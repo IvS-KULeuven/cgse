@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["egse", "egse.storage"]
+namespaces = true
+
+[tool.setuptools.package-data]
+egse = ["*.yaml"]
+
+[project]
+name = "plato-fits"
+version = "2023.1.0"
+description = "FITS Persistence implementation for CGSE"
+license = { text = "Common-EGSE Software License Agreement" }
+dependencies = [
+    "cgse-common",
+    "plato-spw",
+    "astropy",
+    "numpy",
+]
+
+[project.entry-points."cgse.version"]
+plato-fits = 'egse.storage.plugins'
+
+[project.entry-points."cgse.storage.persistence"]
+FITS = "egse.plugins.storage.fits:FITS"

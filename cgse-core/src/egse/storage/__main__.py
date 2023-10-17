@@ -1,0 +1,3 @@
+import rich
+
+rich.print("")

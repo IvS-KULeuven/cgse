@@ -1,0 +1,51 @@
+
+ProxyClass:
+    egse.services.ServiceProxy
+
+ClassDescription:
+    The Service Proxy class is used to send control commands to any of the control servers.
+
+Commands:
+
+    set_monitoring_frequency:
+        description:   Sets the monitoring frequency (Hz) to the given freq value.
+        cmd:           '{freq}'
+        device_method: None
+        response:      handle_set_monitoring_frequency
+
+    set_hk_frequency:
+        description:    Sets the housekeeping frequency (Hz) to the given freq value.
+        cmd:           '{freq}'
+        device_method: None
+        response:      handle_set_hk_frequency
+
+    set_logging_level:
+        description:   Set the logging level for the logger with the given name.
+        cmd:           '{name} {level}'
+        device_method: None
+        response:      handle_set_logging_level
+
+    quit_server:
+        description:   Send an interrupt to the control server. The server will close all connections and exit.
+        device_method: None
+        response:      handle_quit
+
+    get_process_status:
+        description:   Ask for the process status of the control server.
+        device_method: None
+        response:      handle_get_process_status
+
+    get_cs_module:
+        description:   Returns the module in which the control server has been implemented.
+        device_method: None
+        response:      handle_get_cs_module
+
+    get_average_execution_times:
+        description:    Returns a dictionary with the average execution times of the get_housekeeping and get_status methods
+        device_method:  None
+        response:       handle_get_average_execution_times
+
+    get_storage_mnemonic:
+        description:    Returns the mnemonic that is part of the filename where the housekeeping data are stored.
+        device_method:  None
+        response:       handle_get_storage_mnemonic

@@ -1,0 +1,193 @@
+BaseClass:
+    egse.hexapod.symmetrie.PunaInterface
+
+ProxyClass:
+    egse.hexapod.symetrie.PunaProxy
+
+ControlServerClass:
+    egse.hexapod.symetrie.PunaControlServer
+
+ControlServer:
+    egse.hexapod.symetrie.puna_cs
+
+UserInterface:
+    egse.hexapod.symetrie.puna_ui
+
+Commands:
+
+    # Each of these groups is parsed and used on both the server and the client side.
+    #
+    # The group name (e.g. is_simulator) will be monkey patched in the Proxy class for the device
+    # or service.
+    #
+    # The other field are:
+    #   description:   Used by the doc_string method to generate a help string
+    #   cmd:           Command string that will eventually be send to the hardware controller for
+    #                  the device. This cmd string is also used at the client side to parse and
+    #                  validate the arguments.
+    #   device_method: The name of the method to be called on the device class.
+    #                  These should all be defined by the interface class for the device, i.e.
+    #                  PunaInterface in this case.
+    #                  When the device_method is the same as the group name, it can be omitted.
+    #   response:      The name of the method to be called from the device protocol.
+    #                  This method should exist in the subclass of the CommandProtocol base class,
+    #                  i.e. in this case it will be the PunaProtocol class.
+    #                  The default (when no response is given) is 'handle_device_method'.
+
+    # Definition of the the DeviceInterface
+
+    is_simulator:
+        description:    Ask if the connected class is a simulator instead of the real device Controller class.
+        returns:        bool | True if the far end is a simulator instead of the real hardware
+
+    is_connected:
+        description:    Check if the Hexapod hardware controller is connected.
+
+    connect:
+        description:    Connect the Hexapod hardware controller
+
+    reconnect:
+        description:    Reconnect the Hexapod hardware controller.
+
+                        This command will force a disconnect and then try to re-connect to the controller.
+
+    disconnect:
+        description:    Disconnect from the hexapod controller.
+
+                        This command will be send to the Hexapod Control Server which will then
+                        disconnect from the hardware controller.
+
+                        This command does not affect the ZeroMQ connection of the Proxy to the
+                        control server. Use the service command `disconnect_cs()` to disconnect
+                        from the control server.
+
+
+    # Definition of the device commands
+
+    is_in_position:
+        description:    Returns True when the actuators are in position.
+
+    info:
+        description:    Retrieve basic information about the Hexapod and the Controller.
+
+    reset:
+        description:    Completely resets the Hexapod controller with the standard boot cycle.
+        cmd:            "$$$"
+
+    stop:
+        description:    Stop the current motion.
+        cmd:            "&2 Q20=2"
+
+    homing:
+        description:    Start the homing cycle for the Hexapod.
+        cmd:            "&2 Q20=1"
+
+    is_homing_done:
+        description:    Check if Homing is done.
+
+    set_virtual_homing:
+        description:    Starts the virtual homing cycle on the hexapod.
+
+                        This command uses the position given in parameters to initialize the hexapod position.
+                        No movements of the hexapod are performed during this homing cycle. Please note that the
+                        position specified in parameters must match the absolute position of the Object coordinate
+                        system in the User coordinate system (see description in the manual chapter 2 on coordinates
+                        systems). This position correspond to the answer of the command `get_user_positions()`.
+                        During this operation, it is important to have the same hexapod position as those defined
+                        during the record of the position. Otherwise, the system initialization will be incorrect.
+
+        cmd:            "&2 Q71={tx} Q72={ty} Q73={tz} Q74={rx} Q75={ry} Q76={rz} Q20=42"
+
+    clear_error:
+        description:    Clear all errors in the controller software.
+        cmd:            "&2 Q20=15"
+
+    activate_control_loop:
+        description:    Activates the control loop on motors.
+        cmd:            "&2 Q20=3"
+
+    deactivate_control_loop:
+        description:    Disables the control loop on the servo motors.
+        cmd:            "&2 Q20=4"
+
+    configure_coordinates_systems:
+        description:    Change the definition of the User Coordinate System and the Object Coordinate System.
+        cmd:            "&2 Q80={tx_u} Q81={ty_u} Q82={tz_u} Q83={rx_u} Q84={ry_u} Q85={rz_u} Q86={tx_o} Q87={ty_o} Q88={tz_o} Q89={rx_o} Q90={ry_o} Q91={rz_o} Q20=21"
+
+    get_coordinates_systems:
+        description:    Retrieve the definition of the User Coordinate System and the Object Coordinate System.
+        cmd:            "&2 Q20=31"
+        query:          "&2 Q20 Q80,12,1"
+
+    get_general_state:
+        description:    Retreive general state information of the hexapod.
+
+    get_user_positions:
+        description:    Retreive the position of the Object Coordinate System in the User Coordinate System.
+        cmd:            "&2 Q53,6,1"
+
+    get_machine_positions:
+        description:    Retreive the position of the Platform Coordinate System in the Machine Coordinate System.
+        cmd:            "&2 Q47,6,1"
+
+    get_actuator_length:
+        description:    Retreive the current length of the hexapod actuators.
+        cmd:            "&2 Q41,6,1"
+
+    get_actuator_state:
+        description:    Returns the general state of the actuators.
+
+    move_absolute:
+        description:    Move/define the Object Coordinate System position and orientation expressed in the invariant user coordinate system.
+
+                        The rotation centre coincides with the Object Coordinates System origin and
+                        the movements are controlled with translation components at first (Tx, Ty, tZ)
+                        and then the rotation components (Rx, Ry, Rz).
+        cmd:            "&2 Q70=0 Q71={tx:.6f} Q72={ty:.6f} Q73={tz:.6f} Q74={rx:.6f} Q75={ry:.6f} Q76={rz:.6f} Q20=11"
+
+    move_relative_object:
+        description:    Move the object relative to its current object position and orientation.
+        cmd:            "&2 Q70=1 Q71={tx:.6f} Q72={ty:.6f} Q73={tz:.6f} Q74={rx:.6f} Q75={ry:.6f} Q76={rz:.6f} Q20=11"
+
+    move_relative_user:
+        description:    Move the object relative to its current object position and orientation.
+        cmd:            "&2 Q70=2 Q71={tx:.6f} Q72={ty:.6f} Q73={tz:.6f} Q74={rx:.6f} Q75={ry:.6f} Q76={rz:.6f} Q20=11"
+
+    check_absolute_movement:
+        description:    Check if the requested object movement is valid.
+        cmd:            "&2 Q70=0 Q71={tx} Q72={ty} Q73={tz} Q74={rx} Q75={ry} Q76={rz} Q20=10"
+
+    check_relative_object_movement:
+        description:    Check if the requested object movement is valid.
+        cmd:            "&2 Q70=1 Q71={tx} Q72={ty} Q73={tz} Q74={rx} Q75={ry} Q76={rz} Q20=10"
+
+    check_relative_user_movement:
+        description:    Check if the requested object movement is valid.
+        cmd:            "&2 Q70=2i Q71={tx} Q72={ty} Q73={tz} Q74={rx} Q75={ry} Q76={rz} Q20=10"
+
+    goto_zero_position:
+        cmd:            "&2 Q80=1 Q20=13"
+
+    goto_retracted_position:
+        cmd:            "&2 Q80=2 Q20=13"
+
+    goto_specific_position:
+        cmd:            "&2 Q80={pos} Q20=13"
+
+    perform_maintenance:
+        description:    Ask the controller to perform the maintenance cycle which consists to
+                        travel the full range on one axis. Full range corresponds to the Hexapod
+                        machine limts (defined by the manufacturer), and the movement is
+                        performed in Machine coordinate system.
+        cmd:            "{axis}"
+
+    get_speed:
+        description:    Returns the movement speed. Translation speed is expressed in mm per
+                        second, the angular speed is expressed in degrees per second.
+
+    set_speed:
+        description:    Sets the speed of movements.
+        cmd:            "&2 Q80={vt} Q81={vr} Q20=25"
+
+    get_debug_info:
+        description:    Returns debugging status information.

@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["egse", "egse.hexapod.symetrie"]
+namespaces = true
+
+[tool.setuptools.package-data]
+egse = ["*.yaml"]
+
+[project]
+name = "symetrie-hexapod"
+version = "2023.1.0"
+description = "Symetrie Hexapod implementation for CGSE"
+license = { text = "Common-EGSE Software License Agreement" }
+dependencies = [
+    "cgse-common",
+    "cgse-core",
+    "cgse-gui",
+    "cgse-coordinates",
+    "PyQt5",
+]
+
+[project.scripts]
+puna_cs = 'egse.hexapod.symetrie.puna_cs:cli'
+
+[project.gui-scripts]
+puna_ui = "egse.hexapod.symetrie.puna_ui:main"
+
+[project.entry-points."cgse.version"]
+symetrie-hexapod = 'egse.plugins'
+
+[project.entry-points."cgse.service.plugins"]
+puna_cs = 'scripts.cgse_service_plugins:puna_cs'

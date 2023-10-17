@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["egse", "egse.coordinates"]
+namespaces = true
+
+[tool.setuptools.package-data]
+egse = ["*.yaml"]
+
+[project]
+name = "cgse-coordinates"
+version = "2023.1.0"
+description = "Reference Frames and Coordinate Transofrmations for CGSE"
+license = { text = "Common-EGSE Software License Agreement" }
+dependencies = [
+    "cgse-core",   # should be cgse-common
+    "numpy",
+    "pandas",
+    "transforms3d",
+]
+
+[project.entry-points."cgse.version"]
+cgse-coordinates = 'egse.plugins'

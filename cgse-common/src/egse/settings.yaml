@@ -1,0 +1,980 @@
+Common-EGSE:
+    VERSION:                 2023.38.0+CGSE    # bump version here and below
+    RELEASE:                 September 2023, 2023.38.0+CGSE
+
+SITE:
+    ID:                            XXX
+    SSH_SERVER:              localhost         # The IP address of the SSH server on your site
+    SSH_PORT:                       22         # The TCP/IP port on which the SSH server is listening
+
+REPO:
+    PLATO_CGSE_CONF:   ENV['PLATO_CONF_REPO_LOCATION']
+
+DSI:
+
+    # Application settings
+
+    RX_BUFFER_LENGTH:           32768          # The size of the reception buffer for RMAP messages
+    TX_BUFFER_LENGTH:            5120          # The size of the transmission buffer for RMAP messages
+
+    # DSI Specific Settings
+
+    DSI_FEE_IP_ADDRESS:     localhost          # IP address of the DSI EtherSpaceLink interface
+    DSI_FEE_PORT:                4949          # The TCP/IP port where the DSI is listening for connections
+    DSI_DPU_IP_ADDRESS:     localhost          # IP address of the DSI EtherSpaceLink interface
+    DSI_DPU_PORT:                4949          # The TCP/IP port where the DSI is listening for connections
+    LINK_SPEED:                   100          # SpW link speed used for both up- and downlink
+
+
+    # RMAP Specific Settings
+
+    INITIATOR_LOGICAL_ADDRESS:   0x50          # The logical address for the initiator, i.e. the DPU Simulator
+    TARGET_LOGICAL_ADDRESS:      0x51          # The logical address for the target, i.e. the FEE Simulator
+
+    RMAP_BASE_ADDRESS:     0x00000000          # The start of the RMAP memory map managed by the FEE
+    RMAP_MEMORY_SIZE:       0x1000000          # The size of the RMAP memory map managed by the FEE, i.e. 16MB
+
+    ESL_DYLIB_FILENAME:   EtherSpaceLink_v34_86.dylib   # Filename of the dynamic library for EtherSpaceLink
+    RMAP_DYLIB_FILENAME:  ESL-RMAP_v34_86.dylib         # Filename of the dynamic library for EtherSpaceLink RMAP
+
+DPU:
+
+    TIMEOUT_MS:                  1000          # Timeout in milli seconds
+    HDF5_QUEUE:          "hdf5_queue"          # Where in $PLATO_DATA_STORAGE_LOCATION the queue of HDF5 files will be stored
+
+FEE:
+    # The last setting of duplicates will be the one selected!
+
+    PLATOSIM_FILENAME:  "SF500x500_E100.hdf5"  # SubField 500x500, # Exposures 100
+
+N-FEE:
+    ROUND_TRIP_FOR_RMAP_COMMAND:  100          # how much time does it take to send an RMAP write
+                                               # command and get a response back [milliseconds]
+    ORIGIN_SPW_DATA:        N-FEE_SPW          # used by the DPU Processor to register to Storage
+    ORIGIN_SPW_DATA_TYPE:        HDF5
+    ORIGIN_CCD_DATA:        N-FEE_CCD
+    ORIGIN_CCD_DATA_TYPE:        FITS
+
+
+PROCESS:
+    METRICS_INTERVAL:              10
+
+# ---------- Controllers ---------------------------------------------------------------------------
+
+OGSE Controller:
+    HOSTNAME:               localhost
+    PORT:                        4181
+
+TCS Controller:
+    HOSTNAME:               localhost
+    COMMANDING_PORT:             6666
+    TELEMETRY_PORT:              6667
+
+Keithley DAQ6510:
+    HOSTNAME:               localhost
+    PORT:                        5025
+    MAC_ADDRESS:    08:00:11:24:0C:7A
+    SERIAL_NUMBER:           04457823
+    TIMEOUT:                       60
+
+LakeShore Controller:
+    LS_1:
+        TYPE:               LSCI_336
+        HOSTNAME:    XXX.XXX.XXX.XXX
+        PORT:                   7777
+    LS_2:
+        TYPE:               LSCI_336
+        HOSTNAME:    XXX.XXX.XXX.XXX
+        PORT:                   7777
+    LS_3:
+        TYPE:               LSCI_336
+        HOSTNAME:    XXX.XXX.XXX.XXX
+        PORT:                   7777
+
+PUNA Alpha+ Controller:
+    user_name: provide username in local settings
+    password: provide password in local settings
+
+PMAC Controller:
+
+    DEFAULT_SPEED:                  2          # Default actuator speed
+
+    H_1A:
+        TYPE:                   ALPHA
+        HOSTNAME:     XXX.XXX.XXX.X1A
+        PORT:                    1025
+
+    H_1B:
+        TYPE:                   ALPHA
+        HOSTNAME:     XXX.XXX.XXX.X1B
+        PORT:                    1025
+
+    H_2A:
+        TYPE:                   ALPHA
+        HOSTNAME:     XXX.XXX.XXX.X2A
+        PORT:                    1025
+
+    H_2B:
+        TYPE:                   ALPHA
+        HOSTNAME:     XXX.XXX.XXX.X2B
+        PORT:                    1025
+
+Gimbal Controller:
+
+    DEFAULT_SPEED:               0.25         # Default rotation speed (deg/s)
+    HOSTNAME:               localhost #192.168.16.220          # IP address of the Hexapod controller, use localhost if you have set up an ssh tunnel
+    PORT:                        1025          # the port number on which the Gimbal controller is listening
+
+ZONDA Controller:                              # Zonda controller is in reality a POWER PMAC controller. For the moment the configuration is set for an Hexapod Emulator
+    DEFAULT_SPEED:                  2          # Default actuator speed
+    IP:                 192.168.80.7 #192.168.16.175         #IP for the simulator: "192.168.56.10"
+    PORT:                           22         # the port number on which the Hexapod controller is listening
+
+Huber Controller:
+
+    HOSTNAME:               localhost
+    PORT:                        4243
+    NUMBER_OF_AXES:                 3          # How many axes does this controller serve?
+    BIG_ROTATION_STAGE:             1
+    SMALL_ROTATION_STAGE:           2
+    TRANSLATION_STAGE:              3
+    DEFAULT_SPEED:       [15000, 15000, 15000] # Default speed for each of the axes, big and small rotation and translation
+
+Thorlabs PM100 Controller:
+
+    VISA_RESOURCE: 'USB0::4883::32889::P1001855::0::INSTR'
+
+Shutter KSC101 Controller:
+    DEVICE_ID: '68001622'
+    BAUDRATE:   115200
+
+Filter Wheel 8SMC4 Controller:
+    FRIENDLY_NAME: '10MCWA168-1'
+    SERIAL: '16556'
+    IP: '192.168.80.6'
+    MAC_ADDRESS: c0:b0:b7:64:a3:03
+
+Standa 8SMC5 Controller:
+    PORT_0:         /dev/filterwheel0
+    PORT_1:         /dev/filterwheel1
+
+Pfeiffer ACP40 Controller:
+    PORT:                  /dev/acp40
+    BAUDRATE:                    9600
+    ADDRESS:                        0
+
+KELLER Leo3 Controller:
+    PORT:                   /dev/leo3
+    BAUDRATE:                    9600
+
+InstruTech IGM402 Controller:
+    PORT:                 /dev/igm402
+    BAUDRATE:                   19200
+    ADDRESS:                        1
+
+Pfeiffer TPG261 Controller:
+    PORT:                 /dev/tpg261
+    BAUDRATE:                    9600
+
+Pfeiffer TC400 Controller:
+    PORT:                  /dev/tc400
+    BAUDRATE:                    9600
+    ADDRESS:                        1
+
+Arun SMD3 Controller:
+    PORT:                   /dev/smd3
+    BAUDRATE:                  115200
+
+Aerotech Ensemble Controller:
+    HOSTNAME:               localhost
+    PORT:                        8000
+
+Agilent 34970 Controller:
+    DAQ 0:
+        PORT:           /dev/agilent0
+        BAUDRATE:              115200
+    DAQ 1:
+        PORT:           /dev/agilent1
+        BAUDRATE:              115200
+
+Agilent 34972 Controller:
+    DAQ 0:
+        PORT:                    5025
+        HOST:               localhost
+    DAQ 1:
+        PORT:                    5025
+        HOST:               localhost
+
+Digalox LN2 level monitor Controller:
+    PORT:                /dev/digalox
+    BAUDRATE:                   19200
+
+Thorlabs SC10 Controller:
+    PORT:                   /dev/sc10
+    BAUDRATE:                    9600
+
+Lamp EQ99 Controller:
+    DEVICE_ID:  'AL00803U'
+    BAUDRATE:   38400
+
+SRS PTC10 Controller:
+    HOSTNAME:   localhost
+
+NI Controller:
+    HOSTNAME:       localhost
+    CDAQ9184_PORT:  8089 # CDAQ9174_PORT: 64804 (CDAQ9184_PORT: 64803)
+    CDAQ9375_PORT:  6340
+
+AEU Controller:
+    HOSTNAME:       localhost
+    AWG1_PORT:          50001
+    AWG2_PORT:          50002
+    CRIO_PORT:          50011
+    PSU1_PORT:          50021
+    PSU2_PORT:          50022
+    PSU3_PORT:          50023
+    PSU4_PORT:          50024
+    PSU5_PORT:          50025
+    PSU6_PORT:          50026
+
+# ---------- Data Acquisition System (DAS) ---------------------------------------------------------
+
+Data Acquisition System:
+
+    METRICS_PORT_TCS:            7004
+    METRICS_PORT_DAQ6510:        7005
+    METRICS_PORT_PTC10:          7006
+    METRICS_PORT_CDAQ:           7007
+    METRICS_PORT_N_FEE_HK:       7008
+    METRICS_PORT_CDAQ_ALARMS:    7002
+
+
+# ---------- GUIs ----------------------------------------------------------------------------------
+
+PM GUI:
+    METRICS_PORT:                8513
+
+DPU GUI:
+    METRICS_PORT:                8514
+
+OGSE GUI:
+    METRICS_PORT:                8515
+
+PUNA GUI:
+    METRICS_PORT:                8541
+
+SMC9300 GUI:
+    STATES_TIMER_INTERVAL:       1000
+    STRIPCHART_TIMER_INTERVAL:   1000
+    METRICS_PORT:                8542
+
+ZONDA GUI:
+    METRICS_PORT:                8543
+
+AEU GUI:
+    METRICS_PORT:                8544
+
+GIMBAL GUI:
+    METRICS_PORT:                8545
+
+FW8SMC4 GUI:
+    METRICS_PORT:               32000
+
+LAMP EQ99 GUI:
+    METRICS_PORT:               33000
+
+CDAQ 9184 GUI:
+    METRICS_PORT:               30001
+
+PM100A GUI:
+    METRICS_PORT:               30000
+
+KSC101 GUI:
+    METRICS_PORT:               31000
+
+# ---------- Notification Channels -----------------------------------------------------------------
+
+Slack Notifications:
+
+    WEBHOOK: define the webhook in the local-settings.yaml on your machine
+
+# ---------- Control Servers -----------------------------------------------------------------------
+
+Logging Control Server:                        # LG_CS
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
+    LOGGING_PORT:                7000
+    COMMANDING_PORT:             7001
+    METRICS_PORT:                7003          # The HTTP port where Prometheus will connect to for retrieving metrics
+    FILE_STORAGE_LOCATION: ENV['PLATO_LOG_FILE_LOCATION']
+    MAX_NR_LOG_FILES:              20          # The maximum number of log files that will be maintained in a roll-over
+    MAX_SIZE_LOG_FILES:            20          # The maximum size one log file can become
+    CUTELOG_IP_ADDRESS:     127.0.0.1          # The IP address of the cutelog listening server
+    CUTELOG_LISTENING_PORT:     19996          # The port number on which the cutelog server is listening
+
+Configuration Manager Control Server:          # CM_CS
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
+    COMMANDING_PORT:             6000          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6001          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6002          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6003          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                          1          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:              CM          # The mnemonic to be used in the filename storing the housekeeping data
+    FILE_STORAGE_LOCATION: ENV['PLATO_CONF_DATA_LOCATION']
+
+Storage Control Server:                        # SM_CS
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
+    COMMANDING_PORT:             6100          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6101          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6102          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6103          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                          1          # The delay time between publishing status information [seconds]
+    FILE_STORAGE_LOCATION: ENV['PLATO_DATA_STORAGE_LOCATION']
+
+Process Manager Control Server:                # PM_CS
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that the client shall connect to, e.g. pleiad01 @ KU Leuven
+    COMMANDING_PORT:             6200          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6201          # The port on which the controller sends periodic status information of the devide - PUB-SUB
+    SERVICE_PORT:                6202          # The port number on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6203          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                          1          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:              PM          # The mnemonic to be used in the filename storing the housekeeping data
+
+Synoptics Manager Control Server:
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost
+    COMMANDING_PORT:             6204          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6205          # The port on which the controller sends periodic status information of the devide - PUB-SUB
+    SERVICE_PORT:                6206          # The port number on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6207          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                          1          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:             SYN          # The mnemonic to be used in the filename storing the housekeeping data
+
+FDIR Manager Control Server:                   # FM_CS
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that the client shall connect to, e.g. pleiad01 @ KU Leuven
+    COMMANDING_PORT:             6300          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6301          # The port on which the controller sends periodic status information of the devide - PUB-SUB
+    SERVICE_PORT:                6302          # The port number on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6303          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                          1          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:              FM          # The mnemonic to be used in the filename storing the housekeeping data
+    RECOVERY_SCRIPT_LOCATION: ENV['PLATO_RECOVERY_SCRIPT_LOCATION']
+    LOGGING_LOCATION: ENV['PLATO_LOG_FILE_LOCATION']
+    GRAFANA_HOSTNAME:       localhost
+    GRAFANA_PORT:                3000
+
+FDIR Remote Control Server:
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost         # The hostname that the client shall connect to, e.g. pleiad01 @ KU Leuven
+    COMMANDING_PORT:             6305          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6306          # The port on which the controller sends periodic status information of the devide - PUB-SUB
+    SERVICE_PORT:                6307          # The port number on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6308          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                          1          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:              FR          # The mnemonic to be used in the filename storing the housekeeping data
+
+Alert Manager Control Server:
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost
+    COMMANDING_PORT:             6309
+    MONITORING_PORT:             6310
+    SERVICE_PORT:                6311
+    METRICS_PORT:                6312
+    DELAY:                          5
+    STORAGE_MNEMONIC:              AM
+    EMAIL_SENDER: ENV['PLATO_EMAIL_SENDER']
+    EMAIL_SERVER: ENV['PLATO_EMAIL_SERVER']
+    EMAIL_WARNING_RECIPIENTS: ENV['PLATO_EMAIL_WARNING_RECIPIENTS']
+    EMAIL_CS_RECIPIENTS: ENV['PLATO_EMAIL_CS_RECIPIENTS']
+    CONFIGURATION_LOCATION: ENV['PLATO_ALERT_CONFIGURATION_LOCATION']
+
+
+DPU Control Server:
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. on the same machine
+    COMMANDING_PORT:             6600          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6601          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6602          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6603          # The HTTP port where Prometheus will connect to for retrieving metrics
+
+DPU Processor:
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. on the same machine
+    MONITORING_PORT:            30102          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    DATA_DISTRIBUTION_PORT:     30103          # The port on which SpW data will be distributed
+
+OGSE Control Server:                           # OGSE_CS
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost
+    COMMANDING_PORT:             4242
+                                               # NOTE: Port 4243 is used by the HUBER Stages
+    MONITORING_PORT:             4244          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                4245          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                4246          # The HTTP port where Prometheus will connect to for retrieving metrics
+    ST_DELAY:                       2          # The delay time between publishing status information [seconds]
+    HK_DELAY:                      10          # The delay time between storing housekeeping information [seconds]
+
+TCS Control Server:                            # TCS_CS
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
+    COMMANDING_PORT:             6605          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6606          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6607          # The port on which the controller listens for configuration and administration - REQ-REP
+    HEARTBEAT_PORT:              6608          # The port on which the controller replies to are-you-alive requests - REQ-REP
+    METRICS_PORT:                6609          # The HTTP port where Prometheus will connect to for retrieving metrics
+    CS_METRICS_PORT:             7004
+    STORAGE_MNEMONIC:             TCS          # The mnemonic to be used in the filename storing the device housekeeping data
+    STORAGE_TM_MNEMONIC:       TCS-HK          # The mnemonic used to store the telemetry housekeeping data
+    ST_DELAY:                       1          # The delay time between publishing status information [seconds]
+    HK_DELAY:                      10          # The delay time between storing housekeeping information [seconds]
+
+Hexapod PUNA Control Server:                  # PUNA_CS
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. on the same machine
+    COMMANDING_PORT:             6700          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6701          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6702          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6703          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                         10          # The delay time between publishing status information [seconds]
+    USE_SIMULATOR:                 NO          # Use the HexapodSimulator class instead of the actual Hexapod class
+
+Hexapod ZONDA Control Server:
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. on the same machine
+    COMMANDING_PORT:             6704          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6705          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6706          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6707          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                         10          # The delay time between publishing status information [seconds]
+    USE_SIMULATOR:                 NO          # Use the HexapodSimulator class instead of the actual Hexapod class
+
+Gimbal Control Server:                         # GIMBAL_CS
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. on the same machine
+    COMMANDING_PORT:             6708          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6709          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6710          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6711          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                         10          # The delay time between publishing status information [seconds]
+    USE_SIMULATOR:                 YES         # Use the GimbalSimulator class instead of the actual Gimbal class
+
+Huber Control Server:
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
+    COMMANDING_PORT:             6800          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6801          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6802          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6803          # The HTTP port where Prometheus will connect to for retrieving metrics
+    ST_DELAY:                       2          # The delay time between publishing status information [seconds]
+    HK_DELAY:                      10          # The delay time between storing housekeeping information [seconds]
+
+Lamp EQ99 Control Server:
+    #TODO: Ask Rik to assign real values to the different ports
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
+    COMMANDING_PORT:             6804          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6805          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6806          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6807          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                          1          # The delay time between publishing status information [seconds]
+    USE_SIMULATOR:                 NO          # Use the HexapodSimulator class instead of the actual Hexapod class
+    STORAGE_MNEMONIC:            EQ99
+
+SRS PTC10 Control Server:
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
+    COMMANDING_PORT:             6808          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6809          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6810          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6811          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                          1          # The delay time between publishing status information [seconds]
+    TIMEOUT:                       60
+    STORAGE_MNEMONIC:       DAS-PTC10-EMPTY
+
+
+LakeShore Control Server:
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
+    PROTOCOL:                     tcp
+    LS_1:
+        COMMANDING_PORT:             6812          # The port on which the controller listens to commands - REQ-REP
+        MONITORING_PORT:             6813          # The port on which the controller sends periodic status information of the device - PUB-SUB
+        SERVICE_PORT:                6814          # The port on which the controller listens for configuration and administration - REQ-REP
+        METRICS_PORT:                6815          # The HTTP port where Prometheus will connect to for retrieving metrics
+        STORAGE_MNEMONIC:            LS-1
+        TYPE:                    LSCI_336
+    LS_2:
+        COMMANDING_PORT:             6816          # The port on which the controller listens to commands - REQ-REP
+        MONITORING_PORT:             6817          # The port on which the controller sends periodic status information of the device - PUB-SUB
+        SERVICE_PORT:                6818          # The port on which the controller listens for configuration and administration - REQ-REP
+        METRICS_PORT:                6819          # The HTTP port where Prometheus will connect to for retrieving metrics
+        STORAGE_MNEMONIC:            LS-2
+        TYPE:                    LSCI_336
+    LS_3:
+        COMMANDING_PORT:             6820          # The port on which the controller listens to commands - REQ-REP
+        MONITORING_PORT:             6821          # The port on which the controller sends periodic status information of the device - PUB-SUB
+        SERVICE_PORT:                6822          # The port on which the controller listens for configuration and administration - REQ-REP
+        METRICS_PORT:                6823          # The HTTP port where Prometheus will connect to for retrieving metrics
+        STORAGE_MNEMONIC:            LS-3
+        TYPE:                    LSCI_336
+    DELAY:                         10          # The delay time between publishing status information [seconds]
+
+Thorlabs PM100 Control Server:
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
+    COMMANDING_PORT:             6905          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6906          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6907          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6908          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                          1          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:          PM100A
+
+Shutter KSC101 Control Server:                  # Ports to be confirmed by KUL
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
+    COMMANDING_PORT:             6909          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6910          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6911          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6912          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                          1          # The delay time between publishing status information [seconds]
+
+Filter Wheel 8SMC4 Control Server:
+    #TODO: asign real values to the different ports
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
+    COMMANDING_PORT:             6913          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6914          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6915          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6916          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                          1          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:         FW8SMC4
+    USE_SIMULATOR:                 NO          # Use the HexapodSimulator class instead of the actual Hexapod class
+
+Keithley Control Server:
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
+    COMMANDING_PORT:             6920          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6921          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6922          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6923          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                         10          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:         DAQ6510          # The mnemonic to be used in the filename storing the housekeeping data
+    TIMEOUT:                       90          # The timeout for DAQ6510Proxy [seconds]. timeout must be > scan count * interval + (one scan duration)
+
+BeagleBone Heater Control Server:
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. stardust @ SRON
+#    HOSTNAME:           10.33.178.140          # The hostname that client shall connect to, e.g. stardust  @ SRON
+    COMMANDING_PORT:             6930          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6931          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6932          # The port on which the controller listens for configuration and administration - REQ-REP
+    HEARTBEAT_PORT:              6933          # The port on which the controller replies to are-you-alive requests - REQ-REP
+    METRICS_PORT:                6934          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                         10          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:     BBB_HEATERS          # The mnemonic to be used in the filename storing the housekeeping data
+
+BeagleBone Valve Control Server:
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost
+    COMMANDING_PORT:             8210
+    MONITORING_PORT:             8211
+    SERVICE_PORT:                8212
+    HEARTBEAT_PORT:              8213
+    METRICS_PORT:                8214
+    DELAY:                         10
+    STORAGE_MNEMONIC:      BBB_VALVES
+
+BeagleBone Lamp Control Server:
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost
+    COMMANDING_PORT:             7215
+    MONITORING_PORT:             7216
+    SERVICE_PORT:                7217
+    HEARTBEAT_PORT:              7218
+    METRICS_PORT:                7219
+    DELAY:                         10
+    STORAGE_MNEMONIC:        BBB_LAMP
+
+BeagleBone GSM Control Server:
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost
+    COMMANDING_PORT:             7220
+    MONITORING_PORT:             7221
+    SERVICE_PORT:                7222
+    HEARTBEAT_PORT:              7223
+    METRICS_PORT:                7224
+    DELAY:                         10
+    STORAGE_MNEMONIC:         BBB_GSM
+
+SPID Control Server:
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. stardust @ SRON
+#    HOSTNAME:           10.33.178.140          # The hostname that client shall connect to, e.g. stardust  @ SRON
+    COMMANDING_PORT:             6935          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6936          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6937          # The port on which the controller listens for configuration and administration - REQ-REP
+    HEARTBEAT_PORT:              6938          # The port on which the controller replies to are-you-alive requests - REQ-REP
+    METRICS_PORT:                6939          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                         10          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:            SPID          # The mnemonic to be used in the filename storing the housekeeping data
+
+Pfeiffer ACP40 Control Server:
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost
+    COMMANDING_PORT:             6940          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6941          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6942          # The port on which the controller listens for configuration and administration - REQ-REP
+    HEARTBEAT_PORT:              6943
+    METRICS_PORT:                6944
+    DELAY:                         10          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:           ACP40          # The mnemonic to be used in the filename storing the housekeeping data
+
+Pfeiffer TC400 Control Server:
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost
+    COMMANDING_PORT:             6945          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6946          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6947          # The port on which the controller listens for configuration and administration - REQ-REP
+    HEARTBEAT_PORT:              6948
+    METRICS_PORT:                6949
+    DELAY:                         10          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:           TC400          # The mnemonic to be used in the filename storing the housekeeping data
+
+InstruTech IGM402 Control Server:
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost
+    COMMANDING_PORT:             6950          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6951          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6952          # The port on which the controller listens for configuration and administration - REQ-REP
+    HEARTBEAT_PORT:              6953
+    METRICS_PORT:                6954
+    DELAY:                         10          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:          IGM402          # The mnemonic to be used in the filename storing the housekeeping data
+
+Pfeiffer TPG261 Control Server:
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost
+    COMMANDING_PORT:             7300          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             7301          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                7302          # The port on which the controller listens for configuration and administration - REQ-REP
+    HEARTBEAT_PORT:              7303
+    METRICS_PORT:                7304
+    DELAY:                         10          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:          TPG261          # The mnemonic to be used in the filename storing the housekeeping data
+
+Arun SMD3 Control Server:
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost
+    COMMANDING_PORT:             6955
+    MONITORING_PORT:             6956
+    SERVICE_PORT:                6957
+    HEARTBEAT_PORT:              6958
+    METRICS_PORT:                6959
+    DELAY:                         10
+    STORAGE_MNEMONIC:            SMD3
+
+Aerotech Ensemble Control Server:
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost
+    COMMANDING_PORT:             6960
+    MONITORING_PORT:             6961
+    SERVICE_PORT:                6962
+    HEARTBEAT_PORT:              6963
+    METRICS_PORT:                6964
+    DELAY:                          1
+    STORAGE_MNEMONIC:        ENSEMBLE
+
+
+MKS E-Vision RGA Control Server:
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost
+    COMMANDING_PORT:             6965
+    MONITORING_PORT:             6966
+    SERVICE_PORT:                6967
+    HEARTBEAT_PORT:              6968
+    METRICS_PORT:                6969
+    DELAY:                         10
+    STORAGE_MNEMONIC:         EVISION
+
+Standa 8SMC5 Control Server:
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost
+    COMMANDING_PORT:             6970
+    MONITORING_PORT:             6971
+    SERVICE_PORT:                6972
+    HEARTBEAT_PORT:              6973
+    METRICS_PORT:                6974
+    DELAY:                         10
+    STORAGE_MNEMONIC:         FW8SMC5
+
+Thorlabs SC10 Control Server:
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost
+    COMMANDING_PORT:             6975
+    MONITORING_PORT:             6976
+    SERVICE_PORT:                6977
+    HEARTBEAT_PORT:              6978
+    METRICS_PORT:                6979
+    DELAY:                         10
+    STORAGE_MNEMONIC:            SC10
+
+APC Control Server:
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost
+    COMMANDING_PORT:             7205
+    MONITORING_PORT:             7206
+    SERVICE_PORT:                7207
+    HEARTBEAT_PORT:              7208
+    METRICS_PORT:                7209
+    DELAY:                         10
+    STORAGE_MNEMONIC:             APC
+
+KELLER Leo3 Control Server:
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost
+    COMMANDING_PORT:             7420
+    MONITORING_PORT:             7421
+    SERVICE_PORT:                7422
+    METRICS_PORT:                7423
+    DELAY:                         10
+    STORAGE_MNEMONIC:            LEO3
+
+Digalox LN2 level monitor Control Server:
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost
+    COMMANDING_PORT:             7900
+    MONITORING_PORT:             7901
+    SERVICE_PORT:                7902
+    METRICS_PORT:                7903
+    DELAY:                         10
+    STORAGE_MNEMONIC:     DIGALOX_LN2
+
+
+Agilent 34972 Control Server:
+    PROTOCOL: tcp
+    HOSTNAME: localhost
+    DAQ0:
+        COMMANDING_PORT: 6980
+        MONITORING_PORT: 6981
+        SERVICE_PORT: 6982
+        METRICS_PORT: 6984
+        STORAGE_MNEMONIC: AG34972-0
+    DAQ1:
+        COMMANDING_PORT: 6985
+        MONITORING_PORT: 6986
+        SERVICE_PORT: 6987
+        METRICS_PORT: 6989
+        STORAGE_MNEMONIC: AG34972-1
+    DELAY: 10
+
+Agilent 34970 Control Server:
+    PROTOCOL: tcp
+    HOSTNAME: localhost
+    DAQ0:
+        COMMANDING_PORT: 6990
+        MONITORING_PORT: 6991
+        SERVICE_PORT: 6992
+        METRICS_PORT: 6994
+        STORAGE_MNEMONIC: AG34970-0
+    DAQ1:
+        COMMANDING_PORT: 6995
+        MONITORING_PORT: 6996
+        SERVICE_PORT: 6997
+        METRICS_PORT: 6999
+        STORAGE_MNEMONIC: AG34970-1
+    DELAY: 10
+
+NI Control Server:
+    PROTOCOL:                   tcp
+    HOSTNAME:             localhost
+    CDAQ9184:
+        COMMANDING_PORT:    7200
+        MONITORING_PORT:    7201
+        SERVICE_PORT:       7203
+        METRICS_PORT:       7204
+        STORAGE_MNEMONIC:   DAS-CDAQ-PHOTODIODES-EMPTY
+    CDAQ9375:
+        COMMANDING_PORT: 7400
+        MONITORING_PORT: 7401
+        SERVICE_PORT: 7403
+        METRICS_PORT: 7404
+        STORAGE_MNEMONIC: DAS-CDAQ-ALARMS-EMPTY
+        TIMEOUT: 30
+
+AEU Control Server:
+    PROTOCOL:                   tcp
+    HOSTNAME:             localhost
+    CRIO:
+        COMMANDING_PORT:    30002
+        MONITORING_PORT:    30003
+        SERVICE_PORT:       30004
+        METRICS_PORT:       30005
+        STORAGE_MNEMONIC:   AEU-CRIO
+        HK_DELAY:           2.5        # The delay time between storing housekeeping information [seconds]
+        DELAY:              2.5        # The delay time between publishing status information [seconds]
+    PSU1:
+        COMMANDING_PORT:    30006
+        MONITORING_PORT:    30007
+        SERVICE_PORT:       30008
+        METRICS_PORT:       30009
+        STORAGE_MNEMONIC:   AEU-PSU1
+        HK_DELAY:           1          # The delay time between storing housekeeping information [seconds]
+        DELAY:              1          # The delay time between publishing status information [seconds]
+    PSU2:
+        COMMANDING_PORT:    30010
+        MONITORING_PORT:    30011
+        SERVICE_PORT:       30012
+        METRICS_PORT:       30013
+        STORAGE_MNEMONIC:   AEU-PSU2
+        HK_DELAY:           1          # The delay time between storing housekeeping information [seconds]
+        DELAY:              1          # The delay time between publishing status information [seconds]
+    PSU3:
+        COMMANDING_PORT:    30014
+        MONITORING_PORT:    30015
+        SERVICE_PORT:       30016
+        METRICS_PORT:       30017
+        STORAGE_MNEMONIC:   AEU-PSU3
+        HK_DELAY:           1          # The delay time between storing housekeeping information [seconds]
+        DELAY:              1          # The delay time between publishing status information [seconds]
+    PSU4:
+        COMMANDING_PORT:    30018
+        MONITORING_PORT:    30019
+        SERVICE_PORT:       30020
+        METRICS_PORT:       30021
+        STORAGE_MNEMONIC:   AEU-PSU4
+        HK_DELAY:           1          # The delay time between storing housekeeping information [seconds]
+        DELAY:              1          # The delay time between publishing status information [seconds]
+    PSU5:
+        COMMANDING_PORT:    30022
+        MONITORING_PORT:    30023
+        SERVICE_PORT:       30024
+        METRICS_PORT:       30025
+        STORAGE_MNEMONIC:   AEU-PSU5
+        HK_DELAY:           1          # The delay time between storing housekeeping information [seconds]
+        DELAY:              1          # The delay time between publishing status information [seconds]
+    PSU6:
+        COMMANDING_PORT:    30026
+        MONITORING_PORT:    30027
+        SERVICE_PORT:       30028
+        METRICS_PORT:       30029
+        STORAGE_MNEMONIC:   AEU-PSU6
+        HK_DELAY:           1          # The delay time between storing housekeeping information [seconds]
+        DELAY:              1          # The delay time between publishing status information [seconds]
+    AWG1:
+        COMMANDING_PORT:    30030
+        MONITORING_PORT:    30031
+        SERVICE_PORT:       30032
+        METRICS_PORT:       30033
+        STORAGE_MNEMONIC:   AEU-AWG1
+        HK_DELAY:           2.5        # The delay time between storing housekeeping information [seconds]
+        DELAY:              2.5        # The delay time between publishing status information [seconds]
+    AWG2:
+        COMMANDING_PORT:    30034
+        MONITORING_PORT:    30035
+        SERVICE_PORT:       30036
+        METRICS_PORT:       30037
+        STORAGE_MNEMONIC:   AEU-AWG2
+        HK_DELAY:           2.5        # The delay time between storing housekeeping information [seconds]
+        DELAY:              2.5        # The delay time between publishing status information [seconds]
+
+Rotation Stage Setup:
+
+    DEFAULT_SPEED:              20000
+    AXIS_NUMBER:                    1
+    NAME:        Rotation Stage Setup
+    ID:                     420-20913
+
+Rotation Stage SMA:
+
+    DEFAULT_SPEED:              20000
+    AXIS_NUMBER:                    2
+    NAME:          Rotation Stage SMA
+    ID:                     409-10661
+
+Translation Stage SMA:
+
+    DEFAULT_SPEED:              20000
+    AXIS_NUMBER:                    3
+    NAME:           Translation Stage
+    ID:                   5101.30-943
+
+FITS Generator Control Server:
+
+    PROTOCOL: tcp
+    HOSTNAME: localhost
+    COMMANDING_PORT: 7011
+    METRICS_PORT: 7012
+    MONITORING_PORT: 7014
+
+N-FEE HK Control Server:
+
+    PROTOCOL: tcp
+    HOSTNAME: localhost
+    COMMANDING_PORT: 7013
+    METRICS_PORT: 7008   # <--- THIS IS ALSO DEFINED ABOVE, SEARCH METRICS_PORT_N_FEE_HK
+
+FOV HK Control Server:
+
+    PROTOCOL: tcp
+    HOSTNAME: localhost
+    COMMANDING_PORT: 7009
+    METRICS_PORT: 7010
+
+
+Windowing:
+
+    CCD_SIDE_LEFT:                  0
+    CCD_SIDE_RIGHT:                 1
+
+    MIN_WINDOW_SIZE:                2
+    MAX_WINDOW_SIZE:               32
+    DEFAULT_WINDOW_SIZE:           10
+
+Field-Of-View:
+
+    RADIUS_DEGREES:              18.8908        # Radius of the field-of-view [degrees]
+    RADIUS_PIXELS:                  4706        # Radius of the field-of-view [pixels]
+    RADIUS_MM:                      84.7        # Radius of the field-of-view [mm]
+    DISTORTION_COEFFICIENTS:  [0.316257210577,  0.066373219688,  0.372589221219]    # Distortion coefficients [k1, k3, k5]
+    FOCAL_LENGTH:                 247.52        # Focal length [mm]
+
+CCD:
+
+    ZEROPOINT:          [-1.3, 82.48]       # CCD zeropoint (x, y) [mm]
+    ORIENTATION:    [180, 270, 0, 90]       # Orientation of the CCD w.r.t. the focal plane [degrees]
+    PIXEL_SIZE:                    18       # Pixel size [µm]
+    NUM_ROWS:                    4510       # Number of rows
+    NUM_COLUMNS:                 4510       # Number of columns
+    LENGTH_SERIAL_PRESCAN:    25            # Number of columns in the serial pre-scan
+
+Visited Positions UI:
+
+    PROTOCOL: tcp
+    HOSTNAME: localhost          # The hostname that client shall connect to
+    PORT:     7100

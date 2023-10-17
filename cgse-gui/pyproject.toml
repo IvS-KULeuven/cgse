@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["egse", "egse.gui"]
+namespaces = true
+
+[tool.setuptools.package-data]
+egse = ["*.yaml", "icons/*"]
+
+[project]
+name = "cgse-gui"
+version = "2023.1.0"
+description = "GUI components for CGSE"
+license = { text = "Common-EGSE Software License Agreement" }
+dependencies = [
+    "cgse-common",
+    "PyQt5",
+]
+
+[project.entry-points."cgse.version"]
+cgse-gui = 'egse.plugins'
+
+[project.entry-points."cgse.resource"]
+icons = 'egse.gui.icons'
+styles = 'egse.gui.styles'

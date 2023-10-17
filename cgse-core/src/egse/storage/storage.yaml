@@ -1,0 +1,72 @@
+BaseClass:
+    egse.storage.StorageInterface
+
+ProxyClass:
+    egse.storage.StorageProxy
+
+ControlServerClass:
+    egse.storage.StorageControlServer
+
+ControlServer:
+    egse.storage.storage_cs
+
+Commands:
+
+    # Each of these groups is parsed and used on both the server and the client side.
+    # The group name (e.g. is_simulator) will be monkey patched in the Proxy class for the device or service.
+    # The other field are:
+    #   description:   Used by the doc_string method to generate a help string
+    #   cmd:           Command string that will eventually be send to the hardware controller for the
+    #                  device.
+    #   device_method: The name of the method to be called on the device class.
+    #                  These should all be defined by the base class for the device, i.e. HexapodBase.
+    #   response:      The name of the method to be called from the device protocol.
+    #                  This method should exist in the subclass of the CommandProtocol base class, i.e.
+    #                  in this case it will be the HexapodProtocol class.
+
+    start_observation:
+        description:    Start a new observation aka test.
+        cmd:            '{obsid}, {camera_name}'
+
+    end_observation:
+        description:    End the current observation.
+        cmd:            '{obsid}'
+
+    get_obsid:
+        description:    Return the current observation identifier
+
+    save:
+        description:    Save data. The packet should be of type StoragePacket.
+        cmd:            '{packet}'
+
+    read:
+        description:    Read data from the registered storage.
+        cmd:            '{item}'
+
+    register:
+        description:    Register a client to the Storage Manager.
+        cmd:            '{client_info}'
+
+    unregister:
+        description:    De-register a client from the Storage Manager.
+        cmd:            '{client_info}'
+
+    get_registry_names:
+        description:    Returns the names/identifiers of the registered components.
+
+    cycle_daily_files:
+        description:    Create new daily files for all registered items.
+
+    get_storage_location:
+        description:    Returns the path to the Storage location on the server.
+
+    new_registration:
+        description:    Open a new data file to which the incoming data needs to be written.
+        cmd:            "{item}, {use_counter}"
+
+    get_filenames:
+        description:    Return the filename(s) associated with this registered item.
+        cmd:            "{item}"
+
+    get_disk_usage:
+        description:    Returns the total, used, and free disk space.

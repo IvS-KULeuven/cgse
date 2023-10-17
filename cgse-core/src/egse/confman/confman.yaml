@@ -1,0 +1,67 @@
+UserInterface:
+    egse.confman.confman_ui
+
+Commands:
+
+    # Each of these groups is parsed and used on both the server and the client side.
+    #
+    # The group name (aka command name, e.g. start_observation) will be monkey patched in the Proxy
+    # class for the device or service.
+    #
+    # The other field are:
+    #   description:   Used by the doc_string method to generate a help string
+    #   cmd:           Command string that will eventually be send to the hardware controller for
+    #                  the device. This cmd string is also used at the client side to parse and
+    #                  validate the arguments.
+    #   device_method: The name of the method to be called on the device class.
+    #                  These should all be defined by the interface class for the device, i.e.
+    #                  PunaInterface in this case.
+    #                  When the device_method is the same as the group name, it can be omitted.
+    #   response:      The name of the method to be called from the device protocol.
+    #                  This method should exist in the subclass of the CommandProtocol base class,
+    #                  i.e. in this case it will be the PunaProtocol class.
+    #                  The default (when no response is given) is 'handle_device_method'.
+
+    # Commands to start/end/maintain an Observation/Test
+
+    start_observation:
+        description:    Start a new observation aka test.
+        cmd:            '{function_info}'
+
+    end_observation:
+        description:    End the current observation.
+
+    get_obsid:
+        description:    Return the observation identifier (OBSID) for the current test.
+
+                        When no test is running, i.e. we have not started an observation,
+                        then a Message is returned.
+
+    # Commands for handling Setups
+
+    load_setup:
+        description:    Loads the Setup for the given `id` in the configuration manager.
+        cmd:            "{id}"
+
+    get_setup:
+        description:    Returns the current Setup that is loaded in the configuration manager.
+        cmd:            "*"
+
+    reload_setups:
+        description:    Clears the cache and reloads the available Setups
+
+    list_setups:
+        description:    Returns a list of Setups that is available for the tests. The returned
+                        list is a list of named tuples with the fields `id` and `site`.
+        cmd:            "**"
+
+    submit_setup:
+        description:    Submit a (new) Setup to the configuration manager. The Setup will be
+                        assigned a unique identifier and committed to the git repository.
+        cmd:            "{setup} {description} {replace}"
+
+    # Commands that are mainly used by the ProcessManager
+
+    get_setup_for_obsid:
+        description:    Returns the Setup that was used for the given `obsid`.
+        cmd:            "{obsid}"

@@ -1,0 +1,48 @@
+/*css stylesheet file that contains all the style information*/
+
+
+QGroupBox {
+    border: 1px solid lightGray;
+    border-radius: 0px;
+    margin-top: 0px;
+    padding-top: 10px;
+}
+
+QGroupBox::title {
+    background-color: transparent;
+    padding-top: 0px;
+    padding-left: 0px;
+}
+
+/*
+QGroupBox#ManualModeGroupBox {
+    border: 1px solid lightGray;
+}
+
+QFrame#AppFrame {
+  border: 1px solid black;
+}
+
+QFrame#StatusFrame {
+  border: 1px solid red;
+}
+
+QFrame#TabsFrame {
+  border: 1px solid red;
+}
+
+QWidget#ManualPositions {
+  border: 0px solid green;
+}
+*/
+
+/*
+tabs_frame.setStyleSheet("border: 1px solid orange; ")
+states_frame.setStyleSheet("border: 1px solid green; ")
+positions_frame.setStyleSheet("border: 1px solid blue; ")
+toolbar_widget.setStyleSheet("border: 1px solid black; ")
+states_widget.setStyleSheet("border: 1px solid magenta; ")
+user_positions_widget.setStyleSheet("border: 1px solid cyan; ")
+mach_positions_widget.setStyleSheet("border: 1px solid cyan; ")
+atcuator_length_widget.setStyleSheet("border: 1px solid cyan; ")
+*/

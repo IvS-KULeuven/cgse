@@ -1,0 +1,337 @@
+BaseClass:
+    egse.hexapod.symetrie.zonda.AlphaPlusControllerInterface
+
+ProxyClass:
+    egse.hexapod.symetrie.zonda.ZondaProxy
+
+ControlServerClass:
+    egse.hexapod.symetrie.zonda_cs.ZondaControlServer
+
+ControlServer:
+    egse.hexapod.symetrie.zonda_cs
+
+UserInterface:
+    egse.hexapod.symetrie.zonda_ui
+
+Commands:
+
+    # Each of these groups is parsed and used on both the server and the client side.
+    #
+    # The group name (e.g. is_simulator) will be monkey patched in the Proxy class for the device
+    # or service.
+    #
+    # The other field are:
+    #   description:   Used by the doc_string method to generate a help string
+    #   cmd:           Command string that will eventually be send to the hardware controller for
+    #                  the device. This cmd string is also used at the client side to parse and
+    #                  validate the arguments.
+    #   device_method: The name of the method to be called on the device class.
+    #                  These should all be defined by the interface class for the device, i.e.
+    #                  PunaInterface in this case.
+    #                  When the device_method is the same as the group name, it can be omitted.
+    #   response:      The name of the method to be called from the device protocol.
+    #                  This method should exist in the subclass of the CommandProtocol base class,
+    #                  i.e. in this case it will be the PunaProtocol class.
+    #                  The default (when no response is given) is 'handle_device_method'.
+
+    # Definition of the the DeviceInterface
+
+    is_simulator:
+        description:    Ask if the connected class is a simulator instead of the real device Controller class.
+        returns:        bool | True if the far end is a simulator instead of the real hardware
+
+    is_connected:
+        description:    Check if the Hexapod hardware controller is connected.
+
+    connect:
+        description:    Connect the Hexapod hardware controller
+
+    reconnect:
+        description:    Reconnect the Hexapod hardware controller.
+
+                        This command will force a disconnect and then try to re-connect to the controller.
+
+    disconnect:
+        description:    Disconnect from the hexapod controller.
+
+                        This command will be send to the Hexapod Control Server which will then
+                        disconnect from the hardware controller.
+
+                        This command does not affect the ZeroMQ connection of the Proxy to the
+                        control server. Use the service command `disconnect_cs()` to disconnect
+                        from the control server.
+
+    info:
+      description:    Retrieve basic information about the Hexapod and the Controller.
+
+    get_general_state:
+      description:    Retreive general state information of the hexapod.
+
+    reset:
+      description:    Reboot the controller. This command reboot the controller and the Ethernet communication is
+        closed. The controller takes about 2 minutes to initialize. The configuration changes (commands
+        of “CFG” family) will be lost if no CFG_SAVE command were sent since last configuration
+        modifications The system reboot command is interpreted directly by the operating system of the
+        controller. STOP and CONTROLOFF the hexapod before sending the command.
+
+    homing:
+        description:    Start the homing cycle for the Hexapod PUNA. Homing is required before performing a control
+                        movement. Without absolute encoders, the homing is performed with a hexapod movement until
+                        detecting the reference sensor on each of the actuators. The Hexapod will go to a position were
+                        the sensors are reached that signal a known calibrated position and then returns to the zero
+                        position.
+                        Whenever a homing is performed, the method will return before the actual movement is finished.
+                        The homing cycle takes about two minutes to complete, but the homing() method returns almost
+                        immediately. Therefore, to check if the homing is finished, use the is_homing_done() method.
+
+    stop:
+        description:    Stop the current motion.
+
+    clear_error:
+        description:    Clear all errors in the controller software.
+
+    activate_control_loop:
+        description:    Activates the control loop on motors. It activates the power on the motors and release the
+                        brakes if present. The hexapod status Control on switches to true when the command is successful.
+
+    deactivate_control_loop:
+        description:    Disables the control loop on the servo motors.
+
+    jog:
+        description:    Starts a JOG-type movement on the actuator defined by the arguments. A JOG type movement is a
+                        movement done without using the kinematic of the hexapod. It's a relative movement along a
+                        defined actuator. The actuator number is defined by the "axis" variable. The increment "inc"
+                        can be positive to extend the actuator or negative to retract the actuator.
+
+                        Arguments
+
+                          axis(int)  number of the actuator (1 to 6)
+                          inc(float) increment to achieve in mm
+
+                        * Note this is a maintenance feature.
+                        * Note for this command the home do not necessary has to be completed. It is important to
+                        realize that moving the actuator XX mm doesn't correspond to move XX mm in the hexapod workspace
+
+    set_speed:
+        description:    Set the speed of the hexapod movements according to vt and vr arguments.
+
+                        vt is the translation speed of the hexapod in mm per second [mm/s]
+                        vr is the angular speed of the hexapod in deg per second [deg/s]
+
+                        The parameters vt and vr are automatically limited by the controller between the factory
+                        configured minimum and maximum speed
+        cmd:            "{vt} {vr}"
+
+        sequence:
+          description:  Execute a sequence of several points.
+                        First, it checks if limits are enabled (get_limit_state) and if not it enables them (user_limit_enable?? or machine_limit_enable??).
+                        Secondly, it checks if all points of the sequence are reachable (not outside the limits/workspace).
+                        Eventually, it moves hexapod following the sequence step by step (and reads the step n+1 after that the step n is complete).
+                        After a step it waits for "time_sleep" seconds before reading the next step.
+          cmd:          "{file_path} {time_sleep}"
+
+    get_speed:
+      description:      Retrieve the configuration of the movement speed.
+
+                        vt is the translation speed of the hexapod in mm per second [mm/s]
+                        vr is the angular speed of the hexapod in deg per second [deg/s]
+                        vt_min, vt_max are the limits for the translation speed [mm/s]
+                        vr_min, vr_max are the limits for the angular speed [mm/s]
+
+    get_temperature:
+      description:      Retrieves the value of the 6 PT100 temperature sensors in C.
+                        The security temperature limit has been factory set to 60 C.
+                        The controller will be in error state and thus the hexapod movement will stop if the
+                        temperature limit is exceeded. In that case, clear the error before using the Hexapod again.
+      returns:          list | list of floats with the temperature values
+
+    perform_maintenance:
+        description:    Starts a maintenance cycle. The mode selects the type of movement.
+
+                        Arguments
+                          mode = 1 Jog to zero, no other parameter is required for this mode. The Machine zero position
+                          is reached by moving each actuatorin JOG mode without inter-axis interpolation (kinematic
+                          disabled). Backlash compensation is not performed with this mode. This is a maintenance
+                          command that should be used only in case of kinematic error or failure of one/several
+                          actuators.
+                          mode = 2 Move along a single operational axis, the parameter axis is needed to define the
+                          operational axis. The movements are executed in the machine coordinate system. The sequence
+                          is (1) movement to machine zero (2) movement to axis operational negative limit (3) movement
+                          to axis operational positive limit (4) movement to machine zero). The operational limits are
+                          factory defined.
+                          mode = 3 Move allong all the operational axis one after the other, No other parameter is
+                          required for this mode. Movements are executed in the machine coordinate system. The sequence
+                          execute the sequence alon a single operational axis, one axis after another. The axis order is
+                          Tx, Ty, Tz, Rx, Ry, Rz.
+
+                          axis(int) defines the movement around the selected axis
+        cmd:              "{axis}"
+
+    goto_specific_position:
+        description:    Ask to go to a specific position.
+                            * pos=1 User zero
+                            * pos=2 Retracted position
+                            * pos=3 Machine zero
+        cmd:            "{pos}"
+
+    goto_retracted_position:
+        description:    Ask the hexapod to go to the retracted position.
+
+    goto_zero_position:
+        description: Ask the hexapod to go to the user zero position.
+
+    is_homing_done:
+        description:    Check if homing is done.
+
+    is_in_position:
+        description:    Check if the actuators are in position.
+
+    move_absolute:
+        description:    Starts the movement defined by the arguments.
+
+                          tx(float) position on the X-axis [mm]
+                          ty(float) position on the Y-axis [mm]
+                          tz(float) position on the Z-axis [mm]
+                          rx(float) rotation around the X-axis [deg]
+                          ry(float) rotation around the Y-axis [deg]
+                          rz(float) rotation around the Z-axis [deg]
+
+                        Move/define the Object Coordinate System position and orientation expressed in the invariant
+                        user coordinate system.
+
+                        The rotation centre coincides with the Object Coordinates System origin and
+                        the movements are controlled with translation components at first (Tx, Ty, tZ)
+                        and then the rotation components (Rx, Ry, Rz).
+
+                        Will raise an error code if the following conditions are not met
+                          * there is no motion task tunning (motion task running)
+                          * home is completed (home complete),
+                          * the control loop on servo motors is activated (control on),
+                          * the hexapod is not stopping
+        cmd:            "{tx} {ty} {tz} {rx} {ry} {rz}"
+
+    move_relative_object:
+        description:    Starts the movement defined by the arguments.
+
+                          tx(float) position on the X-axis [mm]
+                          ty(float) position on the Y-axis [mm]
+                          tz(float) position on the Z-axis [mm]
+                          rx(float) rotation around the X-axis [deg]
+                          ry(float) rotation around the Y-axis [deg]
+                          rz(float) rotation around the Z-axis [deg]
+
+                         Move the object relative to its current object position and orientation. The relative movement
+                         is expressed in the object coordinate system.
+
+                        Will raise an error code if the following conditions are not met
+                          * there is no motion task tunning (motion task running)
+                          * home is completed (home complete),
+                          * the control loop on servo motors is activated (control on),
+                          * the hexapod is not stopping
+        cmd:            "{tx} {ty} {tz} {rx} {ry} {rz}"
+
+    move_relative_user:
+        description:    Starts the movement defined by the arguments.
+
+                          tx(float) position on the X-axis [mm]
+                          ty(float) position on the Y-axis [mm]
+                          tz(float) position on the Z-axis [mm]
+                          rx(float) rotation around the X-axis [deg]
+                          ry(float) rotation around the Y-axis [deg]
+                          rz(float) rotation around the Z-axis [deg]
+
+                        The object is moved relative to its current object position and orientation. The relative
+                        movement is expressed in the (invariant) user coordinate system.
+
+                        Will raise an error code if the following conditions are not met
+                          * there is no motion task tunning (motion task running)
+                          * home is completed (home complete),
+                          * the control loop on servo motors is activated (control on),
+                          * the hexapod is not stopping
+        cmd:            "{tx} {ty} {tz} {rx} {ry} {rz}"
+
+    check_absolute_movement:
+        description:    Verifies if the movement defined by the arguments is feasible in absolute coordinate system.
+                        After command execution, when the command execution has been successful, the result of the vali-
+                        dation returns
+                            0 when target position is valid
+                            Positive value when the validation shows limitations
+                            Negative value when the validation fails
+        cmd:            "{tx} {ty} {tz} {rx} {ry} {rz}"
+
+    check_relative_object_movement:
+        description:    Verifies if the movement defined by the arguments is feasible in user coordinate system.
+                        After command execution, when the command execution has been successful, the result of the vali-
+                        dation returns
+                            0 when target position is valid
+                            Positive value when the validation shows limitations
+                            Negative value when the validation fails
+        cmd:            "{tx} {ty} {tz} {rx} {ry} {rz}"
+
+    check_relative_user_movement:
+        description:    Verifies if the movement defined by the arguments is feasible in user coordinate system.
+                        After command execution, when the command execution has been successful, the result of the vali-
+                        dation returns
+                            0 when target position is valid
+                            Positive value when the validation shows limitations
+                            Negative value when the validation fails
+        cmd:            "{tx} {ty} {tz} {rx} {ry} {rz}"
+
+    get_coordinates_systems:
+        description:    Retrieve the definition of the User Coordinate System and the Object Coordinate System.
+                        Returns tx_u, ty_u, tz_u, rx_u, ry_u, rz_u, tx_o, ty_o, tz_o, rx_o, ry_o, rz_o where the
+                        translation parameters are in [mm] and the rotation parameters are in [deg].
+
+    get_actuator_length:
+        description:    Retreive the current length of the hexapod actuators in mm.
+
+
+    get_user_positions:
+        description:    Retreive the position of the Object Coordinate System in the User Coordinate System.
+
+    get_machine_positions:
+        description:    Retreive the position of the Platform Coordinate System in the Machine Coordinate System.
+
+    get_actuator_state:
+        description:    Retreive general state information of the actuators. For each of the six actuators, an integer
+                        value is returned that should be interpreted as a bit field containing status bits for that
+                        actuator.
+
+    get_limits_value:
+        description:    Retreive the current limits that have been set to the hexapod. The argument "lim" determines
+                        the workspace in which the limits wants to be retrieved.
+        args:
+          lim:          int  | 0 = Factory, 1 = machine cs limits, 2 = user cs limits
+        cmd:           "{lim}"
+        returns:        list | list of floats with the limits set to the selected workspace (factory, machine, user)
+
+    get_limits_state:
+      description:      Return workspace limits enable state
+      returns:          dict | Limit states of the different work spaces (factory, machine and user)
+
+    machine_limit_enable:
+        description:    Enables (1) or disables (0) the machine workspace limits of the hexapod.
+
+    machine_limit_set:
+        description:    Sets the machine workspace limits of the hexapod.
+
+    user_limit_enable:
+        description:    Enables (1) or disables (0) the user workspace limits of the hexapod.
+
+    user_limit_set:
+        description:    Sets the machine workspace limits of the hexapod.
+
+    set_default:
+        description:    Restores the default configuration parameters. The command can be used to restore factory
+                        default parameters. The restored configuration is not automatically saved. refer to the command
+                        CFG_SAVE to save the parameters in order to keep them after a controller power off. The
+                        calculation of the hexapod position is suspended during the command execution.
+
+    configure_coordinates_systems:
+        description:    Change the definition of the User Coordinate System and the Object Coordinate System.
+                        The parameters tx_u, ty_u, tz_u, rx_u, ry_u, rz_u are used to define the user coordinate system
+                        relative to the Machine Coordinate System and the parameters tx_o, ty_o, tz_o, rx_o, ry_o, rz_o
+                        are used to define the Object Coordinate System relative to the Platform Coordinate System.
+
+                        No motion task shall be running when executing this parameter.
+        cmd:            "{tx_u} {ty_u} {tz_u} {rx_u} {ry_u} {rz_u} {tx_o} {ty_o} {tz_o} {rx_o} {ry_o} {rz_o}"

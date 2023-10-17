@@ -1,0 +1,49 @@
+Commands:
+
+    get_cm_proxy:
+        description:    Returns the Proxy for Configuration Management.
+
+    get_devices:
+        description:    Returns a dictionary of the devices in the current setup.
+
+    get_core:
+        description:    Returns a dictionary of the core EGSE processes (i.e. storage, CM, and PM).
+
+    start_egse:
+        description:    Start all Common-EGSE Control Servers.
+        args         :
+            sim_mode  : boolean | Whether or not to start the processeses in simulator mode.
+
+    start_cs:
+        description:    Starts the Control Server.
+        args         :
+            process_name  : str | Name of the process you want to start (as in the process list).
+            sim_mode  : boolean | Whether or not to start the processes in simulator mode.
+        cmd:            "{process_name} {sim_mode}"
+
+    shut_down_egse:
+        description:    Shut down all Common-EGSE Control Servers.
+
+    shut_down_cs:
+        description:    Shut down Control Server.
+        args         :
+            process_name  : str | Name of the process you want to shut down (as in the process list).
+        cmd:            "{process_name}"
+
+    start_fitsgen:
+        description:    Start the FITS generation.
+
+    stop_fitsgen:
+        description:    Stop the FITS generation.
+
+    start_fov_hk:
+        description:    Start the generation of FOV HK.
+
+    stop_fov_hk:
+        description:    Stop the generation of FOV HK.
+
+    start_n_fee_hk:
+        description:    Start the generation of N-FEE HK.
+
+    stop_n_fee_hk:
+        description:    Stop the generation of N-FEE HK.
