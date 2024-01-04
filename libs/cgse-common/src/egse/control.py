@@ -5,10 +5,11 @@ import abc
 import logging
 import pickle
 import threading
-import time
 from typing import Any
 
 import zmq
+
+from egse.system import time_in_ms
 
 try:
     from egse.logger import close_all_zmq_handlers
@@ -27,16 +28,6 @@ from egse.system import save_average_execution_time
 
 MODULE_LOGGER = logging.getLogger(__name__)
 PROCESS_SETTINGS = Settings.load("PROCESS")
-
-
-def time_in_ms():
-    """Returns the current time in milliseconds since the Epoch."""
-    return int(round(time.time() * 1000))
-
-
-def time_in_s():
-    """Returns the current time in seconds since the Epoch."""
-    return time.time()
 
 
 def is_control_server_active(endpoint: str = None, timeout: float = 0.5) -> bool:
@@ -317,6 +308,8 @@ class ControlServer(metaclass=abc.ABCMeta):
         # This approach is very simplistic and not time efficient
         # We probably want to use a Timer that executes the monitoring and saving actions at
         # dedicated times in the background.
+
+        # FIXME; we shall use the time.perf_counter() here!
 
         last_time = time_in_ms()
         last_time_hk = time_in_ms()
