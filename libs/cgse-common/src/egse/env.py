@@ -57,7 +57,9 @@ def get_data_storage_location(setup=None, site_id: str = None) -> str:
         setup: Setup = setup or GlobalState.setup
 
         if setup is None:
-            raise ValueError("Could not determine Setup, which is None, even after loading from the configuration manager.")
+            raise ValueError(
+                "Could not determine Setup, which is None, even after loading from the configuration manager."
+            )
 
         site = setup.site_id
     else:
@@ -189,14 +191,6 @@ if __name__ == "__main__":
     rich.print("Generated locations and filenames")
 
     with all_logging_disabled():
-        try:
-            rich.print(f"    {get_common_egse_root() = !s}", flush=True)
-            location = get_common_egse_root()
-            if not Path(location).exists():
-                rich.print("[red]ERROR: The generated Common-EGSE location doesn't exist![/]")
-        except ValueError as exc:
-            rich.print(f"    get_common_egse_path() = [red]{exc}[/]")
-
         try:
             rich.print(f"    {get_data_storage_location() = }", flush=True)
             location = get_data_storage_location()
