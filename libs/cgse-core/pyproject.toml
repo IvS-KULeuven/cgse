@@ -1,0 +1,51 @@
+[tool.poetry]
+name = "cgse-core"
+version = "2023.1.1"
+description = "Core services for the CGSE framework"
+authors = [
+    "Rik Huygen <rik.huygen@kuleuven.be>",
+    "Sara Regibo <sara.regibo@kuleuven.be>",
+]
+readme = "README.md"
+packages = [
+    { include = "egse", from = "src" },
+    { include = "scripts", from = "src" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+apscheduler = "*"
+click = "*"
+gitpython = "*"
+prometheus-client = "*"
+pyzmq = "*"
+rich = "*"
+
+# The following two lines should be used mutually exclusive. Use the development install of the package when you need
+# the latest source from the repo, when publishing however, the explicit version shall always be used.
+# cgse-common = {path = "../../libs/cgse-common", develop = true}
+cgse-common = "2023.1.6"
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.2"
+pytest-mock = "^3.11.1"
+pytest-cov = "^4.1.0"
+
+[tool.poetry.group.dev.dependencies]
+pipdeptree = "^2.13.0"
+
+[tool.poetry.plugins."cgse.version"]
+cgse-core = 'egse'
+
+[tool.poetry.scripts]
+log_cs = 'egse.logger.log_cs:cli'
+sm_cs = 'egse.storage.storage_cs:cli'
+cm_cs = 'egse.confman.confman_cs:cli'
+pm_cs = 'egse.procman.procman_cs:cli'
+
+cgse = 'scripts.cgse:cli'
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
