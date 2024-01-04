@@ -90,6 +90,7 @@ def monitoring(hostname: str, port: int, subscribe: str, multipart: bool, use_pi
     receiver.close(linger=0)
     context.term()
 
+
 if __name__ == "__main__":
     multiprocessing.current_process().name = "Monitoring"
     monitoring()

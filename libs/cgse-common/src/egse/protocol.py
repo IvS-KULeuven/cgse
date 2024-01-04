@@ -205,7 +205,7 @@ class BaseCommandProtocol(DeviceConnectionObserver):
 
     @EXECUTION_TIME.time()
     def execute(self):
-        cs = self.get_control_server()
+        cs = self.get_control_server()  # FIXME: 'cs' not used!
         data = self.receive()
         cmd = None
         args = kwargs = None
