@@ -74,4 +74,7 @@ Publishing cgse-common (2023.1.5) to PyPI
 What is the meaning of the common egse root folder in this monorepo and when the packages are installed through PyPI?
 
 * do we still need `get_common_egse_root()`
+    * NO, this has nothing to do with a generic common egse and also the concept of a project root folder doesn't really work for PyPI projects, especially in a monorepo. What might work in this specific case is to use the egse namespace as a root and find folders and files in the folders that make up the namespace.
+
 * what is the Projects root directory?
+    * this folder basically contains device implementations and plugins for e.g. the storage manager.
