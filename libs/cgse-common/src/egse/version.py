@@ -165,6 +165,7 @@ __PYPI_VERSION__ = VERSION.split('+')[0]
 if __name__ == "__main__":
     import rich
     from egse.system import get_module_location
+    from egse.plugin import entry_points
 
     if VERSION:
         rich.print(f"CGSE version in Settings: [bold default]{VERSION}[/]")
@@ -172,5 +173,6 @@ if __name__ == "__main__":
     if git_version := get_version_from_git(os.getcwd()):
         rich.print(f"git version (current project) = [bold default]{git_version}[/]")
 
-    if installed_version := get_version_installed("cgse"):
-        rich.print(f"CGSE installed version = [bold default]{installed_version}[/]")
+    for ep in entry_points("cgse.version"):
+        if installed_version := get_version_installed(ep.name):
+            rich.print(f"Installed version for {ep.name}= [bold default]{installed_version}[/]")
