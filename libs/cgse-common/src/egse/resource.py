@@ -75,12 +75,17 @@ their functionality is fully replaced by this `egse.resource` module.
 
 """
 
+import errno
 import logging
 import re
 from pathlib import Path
+from pathlib import PurePath
 from typing import Dict
 from typing import List
 from typing import Union
+
+from os.path import exists
+from os.path import join
 
 from egse.config import find_first_occurrence_of_dir
 from egse.config import find_files
@@ -88,7 +93,7 @@ from egse.exceptions import InternalError
 from egse.plugin import entry_points
 from egse.system import get_package_location
 
-LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 class ResourceError(Exception):
@@ -106,6 +111,8 @@ class NoSuchFileError(ResourceError):
 __all__ = [
     "get_resource",
     "get_resource_locations",
+    "get_resource_dirs",
+    "get_resource_path",
     "add_resource_id",
     "initialise_resources",
     "ResourceError",
@@ -128,6 +135,8 @@ DEFAULT_RESOURCES = {
     "lib": "/lib",
     "data": "/data",
 }
+
+_RESOURCE_DIRS = ["resources", "icons", "images", "styles", "data"]
 
 resources = {}
 
@@ -180,6 +189,65 @@ def get_resource_locations() -> Dict[str, List[Path]]:
     return resources.copy()
 
 
+def get_resource_dirs(root_dir: Union[str, PurePath]) -> List[Path]:
+    """
+    Define directories that contain resources like images, icons, and data files.
+
+    Resource directories can have the following names: `resources`, `data`, `icons`, or `images`.
+    This function checks if any of the resource directories exist in the `root_dir` that is given as an argument.
+
+    For all existing directories the function returns the absolute path.
+
+    If the argument root_dir is None, an empty list will be returned and a warning message will be issued.
+
+    Args:
+        root_dir (str): the directory to search for resource folders
+
+    Returns:
+        a list of absolute Paths.
+    """
+
+    if root_dir is None:
+        _LOGGER.warning("The argument root_dir can not be None, an empty list is returned.")
+        return []
+
+    root_dir = Path(root_dir).resolve()
+    if not root_dir.is_dir():
+        root_dir = root_dir.parent
+
+    result = []
+    for dir_ in _RESOURCE_DIRS:
+        if (root_dir / dir_).is_dir():
+            result.append(Path(root_dir, dir_).resolve())
+
+    return result
+
+
+def get_resource_path(name: str, resource_root_dir: Union[str, PurePath] = None) -> PurePath:
+    """
+    Searches for a data file (resource) with the given name.
+
+    When `resource_root_dir` is not given, the search for resources will start at the root
+    folder of the project (using the function `get_common_egse_root()`). Any other root
+    directory can be given, e.g. if you want to start the search from the location of your
+    source code file, use `Path(__file__).parent` as the `resource_root_dir` argument.
+
+    Args:
+        name (str): the name of the resource that is requested
+        resource_root_dir (str): the root directory w_HERE the search for resources should be started
+
+    Returns:
+        the absolute path of the data file with the given name. The first name that matches
+        is returned. If no file with the given name or path exists, a FileNotFoundError is raised.
+
+    """
+    for resource_dir in get_resource_dirs(resource_root_dir):
+        resource_path = join(resource_dir, name)
+        if exists(resource_path):
+            return Path(resource_path).absolute()
+    raise FileNotFoundError(errno.ENOENT, f"Could not locate resource '{name}'")
+
+
 def initialise_resources(root: Union[Path, str] = Path(__file__).parent):
     """
     Initialise the default resources and any resource published by a package entry point.
@@ -215,7 +283,7 @@ def initialise_resources(root: Union[Path, str] = Path(__file__).parent):
             if location not in x:
                 x.append(location)
 
-    LOGGER.debug(f"Resources have been initialised: {resources = }")
+    _LOGGER.debug(f"Resources have been initialised: {resources = }")
 
 
 def print_resources():
@@ -346,7 +414,7 @@ def get_resource(resource_locator: str) -> Path:
                     raise AmbiguityError(f"The {filename=} was found {len(files)} times for "
                                          f"the given resource location '{resource_location}'.")
         elif match[2] == '**/':
-            raise NotImplementedError(f"The '**' to walk the tree is not yet implemented.")
+            raise NotImplementedError("The '**' to walk the tree is not yet implemented.")
         else:
             raise InternalError(
                 f"This shouldn't happen, the match is {match[2]=} for {resource_locator=}")
