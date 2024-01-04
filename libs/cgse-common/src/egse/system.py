@@ -8,6 +8,8 @@ The module has external dependencies to:
 * __psutil__: for system statistics
 
 """
+from __future__ import annotations
+
 import builtins
 import collections
 import contextlib
@@ -188,7 +190,7 @@ SECONDS_IN_AN_HOUR = 60 * 60
 SECONDS_IN_A_MINUTE = 60
 
 
-def humanize_seconds(seconds: float):
+def humanize_seconds(seconds: float, include_micro_seconds: bool = True):
     """
     The number of seconds is represented as "[#D]d [#H]h[#M]m[#S]s.MS" where:
 
@@ -234,7 +236,8 @@ def humanize_seconds(seconds: float):
         result += f"{minutes:02d}m"
 
     result += f"{seconds:02d}s"
-    result += f".{micro_seconds:03d}"
+    if include_micro_seconds:
+        result += f".{micro_seconds:03d}"
 
     return result
 
@@ -249,6 +252,32 @@ def str_to_datetime(datetime_string: str):
     """
 
     return datetime.datetime.strptime(datetime_string.strip("\r"), TIME_FORMAT)
+
+
+def duration(dt_start: str | datetime.datetime, dt_end: str | datetime.datetime) -> datetime.timedelta:
+    """
+    Returns a `timedelta` object with the duration, i.e. time difference between dt_start and dt_end.
+
+    Notes:
+        If you need the number of seconds of your measurement, use the `total_seconds()` method of
+        the timedelta object.
+
+        Even if you —by accident— switch the start and end time arguments, the duration will
+        be calculated as expected.
+
+    Args:
+        dt_start: start time of the measurement
+        dt_end: end time of the measurement
+
+    Returns:
+        The time difference (duration) between dt_start and dt_end.
+    """
+    if isinstance(dt_start, str):
+        dt_start = str_to_datetime(dt_start)
+    if isinstance(dt_end, str):
+        dt_end = str_to_datetime(dt_end)
+
+    return dt_end - dt_start if dt_end > dt_start else dt_start - dt_end
 
 
 def time_since_epoch_1958(datetime_string: str):
@@ -1007,14 +1036,14 @@ def replace_environment_variable(input_string: str):
     return pre_match + result + post_match if result else None
 
 
-def read_last_line(filename: str, max_line_length=5000):
+def read_last_line(filename: str | Path, max_line_length=5000):
     """Returns the last line of a (text) file.
 
     The argument `max_line_length` should be at least the length of the last line in the file,
     because this value is used to backtrack from the end of the file as an optimization.
 
     Args:
-        filename (Option[PurePath, str]): the filename as a string or Path
+        filename (Path | str): the filename as a string or Path
         max_line_length (int): the maximum length of the lines in the file
     Returns:
         The last line in the file (whitespace stripped from the right). An empty string is returned
@@ -1035,7 +1064,7 @@ def read_last_line(filename: str, max_line_length=5000):
             return ""
 
 
-def read_last_lines(filename: str, num_lines: int):
+def read_last_lines(filename: str | Path, num_lines: int):
     """Return the last lines of a text file.
 
     Args:
@@ -1136,20 +1165,38 @@ def get_module_location(arg) -> Optional[Path]:
         an invalid argument was provided.
     """
     if isinstance(arg, FunctionType):
+        # print(f"func: {arg = }, {arg.__module__ = }")
         module_name = arg.__module__
     elif isinstance(arg, ModuleType):
+        # print(f"mod: {arg = }, {arg.__file__ = }")
         module_name = arg.__name__
     elif isinstance(arg, str):
+        # print(f"str: {arg = }")
         module_name = arg
     else:
         return None
+
+    # print(f"{module_name = }")
 
     try:
         module = importlib.import_module(module_name)
     except TypeError as exc:
         return None
 
-    return Path(module.__file__).parent.resolve()
+    if is_namespace(module):
+        # print(f"{module = }")
+        return None
+
+    location = Path(module.__file__)
+
+    if location.is_dir():
+        return location.resolve()
+    elif location.is_file():
+        return location.parent.resolve()
+    else:
+        # print(f"Unknown {location = }")
+        return None
+
 
 
 def get_full_classname(obj: object) -> str:
@@ -1424,10 +1471,21 @@ def clear_average_execution_times():
 def get_system_architecture() -> str:
     """
     Returns the machine type. This is a string describing the processor architecture,
-    like i386 or arm64, but the exact string is not defined. An empty string can be returned when
-    the type cannot be determined.
+    like 'i386' or 'arm64', but the exact string is not defined. An empty string can be
+    returned when the type cannot be determined.
     """
     return platform.machine()
+
+
+def time_in_ms() -> int:
+    """
+    Returns the current time in milliseconds since the Epoch.
+
+    Note: if you are looking for a high performance timer, you should really be using perf_counter()
+          instead of this function.
+    """
+    return int(round(time.time() * 1000))
+
 
 ignore_m_warning("egse.system")
 
