@@ -13,7 +13,7 @@ from typing import Optional
 from egse.settings import Settings
 from egse.system import get_caller_info
 
-MODULE_LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 def static_vars(**kwargs):
@@ -95,7 +95,7 @@ def timer(*, level: int = logging.INFO, precision: int = 4):
             value = func(*args, **kwargs)
             end_time = time.perf_counter()
             run_time = end_time - start_time
-            MODULE_LOGGER.log(level, f"Finished {func.__name__!r} in {run_time:.{precision}f} secs")
+            _LOGGER.log(level, f"Finished {func.__name__!r} in {run_time:.{precision}f} secs")
             return value
 
         return wrapper_timer
@@ -160,9 +160,9 @@ def debug(func):
             args_repr = [repr(a) for a in args]
             kwargs_repr = [f"{k}={v!r}" for k, v in kwargs.items()]
             signature = ", ".join(args_repr + kwargs_repr)
-            MODULE_LOGGER.debug(f"Calling {func.__name__}({signature})")
+            _LOGGER.debug(f"Calling {func.__name__}({signature})")
             value = func(*args, **kwargs)
-            MODULE_LOGGER.debug(f"{func.__name__!r} returned {value!r}")
+            _LOGGER.debug(f"{func.__name__!r} returned {value!r}")
         else:
             value = func(*args, **kwargs)
         return value
@@ -238,12 +238,12 @@ def profile(func):
             args_repr = [repr(a) for a in args]
             kwargs_repr = [f"{k}={v!r}" for k, v in kwargs.items()]
             signature = ", ".join(args_repr + kwargs_repr)
-            caller = get_caller_info()
+            caller = get_caller_info(level=2)
             prefix = f"PROFILE[{profile.counter}]: "
-            MODULE_LOGGER.info(f"{prefix}Calling {func.__name__}({signature})")
-            MODULE_LOGGER.info(f"{' ' * len(prefix)}from {caller.filename} at {caller.lineno}.")
+            _LOGGER.info(f"{prefix}Calling {func.__name__}({signature})")
+            _LOGGER.info(f"{prefix}    from {caller.filename} at {caller.lineno}.")
             value = func(*args, **kwargs)
-            MODULE_LOGGER.info(f"{prefix}{func.__name__!r} returned {value!r}")
+            _LOGGER.info(f"{prefix}{func.__name__!r} returned {value!r}")
             profile.counter -= 1
         else:
             value = func(*args, **kwargs)
@@ -257,7 +257,7 @@ def to_be_implemented(func):
 
     @functools.wraps(func)
     def wrapper_tbi(*args, **kwargs):
-        MODULE_LOGGER.warning(f"The function/method {func.__name__} is not yet implemented.")
+        _LOGGER.warning(f"The function/method {func.__name__} is not yet implemented.")
         return func(*args, **kwargs)
 
     return wrapper_tbi

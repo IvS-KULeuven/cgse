@@ -8,7 +8,7 @@ SITE:
     SSH_PORT:                       22         # The TCP/IP port on which the SSH server is listening
 
 REPO:
-    PLATO_CGSE_CONF:   ENV['PLATO_CONF_REPO_LOCATION']
+    CGSE_CONF:  ENV['CGSE_CONF_REPO_LOCATION']
 
 DSI:
 
@@ -308,6 +308,7 @@ Logging Control Server:                        # LG_CS
     COMMANDING_PORT:             7001
     METRICS_PORT:                7003          # The HTTP port where Prometheus will connect to for retrieving metrics
     FILE_STORAGE_LOCATION: ENV['PLATO_LOG_FILE_LOCATION']
+    FILENAME:             general.log          # The name used for the log file in the logging manager
     MAX_NR_LOG_FILES:              20          # The maximum number of log files that will be maintained in a roll-over
     MAX_SIZE_LOG_FILES:            20          # The maximum size one log file can become
     CUTELOG_IP_ADDRESS:     127.0.0.1          # The IP address of the cutelog listening server

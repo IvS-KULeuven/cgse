@@ -10,6 +10,8 @@ from egse.bits import clear_bit
 from egse.bits import clear_bits
 from egse.bits import crc_calc
 from egse.bits import humanize_bytes
+from egse.bits import s16
+from egse.bits import s32
 from egse.bits import set_bit
 from egse.bits import set_bits
 from egse.bits import toggle_bit
@@ -246,3 +248,19 @@ def test_humanize_bytes():
 
     assert humanize_bytes(1024**3, base='binary') == "1.000 GiB"
     assert humanize_bytes(1073741824, base='decimal') == "1.074 GB"
+
+
+def test_s16():
+
+    assert s16(0b1000_0000_0001_0001) == -32751
+    assert s16(0b1000_0000_0000_0001) == -32767
+    assert s16(0b1111_1111_1111_1111) == -1
+    assert s16(0b0111_1111_1111_1111) == 32767
+
+
+def test_s32():
+
+    assert s32(0b1000_0000_0000_0000_0000_0000_0001_0001) == -2147483631
+    assert s32(0b1000_0000_0000_0000_0000_0000_0000_0001) == -2147483647
+    assert s32(0b1111_1111_1111_1111_1111_1111_1111_1111) == -1
+    assert s32(0b0111_1111_1111_1111_1111_1111_1111_1111) == 2147483647

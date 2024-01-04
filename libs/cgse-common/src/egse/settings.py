@@ -254,7 +254,7 @@ class Settings:
                         f"Local settings YAML file '{local_settings_location}' not found. "
                         f"Check your environment variable {ENV_PLATO_LOCAL_SETTINGS}."
                     ) from exc
-                except FileIsEmptyError as exc:
+                except FileIsEmptyError:
                     logger.warning(f"Local settings YAML file '{local_settings_location}' is empty. "
                                    f"No local settings were loaded.")
                     local_settings = {}

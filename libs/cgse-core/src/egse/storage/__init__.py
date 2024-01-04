@@ -142,6 +142,8 @@ __all__ = [
     "is_storage_manager_active",
     "get_status",
     "PersistenceLayer",
+    "register_to_storage_manager",
+    "unregister_from_storage_manager",
 ]
 
 

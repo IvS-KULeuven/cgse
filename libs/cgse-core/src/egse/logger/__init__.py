@@ -31,8 +31,16 @@ __all__ = [
     "egse_logger",
     "set_all_logger_levels",
     "close_all_zmq_handlers",
-    "ZeroMQHandler",
+    "replace_zmq_handler",
+    "get_log_file_name",
 ]
+
+
+def get_log_file_name():
+    """
+    Returns the filename of the log file as defined in the Settings or return the default name 'general.log'.
+    """
+    return CTRL_SETTINGS.get("FILENAME", "general.log")
 
 
 class ZeroMQHandler(logging.Handler):

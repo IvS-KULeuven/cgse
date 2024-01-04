@@ -8,7 +8,9 @@ from egse.resource import NoSuchFileError
 from egse.resource import ResourceError
 from egse.resource import add_resource_id
 from egse.resource import get_resource
+from egse.resource import get_resource_dirs
 from egse.resource import get_resource_locations
+from egse.resource import get_resource_path
 from egse.resource import initialise_resources
 from egse.resource import print_resources
 
@@ -189,3 +191,30 @@ def test_add_resource(reset_resource):
 
     for folder in root/"lib", root/"xxx", root/"yyy":
         shutil.rmtree(folder)
+
+
+def test_get_resource_dirs(caplog):
+
+    assert len(get_resource_dirs(__file__)) > 0
+
+    # We have a data folder in the tests, so check if this folder is part of the resource dirs
+
+    assert any([str(x).endswith("data") for x in get_resource_dirs(__file__)])
+
+    caplog.clear()
+
+    assert get_resource_dirs(None) == []
+    assert "WARNING" in caplog.text
+
+
+def test_get_resource_path():
+
+    with pytest.raises(FileNotFoundError):
+        get_resource_path("non-existing-file")
+
+    # The following resources should all exist in this project
+    # We don't need the return value as the function raises a FileNotFoundError
+    # when the resource is not found.
+
+    _ = get_resource_path("empty_data_file.txt", Path(__file__).parent / "data")  # in tests/data/data
+    _ = get_resource_path("keyboard.png", Path(__file__).parent / "data")  # in tests/data/icons

@@ -21,6 +21,8 @@ from prometheus_client import Counter
 from prometheus_client import start_http_server
 
 from egse.env import get_log_file_location
+
+from egse.logger import get_log_file_name
 from egse.logger import send_request
 from egse.process import SubProcess
 from egse.settings import Settings
@@ -103,12 +105,12 @@ def start():
     start_http_server(CTRL_SETTINGS.METRICS_PORT)
 
     log_file_location = Path(get_log_file_location())
+    log_file_name = get_log_file_name()
+
     if not log_file_location.exists():
         raise FileNotFoundError(f"The location for the log files doesn't exist: {log_file_location!s}.")
 
-    file_handler = TimedRotatingFileHandler(
-        filename=log_file_location / "general.log", when='midnight'
-    )
+    file_handler = TimedRotatingFileHandler(filename=log_file_location / log_file_name, when='midnight')
     file_handler.setFormatter(file_formatter)
 
     # There is no need to set the level for the handlers, because the level is checked by the

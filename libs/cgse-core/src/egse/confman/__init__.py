@@ -162,9 +162,10 @@ REPO = Settings.load("REPO")
 CM_SETUP_ID = Gauge("CM_SETUP_ID", 'Setup ID')
 CM_TEST_ID = Gauge("CM_TEST_ID", 'Test ID')
 
+
 def _push_setup_to_repo(filename: str, commit_msg: str) -> Failure | Success:
     """
-    Push the Setup file to the `plato-cgse-conf` repository on GitHub.
+    Push the Setup file to the `cgse-conf` repository on GitHub.
 
     Args:
         filename: the basename of the new Setup file
@@ -173,13 +174,14 @@ def _push_setup_to_repo(filename: str, commit_msg: str) -> Failure | Success:
         None.
     """
 
-    repo_workdir = REPO.PLATO_CGSE_CONF
+    repo_workdir = REPO.CGSE_CONF
     repo_workdir = replace_environment_variable(repo_workdir)
     if repo_workdir is None:
         msg = textwrap.dedent(
             """\
-            Couldn't determine the repository location for plato-cgse-conf. 
-            Check if the environment variable 'PLATO_CONF_REPO_LOCATION' is set 
+            Couldn't determine the repository location for cgse-conf. 
+
+            Check if the environment variable 'CGSE_CONF_REPO_LOCATION' is set 
             before starting the configuration manager.
             """
         )
@@ -190,14 +192,14 @@ def _push_setup_to_repo(filename: str, commit_msg: str) -> Failure | Success:
 
     if repo.is_dirty():
         LOGGER.warning(
-            f"The plato-cgse-conf repository is dirty. Check the git status at '{repo_workdir}'.")
+            f"The cgse-conf repository is dirty. Check the git status at '{repo_workdir}'.")
 
     untracked = repo.untracked_files
 
     if len(untracked) != 1:
         msg = textwrap.dedent(
             f"""\
-            The number of untracked files ({len(untracked)}) in the plato-cgse-conf repository doesn't match 
+            The number of untracked files ({len(untracked)}) in the cgse-conf repository doesn't match 
             the expected. Check the git status at '{repo_workdir}' on the egse-server. 
             Only '{filename}' should be untracked.
             

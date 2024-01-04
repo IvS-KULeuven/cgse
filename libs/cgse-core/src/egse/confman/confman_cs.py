@@ -16,17 +16,15 @@ from pathlib import Path
 import click
 import rich
 import zmq
+from egse.control import ControlServer
+from egse.control import Response
+from egse.process import SubProcess
+from egse.settings import Settings
+from egse.system import replace_environment_variable
 from prometheus_client import start_http_server
 
 from egse.confman import ConfigurationManagerProtocol
 from egse.confman import ConfigurationManagerProxy
-from egse.confman import is_configuration_manager_active
-from egse.control import ControlServer
-from egse.control import Response
-from egse.control import Success
-from egse.process import SubProcess
-from egse.settings import Settings
-from egse.system import replace_environment_variable
 
 # Use explicit name here otherwise the logger will probably be called __main__
 
@@ -65,6 +63,28 @@ class ConfigurationManagerControlServer(ControlServer):
             return CTRL_SETTINGS.STORAGE_MNEMONIC
         except AttributeError:
             return "CM"
+
+    def is_storage_manager_active(self):
+        from egse.storage import is_storage_manager_active
+        return is_storage_manager_active()
+
+    def register_to_storage_manager(self):
+        from egse.storage import register_to_storage_manager
+        from egse.storage.persistence import CSV
+
+        register_to_storage_manager(
+            origin=self.get_storage_mnemonic(),
+            persistence_class=CSV,
+            prep={
+                "column_names": list(self.device_protocol.get_housekeeping().keys()),
+                "mode": "a",
+            }
+        )
+
+    def unregister_from_storage_manager(self):
+        from egse.storage import unregister_from_storage_manager
+
+        unregister_from_storage_manager(origin=self.get_storage_mnemonic())
 
     def before_serve(self):
         start_http_server(CTRL_SETTINGS.METRICS_PORT)

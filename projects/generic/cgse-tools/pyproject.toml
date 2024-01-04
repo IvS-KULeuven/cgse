@@ -1,36 +1,45 @@
-[build-system]
-requires = ["setuptools", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["egse.tools", "scripts"]
-namespaces = true
-
-[tool.setuptools.package-data]
-egse = ["*.yaml"]
-
-[project]
+[tool.poetry]
 name = "cgse-tools"
 version = "2023.1.0"
 description = "Tools for CGSE"
-license = { text = "Common-EGSE Software License Agreement" }
-dependencies = [
-    "cgse-core",
-    "textual",
-    "rich",
+authors = [
+    "Rik Huygen <rik.huygen@kuleuven.be>",
+    "Sara Regibo <sara.regibo@kuleuven.be>",
+]
+readme = "README.md"
+packages = [
+    { include = "egse", from = "src" },
 ]
 
-[project.scripts]
-cgse-status = "egse.tools.status:main"
+[tool.poetry.dependencies]
+python = "^3.8"
+rich = "^13.6.0"
+textual = "*"
 
-[project.entry-points."cgse.version"]
-cgse-tools = 'egse.tools'
+# The following two lines should be used mutually exclusive. Use the development install of the package when you need
+# the latest source from the repo, when publishing however, the explicit version shall always be used.
+cgse-core = {path = "../../../libs/cgse-core", develop = true}  # this shall be replaced when building
+# cgse-core = "2023.1.0"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.2"
+pytest-mock = "^3.11.1"
+pytest-cov = "^4.1.0"
+
+[tool.poetry.group.dev.dependencies]
+pipdeptree = "^2.13.0"
+
+[tool.poetry.plugins."cgse.version"]
+cgse-tools = 'egse'
 
 # Examples of how to provide plugins for the `cgse` command
 
-[project.entry-points."cgse.plugins"]
+[tool.poetry.plugins."cgse.plugins"]
 foo = 'scripts.cgse_plugins:foo'
 
-[project.entry-points."cgse.service.plugins"]
+[tool.poetry.plugins."cgse.service.plugins"]
 xxx = 'scripts.cgse_service_plugins:xxx'
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
