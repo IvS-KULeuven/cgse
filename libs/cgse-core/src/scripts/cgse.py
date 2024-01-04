@@ -95,6 +95,7 @@ def core(ctx):
 def service(ctx):
     pass
 
+
 stop.add_command(core)
 stop.add_command(service)
 
@@ -105,6 +106,7 @@ status.add_command(service)
 @service.command()
 @click.pass_context
 def log_cs(ctx):
+    print(f"executing: log_cs {ctx.obj['action']}")
     if ctx.obj['action'] == 'start':
         proc = SubProcess("log_cs", ["log_cs", "start"])
         proc.execute()
@@ -123,6 +125,7 @@ def log_cs(ctx):
 @service.command()
 @click.pass_context
 def sm_cs(ctx):
+    print(f"executing: sm_cs {ctx.obj['action']}")
     if ctx.obj['action'] == 'start':
         proc = SubProcess("sm_cs", ["sm_cs", "start"])
         proc.execute()
@@ -141,6 +144,7 @@ def sm_cs(ctx):
 @service.command()
 @click.pass_context
 def cm_cs(ctx):
+    print(f"executing: cm_cs {ctx.obj['action']}")
     if ctx.obj['action'] == 'start':
         proc = SubProcess("cm_cs", ["cm_cs", "start"])
         proc.execute()
@@ -159,6 +163,7 @@ def cm_cs(ctx):
 @service.command()
 @click.pass_context
 def pm_cs(ctx):
+    print(f"executing: pm_cs {ctx.obj['action']}")
     if ctx.obj['action'] == 'start':
         proc = SubProcess("pm_cs", ["pm_cs", "start"])
         proc.execute()
