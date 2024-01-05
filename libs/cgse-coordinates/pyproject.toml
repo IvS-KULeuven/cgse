@@ -22,5 +22,9 @@ dependencies = [
     "transforms3d",
 ]
 
+[tool.poetry.group.dev.dependencies]
+pipdeptree = "^2.13.0"
+tomlkit = "^0.12.3"
+
 [project.entry-points."cgse.version"]
 cgse-coordinates = 'egse.plugins'

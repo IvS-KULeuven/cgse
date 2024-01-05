@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cgse-core"
-version = "2023.1.1"
+version = "2024.1.0"
 description = "Core services for the CGSE framework"
 authors = [
     "Rik Huygen <rik.huygen@kuleuven.be>",
@@ -23,8 +23,8 @@ rich = "*"
 
 # The following two lines should be used mutually exclusive. Use the development install of the package when you need
 # the latest source from the repo, when publishing however, the explicit version shall always be used.
-# cgse-common = {path = "../../libs/cgse-common", develop = true}
-cgse-common = "2023.1.6"
+cgse-common = {path = "../../libs/cgse-common", develop = true}
+# cgse-common = "2023.1.6"
 
 
 [tool.poetry.group.test.dependencies]
@@ -34,6 +34,7 @@ pytest-cov = "^4.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pipdeptree = "^2.13.0"
+tomlkit = "^0.12.3"
 
 [tool.poetry.plugins."cgse.version"]
 cgse-core = 'egse'

@@ -32,6 +32,7 @@ pytest-cov = "^4.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pipdeptree = "^2.13.0"
+tomlkit = "^0.12.3"
 ruff = "^0.1.6"
 
 [tool.poetry.plugins."cgse.version"]
