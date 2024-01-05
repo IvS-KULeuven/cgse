@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "cgse"
+version = "2024.1.0"
+description = "Generic Common-EGSE: Commanding and monitoring lab equipment"
+authors = ["Rik Huygen <rik.huygen@kuleuven.be>", "Sara Regibo <sara.regibo@kuleuven.be>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+tomlkit = "^0.12.3"
+setuptools = "*"
+rich = "^13.7.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
