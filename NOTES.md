@@ -1,5 +1,7 @@
 # The monorepo structure
 
+
+
 Currently, the structure starts with two folders in the root, i.e. `libs` and `projects`. Where _libs_ contains library type packages like common modules, small generic gui functions, reference frames, ... and _projects_ contain packages that build upon these libraries. 
 
 There is one package that I think doesn't fit into this picture, that is `cgse-core`. This is not a library, but a – collection of – service(s). So, we might want to add a third top-level folder `services` but I also fear that this again more complicates the monorepo.
