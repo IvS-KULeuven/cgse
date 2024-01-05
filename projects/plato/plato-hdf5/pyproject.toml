@@ -1,29 +1,44 @@
-[build-system]
-requires = ["setuptools", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["egse.storage"]
-namespaces = true
-
-[tool.setuptools.package-data]
-egse = ["*.yaml"]
-
-[project]
+[tool.poetry]
 name = "plato-hdf5"
-version = "2023.1.0"
-description = "HDF5 Persistence sub-class for CGSE"
-license = { text = "Common-EGSE Software License Agreement" }
-dependencies = [
-    "cgse-common",
-    "plato-spw",
-    "h5py",
-    "natsort",
+version = "2024.1.0"
+description = "HDF5 plugin for the CGSE storage manager"
+authors = [
+    "Rik Huygen <rik.huygen@kuleuven.be>",
+    "Sara Regibo <sara.regibo@kuleuven.be>",
 ]
+readme = "README.md"
+#packages = [
+#    { include = "egse", from = "src" },
+#]
 
-[project.entry-points."cgse.version"]
-plato-hdf5 = 'egse.plugins'
+[tool.poetry.dependencies]
+python = "^3.8"
 
-[project.entry-points."cgse.storage.persistence"]
+# The following two lines should be used mutually exclusive. Use the development install of the package when you need
+# the latest source from the repo, when publishing however, the explicit version shall always be used.
+plato-spw = {path = "../../../projects/plato/plato-spw", develop = true}  # this shall be replaced when building
+# plato-spw = "2024.1.0"  # version shall match [tool.poetry.version]
+
+# The following two lines should be used mutually exclusive. Use the development install of the package when you need
+# the latest source from the repo, when publishing however, the explicit version shall always be used.
+cgse-common = {path = "../../../libs/cgse-common", develop = true}  # this shall be replaced when building
+# cgse-common = "2024.1.0"  # version shall match [tool.poetry.version]
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.2"
+pytest-mock = "^3.11.1"
+pytest-cov = "^4.1.0"
+
+[tool.poetry.group.dev.dependencies]
+pipdeptree = "^2.13.0"
+tomlkit = "^0.12.3"
+
+[tool.poetry.plugins."cgse.version"]
+plato-hdf5 = 'egse.storage.plugins'
+
+[tool.poetry.plugins."cgse.storage.persistence"]
 HDF5 = "egse.plugins.storage.hdf5:HDF5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
