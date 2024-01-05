@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["egse.storage"]
+namespaces = true
+
+[tool.setuptools.package-data]
+egse = ["*.yaml"]
+
+[project]
+name = "plato-hdf5"
+version = "2023.1.0"
+description = "HDF5 Persistence sub-class for CGSE"
+license = { text = "Common-EGSE Software License Agreement" }
+dependencies = [
+    "cgse-common",
+    "plato-spw",
+    "h5py",
+    "natsort",
+]
+
+[project.entry-points."cgse.version"]
+plato-hdf5 = 'egse.plugins'
+
+[project.entry-points."cgse.storage.persistence"]
+HDF5 = "egse.plugins.storage.hdf5:HDF5"
