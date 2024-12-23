@@ -506,7 +506,7 @@ class AlphaControllerInterface:
 
     @dynamic_interface
     def get_user_positions(self):
-        """Retreive the current position of the hexapod.
+        """Retrieve the current position of the hexapod.
 
         The returned position corresponds to the position of the Object Coordinate System
         in the User Coordinate System.
@@ -521,7 +521,7 @@ class AlphaControllerInterface:
 
     @dynamic_interface
     def get_machine_positions(self):
-        """Retreive the current position of the hexapod.
+        """Retrieve the current position of the hexapod.
 
         The returned position corresponds to the position of the Platform Coordinate System
         in the Machine Coordinate System.
@@ -586,7 +586,7 @@ class AlphaControllerInterface:
 
     @dynamic_interface
     def get_actuator_state(self):
-        """Retreive general state information of the actuators.
+        """Retrieve general state information of the actuators.
 
         For each of the six actuators, an integer value is returned that should be interpreted as a
         bit field containing status bits for that actuator.
