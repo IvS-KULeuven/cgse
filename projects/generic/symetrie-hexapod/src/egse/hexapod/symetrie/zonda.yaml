@@ -1,5 +1,5 @@
 BaseClass:
-    egse.hexapod.symetrie.zonda.AlphaPlusControllerInterface
+    egse.hexapod.symetrie.alpha.AlphaPlusControllerInterface
 
 ProxyClass:
     egse.hexapod.symetrie.zonda.ZondaProxy
