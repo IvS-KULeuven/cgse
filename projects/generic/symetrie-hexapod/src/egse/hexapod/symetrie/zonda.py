@@ -215,7 +215,7 @@ class ZondaController(ZondaInterface):
     def reset(self, wait=True):
         try:
             print("Resetting the Hexapod Controller")
-            print("STOP and CONTROLOFF commands are sent to the controller before reseting...")
+            print("STOP and CONTROLOFF commands are sent to the controller before resetting...")
             self.stop()
             print("Hexapod is stopped")
             self.deactivate_control_loop()
@@ -473,7 +473,6 @@ class ZondaController(ZondaInterface):
 
         return pc, {pc: msg}
 
-
     def move_absolute(self, tx, ty, tz, rx, ry, rz):
         try:
             rc = self.__move(0, tx, ty, tz, rx, ry, rz)
@@ -682,6 +681,7 @@ class ZondaController(ZondaInterface):
             print("Step ", step_number, "done.\nWaiting for ", time_sleep, "seconds.")
             sleep(time_sleep)
         print('Sequence "' + file_path + '" done with success!')
+
 
 class ZondaSimulator(ZondaInterface):
     """

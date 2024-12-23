@@ -90,6 +90,7 @@ class ZondaControlServer(ControlServer):
     def before_serve(self):
         start_http_server(CTRL_SETTINGS.METRICS_PORT)
 
+
 @click.group()
 def cli():
     pass
