@@ -22,16 +22,16 @@ Commands:
     #
     # The other field are:
     #   description:   Used by the doc_string method to generate a help string
-    #   cmd:           Command string that will eventually be send to the hardware controller for
+    #   cmd:           Command string that will eventually be sent to the hardware controller for
     #                  the device. This cmd string is also used at the client side to parse and
     #                  validate the arguments.
     #   device_method: The name of the method to be called on the device class.
     #                  These should all be defined by the interface class for the device, i.e.
-    #                  PunaInterface in this case.
+    #                  ZondaInterface in this case.
     #                  When the device_method is the same as the group name, it can be omitted.
     #   response:      The name of the method to be called from the device protocol.
     #                  This method should exist in the subclass of the CommandProtocol base class,
-    #                  i.e. in this case it will be the PunaProtocol class.
+    #                  i.e. in this case it will be the ZondaProtocol class.
     #                  The default (when no response is given) is 'handle_device_method'.
 
     # Definition of the DeviceInterface
@@ -75,7 +75,7 @@ Commands:
         controller. STOP and CONTROLOFF the hexapod before sending the command.
 
     homing:
-        description:    Start the homing cycle for the Hexapod PUNA. Homing is required before performing a control
+        description:    Start the homing cycle for the Hexapod ZONDA. Homing is required before performing a control
                         movement. Without absolute encoders, the homing is performed with a hexapod movement until
                         detecting the reference sensor on each of the actuators. The Hexapod will go to a position were
                         the sensors are reached that signal a known calibrated position and then returns to the zero
