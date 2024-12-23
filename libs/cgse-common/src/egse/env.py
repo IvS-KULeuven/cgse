@@ -2,25 +2,27 @@
 This module provides functionality to work with and check your Python environment.
 """
 from pathlib import Path
-
+import os
 from egse.system import all_logging_disabled
 from egse.system import ignore_m_warning
 
-ENV_PLATO_COMMON_EGSE = "PLATO_COMMON_EGSE_PATH"
-ENV_PLATO_INSTALL = "PLATO_INSTALL_LOCATION"
-ENV_PLATO_CONF_DATA = "PLATO_CONF_DATA_LOCATION"
-ENV_PLATO_CONF_REPO = "PLATO_CONF_REPO_LOCATION"
-ENV_PLATO_STORAGE_DATA = "PLATO_DATA_STORAGE_LOCATION"
-ENV_PLATO_LOG_DATA = "PLATO_LOG_FILE_LOCATION"
-ENV_PLATO_LOCAL_SETTINGS = "PLATO_LOCAL_SETTINGS"
+PROJECT = os.environ.get("PROJECT") or "PLATO"
 
-PLATO_ENV_VARIABLES = [globals()[x] for x in globals() if x.startswith('ENV_PLATO_')]
+ENV_COMMON_EGSE = f"COMMON_EGSE_PATH"
+ENV_INSTALL = f"{PROJECT}_INSTALL_LOCATION"
+ENV_CONF_DATA = f"{PROJECT}_CONF_DATA_LOCATION"
+ENV_CONF_REPO = f"{PROJECT}_CONF_REPO_LOCATION"
+ENV_STORAGE_DATA = f"{PROJECT}_DATA_STORAGE_LOCATION"
+ENV_LOG_DATA = f"{PROJECT}_LOG_FILE_LOCATION"
+ENV_LOCAL_SETTINGS = f"{PROJECT}_LOCAL_SETTINGS"
+
+ENV_VARIABLES = [globals()[x] for x in globals() if x.startswith('ENV_PLATO_')]
 
 __all__ = [
     "get_data_storage_location",
     "get_conf_data_location",
     "get_log_file_location",
-    *PLATO_ENV_VARIABLES
+    *ENV_VARIABLES
 ]
 
 
@@ -65,7 +67,7 @@ def get_data_storage_location(setup=None, site_id: str = None) -> str:
     else:
         site = site_id
 
-    data_root = os.environ[ENV_PLATO_STORAGE_DATA]
+    data_root = os.environ[ENV_STORAGE_DATA]
     data_root = data_root.rstrip('/')
 
     return data_root if data_root.endswith(site) else f"{data_root}/{site}"
@@ -110,9 +112,9 @@ def get_log_file_location() -> str:
     import os
 
     try:
-        log_data_root = os.environ[ENV_PLATO_LOG_DATA]
+        log_data_root = os.environ[ENV_LOG_DATA]
     except KeyError:
-        data_root = os.environ[ENV_PLATO_STORAGE_DATA]
+        data_root = os.environ[ENV_STORAGE_DATA]
         data_root = data_root.rstrip('/')
 
         from egse.settings import get_site_id
@@ -181,7 +183,7 @@ if __name__ == "__main__":
 
     rich.print("Environment variables:")
 
-    for var in PLATO_ENV_VARIABLES:
+    for var in ENV_VARIABLES:
         if var.endswith("_SETTINGS"):
             rich.print(f"    {var} = {check_env_file(var)}")
         else:
@@ -226,24 +228,24 @@ if __name__ == "__main__":
         rich.print(f"    PATH=[\n      {path_msg}\n    ]")
 
     help_msg = f"""
-[bold]{ENV_PLATO_COMMON_EGSE}[/bold]:
+[bold]{ENV_COMMON_EGSE}[/bold]:
     This variable should point to the root of the working copy of the 'plato-common-egse' 
     project. Its value is usually '~/git/plato-common-egse' which is considered the default 
     location.
 
-[bold]{ENV_PLATO_INSTALL}[/bold]:
+[bold]{ENV_INSTALL}[/bold]:
     This variable shall point to the location where the CGSE will be installed and is 
     usually set to `/cgse`. The variable is used by the [blue]update_cgse[/blue] script.
 
-[bold]{ENV_PLATO_CONF_DATA}[/bold]:
+[bold]{ENV_CONF_DATA}[/bold]:
     This directory is the root folder for all the Setups of the site, the site is part
     of the name. By default, this directory is located in the overall data storage folder.
 
-[bold]{ENV_PLATO_CONF_REPO}[/bold]:
+[bold]{ENV_CONF_REPO}[/bold]:
     This variable is the root of the working copy of the 'plato-cgse-conf' project. 
     The value is usually set to `~/git/plato-cgse-conf`.
 
-[bold]{ENV_PLATO_STORAGE_DATA}[/bold]:
+[bold]{ENV_STORAGE_DATA}[/bold]:
     This directory contains all the data files from the control servers and other
     components. This folder is the root folder for all data from all cameras and 
     all sites. Below this folder shall be a folder for each of the cameras and in 
@@ -255,12 +257,12 @@ if __name__ == "__main__":
     the configuration manager and contains information about the observations that
     were run and the commands to start those observation.
 
-[bold]{ENV_PLATO_LOG_DATA}[/bold]:
+[bold]{ENV_LOG_DATA}[/bold]:
     This directory contains the log files with all messages that were sent to the 
     logger control server. The log files are rotated on a daily basis at midnight UTC.
     By default, this directory is also located in the overall data storage folder.
 
-[bold]{ENV_PLATO_LOCAL_SETTINGS}[/bold]:
+[bold]{ENV_LOCAL_SETTINGS}[/bold]:
     This file is used for local site-specific settings. When the environment 
     variable is not set, no local settings will be loaded. By default, this variable
     is assumed to be '/cgse/local_settings.yaml'.

@@ -4,15 +4,21 @@ and to find paths and resources.
 """
 from __future__ import annotations
 
+import errno
 import fnmatch
 import logging
 import os
+from functools import lru_cache
+from os.path import exists
+from os.path import join
 from pathlib import Path
 from pathlib import PurePath
 from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
+
+import git
 
 _HERE = Path(__file__).parent.resolve()
 _LOGGER = logging.getLogger(__name__)
@@ -231,6 +237,122 @@ def find_root(
         prev, test = test, test.parent
 
     return Path(default) if default is not None else None
+
+
+@lru_cache(maxsize=16)
+def get_common_egse_root(path: Union[str, PurePath] = None) -> Optional[PurePath]:
+    """
+    Returns the absolute path to the installation directory for the Common-EGSE.
+
+    The algorithm first tries to determine the path from the environment variable
+    ``PLATO_COMMON_EGSE_PATH``. If this environment variable doesn't exist, the algorithm
+    tries to determine the path automatically from (1) the git root if it is a git repository,
+    or (2) from the location of this module assuming the installation is done from the
+    GitHub distribution.
+
+    When the optional argument ``path`` is given, that directory will be used to start the
+    search for the root folder.
+
+    At this moment the algorithm does not cache the ``egse_path`` in order to speed up
+    the successive calls to this function.
+
+    Args:
+        path (str or Path): a directory as a Path or str [optional]
+
+    Returns:
+        Path: the absolute path to the Common-EGSE installation directory or None
+    """
+    _TEST_NAMES = ("pyproject.toml", "setup.py")
+    if path is not None:
+        return find_root(path, tests=_TEST_NAMES)
+
+    egse_path: Union[str, PurePath, None] = os.getenv("COMMON_EGSE_PATH")
+
+    if egse_path is None:
+
+        # The root of the plato-common-egse installation shall be determined from the location
+        # of this config module using git commands to find the git root folder.
+        # This assumes the user has installed from git/GitHub (which is not always true)!
+        #
+        # Alternatively, the root directory can be determined from the location of this module
+        # by going back in the directory structure until the ``setup.py`` module is found.
+
+        _THIS_FILE_PATH = Path(__file__).resolve()
+        _THIS_FILE_LOCATION = _THIS_FILE_PATH.parent
+
+        try:
+            git_repo = git.Repo(_THIS_FILE_PATH, search_parent_directories=True)
+            git_root = git_repo.git.rev_parse("--show-toplevel")
+            egse_path = git_root
+        except (git.exc.InvalidGitRepositoryError, git.exc.NoSuchPathError):
+            _LOGGER.info("no git repository found, assuming installation from distribution.")
+            egse_path = find_root(_THIS_FILE_LOCATION, tests=_TEST_NAMES)
+
+        _LOGGER.debug(f"Common-EGSE location is automatically determined: {egse_path}.")
+
+    else:
+        _LOGGER.debug(
+            f"Common-EGSE location determined from environment variable "
+            f"PLATO_COMMON_EGSE_PATH: {egse_path}"
+        )
+
+    return Path(egse_path)
+
+
+def get_resource_dirs(root_dir: Union[str, PurePath] = None) -> List[Path]:
+    """
+    Define directories that contain resources like images, icons, and data files.
+
+    Resource directories can have the following names: `resources`, `data`, `icons`, or `images`.
+    This function checks if any of the resource directories exist in the project root directory,
+    in the `root_dir` that is given as an argument or in the `src/egse` sub-folder.
+
+    So, the directories that are searched for the resource folders are:
+
+    * `root_dir` or the project's root directory
+    * the `src/egse` sub-folder of one of the above
+
+    For all existing directories the function returns the absolute path.
+
+    Args:
+        root_dir (str): the directory to search for resource folders
+
+    Returns:
+        a list of absolute Paths.
+    """
+    project_dir = Path(root_dir).resolve() if root_dir else get_common_egse_root()
+    result = []
+    for dir_ in ["resources", "data", "icons", "images"]:
+        if (project_dir / dir_).is_dir():
+            result.append(Path(project_dir, dir_).resolve())
+        if (project_dir / "src" / "egse" / dir_).is_dir():
+            result.append(Path(project_dir, "src", "egse", dir_).resolve())
+    return result
+
+
+def get_resource_path(name: str, resource_root_dir: Union[str, PurePath] = None) -> PurePath:
+    """
+    Searches for a data file (resource) with the given name.
+
+    When `resource_root_dir` is not given, the search for resources will start at the root
+    folder of the project (using the function `get_common_egse_root()`). Any other root
+    directory can be given, e.g. if you want to start the search from the location of your
+    source code file, use `Path(__file__).parent` as the `resource_root_dir` argument.
+
+    Args:
+        name (str): the name of the resource that is requested
+        resource_root_dir (str): the root directory where the search for resources should be started
+
+    Returns:
+        the absolute path of the data file with the given name. The first name that matches
+        is returned. If no file with the given name or path exists, a FileNotFoundError is raised.
+
+    """
+    for resource_dir in get_resource_dirs(resource_root_dir):
+        resource_path = join(resource_dir, name)
+        if exists(resource_path):
+            return Path(resource_path).absolute()
+    raise FileNotFoundError(errno.ENOENT, f"Could not locate resource '{name}'")
 
 
 def set_logger_levels(logger_levels: List[Tuple] = None):
