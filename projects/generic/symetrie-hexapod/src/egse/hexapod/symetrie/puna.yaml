@@ -34,7 +34,7 @@ Commands:
     #                  i.e. in this case it will be the PunaProtocol class.
     #                  The default (when no response is given) is 'handle_device_method'.
 
-    # Definition of the the DeviceInterface
+    # Definition of the DeviceInterface
 
     is_simulator:
         description:    Ask if the connected class is a simulator instead of the real device Controller class.
@@ -120,18 +120,18 @@ Commands:
         query:          "&2 Q20 Q80,12,1"
 
     get_general_state:
-        description:    Retreive general state information of the hexapod.
+        description:    Retrieve general state information of the hexapod.
 
     get_user_positions:
-        description:    Retreive the position of the Object Coordinate System in the User Coordinate System.
+        description:    Retrieve the position of the Object Coordinate System in the User Coordinate System.
         cmd:            "&2 Q53,6,1"
 
     get_machine_positions:
-        description:    Retreive the position of the Platform Coordinate System in the Machine Coordinate System.
+        description:    Retrieve the position of the Platform Coordinate System in the Machine Coordinate System.
         cmd:            "&2 Q47,6,1"
 
     get_actuator_length:
-        description:    Retreive the current length of the hexapod actuators.
+        description:    Retrieve the current length of the hexapod actuators.
         cmd:            "&2 Q41,6,1"
 
     get_actuator_state:

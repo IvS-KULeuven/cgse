@@ -49,7 +49,7 @@ class PunaPlusController(PunaPlusInterface, DynamicCommandMixin):
 class PunaPlusProxy(DynamicProxy, PunaPlusInterface):
     """
     The PunaPlusProxy class is used to connect to the control server and send commands to the
-    Hexapod PUNA remotely. The devce controller for that PUNA hexapod is a Alpha+ controller.
+    Hexapod PUNA remotely. The devce controller for that PUNA hexapod is an Alpha+ controller.
     """
 
     def __init__(
