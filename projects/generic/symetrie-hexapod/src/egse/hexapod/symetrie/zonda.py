@@ -667,7 +667,7 @@ class ZondaController(ZondaInterface):
         for step in SEQUENCE:
             state = self.check_absolute_movement(step[0], step[1], step[2], step[3], step[4], step[5])
             if state[0] != 0:
-                print('Error: Out of bounds! One pont is out of the workspace!')
+                print('Error: Out of bounds! One point is out of the workspace!')
                 return
         print("OK! The entire trajectory is reachable in the defined workspace.")
         step_number = 0
