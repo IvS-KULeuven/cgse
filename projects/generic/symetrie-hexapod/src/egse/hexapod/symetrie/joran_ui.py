@@ -1,9 +1,9 @@
 """
-A Graphical User Interface for monitoring and commanding the Symétrie ZONDA Hexapod.
+A Graphical User Interface for monitoring and commanding the Symétrie JORAN Hexapod.
 
 Start the GUI from your terminal as follows:
 
-    zonda_ui [--type proxy|direct|simulator]
+    joran_ui [--type proxy|direct|simulator]
 
 This GUI is based on the SYM_positioning application from Symétrie. The intent
 is to provide operators a user interface which is platform independent, but
@@ -16,13 +16,12 @@ platform that supports Python and Qt5.
 import argparse
 import logging
 import multiprocessing
-from pathlib import Path
-
 import sys
 import threading
+from pathlib import Path
 from typing import List
 
-multiprocessing.current_process().name = "zonda_ui"
+multiprocessing.current_process().name = "joran_ui"
 
 import pyqtgraph as pg
 from PyQt5.QtCore import QDateTime, QLockFile
@@ -46,9 +45,9 @@ from egse.hexapod.symetrie.hexapod_ui import ActuatorStates
 from egse.hexapod.symetrie.hexapod_ui import HexapodUIController
 from egse.hexapod.symetrie.hexapod_ui import HexapodUIModel
 from egse.hexapod.symetrie.hexapod_ui import HexapodUIView
-from egse.hexapod.symetrie.zonda import ZondaController
-from egse.hexapod.symetrie.zonda import ZondaProxy
-from egse.hexapod.symetrie.zonda import ZondaSimulator
+from egse.hexapod.symetrie.joran import JoranController
+from egse.hexapod.symetrie.joran import JoranProxy
+from egse.hexapod.symetrie.joran_protocol import JoranSimulator
 from egse.process import ProcessStatus
 from egse.resource import get_resource
 from egse.settings import Settings
@@ -101,7 +100,8 @@ ACTUATOR_STATE_LABELS = [
 
 SPECIFIC_POSITIONS = ["Position ZERO", "Position RETRACTED"]
 
-GUI_SETTINGS = Settings.load("ZONDA GUI")
+GUI_SETTINGS = Settings.load("JORAN GUI")
+
 
 class TemperatureLog(QWidget):
     """This Widget allows to view the temperature value of all six actuators."""
@@ -168,11 +168,12 @@ class TemperatureLog(QWidget):
 
         return create_temperature_stripchart
 
-class ZondaUIView(HexapodUIView):
+
+class JoranUIView(HexapodUIView):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Hexapod ZONDA Controller")
+        self.setWindowTitle("Hexapod JORAN Controller")
 
         self.actuator_states = ActuatorStates(labels=ACTUATOR_STATE_LABELS)
 
@@ -269,31 +270,31 @@ class ZondaUIView(HexapodUIView):
             self.mode_label.setText(f"mode: {mode}")
         self.statusBar().repaint()
 
-    def updatePositions(self, userPositions, machinePositions, actuatorLengths):
+    def updatePositions(self, user_positions, machine_positions, actuator_lengths):
 
-        if userPositions is None:
+        if user_positions is None:
             MODULE_LOGGER.warning("no userPositions passed into updatePositions(), returning.")
             return
 
         for upos in range(len(self.user_positions)):
             try:
-                self.user_positions[upos][1].setText(f"{userPositions[upos]:10.4f}")
+                self.user_positions[upos][1].setText(f"{user_positions[upos]:10.4f}")
             except IndexError:
                 MODULE_LOGGER.error(f"IndexError in user_positions, upos = {upos}")
 
-        if machinePositions is None:
+        if machine_positions is None:
             MODULE_LOGGER.warning("no machinePositions passed into updatePositions(), returning.")
             return
 
         for mpos in range(len(self.mach_positions)):
-            self.mach_positions[mpos][1].setText(f"{machinePositions[mpos]:10.4f}")
+            self.mach_positions[mpos][1].setText(f"{machine_positions[mpos]:10.4f}")
 
-        if actuatorLengths is None:
+        if actuator_lengths is None:
             MODULE_LOGGER.warning("no actuatorLengths passed into updatePositions(), returning.")
             return
 
         for idx, alen in enumerate(self.actuator_lengths):
-            alen[1].setText(f"{actuatorLengths[idx]:10.4f}")
+            alen[1].setText(f"{actuator_lengths[idx]:10.4f}")
 
     def updateStates(self, states):
 
@@ -319,16 +320,16 @@ class ZondaUIView(HexapodUIView):
                 self.temperature_values[t].setText(f"{temp[t]:10.4f}")
 
 
-class ZondaUIModel(HexapodUIModel):
-    def __init__(self, connection_type):
+class JoranUIModel(HexapodUIModel):
+    def __init__(self, connection_type: str):
 
         if connection_type == "proxy":
-            device = ZondaProxy()
+            device = JoranProxy()
         elif connection_type == "direct":
-            device = ZondaController()
+            device = JoranController()
             device.connect()
         elif connection_type == "simulator":
-            device = ZondaSimulator()
+            device = JoranSimulator()
         else:
             raise ValueError(
                 f"Unknown type of Hexapod implementation passed into the model: {connection_type}"
@@ -348,15 +349,15 @@ class ZondaUIModel(HexapodUIModel):
         return temp
 
 
-class ZondaUIController(HexapodUIController):
-    def __init__(self, model: ZondaUIModel, view: ZondaUIView):
+class JoranUIController(HexapodUIController):
+    def __init__(self, model: JoranUIModel, view: JoranUIView):
         super().__init__(model, view)
 
     def update_values(self):
 
         super().update_values()
 
-        # Add here any updates to ZONDA specific widgets
+        # Add here any updates to JORAN specific widgets
 
         temp = self.model.get_temperature()
         self.view.updateTemperature(temp)
@@ -385,10 +386,10 @@ def parse_arguments():
 
 
 def main():
-    lock_file = QLockFile(str(Path("~/zonda_ui.app.lock").expanduser()))
+    lock_file = QLockFile(str(Path("~/joran_ui.app.lock").expanduser()))
 
     styles_location = get_resource(":/styles/default.qss")
-    app_logo = get_resource(":/icons/logo-zonda.svg")
+    app_logo = get_resource(":/icons/logo-joran.svg")
 
     args = list(sys.argv)
     args[1:1] = ["-stylesheet", str(styles_location)]
@@ -411,7 +412,7 @@ def main():
             Settings.set_profiling(True)
 
         if args.type == "proxy":
-            proxy = ZondaProxy()
+            proxy = JoranProxy()
             if not proxy.ping():
                 description = "Could not connect to Hexapod Control Server"
                 info_text = (
@@ -424,9 +425,9 @@ def main():
 
                 show_warning_message(description, info_text)
 
-        view = ZondaUIView()
-        model = ZondaUIModel(args.type)
-        ZondaUIController(model, view)
+        view = JoranUIView()
+        model = JoranUIModel(args.type)
+        JoranUIController(model, view)
 
         view.show()
 
@@ -435,7 +436,7 @@ def main():
         error_message = QMessageBox()
         error_message.setIcon(QMessageBox.Warning)
         error_message.setWindowTitle("Error")
-        error_message.setText("The Zonda GUI application is already running!")
+        error_message.setText("The Joran GUI application is already running!")
         error_message.setStandardButtons(QMessageBox.Ok)
 
         return error_message.exec()

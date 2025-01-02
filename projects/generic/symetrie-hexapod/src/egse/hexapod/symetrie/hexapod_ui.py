@@ -1009,8 +1009,10 @@ class HexapodUIController(Observer):
             self.view.set_connection_state("disconnected")
             self.stop_timer()
 
-            if not self.model.is_device_connected(): self.view.disable_device_action()
-            if not self.model.is_cs_connected(): self.view.uncheck_cs_action()
+            if not self.model.is_device_connected():
+                self.view.disable_device_action()
+            if not self.model.is_cs_connected():
+                self.view.uncheck_cs_action()
 
             return
 
@@ -1170,7 +1172,7 @@ class HexapodUIView(QMainWindow, Observable):
 
         self.temperature_log = None
 
-    def onClick(self, icon: Union[QIcon, bool]):
+    def on_click(self, icon: Union[QIcon, bool]):
 
         sender = self.sender()
 
@@ -1184,14 +1186,14 @@ class HexapodUIView(QMainWindow, Observable):
 
         self.notifyObservers(sender)
 
-    def createStatusBar(self):
+    def create_status_bar(self):
 
         self.statusBar().setStyleSheet("border: 0; background-color: #FFF8DC;")
         self.statusBar().setStyleSheet("QStatusBar::item {border: none;}")
         self.statusBar().addPermanentWidget(VLine())
         self.statusBar().addPermanentWidget(self.mode_label)
 
-    def createToolbar(self):
+    def create_toolbar(self):
 
         # The Switch On/OFF is in this case used for the Control ON/OFF action.
 
@@ -1202,7 +1204,7 @@ class HexapodUIView(QMainWindow, Observable):
             not_selected=get_resource(":/icons/switch-off.svg"),
             disabled=get_resource(":/icons/switch-disabled.svg")
         )
-        self.control.clicked.connect(self.onClick)
+        self.control.clicked.connect(self.on_click)
 
         # The Home action is used to command the Homing to the Hexapod.
 
@@ -1212,7 +1214,7 @@ class HexapodUIView(QMainWindow, Observable):
             selected=get_resource(":/icons/home.svg"),
             disabled=get_resource(":/icons/home-disabled.svg"),
         )
-        self.homing.clicked.connect(self.onClick)
+        self.homing.clicked.connect(self.on_click)
 
         # The Clear action is used to command the ClearErrors to the Hexapod.
 
@@ -1222,7 +1224,7 @@ class HexapodUIView(QMainWindow, Observable):
             selected=get_resource(":/icons/erase.svg"),
             disabled=get_resource(":/icons/erase-disabled.svg"),
         )
-        self.clear_errors.clicked.connect(self.onClick)
+        self.clear_errors.clicked.connect(self.on_click)
 
         # The Reconnect action is used to reconnect to the control server
 
@@ -1233,7 +1235,7 @@ class HexapodUIView(QMainWindow, Observable):
             not_selected=get_resource(":/icons/cs-not-connected.svg"),
             disabled=get_resource(":/icons/cs-connected-disabled.svg")
         )
-        self.cs_connection.clicked.connect(self.onClick)
+        self.cs_connection.clicked.connect(self.on_click)
 
         # The Reconnect action is used to reconnect the device
 
@@ -1244,7 +1246,7 @@ class HexapodUIView(QMainWindow, Observable):
             not_selected=get_resource(":/icons/unplugged.svg"),
             disabled=get_resource(":/icons/plugged-disabled.svg")
         )
-        self.device_connection.clicked.connect(self.onClick)
+        self.device_connection.clicked.connect(self.on_click)
 
 
         # The STOP button is used to immediately stop the current motion
@@ -1253,7 +1255,7 @@ class HexapodUIView(QMainWindow, Observable):
 
         self.stop_action = QAction(stop_button, "STOP", self)
         self.stop_action.setToolTip("STOP Movement")
-        self.stop_action.triggered.connect(self.onClick)
+        self.stop_action.triggered.connect(self.on_click)
 
         # The HELP button is used to show the on-line help in a browser window
 
@@ -1261,7 +1263,7 @@ class HexapodUIView(QMainWindow, Observable):
 
         self.help_action = QAction(help_button, "INFO", self)
         self.help_action.setToolTip("Browse the on-line documentation")
-        self.help_action.triggered.connect(self.onClick)
+        self.help_action.triggered.connect(self.on_click)
 
         # spacer widget to help with aligning STOP button to the right
 
@@ -1280,7 +1282,7 @@ class HexapodUIView(QMainWindow, Observable):
 
         return self.toolbar
 
-    def createUserPositionWidget(self):
+    def create_user_position_widget(self):
 
         vbox_labels = QVBoxLayout()
         vbox_values = QVBoxLayout()
@@ -1324,7 +1326,7 @@ class HexapodUIView(QMainWindow, Observable):
 
         return gbox_positions
 
-    def createMachinePositionWidget(self):
+    def create_machine_position_widget(self):
 
         vbox_labels = QVBoxLayout()
         vbox_values = QVBoxLayout()
@@ -1368,7 +1370,7 @@ class HexapodUIView(QMainWindow, Observable):
 
         return gbox_positions
 
-    def createActuatorLengthWidget(self):
+    def create_actuator_length_widget(self):
 
         vbox_labels = QVBoxLayout()
         vbox_values = QVBoxLayout()
