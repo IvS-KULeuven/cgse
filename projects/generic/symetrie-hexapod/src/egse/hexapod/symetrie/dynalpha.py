@@ -602,9 +602,8 @@ class AlphaPlusTelnetInterface(DeviceTransport, DeviceConnectionInterface):
     def connect(self) -> None:
         """
         Connects to the Alpha+ Controller using the Telnet protocol. After connection
-        the telnet session logs in with the username provided in the Settings under
-        the `PUNA Alpha+ Controller` group. The password for this login is also provided
-        in the Settings under the same group. Make sure their values are only given in
+        the telnet session logs in with the username provided in the Settings file. The password for this login is also
+        provided in the Settings under the same group. Make sure their values are only given in
         the local settings file, not the global settings.
 
         After login, the `gpascii` command is started with the option `-2` as instructed
