@@ -1,11 +1,11 @@
 """
-Device control for the Symétrie Hexapod PUNA and ZONDA.
+Device control for the Symétrie Hexapod PUNA, ZONDA, and JORAN.
 
-This package contains the modules and classes to work with the Hexapod PUNA and the Hexapod ZONDA
+This package contains the modules and classes to work with the Hexapod PUNA, the Hexapod ZONDA, and the Hexapod JORAN
 from [Symétrie](www.symetrie.fr).
 
 The main entry point for the user of this package is through the terminal commands to start the
-control servers for the PUNA and ZONDA Hexapod, and the GUIs that are provided to interact with
+control servers for the PUNA, ZONDA, and JORAN Hexapod, and the GUIs that are provided to interact with
 the hexapods. The following commands start the control servers for the PUNA, ZONDA, and JORAN
 in the background.
 
