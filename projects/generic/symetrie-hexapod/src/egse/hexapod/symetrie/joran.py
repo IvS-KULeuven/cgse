@@ -56,6 +56,37 @@ class JoranController(JoranInterface, DynamicCommandMixin):
             self.disconnect()
         self.connect()
 
+    def reset(self, wait=True):
+        raise NotImplementedError
+
+    # def sequence(self):
+    #     raise NotImplementedError
+
+    def set_virtual_homing(self, tx, ty, tz, rx, ry, rz):
+        raise NotImplementedError
+
+    def get_debug_info(self):
+        raise NotImplementedError
+
+    def jog(self, axis: int, inc: float) -> int:
+        raise NotImplementedError
+
+    def get_temperature(self):
+        raise NotImplementedError
+
+    def get_limits_state(self):
+        raise NotImplementedError
+
+    def machine_limit_enable(self, state):
+        raise NotImplementedError
+
+    def user_limit_set(self, *par):
+        raise NotImplementedError
+
+    def set_default(self):
+        raise NotImplementedError
+
+
 class JoranSimulator(JoranInterface):
     """
     HexapodSimulator simulates the Symétrie Hexapod JORAN. The class is heavily based on the
