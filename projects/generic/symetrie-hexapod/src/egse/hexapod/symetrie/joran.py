@@ -53,6 +53,76 @@ class JoranController(JoranInterface, DynamicCommandMixin):
         if self.is_connected():
             self.disconnect()
         self.connect()
+
+class JoranSimulator(JoranInterface):
+    """
+    HexapodSimulator simulates the Symétrie Hexapod JORAN. The class is heavily based on the
+    ReferenceFrames in the `egse.coordinates` package.
+
+    The simulator implements the same methods as the HexapodController class which acts on the
+    real hardware controller in either simulation mode or with a real Hexapod JORAN connected.
+
+    Therefore, the HexapodSimulator can be used instead of the Hexapod class in test harnesses
+    and when the hardware is not available.
+
+    This class simulates all the movements and status of the Hexapod.
+    """
+    def __init__(self):
+
+        super().__init__()
+
+        # Keep a record if the homing() command has been executed.
+
+        self.homing_done = False
+        self.control_loop = False
+        self._virtual_homing = False
+        self._virtual_homing_position = None
+
+    def is_simulator(self):
+        return True
+
+    def connect(self):
+        pass
+
+    def reconnect(self):
+        pass
+
+    def disconnect(self):
+        # TODO:
+        #   Should I keep state in this class to check if it has been disconnected?
+        #
+        # TODO:
+        #   What happens when I re-connect to this Simulator? Shall it be in Homing position or
+        #   do I have to keep state via a persistency mechanism?
+        pass
+
+    def is_connected(self):
+        return True
+
+    def clear_error(self):
+        return 0
+
+    def homing(self):
+        self.goto_zero_position()
+        self.homing_done = True
+        self._virtual_homing = False
+        self._virtual_homing_position = None
+        return 0
+
+    def is_homing_done(self):
+        return self.homing_done
+
+    def activate_control_loop(self):
+        self.control_loop = True
+        return self.control_loop
+
+    def deactivate_control_loop(self):
+        self.control_loop = False
+        return self.control_loop
+
+    pass
+
+
 class JoranProxy(DynamicProxy, JoranInterface):
     """The JoranProxy class is used to connect to the control server and send commands to the
     Hexapod JORAN remotely."""
