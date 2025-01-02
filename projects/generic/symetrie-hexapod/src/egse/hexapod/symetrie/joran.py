@@ -8,7 +8,7 @@ import math
 import time
 
 from egse.hexapod.symetrie.alpha import AlphaPlusControllerInterface
-from egse.hexapod.symetrie.dynalpha import AlphaPlusTelnetInterface
+from egse.hexapod.symetrie.dynalpha import AlphaPlusTelnetInterface, decode_validation_error
 from egse.mixin import DynamicCommandMixin
 from egse.proxy import DynamicProxy
 from egse.settings import Settings
@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 JORAN_SETTINGS = Settings.load("JORAN Controller")
 CTRL_SETTINGS = Settings.load("Hexapod JORAN Control Server")
 DEVICE_SETTINGS = Settings.load(filename="joran.yaml")
+
+
 class JoranInterface(AlphaPlusControllerInterface):
     """
     Interface definition for the JoranController, the JoranProxy, and the JoranSimulator.
@@ -143,6 +145,7 @@ class JoranProxy(DynamicProxy, JoranInterface):
         """
         super().__init__(connect_address(protocol, hostname, port))
 
+
 if __name__ == "__main__":
 
     from rich import print as rp
@@ -225,3 +228,8 @@ if __name__ == "__main__":
 
         # joran.reset()
         joran.disconnect()
+
+        rp(0, decode_validation_error(0))
+        rp(11, decode_validation_error(11))
+        rp(8, decode_validation_error(8))
+        rp(24, decode_validation_error(24))
