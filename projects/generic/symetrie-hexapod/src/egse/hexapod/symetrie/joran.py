@@ -126,7 +126,7 @@ class JoranSimulator(JoranInterface):
         #
         # TODO:
         #   What happens when I re-connect to this Simulator? Shall it be in Homing position or
-        #   do I have to keep state via a persistency mechanism?
+        #   do I have to keep state via a persistence mechanism?
         pass
 
     def is_connected(self):
