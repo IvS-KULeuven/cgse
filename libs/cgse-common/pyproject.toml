@@ -1,8 +1,11 @@
 [project]
 name = "cgse-common"
-version = "2024.1.0"
+version = "2024.1.2"
 description = "Software framework to support hardware testing"
 authors = [
+    {name = "IVS KU Leuven"}
+]
+maintainers = [
     {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
     {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"}
 ]
