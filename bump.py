@@ -27,7 +27,7 @@ def get_master_version(master_pyproject_path):
     with open(master_pyproject_path, 'r') as file:
         data = tomlkit.parse(file.read())
 
-    return data['tool']['poetry']['version']
+    return data['project']['version']
 
 
 def update_project_version(project_dir, new_version):
@@ -41,12 +41,13 @@ def update_project_version(project_dir, new_version):
         data = tomlkit.parse(file.read())
 
     try:
-        _ = data['tool']['poetry']['version']
-        subprocess.run(['poetry', 'version', new_version], check=True)
+        data['project']['version'] = new_version
+
+        with open('pyproject.toml', 'w') as file:
+            tomlkit.dump(data, file)
+
     except tomlkit.exceptions.NonExistentKey:
-        rich.print(f"[red]\[tool.poetry.version] is not defined in pyproject.toml in {project_dir}[/]")
-    except subprocess.CalledProcessError:
-        rich.print(f"[red]\[tool.poetry] is not defined in pyproject.toml in {project_dir}[/]")
+        rich.print(f"[red]\[project.version] is not defined in pyproject.toml in {project_dir}[/]")
 
 
 def update_all_projects_in_monorepo(root_dir):
@@ -57,7 +58,7 @@ def update_all_projects_in_monorepo(root_dir):
     rich.print(f"Projects will be bumped to version {master_version}")
 
     for subdir, dirs, files in os.walk(root_dir):
-        if subdir == '.' or subdir == '..' or subdir == '__pycache__':
+        if subdir == '.' or subdir == '..' or subdir == '__pycache__' or ".venv" in subdir or ".git" in subdir:
             continue
         if 'pyproject.toml' in files and subdir != str(root_dir):  # Skip the master pyproject.toml
             print(f"Updating version for project in {subdir}")

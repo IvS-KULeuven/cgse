@@ -1,35 +1,55 @@
-[tool.poetry]
+[project]
 name = "plato-fits"
-version = "2024.1.0"
-description = "FITS plugin for the CGSE storage manager"
+version = "2024.1.2"
+description = "FITS Persistence implementation for CGSE"
 authors = [
-    "Rik Huygen <rik.huygen@kuleuven.be>",
-    "Sara Regibo <sara.regibo@kuleuven.be>",
+    {name = "IVS KU Leuven"}
 ]
-readme = "README.md"
-#packages = [
-#    { include = "egse", from = "src" },
-#]
+maintainers = [
+    {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
+    {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"}
+]
+readme = {"file" = "README.md", "content-type" = "text/markdown"}
+requires-python = ">=3.9"
+license = "MIT"
+keywords = [
+    "CGSE",
+    "Common-EGSE",
+    "hardware testing",
+    "software framework"
+]
+dependencies = [
+    "cgse-common",
+    "plato-spw",
+    "astropy",
+    "numpy",
+]
 
-[tool.poetry.dependencies]
-python = "^3.8"
-cgse-common = {path = "../../../libs/cgse-common", develop = true}  # this shall be replaced when building
+[project.optional-dependencies]
+test = ["pytest", "pytest-mock", "pytest-cov"]
 
-[tool.poetry.group.test.dependencies]
-pytest = "^7.4.2"
-pytest-mock = "^3.11.1"
-pytest-cov = "^4.1.0"
-
-[tool.poetry.group.dev.dependencies]
-pipdeptree = "^2.13.0"
-tomlkit = "^0.12.3"
-
-[tool.poetry.plugins."cgse.version"]
+[project.entry-points."cgse.version"]
 plato-fits = 'egse.storage.plugins'
 
-[tool.poetry.plugins."cgse.storage.persistence"]
+[project.entry-points."cgse.storage.persistence"]
 FITS = "egse.plugins.storage.fits:FITS"
 
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/tests",
+    "/pytest.ini",
+    "/.gitignore",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/egse", "src/scripts"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+extend-select = ["E501"]
+
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
