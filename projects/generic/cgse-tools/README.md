@@ -1,1 +1,1 @@
-# Tools for the Common-EGSE
+# Tools for the CGSE framework

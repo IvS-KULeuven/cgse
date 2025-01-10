@@ -1,6 +1,6 @@
 Common-EGSE:
-    VERSION:                 2023.38.0+CGSE    # bump version here and below
-    RELEASE:                 September 2023, 2023.38.0+CGSE
+    VERSION:                 2024.1.0+CGSE    # bump version here and below
+    RELEASE:                 December 2024, 2024.1.0+CGSE
 
 SITE:
     ID:                            XXX

@@ -1,7 +1,5 @@
 # The monorepo structure
 
-
-
 Currently, the structure starts with two folders in the root, i.e. `libs` and `projects`. Where _libs_ contains library type packages like common modules, small generic gui functions, reference frames, ... and _projects_ contain packages that build upon these libraries and can be device drivers or stand-alone applications.
 
 There is one package that I think doesn't fit into this picture, that is `cgse-core`. This is not a library, but a – collection of – service(s). So, we might want to add a third top-level folder `services` but I also fear that this again more complicates the monorepo.
@@ -57,7 +55,7 @@ Note that each library or project is a standalone Poetry package with its own `p
 
 All packages in the monorepo will have the same version. This can be maintained with the `bump.py` script. This script will read the version from the `pyproject.toml` file at the root of the monorepo and propagate the version to all libs and projects in the monorepo. Note that you –for now– will have to update the version number in the `pyproject.toml` file  located at the monorepo root folder manually. 
 
-# Use of Poetry
+# Use of Poetry (DEPRECATED: see below)
 
 I have now Poetry configurations for all `libs` in this monorepo. So, how do we use Poetry in this project?
 
@@ -85,16 +83,22 @@ $ poetry run python -m egse.monitoring localhost 6001
 
 Building a source distribution and a wheel for your project is as easy as running the following command:
 ```
-$ poetry build
-Building cgse-common (2023.1.5)
-  - Building sdist
-  - Built cgse_common-2023.1.5.tar.gz
-  - Building wheel
-  - Built cgse_common-2023.1.5-py3-none-any.whl
+$ pipx run build
+* Creating isolated environment: venv+pip...
+* Installing packages in isolated environment:
+  - hatchling
+* Getting build dependencies for sdist...
+* Building sdist...
+* Building wheel from sdist
+* Creating isolated environment: venv+pip...
+* Installing packages in isolated environment:
+  - hatchling
+* Getting build dependencies for wheel...
+* Building wheel...
 ```
 Make sure you have updated/bumped the version number in the `pyproject.toml`. Publishing your package on PyPI needs some more preparation, since you need to prepare a token that allows you to upload your project to PyPI. Publishing itself is a peace of cake when the credentials have been configured correctly. Poetry will also automatically take the latest version to publish.
 ```
-$ poetry publish
+$ pipx run twine publish
 Publishing cgse-common (2023.1.5) to PyPI
  - Uploading cgse_common-2023.1.5-py3-none-any.whl 100%
  - Uploading cgse_common-2023.1.5.tar.gz 100%
@@ -118,4 +122,3 @@ What is the meaning of the common egse root folder in this monorepo and when the
 * what is the Projects root directory?
 
     This folder basically contains device implementations and plugins for e.g. the storage manager.
-

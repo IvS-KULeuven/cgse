@@ -1,30 +1,46 @@
-[build-system]
-requires = ["setuptools", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["egse", "egse.coordinates"]
-namespaces = true
-
-[tool.setuptools.package-data]
-egse = ["*.yaml"]
-
 [project]
 name = "cgse-coordinates"
-version = "2023.1.0"
+version = "2024.1.0"
 description = "Reference Frames and Coordinate Transofrmations for CGSE"
-license = { text = "Common-EGSE Software License Agreement" }
+authors = [
+    {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
+    {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"}
+]
+readme = {"file" = "README.md", "content-type" = "text/markdown"}
+requires-python = ">=3.9"
+license = "MIT"
+keywords = [
+    "CGSE",
+    "Common-EGSE",
+    "hardware testing",
+    "software framework",
+    "reference frames",
+]
 dependencies = [
-    "cgse-core",   # should be cgse-common
+    "cgse-common",
+    "cgse-core>=2024.1.1",
     "numpy",
     "pandas",
+    "pip>=24.3.1",
     "transforms3d",
 ]
 
-[tool.poetry.group.dev.dependencies]
-pipdeptree = "^2.13.0"
-tomlkit = "^0.12.3"
+[project.optional-dependencies]
+dev = ["pytest", "pytest-mock", "pytest-cov", "pipdeptree"]
 
 [project.entry-points."cgse.version"]
-cgse-coordinates = 'egse.plugins'
+cgse-core = 'egse'
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/tests",
+    "/pytest.ini",
+    "/.gitignore",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/egse"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
