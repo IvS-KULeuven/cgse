@@ -1,52 +1,60 @@
-[tool.poetry]
+[project]
 name = "cgse-common"
 version = "2024.1.0"
-description = "Software framework to support testing hardware"
+description = "Software framework to support hardware testing"
 authors = [
-    "Rik Huygen <rik.huygen@kuleuven.be>",
-    "Sara Regibo <sara.regibo@kuleuven.be>",
+    {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
+    {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"}
 ]
-readme = "README.md"
-packages = [
-    { include = "egse", from = "src" }
+readme = {"file" = "README.md", "content-type" = "text/markdown"}
+requires-python = ">=3.9"
+license = "MIT"
+keywords = [
+    "CGSE",
+    "Common-EGSE",
+    "hardware testing",
+    "software framework"
+]
+dependencies = [
+    "click",
+    "deepdiff",
+    "distro",
+    "gitpython",
+    "numpy == 1.22.4", # only used in setup
+    "pandas",
+    "pip>=24.3.1", # only used in setup
+    "prometheus-client",
+    "psutil",
+    "pyyaml",
+    "pyzmq == 23.2.1",
+    "rich",
 ]
 
-[tool.poetry.dependencies]
-python = "^3.8"
-click = "^8.1.7"
-deepdiff = "^6.6.1"
-distro = "^1.8.0"
-GitPython = "^3.1.40"
-numpy = "^1.24"  # Numpy 1.25.0 requires Python 3.9+
-pandas = "^2.0"  # Pandas 2.1.0 requires Python 3.9+
-prometheus-client = "^0.19.0"
-psutil = "^5.9.6"
-PyYAML = "^6.0.1"
-pyzmq = "^25.1.1"
-rich = "^13.6.0"
+[project.optional-dependencies]
+test = ["pytest", "pytest-mock", "pytest-cov"]
+dev = ["pipdeptree", "tomlkit", "ruff"]
 
-[tool.poetry.group.test.dependencies]
-pytest = "^7.4.2"
-pytest-mock = "^3.11.1"
-pytest-cov = "^4.1.0"
-
-[tool.poetry.group.dev.dependencies]
-pipdeptree = "^2.13.0"
-tomlkit = "^0.12.3"
-ruff = "^0.1.6"
-
-[tool.poetry.plugins."cgse.version"]
+[project.entry-points."cgse.version"]
 cgse-common = 'egse'
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/tests",
+    "/pytest.ini",
+    "/.gitignore",
+    "/*poetry*",
+    "/*setuptools*",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/egse"]
 
 [tool.ruff]
 line-length = 120
 
 [tool.ruff.lint]
-# Add the `line-too-long` rule to the enforced rule set. By default, Ruff omits rules that
-# overlap with the use of a formatter, like Black, but we can override this behavior by
-# explicitly adding the rule.
 extend-select = ["E501"]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

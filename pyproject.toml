@@ -1,22 +1,19 @@
-[tool.poetry]
+[project]
 name = "cgse"
 version = "2024.1.0"
 description = "Generic Common-EGSE: Commanding and monitoring lab equipment"
 authors = [
-    "Rik Huygen <rik.huygen@kuleuven.be>",
-    "Sara Regibo <sara.regibo@kuleuven.be>"
+    {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
+    {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"}
 ]
-license = "MIT"
+license = {text = "MIT"}
 readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []
 
-[tool.poetry.dependencies]
-python = "^3.8"
-
-[tool.poetry.group.dev.dependencies]
-tomlkit = "^0.12.3"
-setuptools = "*"
-rich = "^13.7.0"
+[project.optional-dependencies]
+dev = ["pipdeptree", "tomlkit", "ruff"]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

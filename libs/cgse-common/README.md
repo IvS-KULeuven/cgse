@@ -1,6 +1,6 @@
-# Generic Functionality used in the PLATO Common-EGSE
+# Generic Functionality used in the Common-EGSE
 
-This package 'cgse-common' contains functionality that is used by all `cgse` sub-packages, but it is designed to be a stand-alone generic package that can be used in any other project.
+This package 'cgse-common' contains functionality that is used by all `cgse` sub-packages, but it is designed to be a stand-alone generic package that can be used also in any other project.
 
 
 ## Installation
