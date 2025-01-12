@@ -11,10 +11,15 @@ Note:
     and the rich package.
 
 """
-
+# /// script
+# requires-python = ">=3.9"
+# dependencies = [
+#   "tomlkit",
+#   "rich",
+# ]
+# ///
 import os
 import pathlib
-import subprocess
 
 import rich
 import tomlkit
@@ -53,12 +58,15 @@ def update_project_version(project_dir, new_version):
 def update_all_projects_in_monorepo(root_dir):
     """Updates all pyproject.toml files with the master version number."""
 
+    excluded_subdirs = ['__pycache__', '.venv', '.git', '.idea', 'cgse/build', 'cgse/dist']
+
     master_version = get_master_version(os.path.join(root_dir, 'pyproject.toml'))
 
     rich.print(f"Projects will be bumped to version {master_version}")
 
     for subdir, dirs, files in os.walk(root_dir):
-        if subdir == '.' or subdir == '..' or subdir == '__pycache__' or ".venv" in subdir or ".git" in subdir:
+        if subdir == '.' or subdir == '..' or any(excluded in subdir for excluded in excluded_subdirs):
+            # rich.print(f"rejected {subdir = }")
             continue
         if 'pyproject.toml' in files and subdir != str(root_dir):  # Skip the master pyproject.toml
             print(f"Updating version for project in {subdir}")
