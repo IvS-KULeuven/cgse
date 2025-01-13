@@ -87,6 +87,7 @@ Do we need additional hooks into this commanding?
 * provide an execute method for the CommandExecution that executes the command
   with the saved parameters
 """
+
 import functools
 import inspect
 import logging
@@ -149,7 +150,6 @@ def dry_run(func: Callable) -> Callable:
 
     @functools.wraps(func)
     def func_wrapper(self, *args, **kwargs):
-
         from egse.state import GlobalState  # prevent circular import
 
         if GlobalState.dry_run:
@@ -167,9 +167,7 @@ def dry_run(func: Callable) -> Callable:
             else:
                 FunctionExecution = namedtuple("FunctionExecution", ["name", "args", "kwargs"])
                 GlobalState.add_command(FunctionExecution(func.__name__, args, kwargs))
-            return Success(
-                "Command execution appended to command sequence, function not executed in dry_run."
-            )
+            return Success("Command execution appended to command sequence, function not executed in dry_run.")
         else:
             return func(self, *args, **kwargs)
 
@@ -206,8 +204,7 @@ def parse_format_string(fstring):
 
     # If this assertion fails, there is a flaw in the algorithm above
     assert tot_n_args == n_args + n_kwargs, (
-        f"Total number of arguments ({tot_n_args}) doesn't match # args ({n_args}) + "
-        f"# kwargs ({n_kwargs})."
+        f"Total number of arguments ({tot_n_args}) doesn't match # args ({n_args}) + # kwargs ({n_kwargs})."
     )
 
     if n_args > 0 and n_kwargs > 0:
@@ -291,9 +288,7 @@ class InvalidCommandExecution(CommandExecution):
         self._exc = exc
 
     def run(self):
-        raise InvalidArgumentsError(
-            f"The command {self.get_name()} can not be executed. Reason: {self._exc}"
-        )
+        raise InvalidArgumentsError(f"The command {self.get_name()} can not be executed. Reason: {self._exc}")
 
     def __str__(self):
         msg = super().__str__()
@@ -307,7 +302,6 @@ class WaitCommand:
         self._condition = condition
 
     def __call__(self):
-
         # .. todo:: do we need a timeout possibility here?
 
         while True:
@@ -330,10 +324,7 @@ class Command:
     Arguments can be positional or keyword arguments, not both.
     """
 
-    def __init__(
-            self, name, cmd, response=None, wait=None, check=None, description=None,
-            device_method=None
-    ):
+    def __init__(self, name, cmd, response=None, wait=None, check=None, description=None, device_method=None):
         self._name = name
         self._cmd = cmd
         self._response = response
@@ -362,7 +353,6 @@ class Command:
         return msg
 
     def validate_arguments(self, *args, **kwargs):
-
         # Special case for commands with *args or **kwargs, we don't validate
 
         if self._cmd in ("*", "**"):
@@ -373,8 +363,7 @@ class Command:
 
         if self._tot_n_args != nargs + nkwargs:
             raise InvalidArgumentsError(
-                f"Expected {self._tot_n_args} arguments for command {self._name}, "
-                f"got {nargs + nkwargs} arguments."
+                f"Expected {self._tot_n_args} arguments for command {self._name}, got {nargs + nkwargs} arguments."
             )
 
         if self._tot_n_args == 0:
@@ -414,7 +403,6 @@ class Command:
         return self._device_method.__name__
 
     def get_command_execution(self, *args, **kwargs):
-
         return CommandExecution(self, *args, **kwargs)
 
     def __call__(self, *args, **kwargs):
@@ -444,8 +432,7 @@ class Command:
 
         if self._tot_n_args != nargs + nkwargs:
             raise CommandError(
-                f"Expected {self._tot_n_args} arguments for command {self._name}, "
-                f"got {nargs + nkwargs} arguments."
+                f"Expected {self._tot_n_args} arguments for command {self._name}, got {nargs + nkwargs} arguments."
             )
 
         if self._tot_n_args == 0:
@@ -539,17 +526,13 @@ class ClientServerCommand(Command):
         # the class instances are not known at the other side.
 
         if self._response.__name__ == "handle_device_method":
-
             # call the handle_device_method of the Protocol sub-class
 
-            logger.log(0,
-                       f"Executing Command {self._response.__name__}({other!r}, "
-                       f"{self!r}, {args}, {kwargs})")
+            logger.log(0, f"Executing Command {self._response.__name__}({other!r}, {self!r}, {args}, {kwargs})")
 
             rc = self._response(other, self, *args, **kwargs)
         else:
-            logger.log(0,
-                       f"Executing Command {self._response.__name__}({other!r}, {args}, {kwargs})")
+            logger.log(0, f"Executing Command {self._response.__name__}({other!r}, {args}, {kwargs})")
 
             rc = self._response(other, *args, **kwargs)
 
@@ -615,9 +598,7 @@ def get_function(parent_class, method_name: str):
             return func
         logger.warning(f"{method_name} is not a function, type={type(func)}")
     else:
-        logger.warning(
-            f"{parent_class.__module__}.{parent_class.__name__} has no method called {method_name}"
-        )
+        logger.warning(f"{parent_class.__module__}.{parent_class.__name__} has no method called {method_name}")
 
     return None
 
