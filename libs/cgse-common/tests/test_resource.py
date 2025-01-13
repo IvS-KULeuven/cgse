@@ -171,11 +171,11 @@ def test_add_resource(reset_resource):
     # ValueError because the folder 'lib' doesn't exist yet in 'root'
 
     with pytest.raises(ValueError):
-        add_resource_id("lib", "lib")
+        add_resource_id("docs", "docs")
 
-    (root / "lib").mkdir()
+    (root / "docs").mkdir()
 
-    add_resource_id("lib", root / "lib")
+    add_resource_id("docs", root / "docs")
 
     (root / "xxx").mkdir()
     (root / "yyy").mkdir()
@@ -189,7 +189,7 @@ def test_add_resource(reset_resource):
 
     # Remove folder created for this test
 
-    for folder in root/"lib", root/"xxx", root/"yyy":
+    for folder in root/"docs", root/"xxx", root/"yyy":
         shutil.rmtree(folder)
 
 
