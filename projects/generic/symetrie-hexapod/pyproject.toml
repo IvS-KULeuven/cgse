@@ -21,6 +21,8 @@ dependencies = [
     "cgse-gui",
     "cgse-coordinates",
     "PyQt5",
+    "paramiko",
+    "invoke"
 ]
 
 [project.scripts]
