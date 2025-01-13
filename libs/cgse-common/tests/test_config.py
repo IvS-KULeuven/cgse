@@ -9,6 +9,7 @@ from egse.config import find_file
 from egse.config import find_files
 from egse.config import find_first_occurrence_of_dir
 from egse.config import find_root
+from egse.config import get_common_egse_root
 
 _HERE = Path(__file__).parent.resolve()
 
@@ -16,11 +17,14 @@ _HERE = Path(__file__).parent.resolve()
 def test_find_first_occurrence_of_dir():
 
     assert str(find_first_occurrence_of_dir("conf", root=_HERE)).endswith("tests/data/conf")
-    assert str(find_first_occurrence_of_dir("CSL/conf", root=_HERE)).endswith("tests/data/CSL/conf")
+    assert str(find_first_occurrence_of_dir("dev1", root=_HERE)).endswith("tests/data/lib/dev1")
+    assert str(find_first_occurrence_of_dir("dev2", root=_HERE)).endswith("tests/data/lib/dev2")
 
     assert find_first_occurrence_of_dir("not-a-directory", root=_HERE) is None
 
-    assert str(find_first_occurrence_of_dir("/egse/images")).endswith("src/egse/images")
+    # Pass in a different root directory
+
+    assert str(find_first_occurrence_of_dir("dev1", root=_HERE/"data")).endswith("lib/dev1")
 
     folders = (
         _HERE / "x_data/01/kul",
@@ -78,7 +82,7 @@ def test_get_common_egse_root_with_env():
 
     import os
 
-    os.environ["PLATO_COMMON_EGSE_PATH"] = "/Users/rik/git"
+    os.environ["COMMON_EGSE_PATH"] = "/Users/rik/git"
 
     # I added lru_cache to speed up the get_common_egse_root() function, but this
     # is of course fatal for test harnesses. T_HEREfore, clear the cache before and
@@ -90,7 +94,7 @@ def test_get_common_egse_root_with_env():
 
     get_common_egse_root.cache_clear()
 
-    del os.environ["PLATO_COMMON_EGSE_PATH"]
+    del os.environ["COMMON_EGSE_PATH"]
 
 
 def test_find_files():
@@ -107,8 +111,8 @@ def test_find_files():
 
     # When I want to find a file in a specific directory, use the in_dir keyword
 
-    filename = Path("EtherSpaceLink_v*.dylib")
-    files = list(find_files(filename, in_dir="lib/CentOS-7"))
+    filename_pattern = "shared-lib.so"
+    files = list(find_files(filename_pattern, in_dir="lib/dev1"))
     print()
     print(files)
 
@@ -119,24 +123,24 @@ def test_find_files():
 
 
 def test_find_dirs():
-    dir_name = "CentOS-[78]"
+    dir_name = "dev[12]"
     dirs = list(find_dirs(dir_name))
     assert dirs
 
-    dir_name = "CentOS-7"
+    dir_name = "dev1"
     dirs = list(find_dirs(dir_name))
     assert dirs
 
-    dir_name = "egse/images"
+    dir_name = "lib/dev*"
     dirs = list(find_dirs(dir_name))
     print(dirs)
     # The third file could be in the build folder which doesn't always exists.
     # A fourth file could be in the virtual environment venv or venv38
     assert len(dirs) in (2, 3, 4)
 
-    # use the leading '/' to prevent that 'plato-common-egse/images' is matched.
+    # use the leading '/' to prevent that another 'lib/dev' is matched.
 
-    dir_name = "/egse/images"
+    dir_name = "/lib/dev*"
     dirs = list(find_dirs(dir_name))
     print(dirs)
     # The second file could be in the build folder which doesn't always exists.
