@@ -21,8 +21,8 @@ keywords = [
 dependencies = [
     "cgse-common",
     "plato-spw",
-    "h5py",
-    "natsort",
+    "h5py>=3.12.1",
+    "natsort>=8.4.0",
 ]
 
 [project.optional-dependencies]
