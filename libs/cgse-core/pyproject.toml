@@ -17,12 +17,12 @@ keywords = [
 ]
 dependencies = [
     "cgse-common",
-    "apscheduler",
-    "click",
-    "gitpython",
-    "prometheus-client",
+    "apscheduler>=3.11.0",
+    "click>=8.1.8",
+    "gitpython>=3.1.44",
+    "prometheus-client>=0.21.1",
     "pyzmq == 23.2.1",
-    "rich",
+    "rich>=13.9.4",
 ]
 
 [project.optional-dependencies]
