@@ -1,0 +1,25 @@
+exclude = [
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "build",
+    "dist",
+    "site-packages",
+    "venv",
+]
+
+line-length = 120
+indent-width = 4
+
+# Assume Python 3.9
+target-version = "py39"
