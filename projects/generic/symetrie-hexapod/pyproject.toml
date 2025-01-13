@@ -24,6 +24,8 @@ dependencies = [
     "cgse-gui",
     "cgse-coordinates",
     "PyQt5>=5.15.11",
+    "paramiko",
+    "invoke"
 ]
 
 [project.optional-dependencies]

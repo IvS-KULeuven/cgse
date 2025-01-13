@@ -211,14 +211,14 @@ class PunaUIView(HexapodUIView):
         vbox_left = QVBoxLayout()
         vbox_right = QVBoxLayout()
 
-        self.createToolbar()
-        self.createStatusBar()
+        self.create_toolbar()
+        self.create_status_bar()
 
         self.states = States(STATUS_LEDS[self.dct])
 
-        user_positions_widget = self.createUserPositionWidget()
-        mach_positions_widget = self.createMachinePositionWidget()
-        actuator_length_widget = self.createActuatorLengthWidget()
+        user_positions_widget = self.create_user_position_widget()
+        mach_positions_widget = self.create_machine_position_widget()
+        actuator_length_widget = self.create_actuator_length_widget()
 
         vbox_right.addWidget(user_positions_widget)
         vbox_right.addWidget(mach_positions_widget)

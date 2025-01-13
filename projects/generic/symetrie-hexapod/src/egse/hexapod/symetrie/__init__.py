@@ -1,32 +1,40 @@
 """
-Device control for the Symétrie Hexapod PUNA and ZONDA.
+Device control for the Symétrie Hexapod PUNA, ZONDA, and JORAN.
 
-This package contains the modules and classes to work with the Hexapod PUNA and the Hexapod ZONDA
+This package contains the modules and classes to work with the Hexapod PUNA, the Hexapod ZONDA, and the Hexapod JORAN
 from [Symétrie](www.symetrie.fr).
 
 The main entry point for the user of this package is through the terminal commands to start the
-control servers for the PUNA and ZONDA Hexapod, and the GUIs that are provided to interact with
-the hexapods. The following commands start the control servers for both the PUNA and the ZONDA
+control servers for the PUNA, ZONDA, and JORAN Hexapod, and the GUIs that are provided to interact with
+the hexapods. The following commands start the control servers for the PUNA, ZONDA, and JORAN
 in the background.
 
     $ puna_cs start-bg
     $ zonda_cs start-bg
+    $ joran_cs start-bg
 
 The GUIs can be started with the following commands:
 
     $ puna_ui
     $ zonda_ui
+    $ joran_ui
 
-For developers, the `PunaProxy` and `ZondaProxy` classes are the main interface to command the
+For developers, the `PunaProxy`, `ZondaProxy`, and `JoranProxy` classes are the main interface to command the
 hardware.
 
+For the PUNA:
     >>> from egse.hexapod.symetrie.puna import PunaProxy
     >>> puna = PunaProxy()
 
-and for the ZONDA:
+For the ZONDA:
 
     >>> from egse.hexapod.symetrie.zonda import ZondaProxy
     >>> zonda = ZondaProxy()
+
+For the JORAN:
+
+    >>> from egse.hexapod.symetrie.joran import JoranProxy
+    >>> joran = JoranProxy()
 
 These classes will connect to their control servers and provide all commands to
 control the hexapod and monitor its positions and status.
@@ -113,6 +121,10 @@ class ProxyFactory(DeviceFactoryInterface):
             from egse.hexapod.symetrie.zonda import ZondaProxy
             return ZondaProxy()
 
+        elif "joran" in device_name.lower():
+            from egse.hexapod.symetrie.joran import JoranProxy
+            return JoranProxy()
+
         else:
             raise ValueError(f"Unknown device name: {device_name}")
 
@@ -121,7 +133,7 @@ class ControllerFactory(DeviceFactoryInterface):
     """
     A factory class that will create the Controller that matches the given device name and identifier.
 
-    The device name is matched against the string 'puna' or 'zonda'. If the device name doesn't contain
+    The device name is matched against the string 'puna', 'zonda', or 'joran'. If the device name doesn't contain
     one of these names, a ValueError will be raised.
     """
     def create(self, device_name: str, *, device_id: str = None, **_ignored):
@@ -146,6 +158,10 @@ class ControllerFactory(DeviceFactoryInterface):
         elif "zonda" in device_name.lower():
             from egse.hexapod.symetrie.zonda import ZondaController
             return ZondaController()
+
+        elif "joran" in device_name.lower():
+            from egse.hexapod.symetrie.joran import JoranController
+            return JoranController()
 
         else:
             raise ValueError(f"Unknown device name: {device_name}")

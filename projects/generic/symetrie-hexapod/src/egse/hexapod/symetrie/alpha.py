@@ -22,7 +22,7 @@ class AlphaControllerInterface:
                 for 30 seconds which should complete the cycle, i.e. this command will
                 only return after 30 seconds.
 
-        .. Note::
+        Note:
            This command is equivalent to power cycling the controller manually.
 
         """
@@ -47,7 +47,7 @@ class AlphaControllerInterface:
         Returns:
             0 on success.
         Raises:
-            HexapodError: when there is a time out or when there is a communication error with
+            HexapodError: when there is a timeout or when there is a communication error with
             the hexapod.
         """
         raise NotImplementedError
@@ -76,7 +76,7 @@ class AlphaControllerInterface:
             return_code: 0 on success, -1 when ignored
 
         Raises:
-            HexapodError: when the arguments do not match up, or when there is a time out or when
+            HexapodError: when the arguments do not match up, or when there is a timeout or when
             there is a
             socket communication error.
 
@@ -85,12 +85,12 @@ class AlphaControllerInterface:
 
     @dynamic_interface
     def stop(self):
-        """Stop the current motion. This command can be send during a motion of the Hexapod.
+        """Stop the current motion. This command can be sent during a motion of the Hexapod.
 
         Returns:
             0 on success.
         Raises:
-            HexapodError: when there is a time out or when there is a communication error with
+            HexapodError: when there is a timeout or when there is a communication error with
             the hexapod.
         """
         raise NotImplementedError
@@ -114,7 +114,7 @@ class AlphaControllerInterface:
         Returns:
             0 on success, -1 when ignored, -2 on error.
         Raises:
-            HexapodError: when there is a time out or when there is a communication error with
+            HexapodError: when there is a timeout or when there is a communication error with
             the hexapod
                 hardware controller.
         """
@@ -127,7 +127,7 @@ class AlphaControllerInterface:
         Returns:
             0 on success.
         Raises:
-            HexapodError: when there is a time out or when there is a communication error with
+            HexapodError: when there is a timeout or when there is a communication error with
             the hexapod.
         """
         raise NotImplementedError
@@ -136,7 +136,7 @@ class AlphaControllerInterface:
     def jog(self, axis: int, inc: float) -> int:
         """Perform a JOG-type movement on the specified actuator.
 
-        .. note::
+        Note:
             This is a maintenance feature.
 
         Args:
@@ -145,7 +145,7 @@ class AlphaControllerInterface:
         Returns:
             0 on success, -1 if command was ignored due to non-compliance.
         Raises:
-            HexapodError: when there is a time out or when there is a communication error with
+            HexapodError: when there is a timeout or when there is a communication error with
             the hexapod.
         """
         raise NotImplementedError
@@ -262,44 +262,29 @@ class AlphaControllerInterface:
 
         Args:
             tx_u (float): translation parameter that define the user coordinate system relative
-            to the
-                                      machine coordinate system [in mm]
+            to the machine coordinate system [in mm]
             ty_u (float): translation parameter that define the user coordinate system relative
-            to the
-                                      machine coordinate system [in mm]
+            to the machine coordinate system [in mm]
             tz_u (float): translation parameter that define the user coordinate system relative
-            to the
-                                      machine coordinate system [in mm]
-
+            to the  machine coordinate system [in mm]
             rx_u (float): rotation parameter that define the user coordinate system relative to
-            the machine
-                                      coordinate system [in deg]
+            the machine coordinate system [in deg]
             ry_u (float): rotation parameter that define the user coordinate system relative to
-            the machine
-                                      coordinate system [in deg]
+            the machine coordinate system [in deg]
             rz_u (float): rotation parameter that define the user coordinate system relative to
-            the machine
-                                      coordinate system [in deg]
-
+            the machine coordinate system [in deg]
             tx_o (float): translation parameter that define the object coordinate system relative
-            to the
-                                      platform coordinate system [in mm]
+            to the platform coordinate system [in mm]
             ty_o (float): translation parameter that define the object coordinate system relative
-            to the
-                                      platform coordinate system [in mm]
+            to the platform coordinate system [in mm]
             tz_o (float): translation parameter that define the object coordinate system relative
-            to the
-                                      platform coordinate system [in mm]
-
-            rx_o (float): rotation parameter that define the object coordinate system relative to
-            the
-                                      platform coordinate system [in deg]
-            ry_o (float): rotation parameter that define the object coordinate system relative to
-            the
-                                      platform coordinate system [in deg]
-            rz_o (float): rotation parameter that define the object coordinate system relative to
-            the
-                                      platform coordinate system [in deg]
+            to the platform coordinate system [in mm]
+            rx_o (float): rotation parameter that define the object coordinate system relative to the platform
+            coordinate system [in deg]
+            ry_o (float): rotation parameter that define the object coordinate system relative to the platform
+            coordinate system [in deg]
+            rz_o (float): rotation parameter that define the object coordinate system relative to the platform
+            coordinate system [in deg]
 
         Returns:
             0 on success and -1 when the configuration is ignored, e.g. when password protection
@@ -506,7 +491,7 @@ class AlphaControllerInterface:
 
     @dynamic_interface
     def get_user_positions(self):
-        """Retreive the current position of the hexapod.
+        """Retrieve the current position of the hexapod.
 
         The returned position corresponds to the position of the Object Coordinate System
         in the User Coordinate System.
@@ -515,13 +500,13 @@ class AlphaControllerInterface:
             array: an array of six float values for Tx, Ty, Tz, Rx, Ry, Rz.
             None: when an Exception was raised and logs the error message.
 
-        .. note:: This is equivalent to the POSUSER? command.
+        Note: This is equivalent to the POSUSER? command.
         """
         raise NotImplementedError
 
     @dynamic_interface
     def get_machine_positions(self):
-        """Retreive the current position of the hexapod.
+        """Retrieve the current position of the hexapod.
 
         The returned position corresponds to the position of the Platform Coordinate System
         in the Machine Coordinate System.
@@ -530,7 +515,7 @@ class AlphaControllerInterface:
             array: an array of six float values for Tx, Ty, Tz, Rx, Ry, Rz.
             None: when a PMACError was raised and logs the error message.
 
-        .. note:: This is equivalent to the POSMACH? command.
+        Note: This is equivalent to the POSMACH? command.
         """
         raise NotImplementedError
 
@@ -580,13 +565,13 @@ class AlphaControllerInterface:
 
             None: when an Exception was raised and logs the error message.
 
-        .. note:: This is equivalent to the STATE#HEXA? Command.
+        Note: This is equivalent to the STATE#HEXA? Command.
         """
         raise NotImplementedError
 
     @dynamic_interface
     def get_actuator_state(self):
-        """Retreive general state information of the actuators.
+        """Retrieve general state information of the actuators.
 
         For each of the six actuators, an integer value is returned that should be interpreted as a
         bit field containing status bits for that actuator.
@@ -616,7 +601,7 @@ class AlphaControllerInterface:
                 Hexapod Controller API, section 4.5.5.
             None: when an Exception was raised and logs the error message.
 
-        .. note:: This is equivalent to the STATE#ACTUATOR? Command.
+        Note: This is equivalent to the STATE#ACTUATOR? Command.
         """
         raise NotImplementedError
 
@@ -691,7 +676,7 @@ class AlphaControllerInterface:
 
     @dynamic_interface
     def perform_maintenance(self, axis):
-        """Perform a maintenance cycle which consists to travel the full range
+        """Perform a maintenance cycle which consists of travelling the full range
         on one axis corresponding to the Hexapod machine limits. The movement is
         also in machine coordinate system.
 
@@ -839,9 +824,9 @@ class AlphaPlusControllerInterface(AlphaControllerInterface):
         """Sets the user workspace limits of the hexapod. Will raise error if not all the parameters are set (see
         Args definition)
 
-        Remark: operational workspace limits must be understood as limits in terms of amplitude of movement. Those limits
-        are defined for each operational axis with a negative and positive value and are used in the validation process.
-        Position on each operational axis must be within those two values.
+        Remark: operational workspace limits must be understood as limits in terms of amplitude of movement. Those
+        limits are defined for each operational axis with a negative and positive value and are used in the
+        validation process.  Position on each operational axis must be within those two values.
 
         Args:
             ntx(double): negative position limit in X in mm
