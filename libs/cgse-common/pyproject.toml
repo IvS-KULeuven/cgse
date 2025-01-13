@@ -1,8 +1,11 @@
 [project]
 name = "cgse-common"
-version = "2024.1.0"
+version = "2024.1.3"
 description = "Software framework to support hardware testing"
 authors = [
+    {name = "IVS KU Leuven"}
+]
+maintainers = [
     {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
     {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"}
 ]
@@ -16,26 +19,27 @@ keywords = [
     "software framework"
 ]
 dependencies = [
-    "click",
-    "deepdiff",
-    "distro",
-    "gitpython",
-    "numpy == 1.22.4", # only used in setup
-    "pandas",
+    "click>=8.1.8",
+    "deepdiff>=8.1.1",
+    "distro>=1.9.0",
+    "gitpython>=3.1.44",
+    "numpy==1.22.4",
+    "pandas>=1.5.1",
     "pip>=24.3.1", # only used in setup
-    "prometheus-client",
-    "psutil",
-    "pyyaml",
+    "prometheus-client>=0.21.1",
+    "psutil>=6.1.1",
+    "pyyaml>=6.0.2",
     "pyzmq == 23.2.1",
-    "rich",
+    "rich>=13.9.4",
 ]
-
-[project.optional-dependencies]
-test = ["pytest", "pytest-mock", "pytest-cov"]
-dev = ["pipdeptree", "tomlkit", "ruff"]
 
 [project.entry-points."cgse.version"]
 cgse-common = 'egse'
+
+[tool.pytest.ini_options]
+pythonpath = "src"
+testpaths = ["tests"]
+addopts = "-ra -q"
 
 [tool.hatch.build.targets.sdist]
 exclude = [
@@ -53,8 +57,14 @@ packages = ["src/egse"]
 line-length = 120
 
 [tool.ruff.lint]
-extend-select = ["E501"]
+extend-select = ["E", "W"]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+    "ruff>=0.9.0",
+]
