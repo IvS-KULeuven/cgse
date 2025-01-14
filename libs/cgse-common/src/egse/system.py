@@ -934,14 +934,17 @@ def env_var(**kwargs):
     try:
         for k, v in kwargs.items():
             saved_env[k] = os.environ.get(k)
-            os.environ[k] = v
+            if v is None:
+                del os.environ[k]
+            else:
+                os.environ[k] = v
         yield
     finally:
         for k, v in saved_env.items():
-            if v is not None:
-                os.environ[k] = v
-            else:
+            if v is None:
                 del os.environ[k]
+            else:
+                os.environ[k] = v
 
 
 def filter_by_attr(elements: Iterable, **attrs) -> List:
