@@ -62,7 +62,8 @@ import re
 
 import yaml  # This module is provided by the pip package PyYaml - pip install pyyaml
 
-from egse.env import ENV_LOCAL_SETTINGS
+from egse.env import get_local_settings
+from egse.env import get_local_settings_env_name
 from egse.exceptions import FileIsEmptyError
 from egse.system import AttributeDict
 from egse.system import get_caller_info
@@ -222,7 +223,7 @@ class Settings:
 
         try:
             yaml_document_global = cls.read_configuration_file(
-                yaml_location / filename, force=force
+                str(yaml_location / filename), force=force
             )
         except FileNotFoundError as exc:
             raise SettingsError(
@@ -236,10 +237,12 @@ class Settings:
 
         # Load the LOCAL settings YAML file
 
+        local_settings = {}
+
         if add_local_settings:
             try:
-                local_settings_location = os.environ[ENV_LOCAL_SETTINGS]
-                logger.log(5, f"Using {ENV_LOCAL_SETTINGS} to update global settings.")
+                local_settings_location = get_local_settings()
+                logger.log(5, f"Using {local_settings_location} to update global settings.")
                 try:
                     yaml_document_local = cls.read_configuration_file(
                         local_settings_location, force=force
@@ -252,15 +255,13 @@ class Settings:
                 except FileNotFoundError as exc:
                     raise SettingsError(
                         f"Local settings YAML file '{local_settings_location}' not found. "
-                        f"Check your environment variable {ENV_LOCAL_SETTINGS}."
+                        f"Check your environment variable {get_local_settings_env_name()}."
                     ) from exc
                 except FileIsEmptyError:
                     logger.warning(f"Local settings YAML file '{local_settings_location}' is empty. "
                                    f"No local settings were loaded.")
-                    local_settings = {}
             except KeyError:
-                logger.debug(f"The environment variable {ENV_LOCAL_SETTINGS} is not defined.")
-                local_settings = {}
+                logger.debug(f"The environment variable {get_local_settings_env_name()} is not defined.")
 
         if group_name in (None, ""):
             global_settings = AttributeDict(
@@ -321,7 +322,7 @@ class Settings:
         return cls.__profile
 
     @classmethod
-    def set_simulation_mode(cls, flag: bool) -> bool:
+    def set_simulation_mode(cls, flag: bool):
         cls.__simulation = flag
 
     @classmethod
@@ -346,7 +347,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=(
             f"Print out the default Settings, updated with local settings if the "
-            f"{ENV_LOCAL_SETTINGS} environment variable is set."
+            f"{get_local_settings_env_name()} environment variable is set."
         ),
     )
     parser.add_argument("--local", action="store_true", help="print only the local settings.")
@@ -358,7 +359,7 @@ if __name__ == "__main__":
     from rich import print
 
     if args.local:
-        location = os.environ.get(ENV_LOCAL_SETTINGS)
+        location = get_local_settings()
         if location:
             settings = Settings.load(filename=location)
             print(settings)
