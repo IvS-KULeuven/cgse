@@ -40,6 +40,9 @@ cgse-common = 'egse'
 pythonpath = "src"
 testpaths = ["tests"]
 addopts = "-ra --cov --cov-report html"
+filterwarnings = [
+    "ignore::DeprecationWarning"
+]
 
 [tool.hatch.build.targets.sdist]
 exclude = [
