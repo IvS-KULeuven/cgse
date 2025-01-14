@@ -1,128 +1,286 @@
 """
 This module provides functionality to work with and check your Python environment.
+
+The module provides functions to get the location of the data storage, the configuration data, and the log files.
+The locations are determined from the environment variables that are set for the project.
+
+Two important and mandatory environment variables are PROJECT and SITE_ID. The PROJECT environment variable is
+used to construct the names of the other environment variables that are specific to the project.
+
+Mandatory environment variables:
+
+- PROJECT: the name of the project, e.g. PLATO, ARIEL. [shall be UPPER case]
+- SITE_ID: the site identifier, e.g. the lab name or organisation acronym. [shall be UPPER case]
+
+The following environment variables are used by the project:
+
+- <PROJECT>_DATA_STORAGE_LOCATION: the root of the data storage location.
+- <PROJECT>_CONF_DATA_LOCATION: the location of the configuration data.
+- <PROJECT>_LOG_FILE_LOCATION: the location of the log files.
+
+Do not use the environment variables directly, but use the functions provided by this module to get the locations.
+
+- get_data_storage_location(): returns the full path of the data storage location.
+- get_conf_data_location(): returns the full path of the location of the configuration data.
+- get_log_file_location(): returns the full path of the location of the log files.
+
 """
-from pathlib import Path
+__all__ = [
+    "get_data_storage_location",
+    "get_data_storage_location_env_name",
+    "get_conf_data_location",
+    "get_conf_data_location_env_name",
+    "get_log_file_location",
+    "get_log_file_location_env_name",
+    "get_local_settings",
+    "get_local_settings_env_name",
+]
+
 import os
+import warnings
+from pathlib import Path
+
 from egse.system import all_logging_disabled
 from egse.system import ignore_m_warning
 
-PROJECT = os.environ.get("PROJECT") or "PLATO"
+# Every project shall have a PROJECT and a SITE_ID environment variable set. This variable will be used to
+# create the other environment variables that are specific to the project.
 
-ENV_COMMON_EGSE = f"COMMON_EGSE_PATH"
-ENV_INSTALL = f"{PROJECT}_INSTALL_LOCATION"
-ENV_CONF_DATA = f"{PROJECT}_CONF_DATA_LOCATION"
-ENV_CONF_REPO = f"{PROJECT}_CONF_REPO_LOCATION"
-ENV_STORAGE_DATA = f"{PROJECT}_DATA_STORAGE_LOCATION"
-ENV_LOG_DATA = f"{PROJECT}_LOG_FILE_LOCATION"
-ENV_LOCAL_SETTINGS = f"{PROJECT}_LOCAL_SETTINGS"
+MANDATORY_ENVIRONMENT_VARIABLES = [
+    "PROJECT",
+    "SITE_ID",
+]
 
-ENV_VARIABLES = [globals()[x] for x in globals() if x.startswith('ENV_PLATO_')]
+# The environment variables that are known to be used by the project. These environment variables shall be set
+# as ${PROJECT}_<variable name>, e.g. PLATO_DATA_STORAGE_LOCATION. For each of these variables, there is a
+# corresponding function that will return the value of the environment variable.
 
-__all__ = [
-    "get_data_storage_location",
-    "get_conf_data_location",
-    "get_log_file_location",
-    *ENV_VARIABLES
+KNOWN_PROJECT_ENVIRONMENT_VARIABLES = [
+    "DATA_STORAGE_LOCATION",
+    "CONF_DATA_LOCATION",
+    "LOG_FILE_LOCATION",
+    "LOCAL_SETTINGS",
 ]
 
 
-def get_data_storage_location(setup=None, site_id: str = None) -> str:
+def initialize():
     """
-    Returns the full path of the data storage location for the Site as
-    in the given Setup. If the Setup is not given, it is requested from the
-    configuration manager unless the `site_id` argument is given.
+    Initialize the environment variables that are required for the CGSE to function properly.
+    This function will print a warning if any of the mandatory environment variables is not set.
+
+    This function is automatically called on import and can be called whenever the environment
+    variables have been changed, e.g. in unit tests.
+    """
+
+    global _env
+
+    for name in MANDATORY_ENVIRONMENT_VARIABLES:
+        try:
+            _env.set(name, os.environ[name])
+        except KeyError:
+            warnings.warn(
+                f"The environment variable {name} is not set. {name} is required to define the project settings and "
+                f"environment variables. Please set the environment variable {name} before proceeding."
+            )
+            _env.set(name, NoValue())
+
+    for gen_var_name in KNOWN_PROJECT_ENVIRONMENT_VARIABLES:
+        template = "{PROJECT}_" + gen_var_name
+        env_var = template.format(PROJECT=_env.get("PROJECT"))
+        _env.set(gen_var_name, os.environ.get(env_var, NoValue()))
+
+
+class _Env:
+    """Internal class that keeps track of the environment variables."""
+
+    def __init__(self):
+        self._env = {}
+
+    def set(self, key, value):
+        self._env[key] = value
+
+    def get(self, key) -> str:
+        return self._env.get(key, NoValue())
+
+
+_env = _Env()
+
+
+class NoValue:
+    """
+    Represents a no value object, an environment variable that was not set.
+
+    The truth value of this object is always False, and it is equal to any other NoValue object.
+    """
+
+    def __eq__(self, other):
+        if isinstance(other, NoValue):
+            return True
+        return False
+
+    def __hash__(self):
+        return id(self)
+
+    def __bool__(self):
+        return False
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}"
+
+
+# The module needs to be initialized before it can be used.
+initialize()
+
+
+def _check_no_value(var_name, value):
+    if value == NoValue():
+        project = _env.get("PROJECT")
+        env_name = var_name if var_name == "SITE_ID" else f"{project}_{var_name}"
+        raise ValueError(
+            f"The environment variable {env_name} is not set. "
+            f"Please set the environment variable before proceeding."
+        )
+
+
+def get_data_storage_location_env_name() -> str:
+    project = _env.get("PROJECT")
+    return f"{project}_DATA_STORAGE_LOCATION"
+
+
+def get_data_storage_location(site_id: str = None) -> str:
+    """
+    Returns the full path of the data storage location for the given site_id.
+
+    If the site_id is None, it is determined from the environment variable SITE_ID.
+
+    If the ${PROJECT}_DATA_STORAGE_LOCATION environment variable does not end with the site_id,
+    the site_id will be appended to the path on return.
 
     Note: when you specify the `site_id` as an argument, it takes precedence
-          over the site_id that is specified in the Setup.
+          over the SITE_ID environment variable.
 
     Args:
-        setup: the Setup from which the Camera name and Site ID are taken
-        site_id: the site identifier (to be used instead of the site_id in the Setup)
+        site_id: the site identifier (to be used instead of the SITE_ID environment variable)
 
     Returns:
         The full path of data storage location as a string.
 
     Raises:
-        A ValueError when no Setup can be loaded.
+        A ValueError when the SITE_ID or the ${PROJECT}_DATA_STORAGE_LOCATION is not set.
     """
+    global _env
 
-    # FIXME: this should be made independent of PLATO, maybe use CGSE_STORAGE_LOCATION as environment variable.
+    site_id = site_id or _env.get("SITE_ID")
+    _check_no_value("SITE_ID", site_id)
 
-    # FIXME: use CGSE_SITE_ID if Setup can not be determined.
+    data_root = _env.get("DATA_STORAGE_LOCATION")
+    _check_no_value("DATA_STORAGE_LOCATION", data_root)
 
-    import os
-
-    if site_id is None:
-
-        from egse.setup import Setup
-        from egse.state import GlobalState
-        setup: Setup = setup or GlobalState.setup
-
-        if setup is None:
-            raise ValueError(
-                "Could not determine Setup, which is None, even after loading from the configuration manager."
-            )
-
-        site = setup.site_id
-    else:
-        site = site_id
-
-    data_root = os.environ[ENV_STORAGE_DATA]
     data_root = data_root.rstrip('/')
 
-    return data_root if data_root.endswith(site) else f"{data_root}/{site}"
+    return data_root if data_root.endswith(site_id) else f"{data_root}/{site_id}"
 
 
-def get_conf_data_location(setup=None) -> str:
+def get_conf_data_location_env_name() -> str:
+    project = _env.get("PROJECT")
+    return f"{project}_CONF_DATA_LOCATION"
+
+
+def get_conf_data_location(site_id: str = None) -> str:
     """
-    Returns the full path of the location of the Setups for the Site.
-    If the Setup is not given, it is requested from the configuration manager.
+    Returns the full path of the location of the configuration data for the Site.
+
+    If the site_id is None, it is determined from the environment variable SITE_ID.
+
+    When the ${PROJECT}_CONF_DATA_LOCATION environment variable is not set, the configuration data
+    location will be the ${PROJECT}_DATA_STORAGE_LOCATION + '/conf'.
 
     Args:
-        setup: the Setup from which the Camera name and Site ID are taken
+        site_id: the site identifier (to be used instead of the SITE_ID environment variable)
 
     Returns:
-        The full path of location of the Setups as a string.
+        The full path of location of the configuration data as a string.
 
     Raises:
-        A ValueError when no Setup can be loaded.
+        A ValueError when the SITE_ID or the ${PROJECT}_DATA_STORAGE_LOCATION is not set.
     """
 
-    data_root = get_data_storage_location(setup=setup)
+    conf_data_root = _env.get("CONF_DATA_LOCATION")
 
-    return f"{data_root}/conf"
+    if not conf_data_root:
+        try:
+            data_root = get_data_storage_location(site_id=site_id)
+        except ValueError:
+            raise ValueError(
+                f"Could not determine the location of the configuration files. "
+                f"The environment variable {get_conf_data_location_env_name()} is not set and also the "
+                f"data storage location is unknown."
+            )
+
+        data_root = data_root.rstrip('/')
+        conf_data_root = f"{data_root}/conf"
+
+    return conf_data_root
 
 
-def get_log_file_location() -> str:
+def get_log_file_location_env_name():
+    project = _env.get("PROJECT")
+    return f"{project}_LOG_FILE_LOCATION"
+
+
+def get_log_file_location(site_id: str = None) -> str:
     """
     Returns the full path of the location of the log files. The log file location is read from the environment
-    variable PLATO_LOG_FILE_LOCATION. The location shall be independent of the Setup, Camera ID or any other
-    setting that is subject to change.
+    variable ${PROJECT}_LOG_FILE_LOCATION. The location shall be independent of any setting that is subject to change.
 
     If the environment variable is not set, a default log file location is created from the data storage location as
-    follows: $PLATO_DATA_STORAGE_LOCATION/<SITE_ID>/log.
+    follows: <PROJECT>_DATA_STORAGE_LOCATION/<SITE_ID>/log.
+
+    Args:
+        site_id: the site identifier
 
     Returns:
         The full path of location of the log files as a string.
+
+    Raises:
+        A ValueError when the SITE_ID or the ${PROJECT}_DATA_STORAGE_LOCATION is not set.
+
     """
 
-    # FIXME: this should be made independent of PLATO, maybe put the log file in the cwd unless an environment
-    #        variable CGSE_LOG_FILE_LOCATION is defined and the location exists and is writable.
+    log_data_root = _env.get("LOG_FILE_LOCATION")
 
-    import os
-
-    try:
-        log_data_root = os.environ[ENV_LOG_DATA]
-    except KeyError:
-        data_root = os.environ[ENV_STORAGE_DATA]
+    if not log_data_root:
+        try:
+            data_root = get_data_storage_location(site_id=site_id)
+        except ValueError:
+            raise ValueError(
+                f"Could not determine the location of the log files. "
+                f"The environment variable {get_log_file_location_env_name()} is not set and also the "
+                f"data storage location is unknown."
+            )
         data_root = data_root.rstrip('/')
-
-        from egse.settings import get_site_id
-        site = get_site_id()
-
-        log_data_root = f"{data_root}/{site}/log"
+        log_data_root = f"{data_root}/log"
 
     return log_data_root
+
+
+def get_local_settings_env_name() -> str:
+    project = _env.get("PROJECT")
+    return f"{project}_LOCAL_SETTINGS"
+
+
+def get_local_settings() -> str:
+    """Returns the fully qualified filename of the local settings YAML file."""
+
+    local_settings = _env.get("LOCAL_SETTINGS")
+
+    if not Path(local_settings).exists():
+        warnings.warn(
+            f"The local settings '{local_settings}' doesn't exist. As a result, "
+            f"the local settings for your project will not be loaded."
+        )
+
+    return local_settings or None
 
 
 ignore_m_warning('egse.env')
@@ -130,11 +288,8 @@ ignore_m_warning('egse.env')
 if __name__ == "__main__":
 
     import argparse
-    import os
     import sys
     import rich
-
-    from egse.config import get_common_egse_root
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -152,11 +307,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+
     def check_env_dir(env_var: str):
 
-        value = os.environ.get(env_var)
+        value = _env.get(env_var)
 
-        if value is None:
+        if value == NoValue():
             value = "[bold red]not set"
         elif not value.startswith('/'):
             value = f"[default]{value} [bold orange3](this is a relative path!)"
@@ -171,9 +327,9 @@ if __name__ == "__main__":
 
     def check_env_file(env_var: str):
 
-        value = os.environ.get(env_var)
+        value = _env.get(env_var)
 
-        if value is None:
+        if not value:
             value = "[bold red]not set"
         elif not os.path.exists(value):
             value = f"[default]{value} [bold red](location doesn't exist!)"
@@ -181,18 +337,24 @@ if __name__ == "__main__":
             value = f"[default]{value}"
         return value
 
+
     rich.print("Environment variables:")
 
-    for var in ENV_VARIABLES:
+    project = _env.get("PROJECT")
+
+    for var in MANDATORY_ENVIRONMENT_VARIABLES:
+        rich.print(f"    {var} = {_env.get(var)}")
+    for var in KNOWN_PROJECT_ENVIRONMENT_VARIABLES:
         if var.endswith("_SETTINGS"):
-            rich.print(f"    {var} = {check_env_file(var)}")
+            rich.print(f"    {project}_{var} = {check_env_file(var)}")
         else:
-            rich.print(f"    {var} = {check_env_dir(var)}")
+            rich.print(f"    {project}_{var} = {check_env_dir(var)}")
 
     rich.print()
     rich.print("Generated locations and filenames")
 
     with all_logging_disabled():
+        warnings.filterwarnings("ignore", category=UserWarning)
         try:
             rich.print(f"    {get_data_storage_location() = }", flush=True)
             location = get_data_storage_location()
@@ -217,6 +379,14 @@ if __name__ == "__main__":
         except ValueError as exc:
             rich.print(f"    get_log_file_location() = [red]{exc}[/]")
 
+        try:
+            rich.print(f"    {get_local_settings() = }", flush=True)
+            location = get_local_settings()
+            if not Path(location).exists():
+                rich.print("[red]ERROR: The local settings file doesn't exist![/]")
+        except ValueError as exc:
+            rich.print(f"    get_local_settings() = [red]{exc}[/]")
+
     if args.full:
         rich.print()
         rich.print(f"    PYTHONPATH=[default]{os.environ.get('PYTHONPATH')}")
@@ -227,43 +397,38 @@ if __name__ == "__main__":
         path_msg = "\n      ".join(os.environ.get("PATH").split(":"))
         rich.print(f"    PATH=[\n      {path_msg}\n    ]")
 
-    help_msg = f"""
-[bold]{ENV_COMMON_EGSE}[/bold]:
-    This variable should point to the root of the working copy of the 'plato-common-egse' 
-    project. Its value is usually '~/git/plato-common-egse' which is considered the default 
-    location.
-
-[bold]{ENV_INSTALL}[/bold]:
-    This variable shall point to the location where the CGSE will be installed and is 
+    help_msg = """
+[bold]PROJECT_INSTALL_LOCATION[/bold]:
+    This variable shall point to the location where the CGSE will be installed and is
     usually set to `/cgse`. The variable is used by the [blue]update_cgse[/blue] script.
 
-[bold]{ENV_CONF_DATA}[/bold]:
+[bold]PROJECT_CONF_DATA_LOCATION[/bold]:
     This directory is the root folder for all the Setups of the site, the site is part
     of the name. By default, this directory is located in the overall data storage folder.
 
-[bold]{ENV_CONF_REPO}[/bold]:
-    This variable is the root of the working copy of the 'plato-cgse-conf' project. 
+[bold]PROJECT_CONF_REPO_LOCATION[/bold]:
+    This variable is the root of the working copy of the 'plato-cgse-conf' project.
     The value is usually set to `~/git/plato-cgse-conf`.
 
-[bold]{ENV_STORAGE_DATA}[/bold]:
+[bold]PROJECT_DATA_STORAGE_LOCATION[/bold]:
     This directory contains all the data files from the control servers and other
-    components. This folder is the root folder for all data from all cameras and 
-    all sites. Below this folder shall be a folder for each of the cameras and in 
-    there a sub-folder for each of the sites where that camera was tested. The 
+    components. This folder is the root folder for all data from all cameras and
+    all sites. Below this folder shall be a folder for each of the cameras and in
+    there a sub-folder for each of the sites where that camera was tested. The
     hierarchy is therefore: `$PLATO_DATA_STORAGE_LOCATION/<camera name>/<site id>.
-    Each of those folder shall contain at least the sub-folder [blue]daily[/blue], and [blue]obs[/blue]. 
-    
-    There is also a file called [blue]obsid-table-<site id>.txt[/blue] which is maintained by 
+    Each of those folder shall contain at least the sub-folder [blue]daily[/blue], and [blue]obs[/blue].
+
+    There is also a file called [blue]obsid-table-<site id>.txt[/blue] which is maintained by
     the configuration manager and contains information about the observations that
     were run and the commands to start those observation.
 
-[bold]{ENV_LOG_DATA}[/bold]:
-    This directory contains the log files with all messages that were sent to the 
+[bold]PROJECT_LOG_FILE_LOCATION[/bold]:
+    This directory contains the log files with all messages that were sent to the
     logger control server. The log files are rotated on a daily basis at midnight UTC.
     By default, this directory is also located in the overall data storage folder.
 
-[bold]{ENV_LOCAL_SETTINGS}[/bold]:
-    This file is used for local site-specific settings. When the environment 
+[bold]PROJECT_LOCAL_SETTINGS[/bold]:
+    This file is used for local site-specific settings. When the environment
     variable is not set, no local settings will be loaded. By default, this variable
     is assumed to be '/cgse/local_settings.yaml'.
 """

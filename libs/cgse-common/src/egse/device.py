@@ -12,8 +12,10 @@ class DeviceConnectionState(IntEnum):
     """Defines connection states for device connections."""
 
     # We do not use zero '0' as the connected state to prevent a state to be set
-    # to connected by default without it explicitly being set.
+    # to connected by default without it explicitly being set. Therefore, 0 will
+    # be the state where the connection is not explicitly set.
 
+    DEVICE_CONNECTION_NOT_SET = 0
     DEVICE_CONNECTED = 1
     DEVICE_NOT_CONNECTED = 2
 

@@ -23,7 +23,7 @@ dependencies = [
     "cgse-core",
     "cgse-gui",
     "cgse-coordinates",
-    "PyQt5",
+    "PyQt5>=5.15.11",
     "paramiko",
     "invoke"
 ]

@@ -20,8 +20,8 @@ keywords = [
 ]
 dependencies = [
     "cgse-core",
-    "textual",
-    "rich",
+    "textual>=1.0.0",
+    "rich>=13.9.4",
 ]
 
 [project.optional-dependencies]

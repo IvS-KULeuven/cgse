@@ -29,6 +29,7 @@ import subprocess  # For executing a shell command
 import sys
 import time
 from collections import namedtuple
+from contextlib import contextmanager
 from pathlib import Path
 from types import FunctionType
 from types import ModuleType
@@ -36,7 +37,6 @@ from typing import Any
 from typing import Callable
 from typing import Iterable
 from typing import List
-from typing import NamedTuple
 from typing import Optional
 from typing import Tuple
 from typing import Union
@@ -51,12 +51,6 @@ TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%f%z"
 
 logger = logging.getLogger(__name__)
 
-from contextlib import contextmanager
-import logging
-
-
-# Code below is copied from https://gist.github.com/simon-weber/7853144
-
 
 @contextmanager
 def all_logging_disabled(highest_level=logging.CRITICAL, flag=True):
@@ -68,6 +62,7 @@ def all_logging_disabled(highest_level=logging.CRITICAL, flag=True):
             This would only need to be changed if a custom level greater than CRITICAL is defined.
         flag: True to disable all logging [default=True]
     """
+    # Code below is copied from https://gist.github.com/simon-weber/7853144
     # two kind-of hacks here:
     #    * can't get the highest logging level in effect => delegate to the user
     #    * can't get the current module-level override => use an undocumented
@@ -939,14 +934,17 @@ def env_var(**kwargs):
     try:
         for k, v in kwargs.items():
             saved_env[k] = os.environ.get(k)
-            os.environ[k] = v
+            if v is None:
+                del os.environ[k]
+            else:
+                os.environ[k] = v
         yield
     finally:
         for k, v in saved_env.items():
-            if v is not None:
-                os.environ[k] = v
-            else:
+            if v is None:
                 del os.environ[k]
+            else:
+                os.environ[k] = v
 
 
 def filter_by_attr(elements: Iterable, **attrs) -> List:
@@ -1121,6 +1119,25 @@ def is_namespace(module) -> bool:
 
 
 def get_package_location(module) -> List[Path]:
+    """
+    Retrieves the file system locations associated with a Python package.
+
+    This function takes a module, module name, or fully qualified module path,
+    and returns a list of Path objects representing the file system locations
+    associated with the package. If the module is a namespace package, it returns
+    the paths of all namespaces; otherwise, it returns the location of the module.
+
+    Args:
+        module (Union[FunctionType, ModuleType, str]): The module or module name to
+            retrieve locations for.
+
+    Returns:
+        List[Path]: A list of Path objects representing the file system locations.
+
+    Note:
+        If the module is not found or is not a valid module, an empty list is returned.
+
+    """
 
     if isinstance(module, FunctionType):
         module_name = module.__module__
@@ -1133,7 +1150,7 @@ def get_package_location(module) -> List[Path]:
 
     try:
         module = importlib.import_module(module)
-    except TypeError as exc:
+    except TypeError:
         return []
 
     if is_namespace(module):
@@ -1180,7 +1197,7 @@ def get_module_location(arg) -> Optional[Path]:
 
     try:
         module = importlib.import_module(module_name)
-    except TypeError as exc:
+    except TypeError:
         return None
 
     if is_namespace(module):

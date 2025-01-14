@@ -20,6 +20,8 @@ from typing import Union
 
 import git
 
+from egse.decorators import deprecate
+
 _HERE = Path(__file__).parent.resolve()
 _LOGGER = logging.getLogger(__name__)
 
@@ -130,7 +132,7 @@ def find_dirs(pattern: str, root: str = None):
                 yield Path(path) / name
 
 
-def find_files(pattern: str, root: str = None, in_dir: str = None):
+def find_files(pattern: str, root: PurePath | str = None, in_dir: str = None):
     """
     Generator for returning file paths from a top folder, matching the pattern.
 
@@ -202,7 +204,7 @@ def find_file(name: str, root: str = None, in_dir: str = None) -> Optional[Path]
 
 
 def find_root(
-    path: Union[str, PurePath], tests: Tuple[str, ...] = (), default: str = None
+    path: Union[str, PurePath] | None, tests: Tuple[str, ...] = (), default: str = None
 ) -> Union[PurePath, None]:
     """
     Find the root folder based on the files in ``tests``.
@@ -240,6 +242,8 @@ def find_root(
 
 
 @lru_cache(maxsize=16)
+@deprecate(reason="the concept of CGSE root doesn't exist in a monorepo.",
+           alternative="a case-by-case alternative.")
 def get_common_egse_root(path: Union[str, PurePath] = None) -> Optional[PurePath]:
     """
     Returns the absolute path to the installation directory for the Common-EGSE.
