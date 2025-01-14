@@ -29,6 +29,7 @@ __all__ = [
     "get_data_storage_location",
     "get_conf_data_location",
     "get_log_file_location",
+    "get_local_settings",
 ]
 
 import os
@@ -54,6 +55,7 @@ KNOWN_PROJECT_ENVIRONMENT_VARIABLES = [
     "DATA_STORAGE_LOCATION",
     "CONF_DATA_LOCATION",
     "LOG_FILE_LOCATION",
+    "LOCAL_SETTINGS",
 ]
 
 
@@ -136,7 +138,7 @@ def _check_no_value(var_name, value):
         )
 
 
-def get_data_storage_location_env_name():
+def get_data_storage_location_env_name() -> str:
     project = _env.get("PROJECT")
     return f"{project}_DATA_STORAGE_LOCATION"
 
@@ -175,7 +177,7 @@ def get_data_storage_location(site_id: str = None) -> str:
     return data_root if data_root.endswith(site_id) else f"{data_root}/{site_id}"
 
 
-def get_conf_data_location_env_name():
+def get_conf_data_location_env_name() -> str:
     project = _env.get("PROJECT")
     return f"{project}_CONF_DATA_LOCATION"
 
@@ -258,6 +260,25 @@ def get_log_file_location(site_id: str = None) -> str:
     return log_data_root
 
 
+def get_local_settings_env_name() -> str:
+    project = _env.get("PROJECT")
+    return f"{project}_LOCAL_SETTINGS"
+
+
+def get_local_settings() -> str:
+    """Returns the fully qualified filename of the local settings YAML file."""
+
+    local_settings = _env.get("LOCAL_SETTINGS")
+
+    if not Path(local_settings).exists():
+        warnings.warn(
+            f"The local settings '{local_settings}' doesn't exist. As a result, "
+            f"the local settings for your project will not be loaded."
+        )
+
+    return local_settings or None
+
+
 ignore_m_warning('egse.env')
 
 if __name__ == "__main__":
@@ -315,18 +336,21 @@ if __name__ == "__main__":
 
     rich.print("Environment variables:")
 
+    project = _env.get("PROJECT")
+
     for var in MANDATORY_ENVIRONMENT_VARIABLES:
         rich.print(f"    {var} = {_env.get(var)}")
     for var in KNOWN_PROJECT_ENVIRONMENT_VARIABLES:
         if var.endswith("_SETTINGS"):
-            rich.print(f"    {var} = {check_env_file(var)}")
+            rich.print(f"    {project}_{var} = {check_env_file(var)}")
         else:
-            rich.print(f"    {var} = {check_env_dir(var)}")
+            rich.print(f"    {project}_{var} = {check_env_dir(var)}")
 
     rich.print()
     rich.print("Generated locations and filenames")
 
     with all_logging_disabled():
+        warnings.filterwarnings("ignore", category=UserWarning)
         try:
             rich.print(f"    {get_data_storage_location() = }", flush=True)
             location = get_data_storage_location()
@@ -350,6 +374,14 @@ if __name__ == "__main__":
                 rich.print("[red]ERROR: The generated log files location doesn't exist![/]")
         except ValueError as exc:
             rich.print(f"    get_log_file_location() = [red]{exc}[/]")
+
+        try:
+            rich.print(f"    {get_local_settings() = }", flush=True)
+            location = get_local_settings()
+            if not Path(location).exists():
+                rich.print("[red]ERROR: The local settings file doesn't exist![/]")
+        except ValueError as exc:
+            rich.print(f"    get_local_settings() = [red]{exc}[/]")
 
     if args.full:
         rich.print()
