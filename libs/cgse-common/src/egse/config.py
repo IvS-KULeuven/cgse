@@ -20,6 +20,8 @@ from typing import Union
 
 import git
 
+from egse.decorators import deprecate
+
 _HERE = Path(__file__).parent.resolve()
 _LOGGER = logging.getLogger(__name__)
 
@@ -240,6 +242,8 @@ def find_root(
 
 
 @lru_cache(maxsize=16)
+@deprecate(reason="the concept of CGSE root doesn't exist in a monorepo.",
+           alternative="a case-by-case alternative.")
 def get_common_egse_root(path: Union[str, PurePath] = None) -> Optional[PurePath]:
     """
     Returns the absolute path to the installation directory for the Common-EGSE.
