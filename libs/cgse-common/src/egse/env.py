@@ -27,9 +27,13 @@ Do not use the environment variables directly, but use the functions provided by
 """
 __all__ = [
     "get_data_storage_location",
+    "get_data_storage_location_env_name",
     "get_conf_data_location",
+    "get_conf_data_location_env_name",
     "get_log_file_location",
+    "get_log_file_location_env_name",
     "get_local_settings",
+    "get_local_settings_env_name",
 ]
 
 import os
