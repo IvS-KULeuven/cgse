@@ -1,3 +1,9 @@
+__all__ = [
+    "get_housekeeping",
+    "convert_hk_names",
+    "read_conversion_dict",
+    "TmDictionaryColumns",
+]
 import csv
 import datetime
 import logging
@@ -22,7 +28,7 @@ from egse.system import read_last_lines
 from egse.system import str_to_datetime
 from egse.system import time_since_epoch_1958
 
-logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 SITE_ID = Settings.load("SITE").ID
 
@@ -441,7 +447,7 @@ def _get_housekeeping_daily(hk_name: str, data_dir, time_window: int = None, set
 
         else:
 
-            logger.warning(f"No HK available for {origin} on "
+            _LOGGER.warning(f"No HK available for {origin} on "
                            f"{start_time.day}/{start_time.month}/{start_time.year}")
 
         day = (start_time + datetime.timedelta(days=1)).date()  # The day after the first day
@@ -472,7 +478,7 @@ def _get_housekeeping_daily(hk_name: str, data_dir, time_window: int = None, set
 
             else:
 
-                logger.warning(f"No HK available for {origin} on {day.day}/{day.month}/{day.year}")
+                _LOGGER.warning(f"No HK available for {origin} on {day.day}/{day.month}/{day.year}")
 
             day += datetime.timedelta(days=1)
 
@@ -691,8 +697,8 @@ def read_conversion_dict(storage_mnemonic: str, use_site: bool = False, setup: O
     else:
 
         if len(original_name_col) != len(correct_name_col):
-            logger.error(f"Name columns in TM dictionary have different length: "
-                         f"{len(original_name_col)} != {len(correct_name_col)}")
+            _LOGGER.error(f"Name columns in TM dictionary have different length: "
+                          f"{len(original_name_col)} != {len(correct_name_col)}")
 
         return dict(zip(original_name_col, correct_name_col))
 

@@ -935,14 +935,16 @@ def env_var(**kwargs):
         for k, v in kwargs.items():
             saved_env[k] = os.environ.get(k)
             if v is None:
-                del os.environ[k]
+                if k in os.environ:
+                    del os.environ[k]
             else:
                 os.environ[k] = v
         yield
     finally:
         for k, v in saved_env.items():
             if v is None:
-                del os.environ[k]
+                if k in os.environ:
+                    del os.environ[k]
             else:
                 os.environ[k] = v
 

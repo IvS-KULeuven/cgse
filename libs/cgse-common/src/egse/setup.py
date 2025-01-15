@@ -44,10 +44,10 @@ Some of the information in the Setup is interpreted in a special way, i.e. some 
 processed before returning. Examples are the device classes and calibration/data files. The
 following values are treated special if they start with:
 
-* `class//`: the class in instantiated and the object is returned
-* `csv//`: the CSV file is loaded and a numpy array is returned
-* `yaml//`: the YAML file is loaded and a dictionary is returned
-* `enum//`: the enumeration is created dynamically and the object is returned
+* `class//`: instantiate the class and return the object
+* `csv//`: load the CSV file and return a numpy array
+* `yaml//`: load the YAML file and return a dictionary
+* `enum//`: dynamically create the enumeration and return the Enum object
 
 #### Device Classes
 
@@ -63,7 +63,7 @@ return the device object. As an example, the following defines the Hexapod devic
     >>> setup.gse.hexapod.device.is_homing_done()
     False
     >>> setup.gse.hexapod.device.info()  # doctest: +ELLIPSIS
-    'Info about the PunaSimulator...
+    'Info about the PunaSimulator...'
 
 In the above example you see that we can call the `is_homing_done()` and `info()` methodes
 directly on the device by navigating the Setup. It would however be better (more performant) to
@@ -99,7 +99,20 @@ Note: the resource location is always relative to the path defined by the PLATO_
 environment variable.
 
 """
+
 from __future__ import annotations
+
+__all__ = [
+    "Setup",
+    "navdict",  # noqa: ignore typo
+    "list_setups",
+    "load_setup",
+    "get_setup",
+    "submit_setup",
+    "SetupError",
+    "load_last_setup_id",
+    "save_last_setup_id",
+]
 
 import enum
 import importlib
@@ -117,7 +130,11 @@ import rich
 import yaml
 from rich.tree import Tree
 
-from egse.control import Failure
+from egse.env import get_conf_repo_location
+from egse.env import get_conf_repo_location_env_name
+from egse.env import get_data_storage_location
+from egse.response import Failure
+from egse.env import get_conf_data_location
 from egse.system import format_datetime
 from egse.system import sanity_check
 from egse.system import walk_dict_tree
@@ -131,9 +148,10 @@ class SetupError(Exception):
 
 
 def _load_class(class_name: str):
-    """Find and returns a class based on the fully qualified name.
+    """
+    Find and returns a class based on the fully qualified name.
 
-    A class name can be preceded with the string `class//`. This is used in YAML
+    A class name can be preceded with the string `class//` or `factory//`. This is used in YAML
     files where the class is then instantiated on load.
 
     Args:
@@ -155,7 +173,7 @@ def _load_csv(resource_name: str):
 
     parts = resource_name[5:].rsplit("/", 1)
     [in_dir, fn] = parts if len(parts) > 1 else [None, parts[0]]
-    conf_location = os.environ['PLATO_CONF_DATA_LOCATION']
+    conf_location = get_conf_data_location()
     try:
         csv_location = Path(conf_location) / in_dir / fn
         content = genfromtxt(csv_location, delimiter=",", skip_header=1)
@@ -198,7 +216,7 @@ def _load_yaml(resource_name: str):
 
     parts = resource_name[6:].rsplit("/", 1)
     [in_dir, fn] = parts if len(parts) > 1 else [None, parts[0]]
-    conf_location = os.environ['PLATO_CONF_DATA_LOCATION']
+    conf_location = get_conf_data_location()
     try:
         yaml_location = Path(conf_location) / in_dir / fn
         content = NavigableDict(Settings.load(filename=yaml_location, add_local_settings=False))
@@ -246,22 +264,19 @@ def _parse_filename_for_setup_id(filename: str):
 
     try:
         return match[2]  # match[2] is setup_id
-    except (IndexError, TypeError) as exc:
+    except (IndexError, TypeError):
         return None
 
 
 def get_last_setup_id_file_path(site_id: str = None) -> Path:
     """
     Return the fully expanded file path of the file containing the last loaded Setup in the configuration manager.
+    The default location for this file is the data storage location.
 
     Args:
-        site_id: The SITE identifier
+        site_id: The SITE identifier (overrides the SITE_ID environment variable)
 
     """
-    from egse.env import get_data_storage_location
-    from egse.settings import Settings
-
-    site_id = site_id or Settings.load("SITE").ID
     location = get_data_storage_location(site_id=site_id)
 
     return Path(location).expanduser().resolve() / "last_setup_id.txt"
@@ -510,11 +525,10 @@ class NavigableDict(dict):
             ValueError: when the key doesn't start with an underscore.
         """
         if not key.startswith("_"):
-            raise ValueError(
-                f"Invalid argument key='{key}', must start with underscore character '_'."
-            )
+            raise ValueError(f"Invalid argument key='{key}', must start with underscore character '_'.")
+
         try:
-            self.__dict__[key]
+            _ = self.__dict__[key]
             return True
         except KeyError:
             return False
@@ -614,11 +628,15 @@ class NavigableDict(dict):
         return list(self.__dict__["_memoized"].keys())
 
 
+navdict = NavigableDict  # noqa: ignore typo
+"""Shortcut for NavigableDict and more Pythonic."""
+
+
 class Setup(NavigableDict):
     """The Setup class represents a version of the configuration of the test facility, the
     test setup and the Camera Under Test (CUT)."""
 
-    def __init__(self, nav_dict: NavigableDict = None):
+    def __init__(self, nav_dict: NavigableDict | dict = None):
         super().__init__(nav_dict or {})
 
     @staticmethod
@@ -722,10 +740,9 @@ class Setup(NavigableDict):
     @staticmethod
     def compare(setup_1: NavigableDict, setup_2: NavigableDict):
         from egse.device import DeviceInterface
-        from egse.dpu import DPUSimulator
         from deepdiff import DeepDiff
 
-        return DeepDiff(setup_1, setup_2, exclude_types={DeviceInterface, DPUSimulator})
+        return DeepDiff(setup_1, setup_2, exclude_types=[DeviceInterface])
 
     # def get_devices(self):
     #     """Returns a list of devices for the current setup.
@@ -741,7 +758,7 @@ class Setup(NavigableDict):
     #     return devices
 
     @staticmethod
-    def find_devices(node: NavigableDict, devices={}):
+    def find_devices(node: NavigableDict, devices: dict = None):
         """
         Returns a dictionary with the devices that are included in the setup.  The keys
         in the dictionary are taken from the "device_name" entries in the setup file. The
@@ -755,6 +772,7 @@ class Setup(NavigableDict):
         Returns:
             - Dictionary with the devices that are included in the setup.
         """
+        devices = devices or {}
 
         for sub_node in node.values():
 
@@ -848,7 +866,11 @@ def list_setups(**attr):
     >>> list_setups(gse__hexapod__ID=4)
     """
 
-    from egse.confman import ConfigurationManagerProxy
+    try:
+        from egse.confman import ConfigurationManagerProxy
+    except ImportError:
+        print("WARNING: package 'cgse-core' is not installed, service not available.")
+        return
 
     try:
         with ConfigurationManagerProxy() as proxy:
@@ -873,16 +895,18 @@ def get_setup(setup_id: int = None):
     This function is for interactive use and consults the configuration manager server. Don't use
     this within the test script, but use the `GlobalState.setup` property instead.
     """
-    from egse.confman import ConfigurationManagerProxy
+    try:
+        from egse.confman import ConfigurationManagerProxy
+    except ImportError:
+        print("WARNING: package 'cgse-core' is not installed, service not available.")
+        return
 
     try:
         with ConfigurationManagerProxy() as proxy:
             setup = proxy.get_setup(setup_id)
         return setup
-    except ConnectionError as exc:
-        print(
-            "Could not make a connection with the Configuration Manager, no Setup returned."
-        )
+    except ConnectionError:
+        print("Could not make a connection with the Configuration Manager, no Setup returned.")
 
 
 def _check_conditions_for_get_path_of_setup_file(site_id: str) -> Path:
@@ -911,8 +935,9 @@ def _check_conditions_for_get_path_of_setup_file(site_id: str) -> Path:
         NotADirectoryError when either the repository folder or the Setups folder doesn't exist.
 
     """
-    repo_location_env = 'PLATO_CONF_REPO_LOCATION'
-    if not (repo_location := os.environ.get(repo_location_env)):
+    repo_location_env = get_conf_repo_location_env_name()
+
+    if not (repo_location := get_conf_repo_location()):
         raise LookupError(
             f"Environment variable doesn't exist, please define {repo_location_env} and try again."
         )
@@ -940,8 +965,8 @@ def get_path_of_setup_file(setup_id: int, site_id: str) -> Path:
     Returns the Path to the last Setup file for the given site_id. The last Setup file is the file
     with the largest setup_id number.
 
-    This function needs the environment variable PLATO_CONF_REPO_LOCATION to be defined as the
-    location of the repository 'plato-cgse-conf' on your disk.
+    This function needs the environment variable <PROJECT>_CONF_REPO_LOCATION to be defined as the
+    location of the repository with configuration data on your disk.
 
     Args:
         setup_id (int): the identifier for the requested Setup
@@ -1019,7 +1044,11 @@ def load_setup(
 
     # When we arrive here the Setup shall be loaded from the Configuration manager
 
-    from egse.confman import ConfigurationManagerProxy
+    try:
+        from egse.confman import ConfigurationManagerProxy
+    except ImportError:
+        print("WARNING: package 'cgse-core' is not installed, service not available. Returning an empty Setup.")
+        return Setup()
 
     if setup_id is not None:
         try:
@@ -1064,7 +1093,11 @@ def submit_setup(setup: Setup, description: str):
     #                 be replaced by this new Setup. [default=True]
     replace: bool = True
 
-    from egse.confman import ConfigurationManagerProxy
+    try:
+        from egse.confman import ConfigurationManagerProxy
+    except ImportError:
+        print("WARNING: package 'cgse-core' is not installed, service not available.")
+        return
 
     try:
         with ConfigurationManagerProxy() as proxy:
@@ -1076,27 +1109,27 @@ def submit_setup(setup: Setup, description: str):
             rich.print(f"[red]Submit failed for given Setup[/red]: {setup}")
             setup = None
         elif replace:
-            rich.print(textwrap.dedent(
-                f"""\
+            rich.print(textwrap.dedent("""\
                 [green]
-                Your new setup has been submitted and pushed to GitHub. The new setup is also 
+                Your new setup has been submitted and pushed to GitHub. The new setup is also
                 activated in the configuration manager. Load the new setup in your session with:
 
-                    setup = load_setup() 
+                    setup = load_setup()
                 [/]
                 """
             ))
         else:
-            rich.print(textwrap.dedent(
-                f"""\
-                [dark_orange]
-                Your new setup has been submitted and pushed to GitHub, but has not been
-                activated in the configuration manager. To activate this setup, use the
-                following command: 
+            rich.print(
+                textwrap.dedent(
+                    """[dark_orange]
+                    Your new setup has been submitted and pushed to GitHub, but has not been
+                    activated in the configuration manager. To activate this setup, use the
+                    following command:
 
-                    setup = load_setup({str(setup.get_id())})
-                [/]
-                """)
+                        setup = load_setup({str(setup.get_id())})
+                    [/]
+                    """
+                )
             )
 
         return setup.get_id() if setup is not None else None
@@ -1104,29 +1137,18 @@ def submit_setup(setup: Setup, description: str):
     except ConnectionError:
         rich.print("Could not make a connection with the Configuration Manager, no Setup was submitted.")
     except NotImplementedError:
-        rich.print(textwrap.dedent(
-            """\
-            Caught a NotImplementedError. That usually means the configuration manager is not running or 
-            can not be reached. Check on the egse-server if the `cm_cs` process is running. If not you will
-            need to be restart the core services.
-            """
-        ))
+        rich.print(
+            textwrap.dedent(
+                """\
+                Caught a NotImplementedError. That usually means the configuration manager is not running or
+                can not be reached. Check on the egse-server if the `cm_cs` process is running. If not you will
+                need to be restart the core services.
+                """
+            )
+        )
 
 
-__all__ = [
-    "Setup",
-    "list_setups",
-    "load_setup",
-    "get_setup",
-    "submit_setup",
-    "SetupError",
-    "load_last_setup_id",
-    "save_last_setup_id",
-]
-
-if __name__ == "__main__":
-
-    import sys
+def main(args: list = None):  # pragma: no cover
     import argparse
 
     from rich import print
@@ -1137,10 +1159,10 @@ if __name__ == "__main__":
     SITE = Settings.load("SITE")
     location = os.environ.get("PLATO_CONF_DATA_LOCATION")
     parser = argparse.ArgumentParser(
-        description=textwrap.dedent(f"""\
-            Print out the Setup for the given setup-id. The Setup will 
-            be loaded from the location given by the environment variable 
-            PLATO_CONF_DATA_LOCATION. If this env is not set, the Setup 
+        description=textwrap.dedent("""\
+            Print out the Setup for the given setup-id. The Setup will
+            be loaded from the location given by the environment variable
+            PLATO_CONF_DATA_LOCATION. If this env is not set, the Setup
             will be searched from the current directory."""
         ),
         epilog=f"PLATO_CONF_DATA_LOCATION={location}"
@@ -1150,17 +1172,21 @@ if __name__ == "__main__":
         help="the Setup ID. If not given, the last Setup will be selected.")
     parser.add_argument("--list", "-l", action="store_true", help="list available Setups.")
     parser.add_argument("--use-cm", action="store_true", help="use the configuration manager.")
-    args = parser.parse_args()
+    args = parser.parse_args(args or [])
 
     if args.use_cm:
-        from egse.confman import ConfigurationManagerProxy
+        try:
+            from egse.confman import ConfigurationManagerProxy
+        except ImportError:
+            print("WARNING: package 'cgse-core' is not installed, service not available.")
+            return
 
         with ConfigurationManagerProxy() as cm:
             if args.list:
                 print(cm.list_setups())
             else:
                 print(cm.get_setup())
-        sys.exit(0)
+        return
 
     if args.list:
         files = find_files(f"SETUP_{SITE.ID}_*_*.yaml", root=location)
@@ -1175,6 +1201,15 @@ if __name__ == "__main__":
             setup_files = find_files(f"SETUP_{SITE.ID}_*_*.yaml", root=location)
         else:
             setup_files = find_files(f"SETUP_{SITE.ID}_{setup_id:05d}_*.yaml", root=location)
-        setup_file = sorted(setup_files)[-1]
-        setup = Setup.from_yaml_file(setup_file)
-        print(setup)
+        setup_files = list(setup_files)
+        if len(setup_files) > 0:
+            setup_file = sorted(setup_files)[-1]
+            setup = Setup.from_yaml_file(setup_file)
+            print(setup)
+        else:
+            print("[red]No setup files were found.[/]")
+
+
+if __name__ == "__main__":
+    import sys
+    main(sys.argv[1:])
