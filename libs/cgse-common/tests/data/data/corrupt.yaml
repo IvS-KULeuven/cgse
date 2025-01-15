@@ -1,0 +1,11 @@
+# This is just a corrupt YAML file
+# in the sense that it doesn't follow the YAML
+# standard. The intention for this file is for 
+# use in the test_loading_problems.
+
+# The problem with this YAML file is the following line.
+# It is not allowed to have both a string (here 'arg') and
+# an object (here 'var') as the value of a key.
+group: arg
+   var: 1
+   var: 2
