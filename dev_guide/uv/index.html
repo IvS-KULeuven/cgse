@@ -36,6 +36,14 @@
         <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
       
       
+  
+  
+    
+    
+  
+  
+  <style>:root{--md-admonition-icon--note:url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M64 32C28.7 32 0 60.7 0 96v320c0 35.3 28.7 64 64 64h224V368c0-26.5 21.5-48 48-48h112V96c0-35.3-28.7-64-64-64zm384 320H336c-8.8 0-16 7.2-16 16v112l32-32 64-64z"/></svg>');}</style>
+
 
 
     
@@ -302,23 +310,6 @@ window.onload = async (event) => {
         
   
   
-  
-    <li class="md-tabs__item">
-      <a href="../../tutorial/" class="md-tabs__link">
-        
-  
-    
-  
-  Tutorial
-
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
     
   
   
@@ -525,26 +516,6 @@ window.onload = async (event) => {
       
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../../tutorial/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Tutorial
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
     
   
   
@@ -577,7 +548,7 @@ window.onload = async (event) => {
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           
@@ -593,14 +564,14 @@ window.onload = async (event) => {
             </a>
             
               
-              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_4">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Developer Guide
           </label>
@@ -699,6 +670,15 @@ window.onload = async (event) => {
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#create-a-virtual-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Create a virtual environment
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -780,7 +760,7 @@ window.onload = async (event) => {
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
           
@@ -797,8 +777,8 @@ window.onload = async (event) => {
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             User Guide
           </label>
@@ -857,6 +837,15 @@ window.onload = async (event) => {
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#create-a-virtual-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Create a virtual environment
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -890,6 +879,55 @@ window.onload = async (event) => {
 </code></pre>
 <p>If you need more specific information on installing and upgrading <code>uv</code>, please refer to the <a href="https://docs.astral.sh/uv/getting-started/installation/">official documentation</a>.</p>
 <h2 id="installing-a-python-version">Installing a Python version<a class="headerlink" href="#installing-a-python-version" title="Permanent link">&para;</a></h2>
+<p>The CGSE is guaranteed to work with Python 3.9.x. We will gradually include higher versions of Python, but currently 
+these have not been tested. So, we will for the moment stick with Python 3.9.20. Install this version as follows:</p>
+<pre><code class="language-shell">$ uv python install 3.9.20
+</code></pre>
+<div class="admonition note">
+<p class="admonition-title"><code>pyenv</code></p>
+<p>When using <code>pyenv</code> to manage your Python versions, make sure you also have the same Python version installed 
+with <code>pyenv</code> and <code>uv</code>. Otherwise you will run into the following error. This is a known issue with <code>uv</code>.</p>
+<p><code>pyenv: version `3.9.20' is not installed (set by /Users/rik/github/cgse/libs/cgse-common/.python-version)</code></p>
+</div>
+<p>You can check which Python versions are installed already on your system:</p>
+<pre><code class="language-shell">$ uv python list --only-installed
+cpython-3.12.8-macos-aarch64-none     /Users/rik/Library/Application Support/uv/python/cpython-3.12.8-macos-aarch64-none/bin/python3.12
+cpython-3.10.16-macos-aarch64-none    /Users/rik/Library/Application Support/uv/python/cpython-3.10.16-macos-aarch64-none/bin/python3.10
+cpython-3.9.21-macos-aarch64-none     /Users/rik/Library/Application Support/uv/python/cpython-3.9.21-macos-aarch64-none/bin/python3.9
+cpython-3.9.20-macos-aarch64-none     /Users/rik/Library/Application Support/uv/python/cpython-3.9.20-macos-aarch64-none/bin/python3.9
+cpython-3.9.6-macos-aarch64-none      /Library/Developer/CommandLineTools/usr/bin/python3 -&gt; ../../Library/Frameworks/Python3.framework/Versions/3.9/bin/python3
+cpython-3.8.17-macos-aarch64-none     /Users/rik/Library/Application Support/uv/python/cpython-3.8.17-macos-aarch64-none/bin/python3.8
+</code></pre>
+<h2 id="create-a-virtual-environment">Create a virtual environment<a class="headerlink" href="#create-a-virtual-environment" title="Permanent link">&para;</a></h2>
+<div class="admonition info inline end">
+<p class="admonition-title">Pin a Python version</p>
+<p>You can pin a python version with the command:</p>
+<p><code>$ uv python pin 3.9.20</code></p>
+<p><code>uv</code> will search for a pinned version in the parent folders up to the root folder or your home directory.</p>
+</div>
+<p>You can create a virtual environment with <code>uv</code> for the specific Python version as follows. The '<code>--python</code>' is optional 
+and <code>uv</code> will use the default (pinned) Python version when creating a <code>venv</code> without this option. When creating a 
+virtual environment make sure you are in the package root, e.g. <code>~/github/cgse/libs/cgse-common</code>.</p>
+<pre><code class="language-shell">$ cd ~/github/cgse/libs/cgse-common
+$ uv venv --python 3.9.20
+</code></pre>
+<p>Assuming you are in the package root where you created the virtual environment, you can now install its dependencies 
+with <code>pip install</code> as follows:</p>
+<pre><code class="language-shell">$ uv pip install -r pyproject.toml
+</code></pre>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you don't want to use the <code>uv</code> commands, you can activate the virtual environment and use the original <code>pip</code> 
+and <code>python</code> commands as you are used to.</p>
+<p><code>$ source .venv/bin/activate</code></p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>When working in a workspace, keep in mind that the commands <code>uv run</code> and <code>uv sync</code> by default work on the 
+workspace root. That means that when you run the <code>uv run pip install &lt;package&gt;</code> command, the <code>.venv</code> at the 
+workspace root will be updated or created if it didn't exist. Similar for the <code>uv sync</code> command, there is only 
+one <code>uv.lock</code> file at the root of the workspace.  </p>
+</div>
 
 
 
