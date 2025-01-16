@@ -448,6 +448,12 @@ def main(args: list | None = None):  # pragma: no cover
         action="store_true",
         help="Print help on the environment variables and paths.",
     )
+    parser.add_argument(
+        "--mkdir",
+        default=False,
+        action="store_true",
+        help="Create directory that doesn't exist.",
+    )
 
     args = parser.parse_args(args or [])
 
@@ -497,34 +503,54 @@ def main(args: list | None = None):  # pragma: no cover
     with all_logging_disabled():
         warnings.filterwarnings("ignore", category=UserWarning)
         try:
-            rich.print(f"    {get_data_storage_location() = }", flush=True)
+            rich.print(f"    {get_data_storage_location() = }", flush=True, end="")
             location = get_data_storage_location()
             if not Path(location).exists():
-                rich.print("[red]ERROR: The generated data storage location doesn't exist![/]")
+                if args.mkdir:
+                    rich.print(f"  [green]⟶ Creating data storage location: {location}[/]")
+                    Path(location).mkdir(parents=True)
+                else:
+                    rich.print("  [red]⟶ ERROR: The data storage location doesn't exist![/]")
+            else:
+                rich.print()
         except ValueError as exc:
             rich.print(f"    get_data_storage_location() = [red]{exc}[/]")
 
         try:
-            rich.print(f"    {get_conf_data_location() = }", flush=True)
+            rich.print(f"    {get_conf_data_location() = }", flush=True, end="")
             location = get_conf_data_location()
             if not Path(location).exists():
-                rich.print("[red]ERROR: The generated configuration data location doesn't exist![/]")
+                if args.mkdir:
+                    rich.print(f"  [green]⟶ Creating configuration data location: {location}[/]")
+                    Path(location).mkdir(parents=True)
+                else:
+                    rich.print("  [red]⟶ ERROR: The configuration data location doesn't exist![/]")
+            else:
+                rich.print()
         except ValueError as exc:
             rich.print(f"    get_conf_data_location() = [red]{exc}[/]")
 
         try:
-            rich.print(f"    {get_log_file_location() = }", flush=True)
+            rich.print(f"    {get_log_file_location() = }", flush=True, end="")
             location = get_log_file_location()
             if not Path(location).exists():
-                rich.print("[red]ERROR: The generated log files location doesn't exist![/]")
+                if args.mkdir:
+                    rich.print(f"  [green]⟶ Creating log files location: {location}[/]")
+                    Path(location).mkdir(parents=True)
+                else:
+                    rich.print("  [red]⟶ ERROR: The log files location doesn't exist![/]")
+            else:
+                rich.print()
         except ValueError as exc:
             rich.print(f"    get_log_file_location() = [red]{exc}[/]")
 
         try:
-            rich.print(f"    {get_local_settings() = }", flush=True)
+            rich.print(f"    {get_local_settings() = }", flush=True, end="")
             location = get_local_settings()
             if location is None or not Path(location).exists():
-                rich.print("[red]ERROR: The local settings file doesn't exist![/]")
+                rich.print("  [red]⟶ ERROR: The local settings file is not defined or doesn't exist![/]")
+            else:
+                rich.print()
         except ValueError as exc:
             rich.print(f"    get_local_settings() = [red]{exc}[/]")
 
