@@ -1,6 +1,6 @@
 [project]
 name = "plato-spw"
-version = "2025.0.1"
+version = "2025.0.2"
 description = "SpaceWire implementation for CGSE"
 authors = [
     {name = "IVS KU Leuven"}
