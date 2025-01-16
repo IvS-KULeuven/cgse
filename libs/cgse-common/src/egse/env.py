@@ -1,11 +1,12 @@
 """
-This module provides functionality to work with and check your Python environment.
+This module provides functionality to work with and check your environment variables.
 
-The module provides functions to get the location of the data storage, the configuration data, and the log files.
+The module provides functions to get/set the location of the data storage, the configuration data, and the log files.
 The locations are determined from the environment variables that are set for the project.
 
 Two important and mandatory environment variables are PROJECT and SITE_ID. The PROJECT environment variable is
-used to construct the names of the other environment variables that are specific to the project.
+used to construct the names of the other environment variables that are specific to the project. The SITE_ID
+environment variable is used in the value that is returned for some the of project specific environment variables.
 
 Mandatory environment variables:
 
@@ -16,23 +17,43 @@ The following environment variables are used by the project:
 
 - <PROJECT>_DATA_STORAGE_LOCATION: the root of the data storage location.
 - <PROJECT>_CONF_DATA_LOCATION: the location of the configuration data.
+- <PROJECT>_CONF_REPO_LOCATION: the location of the configuration data GitHub repository.
 - <PROJECT>_LOG_FILE_LOCATION: the location of the log files.
+- <PROJECT>_LOCAL_SETTINGS: the YAML file that contains site specific local settings.
 
 Do not use the environment variables directly, but use the functions provided by this module to get the locations.
 
 - get_data_storage_location(): returns the full path of the data storage location.
 - get_conf_data_location(): returns the full path of the location of the configuration data.
+- get_conf_repo_location(): returns the full path of the location of the configuration data repository.
 - get_log_file_location(): returns the full path of the location of the log files.
+- get_local_settings(): returns the fully qualified filename of the local settings YAML file.
+
+WARNING:
+
+    These environment variables shall not be changed outside the processes that use them and also not using the
+    `os.environ` within the code. For the known environment variables, use the dedicated 'setters' that are provided
+    by this module. If there is a need to change the environment variables, e.g. in unit tests, make sure to call the
+    `egse.env.initialize()` to reset the proper state.
 
 """
+from __future__ import annotations
+
 __all__ = [
     "get_data_storage_location",
+    "set_data_storage_location",
     "get_data_storage_location_env_name",
     "get_conf_data_location",
+    "set_conf_data_location",
     "get_conf_data_location_env_name",
+    "get_conf_repo_location",
+    "set_conf_repo_location",
+    "get_conf_repo_location_env_name",
     "get_log_file_location",
+    "set_log_file_location",
     "get_log_file_location_env_name",
     "get_local_settings",
+    "set_local_settings",
     "get_local_settings_env_name",
 ]
 
@@ -53,11 +74,13 @@ MANDATORY_ENVIRONMENT_VARIABLES = [
 
 # The environment variables that are known to be used by the project. These environment variables shall be set
 # as ${PROJECT}_<variable name>, e.g. PLATO_DATA_STORAGE_LOCATION. For each of these variables, there is a
-# corresponding function that will return the value of the environment variable.
+# corresponding function that will return the value of the environment variable. The environment variable is not
+# mandatory and if not set, a LookupError will be raised.
 
 KNOWN_PROJECT_ENVIRONMENT_VARIABLES = [
     "DATA_STORAGE_LOCATION",
     "CONF_DATA_LOCATION",
+    "CONF_REPO_LOCATION",
     "LOG_FILE_LOCATION",
     "LOCAL_SETTINGS",
 ]
@@ -84,9 +107,10 @@ def initialize():
             )
             _env.set(name, NoValue())
 
+    project = _env.get("PROJECT")
+
     for gen_var_name in KNOWN_PROJECT_ENVIRONMENT_VARIABLES:
-        template = "{PROJECT}_" + gen_var_name
-        env_var = template.format(PROJECT=_env.get("PROJECT"))
+        env_var = f"{project}_{gen_var_name}"
         _env.set(gen_var_name, os.environ.get(env_var, NoValue()))
 
 
@@ -118,9 +142,6 @@ class NoValue:
             return True
         return False
 
-    def __hash__(self):
-        return id(self)
-
     def __bool__(self):
         return False
 
@@ -133,6 +154,7 @@ initialize()
 
 
 def _check_no_value(var_name, value):
+    """Raise a ValueError when the value for the variable is NoValue."""
     if value == NoValue():
         project = _env.get("PROJECT")
         env_name = var_name if var_name == "SITE_ID" else f"{project}_{var_name}"
@@ -143,8 +165,28 @@ def _check_no_value(var_name, value):
 
 
 def get_data_storage_location_env_name() -> str:
+    """Returns the name of the environment variable for the project."""
     project = _env.get("PROJECT")
     return f"{project}_DATA_STORAGE_LOCATION"
+
+
+def set_data_storage_location(location: str | Path):
+    """
+    Sets the environment variable and the internal representation to the given value.
+
+    Warnings:
+        Issues a warning when the given location doesn't exist.
+    """
+    env_name = get_data_storage_location_env_name()
+
+    # Check if location exists and is readable
+    if not Path(location).exists():
+        warnings.warn(
+            f"The location you provided for the environment variable {env_name} doesn't exist: {location}."
+        )
+
+    os.environ[env_name] = location
+    _env.set('DATA_STORAGE_LOCATION', location)
 
 
 def get_data_storage_location(site_id: str = None) -> str:
@@ -153,8 +195,9 @@ def get_data_storage_location(site_id: str = None) -> str:
 
     If the site_id is None, it is determined from the environment variable SITE_ID.
 
-    If the ${PROJECT}_DATA_STORAGE_LOCATION environment variable does not end with the site_id,
-    the site_id will be appended to the path on return.
+    If the ${PROJECT}_DATA_STORAGE_LOCATION environment variable does not end with
+    the site_id, the site_id will be appended to the path on return. That means
+    the actual data storage location will always be site specific.
 
     Note: when you specify the `site_id` as an argument, it takes precedence
           over the SITE_ID environment variable.
@@ -182,8 +225,29 @@ def get_data_storage_location(site_id: str = None) -> str:
 
 
 def get_conf_data_location_env_name() -> str:
+    """Returns the name of the environment variable for the project."""
     project = _env.get("PROJECT")
     return f"{project}_CONF_DATA_LOCATION"
+
+
+def set_conf_data_location(location: str | Path):
+    """
+    Sets the environment variable and the internal representation to the given value.
+
+    Warnings:
+        Issues a warning when the given location doesn't exist.
+    """
+
+    env_name = get_conf_data_location_env_name()
+
+    # Check if location exists and is readable
+    if not Path(location).exists():
+        warnings.warn(
+            f"The location you provided for the environment variable {env_name} doesn't exist: {location}."
+        )
+
+    os.environ[env_name] = location
+    _env.set('CONF_DATA_LOCATION', location)
 
 
 def get_conf_data_location(site_id: str = None) -> str:
@@ -224,8 +288,29 @@ def get_conf_data_location(site_id: str = None) -> str:
 
 
 def get_log_file_location_env_name():
+    """Returns the name of the environment variable for the project."""
     project = _env.get("PROJECT")
     return f"{project}_LOG_FILE_LOCATION"
+
+
+def set_log_file_location(location: str | Path):
+    """
+    Sets the environment variable and the internal representation to the given value.
+
+    Warnings:
+        Issues a warning when the given location doesn't exist.
+    """
+
+    env_name = get_log_file_location_env_name()
+
+    # Check if location exists and is readable
+    if not Path(location).exists():
+        warnings.warn(
+            f"The location you provided for the environment variable {env_name} doesn't exist: {location}."
+        )
+
+    os.environ[env_name] = location
+    _env.set('LOG_FILE_LOCATION', location)
 
 
 def get_log_file_location(site_id: str = None) -> str:
@@ -265,8 +350,29 @@ def get_log_file_location(site_id: str = None) -> str:
 
 
 def get_local_settings_env_name() -> str:
+    """Returns the name of the environment variable for the project."""
     project = _env.get("PROJECT")
     return f"{project}_LOCAL_SETTINGS"
+
+
+def set_local_settings(path: str | Path):
+    """
+    Sets the environment variable and the internal representation to the given value.
+
+    Warnings:
+        Issues a warning when the given path doesn't exist.
+    """
+
+    env_name = get_local_settings_env_name()
+
+    # Check if location exists and is readable
+    if not Path(path).exists():
+        warnings.warn(
+            f"The location you provided for the environment variable {env_name} doesn't exist: {path}."
+        )
+
+    os.environ[env_name] = path
+    _env.set('LOCAL_SETTINGS', path)
 
 
 def get_local_settings() -> str:
@@ -274,7 +380,7 @@ def get_local_settings() -> str:
 
     local_settings = _env.get("LOCAL_SETTINGS")
 
-    if not Path(local_settings).exists():
+    if local_settings and not Path(local_settings).exists():
         warnings.warn(
             f"The local settings '{local_settings}' doesn't exist. As a result, "
             f"the local settings for your project will not be loaded."
@@ -283,9 +389,47 @@ def get_local_settings() -> str:
     return local_settings or None
 
 
+def get_conf_repo_location_env_name() -> str:
+    """Returns the name of the environment variable for the project."""
+    project = _env.get("PROJECT")
+    return f"{project}_CONF_REPO_LOCATION"
+
+
+def get_conf_repo_location() -> str:
+    """Returns the fully qualified name of the location of the repository with configuration and calibration data."""
+
+    location = _env.get("CONF_REPO_LOCATION")
+
+    if location and not Path(location).exists():
+        warnings.warn(f"The location of the configuration data repository doesn't exist: {location}.")
+
+    return location or None
+
+
+def set_conf_repo_location(location: str):
+    """
+    Sets the environment variable and the internal representation to the given value.
+
+    Warnings:
+        Issues a warning when the given location doesn't exist.
+    """
+
+    env_name = get_conf_repo_location_env_name()
+
+    # Check if location exists and is readable
+    if not Path(location).exists():
+        warnings.warn(
+            f"The location you provided for the environment variable {env_name} doesn't exist: {location}."
+        )
+
+    os.environ[env_name] = location
+    _env.set('CONF_REPO_LOCATION', location)
+
+
 ignore_m_warning('egse.env')
 
-if __name__ == "__main__":
+
+def main(args: list | None = None):  # pragma: no cover
 
     import argparse
     import sys
@@ -304,9 +448,14 @@ if __name__ == "__main__":
         action="store_true",
         help="Print help on the environment variables and paths.",
     )
+    parser.add_argument(
+        "--mkdir",
+        default=False,
+        action="store_true",
+        help="Create directory that doesn't exist.",
+    )
 
-    args = parser.parse_args()
-
+    args = parser.parse_args(args or [])
 
     def check_env_dir(env_var: str):
 
@@ -324,7 +473,6 @@ if __name__ == "__main__":
             value = f"[default]{value}"
         return value
 
-
     def check_env_file(env_var: str):
 
         value = _env.get(env_var)
@@ -336,7 +484,6 @@ if __name__ == "__main__":
         else:
             value = f"[default]{value}"
         return value
-
 
     rich.print("Environment variables:")
 
@@ -356,34 +503,54 @@ if __name__ == "__main__":
     with all_logging_disabled():
         warnings.filterwarnings("ignore", category=UserWarning)
         try:
-            rich.print(f"    {get_data_storage_location() = }", flush=True)
+            rich.print(f"    {get_data_storage_location() = }", flush=True, end="")
             location = get_data_storage_location()
             if not Path(location).exists():
-                rich.print("[red]ERROR: The generated data storage location doesn't exist![/]")
+                if args.mkdir:
+                    rich.print(f"  [green]⟶ Creating data storage location: {location}[/]")
+                    Path(location).mkdir(parents=True)
+                else:
+                    rich.print("  [red]⟶ ERROR: The data storage location doesn't exist![/]")
+            else:
+                rich.print()
         except ValueError as exc:
             rich.print(f"    get_data_storage_location() = [red]{exc}[/]")
 
         try:
-            rich.print(f"    {get_conf_data_location() = }", flush=True)
+            rich.print(f"    {get_conf_data_location() = }", flush=True, end="")
             location = get_conf_data_location()
             if not Path(location).exists():
-                rich.print("[red]ERROR: The generated configuration data location doesn't exist![/]")
+                if args.mkdir:
+                    rich.print(f"  [green]⟶ Creating configuration data location: {location}[/]")
+                    Path(location).mkdir(parents=True)
+                else:
+                    rich.print("  [red]⟶ ERROR: The configuration data location doesn't exist![/]")
+            else:
+                rich.print()
         except ValueError as exc:
             rich.print(f"    get_conf_data_location() = [red]{exc}[/]")
 
         try:
-            rich.print(f"    {get_log_file_location() = }", flush=True)
+            rich.print(f"    {get_log_file_location() = }", flush=True, end="")
             location = get_log_file_location()
             if not Path(location).exists():
-                rich.print("[red]ERROR: The generated log files location doesn't exist![/]")
+                if args.mkdir:
+                    rich.print(f"  [green]⟶ Creating log files location: {location}[/]")
+                    Path(location).mkdir(parents=True)
+                else:
+                    rich.print("  [red]⟶ ERROR: The log files location doesn't exist![/]")
+            else:
+                rich.print()
         except ValueError as exc:
             rich.print(f"    get_log_file_location() = [red]{exc}[/]")
 
         try:
-            rich.print(f"    {get_local_settings() = }", flush=True)
+            rich.print(f"    {get_local_settings() = }", flush=True, end="")
             location = get_local_settings()
-            if not Path(location).exists():
-                rich.print("[red]ERROR: The local settings file doesn't exist![/]")
+            if location is None or not Path(location).exists():
+                rich.print("  [red]⟶ ERROR: The local settings file is not defined or doesn't exist![/]")
+            else:
+                rich.print()
         except ValueError as exc:
             rich.print(f"    get_local_settings() = [red]{exc}[/]")
 
@@ -444,3 +611,8 @@ if __name__ == "__main__":
     #
     # PLATO_WORKDIR
     # PLATO_COMMON_EGSE_PATH - YES
+
+
+if __name__ == "__main__":
+    import sys
+    main(sys.argv[1:])

@@ -70,7 +70,7 @@ from egse.system import get_caller_info
 from egse.system import ignore_m_warning
 from egse.system import recursive_dict_update
 
-logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 class SettingsError(Exception):
@@ -146,13 +146,13 @@ class Settings:
         """
         if force or filename not in cls.__memoized_yaml:
 
-            logger.debug(f"Parsing YAML configuration file {filename}.")
+            _LOGGER.debug(f"Parsing YAML configuration file {filename}.")
 
             with open(filename, "r") as stream:
                 try:
                     yaml_document = yaml.load(stream, Loader=SAFE_LOADER)
                 except yaml.YAMLError as exc:
-                    logger.error(exc)
+                    _LOGGER.error(exc)
                     raise SettingsError(f"Error loading YAML document {filename}") from exc
 
             cls.__memoized_yaml[filename] = yaml_document
@@ -217,7 +217,7 @@ class Settings:
 
             yaml_location = pathlib.Path(location).resolve()
 
-        logger.log(5, f"yaml_location in Settings.load(location={location}) is {yaml_location}")
+        _LOGGER.debug(f"yaml_location in Settings.load(location={location}) is {yaml_location}")
 
         # Load the YAML global document
 
@@ -242,26 +242,27 @@ class Settings:
         if add_local_settings:
             try:
                 local_settings_location = get_local_settings()
-                logger.log(5, f"Using {local_settings_location} to update global settings.")
-                try:
-                    yaml_document_local = cls.read_configuration_file(
-                        local_settings_location, force=force
-                    )
-                    if yaml_document_local is None:
-                        raise FileIsEmptyError()
-                    local_settings = AttributeDict(
-                        {name: value for name, value in yaml_document_local.items()}
-                    )
-                except FileNotFoundError as exc:
-                    raise SettingsError(
-                        f"Local settings YAML file '{local_settings_location}' not found. "
-                        f"Check your environment variable {get_local_settings_env_name()}."
-                    ) from exc
-                except FileIsEmptyError:
-                    logger.warning(f"Local settings YAML file '{local_settings_location}' is empty. "
-                                   f"No local settings were loaded.")
+                if local_settings_location:
+                    _LOGGER.debug(f"Using {local_settings_location} to update global settings.")
+                    try:
+                        yaml_document_local = cls.read_configuration_file(
+                            local_settings_location, force=force
+                        )
+                        if yaml_document_local is None:
+                            raise FileIsEmptyError()
+                        local_settings = AttributeDict(
+                            {name: value for name, value in yaml_document_local.items()}
+                        )
+                    except FileNotFoundError as exc:
+                        raise SettingsError(
+                            f"Local settings YAML file '{local_settings_location}' not found. "
+                            f"Check your environment variable {get_local_settings_env_name()}."
+                        ) from exc
+                    except FileIsEmptyError:
+                        _LOGGER.warning(f"Local settings YAML file '{local_settings_location}' is empty. "
+                                       f"No local settings were loaded.")
             except KeyError:
-                logger.debug(f"The environment variable {get_local_settings_env_name()} is not defined.")
+                _LOGGER.debug(f"The environment variable {get_local_settings_env_name()} is not defined.")
 
         if group_name in (None, ""):
             global_settings = AttributeDict(

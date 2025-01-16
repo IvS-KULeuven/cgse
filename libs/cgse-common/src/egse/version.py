@@ -154,7 +154,10 @@ def get_version_installed(package_name: str) -> str:
     return version
 
 
-VERSION = get_version_from_settings_file_raw("Common-EGSE", location=HERE)
+# The version will be the installed version of the `egse.common`, because this is the package that is guaranteed
+# to be installed, and not necessarily `cgse`.
+
+VERSION = get_version_installed('cgse-common')
 
 # The __PYPI_VERSION__ is the version number that will be used for the installation.
 # The version will appear in PyPI and also as the `installed version`.
@@ -164,7 +167,6 @@ __PYPI_VERSION__ = VERSION.split('+')[0]
 
 if __name__ == "__main__":
     import rich
-    from egse.system import get_module_location
     from egse.plugin import entry_points
 
     if VERSION:
