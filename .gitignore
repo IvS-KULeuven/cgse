@@ -30,6 +30,10 @@ venv
 
 .idea
 
+# MKDOCS documentation site
+
+/site
+
 # Packaging
 
 uv.lock

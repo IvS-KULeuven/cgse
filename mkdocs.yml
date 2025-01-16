@@ -1,0 +1,81 @@
+
+# Project information
+site_name: CGSE
+site_url: https://ivs-kuleuven.github.io/cgse/
+site_author: Rik Huygen
+site_description: >-
+  Official documentation of the CGSE — Common-EGSE framework.
+
+# Repository
+
+repo_name: IvS-KULeuven/cgse
+repo_url: https://github.com/IvS-KULeuven/cgse
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - admonition
+  - def_list
+  - meta
+  - footnotes
+
+  - toc:
+      permalink: true
+      baselevel: 1
+
+theme:
+    name: material
+    custom_dir: docs/custom_theme
+    logo: images/icons/cgse-logo.svg
+    icon:
+        admonition:
+            note: fontawesome/solid/note-sticky
+    features:
+        - navigation.tabs
+        - navigation.indexes
+        - navigation.tabs.sticky
+        - navigation.footer
+        - content.code.annotate
+        - content.code.copy
+    palette:
+        - media: "(prefers-color-scheme: light)"
+          scheme: default
+          accent: purple
+          toggle:
+              icon: material/weather-sunny
+              name: Switch to dark mode
+        - media: "(prefers-color-scheme: dark)"
+          scheme: slate
+          primary: black
+          toggle:
+              icon: material/weather-night
+              name: Switch to light mode
+
+plugins:
+  search:
+
+extra_css:
+  - stylesheets/custom.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/IvS-KULeuven/cgse/
+      name: CGSE on Github
+
+nav:
+  - "index.md"
+  - Introduction:
+      - "getting_started.md"
+      - "help.md"
+  - Developer Guide:
+      - "dev_guide/index.md"
+      - "dev_guide/installation.md"
+      - "dev_guide/uv.md"
+      - "dev_guide/coding_style.md"
+      - "dev_guide/docs.md"
+  - User Guide:
+      - "user_guide/index.md"

@@ -1,0 +1,9 @@
+SITE=CSL2
+
+export PLATO_CONF_DATA_LOCATION=~/Documents/PyCharmProjects/plato-cgse-conf/data/${SITE}/conf
+export PLATO_CONF_REPO_LOCATION=~/Documents/PyCharmProjects/plato-cgse-conf
+export PLATO_DATA_STORAGE_LOCATION=~/data
+export PLATO_LOCAL_SETTINGS=~/cgse/local_settings.yaml
+
+export PYTHONSTARTUP=~/Documents/PyCharmProjects/plato-common-egse/startup.py
+
