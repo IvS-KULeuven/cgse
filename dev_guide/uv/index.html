@@ -679,6 +679,15 @@ window.onload = async (event) => {
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#building-and-publishing-all-packages" class="md-nav__link">
+    <span class="md-ellipsis">
+      Building and publishing all packages
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -846,6 +855,15 @@ window.onload = async (event) => {
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#building-and-publishing-all-packages" class="md-nav__link">
+    <span class="md-ellipsis">
+      Building and publishing all packages
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -915,19 +933,41 @@ $ uv venv --python 3.9.20
 with <code>pip install</code> as follows:</p>
 <pre><code class="language-shell">$ uv pip install -r pyproject.toml
 </code></pre>
+<p>To install the current project as an editable package:</p>
+<pre><code class="language-shell">$ uv pip install -e .
+</code></pre>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If you don't want to use the <code>uv</code> commands, you can activate the virtual environment and use the original <code>pip</code> 
 and <code>python</code> commands as you are used to.</p>
 <p><code>$ source .venv/bin/activate</code></p>
 </div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
+<h2 id="building-and-publishing-all-packages">Building and publishing all packages<a class="headerlink" href="#building-and-publishing-all-packages" title="Permanent link">&para;</a></h2>
+<p>We have chosen for one and the same version number for all packages in the <code>cgse</code> monorepo. That means that whenever 
+we make a change to one of the packages and want to release that change, all packages shall be rebuild and published.</p>
+<div class="admonition inline end warning">
+<p class="admonition-title">Inline</p>
 <p>When working in a workspace, keep in mind that the commands <code>uv run</code> and <code>uv sync</code> by default work on the 
 workspace root. That means that when you run the <code>uv run pip install &lt;package&gt;</code> command, the <code>.venv</code> at the 
 workspace root will be updated or created if it didn't exist. Similar for the <code>uv sync</code> command, there is only 
 one <code>uv.lock</code> file at the root of the workspace.  </p>
 </div>
+<p>Fortunately, with <code>uv</code>, that is done in a few commands.</p>
+<p>When you are in the monorepo root folder, you can build all packages at once. They will be placed in the <code>dist</code> folder 
+of the root package. Before building, make sure you update the version in the <code>pyproject.toml</code> of the root package 
+and then bump the versions. Before building, clean up the <code>dist</code> folder, then you can do a default <code>uv publish</code> afterwards.</p>
+<pre><code class="language-shell">$ cd &lt;monorepo root&gt;
+$ uv run bump.py
+$ rm -r dist
+$ uv build --all-packages
+</code></pre>
+<p>Publish all packages in the root dist folder to PyPI. The UV_PUBLISH_TOKEN can be defined in a (read protected) ~/.
+setenv.bash file:</p>
+<pre><code class="language-shell">$ uv publish --token $UV_PUBLISH_TOKEN
+</code></pre>
+<p>The above command will publish all package to PyPI. If you don't want the token to be in a shell variable, you can 
+omit the <code>--token</code> in the command above. You will then be asked for a username, use <code>__token__</code> as the username and 
+then provide the token as a password.</p>
 
 
 
