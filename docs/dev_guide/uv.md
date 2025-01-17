@@ -79,6 +79,12 @@ with `pip install` as follows:
 $ uv pip install -r pyproject.toml
 ```
 
+To install the current project as an editable package:
+
+```shell
+$ uv pip install -e .
+```
+
 !!! note 
 
     If you don't want to use the `uv` commands, you can activate the virtual environment and use the original `pip` 
@@ -88,10 +94,38 @@ $ uv pip install -r pyproject.toml
     $ source .venv/bin/activate
     ```
 
+## Building and publishing all packages
 
-!!! warning
+We have chosen for one and the same version number for all packages in the `cgse` monorepo. That means that whenever 
+we make a change to one of the packages and want to release that change, all packages shall be rebuild and published.
+
+!!! inline end warning
 
     When working in a workspace, keep in mind that the commands `uv run` and `uv sync` by default work on the 
     workspace root. That means that when you run the `uv run pip install <package>` command, the `.venv` at the 
     workspace root will be updated or created if it didn't exist. Similar for the `uv sync` command, there is only 
     one `uv.lock` file at the root of the workspace.  
+
+Fortunately, with `uv`, that is done in a few commands.
+
+When you are in the monorepo root folder, you can build all packages at once. They will be placed in the `dist` folder 
+of the root package. Before building, make sure you update the version in the `pyproject.toml` of the root package 
+and then bump the versions. Before building, clean up the `dist` folder, then you can do a default `uv publish` afterwards.
+
+```shell
+$ cd <monorepo root>
+$ uv run bump.py
+$ rm -r dist
+$ uv build --all-packages
+```
+
+Publish all packages in the root dist folder to PyPI. The UV_PUBLISH_TOKEN can be defined in a (read protected) ~/.
+setenv.bash file:
+
+```shell
+$ uv publish --token $UV_PUBLISH_TOKEN
+```
+
+The above command will publish all package to PyPI. If you don't want the token to be in a shell variable, you can 
+omit the `--token` in the command above. You will then be asked for a username, use `__token__` as the username and 
+then provide the token as a password.
