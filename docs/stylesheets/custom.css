@@ -78,44 +78,20 @@ td code {
 
 }
 
-.textual-web-demo iframe {
-  border: none;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  padding: 0;
-  margin: 0;
-}
-
-
-.textual-web-demo {
-  display: flex;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  padding: 0;
-  margin: 0;
-  opacity: 0;
-  transition: 0.3s opacity;
-}
-
-.textual-web-demo.-loaded {
-  opacity: 1.0;
-  transition: 0.3s opacity;
-}
-
 :root {
-  --md-admonition-icon--textualize: url('/images/icons/logo light transparent.svg')
+  --md-admonition-icon--cgse: url('/images/icons/cgse-logo.svg')
 }
-.md-typeset .admonition.textualize,
-.md-typeset details.textualize {
+.md-typeset .admonition.cgse,
+.md-typeset details.cgse {
   border-color: rgb(43, 155, 70);
 }
-.md-typeset .textualize > .admonition-title,
-.md-typeset .textualize > summary {
+.md-typeset .cgse > .admonition-title,
+.md-typeset .cgse > summary {
   background-color: rgba(43, 155, 70, 0.1);
 }
-.md-typeset .textualize > .admonition-title::before,
-.md-typeset .textualize > summary::before {
+.md-typeset .cgse > .admonition-title::before,
+.md-typeset .cgse > summary::before {
   background-color: rgb(43, 155, 70);
-  -webkit-mask-image: var(--md-admonition-icon--textualize);
-          mask-image: var(--md-admonition-icon--textualize);
+  -webkit-mask-image: var(--md-admonition-icon--cgse);
+          mask-image: var(--md-admonition-icon--cgse);
 }
