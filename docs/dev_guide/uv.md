@@ -94,6 +94,19 @@ $ uv pip install -e .
     $ source .venv/bin/activate
     ```
 
+!!! info
+
+    In a workspace, maintaining a virtual environment per package might be a hassle and most of the time that is not 
+    needed. A good approach is to always use the virtual environment at the workspace root. This `venv` which will be 
+    automatically created if you run a command or if you use `uv sync` in the package folder. With `uv sync` you can 
+    make sure the virtual environment is up-to-date and contains only those dependencies that are required for the 
+    package you are in. So, each time you switch to another package and want to run a comand or a test for that 
+    package, use 
+
+    ```
+    $ uv sync
+    ```
+
 ## Building and publishing all packages
 
 We have chosen for one and the same version number for all packages in the `cgse` monorepo. That means that whenever 
