@@ -227,7 +227,11 @@ def _load_yaml(resource_name: str):
 
 
 def _load_pandas(resource_name: str, separator: str):
-    """ Find and return the content of the given files as a pandas DataFrame object.
+    """
+    Find and return the content of the given file as a pandas DataFrame object.
+
+    The file is loaded relative from the location of the configuration data
+    as defined by `get_conf_data_location()`.
 
     Args:
         - resource_name: Filename, preceded by "pandas//".
