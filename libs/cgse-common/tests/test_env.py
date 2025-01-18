@@ -1,6 +1,9 @@
 import pytest
 
+import egse.env
 from egse.env import get_conf_repo_location
+from egse.env import get_project_name
+from egse.env import get_site_id
 from egse.env import initialize as env_initialize
 from egse.env import get_conf_data_location
 from egse.env import get_data_storage_location
@@ -13,6 +16,20 @@ from egse.env import set_data_storage_location
 from egse.env import set_local_settings
 from egse.env import set_log_file_location
 from egse.system import env_var
+
+
+def test_get_project_name():
+
+    with env_var(PROJECT="CGSE"):
+        egse.env.initialize()
+        assert get_project_name() == "CGSE"
+
+
+def test_get_site_id():
+
+    with env_var(SITE_ID="HOME"):
+        egse.env.initialize()
+        assert get_site_id() == "HOME"
 
 
 def test_get_data_storage_location():
