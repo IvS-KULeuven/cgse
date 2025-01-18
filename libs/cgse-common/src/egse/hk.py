@@ -16,9 +16,9 @@ import dateutil.parser as date_parser
 import numpy as np
 from egse.config import find_files
 from egse.env import get_data_storage_location
+from egse.env import get_site_id
 from egse.obsid import ObservationIdentifier
 from egse.obsid import obsid_from_storage
-from egse.settings import Settings
 from egse.setup import Setup
 from egse.setup import SetupError
 from egse.setup import load_setup
@@ -29,8 +29,6 @@ from egse.system import str_to_datetime
 from egse.system import time_since_epoch_1958
 
 _LOGGER = logging.getLogger(__name__)
-
-SITE_ID = Settings.load("SITE").ID
 
 
 class TmDictionaryColumns(str, Enum):
@@ -50,7 +48,7 @@ class TmDictionaryColumns(str, Enum):
     STORAGE_MNEMONIC = "Storage mnemonic"
     CORRECT_HK_NAMES = "CAM EGSE mnemonic"
     ORIGINAL_EGSE_HK_NAMES = "Original name in EGSE"
-    SYNOPTICS_ORIGIN = f"Origin of synoptics at {SITE_ID}"
+    SYNOPTICS_ORIGIN = f"Origin of synoptics at {get_site_id()}"
     TIMESTAMP_NAMES = "Name of corresponding timestamp"
     DESCRIPTION = "Description"
     DASHBOARD = "MON screen"
@@ -120,7 +118,7 @@ def get_housekeeping(hk_name: str, obsid: Union[ObservationIdentifier, str, int]
         try:
             return _get_housekeeping_obsid(hk_name, data_dir, obsid=obsid, time_window=time_window, setup=setup)
         except (ValueError, StopIteration, FileNotFoundError) as exc:
-            raise HKError(f"No HK found for {hk_name} for obsid {obsid} at {SITE_ID}") from exc
+            raise HKError(f"No HK found for {hk_name} for obsid {obsid} at {get_site_id()}") from exc
 
     # Specified OD
 
@@ -129,14 +127,14 @@ def get_housekeeping(hk_name: str, obsid: Union[ObservationIdentifier, str, int]
         try:
             return _get_housekeeping_od(hk_name, data_dir, od=od, time_window=time_window, setup=setup)
         except (ValueError, StopIteration, FileNotFoundError) as exc:
-            raise HKError(f"No HK found for {hk_name} for OD {od} at {SITE_ID}") from exc
+            raise HKError(f"No HK found for {hk_name} for OD {od} at {get_site_id()}") from exc
 
     # Didn't specify neither the obsid nor the OD
 
     try:
         return _get_housekeeping_daily(hk_name, data_dir, time_window=time_window, setup=setup)
     except (ValueError, StopIteration, FileNotFoundError) as exc:
-        raise HKError(f"No HK found for {hk_name} for today at {SITE_ID}") from exc
+        raise HKError(f"No HK found for {hk_name} for today at {get_site_id()}") from exc
 
 
 def _get_housekeeping(hk_name: str, timestamp_name: str, hk_dir: str, files, time_window: int = None):
@@ -272,7 +270,7 @@ def _get_housekeeping_od(hk_name: str, data_dir, od: str, time_window: int = Non
         raise HKError(f"Cannot determine which EGSE component generated HK parameter {hk_name}")
 
     hk_dir += f"{od}/"
-    hk_files = [f"{od}_{SITE_ID}_{origin}.csv"]
+    hk_files = [f"{od}_{get_site_id()}_{origin}.csv"]
 
     return _get_housekeeping(hk_name, timestamp_name, hk_dir, hk_files, time_window=time_window)
 
@@ -326,7 +324,7 @@ def _get_housekeeping_obsid(hk_name: str, data_dir, obsid: Union[ObservationIden
 
     if len(hk_files) == 0:
 
-        raise HKError(f"No HK found for the {origin} at {SITE_ID} for obsid {obsid}")
+        raise HKError(f"No HK found for the {origin} at {get_site_id()} for obsid {obsid}")
 
     hk_files = [hk_files[-1].name]
 
@@ -387,7 +385,7 @@ def _get_housekeeping_daily(hk_name: str, data_dir, time_window: int = None, set
 
         timestamp = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%d")
         hk_dir += f"{timestamp}/"
-        filename = f"{timestamp}_{SITE_ID}_{origin}.csv"
+        filename = f"{timestamp}_{get_site_id()}_{origin}.csv"
 
         timestamp_index, hk_index = get_indices(hk_dir + filename, hk_name, timestamp_name)
         return get_last_non_empty(hk_dir + filename, timestamp_index, hk_index)
@@ -412,7 +410,7 @@ def _get_housekeeping_daily(hk_name: str, data_dir, time_window: int = None, set
 
         # Determine which columns will be needed from which file
 
-        filename = f"{start_od}/{start_od}_{SITE_ID}_{origin}.csv"
+        filename = f"{start_od}/{start_od}_{get_site_id()}_{origin}.csv"
 
         if Path(hk_dir + filename).exists():
 
@@ -456,7 +454,7 @@ def _get_housekeeping_daily(hk_name: str, data_dir, time_window: int = None, set
         while day <= last_day:
 
             od = f"{day.year}{day.month:02d}{day.day:02d}"
-            filename = f"{od}/{od}_{SITE_ID}_{origin}.csv"
+            filename = f"{od}/{od}_{get_site_id()}_{origin}.csv"
 
             if Path(hk_dir + filename).exists():
 
@@ -684,7 +682,7 @@ def read_conversion_dict(storage_mnemonic: str, use_site: bool = False, setup: O
 
     if use_site:
 
-        th_prefix = f"G{SITE_ID}_"
+        th_prefix = f"G{get_site_id()}_"
 
         th_conversion_dict = {}
 
