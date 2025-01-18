@@ -40,6 +40,8 @@ WARNING:
 from __future__ import annotations
 
 __all__ = [
+    "get_project_name",
+    "get_site_id",
     "get_data_storage_location",
     "set_data_storage_location",
     "get_data_storage_location_env_name",
@@ -162,6 +164,14 @@ def _check_no_value(var_name, value):
             f"The environment variable {env_name} is not set. "
             f"Please set the environment variable before proceeding."
         )
+
+
+def get_project_name():
+    return _env.get("PROJECT") or None
+
+
+def get_site_id():
+    return _env.get("SITE_ID") or None
 
 
 def get_data_storage_location_env_name() -> str:
