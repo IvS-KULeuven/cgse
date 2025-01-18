@@ -237,7 +237,7 @@ def _load_pandas(resource_name: str, separator: str):
 
     parts = resource_name[8:].rsplit("/", 1)
     [in_dir, fn] = parts if len(parts) > 1 else [None, parts[0]]
-    conf_location = os.environ['PLATO_CONF_DATA_LOCATION']
+    conf_location = get_conf_data_location()
 
     try:
         pandas_file_location = Path(conf_location) / in_dir / fn
