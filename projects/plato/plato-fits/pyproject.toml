@@ -1,6 +1,6 @@
 [project]
 name = "plato-fits"
-version = "2025.0.3"
+version = "2025.0.4"
 description = "FITS Persistence implementation for CGSE"
 authors = [
     {name = "IVS KU Leuven"}

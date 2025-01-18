@@ -1,0 +1,3 @@
+TM source;Storage mnemonic;CAM EGSE mnemonic;Original name in EGSE;Name of corresponding timestamp;Origin of synoptics at CSL;Origin of synoptics at CSL1;Origin of synoptics at CSL2;Origin of synoptics at SRON;Origin of synoptics at IAS;Origin of synoptics at INTA;Description;MON screen;unit cal1;offset b cal1;slope a cal1;calibration function;MAX nonops;MIN nonops;MAX ops;MIN ops;Comment
+
+Unit Test Manager;DAQ-TM;TEMP_ABC_001;ABC_001;timestamp;;;;;;;Temperature of ABC;;;;;;;;;;
