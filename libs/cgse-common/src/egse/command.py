@@ -95,7 +95,7 @@ import re
 from collections import namedtuple
 from typing import Callable
 
-from egse.control import Success
+from egse.response import Success
 from egse.exceptions import Error
 
 logger = logging.getLogger(__name__)
