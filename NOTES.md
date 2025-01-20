@@ -55,29 +55,6 @@ Note that each library or project is a standalone Poetry package with its own `p
 
 All packages in the monorepo will have the same version. This can be maintained with the `bump.py` script. This script will read the version from the `pyproject.toml` file at the root of the monorepo and propagate the version to all libs and projects in the monorepo. Note that you –for now– will have to update the version number in the `pyproject.toml` file  located at the monorepo root folder manually. 
 
-# Use of Poetry (DEPRECATED: see below)
-
-I have now Poetry configurations for all `libs` in this monorepo. So, how do we use Poetry in this project?
-
-First thing to understand, Poetry is a development and dependency management tool. So, if you are installing the different packages in this repo from PyPI there is no need to use Poetry. The package will be installed in your current virtual environment.
-
-You can choose how you want to manage your virtual environments for each of the packages in the monorepo. I personally use `pyenv` to manage my virtual environments and I disable the virtual environment that would normally be used by Poetry.
-
-> Explain how to use `pyenv` for your virtual environments
-
-The following command starts a new sub-shell and activates the virtual environment: 
-```
-$ poetry shell
-```
-
-If you do not want to start a new shell, but just want to execute a command in the virtual environment, use the `poetry run` command, e.g.
-```
-$ poetry run pytest tests/test_bits.py
-```
-Or
-```
-$ poetry run python -m egse.monitoring localhost 6001
-```
 
 # Build and Publish
 
