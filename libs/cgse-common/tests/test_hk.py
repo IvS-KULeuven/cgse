@@ -17,6 +17,8 @@ HERE = Path(__file__).parent
 
 def test_get_housekeeping(default_env):
 
+    # FIXME: it doesn't feel right to have the default_env return the data_dir and doing the assignment below.
+
     data_dir = default_env
 
     # The get_housekeeping() function will by default search for HK telemetry in the daily CSV file that contains the
