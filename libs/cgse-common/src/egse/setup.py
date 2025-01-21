@@ -227,7 +227,11 @@ def _load_yaml(resource_name: str):
 
 
 def _load_pandas(resource_name: str, separator: str):
-    """ Find and return the content of the given files as a pandas DataFrame object.
+    """
+    Find and return the content of the given file as a pandas DataFrame object.
+
+    The file is loaded relative from the location of the configuration data
+    as defined by `get_conf_data_location()`.
 
     Args:
         - resource_name: Filename, preceded by "pandas//".
@@ -678,11 +682,12 @@ class Setup(NavigableDict):
 
     @staticmethod
     @lru_cache
-    def from_yaml_file(filename: Union[str, Path] = None):
+    def from_yaml_file(filename: Union[str, Path] = None, add_local_settings: bool = True):
         """Loads a Setup from the given YAML file.
 
         Args:
             filename (str): the path of the YAML file to be loaded
+            add_local_settings (bool): if local settings shall be loaded and override the settings from the YAML file.
 
         Returns:
             a Setup that was loaded from the given location.
@@ -692,7 +697,7 @@ class Setup(NavigableDict):
         if not filename:
             raise ValueError("Invalid argument to function: No filename or None given.")
 
-        setup_dict = Settings.load("Setup", filename=filename, force=True)
+        setup_dict = Settings.load("Setup", filename=filename, force=True, add_local_settings=add_local_settings)
 
         setup = Setup(setup_dict)
         setup.set_private_attribute("_filename", filename)

@@ -24,12 +24,22 @@ def test_get_project_name():
         egse.env.initialize()
         assert get_project_name() == "CGSE"
 
+    # Re-initialize the environment because PROJECT was changed and the env_var
+    # context manager doesn't reset the environment.
+
+    env_initialize()
+
 
 def test_get_site_id():
 
     with env_var(SITE_ID="HOME"):
         egse.env.initialize()
         assert get_site_id() == "HOME"
+
+    # Re-initialize the environment because PROJECT was changed and the env_var
+    # context manager doesn't reset the environment.
+
+    env_initialize()
 
 
 def test_get_data_storage_location():
@@ -62,6 +72,11 @@ def test_get_data_storage_location():
             get_data_storage_location()
         print(f"{exc.typename}: {exc.value}")
 
+    # Re-initialize the environment because PROJECT was changed and the env_var
+    # context manager doesn't reset the environment.
+
+    env_initialize()
+
 
 def test_set_data_storage_location():
 
@@ -72,6 +87,15 @@ def test_set_data_storage_location():
             set_data_storage_location("/tmp/data")
 
         assert get_data_storage_location(site_id="KUL") == "/tmp/data/KUL"
+
+        # Cleanup data storage location
+
+        set_data_storage_location(None)
+
+    # Re-initialize the environment because PROJECT was changed and the env_var
+    # context manager doesn't reset the environment.
+
+    env_initialize()
 
 
 def test_get_conf_data_location():
@@ -98,6 +122,11 @@ def test_get_conf_data_location():
                 with pytest.raises(ValueError, match="Could not determine the location"):
                     assert get_conf_data_location() == '/storage/ESA/conf'
 
+    # Re-initialize the environment because PROJECT was changed and the env_var
+    # context manager doesn't reset the environment.
+
+    env_initialize()
+
 
 def test_set_conf_data_location():
 
@@ -109,6 +138,15 @@ def test_set_conf_data_location():
 
         assert get_conf_data_location(site_id="KUL") == "/tmp/data"
         assert get_conf_data_location() == "/tmp/data"
+
+        # Cleanup configuration data location
+
+        set_conf_data_location(None)
+
+    # Re-initialize the environment because PROJECT was changed and the env_var
+    # context manager doesn't reset the environment.
+
+    env_initialize()
 
 
 def test_get_log_file_location():
@@ -130,6 +168,11 @@ def test_get_log_file_location():
             assert get_log_file_location() == '/storage/ESA/log'
             assert get_log_file_location(site_id="KUL") == '/storage/KUL/log'
 
+    # Re-initialize the environment because PROJECT was changed and the env_var
+    # context manager doesn't reset the environment.
+
+    env_initialize()
+
 
 def test_set_log_file_location():
 
@@ -142,6 +185,15 @@ def test_set_log_file_location():
         assert get_log_file_location(site_id="KUL") == "/tmp/data/log"
         assert get_log_file_location() == "/tmp/data/log"
 
+        # Cleanup log file location
+
+        set_log_file_location(None)
+
+    # Re-initialize the environment because PROJECT was changed and the env_var
+    # context manager doesn't reset the environment.
+
+    env_initialize()
+
 
 def test_get_local_settings():
 
@@ -151,6 +203,11 @@ def test_get_local_settings():
         with pytest.warns(UserWarning, match="local settings for your project will not be loaded"):
             assert get_local_settings_env_name() == "CGSE_LOCAL_SETTINGS"
             assert get_local_settings() == "/tmp/local_settings.yaml"
+
+    # Re-initialize the environment because PROJECT was changed and the env_var
+    # context manager doesn't reset the environment.
+
+    env_initialize()
 
 
 def test_set_local_settings():
@@ -163,6 +220,15 @@ def test_set_local_settings():
 
         with pytest.warns(UserWarning, match="As a result, the local settings for your project will not be loaded"):
             assert get_local_settings() == "/tmp/data/local_settings.yaml"
+
+        # Cleanup local settings
+
+        set_local_settings(None)
+
+    # Re-initialize the environment because PROJECT was changed and the env_var
+    # context manager doesn't reset the environment.
+
+    env_initialize()
 
 
 def test_get_conf_repo_location():
@@ -177,6 +243,11 @@ def test_get_conf_repo_location():
         env_initialize()
         assert get_conf_repo_location() is None
 
+    # Re-initialize the environment because PROJECT was changed and the env_var
+    # context manager doesn't reset the environment.
+
+    env_initialize()
+
 
 def test_set_conf_repo_location():
 
@@ -188,6 +259,15 @@ def test_set_conf_repo_location():
 
         with pytest.warns(UserWarning, match="location of the configuration data repository doesn't exist"):
             assert get_conf_repo_location() == "/tmp/data/conf-repo"
+
+        # Cleanup repo location
+
+        set_conf_repo_location(None)
+
+    # Re-initialize the environment because PROJECT was changed and the env_var
+    # context manager doesn't reset the environment.
+
+    env_initialize()
 
 
 def test_main(capsys):
@@ -211,3 +291,8 @@ def test_main(capsys):
         captured = capsys.readouterr()
 
         assert 'PYTHONSTARTUP=my_script.py' in captured.out  # noqa
+
+    # Re-initialize the environment because PROJECT was changed and the env_var
+    # context manager doesn't reset the environment.
+
+    env_initialize()

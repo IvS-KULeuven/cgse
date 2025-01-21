@@ -5,16 +5,19 @@ from pathlib import Path
 import rich
 
 from egse.env import get_site_id
+from egse.hk import get_housekeeping
 from egse.setup import Setup
 from egse.system import EPOCH_1958_1970
 from egse.system import format_datetime
 
+from helpers import create_text_file
 
 HERE = Path(__file__).parent
 
 
 def test_get_housekeeping(default_env):
-    from egse.hk import get_housekeeping
+
+    data_dir = Path(default_env.data_root)
 
     # The get_housekeeping() function will by default search for HK telemetry in the daily CSV file that contains the
     # HK parameter that is passed into the function. Since we have no operational system running during the tess,
@@ -26,31 +29,48 @@ def test_get_housekeeping(default_env):
     today = format_datetime("today")
     today_with_dash = format_datetime("today", fmt="%Y-%m-%d")
 
-    hk_path = HERE / f"data/{get_site_id()}/daily/{today}/"
-    hk_filename = f"{today}_{get_site_id()}_DAQ-TM.csv"
+    tm_dictionary_path = data_dir / "../common/telemetry/tm-dictionary.csv"
 
-    hk_path.mkdir(mode=0o777, parents=True, exist_ok=True)
+    create_text_file(tm_dictionary_path, textwrap.dedent(
+        """\
+        TM source;Storage mnemonic;CAM EGSE mnemonic;Original name in EGSE;Name of corresponding timestamp;\
+        Origin of synoptics at CSL;Origin of synoptics at CSL1;Origin of synoptics at CSL2;\
+        Origin of synoptics at SRON;Origin of synoptics at IAS;Origin of synoptics at INTA;\
+        Description;MON screen;unit cal1;offset b cal1;slope a cal1;calibration function;\
+        MAX nonops;MIN nonops;MAX ops;MIN ops;Comment
 
-    with (hk_path / hk_filename).open(mode='w') as fd:
-        fd.writelines(textwrap.dedent(
+        Unit Test Manager;DAQ-TM;TEMP_ABC_001;ABC_001;timestamp;;;;;;;Temperature of ABC;;;;;;;;;;
+
+        """
+    ), create_folder=True)
+
+    hk_path = data_dir / f"daily/{today}/{today}_{get_site_id()}_DAQ-TM.csv"
+
+    create_text_file(hk_path, textwrap.dedent(
             f"""\
             timestamp,TEMPT_ABC_000,TEMP_ABC_001,TEMP_ABC_002
             {today_with_dash}T00:00:23.324+0000,21.333,23.3421,26.234
             {today_with_dash}T00:00:42.123+0000,22.145,23.4567,27.333
             """
-        ))
+        ), create_folder=True
+    )
+
+    # The TM dictionary will be loaded relative from the configuration data location as defined by
+    # `get_conf_data_location()` (the latter being defined from the data storage location which is defined
+    # in `default_env`).
 
     setup = Setup.from_yaml_string(
         textwrap.dedent(
             """
             telemetry:
-                dictionary: pandas//../../common/telemetry/tm-dictionary-default.csv
+                dictionary: pandas//../../common/telemetry/tm-dictionary.csv
                 separator: ;
             """
         )
     )
 
-    rich.print("telemetry", setup.telemetry.dictionary)
+    rich.print(f"{hk_path = }")
+    rich.print(f"{tm_dictionary_path = }")
 
     try:
         timestamp, data = get_housekeeping("TEMP_ABC_001", setup=setup)
@@ -64,10 +84,10 @@ def test_get_housekeeping(default_env):
 
     finally:
         # Get rid of the CSV file
-        (hk_path / hk_filename).unlink()
+        hk_path.unlink()
 
-        # Get rid of today's folder
-        hk_path.rmdir()
+        # Get rid of the tm dictionary file
+        tm_dictionary_path.unlink()
 
 
 def test_convert_hk_names():
