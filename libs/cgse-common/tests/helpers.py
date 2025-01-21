@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 __all__ = [
-    "create_data_storage_layout",
+    "setup_data_storage_layout",
+    "teardown_data_storage_layout",
     "create_empty_file",
     "create_text_file",
 ]
@@ -16,7 +17,11 @@ from egse.env import set_data_storage_location
 from egse.env import set_log_file_location
 
 
-def create_data_storage_layout(tmp_data_dir : Path):
+def teardown_data_storage_layout(data_dir: Path):
+    ...
+
+
+def setup_data_storage_layout(tmp_data_dir: Path) -> Path:
     """
     Create a standard layout for the data storage as expected by the CGSE. The path is created from the
     `tmp_data_dir`. The site_id is derived from the environment module using: `get_site_id()`.
@@ -27,6 +32,7 @@ def create_data_storage_layout(tmp_data_dir : Path):
         └───data/
             └── LAB23
                 ├── conf
+                │   └── data
                 ├── daily
                 │   └── 20250118
                 ├── log
@@ -44,6 +50,9 @@ def create_data_storage_layout(tmp_data_dir : Path):
     tmp_dir.mkdir()
 
     tmp_dir = data_root / "conf"
+    tmp_dir.mkdir()
+
+    tmp_dir = data_root / "conf" / "data"
     tmp_dir.mkdir()
 
     tmp_dir = data_root / "obs"
@@ -116,7 +125,7 @@ def create_text_file(filename: str | Path, content: str, create_folder: bool = F
             self.filename = Path(filename)
 
             if self.filename.exists():
-                raise FileExistsError(f"The empty file you wanted to create already exists: {filename}")
+                raise FileExistsError(f"The text file you wanted to create already exists: {filename}")
 
             if create_folder and not self.filename.parent.exists():
                 self.filename.parent.mkdir(parents=True)
