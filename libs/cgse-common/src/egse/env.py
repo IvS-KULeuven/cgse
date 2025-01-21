@@ -40,23 +40,23 @@ WARNING:
 from __future__ import annotations
 
 __all__ = [
-    "get_project_name",
-    "get_site_id",
-    "get_data_storage_location",
-    "set_data_storage_location",
-    "get_data_storage_location_env_name",
     "get_conf_data_location",
-    "set_conf_data_location",
     "get_conf_data_location_env_name",
     "get_conf_repo_location",
-    "set_conf_repo_location",
     "get_conf_repo_location_env_name",
-    "get_log_file_location",
-    "set_log_file_location",
-    "get_log_file_location_env_name",
+    "get_data_storage_location",
+    "get_data_storage_location_env_name",
     "get_local_settings",
-    "set_local_settings",
     "get_local_settings_env_name",
+    "get_log_file_location",
+    "get_log_file_location_env_name",
+    "get_project_name",
+    "get_site_id",
+    "set_conf_data_location",
+    "set_conf_repo_location",
+    "set_data_storage_location",
+    "set_local_settings",
+    "set_log_file_location",
 ]
 
 import os
@@ -123,10 +123,17 @@ class _Env:
         self._env = {}
 
     def set(self, key, value):
-        self._env[key] = value
+        if value is None:
+            if key in self._env:
+                del self._env[key]
+        else:
+            self._env[key] = value
 
     def get(self, key) -> str:
         return self._env.get(key, NoValue())
+
+    def __rich__(self):
+        return self._env
 
 
 _env = _Env()
@@ -166,12 +173,44 @@ def _check_no_value(var_name, value):
         )
 
 
+def set_default_environment(
+        project: str,
+        site_id: str,
+        data_storage_location: str | Path,
+        conf_data_location: str | Path | None = None,
+        conf_repo_location: str | Path | None = None,
+        log_file_location: str | Path | None = None,
+        local_settings: str | Path | None = None,
+):
+    set_project_name(project)
+    set_site_id(site_id)
+    set_data_storage_location(data_storage_location)
+    set_conf_data_location(conf_data_location)
+    set_conf_repo_location(conf_repo_location)
+    set_log_file_location(log_file_location)
+    set_local_settings(local_settings)
+
+
 def get_project_name():
+    """Get the PROJECT name. Return None when the PROJECT is not set."""
     return _env.get("PROJECT") or None
 
 
+def set_project_name(name: str):
+    """Set the environment variable PROJECT and its internal representation."""
+    os.environ["PROJECT"] = name
+    _env.set("PROJECT", name)
+
+
 def get_site_id():
+    """Get the SITE_ID. Return None if the SITE_ID is not set."""
     return _env.get("SITE_ID") or None
+
+
+def set_site_id(name: str):
+    """Set the environment variable SITE_ID and its internal representation."""
+    os.environ["SITE_ID"] = name
+    _env.set("SITE_ID", name)
 
 
 def get_data_storage_location_env_name() -> str:
@@ -180,7 +219,7 @@ def get_data_storage_location_env_name() -> str:
     return f"{project}_DATA_STORAGE_LOCATION"
 
 
-def set_data_storage_location(location: str | Path):
+def set_data_storage_location(location: str | Path | None):
     """
     Sets the environment variable and the internal representation to the given value.
 
@@ -189,14 +228,20 @@ def set_data_storage_location(location: str | Path):
     """
     env_name = get_data_storage_location_env_name()
 
+    if location is None:
+        if env_name in os.environ:
+            del os.environ[env_name]
+        _env.set("DATA_STORAGE_LOCATION", None)
+        return
+
     # Check if location exists and is readable
     if not Path(location).exists():
         warnings.warn(
             f"The location you provided for the environment variable {env_name} doesn't exist: {location}."
         )
 
-    os.environ[env_name] = location
-    _env.set('DATA_STORAGE_LOCATION', location)
+    os.environ[env_name] = str(location)
+    _env.set('DATA_STORAGE_LOCATION', str(location))
 
 
 def get_data_storage_location(site_id: str = None) -> str:
@@ -240,7 +285,7 @@ def get_conf_data_location_env_name() -> str:
     return f"{project}_CONF_DATA_LOCATION"
 
 
-def set_conf_data_location(location: str | Path):
+def set_conf_data_location(location: str | Path | None):
     """
     Sets the environment variable and the internal representation to the given value.
 
@@ -249,6 +294,12 @@ def set_conf_data_location(location: str | Path):
     """
 
     env_name = get_conf_data_location_env_name()
+
+    if location is None:
+        if env_name in os.environ:
+            del os.environ[env_name]
+        _env.set("CONF_DATA_LOCATION", None)
+        return
 
     # Check if location exists and is readable
     if not Path(location).exists():
@@ -303,7 +354,7 @@ def get_log_file_location_env_name():
     return f"{project}_LOG_FILE_LOCATION"
 
 
-def set_log_file_location(location: str | Path):
+def set_log_file_location(location: str | Path | None):
     """
     Sets the environment variable and the internal representation to the given value.
 
@@ -312,6 +363,12 @@ def set_log_file_location(location: str | Path):
     """
 
     env_name = get_log_file_location_env_name()
+
+    if location is None:
+        if env_name in os.environ:
+            del os.environ[env_name]
+        _env.set("LOG_FILE_LOCATION", None)
+        return
 
     # Check if location exists and is readable
     if not Path(location).exists():
@@ -365,15 +422,23 @@ def get_local_settings_env_name() -> str:
     return f"{project}_LOCAL_SETTINGS"
 
 
-def set_local_settings(path: str | Path):
+def set_local_settings(path: str | Path | None):
     """
     Sets the environment variable and the internal representation to the given value.
+
+    When the path is set to None, the environment variable will be unset.
 
     Warnings:
         Issues a warning when the given path doesn't exist.
     """
 
     env_name = get_local_settings_env_name()
+
+    if path is None:
+        if env_name in os.environ:
+            del os.environ[env_name]
+        _env.set('LOCAL_SETTINGS', None)
+        return
 
     # Check if location exists and is readable
     if not Path(path).exists():
@@ -416,7 +481,7 @@ def get_conf_repo_location() -> str:
     return location or None
 
 
-def set_conf_repo_location(location: str):
+def set_conf_repo_location(location: str | Path | None):
     """
     Sets the environment variable and the internal representation to the given value.
 
@@ -425,6 +490,12 @@ def set_conf_repo_location(location: str):
     """
 
     env_name = get_conf_repo_location_env_name()
+
+    if location is None:
+        if env_name in os.environ:
+            del os.environ[env_name]
+        _env.set("CONF_REPO_LOCATION", None)
+        return
 
     # Check if location exists and is readable
     if not Path(location).exists():
