@@ -18,6 +18,10 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.superfences
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
   - admonition
   - def_list
   - meta
@@ -34,6 +38,17 @@ theme:
     icon:
         admonition:
             note: fontawesome/solid/note-sticky
+            abstract: fontawesome/solid/book
+            info: fontawesome/solid/circle-info
+            tip: fontawesome/solid/bullhorn
+            success: fontawesome/solid/check
+            question: fontawesome/solid/circle-question
+            warning: fontawesome/solid/triangle-exclamation
+            failure: fontawesome/solid/bomb
+            danger: fontawesome/solid/skull
+            bug: fontawesome/solid/robot
+            example: fontawesome/solid/flask
+            quote: fontawesome/solid/quote-left
     features:
         - navigation.tabs
         - navigation.indexes
@@ -68,15 +83,29 @@ extra:
       name: CGSE on Github
 
 nav:
-  - "index.md"
+  - index.md
   - Introduction:
-      - "getting_started.md"
-      - "help.md"
+    - getting_started.md
+    - help.md
   - Developer Guide:
-      - "dev_guide/index.md"
-      - "dev_guide/installation.md"
-      - "dev_guide/uv.md"
-      - "dev_guide/coding_style.md"
-      - "dev_guide/docs.md"
+    - dev_guide/index.md
+    - dev_guide/installation.md
+    - dev_guide/uv.md
+    - dev_guide/coding_style.md
+    - dev_guide/docs.md
   - User Guide:
-      - "user_guide/index.md"
+    - user_guide/index.md
+  - Libs:
+    - libs/index.md
+    - cgse-common:
+      - libs/cgse-common/index.md
+    - cgse-core:
+      - libs/cgse-core/index.md
+    - cgse-coordinates:
+      - libs/cgse-coordinates/index.md
+    - cgse-gui:
+      - libs/cgse-gui/index.md
+  - Projects:
+    - projects/index.md
+    - projects/cgse-tools.md
+    - projects/symetrie-hexapod.md

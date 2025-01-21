@@ -40,15 +40,23 @@ $ uv python install 3.9.20
 
 You can check which Python versions are installed already on your system:
 
-```shell
-$ uv python list --only-installed
-cpython-3.12.8-macos-aarch64-none     /Users/rik/Library/Application Support/uv/python/cpython-3.12.8-macos-aarch64-none/bin/python3.12
-cpython-3.10.16-macos-aarch64-none    /Users/rik/Library/Application Support/uv/python/cpython-3.10.16-macos-aarch64-none/bin/python3.10
-cpython-3.9.21-macos-aarch64-none     /Users/rik/Library/Application Support/uv/python/cpython-3.9.21-macos-aarch64-none/bin/python3.9
-cpython-3.9.20-macos-aarch64-none     /Users/rik/Library/Application Support/uv/python/cpython-3.9.20-macos-aarch64-none/bin/python3.9
-cpython-3.9.6-macos-aarch64-none      /Library/Developer/CommandLineTools/usr/bin/python3 -> ../../Library/Frameworks/Python3.framework/Versions/3.9/bin/python3
-cpython-3.8.17-macos-aarch64-none     /Users/rik/Library/Application Support/uv/python/cpython-3.8.17-macos-aarch64-none/bin/python3.8
-```
+=== "Command"
+
+    ```bash
+    $ uv python list --only-installed
+    ```
+
+=== "Output"
+
+    ```
+    cpython-3.12.8-macos-aarch64-none     /Users/rik/Library/Application Support/uv/python/cpython-3.12.8-macos-aarch64-none/bin/python3.12
+    cpython-3.10.16-macos-aarch64-none    /Users/rik/Library/Application Support/uv/python/cpython-3.10.16-macos-aarch64-none/bin/python3.10
+    cpython-3.9.21-macos-aarch64-none     /Users/rik/Library/Application Support/uv/python/cpython-3.9.21-macos-aarch64-none/bin/python3.9
+    cpython-3.9.20-macos-aarch64-none     /Users/rik/Library/Application Support/uv/python/cpython-3.9.20-macos-aarch64-none/bin/python3.9
+    cpython-3.9.6-macos-aarch64-none      /Library/Developer/CommandLineTools/usr/bin/python3 -> ../../Library/Frameworks/Python3.framework/Versions/3.9/bin/python3
+    cpython-3.8.17-macos-aarch64-none     /Users/rik/Library/Application Support/uv/python/cpython-3.8.17-macos-aarch64-none/bin/python3.8
+    ```
+
 
 ## Create a virtual environment
 
@@ -92,6 +100,19 @@ $ uv pip install -e .
 
     ```
     $ source .venv/bin/activate
+    ```
+
+!!! info
+
+    In a workspace, maintaining a virtual environment per package might be a hassle and most of the time that is not 
+    needed. A good approach is to always use the virtual environment at the workspace root. This `venv` which will be 
+    automatically created if you run a command or if you use `uv sync` in the package folder. With `uv sync` you can 
+    make sure the virtual environment is up-to-date and contains only those dependencies that are required for the 
+    package you are in. So, each time you switch to another package and want to run a comand or a test for that 
+    package, use 
+
+    ```
+    $ uv sync
     ```
 
 ## Building and publishing all packages
