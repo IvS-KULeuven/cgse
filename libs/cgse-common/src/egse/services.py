@@ -10,6 +10,7 @@ logging levels, or to quit the control server in a controlled way.
 
 import inspect
 import logging
+from pathlib import Path
 
 from egse.command import ClientServerCommand
 from egse.control import ControlServer
@@ -22,7 +23,9 @@ from egse.zmq_ser import connect_address
 
 LOGGER = logging.getLogger(__name__)
 
-SERVICE_SETTINGS = Settings.load(filename="services.yaml")
+HERE = Path(__file__).parent
+
+SERVICE_SETTINGS = Settings.load(filename=str(HERE / "services.yaml"))
 
 
 class ServiceCommand(ClientServerCommand):

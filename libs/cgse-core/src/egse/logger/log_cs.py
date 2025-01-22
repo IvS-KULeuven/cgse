@@ -119,9 +119,9 @@ def start():
     stream_handler = StreamHandler()
     stream_handler.setFormatter(logging.Formatter(fmt=LOG_FORMAT_STREAM))
 
-    # Log records are also sent to the cutelog listening server
+    # Log records are also sent to the textualog listening server
 
-    socket_handler = SocketHandler(CTRL_SETTINGS.CUTELOG_IP_ADDRESS, CTRL_SETTINGS.CUTELOG_LISTENING_PORT)
+    socket_handler = SocketHandler(CTRL_SETTINGS.TEXTUALOG_IP_ADDRESS, CTRL_SETTINGS.TEXTUALOG_LISTENING_PORT)
     socket_handler.setFormatter(file_formatter)
 
     context = zmq.Context()

@@ -588,8 +588,10 @@ def main(args: list | None = None):  # pragma: no cover
             location = get_data_storage_location()
             if not Path(location).exists():
                 if args.mkdir:
-                    rich.print(f"  [green]⟶ Creating data storage location: {location}[/]")
+                    rich.print(f"  [green]⟶ Creating data storage location: {location} (+ daily + obs)[/]")
                     Path(location).mkdir(parents=True)
+                    (Path(location) / "daily").mkdir()
+                    (Path(location) / "obs").mkdir()
                 else:
                     rich.print("  [red]⟶ ERROR: The data storage location doesn't exist![/]")
             else:

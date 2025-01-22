@@ -17,7 +17,9 @@ import click
 import rich
 import zmq
 from egse.control import ControlServer
-from egse.control import Response
+from egse.env import get_conf_data_location
+from egse.env import get_data_storage_location
+from egse.response import Response
 from egse.process import SubProcess
 from egse.settings import Settings
 from egse.system import replace_environment_variable
@@ -205,14 +207,11 @@ def check_prerequisites():
 
     # We need a proper location for storing the configuration data.
 
-    location = CTRL_SETTINGS.FILE_STORAGE_LOCATION
-    location = replace_environment_variable(location)
+    location = get_conf_data_location()
 
     if not location:
         raise RuntimeError(
-            "The environment variable referenced in the Settings.yaml file for the "
-            "FILE_STORAGE_LOCATION of the Configuration Manager does not exist, please set "
-            "the environment variable."
+            "The location for the configuration data is not defined. Please check your environment."
         )
 
     location = Path(location)

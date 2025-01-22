@@ -1,0 +1,32 @@
+Logging Control Server:                          # LOG_CS
+
+    PROTOCOL:                       tcp
+    HOSTNAME:                 localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
+    LOGGING_PORT:                  7000
+    COMMANDING_PORT:               7001
+    METRICS_PORT:                  7003          # The HTTP port where Prometheus will connect to for retrieving metrics
+    MAX_NR_LOG_FILES:                20          # The maximum number of log files that will be maintained in a roll-over
+    MAX_SIZE_LOG_FILES:              20          # The maximum size one log file can become
+    TEXTUALOG_IP_ADDRESS:     127.0.0.1          # The IP address of the textualog listening server
+    TEXTUALOG_LISTENING_PORT:     19996          # The port number on which the textualog server is listening
+
+Configuration Manager Control Server:            # CM_CS
+
+    PROTOCOL:                       tcp
+    HOSTNAME:                 localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
+    COMMANDING_PORT:               6000          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:               6001          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                  6002          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                  6003          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                            1          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:                CM          # The mnemonic to be used in the filename storing the housekeeping data
+
+Storage Control Server:                          # SM_CS
+
+    PROTOCOL:                       tcp
+    HOSTNAME:                 localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
+    COMMANDING_PORT:               6100          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:               6101          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                  6102          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                  6103          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                            1          # The delay time between publishing status information [seconds]
