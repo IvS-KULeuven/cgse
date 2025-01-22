@@ -25,9 +25,6 @@ dependencies = [
     "rich>=13.9.4",
 ]
 
-[project.optional-dependencies]
-dev = ["pytest", "pytest-mock", "pytest-cov"]
-
 [project.scripts]
 log_cs = 'egse.logger.log_cs:cli'
 sm_cs = 'egse.storage.storage_cs:cli'
@@ -38,6 +35,14 @@ cgse = 'scripts.cgse:cli'
 
 [project.entry-points."cgse.version"]
 cgse-core = 'egse'
+
+[tool.pytest.ini_options]
+pythonpath = "src"
+testpaths = ["tests"]
+addopts = "-ra --cov --cov-report html"
+filterwarnings = [
+    "ignore::DeprecationWarning"
+]
 
 [tool.hatch.build.targets.sdist]
 exclude = [
@@ -62,5 +67,6 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
     "ruff>=0.9.0",
 ]

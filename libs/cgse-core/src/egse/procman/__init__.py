@@ -11,7 +11,8 @@ import zmq
 
 from egse.command import ClientServerCommand
 from egse.confman import ConfigurationManagerProxy
-from egse.control import ControlServer, Success, Failure
+from egse.control import ControlServer
+from egse.response import Success, Failure
 from egse.decorators import dynamic_interface
 from egse.dpu import fitsgen
 from egse.dpu.dpu_cs import is_dpu_cs_active

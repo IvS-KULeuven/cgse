@@ -1,0 +1,8 @@
+SITE:
+    ID: CORE
+
+Logging Control Server:
+    HOSTNAME: my_fancy_laptop
+
+NEW_GROUP:
+    COMMENT: will NOT be ignored

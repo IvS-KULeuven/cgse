@@ -28,6 +28,7 @@ import socket
 import subprocess  # For executing a shell command
 import sys
 import time
+import warnings
 from collections import namedtuple
 from contextlib import contextmanager
 from pathlib import Path
@@ -510,6 +511,9 @@ class AttributeDict(dict):
         # if we left out key:value pairs, print a ', ...' to indicate incompleteness
 
         return self.__class__.__name__ + f"({{{sub_msg}{', ...' if len(self) > count else ''}}})"
+
+
+attrdict = AttributeDict
 
 
 def walk_dict_tree(dictionary: dict, tree: Tree, text_style: str = "green"):
@@ -1121,7 +1125,7 @@ def is_namespace(module) -> bool:
         return False
 
 
-def get_package_location(module) -> List[Path]:
+def get_package_location(module: str) -> List[Path]:
     """
     Retrieves the file system locations associated with a Python package.
 
@@ -1154,6 +1158,7 @@ def get_package_location(module) -> List[Path]:
     try:
         module = importlib.import_module(module)
     except TypeError:
+        warnings.warn(f"The module is not found or is not valid: {module_name}.")
         return []
 
     if is_namespace(module):
