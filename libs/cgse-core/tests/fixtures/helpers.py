@@ -4,6 +4,7 @@ __all__ = [
     "create_empty_file",
     "create_text_file",
     "is_process_not_running",
+    "setup_conf_data",
     "setup_data_storage_layout",
     "teardown_data_storage_layout",
 ]
@@ -23,6 +24,46 @@ from egse.process import is_process_running
 def is_process_not_running(items: List):
     """Check if a process is not running currently."""
     return not is_process_running(items)
+
+
+def setup_conf_data(tmp_data_dir: Path):
+
+    data_root = tmp_data_dir / get_site_id() / "conf"
+    data_root.mkdir(parents=True, exist_ok=True)
+
+    create_text_file(
+        data_root / "SETUP_HOME_00000_240123_120000.yaml",
+        textwrap.dedent(
+            """\
+            # This is the 'Zero' Setup for HOME.
+
+            Setup:
+                site_id: HOME
+
+                history:
+                    0: Initial zero Setup for HOME
+            """
+        )
+    )
+
+    create_text_file(
+        data_root / "SETUP_HOME_00028_240123_120028.yaml",
+        textwrap.dedent(
+            """\
+            # This is Setup nr 28 for HOME.
+
+            Setup:
+                site_id: HOME
+
+                history:
+                    0: Initial zero Setup for HOME
+                    28: I just jumped straight to twenty eight
+            """
+        )
+    )
+
+def teardown_conf_data(data_dir: Path):
+    ...
 
 
 def teardown_data_storage_layout(data_dir: Path):

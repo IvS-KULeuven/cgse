@@ -133,6 +133,7 @@ from rich.tree import Tree
 from egse.env import get_conf_repo_location
 from egse.env import get_conf_repo_location_env_name
 from egse.env import get_data_storage_location
+from egse.env import has_conf_repo_location
 from egse.response import Failure
 from egse.env import get_conf_data_location
 from egse.system import format_datetime
@@ -697,6 +698,8 @@ class Setup(NavigableDict):
         if not filename:
             raise ValueError("Invalid argument to function: No filename or None given.")
 
+        MODULE_LOGGER.info(f"Loading {filename}...")
+
         setup_dict = Settings.load("Setup", filename=filename, force=True, add_local_settings=add_local_settings)
 
         setup = Setup(setup_dict)
@@ -916,17 +919,14 @@ def get_setup(setup_id: int = None):
 
 def _check_conditions_for_get_path_of_setup_file(site_id: str) -> Path:
     """
-    Check some pre-conditions that need to be met before we try to determine the file path for
-    the requested Setup file.
+    Check some pre-conditions that need to be met before we try to determine the
+    file path for the requested Setup file.
 
     The following checks are performed:
 
-    * if the environment variable 'PLATO_CONF_REPO_LOCATION' is set
-
+    * if the environment variable '{PROJECT}_CONF_REPO_LOCATION' is set
     * if the directory specified in the env variable actually exists
-
     * if the folder with the Setups exists for the given site_id
-
 
     Args:
         site_id (str): the name of the test house
@@ -967,11 +967,13 @@ def _check_conditions_for_get_path_of_setup_file(site_id: str) -> Path:
 
 def get_path_of_setup_file(setup_id: int, site_id: str) -> Path:
     """
-    Returns the Path to the last Setup file for the given site_id. The last Setup file is the file
-    with the largest setup_id number.
+    Returns the Path to the last Setup file for the given site_id. The last Setup
+    file is the file with the largest setup_id number.
 
-    This function needs the environment variable <PROJECT>_CONF_REPO_LOCATION to be defined as the
-    location of the repository with configuration data on your disk.
+    This function needs the environment variable <PROJECT>_CONF_REPO_LOCATION to
+    be defined as the location of the repository with configuration data on your
+    disk. If the repo is not defined, the configuration data location will be used
+    instead.
 
     Args:
         setup_id (int): the identifier for the requested Setup
@@ -989,7 +991,10 @@ def get_path_of_setup_file(setup_id: int, site_id: str) -> Path:
 
     """
 
-    setup_location = _check_conditions_for_get_path_of_setup_file(site_id)
+    if not has_conf_repo_location():
+        setup_location = Path(get_conf_data_location(site_id))
+    else:
+        setup_location = _check_conditions_for_get_path_of_setup_file(site_id)
 
     if setup_id:
         files = list(setup_location.glob(f'SETUP_{site_id}_{setup_id:05d}_*.yaml'))
