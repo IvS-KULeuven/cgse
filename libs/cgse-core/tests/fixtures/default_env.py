@@ -3,8 +3,10 @@ from dataclasses import dataclass
 import pytest
 
 from egse.env import set_default_environment
-
-from fixtures.helpers import setup_data_storage_layout, teardown_data_storage_layout
+from fixtures.helpers import setup_conf_data
+from fixtures.helpers import setup_data_storage_layout
+from fixtures.helpers import teardown_conf_data
+from fixtures.helpers import teardown_data_storage_layout
 
 
 @dataclass
@@ -26,6 +28,10 @@ def default_env(tmp_path_factory):
 
     data_root = setup_data_storage_layout(tmp_data_dir)
 
+    setup_conf_data(tmp_data_dir)
+
     yield DefaultEnvironment(project=project, site_id=site_id, data_root=str(data_root))
+
+    teardown_conf_data(tmp_data_dir)
 
     teardown_data_storage_layout(tmp_data_dir)

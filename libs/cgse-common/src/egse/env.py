@@ -464,21 +464,40 @@ def get_local_settings() -> str:
     return local_settings or None
 
 
+def has_conf_repo_location() -> bool:
+    location = _env.get("CONF_REPO_LOCATION")
+    return True if location else False
+
+
 def get_conf_repo_location_env_name() -> str:
     """Returns the name of the environment variable for the project."""
     project = _env.get("PROJECT")
     return f"{project}_CONF_REPO_LOCATION"
 
 
-def get_conf_repo_location() -> str:
-    """Returns the fully qualified name of the location of the repository with configuration and calibration data."""
+def get_conf_repo_location() -> str | None:
+    """
+    Returns the fully qualified name of the location of the repository with
+    configuration and calibration data.
+
+    Returns None if no environment variable was defined or if the location doesn't exist.
+    In both cases a Warning is issued.
+    """
 
     location = _env.get("CONF_REPO_LOCATION")
 
-    if location and not Path(location).exists():
-        warnings.warn(f"The location of the configuration data repository doesn't exist: {location}.")
+    if location is None:
+        warnings.warn(
+            f"The environment variable for the configuration data repository is "
+            f"not defined ({get_conf_repo_location_env_name()})."
+        )
+        return None
 
-    return location or None
+    if not Path(location).exists():
+        warnings.warn(f"The location of the configuration data repository doesn't exist: {location}.")
+        return None
+
+    return location
 
 
 def set_conf_repo_location(location: str | Path | None):
@@ -612,6 +631,16 @@ def main(args: list | None = None):  # pragma: no cover
                 rich.print()
         except ValueError as exc:
             rich.print(f"    get_conf_data_location() = [red]{exc}[/]")
+
+        try:
+            rich.print(f"    {get_conf_repo_location() = }", flush=True, end="")
+            location = get_conf_repo_location()
+            if location and not Path(location).exists():
+                rich.print("  [red]⟶ ERROR: The configuration repository location doesn't exist![/]")
+            else:
+                rich.print()
+        except ValueError as exc:
+            rich.print(f"    get_conf_repo_location() = [red]{exc}[/]")
 
         try:
             rich.print(f"    {get_log_file_location() = }", flush=True, end="")

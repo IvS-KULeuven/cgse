@@ -890,6 +890,12 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         setup.set_private_attribute("_setup_id", setup_id)
         setup.to_yaml_file(self._data_conf_location / filename)
 
+        # No repository is defined. This should not break, but a warning is in place.
+        # The warnings are issued by the get_conf_repo_location() function.
+
+        if get_conf_repo_location() is None:
+            return
+
         try:
             rc = _push_setup_to_repo(filename, description)
             if isinstance(rc, Failure):
@@ -910,7 +916,8 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         return setup
 
     def get_next_setup_id_for_site(self, site: str) -> int:
-        """Return the next available Setup ID for the given Site.
+        """
+        Return the next available Setup ID for the given Site.
 
         Args:
             site (str): site identification, e.g. CSL, SRON, ...
