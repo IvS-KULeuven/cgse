@@ -10,7 +10,7 @@ from egse.setup import Setup
 from egse.system import EPOCH_1958_1970
 from egse.system import format_datetime
 
-from helpers import create_text_file
+from fixtures.helpers import create_text_file
 
 HERE = Path(__file__).parent
 

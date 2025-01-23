@@ -47,6 +47,7 @@ filterwarnings = [
 [tool.coverage.run]
 omit = [
     "tests/*",
+    "conftest.py",
 ]
 
 [tool.hatch.build.targets.sdist]
