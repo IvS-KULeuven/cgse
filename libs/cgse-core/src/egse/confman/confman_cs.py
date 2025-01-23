@@ -16,17 +16,15 @@ from pathlib import Path
 import click
 import rich
 import zmq
-from egse.control import ControlServer
-from egse.env import get_conf_data_location
-from egse.env import get_data_storage_location
-from egse.response import Response
-from egse.process import SubProcess
-from egse.settings import Settings
-from egse.system import replace_environment_variable
 from prometheus_client import start_http_server
 
 from egse.confman import ConfigurationManagerProtocol
 from egse.confman import ConfigurationManagerProxy
+from egse.control import ControlServer
+from egse.env import get_conf_data_location
+from egse.process import SubProcess
+from egse.response import Response
+from egse.settings import Settings
 
 # Use explicit name here otherwise the logger will probably be called __main__
 

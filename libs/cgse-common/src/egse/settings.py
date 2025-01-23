@@ -112,7 +112,7 @@ SAFE_LOADER.add_implicit_resolver(
     list(u'-+0123456789.'))
 
 
-def get_settings_locations(location: str | Path = None) -> list[Path]:
+def get_settings_locations(location: str | Path = None, filename: str = "settings.yaml") -> list[Path]:
 
     yaml_locations: set[Path] = set()
 
@@ -120,7 +120,7 @@ def get_settings_locations(location: str | Path = None) -> list[Path]:
         package_locations = get_package_location("egse")  # `egse` is a namespace
 
         for package_location in package_locations:
-            if (package_location / "settings.yaml").exists():
+            if (package_location / filename).exists():
                 yaml_locations.add(package_location)
 
         yaml_locations.add(_HERE)
@@ -129,15 +129,15 @@ def get_settings_locations(location: str | Path = None) -> list[Path]:
     else:
 
         package_location = Path(location).resolve()
-        if (package_location / "settings.yaml").exists():
+        if (package_location / filename).exists():
             yaml_locations.add(package_location)
         else:
-            _LOGGER.warning(f"No 'settings.yaml' file found at {package_location}.")
+            _LOGGER.warning(f"No '{filename}' file found at {package_location}.")
 
     return list(yaml_locations)
 
 
-def load_global_settings(locations, filename: str = "settings.yaml", force: bool = False):
+def load_global_settings(locations, filename: str = "settings.yaml", force: bool = False) -> attrdict:
 
     global_settings = attrdict()
 
@@ -283,7 +283,7 @@ class Settings:
         Args:
             group_name (str): the name of one of the main groups from the YAML file
             filename (str): the name of the YAML file to read
-            location (str): the path to the location of the YAML file
+            location (str, Path): the path to the location of the YAML file
             force (bool): force reloading the file
             add_local_settings (bool): update the Settings with site specific local settings
 
@@ -296,7 +296,7 @@ class Settings:
 
         # Load all detected YAML documents, these are considered global settings
 
-        yaml_locations = get_settings_locations(location)
+        yaml_locations = get_settings_locations(location, filename)
         global_settings = load_global_settings(yaml_locations, filename, force)
 
         if not global_settings:

@@ -137,7 +137,7 @@ HERE = Path(__file__).parent
 
 CTRL_SETTINGS = Settings.load("Storage Control Server")
 SITE_ID = get_site_id()
-DEVICE_SETTINGS = COMMAND_SETTINGS = Settings.load(filename=str(HERE / "storage.yaml"))
+DEVICE_SETTINGS = COMMAND_SETTINGS = Settings.load(location=HERE, filename="storage.yaml")
 
 __all__ = [
     "is_storage_manager_active",
