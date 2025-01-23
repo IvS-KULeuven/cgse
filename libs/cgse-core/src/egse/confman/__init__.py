@@ -160,7 +160,7 @@ HERE = Path(__file__).parent
 
 CTRL_SETTINGS = Settings.load("Configuration Manager Control Server")
 SITE_ID = get_site_id()
-COMMAND_SETTINGS = Settings.load(filename=str(HERE / "confman.yaml"))
+COMMAND_SETTINGS = Settings.load(location=HERE, filename="confman.yaml")
 
 CM_SETUP_ID = Gauge("CM_SETUP_ID", 'Setup ID')
 CM_TEST_ID = Gauge("CM_TEST_ID", 'Test ID')

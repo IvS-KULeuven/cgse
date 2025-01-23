@@ -7,6 +7,8 @@ import pickle
 import time
 
 import sys
+from pathlib import Path
+
 import zmq
 
 from egse.command import ClientServerCommand
@@ -30,8 +32,10 @@ from egse.system import format_datetime
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
 
+HERE = Path(__file__).parent
+
 CTRL_SETTINGS = Settings.load("Process Manager Control Server")
-COMMAND_SETTINGS = Settings.load(filename="procman.yaml")
+COMMAND_SETTINGS = Settings.load(location=HERE, filename="procman.yaml")
 
 LOGGER = logging.getLogger(__name__)
 
