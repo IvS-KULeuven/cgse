@@ -26,7 +26,7 @@ from egse.setup import navdict
 from egse.setup import save_last_setup_id
 from egse.system import AttributeDict
 from egse.system import env_var
-from helpers import create_text_file
+from fixtures.helpers import create_text_file
 
 _LOGGER = logging.getLogger(__name__)
 

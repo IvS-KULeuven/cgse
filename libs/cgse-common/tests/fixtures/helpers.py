@@ -1,20 +1,28 @@
 from __future__ import annotations
 
 __all__ = [
-    "setup_data_storage_layout",
-    "teardown_data_storage_layout",
     "create_empty_file",
     "create_text_file",
+    "is_process_not_running",
+    "setup_data_storage_layout",
+    "teardown_data_storage_layout",
 ]
 
 import os
 import textwrap
 from pathlib import Path
+from typing import List
 
 from egse.env import get_site_id
 from egse.env import set_conf_data_location
 from egse.env import set_data_storage_location
 from egse.env import set_log_file_location
+from egse.process import is_process_running
+
+
+def is_process_not_running(items: List):
+    """Check if a process is not running currently."""
+    return not is_process_running(items)
 
 
 def teardown_data_storage_layout(data_dir: Path):

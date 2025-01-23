@@ -36,8 +36,8 @@ from egse.system import replace_environment_variable
 from egse.system import save_average_execution_time
 from egse.system import wait_until
 from egse.system import waiting_for
-from helpers import create_empty_file
-from helpers import create_text_file
+from fixtures.helpers import create_empty_file
+from fixtures.helpers import create_text_file
 
 
 def test_attr_dict():
