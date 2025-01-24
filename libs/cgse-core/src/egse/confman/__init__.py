@@ -128,18 +128,21 @@ from egse.command import ClientServerCommand
 from egse.command import stringify_function_call
 from egse.config import find_file
 from egse.config import find_files
-from egse.config import get_common_egse_root
 from egse.control import ControlServer
-from egse.control import Failure
-from egse.control import Response
-from egse.control import Success
 from egse.control import is_control_server_active
 from egse.decorators import dynamic_interface
 from egse.decorators import static_vars
+from egse.env import get_conf_data_location
+from egse.env import get_conf_repo_location
+from egse.env import get_project_name
+from egse.env import get_site_id
 from egse.exceptions import InternalError
 from egse.obsid import ObservationIdentifier
 from egse.protocol import CommandProtocol
 from egse.proxy import Proxy
+from egse.response import Failure
+from egse.response import Response
+from egse.response import Success
 from egse.settings import Settings
 from egse.settings import SettingsError
 from egse.setup import Setup
@@ -147,17 +150,17 @@ from egse.setup import load_last_setup_id
 from egse.setup import save_last_setup_id
 from egse.system import filter_by_attr
 from egse.system import format_datetime
-from egse.system import replace_environment_variable
 from egse.version import VERSION
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
 
 LOGGER = logging.getLogger(__name__)
 
+HERE = Path(__file__).parent
+
 CTRL_SETTINGS = Settings.load("Configuration Manager Control Server")
-SITE = Settings.load("SITE")
-COMMAND_SETTINGS = Settings.load(filename="confman.yaml")
-REPO = Settings.load("REPO")
+SITE_ID = get_site_id()
+COMMAND_SETTINGS = Settings.load(location=HERE, filename="confman.yaml")
 
 CM_SETUP_ID = Gauge("CM_SETUP_ID", 'Setup ID')
 CM_TEST_ID = Gauge("CM_TEST_ID", 'Test ID')
@@ -174,14 +177,14 @@ def _push_setup_to_repo(filename: str, commit_msg: str) -> Failure | Success:
         None.
     """
 
-    repo_workdir = REPO.CGSE_CONF
-    repo_workdir = replace_environment_variable(repo_workdir)
+    repo_workdir = get_conf_repo_location()
+
     if repo_workdir is None:
         msg = textwrap.dedent(
-            """\
-            Couldn't determine the repository location for cgse-conf. 
+            f"""\
+            Couldn't determine the repository location for configuration data. 
 
-            Check if the environment variable 'CGSE_CONF_REPO_LOCATION' is set 
+            Check if the environment variable '{get_project_name()}_CONF_REPO_LOCATION' is set and valid 
             before starting the configuration manager.
             """
         )
@@ -285,8 +288,14 @@ def _populate_cached_setup_info():
 
     LOGGER.info("Populating cache with Setup Info.")
 
-    location = replace_environment_variable(CTRL_SETTINGS.FILE_STORAGE_LOCATION)
-    data_conf_location = Path(location) if location else get_common_egse_root()
+    location = get_conf_data_location()
+    if location:
+        data_conf_location = Path(location)
+    else:
+        raise ValueError(
+            "Couldn't determine location of the configuration data with 'get_conf_data_location()'. "
+            "Check if the environment is properly defined."
+        )
 
     setup_info = {}
 
@@ -550,8 +559,13 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
 
         # Find the location for the configuration data
 
-        location = replace_environment_variable(CTRL_SETTINGS.FILE_STORAGE_LOCATION)
-        self._data_conf_location = Path(location) if location else get_common_egse_root()
+        location = get_conf_data_location()
+        if location:
+            self._data_conf_location = Path(location)
+        else:
+            raise ValueError(
+                "The location for the configuration data is not defined. Please check your environment."
+            )
 
         # Populate the cache with information from the available Setups. This will also load each
         # Setup and cache them with the lru_cache decorator. Since this takes about 5s for 100
@@ -590,7 +604,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
             last_obsid = self._storage.read({"origin": "obsid", "select": "last_line"})
             last_obsid = last_obsid.return_code if isinstance(last_obsid, Success) else None
 
-        self._obsid = create_obsid(last_obsid, SITE.ID, self._setup_id)
+        self._obsid = create_obsid(last_obsid, SITE_ID, self._setup_id)
 
         if self._storage:
             response = self._storage.start_observation(self._obsid, self._sut_name)
@@ -696,14 +710,14 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
 
         setup_files = list(
             find_files(
-                pattern=f"SETUP_{SITE.ID}_{setup_id:05d}_*.yaml", root=self._data_conf_location
+                pattern=f"SETUP_{SITE_ID}_{setup_id:05d}_*.yaml", root=self._data_conf_location
             )
         )
 
         if len(setup_files) != 1:
             LOGGER.error(
                 msg := f"Expected to find just one Setup YAML file, found {len(setup_files)}. "
-                       f"[{SITE.ID = }, {setup_id = }, data_conf_location={self._data_conf_location}]"
+                       f"[{SITE_ID = }, {setup_id = }, data_conf_location={self._data_conf_location}]"
             )
             return Failure("Loading Setup", InternalError(msg))
 
@@ -745,7 +759,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
 
             setup_files = list(
                 find_files(
-                    pattern=f"SETUP_{SITE.ID}_{setup_id:05d}_*.yaml", root=self._data_conf_location
+                    pattern=f"SETUP_{SITE_ID}_{setup_id:05d}_*.yaml", root=self._data_conf_location
                 )
             )
 
@@ -786,7 +800,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
             The Site identifier as a string.
         """
 
-        return SITE.ID
+        return SITE_ID
 
     def reload_setups(self):
         """
@@ -839,7 +853,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
             try:
                 setup_id = int(rc.return_code[-1].split(maxsplit=3)[2])
                 setup_file = find_file(
-                    name=f"SETUP_{SITE.ID}_{setup_id:05d}_*.yaml", root=self._data_conf_location
+                    name=f"SETUP_{SITE_ID}_{setup_id:05d}_*.yaml", root=self._data_conf_location
                 )
                 setup = Setup.from_yaml_file(setup_file)
             except (IndexError, SettingsError):
@@ -867,7 +881,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
 
         setup_id = self.get_next_setup_id_for_site(site)
 
-        filename = _construct_filename(SITE.ID, setup_id)
+        filename = _construct_filename(SITE_ID, setup_id)
 
         if not hasattr(setup, "history"):
             setup.history = {}
@@ -875,6 +889,12 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         setup.history.update({f"{setup_id}": description})
         setup.set_private_attribute("_setup_id", setup_id)
         setup.to_yaml_file(self._data_conf_location / filename)
+
+        # No repository is defined. This should not break, but a warning is in place.
+        # The warnings are issued by the get_conf_repo_location() function.
+
+        if get_conf_repo_location() is None:
+            return
 
         try:
             rc = _push_setup_to_repo(filename, description)
@@ -896,12 +916,13 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         return setup
 
     def get_next_setup_id_for_site(self, site: str) -> int:
-        """Return the next available Setup ID for the given Site.
+        """
+        Return the next available Setup ID for the given Site.
 
         Args:
             site (str): site identification, e.g. CSL, SRON, ...
         """
-        site = site or SITE.ID
+        site = site or SITE_ID
         files = sorted(find_files(pattern=f"SETUP_{site}_*.yaml", root=self._data_conf_location))
         last_file = files[-1]
         setup_id = last_file.name.split("_")[2]

@@ -112,9 +112,10 @@ from egse.bits import humanize_bytes
 from egse.command import ClientServerCommand
 from egse.config import find_files
 from egse.control import ControlServer
-from egse.control import Failure
-from egse.control import Response
-from egse.control import Success
+from egse.env import get_site_id
+from egse.response import Failure
+from egse.response import Response
+from egse.response import Success
 from egse.control import is_control_server_active
 from egse.decorators import dynamic_interface
 from egse.env import get_data_storage_location
@@ -132,11 +133,11 @@ from egse.zmq_ser import connect_address
 
 logger = logging.getLogger(__name__)
 
+HERE = Path(__file__).parent
+
 CTRL_SETTINGS = Settings.load("Storage Control Server")
-SITE = Settings.load("SITE")
-COMMAND_SETTINGS = Settings.load(filename="storage.yaml")
-DEVICE_SETTINGS = Settings.load(filename="storage.yaml")
-CCD_SETTINGS = Settings.load("CCD")
+SITE_ID = get_site_id()
+DEVICE_SETTINGS = COMMAND_SETTINGS = Settings.load(location=HERE, filename="storage.yaml")
 
 __all__ = [
     "is_storage_manager_active",
@@ -543,7 +544,7 @@ def _construct_filename(
         The full path to the file as a `PurePath`.
     """
 
-    site_id = site_id or SITE.ID
+    site_id = site_id or SITE_ID
     location = location or get_data_storage_location(site_id=site_id)
 
     if obsid:
@@ -854,7 +855,7 @@ class StorageController(StorageInterface):
             self._registry.register(item["origin"], item)
 
             if "filename" in item:
-                location = Path(get_data_storage_location(site_id=SITE.ID))
+                location = Path(get_data_storage_location(site_id=SITE_ID))
                 filename = location / item["filename"]
             else:
                 filename = _construct_filename(item["origin"], item["persistence_class"].extension,
@@ -972,7 +973,7 @@ class StorageController(StorageInterface):
                 )
 
     def get_storage_location(self):
-        return get_data_storage_location(site_id=SITE.ID)
+        return get_data_storage_location(site_id=SITE_ID)
 
     def get_filenames(self, item: dict) -> List[Path]:
         registered_item = self._registry.get(item["origin"])
@@ -995,7 +996,7 @@ class StorageController(StorageInterface):
 
     def get_disk_usage(self):
 
-        location = Path(get_data_storage_location(site_id=SITE.ID))
+        location = Path(get_data_storage_location(site_id=SITE_ID))
         total, used, free = shutil.disk_usage(location)
         return total, used, free
 

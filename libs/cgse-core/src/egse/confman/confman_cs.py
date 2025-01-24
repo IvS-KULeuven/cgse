@@ -16,15 +16,15 @@ from pathlib import Path
 import click
 import rich
 import zmq
-from egse.control import ControlServer
-from egse.control import Response
-from egse.process import SubProcess
-from egse.settings import Settings
-from egse.system import replace_environment_variable
 from prometheus_client import start_http_server
 
 from egse.confman import ConfigurationManagerProtocol
 from egse.confman import ConfigurationManagerProxy
+from egse.control import ControlServer
+from egse.env import get_conf_data_location
+from egse.process import SubProcess
+from egse.response import Response
+from egse.settings import Settings
 
 # Use explicit name here otherwise the logger will probably be called __main__
 
@@ -205,14 +205,11 @@ def check_prerequisites():
 
     # We need a proper location for storing the configuration data.
 
-    location = CTRL_SETTINGS.FILE_STORAGE_LOCATION
-    location = replace_environment_variable(location)
+    location = get_conf_data_location()
 
     if not location:
         raise RuntimeError(
-            "The environment variable referenced in the Settings.yaml file for the "
-            "FILE_STORAGE_LOCATION of the Configuration Manager does not exist, please set "
-            "the environment variable."
+            "The location for the configuration data is not defined. Please check your environment."
         )
 
     location = Path(location)

@@ -20,7 +20,7 @@ from prometheus_client import Summary
 from egse.command import Command
 from egse.command import CommandExecution
 from egse.control import ControlServer
-from egse.control import Failure
+from egse.response import Failure
 from egse.device import DeviceConnectionObserver
 from egse.system import format_datetime
 from egse.zmq_ser import bind_address

@@ -20,6 +20,7 @@ from pytz import utc
 from egse.bits import humanize_bytes
 from egse.control import ControlServer
 from egse.env import get_data_storage_location
+from egse.env import get_site_id
 from egse.process import SubProcess
 from egse.settings import Settings
 from egse.storage import StorageProtocol
@@ -33,7 +34,7 @@ from egse.system import replace_environment_variable
 logger = logging.getLogger("egse.storage.storage_cs")
 
 CTRL_SETTINGS = Settings.load("Storage Control Server")
-SITE = Settings.load("SITE")
+SITE_ID = get_site_id()
 
 
 class StorageControlServer(ControlServer):
@@ -159,12 +160,11 @@ def check_prerequisites():
     # We need a proper location for storing the data, this directory shall contain
     # two subfolders: 'daily' and 'obs'.
 
-    location = get_data_storage_location(site_id=SITE.ID)
+    location = get_data_storage_location(site_id=SITE_ID)
 
     if not location:
         raise RuntimeError(
-            "The environment variable referenced in the Settings.yaml file for the "
-            "FILE_STORAGE_LOCATION does not exist, please set the environment variable."
+            "The data storage location is not defined. Please check your environment."
         )
 
     location = Path(location)

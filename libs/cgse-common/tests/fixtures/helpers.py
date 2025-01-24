@@ -1,20 +1,71 @@
 from __future__ import annotations
 
 __all__ = [
-    "setup_data_storage_layout",
-    "teardown_data_storage_layout",
     "create_empty_file",
     "create_text_file",
+    "is_process_not_running",
+    "setup_conf_data",
+    "setup_data_storage_layout",
+    "teardown_data_storage_layout",
 ]
 
 import os
 import textwrap
 from pathlib import Path
+from typing import List
 
 from egse.env import get_site_id
 from egse.env import set_conf_data_location
 from egse.env import set_data_storage_location
 from egse.env import set_log_file_location
+from egse.process import is_process_running
+
+
+def is_process_not_running(items: List):
+    """Check if a process is not running currently."""
+    return not is_process_running(items)
+
+
+def setup_conf_data(tmp_data_dir: Path):
+
+    site_id = get_site_id()
+    data_root = tmp_data_dir / site_id / "conf"
+    data_root.mkdir(parents=True, exist_ok=True)
+
+    create_text_file(
+        data_root / f"SETUP_{site_id}_00000_240123_120000.yaml",
+        textwrap.dedent(
+            f"""\
+            # This is the 'Zero' Setup for {site_id}.
+
+            Setup:
+                site_id: {site_id}
+
+                history:
+                    0: Initial zero Setup for {site_id}
+            """
+        )
+    )
+
+    create_text_file(
+        data_root / f"SETUP_{site_id}_00028_240123_120028.yaml",
+        textwrap.dedent(
+            f"""\
+            # This is Setup nr 28 for {site_id}.
+
+            Setup:
+                site_id: {site_id}
+
+                history:
+                    0: Initial zero Setup for {site_id}
+                    28: I just jumped straight to twenty eight
+            """
+        )
+    )
+
+
+def teardown_conf_data(data_dir: Path):
+    ...
 
 
 def teardown_data_storage_layout(data_dir: Path):

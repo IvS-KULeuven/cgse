@@ -40,6 +40,7 @@ WARNING:
 from __future__ import annotations
 
 __all__ = [
+    "env_var",
     "get_conf_data_location",
     "get_conf_data_location_env_name",
     "get_conf_repo_location",
@@ -59,12 +60,17 @@ __all__ = [
     "set_log_file_location",
 ]
 
+import contextlib
 import os
 import warnings
 from pathlib import Path
 
 from egse.system import all_logging_disabled
+from egse.system import get_caller_info
 from egse.system import ignore_m_warning
+
+from rich.console import Console
+console = Console(width=100)
 
 # Every project shall have a PROJECT and a SITE_ID environment variable set. This variable will be used to
 # create the other environment variables that are specific to the project.
@@ -166,7 +172,7 @@ def _check_no_value(var_name, value):
     """Raise a ValueError when the value for the variable is NoValue."""
     if value == NoValue():
         project = _env.get("PROJECT")
-        env_name = var_name if var_name == "SITE_ID" else f"{project}_{var_name}"
+        env_name = var_name if var_name in ("PROJECT", "SITE_ID") else f"{project}_{var_name}"
         raise ValueError(
             f"The environment variable {env_name} is not set. "
             f"Please set the environment variable before proceeding."
@@ -234,7 +240,6 @@ def set_data_storage_location(location: str | Path | None):
         _env.set("DATA_STORAGE_LOCATION", None)
         return
 
-    # Check if location exists and is readable
     if not Path(location).exists():
         warnings.warn(
             f"The location you provided for the environment variable {env_name} doesn't exist: {location}."
@@ -267,6 +272,9 @@ def get_data_storage_location(site_id: str = None) -> str:
         A ValueError when the SITE_ID or the ${PROJECT}_DATA_STORAGE_LOCATION is not set.
     """
     global _env
+
+    project = _env.get("PROJECT")
+    _check_no_value("PROJECT", project)
 
     site_id = site_id or _env.get("SITE_ID")
     _check_no_value("SITE_ID", site_id)
@@ -301,7 +309,6 @@ def set_conf_data_location(location: str | Path | None):
         _env.set("CONF_DATA_LOCATION", None)
         return
 
-    # Check if location exists and is readable
     if not Path(location).exists():
         warnings.warn(
             f"The location you provided for the environment variable {env_name} doesn't exist: {location}."
@@ -370,7 +377,6 @@ def set_log_file_location(location: str | Path | None):
         _env.set("LOG_FILE_LOCATION", None)
         return
 
-    # Check if location exists and is readable
     if not Path(location).exists():
         warnings.warn(
             f"The location you provided for the environment variable {env_name} doesn't exist: {location}."
@@ -440,7 +446,6 @@ def set_local_settings(path: str | Path | None):
         _env.set('LOCAL_SETTINGS', None)
         return
 
-    # Check if location exists and is readable
     if not Path(path).exists():
         warnings.warn(
             f"The location you provided for the environment variable {env_name} doesn't exist: {path}."
@@ -464,26 +469,49 @@ def get_local_settings() -> str:
     return local_settings or None
 
 
+def has_conf_repo_location() -> bool:
+    location = _env.get("CONF_REPO_LOCATION")
+    console.print(f"[red]{location = }[/]")
+    return True if location else False
+
+
 def get_conf_repo_location_env_name() -> str:
     """Returns the name of the environment variable for the project."""
     project = _env.get("PROJECT")
     return f"{project}_CONF_REPO_LOCATION"
 
 
-def get_conf_repo_location() -> str:
-    """Returns the fully qualified name of the location of the repository with configuration and calibration data."""
+def get_conf_repo_location() -> str | None:
+    """
+    Returns the fully qualified name of the location of the repository with
+    configuration and calibration data.
+
+    Returns None if no environment variable was defined or if the location doesn't exist.
+    In both cases a Warning is issued.
+    """
 
     location = _env.get("CONF_REPO_LOCATION")
 
-    if location and not Path(location).exists():
-        warnings.warn(f"The location of the configuration data repository doesn't exist: {location}.")
+    if location in (None, NoValue()):
+        warnings.warn(
+            f"The environment variable for the configuration data repository is "
+            f"not defined ({get_conf_repo_location_env_name()})."
+        )
+        return None
 
-    return location or None
+    if not Path(location).exists():
+        warnings.warn(f"The location of the configuration data repository doesn't exist: {location}.")
+        return None
+
+    return location
 
 
 def set_conf_repo_location(location: str | Path | None):
     """
     Sets the environment variable and the internal representation to the given value.
+
+    When the location is None, the environment variable will be unset and its internal
+    representation will be NoValue().
 
     Warnings:
         Issues a warning when the given location doesn't exist.
@@ -497,7 +525,6 @@ def set_conf_repo_location(location: str | Path | None):
         _env.set("CONF_REPO_LOCATION", None)
         return
 
-    # Check if location exists and is readable
     if not Path(location).exists():
         warnings.warn(
             f"The location you provided for the environment variable {env_name} doesn't exist: {location}."
@@ -507,7 +534,69 @@ def set_conf_repo_location(location: str | Path | None):
     _env.set('CONF_REPO_LOCATION', location)
 
 
-ignore_m_warning('egse.env')
+def print_env():
+    """
+    Prints out the mandatory and known environment variables at the time of the
+    function call. The function and lineno is also printed for information.
+    """
+    col_width = 30
+
+    console = Console(width=200)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        caller_info = get_caller_info(level=2)
+        console.print(f"[b]Environment as in {caller_info.filename}:{caller_info.lineno}[/]")
+        console.print(f"  {'PROJECT':{col_width}s}: {get_project_name()}")
+        console.print(f"  {'SITE_ID':{col_width}s}: {get_site_id()}")
+        console.print(f"  {get_data_storage_location_env_name():{col_width}s}: {get_data_storage_location()}")
+        console.print(f"  {get_log_file_location_env_name():{col_width}s}: {get_log_file_location()}")
+        console.print(f"  {get_conf_data_location_env_name():{col_width}s}: {get_conf_data_location()}")
+        console.print(f"  {get_conf_repo_location_env_name():{col_width}s}: {get_conf_repo_location()}")
+        console.print(f"  {get_local_settings_env_name():{col_width}s}: {get_local_settings()}")
+
+
+@contextlib.contextmanager
+def env_var(**kwargs):
+    """
+    Context manager to run some code that need alternate settings for environment variables.
+    This will automatically initialize the CGSE environment upon entry and re-initialize upon exit.
+
+    NOTE: This context manager is different from the one from `egse.system` because of the CGSE environment changes.
+
+    Args:
+        **kwargs: dictionary with environment variables that are needed
+
+    Examples:
+
+        >>> from egse.env import env_var
+        >>> with env_var(PLATO_DATA_STORAGE_LOCATION="/Users/rik/data"):
+        ...    # do stuff that needs these alternate setting
+        ...    pass
+
+    """
+    saved_env = {}
+
+    for k, v in kwargs.items():
+        saved_env[k] = os.environ.get(k)
+        if v is None:
+            if k in os.environ:
+                del os.environ[k]
+        else:
+            os.environ[k] = v
+
+    initialize()
+
+    yield
+
+    for k, v in saved_env.items():
+        if v is None:
+            if k in os.environ:
+                del os.environ[k]
+        else:
+            os.environ[k] = v
+
+    initialize()
 
 
 def main(args: list | None = None):  # pragma: no cover
@@ -588,8 +677,10 @@ def main(args: list | None = None):  # pragma: no cover
             location = get_data_storage_location()
             if not Path(location).exists():
                 if args.mkdir:
-                    rich.print(f"  [green]⟶ Creating data storage location: {location}[/]")
+                    rich.print(f"  [green]⟶ Creating data storage location: {location} (+ daily + obs)[/]")
                     Path(location).mkdir(parents=True)
+                    (Path(location) / "daily").mkdir()
+                    (Path(location) / "obs").mkdir()
                 else:
                     rich.print("  [red]⟶ ERROR: The data storage location doesn't exist![/]")
             else:
@@ -610,6 +701,16 @@ def main(args: list | None = None):  # pragma: no cover
                 rich.print()
         except ValueError as exc:
             rich.print(f"    get_conf_data_location() = [red]{exc}[/]")
+
+        try:
+            rich.print(f"    {get_conf_repo_location() = }", flush=True, end="")
+            location = get_conf_repo_location()
+            if location is None or not Path(location).exists():
+                rich.print("  [red]⟶ ERROR: The configuration repository location doesn't exist![/]")
+            else:
+                rich.print()
+        except ValueError as exc:
+            rich.print(f"    get_conf_repo_location() = [red]{exc}[/]")
 
         try:
             rich.print(f"    {get_log_file_location() = }", flush=True, end="")
@@ -692,6 +793,9 @@ def main(args: list | None = None):  # pragma: no cover
     #
     # PLATO_WORKDIR
     # PLATO_COMMON_EGSE_PATH - YES
+
+
+ignore_m_warning('egse.env')
 
 
 if __name__ == "__main__":

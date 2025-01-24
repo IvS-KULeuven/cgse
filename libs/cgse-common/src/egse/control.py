@@ -5,7 +5,6 @@ import abc
 import logging
 import pickle
 import threading
-from typing import Any
 
 import zmq
 

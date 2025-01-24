@@ -168,10 +168,10 @@ def test_add_resource(reset_resource):
     assert 'icons' in resources
     assert 'data' in resources
 
-    # ValueError because the folder 'lib' doesn't exist yet in 'root'
+    # ValueError because the folder 'docs' doesn't exist yet in 'root'
 
     with pytest.raises(ValueError):
-        add_resource_id("docs", "docs")
+        add_resource_id("docs", root / "docs")
 
     (root / "docs").mkdir()
 
