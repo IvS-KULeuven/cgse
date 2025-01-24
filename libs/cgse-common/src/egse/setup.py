@@ -342,7 +342,7 @@ class NavigableDict(dict):
 
     """
 
-    def __init__(self, head: dict = None):
+    def __init__(self, head: dict = None, label: str = None):
         """
         Args:
             head (dict): the original dictionary
@@ -350,6 +350,7 @@ class NavigableDict(dict):
         head = head or {}
         super().__init__(head)
         self.__dict__["_memoized"] = {}
+        self.__dict__["_label"] = label
 
         # By agreement, we only want the keys to be set as attributes if all keys are strings.
         # That way we enforce that always all keys are navigable, or none.
@@ -578,7 +579,7 @@ class NavigableDict(dict):
         return msg
 
     def __rich__(self) -> Tree:
-        tree = Tree("NavigableDict", guide_style="dim")
+        tree = Tree(self.__dict__["_label"] or "NavigableDict", guide_style="dim")
         walk_dict_tree(self, tree, text_style="dark grey")
         return tree
 
@@ -642,8 +643,8 @@ class Setup(NavigableDict):
     """The Setup class represents a version of the configuration of the test facility, the
     test setup and the Camera Under Test (CUT)."""
 
-    def __init__(self, nav_dict: NavigableDict | dict = None):
-        super().__init__(nav_dict or {})
+    def __init__(self, nav_dict: NavigableDict | dict = None, label: str = None):
+        super().__init__(nav_dict or {}, label=label)
 
     @staticmethod
     def from_dict(my_dict):
@@ -657,7 +658,7 @@ class Setup(NavigableDict):
             >>> assert setup["ID"] == setup.ID == "my-setup-001"
 
         """
-        return Setup(my_dict)
+        return Setup(my_dict, label="Setup")
 
     @staticmethod
     def from_yaml_string(yaml_content: str = None):
@@ -680,7 +681,7 @@ class Setup(NavigableDict):
         if "Setup" in setup_dict:
             setup_dict = setup_dict["Setup"]
 
-        return Setup(setup_dict)
+        return Setup(setup_dict, label="Setup")
 
     @staticmethod
     @lru_cache
@@ -699,11 +700,11 @@ class Setup(NavigableDict):
         if not filename:
             raise ValueError("Invalid argument to function: No filename or None given.")
 
-        MODULE_LOGGER.info(f"Loading {filename}...")
+        # MODULE_LOGGER.info(f"Loading {filename}...")
 
         setup_dict = Settings.load("Setup", filename=filename, force=True, add_local_settings=add_local_settings)
 
-        setup = Setup(setup_dict)
+        setup = Setup(setup_dict, label="Setup")
         setup.set_private_attribute("_filename", filename)
         if setup_id := _parse_filename_for_setup_id(str(filename)):
             setup.set_private_attribute("_setup_id", setup_id)

@@ -471,7 +471,6 @@ def get_local_settings() -> str:
 
 def has_conf_repo_location() -> bool:
     location = _env.get("CONF_REPO_LOCATION")
-    console.print(f"[red]{location = }[/]")
     return True if location else False
 
 
