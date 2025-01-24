@@ -699,7 +699,7 @@ class Setup(NavigableDict):
         if not filename:
             raise ValueError("Invalid argument to function: No filename or None given.")
 
-        MODULE_LOGGER.info(f"Loading {filename}...")
+        # MODULE_LOGGER.info(f"Loading {filename}...")
 
         setup_dict = Settings.load("Setup", filename=filename, force=True, add_local_settings=add_local_settings)
 
