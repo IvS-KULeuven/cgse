@@ -28,39 +28,41 @@ def is_process_not_running(items: List):
 
 def setup_conf_data(tmp_data_dir: Path):
 
-    data_root = tmp_data_dir / get_site_id() / "conf"
+    site_id = get_site_id()
+    data_root = tmp_data_dir / site_id / "conf"
     data_root.mkdir(parents=True, exist_ok=True)
 
     create_text_file(
-        data_root / "SETUP_HOME_00000_240123_120000.yaml",
+        data_root / f"SETUP_{site_id}_00000_240123_120000.yaml",
         textwrap.dedent(
-            """\
-            # This is the 'Zero' Setup for HOME.
+            f"""\
+            # This is the 'Zero' Setup for {site_id}.
 
             Setup:
-                site_id: HOME
+                site_id: {site_id}
 
                 history:
-                    0: Initial zero Setup for HOME
+                    0: Initial zero Setup for {site_id}
             """
         )
     )
 
     create_text_file(
-        data_root / "SETUP_HOME_00028_240123_120028.yaml",
+        data_root / f"SETUP_{site_id}_00028_240123_120028.yaml",
         textwrap.dedent(
-            """\
-            # This is Setup nr 28 for HOME.
+            f"""\
+            # This is Setup nr 28 for {site_id}.
 
             Setup:
-                site_id: HOME
+                site_id: {site_id}
 
                 history:
-                    0: Initial zero Setup for HOME
+                    0: Initial zero Setup for {site_id}
                     28: I just jumped straight to twenty eight
             """
         )
     )
+
 
 def teardown_conf_data(data_dir: Path):
     ...

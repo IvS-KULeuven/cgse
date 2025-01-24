@@ -184,7 +184,7 @@ def _push_setup_to_repo(filename: str, commit_msg: str) -> Failure | Success:
             f"""\
             Couldn't determine the repository location for configuration data. 
 
-            Check if the environment variable '{get_project_name()}_CONF_REPO_LOCATION' is set 
+            Check if the environment variable '{get_project_name()}_CONF_REPO_LOCATION' is set and valid 
             before starting the configuration manager.
             """
         )

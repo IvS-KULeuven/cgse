@@ -27,11 +27,12 @@ def default_env(tmp_path_factory):
     set_default_environment(project, site_id, tmp_data_dir)
 
     data_root = setup_data_storage_layout(tmp_data_dir)
-
     setup_conf_data(tmp_data_dir)
+
+    from egse.env import print_env
+    print_env()
 
     yield DefaultEnvironment(project=project, site_id=site_id, data_root=str(data_root))
 
     teardown_conf_data(tmp_data_dir)
-
     teardown_data_storage_layout(tmp_data_dir)

@@ -134,6 +134,7 @@ from egse.env import get_conf_repo_location
 from egse.env import get_conf_repo_location_env_name
 from egse.env import get_data_storage_location
 from egse.env import has_conf_repo_location
+from egse.env import print_env
 from egse.response import Failure
 from egse.env import get_conf_data_location
 from egse.system import format_datetime
@@ -944,8 +945,11 @@ def _check_conditions_for_get_path_of_setup_file(site_id: str) -> Path:
 
     if not (repo_location := get_conf_repo_location()):
         raise LookupError(
-            f"Environment variable doesn't exist, please define {repo_location_env} and try again."
+            f"Environment variable doesn't exist or points to an invalid location, please (re-)define"
+            f" {repo_location_env} and try again."
         )
+
+    print_env()
 
     repo_location = Path(repo_location)
     setup_location = repo_location / 'data' / site_id / 'conf'
