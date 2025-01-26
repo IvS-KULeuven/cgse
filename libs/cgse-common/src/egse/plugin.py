@@ -3,32 +3,87 @@ import os
 import sys
 import textwrap
 import traceback
+from importlib.metadata import EntryPoint
 
 import click
 import rich
 
-LOGGER = logging.getLogger(__name__)
+from egse.settings import Settings
+from egse.system import get_module_location
+
+_LOGGER = logging.getLogger(__name__)
 
 
-def entry_points(name: str):
+def entry_points(name: str) -> set[EntryPoint]:
+    """
+    Returns a set with all entry-points for the given group name.
+
+    When the name is not known as an entry-point group, an empty set will be returned.
+    """
+
     import importlib.metadata
 
     try:
         x = importlib.metadata.entry_points()[name]
         return {ep for ep in x}  # use of set here to remove duplicates
     except KeyError:
-        return []
+        return set()
 
 
 def load_plugins(entry_point: str) -> dict:
-
+    """
+    Returns a dictionary with plugins loaded. The keys are the names of the entry-points,
+    the values are the loaded modules or objects.
+    """
     eps = {}
     for ep in entry_points(entry_point):
         try:
             eps[ep.name] = ep.load()
         except Exception as exc:
             eps[ep.name] = None
-            LOGGER.error(f"Couldn't load entry point: {exc}")
+            _LOGGER.error(f"Couldn't load entry point: {exc}")
+
+    return eps
+
+
+def load_settings(entry_point: str, force: bool = False) -> dict:
+    """
+    Returns a dictionary with all known settings for the given entry-point name.
+
+    The entry-points are interpreted as follows: <name> = "<module>:<filename>" where
+
+    - <name> is the name of the entry-point given in the pyproject.toml file
+    - <module> is a valid module name that can be imported
+    - <filename> is the name of settings YAML file that is located
+
+    As an example, for the `cgse-common` settings, the following entry in the `pyproject.toml`:
+
+        [project.entry-points."cgse.settings"]
+        cgse-common = "cgse_common:settings.yaml"
+
+    Note that the module name for this entry point has an underscore instead of a dash.
+
+    Return:
+        A dictionary with the entry point name as the key and a dictionary (attrdict) as the value.
+    """
+    eps = {}
+
+    for ep in entry_points(entry_point):
+        try:
+            module = ep.module
+            filename = ep.attr  # by convention, we put the settings YAML filename in attr
+            path = get_module_location(module)
+            if path is None:
+                _LOGGER.error(
+                    f"The entry-point '{ep.name}' is ill defined. The module part doesn't exist or is a "
+                    f"namespace. No settings are loaded for this entry-point."
+                )
+                eps[ep.name] = None
+            else:
+                eps[ep.name] = Settings.load(location=path, filename=filename, add_local_settings=False, force=force)
+        except Exception as exc:
+            eps[ep.name] = None
+            _LOGGER.error(f"Couldn't load entry point: {exc}")
 
     return eps
 
@@ -77,7 +132,7 @@ class BrokenCommand(click.Command):
         self.help = textwrap.dedent(
             f"""\
             Warning: entry point could not be loaded. Contact its author for help.
-            
+
             {traceback.format_exc()}
             """
         )

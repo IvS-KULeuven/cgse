@@ -1,7 +1,5 @@
-SITE:
-    ID:                            XXX
-    SSH_SERVER:              localhost         # The IP address of the SSH server on your site
-    SSH_PORT:                       22         # The TCP/IP port on which the SSH server is listening
+# This is a stub file. Don't add any settings to this file, use the settings.yaml file
+# in your projects module, like e.g. `cgse_common/settings.yaml` for this module.
 
-PROCESS:
-    METRICS_INTERVAL:              10
+SITE:
+    ID:  XXXX
