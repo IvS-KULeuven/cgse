@@ -68,7 +68,6 @@ from egse.env import get_local_settings_env_name
 from egse.exceptions import FileIsEmptyError
 from egse.system import attrdict
 from egse.system import get_package_location
-from egse.system import ignore_m_warning
 from egse.system import recursive_dict_update
 
 _LOGGER = logging.getLogger(__name__)
@@ -260,6 +259,31 @@ class Settings:
     @classmethod
     def profiling(cls):
         return cls.__profile
+
+    @classmethod
+    def load_from_entry_points(
+            cls,
+            entry_point: str = 'cgse.settings',
+            add_local_settings: bool = False,
+            force: bool = False
+    ):
+        from egse.plugin import load_settings
+
+        ep_settings = load_settings(entry_point, force)
+
+        global_settings = attrdict(label="Settings")
+
+        for name, settings in ep_settings.items():
+            recursive_dict_update(global_settings, settings)
+
+        # Load the LOCAL settings YAML file
+
+        if add_local_settings:
+            local_settings = load_local_settings(force)
+            recursive_dict_update(global_settings, local_settings)
+
+        return global_settings
+
 
     @classmethod
     def load(cls, group_name=None, filename="settings.yaml", location=None, *, force=False, add_local_settings=True):
