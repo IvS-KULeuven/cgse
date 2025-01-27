@@ -1,14 +1,19 @@
+__all__ = [
+    "load_plugins",
+    "get_file_infos",
+    "entry_points",
+]
 import logging
 import os
 import sys
 import textwrap
 import traceback
 from importlib.metadata import EntryPoint
+from pathlib import Path
 
 import click
 import rich
 
-from egse.settings import Settings
 from egse.system import get_module_location
 
 _LOGGER = logging.getLogger(__name__)
@@ -46,15 +51,16 @@ def load_plugins(entry_point: str) -> dict:
     return eps
 
 
-def load_settings(entry_point: str, force: bool = False) -> dict:
+def get_file_infos(entry_point: str) -> dict[str, tuple[Path, str]]:
     """
-    Returns a dictionary with all known settings for the given entry-point name.
+    Returns a dictionary with location and filename of all the entries found for
+    the given entry-point name.
 
     The entry-points are interpreted as follows: <name> = "<module>:<filename>" where
 
     - <name> is the name of the entry-point given in the pyproject.toml file
-    - <module> is a valid module name that can be imported
-    - <filename> is the name of settings YAML file that is located
+    - <module> is a valid module name that can be imported and from which the location can be determined.
+    - <filename> is the name of the target file, e.g. a YAML file
 
     As an example, for the `cgse-common` settings, the following entry in the `pyproject.toml`:
 
@@ -64,26 +70,24 @@ def load_settings(entry_point: str, force: bool = False) -> dict:
     Note that the module name for this entry point has an underscore instead of a dash.
 
     Return:
-        A dictionary with the entry point name as the key and a dictionary (attrdict) as the value.
+        A dictionary with the entry point name as the key and a tuple (location, filename) as the value.
     """
-    eps = {}
+    eps = dict()
 
     for ep in entry_points(entry_point):
         try:
-            module = ep.module
-            filename = ep.attr  # by convention, we put the settings YAML filename in attr
-            path = get_module_location(module)
+            path = get_module_location(ep.module)
+
             if path is None:
                 _LOGGER.error(
                     f"The entry-point '{ep.name}' is ill defined. The module part doesn't exist or is a "
                     f"namespace. No settings are loaded for this entry-point."
                 )
-                eps[ep.name] = None
             else:
-                eps[ep.name] = Settings.load(location=path, filename=filename, add_local_settings=False, force=force)
+                eps[ep.name] = (path, ep.attr)
+
         except Exception as exc:
-            eps[ep.name] = None
-            _LOGGER.error(f"Couldn't load entry point: {exc}")
+            _LOGGER.error(f"The entry point '{ep.name}' is ill defined: {exc}")
 
     return eps
 
