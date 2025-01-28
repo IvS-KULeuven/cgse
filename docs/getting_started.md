@@ -26,6 +26,9 @@ with the `cgse-common` which contains all common code that is generic and useful
 $ pip install cgse-common
 ```
 
+Check the [list of packages](./package_list.md) that are part of the CGSE repo and can be installed with `pip`. The 
+packages are described in the sections [Libs](./libs/index.md) and [Projects](./projects/index.md).
+
 ## Set up your environment
 
 To check your installation and set up your environment, here are a few tips.
