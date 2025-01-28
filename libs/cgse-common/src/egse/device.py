@@ -152,6 +152,7 @@ class DeviceConnectionInterface(DeviceConnectionObservable):
         Raises:
             ConnectionError: when the connection can not be opened.
         """
+
         raise NotImplementedError
 
     @dynamic_interface
@@ -187,13 +188,13 @@ class DeviceInterface(DeviceConnectionInterface):
 
     @dynamic_interface
     def is_simulator(self) -> bool:
-        """Ask if the device class is a Simulator instead of the real Controller.
+        """ Checks whether the device is a simulator rather than a real hardware controller.
 
         This can be useful for testing purposes or when doing actual movement simulations.
 
-        Returns:
-            True if the Device is a Simulator, False if the Device is connected to real hardware.
+        Returns: True if the Device is a Simulator; False if the Device is connected to real hardware.
         """
+
         raise NotImplementedError
 
 
