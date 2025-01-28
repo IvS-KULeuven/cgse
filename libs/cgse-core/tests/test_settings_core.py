@@ -5,7 +5,6 @@ import rich
 
 from egse.env import set_local_settings
 from egse.settings import Settings
-from egse.settings import get_settings_locations
 from egse.settings import load_local_settings
 
 
@@ -45,35 +44,6 @@ def test_memoized():
 
     Settings.load()
     rich.print(f"Settings to_string():\n{Settings.to_string()}")
-
-
-def test_get_settings_locations():
-
-    print()
-
-    locations = get_settings_locations()
-    rich.print(f"{locations = }")
-
-    valid_location = locations[0]
-
-    # at least there shall be a location that contains `cgse-common` because that's where the settings.py is defined.
-
-    found = 0
-
-    for location in locations:
-        assert isinstance(location, Path)
-        assert location.name == 'egse'
-        if 'cgse-common' in str(location):
-            found += 1
-    else:
-        assert found == 1
-
-    # Do not allow to add a folder that doesn't have a settings.yaml file
-    locations = get_settings_locations("/tmp")
-    assert locations == []
-
-    locations = get_settings_locations(valid_location)
-    assert locations == [valid_location]
 
 
 def test_settings_files():

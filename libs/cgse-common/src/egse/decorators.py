@@ -10,6 +10,8 @@ import warnings
 from typing import Callable
 from typing import Optional
 
+import rich
+
 from egse.settings import Settings
 from egse.system import get_caller_info
 
@@ -227,7 +229,14 @@ def profile_func(output_file=None, sort_by='cumulative', lines_to_print=None, st
 
 
 def profile(func):
-    """Print the function signature and return value"""
+    """
+    Prints the function signature and return value to stdout.
+
+    This function checks the `Settings.profiling()` value and only prints out
+    profiling information if this returns True.
+
+    Profiling can be activated with `Settings.set_profiling(True)`.
+    """
     if not hasattr(profile, "counter"):
         profile.counter = 0
 
@@ -240,10 +249,10 @@ def profile(func):
             signature = ", ".join(args_repr + kwargs_repr)
             caller = get_caller_info(level=2)
             prefix = f"PROFILE[{profile.counter}]: "
-            _LOGGER.info(f"{prefix}Calling {func.__name__}({signature})")
-            _LOGGER.info(f"{prefix}    from {caller.filename} at {caller.lineno}.")
+            rich.print(f"{prefix}Calling {func.__name__}({signature})")
+            rich.print(f"{prefix}    from {caller.filename} at {caller.lineno}.")
             value = func(*args, **kwargs)
-            _LOGGER.info(f"{prefix}{func.__name__!r} returned {value!r}")
+            rich.print(f"{prefix}{func.__name__!r} returned {value!r}")
             profile.counter -= 1
         else:
             value = func(*args, **kwargs)

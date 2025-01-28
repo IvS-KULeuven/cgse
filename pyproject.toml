@@ -20,7 +20,7 @@ testpaths = [
     "libs/cgse-common/tests",
     "libs/cgse-core/tests",
 ]
-addopts = "-ra --cov --cov-report html"
+addopts = "-ra --cov --cov-branch --cov-report html"
 filterwarnings = [
     "ignore::DeprecationWarning"
 ]
@@ -30,6 +30,9 @@ omit = [
     "*/tests/*",
     "conftest.py",
 ]
+
+[tool.coverage.report]
+fail_under = 80
 
 [tool.uv.sources]
 cgse-common = { workspace = true }
