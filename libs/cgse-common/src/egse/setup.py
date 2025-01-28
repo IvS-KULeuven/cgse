@@ -131,14 +131,13 @@ import rich
 import yaml
 from rich.tree import Tree
 
+from egse.env import get_conf_data_location
 from egse.env import get_conf_repo_location
 from egse.env import get_conf_repo_location_env_name
 from egse.env import get_data_storage_location
 from egse.env import has_conf_repo_location
 from egse.env import print_env
 from egse.response import Failure
-from egse.env import get_conf_data_location
-from egse.settings import load_settings_file
 from egse.settings import read_configuration_file
 from egse.system import format_datetime
 from egse.system import sanity_check
@@ -698,7 +697,6 @@ class Setup(NavigableDict):
         Returns:
             a Setup that was loaded from the given location.
         """
-        from egse.settings import Settings
 
         if not filename:
             raise ValueError("Invalid argument to function: No filename or None given.")
