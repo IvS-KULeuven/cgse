@@ -28,6 +28,7 @@ __all__ = [
     "add_cr_lf",
     "dynamic_command",
     "DynamicCommandMixin",
+    "CommandType"
 ]
 
 # ----- Mixin for dynamic commanding ---------------------------------------------------------------
@@ -106,6 +107,12 @@ def add_cr_lf(cmd_string: str):
 def expand_kwargs(kwargs: Dict):
     """Expand keyword arguments and their values as 'key=value' separated by spaces."""
     return " ".join(f"{k}={v}" for k, v in kwargs.items())
+
+class CommandType(enum.Enum, str):
+
+    READ = "read"
+    WRITE = "write"
+    TRANSACTION = "transaction"
 
 
 def dynamic_command(
