@@ -1,3 +1,6 @@
+"""
+This module provides function to load plugins and settings from entry-points.
+"""
 __all__ = [
     "load_plugins",
     "get_file_infos",
