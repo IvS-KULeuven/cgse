@@ -486,7 +486,7 @@ class ProcessManagerController(ProcessManagerInterface):
 
                     if process_name == "DAQ6510":
                         setup = GlobalState.setup
-                        das_delay = setup.gse.DAQ6510.route.delay
+                        das_delay = setup.gse.DAQ6510.route.mon_delay
                         das_count = setup.gse.DAQ6510.route.scan.COUNT.SCAN
                         das_interval = setup.gse.DAQ6510.route.scan.INTERVAL
 
