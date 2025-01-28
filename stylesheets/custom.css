@@ -79,7 +79,7 @@ td code {
 }
 
 :root {
-  --md-admonition-icon--cgse: url('/images/icons/cgse-logo .svg')
+  --md-admonition-icon--cgse: url('/images/icons/cgse-logo.svg')
 }
 .md-typeset .admonition.cgse,
 .md-typeset details.cgse {
