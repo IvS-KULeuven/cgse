@@ -7,7 +7,7 @@ from egse.env import get_project_name
 from egse.env import get_site_id
 from egse.env import get_conf_data_location
 from egse.env import get_data_storage_location
-from egse.env import get_local_settings
+from egse.env import get_local_settings_path
 from egse.env import get_local_settings_env_name
 from egse.env import get_log_file_location
 from egse.env import print_env
@@ -164,7 +164,7 @@ def test_get_local_settings():
 
         with pytest.warns(UserWarning, match="local settings for your project will not be loaded"):
             assert get_local_settings_env_name() == "CGSE_LOCAL_SETTINGS"
-            assert get_local_settings() == "/tmp/local_settings.yaml"
+            assert get_local_settings_path() == "/tmp/local_settings.yaml"
 
 
 def test_set_local_settings():
@@ -175,7 +175,7 @@ def test_set_local_settings():
             set_local_settings("/tmp/data/local_settings.yaml")
 
         with pytest.warns(UserWarning, match="As a result, the local settings for your project will not be loaded"):
-            assert get_local_settings() == "/tmp/data/local_settings.yaml"
+            assert get_local_settings_path() == "/tmp/data/local_settings.yaml"
 
         # Cleanup local settings
 

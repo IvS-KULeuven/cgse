@@ -69,11 +69,9 @@ from typing import Any
 
 import yaml  # This module is provided by the pip package PyYaml - pip install pyyaml
 
-from egse.env import get_local_settings
 from egse.env import get_local_settings_env_name
-from egse.exceptions import FileIsEmptyError
+from egse.env import get_local_settings_path
 from egse.system import attrdict
-from egse.system import get_package_location
 from egse.system import recursive_dict_update
 
 _LOGGER = logging.getLogger(__name__)
@@ -83,22 +81,6 @@ _HERE = Path(__file__).resolve().parent
 
 class SettingsError(Exception):
     pass
-
-
-def is_defined(cls, name):
-    return hasattr(cls, name)
-
-
-def get_attr_value(cls, name, default=None):
-    try:
-        return getattr(cls, name)
-    except AttributeError:
-        return default
-
-
-def set_attr_value(cls, name, value):
-    if hasattr(cls, name):
-        raise KeyError(f"Overwriting setting {name} with {value}, was {hasattr(cls, name)}")
 
 
 # Fix the problem: YAML loads 5e-6 as string and not a number
@@ -117,39 +99,28 @@ SAFE_LOADER.add_implicit_resolver(
     list(u'-+0123456789.'))
 
 
-def get_settings_locations(location: str | Path = None, filename: str = "settings.yaml") -> list[Path]:
-
-    # FIXME: Needs to be reworked as this still assumes namespaces
-
-    yaml_locations: set[Path] = set()
-
-    if location is None:
-        package_locations = get_package_location("egse")  # `egse` is a namespace
-
-        for package_location in package_locations:
-            if (package_location / filename).exists():
-                yaml_locations.add(package_location)
-
-        yaml_locations.add(_HERE)
-        _LOGGER.debug(f"yaml_locations in Settings.load():  {yaml_locations}")
-
-    else:
-
-        package_location = Path(location).resolve()
-        if (package_location / filename).exists():
-            yaml_locations.add(package_location)
-        else:
-            _LOGGER.warning(f"No '{filename}' file found at {package_location}.")
-
-    return list(yaml_locations)
-
-
 def load_settings_file(path: Path, filename: str, force: bool = False) -> attrdict:
+    """
+    Loads the YAML configuration file that is located at `path / filename`.
 
+    Args:
+        - path (PATH): the folder where the YAML file is located
+        - filename (str): the name of the YAML configuration file
+        - force (bool): force reloading, i.e. don't use the cached information
+
+    Raises:
+        A SettingsError when the configuration file doesn't exist or cannot be found.
+
+        A SettingsError when there was an error reading the configuration file.
+
+    Returns:
+         A dictionary (attrdict) with all the settings from the given file.
+
+         Note that, in case of an empty configuration file, and empty dictionary
+         is returned and a warning message is issued.
+    """
     try:
         yaml_document = read_configuration_file(path / filename, force=force)
-        if yaml_document == {}:
-            raise FileIsEmptyError()
         settings = attrdict(
             {name: value for name, value in yaml_document.items()}
         )
@@ -157,17 +128,29 @@ def load_settings_file(path: Path, filename: str, force: bool = False) -> attrdi
         raise SettingsError(
             f"The Settings YAML file '{filename}' is not found at {path!s}. "
         ) from exc
-    except FileIsEmptyError:
+
+    if not settings:
         _LOGGER.warning(
             f"The Settings YAML file '{filename}' at {path!s} is empty. "
             f"No local settings were loaded, an empty dictionary is returned.")
-        settings = attrdict()
 
     return settings
 
 
 def load_global_settings(entry_point: str = 'cgse.settings', force: bool = False) -> attrdict:
+    """
+    Loads the settings that are defined by the given entry_point. The entry-points are defined in the
+    `pyproject.toml` files of the packages that export their global settings.
 
+    Args:
+         - entry_point (str): the name of the entry-point group [default: 'cgse.settings']
+         - force (bool): force reloading the settings, i.e. ignore the cache
+
+    Returns:
+        A dictionary (attrdict) containing a collection of all the settings exported by the packages
+        through the given entry-point.
+
+    """
     from egse.plugin import get_file_infos
 
     ep_settings = get_file_infos(entry_point)
@@ -183,7 +166,7 @@ def load_global_settings(entry_point: str = 'cgse.settings', force: bool = False
 
 def load_local_settings(force: bool = False) -> attrdict:
     """
-    Load the local settings file that is defined from the environment variable <PROJECT>_LOCAL_SETTINGS.
+    Loads the local settings file that is defined from the environment variable <PROJECT>_LOCAL_SETTINGS.
 
     This function might return an empty dictionary when
 
@@ -201,11 +184,11 @@ def load_local_settings(force: bool = False) -> attrdict:
     """
     local_settings = attrdict()
 
-    local_settings_location = get_local_settings()
+    local_settings_path = get_local_settings_path()
 
-    if local_settings_location:
-        location = Path(local_settings_location)
-        local_settings = load_settings_file(location.parent, location.name, force)
+    if local_settings_path:
+        path = Path(local_settings_path)
+        local_settings = load_settings_file(path.parent, path.name, force)
 
     return local_settings
 
@@ -217,7 +200,10 @@ def read_configuration_file(filename: Path, *, force=False):
 
     Args:
         filename (Path): the fully qualified filename of the YAML file
-        force (bool): force reloading the file
+        force (bool): force reloading the file, even when it was memoized
+
+    Raises:
+        A SettingsError when there was an error reading the YAML file.
 
     Returns:
         a dictionary containing all the configuration settings from the YAML file.
@@ -428,7 +414,7 @@ def main(args: list | None = None):  # pragma: no cover
     from rich import print
 
     if args.local:
-        location = get_local_settings()
+        location = get_local_settings_path()
         if location:
             location = str(Path(location).expanduser().resolve())
             settings = Settings.load(filename=location)

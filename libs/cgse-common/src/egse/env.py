@@ -47,7 +47,7 @@ __all__ = [
     "get_conf_repo_location_env_name",
     "get_data_storage_location",
     "get_data_storage_location_env_name",
-    "get_local_settings",
+    "get_local_settings_path",
     "get_local_settings_env_name",
     "get_log_file_location",
     "get_log_file_location_env_name",
@@ -455,18 +455,30 @@ def set_local_settings(path: str | Path | None):
     _env.set('LOCAL_SETTINGS', path)
 
 
-def get_local_settings() -> str:
-    """Returns the fully qualified filename of the local settings YAML file."""
+def get_local_settings_path() -> str or None:
+    """
+    Returns the fully qualified filename of the local settings YAML file. When the local settings environment
+    variable is not defined or is an empty string, None is returned.
+
+    Warnings:
+        - When the local settings environment variable is not defined, or
+        - when the path defined by the environment variable doesn't exist.
+    """
 
     local_settings = _env.get("LOCAL_SETTINGS")
 
-    if local_settings and not Path(local_settings).exists():
+    if not local_settings:
+        warnings.warn(f"The local settings environment variable '{get_local_settings_env_name()}' "
+                      f"is not defined or is an empty string.")
+        return None
+
+    if not Path(local_settings).exists():
         warnings.warn(
-            f"The local settings '{local_settings}' doesn't exist. As a result, "
+            f"The local settings path '{local_settings}' doesn't exist. As a result, "
             f"the local settings for your project will not be loaded."
         )
 
-    return local_settings or None
+    return local_settings
 
 
 def has_conf_repo_location() -> bool:
@@ -552,7 +564,7 @@ def print_env():
         console.print(f"  {get_log_file_location_env_name():{col_width}s}: {get_log_file_location()}")
         console.print(f"  {get_conf_data_location_env_name():{col_width}s}: {get_conf_data_location()}")
         console.print(f"  {get_conf_repo_location_env_name():{col_width}s}: {get_conf_repo_location()}")
-        console.print(f"  {get_local_settings_env_name():{col_width}s}: {get_local_settings()}")
+        console.print(f"  {get_local_settings_env_name():{col_width}s}: {get_local_settings_path()}")
 
 
 @contextlib.contextmanager
@@ -726,8 +738,8 @@ def main(args: list | None = None):  # pragma: no cover
             rich.print(f"    get_log_file_location() = [red]{exc}[/]")
 
         try:
-            rich.print(f"    {get_local_settings() = }", flush=True, end="")
-            location = get_local_settings()
+            rich.print(f"    {get_local_settings_path() = }", flush=True, end="")
+            location = get_local_settings_path()
             if location is None or not Path(location).exists():
                 rich.print("  [red]⟶ ERROR: The local settings file is not defined or doesn't exist![/]")
             else:

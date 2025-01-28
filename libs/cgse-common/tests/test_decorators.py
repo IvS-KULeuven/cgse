@@ -18,7 +18,6 @@ from egse.decorators import to_be_implemented
 from egse.decorators import transaction_command
 from egse.decorators import write_command
 from egse.settings import Settings
-from egse.system import Timer
 
 MODULE_LOGGER = logging.getLogger(__name__)
 
@@ -102,9 +101,7 @@ def test_to_be_implemented(caplog):
     assert 'func is not yet implemented'
 
 
-def test_profile(caplog):
-
-    caplog.set_level(level=logging.INFO)
+def test_profile(capsys):
 
     @profile
     def func(name: str = "World"):
@@ -113,12 +110,16 @@ def test_profile(caplog):
     Settings.set_profiling(False)
 
     func()
-    assert "PROFILE" not in caplog.text
+
+    captured = capsys.readouterr()
+    assert "PROFILE" not in captured.out
 
     Settings.set_profiling(True)
 
     func()
-    assert "PROFILE" in caplog.text
+
+    captured = capsys.readouterr()
+    assert "PROFILE" in captured.out
 
     Settings.set_profiling(False)
 

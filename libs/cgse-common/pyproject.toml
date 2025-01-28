@@ -42,7 +42,7 @@ cgse-common = "cgse_common:settings.yaml"
 [tool.pytest.ini_options]
 pythonpath = "src"
 testpaths = ["tests"]
-addopts = "-ra --cov --cov-report html"
+addopts = "-ra --cov --cov-branch --cov-report html"
 filterwarnings = [
     "ignore::DeprecationWarning"
 ]
