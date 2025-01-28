@@ -1,0 +1,61 @@
+[project]
+name = "keithley-tempcontrol"
+version = "2025.0.1"
+description = "Keithley Temperature Control for CGSE"
+authors = [
+    {name = "IVS KU Leuven"}
+]
+maintainers = [
+    {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
+    {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"}
+]
+readme = {"file" = "README.md", "content-type" = "text/markdown"}
+requires-python = ">=3.9"
+license = "MIT"
+keywords = [
+    "CGSE",
+    "Common-EGSE",
+    "hardware testing",
+    "software framework",
+    "temperature control",
+]
+dependencies = [
+    "cgse-common",
+    "cgse-gui",
+    "PyQt5>=5.15.11"
+]
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-mock", "pytest-cov"]
+
+[project.scripts]
+daq6510_cs = 'egse.tempcontrol.keithley.daq650_cs:cli'
+
+[project.gui-scripts]
+daq6510_ui = "egse.tempcontrol.keithley.daq6510_ui:main"
+
+[project.entry-points."cgse.version"]
+keithley-tempcontrol = 'egse.plugins'
+
+[project.entry-points."cgse.service.plugins"]
+daq6510_cs = 'scripts.cgse_service_plugins:daq6510_cs'
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/tests",
+    "/pytest.ini",
+    "/.gitignore",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/egse", "src/scripts"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+extend-select = ["E501"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

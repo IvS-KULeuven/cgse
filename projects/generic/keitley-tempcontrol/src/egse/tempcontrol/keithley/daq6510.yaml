@@ -1,0 +1,102 @@
+BaseClass:
+    egse.tempcontrol.keithley.daq6510.DAQ6510Interface
+ProxyClass:
+    egse.tempcontrol.keithley.daq6510.DAQ6510Proxy
+ControlServerClass:
+    egse.tempcontrol.keithley.daq6510_cs.DAQ6510ControlServer
+ControlServer:
+    egse.tempcontrol.keithley.daq6510_cs
+
+Commands:
+
+    # Each of these groups is parsed and used on both the server and the client side.
+    # The group name (e.g. is_simulator) will be monkey-patched in the Proxy class for the device or service.
+    # The other fields are:
+    #   description:   Used by the doc_string method to generate a help string
+    #   cmd:           Command string that will eventually be sent to the hardware controller for the
+    #                  device after the arguments have been filled.
+    #   device_method: The name of the method to be called on the device class.
+    #                  These should all be defined by the base class for the device, i.e. KeithleyBase.
+    #   response:      The name of the method to be called from the device protocol.
+    #                  This method should exist in the sub-class of the CommandProtocol base class, i.e.
+    #                  in this case it will be the KeithleyProtocol class.
+
+    # Definition of the DeviceInterface
+
+    disconnect:
+        description  : Disconnects from the Keithley controller. This command will be sent to the
+                       Keithley Control Server which will then disconnect from the hardware controller.
+                       This command doesn't affect the ZeroMQ connection of this Proxy to the
+                       control server. Use the service command ``disconnect()`` to disconnect
+                       from the control server.
+
+    connect:
+        description:    Connects the Keithley hardware controller
+
+    reconnect:
+        description:    Reconnects the Keithley hardware controller.
+
+                        This command will force a disconnect and then try to re-connect to the controller.
+
+    is_simulator:
+        description:   Asks if the control server is a simulator instead of the real KeithleyController class.
+        returns:       bool | True if the far end is a simulator instead of the real hardware
+
+    is_connected:
+        description:   Checks if the Keithley Hardware Controller is connected.
+
+
+    # Definition of the device commands
+
+    info:
+        description:   Retrieves basic information about the Keithley and the Controller.
+
+    reset:
+        description:   Resets the device. This returns the instrument to default settings, and cancels all
+                       pending commands.
+
+    send_command:
+        description:   Sends a SCPI command to the device
+        cmd:           '{command} {response}'
+
+    set_time:
+        description:   Sets the absolute date and time of the device.
+        cmd:           '{year} {month} {day} {hour} {minute} {second}'
+
+    get_time:
+        description:   Gets the time and time of the device.
+
+    read_buffer:
+        description:   Reads specific data elements (measurements) from the given buffer.
+
+    get_buffer_count:
+        description:   The number of readings in the specified reading buffer.
+
+    get_buffer_capacity:
+        description:   The total number of readings that the buffer can store.
+
+    delete_buffer:
+        description:   Deletes the given buffer.
+
+    clear_buffer:
+        description:   Clears all readings and statistics from the specified buffer.
+
+    create_buffer:
+        description:   Creates a Reading Buffer with the given name.
+
+    configure_sensors:
+        description:   Allows to configure the different sensors in the `channel_list`. Each sensor
+                       in the list will be configured according to the settings given in the
+                       `sense` dictionary.
+        cmd:           '{channel_list} {sense}'
+
+    setup_measurements:
+        description:   Sets up the measurements for the given channel list.
+        cmd:           '{channel_list}'
+
+    perform_measurement:
+        description:   Performs the actual measurements. This function will wait until all
+                       measurements have completed, so be careful with the arguments `count` and
+                       `interval` as they will multiply into the number of seconds that you will
+                       have to wait for the response.
+        cmd:           '{channel_list} {count} {interval}'
