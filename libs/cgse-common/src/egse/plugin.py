@@ -14,8 +14,6 @@ from pathlib import Path
 import click
 import rich
 
-from egse.system import get_module_location
-
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -72,6 +70,8 @@ def get_file_infos(entry_point: str) -> dict[str, tuple[Path, str]]:
     Return:
         A dictionary with the entry point name as the key and a tuple (location, filename) as the value.
     """
+    from egse.system import get_module_location
+
     eps = dict()
 
     for ep in entry_points(entry_point):
