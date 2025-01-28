@@ -163,7 +163,7 @@ class BaseCommandProtocol(DeviceConnectionObserver):
         """
         status = {
             "timestamp": format_datetime(),
-            "delay": self.__control_server.delay,
+            "delay": self.__control_server.mon_delay,
         }
         status.update(self.__control_server.get_process_status())
         return status
@@ -386,7 +386,7 @@ class CommandProtocol(DeviceConnectionObserver, metaclass=abc.ABCMeta):
 
     def quit(self):
         """
-        This method can be overridden by a sub-class to cleanup and stop threads that it
+        This method can be overridden by a sub-class to clean up and stop threads that it
         started.
         """
 
@@ -444,7 +444,7 @@ class CommandProtocol(DeviceConnectionObserver, metaclass=abc.ABCMeta):
         """
         status = {
             "timestamp": format_datetime(),
-            "delay": self.control_server.delay,
+            "delay": self.control_server.mon_delay,
         }
         status.update(self.control_server.get_process_status())
         return status

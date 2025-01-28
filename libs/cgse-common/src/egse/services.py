@@ -57,7 +57,7 @@ class ServiceProtocol(CommandProtocol):
         Returns:
             Sends back the selected delay time in milliseconds.
         """
-        delay = self.control_server.set_delay(1.0 / freq)
+        delay = self.control_server.set_mon_delay(1.0 / freq)
 
         LOGGER.debug(f"Set monitoring frequency to {freq}Hz, ± every {delay:.0f}ms.")
 
