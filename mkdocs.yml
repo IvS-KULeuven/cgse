@@ -99,6 +99,8 @@ nav:
     - libs/index.md
     - cgse-common:
       - libs/cgse-common/index.md
+      - libs/cgse-common/settings.md
+      - libs/cgse-common/setup.md
     - cgse-core:
       - libs/cgse-core/index.md
     - cgse-coordinates:

@@ -326,7 +326,7 @@ class Settings:
     @staticmethod
     def _load_one(location: str, filename: str, force=False) -> attrdict:
 
-        return load_settings_file(Path(location), filename, force)
+        return load_settings_file(Path(location).expanduser(), filename, force)
 
     @classmethod
     def load(
