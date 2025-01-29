@@ -1,5 +1,6 @@
 import logging
 import re
+from pathlib import Path
 from typing import Dict, Union
 from typing import List
 from typing import Tuple
@@ -17,9 +18,12 @@ from egse.zmq_ser import connect_address
 
 logger = logging.getLogger(__name__)
 
+HERE = Path(__file__).parent
+
 CTRL_SETTINGS = Settings.load("Keithley Control Server")
 FW_SETTINGS = Settings.load("Keithley DAQ6510")
-DEVICE_SETTINGS = Settings.load(filename="daq6510.yaml")
+DEVICE_SETTINGS = Settings.load(location=HERE, filename="daq6510.yaml")
+
 
 DEFAULT_BUFFER_1 = "defbuffer1"
 DEFAULT_BUFFER_2 = "defbuffer2"
