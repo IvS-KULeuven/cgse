@@ -1,6 +1,6 @@
 [project]
 name = "cgse-common"
-version = "2025.0.5"
+version = "2025.0.7"
 description = "Software framework to support hardware testing"
 authors = [
     {name = "IVS KU Leuven"}
@@ -63,7 +63,7 @@ exclude = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/egse", "src/cgse-common"]
+packages = ["src/egse", "src/cgse_common"]
 
 [tool.ruff]
 line-length = 120
