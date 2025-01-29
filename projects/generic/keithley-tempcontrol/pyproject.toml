@@ -37,6 +37,9 @@ daq6510_ui = "egse.tempcontrol.keithley.daq6510_ui:main"
 [project.entry-points."cgse.version"]
 keithley-tempcontrol = 'egse.plugins'
 
+[project.entry-points."cgse.settings"]
+keithley-tempcontrol = "keithley_tempcontrol:settings.yaml"
+
 [project.entry-points."cgse.service.plugins"]
 daq6510_cs = 'scripts.cgse_service_plugins:daq6510_cs'
 
