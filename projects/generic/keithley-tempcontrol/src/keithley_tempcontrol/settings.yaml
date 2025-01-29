@@ -1,0 +1,22 @@
+PACKAGES:
+    KEITHLEY_TEMPCONTROL: Keithley temperature control
+
+
+Keithley DAQ6510:
+    HOSTNAME:               localhost
+    PORT:                        5025
+    MAC_ADDRESS:    08:00:11:24:0C:7A
+    SERIAL_NUMBER:           04457823
+    TIMEOUT:                       60
+
+Keithley Control Server:
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
+    COMMANDING_PORT:             6920          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6921          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6922          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6923          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                         10          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:         DAQ6510          # The mnemonic to be used in the filename storing the housekeeping data
+    TIMEOUT:                       90          # The timeout for DAQ6510Proxy [seconds]. timeout must be > scan count * interval + (one scan duration)
