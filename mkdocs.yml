@@ -86,6 +86,7 @@ nav:
   - index.md
   - Introduction:
     - getting_started.md
+    - package_list.md
     - help.md
   - Developer Guide:
     - dev_guide/index.md
@@ -99,6 +100,8 @@ nav:
     - libs/index.md
     - cgse-common:
       - libs/cgse-common/index.md
+      - libs/cgse-common/settings.md
+      - libs/cgse-common/setup.md
     - cgse-core:
       - libs/cgse-core/index.md
     - cgse-coordinates:

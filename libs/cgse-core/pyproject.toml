@@ -1,8 +1,11 @@
 [project]
 name = "cgse-core"
-version = "2025.0.5"
+version = "2025.0.7"
 description = "Core services for the CGSE framework"
 authors = [
+    {name = "IVS KU Leuven"}
+]
+maintainers = [
     {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
     {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"}
 ]
@@ -36,6 +39,9 @@ cgse = 'scripts.cgse:cli'
 [project.entry-points."cgse.version"]
 cgse-core = 'egse'
 
+[project.entry-points."cgse.settings"]
+cgse-core = "cgse_core:settings.yaml"
+
 [tool.pytest.ini_options]
 pythonpath = "src"
 testpaths = ["tests"]
@@ -59,7 +65,7 @@ exclude = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/egse", "src/scripts"]
+packages = ["src/egse", "src/scripts", "src/cgse_core"]
 
 [tool.ruff]
 line-length = 120

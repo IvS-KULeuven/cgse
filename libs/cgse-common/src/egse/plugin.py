@@ -1,34 +1,96 @@
+"""
+This module provides function to load plugins and settings from entry-points.
+"""
+__all__ = [
+    "load_plugins",
+    "get_file_infos",
+    "entry_points",
+]
 import logging
 import os
 import sys
 import textwrap
 import traceback
+from importlib.metadata import EntryPoint
+from pathlib import Path
 
 import click
 import rich
 
-LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
-def entry_points(name: str):
+def entry_points(name: str) -> set[EntryPoint]:
+    """
+    Returns a set with all entry-points for the given group name.
+
+    When the name is not known as an entry-point group, an empty set will be returned.
+    """
+
     import importlib.metadata
 
     try:
         x = importlib.metadata.entry_points()[name]
         return {ep for ep in x}  # use of set here to remove duplicates
     except KeyError:
-        return []
+        return set()
 
 
 def load_plugins(entry_point: str) -> dict:
-
+    """
+    Returns a dictionary with plugins loaded. The keys are the names of the entry-points,
+    the values are the loaded modules or objects.
+    """
     eps = {}
     for ep in entry_points(entry_point):
         try:
             eps[ep.name] = ep.load()
         except Exception as exc:
             eps[ep.name] = None
-            LOGGER.error(f"Couldn't load entry point: {exc}")
+            _LOGGER.error(f"Couldn't load entry point: {exc}")
+
+    return eps
+
+
+def get_file_infos(entry_point: str) -> dict[str, tuple[Path, str]]:
+    """
+    Returns a dictionary with location and filename of all the entries found for
+    the given entry-point name.
+
+    The entry-points are interpreted as follows: <name> = "<module>:<filename>" where
+
+    - <name> is the name of the entry-point given in the pyproject.toml file
+    - <module> is a valid module name that can be imported and from which the location can be determined.
+    - <filename> is the name of the target file, e.g. a YAML file
+
+    As an example, for the `cgse-common` settings, the following entry in the `pyproject.toml`:
+
+        [project.entry-points."cgse.settings"]
+        cgse-common = "cgse_common:settings.yaml"
+
+    Note that the module name for this entry point has an underscore instead of a dash.
+
+    Return:
+        A dictionary with the entry point name as the key and a tuple (location, filename) as the value.
+    """
+    from egse.system import get_module_location
+
+    eps = dict()
+
+    for ep in entry_points(entry_point):
+        try:
+            path = get_module_location(ep.module)
+
+            if path is None:
+                _LOGGER.error(
+                    f"The entry-point '{ep.name}' is ill defined. The module part doesn't exist or is a "
+                    f"namespace. No settings are loaded for this entry-point."
+                )
+            else:
+                eps[ep.name] = (path, ep.attr)
+
+        except Exception as exc:
+            _LOGGER.error(f"The entry point '{ep.name}' is ill defined: {exc}")
 
     return eps
 
@@ -77,7 +139,7 @@ class BrokenCommand(click.Command):
         self.help = textwrap.dedent(
             f"""\
             Warning: entry point could not be loaded. Contact its author for help.
-            
+
             {traceback.format_exc()}
             """
         )

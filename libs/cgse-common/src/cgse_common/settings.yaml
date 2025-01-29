@@ -1,0 +1,10 @@
+PACKAGES:
+    CGSE_COMMON: Common classes, functions, decorators, etc. for the CGSE
+
+SITE:
+    ID:                           XXXX         # The SITE ID shall be filled in by the local settings file
+    SSH_SERVER:              localhost         # The IP address of the SSH server on your site
+    SSH_PORT:                       22         # The TCP/IP port on which the SSH server is listening
+
+PROCESS:
+    METRICS_INTERVAL:              10

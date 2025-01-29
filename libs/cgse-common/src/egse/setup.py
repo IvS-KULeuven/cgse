@@ -120,6 +120,7 @@ import logging
 import os
 import re
 import textwrap
+import warnings
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -130,13 +131,14 @@ import rich
 import yaml
 from rich.tree import Tree
 
+from egse.env import get_conf_data_location
 from egse.env import get_conf_repo_location
 from egse.env import get_conf_repo_location_env_name
 from egse.env import get_data_storage_location
 from egse.env import has_conf_repo_location
 from egse.env import print_env
 from egse.response import Failure
-from egse.env import get_conf_data_location
+from egse.settings import read_configuration_file
 from egse.system import format_datetime
 from egse.system import sanity_check
 from egse.system import walk_dict_tree
@@ -220,8 +222,8 @@ def _load_yaml(resource_name: str):
     [in_dir, fn] = parts if len(parts) > 1 else [None, parts[0]]
     conf_location = get_conf_data_location()
     try:
-        yaml_location = Path(conf_location) / in_dir / fn
-        content = NavigableDict(Settings.load(filename=yaml_location, add_local_settings=False))
+        yaml_location = Path(conf_location) / in_dir
+        content = NavigableDict(Settings.load(location=yaml_location, filename=fn, add_local_settings=False))
     except (TypeError, SettingsError) as exc:
         raise ValueError(
             f"Couldn't load resource '{resource_name}' from default {conf_location=}") from exc
@@ -695,14 +697,20 @@ class Setup(NavigableDict):
         Returns:
             a Setup that was loaded from the given location.
         """
-        from egse.settings import Settings
 
         if not filename:
             raise ValueError("Invalid argument to function: No filename or None given.")
 
         # MODULE_LOGGER.info(f"Loading {filename}...")
 
-        setup_dict = Settings.load("Setup", filename=filename, force=True, add_local_settings=add_local_settings)
+        setup_dict = read_configuration_file(filename, force=True)
+        if setup_dict == {}:
+            warnings.warn(f"Empty Setup file: {filename!s}")
+
+        try:
+            setup_dict = setup_dict["Setup"]
+        except KeyError:
+            warnings.warn(f"Setup file doesn't have a 'Setup' group: {filename!s}")
 
         setup = Setup(setup_dict, label="Setup")
         setup.set_private_attribute("_filename", filename)

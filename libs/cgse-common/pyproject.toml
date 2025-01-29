@@ -1,6 +1,6 @@
 [project]
 name = "cgse-common"
-version = "2025.0.5"
+version = "2025.0.7"
 description = "Software framework to support hardware testing"
 authors = [
     {name = "IVS KU Leuven"}
@@ -36,10 +36,13 @@ dependencies = [
 [project.entry-points."cgse.version"]
 cgse-common = 'egse'
 
+[project.entry-points."cgse.settings"]
+cgse-common = "cgse_common:settings.yaml"
+
 [tool.pytest.ini_options]
 pythonpath = "src"
 testpaths = ["tests"]
-addopts = "-ra --cov --cov-report html"
+addopts = "-ra --cov --cov-branch --cov-report html"
 filterwarnings = [
     "ignore::DeprecationWarning"
 ]
@@ -60,7 +63,7 @@ exclude = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/egse"]
+packages = ["src/egse", "src/cgse_common"]
 
 [tool.ruff]
 line-length = 120

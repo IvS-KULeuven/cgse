@@ -1,3 +1,6 @@
+PACKAGES:
+    CGSE_CORE: The core services of the CGSE
+
 Logging Control Server:                          # LOG_CS
 
     PROTOCOL:                       tcp
