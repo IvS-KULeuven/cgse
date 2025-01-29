@@ -605,6 +605,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#check-your-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      Check your Settings
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1387,6 +1396,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#check-your-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      Check your Settings
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1416,18 +1434,18 @@
 <h2 id="virtual-environment">Virtual environment<a class="headerlink" href="#virtual-environment" title="Permanent link">&para;</a></h2>
 <p>You should always work inside a virtual environment to somehow containerize your project such that it doesn't 
 pollute your global environment and you can run different projects next to each other. Create and activate a new 
-virtual environment as follows:</p>
+virtual environment as follows. It should be Python &gt;= 3.9</p>
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
 $<span class="w"> </span><span class="nb">source</span><span class="w"> </span>venv/bin/activate
 </code></pre></div>
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
 <p>The easiest way to install the CGSE is to use the <code>pip</code> command. Since the CGSE is a monorepo and consists of 
-numerous packages, you will need to make your choice which package you need for your project. You can however start 
+several packages, you will need to make your choice which package you need for your project. You can however start 
 with the <code>cgse-common</code> which contains all common code that is generic and useful as a basis for other packages.</p>
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>cgse-common
 </code></pre></div>
 <p>Check the <a href="../package_list/">list of packages</a> that are part of the CGSE repo and can be installed with <code>pip</code>. The 
-packages are described in the sections <a href="../libs/">Libs</a> and <a href="../projects/">Projects</a>.</p>
+packages are described in more detail in the sections <a href="../libs/">Libs</a> and <a href="../projects/">Projects</a>.</p>
 <h2 id="set-up-your-environment">Set up your environment<a class="headerlink" href="#set-up-your-environment" title="Permanent link">&para;</a></h2>
 <p>To check your installation and set up your environment, here are a few tips.</p>
 <p>The version of the core packages and any plugin packages can be verified as follows. The version you installed will 
@@ -1441,33 +1459,10 @@ the expected environment variables yet. There are two mandatory environment vari
 former shall contain the name of your project without spaces and preferably a single word or an acronym like PLATO, 
 ARIEL, MARVEL, MERCATOR. The latter is the name of the site or lab where the tests will be performed. Good names are 
 KUL, ESA, LAB23.</p>
-<p>The other environment variable follow the pattern <code>&lt;PROJECT&gt;_</code>, i.e. they all start with the project name as defined 
-in the PROJECT environment variable. You should define at least <code>&lt;PROJECT&gt;_DATA_STORAGE_LOCATION</code>, the configuration 
-data and log file location will be derived from it. </p>
-<div class="highlight"><pre><span></span><code>$ py -m egse.env
-/Users/rik/tmp/gettings-started/venv/lib/python3.9/site-packages/egse/env.py:112: UserWarning: The environment variable PROJECT is not set. PROJECT is required to define the project settings and environment variables. Please set the environment variable PROJECT before proceeding.
-  warnings.warn(
-/Users/rik/tmp/gettings-started/venv/lib/python3.9/site-packages/egse/env.py:112: UserWarning: The environment variable SITE_ID is not set. SITE_ID is required to define the project settings and environment variables. Please set the environment variable SITE_ID before proceeding.
-  warnings.warn(
-Environment variables:
-    PROJECT = NoValue
-    SITE_ID = NoValue
-    NoValue_DATA_STORAGE_LOCATION = not set
-    NoValue_CONF_DATA_LOCATION = not set
-    NoValue_CONF_REPO_LOCATION = not set
-    NoValue_LOG_FILE_LOCATION = not set
-    NoValue_LOCAL_SETTINGS = not set
-
-Generated locations and filenames
-    get_data_storage_location() = The environment variable PROJECT is not set. Please set the environment variable before proceeding.
-    get_conf_data_location() = Could not determine the location of the configuration files. The environment variable NoValue_CONF_DATA_LOCATION is not set and also the data storage location is
-unknown.
-    get_conf_repo_location() = None  ⟶ ERROR: The configuration repository location doesn&#39;t exist!
-    get_log_file_location() = Could not determine the location of the log files. The environment variable NoValue_LOG_FILE_LOCATION is not set and also the data storage location is unknown.
-    get_local_settings() = None  ⟶ ERROR: The local settings file is not defined or doesn&#39;t exist!
-
-use the &#39;--full&#39; flag to get a more detailed report, &#39;--doc&#39; for help on the variables.
-</code></pre></div>
+<p>The other environment variables follow the pattern <code>&lt;PROJECT&gt;_...</code>, i.e. they all start with the project name as 
+defined 
+in the PROJECT environment variable. You should define at least <code>&lt;PROJECT&gt;_DATA_STORAGE_LOCATION</code>. The configuration 
+data and log file location will be derived from it unless they are explicitly set themselves. </p>
 <p>Let's define the three expected environment variables:</p>
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nb">export</span><span class="w"> </span><span class="nv">PROJECT</span><span class="o">=</span>ARIEL
 $<span class="w"> </span><span class="nb">export</span><span class="w"> </span><span class="nv">SITE_ID</span><span class="o">=</span>VACUUM_LAB
@@ -1498,6 +1493,27 @@ use the &#39;--full&#39; flag to get a more detailed report, &#39;--doc&#39; for
 <p>The folders that do not exist (and are not None) can be created by adding the option <code>--mkdir</code> to the above 
 command.</p>
 </div>
+<h2 id="check-your-settings">Check your Settings<a class="headerlink" href="#check-your-settings" title="Permanent link">&para;</a></h2>
+<p>Settings contains the static configuration of your system, test setup, equipment, including the System Under Test 
+(SUT). You can test your settings with the command below. Let's first also set the <code>ARIEL_LOCALSETTINGS</code> environment 
+variables:</p>
+<p><div class="highlight"><pre><span></span><code>$ export ARIEL_LOCAL_SETTINGS=~/cgse/local_settings_ariel_vacuum_lab.yaml
+$ py -m egse.settings
+Settings
+├── PACKAGES
+│   └── CGSE_COMMON: Common classes, functions, decorators, etc. for the CGSE
+├── SITE
+│   ├── ID: VACUUM_LAB
+│   ├── SSH_SERVER: localhost
+│   └── SSH_PORT: 22
+└── PROCESS
+    └── METRICS_INTERVAL: 10
+Memoized locations:
+[&#39;/Users/rik/tmp/gettings-started/venv/lib/python3.9/site-packages/cgse_common/settings.yaml&#39;, 
+&#39;/Users/rik/cgse/local_settings_ariel_vacuum_lab.yaml&#39;]
+</code></pre></div>
+These Settings will grow when you add more packages to your installation or when you define settings yourself in the 
+local settings file.</p>
 
 
 
