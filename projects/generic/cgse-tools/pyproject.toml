@@ -38,6 +38,7 @@ cgse-tools = 'egse.tools'
 [project.entry-points."cgse.command.plugins"]
 top = 'cgse_tools.cgse_commands:top'
 show = 'cgse_tools.cgse_commands:show[group]'
+check = 'cgse_tools.cgse_commands:check[group]'
 dev-x = 'cgse_tools.cgse_services:dev_x[group]'
 
 [tool.hatch.build.targets.sdist]

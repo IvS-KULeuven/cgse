@@ -25,7 +25,7 @@ LOGGER = logging.getLogger(__name__)
 
 HERE = Path(__file__).parent
 
-SERVICE_SETTINGS = Settings.load(filename=str(HERE / "services.yaml"))
+SERVICE_SETTINGS = Settings.load(location=HERE, filename="services.yaml")
 
 
 class ServiceCommand(ClientServerCommand):

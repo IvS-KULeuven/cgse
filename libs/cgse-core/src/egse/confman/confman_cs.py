@@ -153,7 +153,7 @@ def status():
     import rich
     from egse.confman import get_status
 
-    rich.print(get_status())
+    rich.print(get_status(), end='')
 
 
 @cli.command()

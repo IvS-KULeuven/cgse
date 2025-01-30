@@ -17,7 +17,6 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from prometheus_client import start_http_server
 from pytz import utc
 
-from egse.bits import humanize_bytes
 from egse.control import ControlServer
 from egse.env import get_data_storage_location
 from egse.env import get_site_id
@@ -26,8 +25,6 @@ from egse.settings import Settings
 from egse.storage import StorageProtocol
 from egse.storage import StorageProxy
 from egse.storage import cycle_daily_files
-from egse.storage import is_storage_manager_active
-from egse.system import replace_environment_variable
 
 # Use explicit name here otherwise the logger will probably be called __main__
 
@@ -145,7 +142,7 @@ def status(full):
     import rich
     from egse.storage import get_status
 
-    rich.print(get_status(full=full))
+    rich.print(get_status(full=full), end='')
 
 
 def check_prerequisites():
