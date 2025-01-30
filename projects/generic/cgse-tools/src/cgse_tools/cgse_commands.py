@@ -58,12 +58,12 @@ def show_env(
         rich.print(f"[red]{stderr.decode()}[/]")
 
 
-check = typer.Typer(help="Check ...", no_args_is_help=True)
+check = typer.Typer(help="Check installation, settings, required files, etc.", no_args_is_help=True)
 
 
 @check.command(name="setups")
 def check_setups():
-    """Perform a number of checks on the SETUP that are available."""
+    """Perform a number of checks on the SETUP files."""
 
     # What can we check with respect to the setups?
     #
