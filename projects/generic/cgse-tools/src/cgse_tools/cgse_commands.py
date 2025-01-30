@@ -1,11 +1,14 @@
 import re
 import subprocess
 import sys
+import textwrap
 from pathlib import Path
 from typing import Annotated
 
 import rich
 import typer
+
+from egse.system import format_datetime
 
 app = typer.Typer()
 
@@ -18,6 +21,82 @@ def top():
     Not yet implemented.
     """
     print("This fancy top is not yet implemented.")
+
+
+@app.command()
+def init(project: str = ""):
+    """Initialize your project."""
+    from rich.prompt import Prompt, Confirm
+
+    project = project.upper()
+    site_id = None
+
+    rich.print("[light_steel_blue]Please note default values are given between \[brackets].[/]")
+
+    answer = Prompt.ask(f"What is the name of the project [{project}] ?")
+    if answer:
+        project = answer.upper()
+    while not site_id:
+        answer = Prompt.ask("What is the site identifier ?")
+        if answer:
+            site_id = answer.upper()
+        else:
+            answer = Confirm.ask("Abort?")
+            if answer:
+                return
+
+    data_storage_location = f"~/data/{project}/{site_id}/"
+    answer = Prompt.ask(f"Where can the project data be stored [{data_storage_location}] ?")
+    if answer:
+        data_storage_location = answer
+
+    conf_data_location = f"~/data/{project}/{site_id}/conf/"
+    answer = Prompt.ask(f"Where will the configuration data be located [{conf_data_location}] ?")
+    if answer:
+        conf_data_location = answer
+
+    log_file_location = f"~/data/{project}/{site_id}/log/"
+    answer = Prompt.ask(f"Where will the logging messages be stored [{log_file_location}] ?")
+    if answer:
+        log_file_location = answer
+
+    local_settings_path = f"~/data/{project}/{site_id}/local_settings.yaml"
+    answer = Prompt.ask(f"Where shall I create a local settings YAML file [{local_settings_path}] ?")
+    if answer:
+        local_settings_path = answer
+
+    Path(data_storage_location).expanduser().mkdir(exist_ok=True, parents=True)
+    (Path(data_storage_location).expanduser() / "daily").mkdir(exist_ok=True, parents=True)
+    (Path(data_storage_location).expanduser() / "obs").mkdir(exist_ok=True, parents=True)
+    Path(conf_data_location).expanduser().mkdir(exist_ok=True, parents=True)
+    Path(log_file_location).expanduser().mkdir(exist_ok=True, parents=True)
+
+    with open(Path(local_settings_path).expanduser(), 'w') as fd:
+        fd.write(
+            textwrap.dedent(
+                f"""\
+                SITE:
+                    ID:  {site_id}
+                """
+            )
+        )
+
+    answer = Confirm.ask("Shall I add the environment to your ~/bash_profile ?")
+    if answer:
+        with open(Path("~/.bash_profile").expanduser(), 'a') as fd:
+            fd.write(
+                textwrap.dedent(
+                    f"""
+                    # Environment for project {project} added by `cgse init` at {format_datetime()}
+                    export PROJECT={project}
+                    export SITE_ID={site_id}
+                    export {project}_DATA_STORAGE_LOCATION={data_storage_location}
+                    export {project}_CONF_DATA_LOCATION={conf_data_location}
+                    export {project}_LOG_FILE_LOCATION={log_file_location}
+                    export {project}_LOCAL_SETTINGS={local_settings_path}
+                    """
+                )
+            )
 
 
 show = typer.Typer(help="Show information about settings, environment, setup, ...", no_args_is_help=True)
