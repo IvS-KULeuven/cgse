@@ -9,37 +9,30 @@ $ cgse version
     Prints the installed version of the cgse-core and any other package that is registered under
     the entry points group 'cgse.version'.
 
-$ cgse {start,stop} {core,service} NAME ARGS
+$ cgse core {start,stop,status}
 
-    Starts, stops the core services or any service that is registered under the entry points
-    group 'cgse.service.plugins'.
-
-$ cgse status {core,service} NAME ARGS
-
-    Prints the status of the core services or any service that is registered under the entry
-    points group 'cgse.service.plugins'.
+    Starts, stops, or prints the status of the core services.
 
 Other main commands can be added from external packages when they are provided as entry points with
-the group name 'cgse.plugins'. The entry point needs to be a Click command.
+the group name 'cgse.command.plugins'.
 
+Commands can be added as single commands or as a group containing further sub-commands. To add a group,
+the entry point shall contain 'group' in its extras.
 """
-import subprocess
 
-import click
 import rich
+import typer
+from rich.console import Console
+from rich.traceback import Traceback
 
 from egse.plugin import entry_points
-from egse.plugin import handle_click_plugins
-from egse.process import SubProcess
+from scripts import services
+
+app = typer.Typer(add_completion=True)
+app.add_typer(services.app, name="core")
 
 
-@handle_click_plugins(entry_points("cgse.plugins"))
-@click.group()
-def cli():
-    pass
-
-
-@cli.command()
+@app.command()
 def version():
     """Prints the version of the cgse-core and other registered packages."""
     from egse.version import get_version_installed
@@ -52,128 +45,54 @@ def version():
             rich.print(f"{ep.name.upper()} installed version = [bold default]{installed_version}[/]")
 
 
-@cli.group()
-@click.pass_context
-def start(ctx):
-    """Start the service"""
-    ctx.ensure_object(dict)
+def broken_command(name: str, module: str, exc: Exception):
+    """
+    Rather than completely crash the CLI when a broken plugin is loaded, this
+    function provides a modified help message informing the user that the plugin is
+    broken and could not be loaded.  If the user executes the plugin and specifies
+    the `--traceback` option a traceback is reported showing the exception the
+    plugin loader encountered.
+    """
+    def broken_plugin(traceback: bool = False):
+        rich.print(f"[red]ERROR: Couldn't load this plugin command: {name} ⟶ reason: {exc}[/]")
+        if traceback:
+            console = Console(width=100)
+            tb = Traceback.from_exception(type(exc), exc, exc.__traceback__)
+            console.print(tb)
 
-    ctx.obj['action'] = 'start'
-
-
-@cli.group()
-@click.pass_context
-def stop(ctx):
-    """Stop the service"""
-    ctx.ensure_object(dict)
-
-    ctx.obj['action'] = 'stop'
-
-
-@cli.group()
-@click.pass_context
-def status(ctx):
-    """Provide the status of the service"""
-    ctx.ensure_object(dict)
-
-    ctx.obj['action'] = 'status'
+    broken_plugin.__doc__ = f"ERROR: Couldn't load plugin '{name}' from {module}"
+    broken_plugin.__name__ = name
+    return broken_plugin
 
 
-@start.command()
-@click.pass_context
-def core(ctx):
-    print(f"executing: cgse {ctx.obj['action']} core")
-    ctx.invoke(log_cs)
-    ctx.invoke(sm_cs)
-    ctx.invoke(cm_cs)
-    ctx.invoke(pm_cs)
+# Load the known plugins for the `cgse` command. Plugins are added as commands to the `cgse`.
+
+for ep in entry_points("cgse.command.plugins"):
+    try:
+        if not ep.extras or 'command' in ep.extras:
+            app.command()(ep.load())
+        elif 'group' in ep.extras:
+            app.add_typer(ep.load(), name=ep.name)
+        else:
+            rich.print(f"\n[red]ERROR: don't know what to do with {ep.extras} for {ep.name}, command not added.[/]\n")
+    except Exception as exc:
+        app.command()(broken_command(ep.name, ep.module, exc))
 
 
-@handle_click_plugins(entry_points("cgse.service.plugins"))
-@start.group()
-@click.pass_context
-def service(ctx):
-    pass
+for ep in entry_points("cgse.service.plugins"):
+    try:
+        app.add_typer(ep.load(), name=ep.name)
+    except Exception as exc:
+        app.command()(broken_command(ep.name, ep.module, exc))
 
 
-stop.add_command(core)
-stop.add_command(service)
-
-status.add_command(core)
-status.add_command(service)
-
-
-@service.command()
-@click.pass_context
-def log_cs(ctx):
-    print(f"executing: log_cs {ctx.obj['action']}")
-    if ctx.obj['action'] == 'start':
-        proc = SubProcess("log_cs", ["log_cs", "start"])
-        proc.execute()
-    elif ctx.obj['action'] == 'stop':
-        proc = SubProcess("log_cs", ["log_cs", "stop"])
-        proc.execute()
-    elif ctx.obj['action'] == 'status':
-        proc = SubProcess("log_cs", ["log_cs", "status"], stdout=subprocess.PIPE)
-        proc.execute()
-        output, _ = proc.communicate()
-        rich.print(output, end='')
-    else:
-        rich.print(f"[red]ERROR: Unknown action '{ctx.obj['action']}'[/]")
+@app.callback(no_args_is_help=True, invoke_without_command=True)
+def main():
+    """
+    The main cgse command to inspect, configure, monitor the core services
+    and device control servers.
+    """
 
 
-@service.command()
-@click.pass_context
-def sm_cs(ctx):
-    print(f"executing: sm_cs {ctx.obj['action']}")
-    if ctx.obj['action'] == 'start':
-        proc = SubProcess("sm_cs", ["sm_cs", "start"])
-        proc.execute()
-    elif ctx.obj['action'] == 'stop':
-        proc = SubProcess("sm_cs", ["sm_cs", "stop"])
-        proc.execute()
-    elif ctx.obj['action'] == 'status':
-        proc = SubProcess("sm_cs", ["sm_cs", "status"], stdout=subprocess.PIPE)
-        proc.execute()
-        output, _ = proc.communicate()
-        rich.print(output, end='')
-    else:
-        rich.print(f"[red]ERROR: Unknown action '{ctx.obj['action']}'[/]")
-
-
-@service.command()
-@click.pass_context
-def cm_cs(ctx):
-    print(f"executing: cm_cs {ctx.obj['action']}")
-    if ctx.obj['action'] == 'start':
-        proc = SubProcess("cm_cs", ["cm_cs", "start"])
-        proc.execute()
-    elif ctx.obj['action'] == 'stop':
-        proc = SubProcess("cm_cs", ["cm_cs", "stop"])
-        proc.execute()
-    elif ctx.obj['action'] == 'status':
-        proc = SubProcess("cm_cs", ["cm_cs", "status"], stdout=subprocess.PIPE)
-        proc.execute()
-        output, _ = proc.communicate()
-        rich.print(output, end='')
-    else:
-        rich.print(f"[red]ERROR: Unknown action '{ctx.obj['action']}'[/]")
-
-
-@service.command()
-@click.pass_context
-def pm_cs(ctx):
-    print(f"executing: pm_cs {ctx.obj['action']}")
-    if ctx.obj['action'] == 'start':
-        proc = SubProcess("pm_cs", ["pm_cs", "start"])
-        proc.execute()
-    elif ctx.obj['action'] == 'stop':
-        proc = SubProcess("pm_cs", ["pm_cs", "stop"])
-        proc.execute()
-    elif ctx.obj['action'] == 'status':
-        proc = SubProcess("pm_cs", ["pm_cs", "status"], stdout=subprocess.PIPE)
-        proc.execute()
-        output, _ = proc.communicate()
-        rich.print(output, end='')
-    else:
-        rich.print(f"[red]ERROR: Unknown action '{ctx.obj['action']}'[/]")
+if __name__ == "__main__":
+    app()
