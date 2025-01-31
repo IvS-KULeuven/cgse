@@ -1,6 +1,6 @@
 [project]
 name = "cgse-core"
-version = "2025.0.7"
+version = "2025.0.8-dev.4"
 description = "Core services for the CGSE framework"
 authors = [
     {name = "IVS KU Leuven"}
@@ -26,6 +26,7 @@ dependencies = [
     "prometheus-client>=0.21.1",
     "pyzmq == 23.2.1",
     "rich>=13.9.4",
+    "typer>=0.15.1",
 ]
 
 [project.scripts]
@@ -34,7 +35,7 @@ sm_cs = 'egse.storage.storage_cs:cli'
 cm_cs = 'egse.confman.confman_cs:cli'
 pm_cs = 'egse.procman.procman_cs:cli'
 
-cgse = 'scripts.cgse:cli'
+cgse = 'scripts.cgse:app'
 
 [project.entry-points."cgse.version"]
 cgse-core = 'egse'

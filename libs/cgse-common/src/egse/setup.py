@@ -266,7 +266,8 @@ def _get_attribute(self, name, default):
 def _parse_filename_for_setup_id(filename: str):
     """Returns the setup_id from the filename, or None when no match was found."""
 
-    match = re.search(r"SETUP_([^_]+)_(\d+)", filename)
+    # match = re.search(r"SETUP_([^_]+)_(\d+)", filename)
+    match = re.search(r"SETUP_(\w+)_([\d]{5})_([\d]{6})_([\d]{6})\.yaml", filename)
 
     # TypeError when match is None
 

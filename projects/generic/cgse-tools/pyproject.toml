@@ -1,6 +1,6 @@
 [project]
 name = "cgse-tools"
-version = "2025.0.7"
+version = "2025.0.8-dev.4"
 description = "Tools for CGSE"
 authors = [
     {name = "IVS KU Leuven"}
@@ -33,13 +33,14 @@ cgse-status = "egse.tools.status:main"
 [project.entry-points."cgse.version"]
 cgse-tools = 'egse.tools'
 
-# Examples of how to provide plugins for the `cgse` command
+# plugins for the `cgse` command, add [group] when the command has sub-commands
 
-[project.entry-points."cgse.plugins"]
-foo = 'scripts.cgse_plugins:foo'
-
-[project.entry-points."cgse.service.plugins"]
-xxx = 'scripts.cgse_service_plugins:xxx'
+[project.entry-points."cgse.command.plugins"]
+init = 'cgse_tools.cgse_commands:init'
+top = 'cgse_tools.cgse_commands:top'
+show = 'cgse_tools.cgse_commands:show[group]'
+check = 'cgse_tools.cgse_commands:check[group]'
+dev-x = 'cgse_tools.cgse_services:dev_x[group]'
 
 [tool.hatch.build.targets.sdist]
 exclude = [
@@ -49,7 +50,7 @@ exclude = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/egse"]
+packages = ["src/egse", "src/cgse_tools"]
 
 [tool.ruff]
 line-length = 120
