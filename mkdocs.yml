@@ -87,6 +87,7 @@ nav:
   - Introduction:
     - getting_started.md
     - package_list.md
+    - initialize.md
     - help.md
   - Developer Guide:
     - dev_guide/index.md
