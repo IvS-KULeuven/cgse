@@ -1,6 +1,6 @@
 [project]
 name = "keithley-tempcontrol"
-version = "2025.0.1"
+version = "2025.0.9"
 description = "Keithley Temperature Control for CGSE"
 authors = [
     {name = "IVS KU Leuven"}

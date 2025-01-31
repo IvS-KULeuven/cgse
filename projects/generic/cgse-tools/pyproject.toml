@@ -1,6 +1,6 @@
 [project]
 name = "cgse-tools"
-version = "2025.0.8-dev.4"
+version = "2025.0.9"
 description = "Tools for CGSE"
 authors = [
     {name = "IVS KU Leuven"}
@@ -38,6 +38,7 @@ cgse-tools = 'egse.tools'
 [project.entry-points."cgse.command.plugins"]
 init = 'cgse_tools.cgse_commands:init'
 top = 'cgse_tools.cgse_commands:top'
+clock = 'cgse_tools.cgse_clock:clock'
 show = 'cgse_tools.cgse_commands:show[group]'
 check = 'cgse_tools.cgse_commands:check[group]'
 dev-x = 'cgse_tools.cgse_services:dev_x[group]'
