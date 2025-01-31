@@ -1,6 +1,6 @@
 [project]
 name = "cgse"
-version = "2025.0.8-dev.4"
+version = "2025.0.9"
 description = "Generic Common-EGSE: Commanding and monitoring lab equipment"
 authors = [
     {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
@@ -20,7 +20,7 @@ testpaths = [
     "libs/cgse-common/tests",
     "libs/cgse-core/tests",
 ]
-addopts = "-ra --cov --cov-branch --cov-report html"
+addopts = "-rA --cov --cov-branch --cov-report html"
 filterwarnings = [
     "ignore::DeprecationWarning"
 ]

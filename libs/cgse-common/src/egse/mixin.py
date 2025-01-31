@@ -108,7 +108,8 @@ def expand_kwargs(kwargs: Dict):
     """Expand keyword arguments and their values as 'key=value' separated by spaces."""
     return " ".join(f"{k}={v}" for k, v in kwargs.items())
 
-class CommandType(enum.Enum, str):
+
+class CommandType(str, enum.Enum):
 
     READ = "read"
     WRITE = "write"

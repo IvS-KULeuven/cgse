@@ -1,6 +1,6 @@
 [project]
 name = "cgse-common"
-version = "2025.0.8-dev.4"
+version = "2025.0.9"
 description = "Software framework to support hardware testing"
 authors = [
     {name = "IVS KU Leuven"}
@@ -42,7 +42,7 @@ cgse-common = "cgse_common:settings.yaml"
 [tool.pytest.ini_options]
 pythonpath = "src"
 testpaths = ["tests"]
-addopts = "-ra --cov --cov-branch --cov-report html"
+addopts = "-rA --cov --cov-branch --cov-report html"
 filterwarnings = [
     "ignore::DeprecationWarning"
 ]
