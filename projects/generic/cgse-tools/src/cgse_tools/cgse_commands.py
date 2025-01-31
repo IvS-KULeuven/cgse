@@ -97,6 +97,22 @@ def init(project: str = ""):
                     """
                 )
             )
+    else:
+        rich.print(
+            textwrap.dedent(
+                f"""
+                # -> Add the following lines to your bash profile or equivalent
+                
+                export PROJECT={project}
+                export SITE_ID={site_id}
+                export {project}_DATA_STORAGE_LOCATION={data_storage_location}
+                export {project}_CONF_DATA_LOCATION={conf_data_location}
+                export {project}_LOG_FILE_LOCATION={log_file_location}
+                export {project}_LOCAL_SETTINGS={local_settings_path}
+            """
+            )
+
+        )
 
 
 show = typer.Typer(help="Show information about settings, environment, setup, ...", no_args_is_help=True)
