@@ -16,6 +16,7 @@ import contextlib
 import datetime
 import functools
 import importlib
+import importlib.metadata
 import inspect
 import itertools
 import logging
@@ -1123,6 +1124,18 @@ def is_namespace(module) -> bool:
         return True
     else:
         return False
+
+
+def get_package_description(package_name) -> str:
+    """Returns the description of the package as specified in the projects metadata Summary."""
+    try:
+        # Get the metadata for the package
+        metadata = importlib.metadata.metadata(package_name)
+        # Extract the description
+        description = metadata.get('Summary', 'Description not found')
+        return description
+    except importlib.metadata.PackageNotFoundError:
+        return 'Package not found'
 
 
 def get_package_location(module: str) -> List[Path]:

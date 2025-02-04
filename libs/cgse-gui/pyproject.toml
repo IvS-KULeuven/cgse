@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.entry-points."cgse.version"]
-cgse-gui = 'egse.plugins'
+cgse-gui = ''
 
 [project.entry-points."cgse.resource"]
 icons = 'egse.gui.icons'

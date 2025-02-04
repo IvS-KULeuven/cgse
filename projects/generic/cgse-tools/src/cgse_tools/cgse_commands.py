@@ -120,6 +120,7 @@ show = typer.Typer(help="Show information about settings, environment, setup, ..
 
 @show.command(name="settings")
 def show_settings():
+    """Show the settings that are defined by the installed packages."""
     proc = subprocess.Popen(
         [sys.executable, "-m", "egse.settings"],
         stdout=subprocess.PIPE,
@@ -137,6 +138,7 @@ def show_env(
         full: Annotated[bool, typer.Option(help="Provide additional info")] = None,
         doc: Annotated[bool, typer.Option(help="Provide documentation on environment variables")] = None,
 ):
+    """Show the environment variables that are defined for the project."""
     options = [opt for opt, flag in [("--mkdir", mkdir), ("--full", full), ("--doc", doc)] if flag]
 
     cmd = [sys.executable, "-m", "egse.env"]
