@@ -34,7 +34,7 @@ dependencies = [
 ]
 
 [project.entry-points."cgse.version"]
-cgse-common = 'egse'
+cgse-common = ''
 
 [project.entry-points."cgse.settings"]
 cgse-common = "cgse_common:settings.yaml"
