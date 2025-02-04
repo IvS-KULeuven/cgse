@@ -95,6 +95,7 @@ nav:
     - dev_guide/uv.md
     - dev_guide/coding_style.md
     - dev_guide/docs.md
+    - dev_guide/plugins.md
   - User Guide:
     - user_guide/index.md
   - Libs:
