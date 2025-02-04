@@ -1,6 +1,6 @@
 [project]
 name = "cgse-tools"
-version = "2025.0.9"
+version = "0.1.3"
 description = "Tools for CGSE"
 authors = [
     {name = "IVS KU Leuven"}
@@ -31,7 +31,7 @@ test = ["pytest", "pytest-mock", "pytest-cov"]
 cgse-status = "egse.tools.status:main"
 
 [project.entry-points."cgse.version"]
-cgse-tools = ''
+cgse-tools = 'egse.version:get_version_installed'
 
 # plugins for the `cgse` command, add [group] when the command has sub-commands
 

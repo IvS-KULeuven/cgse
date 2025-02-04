@@ -25,12 +25,12 @@ value can optionally provide additional information about the package, but that 
 specified.
 
 Add the following to your `pyproject.toml` file in your project's root folder, replacing
-_package-name_ with the name of your project. You can leave the entry-point value empty since it is
-currently not used.
+_package-name_ with the name of your project. The entry-point value is currently not used, but you
+want to use a valid format, the value below is always valid.
 
 ```toml
 [project.entry-points."cgse.version"]
-package-name = ''
+package-name = 'egse.version:get_version_installed'
 ```
 
 ## Extending the `cgse` app
@@ -50,20 +50,22 @@ In the `pyproject.toml` file of your project, add the following lines to add the
 [project.entry-points."cgse.command"]
 name = 'module:object'
 ```
+
 Where:
 
 - `name` is the name of the command
 - `module` is a fully qualified module name for your package, a module that can be imported
 - `object` is the name of the function that you want to add as a command
 
-As an example, for the `cgse-tools` package, the `init` command of the `cgse` app is listed in 
+As an example, for the `cgse-tools` package, the `init` command of the `cgse` app is listed in
 the `pyproject.toml` file as follows:
 
 ```toml
 [project.entry-points."cgse.command"]
 init = 'cgse_tools.cgse_commands:init'
 ```
-The `init` function is defined in the `cgse_commands.py` module which is located in the 
+
+The `init` function is defined in the `cgse_commands.py` module which is located in the
 `cgse_tools` module in the `src` folder of the package:
 
 ```text
@@ -76,8 +78,8 @@ src
 
 ### Add a Command group
 
-Some commands are more complicated and define a number of sub-commands. An example is the `show` 
-command where you currently have the sub-commands `env` and `settings` 
+Some commands are more complicated and define a number of sub-commands. An example is the `show`
+command where you currently have the sub-commands `env` and `settings`
 
 ```text
 $ cgse show --help
@@ -95,50 +97,51 @@ $ cgse show --help
 ╰───────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
-The `show` command is defined as a `typer.Typer()` object where `env` and `settings` are added 
-using the decorator `@<app>.command()`.
+The `show` command is defined as a `typer.Typer()` object where `env` and `settings` are added using
+the decorator `@<app>.command()`.
 
 ```python
 import typer
 
 show = typer.Typer(help="Show information about settings, environment, setup, ...")
 
+
 @show.command(name="settings")
 def show_settings():
     ...
+
 
 @show.command(name="env")
 def show_env():
     ...
 ```
 
-To add this command group to the `cgse` app, the following entry was used in the `pyproject.
-toml` file of the `cgse-tools` project. Notice the `[group]` at the end of the entry which 
-indicates this is a command group instead of a single command.
+To add this command group to the `cgse` app, the following entry was used in the `pyproject. toml`
+file of the `cgse-tools` project. Notice the `[group]` at the end of the entry which indicates this
+is a command group instead of a single command.
 
 ```toml
 [project.entry-points."cgse.command"]
 show = 'cgse_tools.cgse_commands:show[group]'
 ```
 
-
 ### Add a Service
 
 If your package provides a device driver or a specific service, use the `cgse.service`
-entry-point group. Service entry-points follow the same scheme as command groups, i.e. they are 
-added to the `cgse` app as a `Typer()` object. Use the following entry in your `pyproject.toml` 
+entry-point group. Service entry-points follow the same scheme as command groups, i.e. they are
+added to the `cgse` app as a `Typer()` object. Use the following entry in your `pyproject.toml`
 file:
 
 ```toml
 [project.entry-points."cgse.service"]
 name = 'module:object'
 ```
+
 where:
 
 - `name` is the name of the service or device driver
 - `module` is a fully qualified module name for your package, a module that can be imported
 - `object` is the name of the `Typer()` object that you want to add as a service
-
 
 ## Register resources
 

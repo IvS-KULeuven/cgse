@@ -1,6 +1,6 @@
 [project]
 name = "symetrie-hexapod"
-version = "2025.0.9"
+version = "0.1.3"
 description = "Symetrie Hexapod implementation for CGSE"
 authors = [
     {name = "IVS KU Leuven"}
@@ -38,7 +38,7 @@ puna_cs = 'egse.hexapod.symetrie.puna_cs:cli'
 puna_ui = "egse.hexapod.symetrie.puna_ui:main"
 
 [project.entry-points."cgse.version"]
-symetrie-hexapod = 'egse.plugins'
+symetrie-hexapod = 'egse.version:get_version_installed'
 
 [project.entry-points."cgse.service"]
 puna = 'symetrie_hexapod.cgse_services:puna'
@@ -51,7 +51,7 @@ exclude = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/egse", "src/scripts"]
+packages = ["src/egse", "src/symetrie_hexapod"]
 
 [tool.ruff]
 line-length = 120
