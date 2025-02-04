@@ -1,6 +1,6 @@
 [project]
 name = "cgse-gui"
-version = "2025.0.9"
+version = "0.1.3"
 description = "GUI components for CGSE"
 authors = [
     {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.entry-points."cgse.version"]
-cgse-gui = ''
+cgse-gui = 'egse.version:get_version_installed'
 
 [project.entry-points."cgse.resource"]
 icons = 'egse.gui.icons'

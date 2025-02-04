@@ -1,6 +1,6 @@
 [project]
 name = "keithley-tempcontrol"
-version = "2025.0.9"
+version = "0.1.3"
 description = "Keithley Temperature Control for CGSE"
 authors = [
     {name = "IVS KU Leuven"}
@@ -36,7 +36,7 @@ daq6510_cs = 'egse.tempcontrol.keithley.daq650_cs:cli'
 daq6510_ui = "egse.tempcontrol.keithley.daq6510_ui:main"
 
 [project.entry-points."cgse.version"]
-keithley-tempcontrol = ''
+keithley-tempcontrol = 'egse.version:get_version_installed'
 
 [project.entry-points."cgse.settings"]
 keithley-tempcontrol = "keithley_tempcontrol:settings.yaml"
