@@ -26,6 +26,7 @@ from rich.console import Console
 from rich.traceback import Traceback
 
 from egse.plugin import entry_points
+from egse.system import get_package_description
 from scripts import services
 
 app = typer.Typer(add_completion=True)
@@ -42,7 +43,8 @@ def version():
 
     for ep in sorted(entry_points("cgse.version"), key=lambda x: x.name):
         if installed_version := get_version_installed(ep.name):
-            rich.print(f"{ep.name.upper()} installed version = [bold default]{installed_version}[/]")
+            rich.print(f"{ep.name.upper()} installed version = [bold default]{installed_version}[/] — "
+                       f"{get_package_description(ep.name)}")
 
 
 def broken_command(name: str, module: str, exc: Exception):
@@ -67,7 +69,7 @@ def broken_command(name: str, module: str, exc: Exception):
 
 # Load the known plugins for the `cgse` command. Plugins are added as commands to the `cgse`.
 
-for ep in entry_points("cgse.command.plugins"):
+for ep in entry_points("cgse.command"):
     try:
         if not ep.extras or 'command' in ep.extras:
             app.command()(ep.load())
@@ -79,7 +81,7 @@ for ep in entry_points("cgse.command.plugins"):
         app.command()(broken_command(ep.name, ep.module, exc))
 
 
-for ep in entry_points("cgse.service.plugins"):
+for ep in entry_points("cgse.service"):
     try:
         app.add_typer(ep.load(), name=ep.name)
     except Exception as exc:

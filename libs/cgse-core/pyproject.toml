@@ -38,7 +38,7 @@ pm_cs = 'egse.procman.procman_cs:cli'
 cgse = 'scripts.cgse:app'
 
 [project.entry-points."cgse.version"]
-cgse-core = 'egse'
+cgse-core = ''
 
 [project.entry-points."cgse.settings"]
 cgse-core = "cgse_core:settings.yaml"

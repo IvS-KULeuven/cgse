@@ -40,8 +40,8 @@ puna_ui = "egse.hexapod.symetrie.puna_ui:main"
 [project.entry-points."cgse.version"]
 symetrie-hexapod = 'egse.plugins'
 
-[project.entry-points."cgse.service.plugins"]
-puna_cs = 'scripts.cgse_service_plugins:puna_cs'
+[project.entry-points."cgse.service"]
+puna = 'symetrie_hexapod.cgse_services:puna'
 
 [tool.hatch.build.targets.sdist]
 exclude = [
