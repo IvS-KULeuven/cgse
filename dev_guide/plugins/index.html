@@ -1528,10 +1528,10 @@ version from the importlib metadata. The entry-point value is currently not used
 value can optionally provide additional information about the package, but that is currently not
 specified.</p>
 <p>Add the following to your <code>pyproject.toml</code> file in your project's root folder, replacing
-<em>package-name</em> with the name of your project. You can leave the entry-point value empty since it is
-currently not used.</p>
+<em>package-name</em> with the name of your project. The entry-point value is currently not used, but you
+want to use a valid format, the value below is always valid.</p>
 <div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">&quot;cgse.version&quot;</span><span class="k">]</span>
-<span class="n">package-name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;&#39;</span>
+<span class="n">package-name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;egse.version:get_version_installed&#39;</span>
 </code></pre></div>
 <h2 id="extending-the-cgse-app">Extending the <code>cgse</code> app<a class="headerlink" href="#extending-the-cgse-app" title="Permanent link">&para;</a></h2>
 <h3 id="add-a-command">Add a Command<a class="headerlink" href="#add-a-command" title="Permanent link">&para;</a></h3>
@@ -1542,21 +1542,21 @@ is as simple as writing a function. The function will be added to the <code>cgse
 the <code>app.command()</code> function of <code>Typer</code>, making the function a top-level command of the <code>cgse</code>
 app. The function can be defined as a plain function or with Typer's <code>@app.command</code> decorator.</p>
 <p>In the <code>pyproject.toml</code> file of your project, add the following lines to add the CGSE command:</p>
-<p><div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">&quot;cgse.command&quot;</span><span class="k">]</span>
+<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">&quot;cgse.command&quot;</span><span class="k">]</span>
 <span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;module:object&#39;</span>
 </code></pre></div>
-Where:</p>
+<p>Where:</p>
 <ul>
 <li><code>name</code> is the name of the command</li>
 <li><code>module</code> is a fully qualified module name for your package, a module that can be imported</li>
 <li><code>object</code> is the name of the function that you want to add as a command</li>
 </ul>
-<p>As an example, for the <code>cgse-tools</code> package, the <code>init</code> command of the <code>cgse</code> app is listed in 
+<p>As an example, for the <code>cgse-tools</code> package, the <code>init</code> command of the <code>cgse</code> app is listed in
 the <code>pyproject.toml</code> file as follows:</p>
-<p><div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">&quot;cgse.command&quot;</span><span class="k">]</span>
+<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">&quot;cgse.command&quot;</span><span class="k">]</span>
 <span class="n">init</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;cgse_tools.cgse_commands:init&#39;</span>
 </code></pre></div>
-The <code>init</code> function is defined in the <code>cgse_commands.py</code> module which is located in the 
+<p>The <code>init</code> function is defined in the <code>cgse_commands.py</code> module which is located in the
 <code>cgse_tools</code> module in the <code>src</code> folder of the package:</p>
 <div class="highlight"><pre><span></span><code>src
 ├── cgse_tools
@@ -1565,8 +1565,8 @@ The <code>init</code> function is defined in the <code>cgse_commands.py</code> m
 ...
 </code></pre></div>
 <h3 id="add-a-command-group">Add a Command group<a class="headerlink" href="#add-a-command-group" title="Permanent link">&para;</a></h3>
-<p>Some commands are more complicated and define a number of sub-commands. An example is the <code>show</code> 
-command where you currently have the sub-commands <code>env</code> and <code>settings</code> </p>
+<p>Some commands are more complicated and define a number of sub-commands. An example is the <code>show</code>
+command where you currently have the sub-commands <code>env</code> and <code>settings</code></p>
 <div class="highlight"><pre><span></span><code>$ cgse show --help
 
  Usage: cgse show [OPTIONS] COMMAND [ARGS]...
@@ -1581,35 +1581,37 @@ command where you currently have the sub-commands <code>env</code> and <code>set
 │ env        Show the environment variables that are defined for the project.           │
 ╰───────────────────────────────────────────────────────────────────────────────────────╯
 </code></pre></div>
-<p>The <code>show</code> command is defined as a <code>typer.Typer()</code> object where <code>env</code> and <code>settings</code> are added 
-using the decorator <code>@&lt;app&gt;.command()</code>.</p>
+<p>The <code>show</code> command is defined as a <code>typer.Typer()</code> object where <code>env</code> and <code>settings</code> are added using
+the decorator <code>@&lt;app&gt;.command()</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">typer</span>
 
 <span class="n">show</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Typer</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Show information about settings, environment, setup, ...&quot;</span><span class="p">)</span>
+
 
 <span class="nd">@show</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;settings&quot;</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">show_settings</span><span class="p">():</span>
     <span class="o">...</span>
 
+
 <span class="nd">@show</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;env&quot;</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">show_env</span><span class="p">():</span>
     <span class="o">...</span>
 </code></pre></div>
-<p>To add this command group to the <code>cgse</code> app, the following entry was used in the <code>pyproject.
-toml</code> file of the <code>cgse-tools</code> project. Notice the <code>[group]</code> at the end of the entry which 
-indicates this is a command group instead of a single command.</p>
+<p>To add this command group to the <code>cgse</code> app, the following entry was used in the <code>pyproject. toml</code>
+file of the <code>cgse-tools</code> project. Notice the <code>[group]</code> at the end of the entry which indicates this
+is a command group instead of a single command.</p>
 <div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">&quot;cgse.command&quot;</span><span class="k">]</span>
 <span class="n">show</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;cgse_tools.cgse_commands:show[group]&#39;</span>
 </code></pre></div>
 <h3 id="add-a-service">Add a Service<a class="headerlink" href="#add-a-service" title="Permanent link">&para;</a></h3>
 <p>If your package provides a device driver or a specific service, use the <code>cgse.service</code>
-entry-point group. Service entry-points follow the same scheme as command groups, i.e. they are 
-added to the <code>cgse</code> app as a <code>Typer()</code> object. Use the following entry in your <code>pyproject.toml</code> 
+entry-point group. Service entry-points follow the same scheme as command groups, i.e. they are
+added to the <code>cgse</code> app as a <code>Typer()</code> object. Use the following entry in your <code>pyproject.toml</code>
 file:</p>
-<p><div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">&quot;cgse.service&quot;</span><span class="k">]</span>
+<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">&quot;cgse.service&quot;</span><span class="k">]</span>
 <span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;module:object&#39;</span>
 </code></pre></div>
-where:</p>
+<p>where:</p>
 <ul>
 <li><code>name</code> is the name of the service or device driver</li>
 <li><code>module</code> is a fully qualified module name for your package, a module that can be imported</li>
