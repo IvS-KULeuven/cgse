@@ -6,6 +6,30 @@ import ctypes
 from typing import Union
 
 
+def extract_bits(value: int, start_position: int, num_bits: int) -> int:
+    """
+    Extracts a specified number of bits from an integer starting at a given position.
+
+    Args:
+        value (int): The input integer.
+        start_position (int): The starting bit position (0-based index).
+        num_bits (int): The number of bits to extract.
+
+    Returns:
+        int: The extracted bits as an integer.
+    """
+    # Create a mask with 'num_bits' set to 1
+    mask = (1 << num_bits) - 1
+
+    # Right shift the number by 'start_position' bits
+    shifted_number = value >> start_position
+
+    # Apply the mask to extract the desired bits
+    extracted_bits = shifted_number & mask
+
+    return extracted_bits
+
+
 def set_bit(value: int, bit) -> int:
     """
     Set bit to 1 for the given value.
