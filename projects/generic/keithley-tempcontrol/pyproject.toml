@@ -30,7 +30,8 @@ dependencies = [
 test = ["pytest", "pytest-mock", "pytest-cov"]
 
 [project.scripts]
-daq6510_cs = 'egse.tempcontrol.keithley.daq650_cs:cli'
+daq6510_cs = 'egse.tempcontrol.keithley.daq6510_cs:cli'
+daq6510_sim = 'egse.tempcontrol.keithley.daq6510_sim:app'
 
 [project.gui-scripts]
 daq6510_ui = "egse.tempcontrol.keithley.daq6510_ui:main"
