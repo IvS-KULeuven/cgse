@@ -1,3 +1,4 @@
+import contextlib
 import re
 import subprocess
 import sys
@@ -8,6 +9,7 @@ from typing import Annotated
 import rich
 import typer
 
+from egse.plugin import entry_points
 from egse.system import format_datetime
 
 app = typer.Typer()
@@ -158,21 +160,13 @@ def show_env(
 @show.command(name="procs")
 def show_processes():
     """Show the settings that are defined by the installed packages."""
-    ps_proc = subprocess.Popen(
-        ["ps", "-ef"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        stdin=subprocess.DEVNULL,
-    )
-    grep_proc = subprocess.Popen(["egrep", "_cs|daq|data_dump|puna"], stdin=ps_proc.stdout, stdout=subprocess.PIPE)
-    stdout, stderr = grep_proc.communicate()
-
-    for line in stdout.decode().split('\n'):
-        if not "egrep " in line:
-            rich.print(line)
-
-    if stderr:
-        rich.print(f"[red]{stderr.decode()}[/]")
+    for ep in entry_points("cgse.explore"):
+        # print(f"{ep.name = }, {ep.module = }, {ep.load() = }, {ep.extras = }")
+        explore = ep.load()
+        with contextlib.suppress(AttributeError):
+            show_procs = getattr(explore, "show_processes")
+            for line in show_procs():
+                rich.print(line)
 
 
 check = typer.Typer(help="Check installation, settings, required files, etc.", no_args_is_help=True)

@@ -43,6 +43,9 @@ cgse-core = 'egse.version:get_version_installed'
 [project.entry-points."cgse.settings"]
 cgse-core = "cgse_core:settings.yaml"
 
+[project.entry-points."cgse.explore"]
+explore = "cgse_core.cgse_explore"
+
 [tool.pytest.ini_options]
 pythonpath = "src"
 testpaths = ["tests"]

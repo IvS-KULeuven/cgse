@@ -458,3 +458,30 @@ def get_process_info(items: List[str] | str, contains: bool = True, case_sensiti
                 response.append(proc.as_dict(attrs=['pid', 'cmdline', 'create_time']))
 
     return response
+
+
+def ps_egrep(pattern):
+    # First command-line
+    ps_command = ["ps", "-ef"]
+
+    # Second command-line
+    grep_command = ["egrep", pattern]
+
+    # Launch first process
+    ps_process = subprocess.Popen(ps_command, stdout=subprocess.PIPE)
+
+    # Launch second process and connect it to the first one
+    grep_process = subprocess.Popen(
+        grep_command, stdin=ps_process.stdout, stdout=subprocess.PIPE
+    )
+
+    # Let stream flow between them
+    output, _ = grep_process.communicate()
+
+    response = [
+        line
+        for line in output.decode().rstrip().split('\n')
+        if line and "egrep " not in line
+    ]
+
+    return response
