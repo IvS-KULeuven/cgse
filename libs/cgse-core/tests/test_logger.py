@@ -50,12 +50,16 @@ def test_logging_error(caplog):
 
 def test_create_new_zmq_logger(caplog):
 
+    print()
+
     camtest_logger = create_new_zmq_logger("camtest")
 
     camtest_logger.info("First message with ZeroMQ handler in camtest logger")
 
     assert "camtest:test_logger" in caplog.text
     assert "ZeroMQ" in caplog.text
+
+    print(f"{caplog.text = }")
 
     caplog.clear()
 

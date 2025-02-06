@@ -43,6 +43,9 @@ symetrie-hexapod = 'egse.version:get_version_installed'
 [project.entry-points."cgse.service"]
 puna = 'symetrie_hexapod.cgse_services:puna'
 
+[project.entry-points."cgse.explore"]
+explore = "symetrie_hexapod.cgse_explore"
+
 [tool.hatch.build.targets.sdist]
 exclude = [
     "/tests",
