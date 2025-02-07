@@ -12,10 +12,9 @@ from logging.handlers import SocketHandler
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from typing import Optional
-from typing import Union
 
-import click
 import rich
+import typer
 import zmq
 from prometheus_client import Counter
 from prometheus_client import start_http_server
@@ -89,12 +88,10 @@ class DateTimeFormatter(logging.Formatter):
 file_formatter = DateTimeFormatter(fmt=LOG_FORMAT_KEY_VALUE, datefmt=LOG_FORMAT_DATE)
 
 
-@click.group()
-def cli():
-    pass
+app = typer.Typer(name="log_cs", no_args_is_help=True)
 
 
-@cli.command()
+@app.command()
 def start():
     """Start the Logger Control Server."""
 
@@ -161,7 +158,7 @@ def start():
                 handle_log_record(record)
 
         except KeyboardInterrupt:
-            click.echo("KeyboardInterrupt caught!")
+            rich.print("KeyboardInterrupt caught!")
             break
 
     record = logging.LogRecord(
@@ -183,7 +180,7 @@ def start():
     receiver.close(linger=0)
 
 
-@cli.command()
+@app.command()
 def start_bg():
     """Start the Logger Control Server in the background."""
     proc = SubProcess("log_cs", ["log_cs", "start"])
@@ -250,7 +247,7 @@ def handle_command(command) -> dict:
     return response
 
 
-@cli.command()
+@app.command()
 def stop():
     """Stop the Logger Control Server."""
 
@@ -261,7 +258,7 @@ def stop():
         rich.print(f"[red] ERROR: {response}")
 
 
-@cli.command()
+@app.command()
 def roll():
     """Roll over the log file of the Logger Control Server."""
 
@@ -272,7 +269,7 @@ def roll():
         rich.print(f"[red]ERROR: {response}")
 
 
-@cli.command()
+@app.command()
 def status():
     """Roll over the log file of the Logger Control Server."""
 
@@ -287,9 +284,8 @@ def status():
         rich.print("Log Manager Status: [red]not active")
 
 
-@cli.command()
-@click.argument('level')
-def set_level(level: Union[int, str]):
+@app.command()
+def set_level(level: str):
     """Set the logging level for """
     try:
         level = logging.getLevelName(int(level))
@@ -307,4 +303,4 @@ def set_level(level: Union[int, str]):
 
 
 if __name__ == "__main__":
-    cli()
+    app()

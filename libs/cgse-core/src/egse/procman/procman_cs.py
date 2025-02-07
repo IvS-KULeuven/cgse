@@ -146,7 +146,7 @@ def cli():
 def start():
     """Start the Process Manager."""
 
-    multiprocessing.current_process().name = "procman_cs"
+    multiprocessing.current_process().name = "pm_cs"
 
     # We import this class such that the class name is
     # 'egse.procman.procman_cs.ProcessManagerControlServer' and we
@@ -154,7 +154,7 @@ def start():
     # If this import would not be done, the class name for the
     # ProcessManagerControlServer would be '__main__.ProcessManagerControlServer'.
 
-    from egse.procman.procman_cs import ProcessManagerControlServer
+    from egse.procman.procman_cs import ProcessManagerControlServer  # noqa
 
     try:
         control_server = ProcessManagerControlServer()

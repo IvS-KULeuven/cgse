@@ -91,7 +91,7 @@ class ConfigurationManagerControlServer(ControlServer):
         start_http_server(CTRL_SETTINGS.METRICS_PORT)
 
 
-app = typer.Typer()
+app = typer.Typer(name="cm_cs", no_args_is_help=True)
 
 
 @app.command()
@@ -103,7 +103,7 @@ def start():
     The cm_cs is normally started automatically on egse-server boot.
     """
 
-    multiprocessing.current_process().name = "confman_cs"
+    multiprocessing.current_process().name = "cm_cs"
 
     try:
         check_prerequisites()
