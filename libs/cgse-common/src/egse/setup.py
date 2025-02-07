@@ -290,8 +290,6 @@ def disentangle_filename(filename: str) -> tuple:
     if filename is None:
         return ()
 
-    MODULE_LOGGER.info(f"{filename = }")
-
     match = re.search(r"SETUP_(\w+)_([\d]{5})_([\d]{6})_([\d]{6})\.yaml", filename)
 
     if match is None:
@@ -752,7 +750,7 @@ class Setup(NavigableDict):
         `_filename` and use that to save the data.
 
         Args:
-            filename (str): the path of the YAML file where to save the data
+            filename (str|Path): the path of the YAML file where to save the data
 
         .. note::
             This method will **overwrite** the original or given YAML file and therefore you might
@@ -765,7 +763,7 @@ class Setup(NavigableDict):
             except KeyError:
                 raise ValueError("No filename given or known, can not save Setup.")
 
-        print(f"Saving Setup to {filename}")
+        print(f"Saving Setup to {filename!s}")
 
         with Path(filename).open("w") as fd:
 
@@ -1158,15 +1156,18 @@ def submit_setup(setup: Setup, description: str):
             rich.print(f"[red]Submit failed for given Setup[/red]: {setup}")
             setup = None
         elif replace:
-            rich.print(textwrap.dedent("""\
-                [green]
-                Your new setup has been submitted and pushed to GitHub. The new setup is also
-                activated in the configuration manager. Load the new setup in your session with:
-
-                    setup = load_setup()
-                [/]
-                """
-            ))
+            rich.print(
+                textwrap.dedent(
+                    """\
+                    [green]
+                    Your new setup has been submitted and pushed to GitHub. The new setup is also
+                    activated in the configuration manager. Load the new setup in your session with:
+    
+                        setup = load_setup()
+                    [/]
+                    """
+                )
+            )
         else:
             rich.print(
                 textwrap.dedent(
