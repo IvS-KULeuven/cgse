@@ -10,6 +10,8 @@ places. The following entry-points are currently defined:
   their functionality from within the `cgse` app, e.g. to start or stop the service or to report on
   its status.
 * `cgse.settings`: Package can add their own settings.
+* `cgse.explore`: Package provides a set of functions to explore, e.g. if any of the processes 
+  it provides are running.
 * `cgse.resource`: Packages can register resources.
 
 Each of the entry-points knows how to load a module or object and each entry-point group is
@@ -142,6 +144,36 @@ where:
 - `name` is the name of the service or device driver
 - `module` is a fully qualified module name for your package, a module that can be imported
 - `object` is the name of the `Typer()` object that you want to add as a service
+
+## Explore
+
+The entry-point `cgse.explore` can be used to extend functionality without adding a new command 
+or sub-command to the `cgse` app. The idea is that commands that work on different packages can 
+use this entry-point to perform certain tasks on the package. This is currently used for the 
+`show procs` command (see below).
+
+The entry-point has the following format:
+
+```toml
+[project.entry-points."cgse.explore"]
+explore = "<package>.cgse_explore"
+```
+
+So, what happens is that a command that wants to apply a functionality on an external package 
+loads the `cgse_explore.py` module for that package and checks if a function with a specific 
+name exists in that module. It then executes that function. For the `show procs` command, the 
+function `show_processes` is expected and it shall return a list of strings which currently are 
+printed to the terminal. This entry-point is currently implemented for `cgse-core` and 
+`cgse-dummy` (an external demo package) and when you run the `cgse show procs` command it looks 
+something like below (the format is from the unix `ps -ef` command). 
+
+```text
+➜  cgse show procs
+459800007 76849     1   0 11:07PM ttys003    0:03.53 /Users/rik/tmp/test_dummy/venv/bin/python3.9 -m egse.logger.log_cs start
+459800007 76850     1   0 11:07PM ttys003    2:18.60 /Users/rik/tmp/test_dummy/venv/bin/python3.9 -m egse.storage.storage_cs start
+459800007 76851     1   0 11:07PM ttys003    2:20.10 /Users/rik/tmp/test_dummy/venv/bin/python3.9 -m egse.confman.confman_cs start
+459800007 13825     1   0  4:31PM ttys003    0:02.97 /Users/rik/tmp/test_dummy/venv/bin/python3.9 -m cgse_dummy.dummy_sim start
+```
 
 ## Register resources
 
