@@ -13,8 +13,8 @@ import multiprocessing
 import sys
 from pathlib import Path
 
-import click
 import rich
+import typer
 import zmq
 from prometheus_client import start_http_server
 
@@ -29,7 +29,7 @@ from egse.settings import Settings
 
 # Use explicit name here otherwise the logger will probably be called __main__
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("egse.confman.confman_cs")
 
 CTRL_SETTINGS = Settings.load("Configuration Manager Control Server")
 
@@ -91,12 +91,10 @@ class ConfigurationManagerControlServer(ControlServer):
         start_http_server(CTRL_SETTINGS.METRICS_PORT)
 
 
-@click.group()
-def cli():
-    pass
+app = typer.Typer()
 
 
-@cli.command()
+@app.command()
 def start():
     """
     Starts the Configuration Manager (cm_cs). The cm_cs is a server which handles the
@@ -119,8 +117,8 @@ def start():
     except KeyboardInterrupt:
         print("Shutdown requested...exiting")
     except SystemExit as exit_code:
-        print("System Exit with code {}.".format(exit_code))
-        sys.exit(exit_code)
+        print(f"System Exit with code {exit_code}.")
+        sys.exit(exit_code.code)
     except Exception:
         import traceback
 
@@ -129,25 +127,25 @@ def start():
     return 0
 
 
-@cli.command()
+@app.command()
 def start_bg():
     """Start the Configuration Manager Control Server in the background."""
     proc = SubProcess("cm_cs", ["cm_cs", "start"])
     proc.execute()
 
 
-@cli.command()
+@app.command()
 def stop():
     """Send a 'quit_server' command to the Configuration Manager."""
     try:
         with ConfigurationManagerProxy() as cm:
             sp = cm.get_service_proxy()
             sp.quit_server()
-    except ConnectionError as exc:
+    except ConnectionError:
         rich.print("[red]ERROR: Couldn't connect to the configuration manager.[/]")
 
 
-@cli.command()
+@app.command()
 def status():
     """Print the status of the control server."""
 
@@ -157,12 +155,19 @@ def status():
     rich.print(get_status(), end='')
 
 
-@cli.command()
-def list_setups(**attr):
+@app.command(
+    context_settings={"allow_extra_args": True, "ignore_unknown_options": True}
+)
+def list_setups(ctx: typer.Context):
     """List available Setups."""
 
+    # These extra arguments need to be converted into a dictionary as expected by
+    # the function egse.system.filter_by_attr()
+    for extra_arg in ctx.args:
+        print(f"Got extra arg: {extra_arg}")
+
     with ConfigurationManagerProxy() as cm:
-        setups = cm.list_setups(**attr)
+        setups = cm.list_setups(**{})
     if isinstance(setups, Failure):
         rich.print(f"[red]ERROR: {setups}[/]")
         rich.print("Check the log file for a more detailed error message.")
@@ -173,9 +178,8 @@ def list_setups(**attr):
         print("\n".join(f"{setup}" for setup in setups))
 
 
-@cli.command()
-@click.argument('setup_id', type=int)
-def load_setup(setup_id):
+@app.command()
+def load_setup(setup_id: int):
     """Load the given Setup on the configuration manager."""
 
     with ConfigurationManagerProxy() as cm:
@@ -188,7 +192,7 @@ def load_setup(setup_id):
         print(f"{setup_id} loaded on configuration manager.")
 
 
-@cli.command()
+@app.command()
 def reload_setups():
     """ Clears the cache and re-loads the available setups.
 
@@ -239,4 +243,4 @@ def check_prerequisites():
 
 if __name__ == "__main__":
 
-    sys.exit(cli())
+    sys.exit(app())
