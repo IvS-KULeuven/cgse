@@ -263,7 +263,7 @@ def _get_attribute(self, name, default):
     return attr
 
 
-def _parse_filename_for_setup_id(filename: str):
+def _parse_filename_for_setup_id(filename: str) -> str | None:
     """Returns the setup_id from the filename, or None when no match was found."""
 
     # match = re.search(r"SETUP_([^_]+)_(\d+)", filename)
@@ -275,6 +275,31 @@ def _parse_filename_for_setup_id(filename: str):
         return match[2]  # match[2] is setup_id
     except (IndexError, TypeError):
         return None
+
+
+def disentangle_filename(filename: str) -> tuple:
+    """
+    Returns the site_id and setup_id (as a tuple) that is extracted from the Setups filename.
+
+    Args:
+        filename (str): the filename or fully qualified file path as a string.
+
+    Returns:
+          A tuple (site_id, setup_id).
+    """
+    if filename is None:
+        return ()
+
+    MODULE_LOGGER.info(f"{filename = }")
+
+    match = re.search(r"SETUP_(\w+)_([\d]{5})_([\d]{6})_([\d]{6})\.yaml", filename)
+
+    if match is None:
+        return ()
+
+    site_id, setup_id = match[1], match[2]
+
+    return site_id, setup_id
 
 
 def get_last_setup_id_file_path(site_id: str = None) -> Path:

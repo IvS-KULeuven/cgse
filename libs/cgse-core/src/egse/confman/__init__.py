@@ -146,6 +146,7 @@ from egse.response import Success
 from egse.settings import Settings
 from egse.settings import SettingsError
 from egse.setup import Setup
+from egse.setup import disentangle_filename
 from egse.setup import load_last_setup_id
 from egse.setup import save_last_setup_id
 from egse.system import filter_by_attr
@@ -835,7 +836,8 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         setups = filter_by_attr(setups, **attr)
 
         for setup in setups:
-            _, setup_site, setup_id, _ = str(setup._filename).split("_", maxsplit=3)
+            # FIXME: are we sure setup.get_filename() returns a Path?
+            setup_site, setup_id = disentangle_filename(str(setup.get_filename()))
             description = _get_description_for_setup(setup, int(setup_id))
             cam_id = _get_sut_id_for_setup(setup)
             setup_list.append((setup_id, setup_site, description, cam_id))
