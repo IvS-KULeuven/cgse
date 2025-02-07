@@ -23,6 +23,7 @@ from egse.confman import ConfigurationManagerProxy
 from egse.control import ControlServer
 from egse.env import get_conf_data_location
 from egse.process import SubProcess
+from egse.response import Failure
 from egse.response import Response
 from egse.settings import Settings
 
@@ -162,6 +163,10 @@ def list_setups(**attr):
 
     with ConfigurationManagerProxy() as cm:
         setups = cm.list_setups(**attr)
+    if isinstance(setups, Failure):
+        rich.print(f"[red]ERROR: {setups}[/]")
+        rich.print("Check the log file for a more detailed error message.")
+        return
     if setups:
         # We want to have the most recent (highest id number) last, but keep the site together
         setups = sorted(setups, key=lambda x: (x[1], x[0]))
