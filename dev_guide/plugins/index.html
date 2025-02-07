@@ -866,6 +866,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#explore" class="md-nav__link">
+    <span class="md-ellipsis">
+      Explore
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#register-resources" class="md-nav__link">
     <span class="md-ellipsis">
       Register resources
@@ -1479,6 +1488,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#explore" class="md-nav__link">
+    <span class="md-ellipsis">
+      Explore
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#register-resources" class="md-nav__link">
     <span class="md-ellipsis">
       Register resources
@@ -1516,6 +1534,8 @@ places. The following entry-points are currently defined:</p>
   their functionality from within the <code>cgse</code> app, e.g. to start or stop the service or to report on
   its status.</li>
 <li><code>cgse.settings</code>: Package can add their own settings.</li>
+<li><code>cgse.explore</code>: Package provides a set of functions to explore, e.g. if any of the processes 
+  it provides are running.</li>
 <li><code>cgse.resource</code>: Packages can register resources.</li>
 </ul>
 <p>Each of the entry-points knows how to load a module or object and each entry-point group is
@@ -1617,6 +1637,28 @@ file:</p>
 <li><code>module</code> is a fully qualified module name for your package, a module that can be imported</li>
 <li><code>object</code> is the name of the <code>Typer()</code> object that you want to add as a service</li>
 </ul>
+<h2 id="explore">Explore<a class="headerlink" href="#explore" title="Permanent link">&para;</a></h2>
+<p>The entry-point <code>cgse.explore</code> can be used to extend functionality without adding a new command 
+or sub-command to the <code>cgse</code> app. The idea is that commands that work on different packages can 
+use this entry-point to perform certain tasks on the package. This is currently used for the 
+<code>show procs</code> command (see below).</p>
+<p>The entry-point has the following format:</p>
+<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">&quot;cgse.explore&quot;</span><span class="k">]</span>
+<span class="n">explore</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&lt;package&gt;.cgse_explore&quot;</span>
+</code></pre></div>
+<p>So, what happens is that a command that wants to apply a functionality on an external package 
+loads the <code>cgse_explore.py</code> module for that package and checks if a function with a specific 
+name exists in that module. It then executes that function. For the <code>show procs</code> command, the 
+function <code>show_processes</code> is expected and it shall return a list of strings which currently are 
+printed to the terminal. This entry-point is currently implemented for <code>cgse-core</code> and 
+<code>cgse-dummy</code> (an external demo package) and when you run the <code>cgse show procs</code> command it looks 
+something like below (the format is from the unix <code>ps -ef</code> command). </p>
+<div class="highlight"><pre><span></span><code>➜  cgse show procs
+459800007 76849     1   0 11:07PM ttys003    0:03.53 /Users/rik/tmp/test_dummy/venv/bin/python3.9 -m egse.logger.log_cs start
+459800007 76850     1   0 11:07PM ttys003    2:18.60 /Users/rik/tmp/test_dummy/venv/bin/python3.9 -m egse.storage.storage_cs start
+459800007 76851     1   0 11:07PM ttys003    2:20.10 /Users/rik/tmp/test_dummy/venv/bin/python3.9 -m egse.confman.confman_cs start
+459800007 13825     1   0  4:31PM ttys003    0:02.97 /Users/rik/tmp/test_dummy/venv/bin/python3.9 -m cgse_dummy.dummy_sim start
+</code></pre></div>
 <h2 id="register-resources">Register resources<a class="headerlink" href="#register-resources" title="Permanent link">&para;</a></h2>
 <p>TODO: what if two packages provide a resource <code>icons</code> ?</p>
 <ul>
