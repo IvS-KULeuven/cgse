@@ -539,6 +539,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         from egse.storage.persistence import TYPES
 
         self._obsid: ObservationIdentifier | None = None
+        self._setup: Setup | None = None
         self._setup_id: int | None = None
         self._sut_name: str | None = None
 
@@ -697,9 +698,9 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
 
         if setup_id is None:
             return Failure(
-                f"No Setup ID was given, cannot load a Setup into the configuration manager. "
-                f"If you wanted to get the current Setup from the configuration manager, use the "
-                f"get_setup() method instead."
+                "No Setup ID was given, cannot load a Setup into the configuration manager. "
+                "If you wanted to get the current Setup from the configuration manager, use the "
+                "get_setup() method instead."
             )
 
         if self._obsid:
@@ -895,20 +896,18 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         # No repository is defined. This should not break, but a warning is in place.
         # The warnings are issued by the get_conf_repo_location() function.
 
-        if get_conf_repo_location() is None:
-            return
-
-        try:
-            rc = _push_setup_to_repo(filename, description)
-            if isinstance(rc, Failure):
-                return rc
-            _add_setup_info_to_cache(setup)
-        except (Exception, ) as exc:
-            msg = "Submit_setup could not complete it's task to send the new Setup to the repo."
-            LOGGER.error(msg, exc_info=True)
-            return Failure("Submit_setup could not complete it's task to send the new Setup to the repo.", exc)
-        else:
-            LOGGER.info(f"Successfully pushed Setup {setup_id} to the repository.")
+        if get_conf_repo_location():
+            try:
+                rc = _push_setup_to_repo(filename, description)
+                if isinstance(rc, Failure):
+                    return rc
+                _add_setup_info_to_cache(setup)
+            except (Exception, ) as exc:
+                msg = "Submit_setup could not complete it's task to send the new Setup to the repo."
+                LOGGER.error(msg, exc_info=True)
+                return Failure("Submit_setup could not complete it's task to send the new Setup to the repo.", exc)
+            else:
+                LOGGER.info(f"Successfully pushed Setup {setup_id} to the repository.")
 
         if replace:
             self._setup = setup
@@ -922,12 +921,12 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         Return the next available Setup ID for the given Site.
 
         Args:
-            site (str): site identification, e.g. CSL, SRON, ...
+            site (str): site identification, e.g. CSL, SRON, VACUUM_LAB...
         """
         site = site or SITE_ID
         files = sorted(find_files(pattern=f"SETUP_{site}_*.yaml", root=self._data_conf_location))
         last_file = files[-1]
-        setup_id = last_file.name.split("_")[2]
+        _, setup_id = disentangle_filename(last_file.name)
 
         return int(setup_id) + 1
 
