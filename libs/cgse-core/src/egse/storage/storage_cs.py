@@ -9,9 +9,10 @@ import logging
 import multiprocessing
 import sys
 from pathlib import Path
+from typing import Annotated
 
-import click
 import rich
+import typer
 import zmq
 from apscheduler.schedulers.background import BackgroundScheduler
 from prometheus_client import start_http_server
@@ -75,16 +76,14 @@ class StorageControlServer(ControlServer):
         return CTRL_SETTINGS.MONITORING_PORT
 
 
-@click.group()
-def cli():
-    pass
+app = typer.Typer(name="sm_cs", no_args_is_help=True)
 
 
-@cli.command()
+@app.command()
 def start():
     """Start the Storage Manager."""
 
-    multiprocessing.current_process().name = "storage_cs"
+    multiprocessing.current_process().name = "sm_cs"
 
     # We import this class such that the class name is
     # 'egse.storage.storage_cs.StorageControlServer' and we
@@ -92,7 +91,7 @@ def start():
     # If this import is not done, the class name for the
     # StorageControlServer would be '__main__.StorageControlServer'.
 
-    from egse.storage.storage_cs import StorageControlServer
+    from egse.storage.storage_cs import StorageControlServer  # noqa
 
     try:
         check_prerequisites()
@@ -106,8 +105,8 @@ def start():
     except KeyboardInterrupt:
         print("Shutdown requested...exiting")
     except SystemExit as exit_code:
-        print("System Exit with code {}.".format(exit_code))
-        sys.exit(exit_code)
+        print(f"System Exit with code {exit_code}.")
+        sys.exit(exit_code.code)
     except Exception:
         import traceback
 
@@ -116,27 +115,26 @@ def start():
     return 0
 
 
-@cli.command()
+@app.command()
 def start_bg():
     """Start the Storage Manager Control Server in the background."""
     proc = SubProcess("sm_cs", ["sm_cs", "start"])
     proc.execute()
 
 
-@cli.command()
+@app.command()
 def stop():
     """Send a 'quit_server' command to the Storage Manager."""
     try:
         with StorageProxy() as sm:
             sp = sm.get_service_proxy()
             sp.quit_server()
-    except ConnectionError as exc:
+    except ConnectionError:
         rich.print("[red]ERROR: Couldn't connect to the storage manager.[/]")
 
 
-@cli.command()
-@click.option("--full", is_flag=True, help="Give a full status report")
-def status(full):
+@app.command()
+def status(full: Annotated[bool, typer.Option(help="Give a full status report")] = False):
     """Print the status of the control server."""
 
     import rich
@@ -195,4 +193,4 @@ def check_prerequisites():
 
 
 if __name__ == "__main__":
-    sys.exit(cli())
+    sys.exit(app())

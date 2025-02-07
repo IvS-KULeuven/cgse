@@ -1,6 +1,6 @@
 [project]
 name = "cgse-core"
-version = "0.2.3"
+version = "0.2.4"
 description = "Core services for the CGSE framework"
 authors = [
     {name = "IVS KU Leuven"}
@@ -30,8 +30,8 @@ dependencies = [
 ]
 
 [project.scripts]
-log_cs = 'egse.logger.log_cs:cli'
-sm_cs = 'egse.storage.storage_cs:cli'
+log_cs = 'egse.logger.log_cs:app'
+sm_cs = 'egse.storage.storage_cs:app'
 cm_cs = 'egse.confman.confman_cs:app'
 pm_cs = 'egse.procman.procman_cs:cli'
 
