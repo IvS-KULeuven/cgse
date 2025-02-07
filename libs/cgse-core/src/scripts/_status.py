@@ -32,7 +32,7 @@ async def status_log_cs():
     #
     # stdout, stderr = proc.communicate()
 
-    rich.print(stdout.decode(), end='')
+    rich.print(stdout.decode().rstrip())
     if stderr:
         rich.print(f"[red]{stderr.decode()}[/]")
 
@@ -54,7 +54,7 @@ async def status_sm_cs():
     #
     # stdout, stderr = proc.communicate()
 
-    rich.print(stdout.decode(), end='')
+    rich.print(stdout.decode().rstrip())
     if stderr:
         rich.print(f"[red]{stderr.decode()}[/]")
 
@@ -76,6 +76,6 @@ async def status_cm_cs():
     #
     # stdout, stderr = proc.communicate()
 
-    rich.print(stdout.decode(), end='')
+    rich.print(stdout.decode().rstrip())
     if stderr:
         rich.print(f"[red]{stderr.decode()}[/]")
