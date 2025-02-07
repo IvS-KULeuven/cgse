@@ -32,7 +32,7 @@ dependencies = [
 [project.scripts]
 log_cs = 'egse.logger.log_cs:cli'
 sm_cs = 'egse.storage.storage_cs:cli'
-cm_cs = 'egse.confman.confman_cs:cli'
+cm_cs = 'egse.confman.confman_cs:app'
 pm_cs = 'egse.procman.procman_cs:cli'
 
 cgse = 'scripts.cgse:app'
