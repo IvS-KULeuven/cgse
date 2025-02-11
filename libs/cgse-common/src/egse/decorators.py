@@ -6,8 +6,10 @@ import functools
 import logging
 import pstats
 import time
+import types
 import warnings
 from typing import Callable
+from typing import List
 from typing import Optional
 
 import rich
@@ -19,7 +21,16 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def static_vars(**kwargs):
-    """Define static variables in a function."""
+    """
+    Define static variables in a function.
+
+    The static variable can be accessed with <function name>.<variable name> inside the function body.
+
+        @static_vars(count=0)
+        def special_count():
+            return special_count.count += 2
+
+    """
     def decorator(func):
         for kw in kwargs:
             setattr(func, kw, kwargs[kw])
@@ -81,11 +92,75 @@ def write_command(func):
     return func
 
 
-def timer(*, level: int = logging.INFO, precision: int = 4):
+def average_time(*, name: str = "average_time", level: int = logging.INFO, precision: int = 6):
+    """
+    This is a decorator that is intended mainly as a development aid. When you decorate your function with
+    `@average_time`, the execution time of your function will be kept and accumulated. At anytime in your code,
+    you can request the total execution time and the number of calls:
+
+        @average_time()
+        def my_function():
+            ...
+        total_execution_time, call_count = my_function.report()
+
+    Requesting the report will automatically log the average runtime and the number of calls.
+    If you need to reset the execution time and the number of calls during your testing, use:
+
+        my_function.reset()
+
+    Args:
+        name: A name for the timer that will be used during reporting, default='average_time'
+        level: the required log level, default=logging.INFO
+        precision: the precision used to report the average time, default=6
+
+    Returns:
+        The decorated function.
+
+    """
+    def actual_decorator(func):
+        func._run_time = 0.0
+        func._call_count = 0
+
+        def _report_average_time():
+            if func._call_count:
+                average_time = func._run_time / func._call_count
+                _LOGGER.log(
+                    level,
+                    f"{name}: "
+                    f"average runtime of {func.__name__!r} is {average_time:.{precision}f}s, "
+                    f"#calls = {func._call_count}."
+                )
+            else:
+                _LOGGER.log(level, f"{name}: function {func.__name__!r} was never called.")
+
+            return func._run_time, func._call_count
+
+        def _reset():
+            func._run_time = 0
+            func._call_count = 0
+
+        func.report = _report_average_time
+        func.reset = _reset
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            start_time = time.perf_counter()
+            result = func(*args, **kwargs)
+            end_time = time.perf_counter()
+            func._run_time += end_time - start_time
+            func._call_count += 1
+            return result
+
+        return wrapper
+    return actual_decorator
+
+
+def timer(*, name: str = "timer", level: int = logging.INFO, precision: int = 4):
     """
     Print the runtime of the decorated function.
 
     Args:
+        name: a name for the Timer, will be printed in the logging message
         level: the logging level for the time message [default=INFO]
         precision: the number of decimals for the time [default=3 (ms)]
     """
@@ -97,14 +172,14 @@ def timer(*, level: int = logging.INFO, precision: int = 4):
             value = func(*args, **kwargs)
             end_time = time.perf_counter()
             run_time = end_time - start_time
-            _LOGGER.log(level, f"Finished {func.__name__!r} in {run_time:.{precision}f} secs")
+            _LOGGER.log(level, f"{name}: Finished {func.__name__!r} in {run_time:.{precision}f} secs")
             return value
 
         return wrapper_timer
     return actual_decorator
 
 
-def time_it(count: int = 1000):
+def time_it(count: int = 1000, precision: int = 4):
     """Print the runtime of the decorated function.
 
     This is a simple replacement for the builtin ``timeit`` function. The purpose is to simplify
@@ -121,6 +196,7 @@ def time_it(count: int = 1000):
 
     Args:
         count (int): the number of executions [default=1000].
+        precision (int): the number of significant digits [default=4]
 
     Returns:
         value: the return value of the last function execution.
@@ -145,8 +221,8 @@ def time_it(count: int = 1000):
                 value = func(*args, **kwargs)
             end_time = time.perf_counter()
             run_time = end_time - start_time
-            logging.info(f"Finished {func.__name__!r} in {run_time/count:.4f} secs (total time: {run_time:.2f}s, "
-                         f"count: {count})")
+            logging.info(f"Finished {func.__name__!r} in {run_time/count:.{precision}f} secs "
+                         f"(total time: {run_time:.2f}s, count: {count})")
             return value
 
         return wrapper_timer
@@ -259,6 +335,112 @@ def profile(func):
         return value
 
     return wrapper_profile
+
+
+class Profiler:
+    """
+    A simple profiler class that provides some useful functions to profile a function.
+
+    - count: count the number of times this function is executed
+    - duration: measure the total and average duration of the function [seconds]
+
+    Example:
+          >>> from egse.decorators import Profiler
+          >>> @Profiler.count()
+          ... def square(x):
+          ...     return x**2
+
+          >>> x = [square(x) for x in range(1_000_000)]
+
+          >>> print(f"Function 'square' called {square.get_count()} times.")
+          >>> print(square)
+
+          >>> @Profiler.duration()
+          ... def square(x):
+          ...     time.sleep(0.1)
+          ...     return x**2
+
+          >>> x = [square(x) for x in range(100)]
+
+          >>> print(f"Function 'square' takes on average {square.get_average_duration():.6f} seconds.")
+          >>> print(square)
+
+    """
+
+    class CountCalls:
+        def __init__(self, func):
+            self.func = func
+            self.count = 0
+
+        def __call__(self, *args, **kwargs):
+            self.count += 1
+            return self.func(*args, **kwargs)
+
+        def get_count(self):
+            return self.count
+
+        def reset(self):
+            self.count = 0
+
+        def __str__(self):
+            return f"Function '{self.func.__name__}' was called {self.count} times."
+
+        # The __get__ method is here to make the decorator work with instance methods (methods inside a class)
+        # as well. It ensures that when the decorated method is called on an instance, the self argument is
+        # correctly passed to the method.
+
+        def __get__(self, instance, owner):
+            if instance is None:
+                return self
+            else:
+                return types.MethodType(self, instance)
+
+    class Duration:
+        def __init__(self, func):
+            self.func = func
+            self.duration = 0
+            self.count = 0
+
+        def __call__(self, *args, **kwargs):
+            start = time.perf_counter_ns()
+            response = self.func(*args, **kwargs)
+            self.count += 1
+            self.duration += time.perf_counter_ns() - start
+            return response
+
+        def get_count(self):
+            return self.count
+
+        def get_duration(self):
+            return self.duration / 1_000_000_000
+
+        def get_average_duration(self):
+            return self.duration / 1_000_000_000 / self.count if self.count else 0.0
+
+        def reset(self):
+            self.duration = 0
+            self.count = 0
+
+        def __str__(self):
+            return f"Function '{self.func.__name__}' takes on average {self.get_average_duration():.6f} seconds."
+
+        # The __get__ method is here to make the decorator work with instance methods (methods inside a class)
+        # as well. It ensures that when the decorated method is called on an instance, the self argument is
+        # correctly passed to the method.
+
+        def __get__(self, instance, owner):
+            if instance is None:
+                return self
+            else:
+                return types.MethodType(self, instance)
+
+    @classmethod
+    def count(cls):
+        return cls.CountCalls
+
+    @classmethod
+    def duration(cls):
+        return cls.Duration
 
 
 def to_be_implemented(func):
@@ -426,3 +608,119 @@ def spy_on_attr_change(obj: object, obj_name: str = None) -> None:
     class_name = obj.__class__.__name__
     obj.__class__ = Wrapper
     obj.__class__.__name__ = class_name
+
+
+def retry_with_exponential_backoff(max_attempts=5, initial_wait=1.0, backoff_factor=2, exceptions: List = None):
+    """
+    Decorator for retrying a function with exponential backoff.
+
+    This decorator can be applied to a function to handle specified exceptions by
+    retrying the function execution. It will make up to 'max_attempts' attempts with a
+    waiting period that grows exponentially between each attempt (dependent on the backoff_factor).
+    Any exception from the list provided in the `exceptions` argument will be ignored for the
+    given `max_attempts`.
+
+    If after all attempts still an exception is raised, it will be passed through the
+    calling function, otherwise the functions return value will be returned.
+
+    Args:
+    - max_attempts: The maximum number of attempts to make.
+    - initial_wait: The initial waiting time in seconds before retrying after the first failure.
+    - backoff_factor: The factor by which the wait time increases after each failure.
+
+    Returns:
+        The response from the executed function.
+    """
+
+    exceptions = [Exception] if exceptions is None else exceptions
+
+    def actual_decorator(func):
+
+        @functools.wraps(func)
+        def decorate_func(*args, **kwargs):
+            attempt = 0
+            wait_time = initial_wait
+            last_exception = None
+
+            while attempt < max_attempts:
+                try:
+                    response = func(*args, **kwargs)  # Attempt to call the function
+                    _LOGGER.info(
+                        f"{func.__name__} successfully executed."
+                    )
+                    return response
+                except tuple(exceptions) as exc:
+                    last_exception = exc
+                    attempt += 1
+                    _LOGGER.info(
+                        f"Retry {attempt}: {func.__name__} will be executing again in {wait_time*backoff_factor}s. "
+                        f"Received a {last_exception!r}."
+                    )
+                    time.sleep(wait_time)  # Wait before retrying
+                    wait_time *= backoff_factor  # Increase wait time for the next attempt
+
+            # If the loop completes, all attempts have failed, reraise the last exception
+
+            raise last_exception
+
+        return decorate_func
+
+    return actual_decorator
+
+
+def retry(times: int = 3, wait: float = 10.0, exceptions: List = None):
+    """
+    Decorator that retries a function multiple times with a delay between attempts.
+
+    This decorator can be applied to a function to handle specified exceptions by
+    retrying the function execution. It will make up to 'times' attempts with a
+    waiting period of 'wait' seconds between each attempt. Any exception from the
+    list provided in the `exceptions` argument will be ignored for the given `times`.
+
+    If after times attempts still an exception is raised, it will be passed through the
+    calling function, otherwise the functions return value will be returned.
+
+    Args:
+        times (int, optional): The number of retry attempts. Defaults to 3.
+        wait (float, optional): The waiting period between retries in seconds. Defaults to 10.0.
+        exceptions (List[Exception] or None, optional): List of exception types to catch and retry.
+            Defaults to None, which catches all exceptions.
+
+    Returns:
+        Callable: The decorated function.
+
+    Example:
+        Apply the retry decorator to a function with specific retry settings:
+
+            @retry(times=5, wait=15.0, exceptions=[ConnectionError, TimeoutError])
+            def my_function():
+                # Function logic here
+
+    Note:
+        The decorator catches specified exceptions and retries the function, logging
+        information about each retry attempt.
+
+    """
+
+    exceptions = [Exception] if exceptions is None else exceptions
+
+    def actual_decorator(func: Callable) -> Callable:
+
+        @functools.wraps(func)
+        def decorated_func(*args, **kwargs):
+            previous_exception = None
+            for n in range(times):
+                try:
+                    return func(*args, **kwargs)
+                except tuple(exceptions) as exc:
+                    previous_exception = exc
+                if n < times:
+                    _LOGGER.info(
+                        f"Retry {n + 1}: {func.__name__} will be executing again in {wait}s. "
+                        f"Received a {previous_exception!r}."
+                    )
+                    time.sleep(wait)
+            raise previous_exception
+        return decorated_func
+
+    return actual_decorator

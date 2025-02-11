@@ -12,6 +12,7 @@ import logging
 import multiprocessing
 import sys
 from pathlib import Path
+from typing import Annotated
 
 import rich
 import typer
@@ -26,6 +27,7 @@ from egse.process import SubProcess
 from egse.response import Failure
 from egse.response import Response
 from egse.settings import Settings
+from egse.storage import store_housekeeping_information
 
 # Use explicit name here otherwise the logger will probably be called __main__
 
@@ -46,6 +48,10 @@ class ConfigurationManagerControlServer(ControlServer):
         self.device_protocol.bind(self.dev_ctrl_cmd_sock)
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
+
+        self.set_hk_delay(10.0)
+
+        self.logger.info(f"CM housekeeping saved every {self.hk_delay / 1000:.1f} seconds.")
 
     def get_communication_protocol(self):
         return CTRL_SETTINGS.PROTOCOL
@@ -69,13 +75,19 @@ class ConfigurationManagerControlServer(ControlServer):
         from egse.storage import is_storage_manager_active
         return is_storage_manager_active()
 
+    def store_housekeeping_information(self, data):
+        """Send housekeeping information to the Storage manager."""
+
+        origin = self.get_storage_mnemonic()
+        store_housekeeping_information(origin, data)
+
     def register_to_storage_manager(self):
         from egse.storage import register_to_storage_manager
-        from egse.storage.persistence import CSV
+        from egse.storage.persistence import TYPES
 
         register_to_storage_manager(
             origin=self.get_storage_mnemonic(),
-            persistence_class=CSV,
+            persistence_class=TYPES["CSV"],
             prep={
                 "column_names": list(self.device_protocol.get_housekeeping().keys()),
                 "mode": "a",
@@ -158,12 +170,14 @@ def status():
 @app.command(
     context_settings={"allow_extra_args": True, "ignore_unknown_options": True}
 )
-def list_setups(ctx: typer.Context):
+def list_setups(ctx: Annotated[typer.Context, typer.Option()] = None):
     """List available Setups."""
+
+    args = ctx.args if ctx else []
 
     # These extra arguments need to be converted into a dictionary as expected by
     # the function egse.system.filter_by_attr()
-    for extra_arg in ctx.args:
+    for extra_arg in args:
         print(f"Got extra arg: {extra_arg}")
 
     with ConfigurationManagerProxy() as cm:

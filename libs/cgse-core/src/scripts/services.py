@@ -35,14 +35,14 @@ def stop_core_services():
 
 
 @app.command(name="status")
-def status_core_services():
+def status_core_services(full: bool = False):
     """Print the status of the core services."""
     # from scripts._status import status_log_cs, status_sm_cs, status_cm_cs
 
     rich.print("[green]Status of the core services...[/]")
 
     from scripts._status import run_all_status
-    asyncio.run(run_all_status())
+    asyncio.run(run_all_status(full))
 
     # status_log_cs()
     # status_sm_cs()

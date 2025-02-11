@@ -85,7 +85,7 @@ We have two sets of files:
 
 2. files that contain all the housekeeping for each of the data sources regardless of an
    observation is running or not. All data that is collected during a test day will be stored in
-   these files. Outside of an observation context there will be no CCD image data collected.
+   these files. Outside an observation context there will be no CCD image data collected.
    These files are located in the `daily` sub-folder of the main data store location. The filename
    is constructed from the date, the site id and the data source identifier. An example for the
    same PUNA Hexapod file: `20200701_CSL_PUNA.csv`.
@@ -95,12 +95,22 @@ The timestamp that is used is the time of file creation.
 """
 from __future__ import annotations
 
+__all__ = [
+    "is_storage_manager_active",
+    "get_status",
+    "PersistenceLayer",
+    "store_housekeeping_information",
+    "register_to_storage_manager",
+    "unregister_from_storage_manager",
+]
+
 import abc
 import datetime
 import logging
 import os
 import shutil
 import textwrap
+from functools import partial
 from pathlib import Path
 from pathlib import PurePath
 from typing import Dict
@@ -113,6 +123,8 @@ from egse.command import ClientServerCommand
 from egse.config import find_files
 from egse.control import ControlServer
 from egse.env import get_site_id
+from egse.listener import Event
+from egse.listener import EventInterface
 from egse.response import Failure
 from egse.response import Response
 from egse.response import Success
@@ -127,6 +139,9 @@ from egse.protocol import CommandProtocol
 from egse.proxy import Proxy
 from egse.proxy import REQUEST_TIMEOUT
 from egse.settings import Settings
+from egse.setup import Setup
+from egse.setup import get_setup
+from egse.storage.persistence import TYPES
 from egse.system import format_datetime
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
@@ -138,14 +153,6 @@ HERE = Path(__file__).parent
 CTRL_SETTINGS = Settings.load("Storage Control Server")
 SITE_ID = get_site_id()
 DEVICE_SETTINGS = COMMAND_SETTINGS = Settings.load(location=HERE, filename="storage.yaml")
-
-__all__ = [
-    "is_storage_manager_active",
-    "get_status",
-    "PersistenceLayer",
-    "register_to_storage_manager",
-    "unregister_from_storage_manager",
-]
 
 
 def is_storage_manager_active(timeout: float = 0.5):
@@ -490,6 +497,21 @@ class StorageInterface:
 
         pass
 
+    @dynamic_interface
+    def get_loaded_setup_id(self) -> str:
+        """
+        Returns the ID of the currently loaded Setup.
+
+        Note:
+            This is the Setup active on this control server. This command is mainly used to check that the Setup
+            loaded in this control server corresponds to the Setup loaded in the configuration manager.
+
+        Returns:
+            The ID of the Setup loaded in this control server.
+        """
+
+        pass
+
 
 def _disentangle_filename(filename: Union[str, Path]) -> Tuple:
     """Disentangle the given filename and return the test identifier, the site id and the Setup id.
@@ -682,16 +704,18 @@ def determine_counter_from_dir_list(location, pattern, index: int = -1):
         return 1
 
 
-class StorageController(StorageInterface):
+class StorageController(StorageInterface, EventInterface):
     """
     The Storage Controller handles the registration of components, the start and end of an
     observation/test and the dispatching of the persistence functions in save.
     """
 
-    def __init__(self):
+    def __init__(self, control_server):
         self._obsid: ObservationIdentifier | None = None
         self._camera_name: str | None = None
         self._registry = Registry()
+        self._cs: ControlServer = control_server
+        self._setup: Setup | None = None
 
     def start_observation(self, obsid: ObservationIdentifier, camera_name: str = None) -> Response:
         if self._obsid is not None:
@@ -701,6 +725,11 @@ class StorageController(StorageInterface):
 
         self._obsid = obsid
         self._camera_name = camera_name
+        if camera_name != self._setup.camera.ID.lower():
+            logger.error(
+                f"Mismatch in camera name between Setup in Storage Manager {self._setup.camera.ID.lower()} "
+                f"and Setup in Configuration Manager {camera_name}!"
+            )
 
         # open a dedicated file for each registered item
 
@@ -726,7 +755,7 @@ class StorageController(StorageInterface):
                 registered_item["origin"],
                 registered_item["persistence_class"].extension,
                 obsid,
-                use_counter=issubclass(registered_item["persistence_class"], HDF5),
+                use_counter=issubclass(registered_item["persistence_class"], TYPES["HDF5"]),
                 camera_name=camera_name
             )
 
@@ -736,8 +765,8 @@ class StorageController(StorageInterface):
 
             # Special case for HDF5 files as they need to be copied instead of created
 
-            if issubclass(registered_item["persistence_class"], HDF5):
-                daily_file_object: HDF5 = registered_item["persistence_objects"][0]
+            if issubclass(registered_item["persistence_class"], TYPES["HDF5"]):
+                daily_file_object: PersistenceLayer = registered_item["persistence_objects"][0]
                 daily_file_path: Path = daily_file_object.get_filepath()
                 logger.debug(f"Copying {daily_file_path} to {filename}")
 
@@ -876,7 +905,7 @@ class StorageController(StorageInterface):
             if (
                 self._obsid
                 and "persistence_count" not in item
-                and not issubclass(item["persistence_class"], HDF5)
+                and not issubclass(item["persistence_class"], TYPES["HDF5"])
             ):
                 filename = _construct_filename(
                     item["origin"], item["persistence_class"].extension, self._obsid,
@@ -1000,12 +1029,48 @@ class StorageController(StorageInterface):
         total, used, free = shutil.disk_usage(location)
         return total, used, free
 
+    def get_loaded_setup_id(self) -> str:
+        return self._setup.get_id() if self._setup is not None else "no setup loaded"
+
+    def load_setup(self, setup_id: int = 0):
+        # Use get_setup() here instead of load_setup() in order to prevent recursively notifying and loading Setups.
+        # That is because the load_setup() method will notify the listeners that a new Setup has been loaded.
+        try:
+            setup = get_setup()
+        except Exception as exc:
+            raise RuntimeError(f"Exception caught: {exc!r}")
+
+        if setup is None:
+            raise RuntimeError("Couldn't get Setup from the configuration manager.")
+
+        if isinstance(setup, Failure):
+            raise setup
+
+        # time.sleep(20.0)  # used as a test to check if this method is blocking the commanding... it is!
+
+        # logger.info(f"{setup_id = }, {setup.get_id() = }")
+
+        if 0 < setup_id != int(setup.get_id()):
+            raise RuntimeError(f"Setup IDs do not match: {setup.get_id()} != {setup_id}, no Setup loaded.")
+        else:
+            self._setup = setup
+            logger.info(f"Setup {setup.get_id()} loaded in the Storage manager.")
+
+    def handle_event(self, event: Event) -> str:
+        logger.info(f"An event is received, {event=}")
+        try:
+            if event.type == 'new_setup':
+                self._cs.schedule_task(partial(self.load_setup, setup_id=event.context['setup_id']))
+        except KeyError as exc:
+            return f"Expected event context to contain the following key: {exc}"
+        return "ACK"
+
 
 class StorageCommand(ClientServerCommand):
     pass
 
 
-class StorageProxy(Proxy, StorageInterface):
+class StorageProxy(Proxy, StorageInterface, EventInterface):
     """The StorageProxy class is used to connect to the Storage Manager (control server) and
     send commands remotely."""
 
@@ -1032,7 +1097,7 @@ class StorageProtocol(CommandProtocol):
         super().__init__()
         self.control_server = control_server
 
-        self.controller = StorageController()
+        self.controller = StorageController(control_server)
 
         self.load_commands(COMMAND_SETTINGS.Commands, StorageCommand, StorageController)
 
@@ -1066,6 +1131,7 @@ def get_status(full: bool = False):
                     Commanding port: {sm.get_commanding_port()}
                     Service port: {sm.get_service_port()}
                     Storage location: {sm.get_storage_location()}
+                    Loaded Setup: {sm.get_loaded_setup_id()}
                     Registrations: {sm.get_registry_names()}
                 """
             )

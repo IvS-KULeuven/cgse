@@ -167,7 +167,7 @@ def test_process_response():
 
     # maybe also test the reverse function first ;)
 
-    assert reverse_response("abcdefgh") == "hgfedcba"
+    assert reverse_response(b"abcdefgh") == b"hgfedcba"
 
     assert q.can_you_hear_me()[::-1] in CHOICES
     assert q.which_choice() in list(range(len(CHOICES)))
@@ -187,7 +187,7 @@ class NewStyleTransport(DeviceTransport):
 
     def trans(self, command: str) -> bytes:
         LOGGER.info(f"trans: {command}")
-        return command
+        return command.encode()
 
     def query(self, command: str) -> bytes:
         LOGGER.info(f"query: {command}")
@@ -269,6 +269,10 @@ class NewStyleCommand(DynamicCommandMixin, NewStyleCommandInterface):
 
 def test_new_style(caplog):
 
+    caplog.set_level(logging.INFO)
+
+    print()
+
     ns = NewStyleCommand()
 
     # Test basic normal behaviour
@@ -276,7 +280,7 @@ def test_new_style(caplog):
     assert ns.new_style_read_command() in RESPONSES
     assert ns.new_style_write_command() is None
     assert ns.new_style_query_command('TRP22') in RESPONSES
-    assert ns.new_style_trans_command() == 'new style transaction command: config=CONFIG'
+    assert ns.new_style_trans_command() == b'new style transaction command: config=CONFIG'
 
     # Test some expected errors
 
@@ -285,7 +289,7 @@ def test_new_style(caplog):
 
     # Test cmd_string processor
 
-    assert ns.test_cmd_string_processor(2, 3, z=36) == 'TRANS_COMMAND, 2, 3, 36\r\n'
+    assert ns.test_cmd_string_processor(2, 3, z=36) == b'TRANS_COMMAND, 2, 3, 36\r\n'
 
     # Check if the correct docstring is attached to the dynamic command
 
@@ -296,27 +300,28 @@ def test_new_style(caplog):
     # in the transport methods.
 
     assert ns.test_cmd_string_extra(1, 2, z=3) == \
-           "trans_command, 1, 2, 3 and ${SOME_PREDEFINED_VARIABLE}"
+           b"trans_command, 1, 2, 3 and ${SOME_PREDEFINED_VARIABLE}"
 
     assert ns.test_cmd_string_extra(1, 2, z=None) == \
-           "trans_command, 1, 2, None and ${SOME_PREDEFINED_VARIABLE}"
+           b"trans_command, 1, 2, None and ${SOME_PREDEFINED_VARIABLE}"
 
-    assert ns.test_cmd_string_format(27, 42.12345, z=1.3) == "trans_command, 0027, 42.12, 1.3000"
+    assert ns.test_cmd_string_format(27, 42.12345, z=1.3) == b"trans_command, 0027, 42.12, 1.3000"
 
-    assert ns.test_cmd_enum(MyEnum.XXX) == f"trans_command {MyEnum.XXX}"
+    assert ns.test_cmd_enum(MyEnum.XXX) == f"trans_command {MyEnum.XXX}".encode()
 
-    assert ns.test_cmd_enum_with_format(MyEnum.XXX) == f"trans_command {MyEnum.XXX}"
+    assert ns.test_cmd_enum_with_format(MyEnum.XXX) == f"trans_command {MyEnum.XXX}".encode()
 
     caplog.clear()
 
     response = ns.test_cmd_pre_post("testing pre- and post-commands")
-    assert response == "msg = testing pre- and post-commands"
+    assert response == b"msg = testing pre- and post-commands"
 
     print(f"{caplog.text = }")
 
     assert "Inside pre_command(NewStyleTransport" in caplog.text
     assert "function_name" in caplog.text
-    assert "Inside post_command(transport=NewStyleTransport, response='msg = testing pre- and post-commands')" in caplog.text
+    assert ("Inside post_command(transport=NewStyleTransport, response=b'msg = testing pre- and post-commands')" in
+            caplog.text)
 
 
 def test_interface_definition():
