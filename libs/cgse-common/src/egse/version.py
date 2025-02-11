@@ -119,13 +119,14 @@ def get_version_from_git(location: str = None):
 
     with chdir(location):
         try:
-            std_out = subprocess.check_output(
-                ["git", "describe", "--tags", "--long", "--always"], stderr=subprocess.PIPE
+            proc = subprocess.run(
+                ["git", "describe", "--tags", "--long", "--always"], stderr=subprocess.PIPE, stdout=subprocess.PIPE
             )
-            version = std_out.strip().decode("ascii")
-            if "cgse" not in version.lower() and "ts" not in version.lower():
+            if proc.stderr:
                 version = None
-        except subprocess.CalledProcessError as exc:
+            if proc.stdout:
+                version = proc.stdout.strip().decode("ascii")
+        except subprocess.CalledProcessError:
             version = None
 
     return version

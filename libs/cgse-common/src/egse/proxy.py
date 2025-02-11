@@ -14,6 +14,7 @@ import zmq
 
 from egse.decorators import dynamic_interface
 from egse.mixin import DynamicClientCommandMixin
+from egse.response import Failure
 from egse.system import AttributeDict
 from egse.zmq_ser import split_address
 
@@ -409,7 +410,7 @@ class Proxy(BaseProxy, ControlServerConnectionInterface):
 
                 if retries_left == 0:
                     self._logger.critical(f"Control Server seems to be off-line, abandoning ({data})")
-                    return None
+                    return Failure(f"Control Server seems to be off-line, abandoning ({data})")
                 retries_left -= 1
 
                 self._logger.log(logging.CRITICAL, f"Reconnecting {self.__class__.__name__}, {retries_left=}")
@@ -421,7 +422,10 @@ class Proxy(BaseProxy, ControlServerConnectionInterface):
                 self._socket.send(pickle_string)
 
     def _request_commands(self):
-        self._commands = self.send("send_commands")
+        response = self.send("send_commands")
+        if isinstance(response, Failure):
+            raise response
+        self._commands = response
 
     def _add_commands(self):
         for key in self._commands:
@@ -463,11 +467,15 @@ class Proxy(BaseProxy, ControlServerConnectionInterface):
         behavior of the Proxy command will not be what is expected.
         """
         # bind the client_call method from each Command to this Proxy object
-        # TODO(rik): what will happen when the _request_commands() fails?
         if self.is_cs_connected():
-            self._request_commands()
-            self._add_commands()
-            return True
+            try:
+                self._request_commands()
+            except Failure as exc:
+                self._logger.warning(f"Failed to request commands for {self.__class__.__name__}: {exc}")
+                return False
+            else:
+                self._add_commands()
+                return True
         else:
             self._logger.warning(f"{self.__class__.__name__} is not connected, try to reconnect.")
             return False

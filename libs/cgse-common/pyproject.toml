@@ -33,6 +33,9 @@ dependencies = [
     "rich>=13.9.4",
 ]
 
+[project.scripts]
+monitor = "egse.monitoring:app"
+
 [project.entry-points."cgse.version"]
 cgse-common = 'egse.version:get_version_installed'
 

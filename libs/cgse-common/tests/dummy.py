@@ -2,7 +2,6 @@
 This module provides dummy implementation for classes of the Commanding chain.
 """
 import logging
-import pickle
 import random
 import sys
 
