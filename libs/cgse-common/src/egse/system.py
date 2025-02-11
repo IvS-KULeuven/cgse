@@ -45,6 +45,7 @@ from typing import Union
 
 import distro  # For determining the Linux distribution
 import psutil
+from rich.console import Console
 from rich.text import Text
 from rich.tree import Tree
 
@@ -57,12 +58,22 @@ logger = logging.getLogger(__name__)
 @contextmanager
 def all_logging_disabled(highest_level=logging.CRITICAL, flag=True):
     """
-    A context manager that will prevent any logging messages triggered during the body from being processed.
+    Context manager to temporarily disable logging messages during its execution.
 
     Args:
-        highest_level: the maximum logging level in use.
-            This would only need to be changed if a custom level greater than CRITICAL is defined.
-        flag: True to disable all logging [default=True]
+        highest_level (int, optional): The maximum logging level to be disabled.
+            Defaults to logging.CRITICAL.
+            Note: Adjust this only if a custom level greater than CRITICAL is defined.
+        flag (bool, optional): If True, disables all logging; if False, no changes are made.
+            Defaults to True.
+
+    Example:
+        >>> with all_logging_disabled():
+        ...     # Your code with logging messages disabled
+
+    Note:
+        This context manager is designed to prevent any logging messages triggered during its body
+        from being processed. It temporarily disables logging and restores the previous state afterward.
     """
     # Code below is copied from https://gist.github.com/simon-weber/7853144
     # two kind-of hacks here:
@@ -82,6 +93,21 @@ def all_logging_disabled(highest_level=logging.CRITICAL, flag=True):
 
 
 def get_active_loggers() -> dict:
+    """
+    Retrieves information about active loggers and their respective log levels.
+
+    Returns a dictionary where keys are the names of active loggers, and values
+    are the corresponding log levels in string format.
+
+    Returns:
+        dict: A dictionary mapping logger names to their log levels.
+
+    Note:
+        This function provides a snapshot of the currently active loggers and
+        their log levels at the time of the function call.
+
+    """
+
     return {
         name: logging.getLevelName(logging.getLogger(name).level) for name in sorted(logging.Logger.manager.loggerDict)
     }
@@ -95,7 +121,7 @@ def ignore_m_warning(modules=None):
     Ignore RuntimeWarning by `runpy` that occurs when executing a module with `python -m package.module`,
     while that module is also imported.
 
-    The original warning mssage is:
+    The original warning message is:
 
         '<package.module>' found in sys.modules after import of package '<package'>,
         but prior to execution of '<package.module>'
@@ -113,6 +139,14 @@ def ignore_m_warning(modules=None):
             warnings.filterwarnings("ignore", message=module_msg, category=RuntimeWarning, module="runpy")  # ignore -m
     except (ImportError, KeyError, AttributeError, Exception):
         pass
+
+
+def now(utc: bool = True):
+    """Returns a datetime object for the current time in UTC or local time."""
+    if utc:
+        return datetime.datetime.now(tz=datetime.timezone.utc)
+    else:
+        return datetime.datetime.now()
 
 
 def format_datetime(dt: Union[str, datetime.datetime] = None, fmt: str = None, width: int = 6, precision: int = 3):
@@ -204,6 +238,8 @@ def humanize_seconds(seconds: float, include_micro_seconds: bool = True):
         '10d 00s.000'
         >>> humanize_seconds(10*86400 + 3*3600 + 42.023)
         '10d 03h00m42s.023'
+        >>> humanize_seconds(10*86400 + 3*3600 + 42.023, include_micro_seconds=False)
+        '10d 03h00m42s'
 
     Returns:
          a string representation for the number of seconds.
@@ -326,22 +362,29 @@ class Timer(object):
         self.name = name
         self.precision = precision
         self.log_level = log_level
+        caller_info = get_caller_info(level=2)
+        self.filename = caller_info.filename
+        self.func = caller_info.function
+        self.lineno = caller_info.lineno
 
     def __enter__(self):
         # start is a value containing the start time in fractional seconds
         # end is a function which returns the time in fractional seconds
         self.start = time.perf_counter()
         self.end = time.perf_counter
+        self._last_elapsed = time.perf_counter()
         return self
 
     def __exit__(self, ty, val, tb):
         # The context goes out of scope here and we fix the elapsed time
         self._total_elapsed = time.perf_counter()
+        self._last_elapsed = self._total_elapsed
 
         # Overwrite self.end() so that it always returns the fixed end time
         self.end = self._end
 
-        logger.log(self.log_level, f"{self.name}: {self.end() - self.start:0.{self.precision}f} seconds")
+        logger.log(self.log_level, f"{self.name} [ {self.filename}:{self.func}:{self.lineno} ]: "
+                                   f"{self.end() - self.start:0.{self.precision}f} seconds")
         return False
 
     def __call__(self):
@@ -349,7 +392,14 @@ class Timer(object):
 
     def log_elapsed(self):
         """Sends the elapsed time info to the default logger."""
-        logger.log(self.log_level, f"{self.name}: {self.end() - self.start:0.{self.precision}f} seconds elapsed")
+        current_lap = self.end()
+        logger.log(
+            self.log_level,
+            f"{self.name} [ {self.func}:{self.lineno} ]: "
+            f"{current_lap - self.start:0.{self.precision}f} seconds elapsed, "
+            f"{current_lap - self._last_elapsed:0.{self.precision}f}s since last lap."
+        )
+        self._last_elapsed = current_lap
 
     def get_elapsed(self) -> float:
         """Returns the elapsed time for this timer as a float in seconds."""
@@ -444,6 +494,47 @@ def get_caller_info(level=1) -> CallerInfo:
     frame_info = inspect.getframeinfo(frame)
 
     return CallerInfo(frame_info.filename, frame_info.function, frame_info.lineno)
+
+
+def get_caller_breadcrumbs(prefix: str = "call stack: ", limit: int = 5, with_filename: bool = False) -> str:
+    """
+    Returns a string representing the calling sequence of this function. The string contains the calling sequence from
+    left to right. Each entry has the function name and the line number of the line being executed.
+    When the `with_filename` is `True`, also the filename is printed before the function name. If the file
+    is `__init__.py`, also the parent folder name is printed.
+
+        <filename>:<function name>[<lineno>] <— <filename>:<caller function name>[<lineno>]
+
+    Use this function for example if you need to find out when and where a function is called in your process.
+
+    Example:
+        state.py:load_setup[126] <- state.py:setup[103] <- spw.py:__str__[167] <- nfeesim.py:run[575]
+
+    Args:
+        prefix: a prefix for the calling sequence [default='call stack: '].
+        limit: the maximum number of caller to go back up the calling stack [default=5].
+        with_filename: filename is included in the returned string when True [default=False].
+
+    Returns:
+        A string containing the calling sequence.
+    """
+    frame = inspect.currentframe()
+    msg = []
+    while (frame := frame.f_back) is not None:
+        fi = inspect.getframeinfo(frame)
+        if with_filename:
+            filename = Path(fi.filename)
+            if filename.name == '__init__.py':
+                filename = f"{filename.parent.name}/{filename.name}:"
+            else:
+                filename = f"{filename.name}:"
+        else:
+            filename = ''
+        msg.append(f"{filename}{fi.function}[{fi.lineno}]")
+        if (limit := limit - 1) == 0:
+            break
+
+    return prefix + " <- ".join(msg)
 
 
 def get_referenced_var_name(obj: Any) -> List[str]:
@@ -1120,6 +1211,25 @@ def read_last_lines(filename: str | Path, num_lines: int):
 
 
 def is_namespace(module) -> bool:
+    """
+    Checks if a module represents a namespace package.
+
+    A namespace package is defined as a module that has a '__path__' attribute
+    and no '__file__' attribute.
+
+    Args:
+        module: The module to be checked.
+
+    Returns:
+        bool: True if the module is a namespace package, False otherwise.
+
+    Note:
+        A namespace package is a special kind of package that does not contain
+        an actual implementation but serves as a container for other packages
+        or modules.
+
+    """
+
     if hasattr(module, '__path__') and getattr(module, '__file__', None) is None:
         return True
     else:
@@ -1201,6 +1311,17 @@ def get_module_location(arg) -> Optional[Path]:
     Returns:
         The location of the module as a Path object or None when the location can not be determined or
         an invalid argument was provided.
+
+    Example:
+        >>> get_module_location('egse')
+        Path('/path/to/egse')
+
+        >>> get_module_location(egse.system)
+        Path('/path/to/egse/system')
+
+    Note:
+        If the module is not found or is not a valid module, None is returned.
+
     """
     if isinstance(arg, FunctionType):
         # print(f"func: {arg = }, {arg.__module__ = }")
@@ -1238,10 +1359,27 @@ def get_module_location(arg) -> Optional[Path]:
 
 
 def get_full_classname(obj: object) -> str:
-    """Returns the fully qualified class name for this object."""
+    """
+    Returns the fully qualified class name for the given object.
 
-    # Take into account that obj might be a class or a builtin or even a
-    # literal like an int or a float or a complex number
+    Args:
+        obj (object): The object for which to retrieve the fully qualified class name.
+
+    Returns:
+        str: The fully qualified class name, including the module.
+
+    Example:
+        >>> get_full_classname("example")
+        'builtins.str'
+
+        >>> get_full_classname(42)
+        'builtins.int'
+
+    Note:
+        The function considers various scenarios, such as objects being classes,
+        built-ins, or literals like int, float, or complex numbers.
+
+    """
 
     if type(obj) is type or obj.__class__.__module__ == str.__module__:
         try:
@@ -1309,7 +1447,26 @@ def check_str_for_slash(arg: str):
 
 
 def check_is_a_string(var, allow_none=False):
-    """Calls is_a_string and raises a type error if the check fails."""
+    """
+    Checks if the given variable is a string and raises a TypeError if the check fails.
+
+    Args:
+        var: The variable to be checked.
+        allow_none (bool, optional): If True, allows the variable to be None without raising an error.
+            Defaults to False.
+
+    Raises:
+        TypeError: If the variable is not a string or is None (when allow_none is False).
+
+    Example:
+        >>> check_is_a_string("example")
+
+    Note:
+        This function is designed to validate that the input variable is a string.
+        If `allow_none` is set to True, it allows the variable to be None without raising an error.
+
+    """
+
     if var is None and allow_none:
         return
     if var is None and not allow_none:
@@ -1320,9 +1477,27 @@ def check_is_a_string(var, allow_none=False):
 
 def sanity_check(flag: bool, msg: str):
     """
-    This is a replacement for the 'assert' statement. Use this in production code
-    such that your checks are not removed during optimisations.
+    Checks a boolean flag and raises an AssertionError with the provided message if the check fails.
+
+    This function serves as a replacement for the 'assert' statement in production code.
+    Using this ensures that your checks are not removed during optimizations.
+
+    Args:
+        flag (bool): The boolean flag to be checked.
+        msg (str): The message to be included in the AssertionError if the check fails.
+
+    Raises:
+        AssertionError: If the flag is False.
+
+    Example:
+        >>> sanity_check(x > 0, "x must be greater than 0")
+
+    Note:
+        This function is designed for production code to perform runtime checks
+        that won't be removed during optimizations.
+
     """
+
     if not flag:
         raise AssertionError(msg)
 
@@ -1523,6 +1698,64 @@ def time_in_ms() -> int:
           instead of this function.
     """
     return int(round(time.time() * 1000))
+
+
+class Sentinel:
+    """
+    This Sentinel can be used as an alternative to None or other meaningful values in e.g. a function argument.
+
+    Usually, a sensible default would be to use None, but if None is a valid input parameter, you can use a Sentinel
+    object and check in the function if the argument value is a Sentinel object.
+
+    Example:
+
+         def get_info(server_socket, timeout: int = Sentinel()):
+             if isinstance(timeout, Sentinel):
+                raise ValueError("You should enter a valid timeout or None")
+
+    """
+    def __repr__(self):
+        return "A default Sentinel object."
+
+
+def touch(path: Path | str):
+    """
+    Unix-like 'touch', i.e. create a file if it doesn't exist and set the modification time to the current time.
+
+    NOTE: if the
+    """
+
+    path = Path(path).expanduser().resolve()
+    basedir = path.parent
+    if not basedir.exists():
+        basedir.mkdir(parents=True, exist_ok=True)
+
+    with path.open('a'):
+        os.utime(path)
+
+
+def capture_rich_output(obj: Any) -> str:
+    """
+    Capture the output of a Rich console print of the given object. If the object is a known Rich renderable or if
+    the object implements the `__rich__()` method, the output string will contain escape sequences to format the
+    output when printed to a terminal.
+
+    This method is usually used to represent Rich output in a log file, e.g. to print a table in the log file.
+
+    Args:
+        obj: any object
+
+    Returns:
+        The output of the capture, a string that possibly contains escape sequences as a result of rendering rich text.
+    """
+    console = Console(width=120)
+
+    with console.capture() as capture:
+        console.print(obj)
+
+    captured_output = capture.get()
+
+    return captured_output
 
 
 ignore_m_warning("egse.system")

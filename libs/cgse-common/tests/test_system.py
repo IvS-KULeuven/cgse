@@ -1,7 +1,9 @@
 import datetime
+import logging
 import operator
 import os
 import pprint
+import shutil
 import textwrap
 import time
 from pathlib import Path
@@ -14,12 +16,14 @@ from egse.system import SignalCatcher
 from egse.system import Timer
 from egse.system import check_argument_type
 from egse.system import clear_average_execution_times
+from egse.system import duration
 from egse.system import env_var
 from egse.system import execution_time
 from egse.system import filter_by_attr
 from egse.system import format_datetime
 from egse.system import get_average_execution_time
 from egse.system import get_average_execution_times
+from egse.system import get_caller_breadcrumbs
 from egse.system import get_caller_info
 from egse.system import get_full_classname
 from egse.system import get_os_name
@@ -34,6 +38,7 @@ from egse.system import ping
 from egse.system import read_last_line
 from egse.system import replace_environment_variable
 from egse.system import save_average_execution_time
+from egse.system import touch
 from egse.system import wait_until
 from egse.system import waiting_for
 from fixtures.helpers import create_empty_file
@@ -104,6 +109,17 @@ def test_attr_dict():
 
     with pytest.raises(AttributeError):
         assert ad.a == "2"
+
+
+def test_get_call_sequence():
+
+    assert get_caller_breadcrumbs().startswith("call stack: test_get_call_sequence[")
+    assert len(get_caller_breadcrumbs().split(' <- ')) == 5
+
+    assert get_caller_breadcrumbs(prefix="XXX: ").startswith("XXX: test_get")
+    assert "<-" not in get_caller_breadcrumbs(limit=1)
+
+    assert "test_system.py" in get_caller_breadcrumbs(with_filename=True)
 
 
 def test_caller():
@@ -282,6 +298,7 @@ def test_humanize_seconds():
     assert humanize_seconds(0.123) == "00s.123"
     assert humanize_seconds(53.43) == "53s.430"
     assert humanize_seconds(92) == "01m32s.000"
+    assert humanize_seconds(92, include_micro_seconds=False) == "01m32s"
 
     assert humanize_seconds(60 * 60 + 120 + 3.002) == "01h02m03s.002"
 
@@ -295,9 +312,10 @@ def test_humanize_seconds():
     )
 
     assert humanize_seconds(2351 * 24 * 60 * 60) == "2351d 00s.000"
+    assert humanize_seconds(2351 * 24 * 60 * 60, include_micro_seconds=False) == "2351d 00s"
 
-    with Timer():
-        for d in range(10000):
+    with Timer("Timing 10_000 humanize_seconds() calls"):
+        for d in range(10_000):
             humanize_seconds(d * 24 * 60 * 60 + 14 * 60 * 60 + 0 * 60 + 16 + 0.7)
 
 
@@ -701,3 +719,111 @@ def test_get_system_architecture():
     from egse.system import get_system_architecture
 
     assert 'x86' in get_system_architecture() or 'arm' in get_system_architecture()
+
+
+def test_duration():
+    dt = datetime.datetime
+    td = datetime.timedelta
+    tz = datetime.timezone
+
+    now = dt.now(tz=tz.utc)
+    dt_start = format_datetime(now)
+
+    dt_end = format_datetime(now + td(seconds=2, milliseconds=500))
+
+    assert duration(dt_start, dt_end).seconds == 2
+    assert duration(dt_start, dt_end).total_seconds() == approx(2.5)
+    assert duration(dt_start, dt_end) == duration(dt_end, dt_start)
+
+    # The following calls just should raise an exception
+
+    now_plus_half_a_second = now + td(milliseconds=500)
+    assert duration(now, now_plus_half_a_second).total_seconds() == approx(0.5)
+    assert duration(now_plus_half_a_second, now).total_seconds() == approx(0.5)
+
+    date_1963 = format_datetime(dt(1963, 2, 16, 12, 00, 00, tzinfo=tz.utc))
+    date_2023 = format_datetime(dt(2023, 2, 16, 12, 00, 00, tzinfo=tz.utc))
+    date_2024 = format_datetime(dt(2024, 2, 16, 12, 00, 00, tzinfo=tz.utc))
+    assert str(duration(date_2024, date_1963)) == '22280 days, 0:00:00'
+    assert str(duration(date_2024, date_2023)) == '365 days, 0:00:00'
+
+    yesterday = now - td(days=1)
+    assert str(duration(now, yesterday)) == '1 day, 0:00:00'
+    assert str(duration(now + td(minutes=3.0, seconds=27), yesterday)) == '1 day, 0:03:27'
+
+
+def test_log_levels_disabled(caplog):
+
+    print()
+
+    import logging
+    from egse.system import all_logging_disabled
+
+    with all_logging_disabled(highest_level=logging.WARNING):
+        logging.critical("a critical message")
+        logging.error("an error message")
+        logging.warning("a warning message")
+        logging.info("an info message")
+        logging.debug("a debug message")
+
+    assert "critical" in caplog.text
+    assert "error" in caplog.text
+    assert "warning" not in caplog.text
+    assert "info" not in caplog.text
+    assert "debug" not in caplog.text
+
+    caplog.clear()
+
+    logger = logging.getLogger("testing_logging_disabled")
+
+    with all_logging_disabled(highest_level=logging.INFO):
+        logger.critical("a critical message")
+        logger.error("an error message")
+        logger.warning("a warning message")
+        logger.info("an info message")
+        logger.debug("a debug message")
+
+        logging.warning("a logging warning message")
+        logging.info("a logging info message")
+
+    assert "critical" in caplog.text
+    assert "error" in caplog.text
+    assert "warning" in caplog.text
+    assert "info" not in caplog.text
+    assert "debug" not in caplog.text
+
+
+def test_get_active_loggers():
+
+    from egse.system import get_active_loggers
+
+    assert "testing_active_loggers" not in get_active_loggers()
+    assert "testing" not in get_active_loggers()
+    assert "testing.active" not in get_active_loggers()
+    assert "testing.active.loggers" not in get_active_loggers()
+
+    logger = logging.getLogger("testing_active_loggers")
+
+    assert "testing_active_loggers" in get_active_loggers()
+
+    logger = logging.getLogger("testing.active.loggers")
+
+    assert "testing" in get_active_loggers()
+    assert "testing.active" in get_active_loggers()
+    assert "testing.active.loggers" in get_active_loggers()
+
+
+def test_touch():
+
+    touch(__file__)
+
+    assert Path(__file__).exists()
+
+    fn = Path(__file__).parent / "data/counter_test" / "x.cnt"
+
+    try:
+        assert not fn.exists()
+        touch(fn)
+        assert fn.exists()
+    finally:
+        shutil.rmtree(fn.parent)

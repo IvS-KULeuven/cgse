@@ -5,10 +5,10 @@ import sys
 import rich
 
 
-async def run_all_status():
+async def run_all_status(full: bool = False):
     tasks = [
         status_log_cs(),
-        status_sm_cs(),
+        status_sm_cs(full),
         status_cm_cs(),
     ]
 
@@ -37,10 +37,14 @@ async def status_log_cs():
         rich.print(f"[red]{stderr.decode()}[/]")
 
 
-async def status_sm_cs():
+async def status_sm_cs(full: bool = False):
+
+    cmd = [sys.executable, '-m', 'egse.storage.storage_cs', 'status']
+    if full:
+        cmd.append("--full" if full else "")
 
     proc = await asyncio.create_subprocess_exec(
-        sys.executable, '-m', 'egse.storage.storage_cs', 'status',
+        *cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE
     )

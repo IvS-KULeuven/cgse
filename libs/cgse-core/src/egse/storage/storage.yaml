@@ -24,6 +24,10 @@ Commands:
     #                  This method should exist in the subclass of the CommandProtocol base class, i.e.
     #                  in this case it will be the HexapodProtocol class.
 
+    handle_event:
+        description:   Notification of an event
+        cmd:           '{event}'
+
     start_observation:
         description:    Start a new observation aka test.
         cmd:            '{obsid}, {camera_name}'
@@ -59,6 +63,9 @@ Commands:
 
     get_storage_location:
         description:    Returns the path to the Storage location on the server.
+
+    get_loaded_setup_id:
+        description:    Returns the ID of the currently loaded Setup on this control server.
 
     new_registration:
         description:    Open a new data file to which the incoming data needs to be written.

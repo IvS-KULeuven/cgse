@@ -111,9 +111,11 @@ from __future__ import annotations
 
 import logging
 import operator
+import os
 import subprocess
 import textwrap
 import threading
+import time
 from pathlib import Path
 from typing import NamedTuple
 from typing import Optional
@@ -137,6 +139,7 @@ from egse.env import get_conf_repo_location
 from egse.env import get_project_name
 from egse.env import get_site_id
 from egse.exceptions import InternalError
+from egse.listener import EVENT_ID
 from egse.obsid import ObservationIdentifier
 from egse.protocol import CommandProtocol
 from egse.proxy import Proxy
@@ -149,8 +152,11 @@ from egse.setup import Setup
 from egse.setup import disentangle_filename
 from egse.setup import load_last_setup_id
 from egse.setup import save_last_setup_id
+from egse.system import Timer
+from egse.system import duration
 from egse.system import filter_by_attr
 from egse.system import format_datetime
+from egse.system import humanize_seconds
 from egse.version import VERSION
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
@@ -165,6 +171,8 @@ COMMAND_SETTINGS = Settings.load(location=HERE, filename="confman.yaml")
 
 CM_SETUP_ID = Gauge("CM_SETUP_ID", 'Setup ID')
 CM_TEST_ID = Gauge("CM_TEST_ID", 'Test ID')
+
+PROXY_TIMEOUT = 10_000  # don't wait longer than 10s by default
 
 
 def _push_setup_to_repo(filename: str, commit_msg: str) -> Failure | Success:
@@ -310,6 +318,8 @@ def _populate_cached_setup_info():
             setup_info[id] = SetupInfo(fn, site_id, cam_id, description)
         else:
             raise InternalError(f"Setup loaded without an ID, {fn=}")
+
+        time.sleep(0.1)
 
     _cached_setup_info = dict(sorted(setup_info.items()))
 
@@ -520,6 +530,10 @@ class ConfigurationManagerInterface:
     def get_setup_for_obsid(self, obsid):
         raise NotImplementedError
 
+    @dynamic_interface
+    def get_listener_names(self):
+        raise NotImplementedError
+
 
 class ConfigurationManagerController(ConfigurationManagerInterface):
     """Handles the commands that are sent to the configuration manager.
@@ -528,7 +542,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         The docstrings for each of the commands are in the `ConfigurationManagerInterface`.
     """
 
-    def __init__(self):
+    def __init__(self, control_server: ControlServer | None = None):
 
         # Import these modules here as to optimize the import of classes and functions in other parts of the CGSE.
         # The CongifurationManagerController is only used by the CM CS and these Storage imports are only used in
@@ -539,9 +553,11 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         from egse.storage.persistence import TYPES
 
         self._obsid: ObservationIdentifier | None = None
+        self._obsid_start_dt: str | None = None
         self._setup: Setup | None = None
         self._setup_id: int | None = None
         self._sut_name: str | None = None
+        self._control_server: ControlServer | None = control_server
 
         if is_storage_manager_active():
             self._storage = StorageProxy()
@@ -607,6 +623,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
             last_obsid = last_obsid.return_code if isinstance(last_obsid, Success) else None
 
         self._obsid = create_obsid(last_obsid, SITE_ID, self._setup_id)
+        self._obsid_start_dt = format_datetime()
 
         if self._storage:
             response = self._storage.start_observation(self._obsid, self._sut_name)
@@ -634,7 +651,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
                 "data": f"{self._obsid.test_id:05d} "
                 f"{self._obsid.lab_id} "
                 f"{self._obsid.setup_id:05d} "
-                f"{format_datetime()} "
+                f"{self._obsid_start_dt} "
                 f"{cmd}",
             }
         )
@@ -667,9 +684,15 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
                 response,
             )
 
-        LOGGER.info(f"Successfully ended observation with obsid={self._obsid}.")
+        obsid_end_dt = format_datetime()
+        obs_duration = humanize_seconds(
+            duration(self._obsid_start_dt, obsid_end_dt).total_seconds(),
+            include_micro_seconds=False
+        )
+        LOGGER.info(f"Successfully ended observation with obsid={self._obsid}, duration={obs_duration}.")
 
         self._obsid = None
+        self._obsid_start_dt = None
 
         return Success("Successfully ended the observation.")
 
@@ -731,6 +754,14 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
             self._sut_name = _get_sut_id_for_setup(self._setup)
             LOGGER.info(f"New Setup loaded from {setup_file}")
             save_last_setup_id(self._setup_id)
+            if self._control_server:
+                LOGGER.info("Notifying listeners for a new Setup!")
+                with Timer(f"Notify Listeners for Setup change, Setup={self._setup_id}"):
+                    self._control_server.notify_listeners(
+                        EVENT_ID.SETUP,
+                        {'event_type': 'new_setup', 'setup_id': self._setup_id}
+                    )
+
             return self._setup
         except SettingsError as exc:
             return Failure(f"The Setup file can not be loaded from {setup_file}.", exc)
@@ -912,7 +943,16 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         if replace:
             self._setup = setup
             self._setup_id = setup_id
+            LOGGER.info(f"New Setup was submitted and loaded: {setup_id=}")
+            self._sut_name = self._setup.camera.ID.lower()
             save_last_setup_id(setup_id)
+            if self._control_server:
+                LOGGER.info("Notifying listeners for a new Setup!")
+                with Timer(f"Notify Listeners for Setup change, Setup={self._setup_id}"):
+                    self._control_server.notify_listeners(
+                        EVENT_ID.SETUP,
+                        {'event_type': 'new_setup', 'setup_id': setup_id}
+                    )
 
         return setup
 
@@ -930,6 +970,10 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
 
         return int(setup_id) + 1
 
+    def get_listener_names(self):
+        """Returns the names of the control servers that are listening for a new Setup."""
+        return self._control_server.get_listener_names()
+
 
 class ConfigurationManagerCommand(ClientServerCommand):
     pass
@@ -946,6 +990,7 @@ class ConfigurationManagerProxy(Proxy, ConfigurationManagerInterface):
         protocol=CTRL_SETTINGS.PROTOCOL,
         hostname=CTRL_SETTINGS.HOSTNAME,
         port=CTRL_SETTINGS.COMMANDING_PORT,
+        timeout=PROXY_TIMEOUT,
     ):
         """
         Args:
@@ -955,7 +1000,7 @@ class ConfigurationManagerProxy(Proxy, ConfigurationManagerInterface):
             port: TCP port on which the control server is listening for commands
                 [default is taken from settings file]
         """
-        super().__init__(connect_address(protocol, hostname, port))
+        super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
 
 
 class ConfigurationManagerProtocol(CommandProtocol):
@@ -963,7 +1008,7 @@ class ConfigurationManagerProtocol(CommandProtocol):
         super().__init__()
         self.control_server = control_server
 
-        self.controller = ConfigurationManagerController()
+        self.controller = ConfigurationManagerController(control_server)
 
         self.load_commands(
             COMMAND_SETTINGS.Commands,
@@ -975,13 +1020,17 @@ class ConfigurationManagerProtocol(CommandProtocol):
 
         self.cgse_version = VERSION
 
-        try:
-            self.git_version = subprocess.check_output(
-                ["git", "describe", "--tags", "--long"], stderr=subprocess.STDOUT)
-            self.git_version = self.git_version.strip().decode("ascii")
-        except subprocess.CalledProcessError as exc:
-            LOGGER.debug(
-                f"A git error occurred for the `git describe` command: {exc}", stack_info=True)
+        proc = subprocess.run(
+            ["git", "describe", "--tags", "--long", "--always"], stderr=subprocess.PIPE, stdout=subprocess.PIPE
+        )
+        if proc.stderr:
+            LOGGER.warning(f"git describe returned: {proc.stderr.decode()}")
+            self.git_version = "no git-version determined"
+        elif proc.stdout:
+            self.git_version = proc.stdout.strip().decode("ascii")
+            LOGGER.info(f"git version: {self.git_version}")
+        else:
+            LOGGER.warning("No git version could be determined, no error message provided.")
             self.git_version = "no git-version determined"
 
     def get_bind_address(self):
@@ -1076,6 +1125,7 @@ def get_status():
                     Monitoring port: {cm.get_monitoring_port()}
                     Commanding port: {cm.get_commanding_port()}
                     Service port: {cm.get_service_port()}
+                    Listeners: {', '.join(cm.get_listener_names())}
                 """
             )
     else:

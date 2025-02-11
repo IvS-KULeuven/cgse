@@ -143,6 +143,32 @@ class ServiceProtocol(CommandProtocol):
         LOGGER.debug(f"Asking for the storage menmonic of {self.control_server.__class__.__name__}.")
         self.send(self.control_server.get_storage_mnemonic())
 
+    def handle_add_listener(self, listener: dict):
+        LOGGER.debug(f"Add listener to {self.control_server.__class__.__name__}: {listener}")
+        try:
+            self.control_server.listeners.add_listener(listener)
+            LOGGER.info(f"Registered listener: {listener['name']} with proxy {listener['proxy']}")
+            self.send(("ACK",))
+        except ValueError as exc:
+            self.send(("NACK", exc))  # Why not send back a failure object?
+
+    def handle_remove_listener(self, listener: dict):
+        LOGGER.debug(f"Remove listener from {self.control_server.__class__.__name__}: {listener}")
+        try:
+            self.control_server.listeners.remove_listener(listener)
+            LOGGER.info(f"Removed listener: {listener['name']}")
+            self.send(("ACK",))
+        except ValueError as exc:
+            self.send(("NACK", exc))  # Why not send back a failure object?
+
+    def handle_get_listener_names(self):
+        LOGGER.debug(f"Get names of registered listener from {self.control_server.__class__.__name__}")
+        try:
+            names = self.control_server.listeners.get_listener_names()
+            self.send((names,))
+        except ValueError as exc:
+            self.send(("", exc))  # Why not sent back a Failure object?
+
 class ServiceInterface:
     @dynamic_interface
     def set_monitoring_frequency(self, freq: float):
@@ -167,6 +193,15 @@ class ServiceInterface:
         ...
     @dynamic_interface
     def get_storage_mnemonic(self):
+        ...
+    @dynamic_interface
+    def add_listener(self, listener: dict):
+        ...
+    @dynamic_interface
+    def remove_listener(self, listener: dict):
+        ...
+    @dynamic_interface
+    def get_listener_names(self, listener: dict):
         ...
 
 class ServiceProxy(Proxy, ServiceInterface):

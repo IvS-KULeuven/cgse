@@ -268,7 +268,7 @@ class SubProcess:
                 LOGGER.warning("The sub-process is dead or a zombie.")
                 return False
             return True
-        LOGGER.debug(f"Return value of the sub-process: {self._popen.returncode}")
+        # LOGGER.debug(f"Return value of the sub-process: {self._popen.returncode}")
         return False
 
     def exists(self) -> bool:
@@ -343,20 +343,54 @@ class SubProcess:
         return output.decode() if output else None, error.decode() if error else None
 
 
-def is_process_running(items: List[str] | str, contains: bool = True, case_sensitive: bool = False):
+def list_processes(items: List[str] | str, contains: bool = True, case_sensitive: bool = False, verbose: bool = False):
+    """
+    Returns and optionally prints the processes that match the given criteria in items.
+
+    Args:
+        items: a string or a list of strings that should match command line parts
+        contains: if True, the match is done with 'in' otherwise '==' [default: True]
+        case_sensitive: if True, the match shall be case-sensitive [default: False]
+        verbose: if True, the processes will be printed to the console
+
+    Returns:
+        A list of lists for the matching processes. The inner list contains the PID, Status and commandline
+        of a process.
+    """
+    procs = is_process_running(items, contains=contains, case_sensitive=case_sensitive, as_list=True)
+
+    result = []
+
+    if verbose:
+        print(f"{'PID':5s} {'Status':>20s} {'Commandline'}")
+    for pid in procs:
+        proc = psutil.Process(pid)
+        status = proc.status()
+        cmdline = ' '.join(proc.cmdline())
+        result.append([pid, status, cmdline])
+        if verbose:
+            print(f"{pid:5d} {proc.status():>20s} {cmdline}")
+
+    return result
+
+
+def is_process_running(items: List[str] | str,
+                       contains: bool = True, case_sensitive: bool = False, as_list: bool = False) -> (int | List[int]):
     """
     Check if there is any running process that contains the given items in its commandline.
 
     Loops over all running processes and tries to match all items in 'cmd_line_items' to the command line
-    of the process. If all 'cmd_line_items' can be matched to a process, the function returns True.
+    of the process. If all 'cmd_line_items' can be matched to a process, the function returns the PID of
+    that process.
 
     Args:
         items: a string or a list of strings that should match command line parts
-        contains: if True, the match is done with 'in' otherwise '=='
-        case_sensitive: if True, the match shall be case-sensitive
+        contains: if True, the match is done with 'in' otherwise '==' [default: True]
+        case_sensitive: if True, the match shall be case-sensitive [default: False]
+        as_list: return the PID off all matching processes as a list [default: False]
 
     Returns:
-        True if there exists a running process with the given items, False otherwise.
+        The PID(s) if there exists a running process with the given items, 0 or [] otherwise.
     """
 
     def lower(x: str) -> str:
@@ -369,20 +403,24 @@ def is_process_running(items: List[str] | str, contains: bool = True, case_sensi
 
     if not items:
         LOGGER.warning("Expected at least one item in 'items', none were given. False returned.")
-        return False
+        return [] if as_list else 0
 
     items = [items] if isinstance(items, str) else items
 
-    for proc in psutil.process_iter():
+    found = []
+
+    for proc in psutil.process_iter(attrs=['pid', 'cmdline', 'name'], ad_value='n/a'):
         with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             # LOGGER.info(f"{proc.name().lower() = }, {proc.cmdline() = }")
             if contains:
                 if all(any(case(y) in case(x) for x in proc.cmdline()) for y in items):
-                    return True
+                    found.append(proc.pid)
             elif all(any(case(y) == case(x) for x in proc.cmdline()) for y in items):
-                return True
-
-    return False
+                found.append(proc.pid)
+    if found:
+        return found if as_list else found[0]
+    else:
+        return [] if as_list else 0
 
 
 def get_process_info(items: List[str] | str, contains: bool = True, case_sensitive: bool = False) -> List:

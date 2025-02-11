@@ -159,7 +159,7 @@ def show_env(
 
 @show.command(name="procs")
 def show_processes():
-    """Show the settings that are defined by the installed packages."""
+    """Show the processes that are running for the installed packages."""
     for ep in entry_points("cgse.explore"):
         # print(f"{ep.name = }, {ep.module = }, {ep.load() = }, {ep.extras = }")
         explore = ep.load()

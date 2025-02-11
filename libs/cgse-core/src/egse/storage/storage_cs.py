@@ -52,6 +52,20 @@ class StorageControlServer(ControlServer):
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
+        from egse.confman import ConfigurationManagerProxy, is_configuration_manager_active
+        from egse.listener import EVENT_ID
+
+        self.register_as_listener(
+            proxy=ConfigurationManagerProxy,
+            listener={'name': 'Storage CS', 'proxy': StorageProxy, 'event_id': EVENT_ID.SETUP}
+        )
+
+        # NOTE:
+        #     Since the CM CS is started after the SM CS in the normal startup sequence, delay the task to load
+        #     the Setup until after the CM CS has been properly started. We do that now with a delay time of 30s,
+        #     but we might in the future use a function returning a boolean, until...
+        self.schedule_task(self.device_protocol.controller.load_setup, after=10.0, when=is_configuration_manager_active)
+
     def before_serve(self):
 
         self.scheduler = BackgroundScheduler(timezone=utc)
@@ -61,7 +75,10 @@ class StorageControlServer(ControlServer):
         start_http_server(CTRL_SETTINGS.METRICS_PORT)
 
     def after_serve(self):
+        from egse.confman import ConfigurationManagerProxy
+
         self.scheduler.shutdown()
+        self.unregister_as_listener(proxy=ConfigurationManagerProxy, listener={'name': 'Storage CS'})
 
     def get_communication_protocol(self):
         return CTRL_SETTINGS.PROTOCOL

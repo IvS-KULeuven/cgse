@@ -710,7 +710,7 @@ class Setup(NavigableDict):
         return Setup(setup_dict, label="Setup")
 
     @staticmethod
-    @lru_cache
+    @lru_cache(maxsize=300)
     def from_yaml_file(filename: Union[str, Path] = None, add_local_settings: bool = True):
         """Loads a Setup from the given YAML file.
 

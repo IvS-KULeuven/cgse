@@ -49,3 +49,20 @@ Commands:
         description:    Returns the mnemonic that is part of the filename where the housekeeping data are stored.
         device_method:  None
         response:       handle_get_storage_mnemonic
+
+    add_listener:
+        description:    Adds a Listener process to be notified on special events.
+        cmd:            '{listener}'
+        device_method:  None
+        response:       handle_add_listener
+
+    remove_listener:
+        description:    Remove a Listener process.
+        cmd:            '{listener}'
+        device_method:  None
+        response:       handle_remove_listener
+
+    get_listener_names:
+        description:    Get the names of the registered Listener processes.
+        device_method:  None
+        response:       handle_get_listener_names
