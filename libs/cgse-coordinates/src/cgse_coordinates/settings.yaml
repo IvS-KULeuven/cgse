@@ -1,0 +1,16 @@
+Field-Of-View:
+
+    RADIUS_DEGREES:              18.8908        # Radius of the field-of-view [degrees]
+    RADIUS_PIXELS:                  4706        # Radius of the field-of-view [pixels]
+    RADIUS_MM:                      84.7        # Radius of the field-of-view [mm]
+    DISTORTION_COEFFICIENTS:  [0.316257210577,  0.066373219688,  0.372589221219]    # Distortion coefficients [k1, k3, k5]
+    FOCAL_LENGTH:                 247.52        # Focal length [mm]
+
+CCD:
+
+    ZEROPOINT:          [-1.3, 82.48]       # CCD zeropoint (x, y) [mm]
+    ORIENTATION:    [180, 270, 0, 90]       # Orientation of the CCD w.r.t. the focal plane [degrees]
+    PIXEL_SIZE:                    18       # Pixel size [µm]
+    NUM_ROWS:                    4510       # Number of rows
+    NUM_COLUMNS:                 4510       # Number of columns
+    LENGTH_SERIAL_PRESCAN:    25            # Number of columns in the serial pre-scan

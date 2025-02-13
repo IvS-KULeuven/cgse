@@ -64,7 +64,7 @@ def plot_reference_frame(frame, master=None, figname=None, **kwargs):
     #kwargs.setdefault('figsize', (10,10))
 
     fig = plt.figure(figname, figsize=plt.figaspect(1.0))
-    ax = fig.gca(projection='3d')
+    ax = fig.add_subplot(projection='3d')
     ax.quiver(x, y, z, vecxx, vecxy, vecxz, color='r', **kwargs)
     ax.quiver(x, y, z, vecyx, vecyy, vecyz, color='g', **kwargs)
     ax.quiver(x, y, z, veczx, veczy, veczz, color='b', **kwargs)
@@ -113,7 +113,7 @@ def plot_points(points, master=None, figname=None, **kwargs):
     kwargs.setdefault('color', 'k')
     #
     fig = plt.figure(figname)
-    ax = fig.gca(projection='3d')
+    ax = fig.add_subplot(projection='3d')
     ax.scatter(xs, ys, zs, **kwargs)
 
     return ax
@@ -138,7 +138,6 @@ def plot_vectors(points, master=None, figname=None, fromorigin=True, **kwargs):
         Use ax.set_xlim3d(min,max) to properly set the ranges of the display.
 
     """
-    #from egse.coordinates.point import Points
 
     if master is None:
         tmpmaster = ReferenceFrame.createMaster()
@@ -173,16 +172,16 @@ def plot_vectors(points, master=None, figname=None, fromorigin=True, **kwargs):
     y = np.ones_like(xs) * y
     z = np.ones_like(xs) * z
 
-    ### PLOT
+    # PLOT
 
     fig = plt.figure(figname)
     ax = fig.gca(projection='3d')
 
-    if fromorigin == True:
+    if fromorigin:
 
         ax.quiver(x, y, z, xs-x, ys-y, zs-z, **kwargs)
 
-    elif fromorigin == False:
+    elif not fromorigin:
 
         ax.quiver(xs, ys, zs, x-xs, y-ys, z-zs, **kwargs)
 
@@ -192,4 +191,3 @@ def plot_vectors(points, master=None, figname=None, fromorigin=True, **kwargs):
         ax.quiver(x, y, z, xs-x, ys-y, zs-z, **kwargs)
 
     return ax
-

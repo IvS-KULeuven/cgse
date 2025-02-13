@@ -20,8 +20,10 @@ from numpy.polynomial import Polynomial
 
 from egse.coordinates.referenceFrame import ReferenceFrame
 from egse.settings import Settings
+from egse.setup import Setup
+from egse.setup import load_setup
 from egse.state import GlobalState
-from egse.setup import NavigableDict
+from egse.setup import navdict
 
 logger = logging.getLogger(__name__)
 
@@ -147,19 +149,21 @@ def distorted_to_undistorted_focal_plane_coordinates(
     return x_undistorted, y_undistorted
 
 
-def focal_plane_to_ccd_coordinates(x_fp, y_fp):
+def focal_plane_to_ccd_coordinates(x_fp, y_fp, setup: Setup = None):
     """
     Conversion from focal-plane to pixel coordinates on the appropriate CCD.
 
     Args:
         x_fp: Focal-plane x-coordinate [mm].
         y_fp: Focal-plane y-coordinate [mm].
+        setup: Setup
     Returns:
         Pixel coordinates (row, column) and the corresponding CCD.  If the given
         focal-plane coordinates do not fall on any CCD, (None, None, None) is
         returned.
     """
-    setup = GlobalState.setup
+
+    setup = setup or load_setup()
 
     if setup is not None:
         num_rows = setup.camera.ccd.num_rows
@@ -316,7 +320,7 @@ def angles_to_focal_plane_coordinates(theta, phi):
     return x_fp, y_fp
 
 
-def dict_to_ref_model(model_def: Union[Dict, List]) -> NavigableDict:
+def dict_to_ref_model(model_def: Union[Dict, List]) -> navdict:
     """
     Creates a reference frames model from a dictionary or list of reference frame definitions.
 
@@ -344,7 +348,7 @@ def dict_to_ref_model(model_def: Union[Dict, List]) -> NavigableDict:
         A dictionary representing the reference frames model.
     """
 
-    ref_model = NavigableDict({})
+    ref_model = navdict()
     ref_links = {}
 
     def create_ref_frame(name, data) -> Union[ReferenceFrame, str]:
@@ -407,7 +411,7 @@ def dict_to_ref_model(model_def: Union[Dict, List]) -> NavigableDict:
     return ref_model
 
 
-def ref_model_to_dict(ref_model) -> NavigableDict:
+def ref_model_to_dict(ref_model) -> navdict:
     """Creates a dictionary with reference frames definitions that define a reference model.
 
     Args:
@@ -436,7 +440,7 @@ def ref_model_to_dict(ref_model) -> NavigableDict:
             f"{links})"
         )
 
-    return NavigableDict(model_def)
+    return navdict(model_def)
 
 
 def serialize_array(arr: Union[np.ndarray, list], precision: int = 4) -> str:
@@ -509,6 +513,8 @@ def _convert_from_string(data):
     #   https://github.com/numpy/numpy/blob/v1.19.0/numpy/matrixlib/defmatrix.py#L14
     # We include the function here because the np.matrix class is deprecated and will be removed.
     # This function is what we actually needed from np.matrix.
+
+    # This function can be replaced with np.fromstring()
 
     for char in "[]":
         data = data.replace(char, "")

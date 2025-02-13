@@ -42,6 +42,7 @@ cgse-common = { workspace = true }
 cgse-core = { workspace = true }
 cgse-coordinates = { workspace = true }
 cgse-gui = { workspace = true }
+cgse-tools = { workspace = true }
 plato-spw = { workspace = true }
 
 [tool.uv.workspace]
