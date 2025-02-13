@@ -31,8 +31,9 @@ $ uv python install 3.9.20
 
 !!! note "`pyenv`"
 
-    When using `pyenv` to manage your Python versions, make sure you also have the same Python version installed 
-    with `pyenv` and `uv`. Otherwise you will run into the following error. This is a known issue with `uv`.
+    When you are using `pyenv` to manage your Python versions, make sure you also have the same 
+    Python version installed with `pyenv` and `uv`. Otherwise you will run into the following 
+    error. This is a known issue with `uv`.
 
     ```
     pyenv: version `3.9.20' is not installed (set by /Users/rik/github/cgse/libs/cgse-common/.python-version)
@@ -71,35 +72,56 @@ You can check which Python versions are installed already on your system:
     `uv` will search for a pinned version in the parent folders up to the root folder or your home directory.
 
 
-You can create a virtual environment with `uv` for the specific Python version as follows. The '`--python`' is optional 
-and `uv` will use the default (pinned) Python version when creating a `venv` without this option. When creating a 
-virtual environment make sure you are in the package root, e.g. `~/github/cgse/libs/cgse-common`.
+You can create a virtual environment with `uv` for the specific Python version as follows. The 
+'`--python`' is optional  and `uv` will use the default (pinned) Python version when creating a 
+`venv` without this option. We are working in a monorepo or what `uv` calls a workspace. There 
+will be only one virtual environment at the root of the monorepo, despite the fact that we have 
+several individual packages in our workspace. Don't worry, `uv` will always use the virtual 
+environment at the root and keep it up-to-date with the project your are currently working in.
+
+When creating a virtual environment make sure you are in the root folder, e.g. `~/github/cgse`.
 
 ```shell
-$ cd ~/github/cgse/libs/cgse-common
+$ cd ~/github/cgse
 $ uv venv --python 3.9.20
 ```
 
-Assuming you are in the package root where you created the virtual environment, you can now install its dependencies 
-with `pip install` as follows:
+Now, navigate to the package you will be working in and update the projects' environment, 
+assuming you are going to work in `cgse-core`, this will be:
 
 ```shell
-$ uv pip install -r pyproject.toml
+$ cd ~/github/cgse/libs/cgse-core
+$ uv sync
 ```
 
-To install the current project as an editable package:
+Your package(s) from the workspace should be installed as an editable install. You can check 
+this with the command:
 
 ```shell
-$ uv pip install -e .
+$ uv pip list -v
+Using Python 3.9.20 environment at: /Users/rik/github/cgse/.venv
+Package           Version     Editable project location
+----------------- ----------- ---------------------------------------
+apscheduler       3.11.0
+cgse-common       0.4.0       /Users/rik/github/cgse/libs/cgse-common
+cgse-core         0.4.0       /Users/rik/github/cgse/libs/cgse-core
+...
+```
+
+To install any other project as an editable package:
+
+```shell
+$ uv pip install -e <project location>
 ```
 
 !!! note 
 
     If you don't want to use the `uv` commands, you can activate the virtual environment and use the original `pip` 
-    and `python` commands as you are used to.
+    and `python` commands as you are used to, but I would recommend you try to get used to `uv` 
+    for a while to experience its benefits.
 
     ```
-    $ source .venv/bin/activate
+    $ source ~/github/cgse/.venv/bin/activate
     ```
 
 !!! info
