@@ -21,7 +21,7 @@ HEXOBUSR = "hexobusr"
 class CSLReferenceFrameModel(ReferenceFrameModel):
     """
     The CSL Reference Frame Model is a specific reference model that adds convenience methods
-    for manipulating the Hexapod PUNA which is part of the overall CSH Setup.
+    for manipulating the Hexapod PUNA which is part of the overall CSL Setup.
     """
 
     _DEGREES_DEFAULT = ReferenceFrameModel._DEGREES_DEFAULT
