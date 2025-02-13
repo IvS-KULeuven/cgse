@@ -3,6 +3,9 @@ name = "cgse-coordinates"
 version = "0.3.0"
 description = "Reference Frames and Coordinate Transofrmations for CGSE"
 authors = [
+    {name = "IVS KU Leuven"}
+]
+maintainers = [
     {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
     {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"}
 ]
@@ -18,18 +21,36 @@ keywords = [
 ]
 dependencies = [
     "cgse-common",
-    "cgse-core",
+    "matplotlib>=3.8.4",
     "numpy==1.22.4",
     "pandas>=1.5.1",
     "pip>=24.3.1",
     "transforms3d>=0.4.2",
 ]
 
-[project.optional-dependencies]
-dev = ["pytest", "pytest-mock", "pytest-cov"]
-
 [project.entry-points."cgse.version"]
 cgse-coordinates = 'egse.version:get_version_installed'
+
+[project.entry-points."cgse.settings"]
+cgse-coordinates = "cgse_coordinates:settings.yaml"
+
+[tool.pytest.ini_options]
+pythonpath = "src"
+testpaths = ["tests"]
+addopts = "-rA --cov --cov-branch --cov-report html"
+filterwarnings = [
+    "ignore::DeprecationWarning"
+]
+
+[tool.uv.sources]
+cgse-common = { workspace = true }
+
+[tool.coverage.run]
+omit = [
+    "tests/*",
+    "*/cgse-common/*",
+    "conftest.py",
+]
 
 [tool.hatch.build.targets.sdist]
 exclude = [
@@ -39,7 +60,7 @@ exclude = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/egse"]
+packages = ["src/egse", "src/cgse_coordinates"]
 
 [build-system]
 requires = ["hatchling"]
@@ -49,5 +70,7 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
     "ruff>=0.9.0",
 ]
