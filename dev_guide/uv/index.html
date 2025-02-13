@@ -1478,8 +1478,9 @@ these have not been tested. So, we will for the moment stick with Python 3.9.20.
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title"><code>pyenv</code></p>
-<p>When using <code>pyenv</code> to manage your Python versions, make sure you also have the same Python version installed 
-with <code>pyenv</code> and <code>uv</code>. Otherwise you will run into the following error. This is a known issue with <code>uv</code>.</p>
+<p>When you are using <code>pyenv</code> to manage your Python versions, make sure you also have the same 
+Python version installed with <code>pyenv</code> and <code>uv</code>. Otherwise you will run into the following 
+error. This is a known issue with <code>uv</code>.</p>
 <div class="highlight"><pre><span></span><code>pyenv: version `3.9.20&#39; is not installed (set by /Users/rik/github/cgse/libs/cgse-common/.python-version)
 </code></pre></div>
 </div>
@@ -1509,24 +1510,41 @@ cpython-3.8.17-macos-aarch64-none     /Users/rik/Library/Application Support/uv/
 </code></pre></div>
 <p><code>uv</code> will search for a pinned version in the parent folders up to the root folder or your home directory.</p>
 </div>
-<p>You can create a virtual environment with <code>uv</code> for the specific Python version as follows. The '<code>--python</code>' is optional 
-and <code>uv</code> will use the default (pinned) Python version when creating a <code>venv</code> without this option. When creating a 
-virtual environment make sure you are in the package root, e.g. <code>~/github/cgse/libs/cgse-common</code>.</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/github/cgse/libs/cgse-common
+<p>You can create a virtual environment with <code>uv</code> for the specific Python version as follows. The 
+'<code>--python</code>' is optional  and <code>uv</code> will use the default (pinned) Python version when creating a 
+<code>venv</code> without this option. We are working in a monorepo or what <code>uv</code> calls a workspace. There 
+will be only one virtual environment at the root of the monorepo, despite the fact that we have 
+several individual packages in our workspace. Don't worry, <code>uv</code> will always use the virtual 
+environment at the root and keep it up-to-date with the project your are currently working in.</p>
+<p>When creating a virtual environment make sure you are in the root folder, e.g. <code>~/github/cgse</code>.</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/github/cgse
 $<span class="w"> </span>uv<span class="w"> </span>venv<span class="w"> </span>--python<span class="w"> </span><span class="m">3</span>.9.20
 </code></pre></div>
-<p>Assuming you are in the package root where you created the virtual environment, you can now install its dependencies 
-with <code>pip install</code> as follows:</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>pyproject.toml
+<p>Now, navigate to the package you will be working in and update the projects' environment, 
+assuming you are going to work in <code>cgse-core</code>, this will be:</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/github/cgse/libs/cgse-core
+$<span class="w"> </span>uv<span class="w"> </span>sync
 </code></pre></div>
-<p>To install the current project as an editable package:</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+<p>Your package(s) from the workspace should be installed as an editable install. You can check 
+this with the command:</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>pip<span class="w"> </span>list<span class="w"> </span>-v
+Using<span class="w"> </span>Python<span class="w"> </span><span class="m">3</span>.9.20<span class="w"> </span>environment<span class="w"> </span>at:<span class="w"> </span>/Users/rik/github/cgse/.venv
+Package<span class="w">           </span>Version<span class="w">     </span>Editable<span class="w"> </span>project<span class="w"> </span>location
+-----------------<span class="w"> </span>-----------<span class="w"> </span>---------------------------------------
+apscheduler<span class="w">       </span><span class="m">3</span>.11.0
+cgse-common<span class="w">       </span><span class="m">0</span>.4.0<span class="w">       </span>/Users/rik/github/cgse/libs/cgse-common
+cgse-core<span class="w">         </span><span class="m">0</span>.4.0<span class="w">       </span>/Users/rik/github/cgse/libs/cgse-core
+...
+</code></pre></div>
+<p>To install any other project as an editable package:</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>&lt;project<span class="w"> </span>location&gt;
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If you don't want to use the <code>uv</code> commands, you can activate the virtual environment and use the original <code>pip</code> 
-and <code>python</code> commands as you are used to.</p>
-<div class="highlight"><pre><span></span><code>$ source .venv/bin/activate
+and <code>python</code> commands as you are used to, but I would recommend you try to get used to <code>uv</code> 
+for a while to experience its benefits.</p>
+<div class="highlight"><pre><span></span><code>$ source ~/github/cgse/.venv/bin/activate
 </code></pre></div>
 </div>
 <div class="admonition info">
