@@ -8,6 +8,7 @@ projects have. We currently have the following generic packages:
 
 - `cgse-tools`
 - `symetrie-hexapod`
+- `keithley-tempcontrol`
 
 and then there are the project specific packages:
 
