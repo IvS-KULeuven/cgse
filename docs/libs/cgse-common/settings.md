@@ -154,6 +154,21 @@ Configuration Manager Control Server:            # CM_CS
     ...
 ```
 
+!!! Warning
+
+    Please note that the module where the Settings YAML file resides is a Python package and not 
+    a namespace. That means it shall have a `__init__.py` file as shown in the example of the 
+    `cgse_core` module above.
+
+    If the `__init__.py` file is not there, you will get an error like below:
+
+    ```text
+    ERROR:egse.plugin:The entry-point 'cgse-coordinates' is ill defined. The module part doesn't 
+    exist or is a namespace. No settings are loaded for this entry-point.
+
+    ```
+
+
 ## Local Settings
 
 You can, and you should, define local settings for your project and put those settings in a known folder
