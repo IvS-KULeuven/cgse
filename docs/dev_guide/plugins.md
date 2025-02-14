@@ -6,9 +6,10 @@ places. The following entry-points are currently defined:
 
 * `cgse.version`: Each package that provides functionality within the CGSE or adds a device driver
   registers itself to provide version information.
-* `cgse.command.plugins`: Packages can add commands or sub-commands to the `cgse` app to manage
+* `cgse.command`: Packages can add commands or sub-commands to the `cgse` app to manage
   their functionality from within the `cgse` app, e.g. to start or stop the service or to report on
   its status.
+* `cgse.service`: Package provides a device driver or another service.
 * `cgse.settings`: Package can add their own settings.
 * `cgse.explore`: Package provides a set of functions to explore, e.g. if any of the processes 
   it provides are running.
