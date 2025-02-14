@@ -1530,9 +1530,10 @@ places. The following entry-points are currently defined:</p>
 <ul>
 <li><code>cgse.version</code>: Each package that provides functionality within the CGSE or adds a device driver
   registers itself to provide version information.</li>
-<li><code>cgse.command.plugins</code>: Packages can add commands or sub-commands to the <code>cgse</code> app to manage
+<li><code>cgse.command</code>: Packages can add commands or sub-commands to the <code>cgse</code> app to manage
   their functionality from within the <code>cgse</code> app, e.g. to start or stop the service or to report on
   its status.</li>
+<li><code>cgse.service</code>: Package provides a device driver or another service.</li>
 <li><code>cgse.settings</code>: Package can add their own settings.</li>
 <li><code>cgse.explore</code>: Package provides a set of functions to explore, e.g. if any of the processes 
   it provides are running.</li>
