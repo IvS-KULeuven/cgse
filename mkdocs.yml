@@ -91,11 +91,13 @@ nav:
     - help.md
   - Developer Guide:
     - dev_guide/index.md
+    - dev_guide/monorepo.md
     - dev_guide/installation.md
     - dev_guide/uv.md
     - dev_guide/coding_style.md
     - dev_guide/docs.md
     - dev_guide/plugins.md
+    - dev_guide/unit_testing.md
   - User Guide:
     - user_guide/index.md
   - Libs:
