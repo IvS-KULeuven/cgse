@@ -18,10 +18,12 @@ dependencies = [
 pythonpath = [
     "libs/cgse-common/src",
     "libs/cgse-core/src",
+    "libs/cgse-coordinates/src",
 ]
 testpaths = [
     "libs/cgse-common/tests",
     "libs/cgse-core/tests",
+    "libs/cgse-coordinates/tests",
 ]
 addopts = "-rA --cov --cov-branch --cov-report html"
 filterwarnings = [
