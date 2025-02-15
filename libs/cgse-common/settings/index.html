@@ -632,6 +632,10 @@
       
         
       
+        
+      
+        
+      
     
     
       
@@ -671,6 +675,27 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dev_guide/monorepo/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The structure of this monorepo
+  </span>
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -769,6 +794,27 @@
   
   <span class="md-ellipsis">
     Plugins
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dev_guide/unit_testing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Testing the Software
   </span>
   
 
@@ -1604,6 +1650,16 @@ Configuration Manager Control Server:            # CM_CS
 
     ...
 </code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Please note that the module where the Settings YAML file resides is a Python package and not 
+a namespace. That means it shall have a <code>__init__.py</code> file as shown in the example of the 
+<code>cgse_core</code> module above.</p>
+<p>If the <code>__init__.py</code> file is not there, you will get an error like below:</p>
+<div class="highlight"><pre><span></span><code>ERROR:egse.plugin:The entry-point &#39;cgse-coordinates&#39; is ill defined. The module part doesn&#39;t 
+exist or is a namespace. No settings are loaded for this entry-point.
+</code></pre></div>
+</div>
 <h2 id="local-settings">Local Settings<a class="headerlink" href="#local-settings" title="Permanent link">&para;</a></h2>
 <p>You can, and you should, define local settings for your project and put those settings in a known folder
 on your system. The usual place is <code>~/cgse/local-settings.yaml</code>. This file will be automatically loaded by the

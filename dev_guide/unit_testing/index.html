@@ -12,28 +12,28 @@
         <meta name="author" content="Rik Huygen">
       
       
-        <link rel="canonical" href="https://ivs-kuleuven.github.io/cgse/user_guide/">
+        <link rel="canonical" href="https://ivs-kuleuven.github.io/cgse/dev_guide/unit_testing/">
       
       
-        <link rel="prev" href="../dev_guide/unit_testing/">
+        <link rel="prev" href="../plugins/">
       
       
-        <link rel="next" href="../libs/">
+        <link rel="next" href="../../user_guide/">
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.49">
     
     
       
-        <title>User Guide - CGSE</title>
+        <title>Testing the Software - CGSE</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.6f8fc17f.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.6f8fc17f.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
       
       
   
@@ -93,9 +93,9 @@
       
     
     
-      <link rel="stylesheet" href="../stylesheets/custom.css">
+      <link rel="stylesheet" href="../../stylesheets/custom.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -108,9 +108,9 @@
 <!-- / Fathom -->
 
 
-<meta property="og:title" content="CGSE - User Guide">
+<meta property="og:title" content="CGSE - Testing the Software">
 <meta property="og:type" content="article">
-<meta property="og:url" content="https://ivs-kuleuven.github.io/cgse/user_guide/">
+<meta property="og:url" content="https://ivs-kuleuven.github.io/cgse/dev_guide/unit_testing/">
 <meta property="og:site_name" content="CGSE Documentation">
 <meta property="og:description" content="CGSE is an instrument test framework for Python.">
 <meta property="og:image" content="https://raw.githubusercontent.com/IvS-KULeuven/cgse/refs/heads/main/docs/images/icons/cgse-logo.svg">
@@ -150,7 +150,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#user-guide" class="md-skip">
+        <a href="#testing-the-software" class="md-skip">
           Skip to content
         </a>
       
@@ -166,9 +166,9 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="CGSE" class="md-header__button md-logo" aria-label="CGSE" data-md-component="logo">
+    <a href="../.." title="CGSE" class="md-header__button md-logo" aria-label="CGSE" data-md-component="logo">
       
-  <img src="../images/icons/cgse-logo.svg" alt="logo">
+  <img src="../../images/icons/cgse-logo.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -185,7 +185,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              User Guide
+              Testing the Software
             
           </span>
         </div>
@@ -286,7 +286,7 @@
   
   
     <li class="md-tabs__item">
-      <a href=".." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
     
@@ -305,32 +305,12 @@
     
     
       <li class="md-tabs__item">
-        <a href="../getting_started/" class="md-tabs__link">
+        <a href="../../getting_started/" class="md-tabs__link">
           
   
     
   
   Introduction
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="../dev_guide/" class="md-tabs__link">
-          
-  
-    
-  
-  Developer Guide
 
         </a>
       </li>
@@ -347,7 +327,27 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="./" class="md-tabs__link">
+        <a href="../" class="md-tabs__link">
+          
+  
+    
+  
+  Developer Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../user_guide/" class="md-tabs__link">
           
   
     
@@ -367,7 +367,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../libs/" class="md-tabs__link">
+        <a href="../../libs/" class="md-tabs__link">
           
   
     
@@ -387,7 +387,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../projects/" class="md-tabs__link">
+        <a href="../../projects/" class="md-tabs__link">
           
   
     
@@ -428,9 +428,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="CGSE" class="md-nav__button md-logo" aria-label="CGSE" data-md-component="logo">
+    <a href="../.." title="CGSE" class="md-nav__button md-logo" aria-label="CGSE" data-md-component="logo">
       
-  <img src="../images/icons/cgse-logo.svg" alt="logo">
+  <img src="../../images/icons/cgse-logo.svg" alt="logo">
 
     </a>
     CGSE
@@ -457,7 +457,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -525,7 +525,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting_started/" class="md-nav__link">
+      <a href="../../getting_started/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -546,7 +546,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../package_list/" class="md-nav__link">
+      <a href="../../package_list/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -567,7 +567,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../initialize/" class="md-nav__link">
+      <a href="../../initialize/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -588,7 +588,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../help/" class="md-nav__link">
+      <a href="../../help/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -613,6 +613,8 @@
       
   
   
+    
+  
   
   
     
@@ -639,19 +641,22 @@
     
     
       
+        
+        
+      
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../dev_guide/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -662,13 +667,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Developer Guide
@@ -684,7 +689,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dev_guide/monorepo/" class="md-nav__link">
+      <a href="../monorepo/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -705,7 +710,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dev_guide/installation/" class="md-nav__link">
+      <a href="../installation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -726,7 +731,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dev_guide/uv/" class="md-nav__link">
+      <a href="../uv/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -747,7 +752,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dev_guide/coding_style/" class="md-nav__link">
+      <a href="../coding_style/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -768,7 +773,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dev_guide/docs/" class="md-nav__link">
+      <a href="../docs/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -789,7 +794,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dev_guide/plugins/" class="md-nav__link">
+      <a href="../plugins/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -807,10 +812,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../dev_guide/unit_testing/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Testing the Software
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -819,6 +844,44 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-unit-test-for-each-package-separately" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running the unit test for each package separately
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-unit-tests-of-all-packages" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running the unit tests of all packages
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -835,8 +898,6 @@
       
   
   
-    
-  
   
   
     
@@ -849,22 +910,19 @@
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="./" class="md-nav__link md-nav__link--active">
+            <a href="../../user_guide/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -876,7 +934,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             User Guide
@@ -928,7 +986,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../libs/" class="md-nav__link ">
+            <a href="../../libs/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -986,7 +1044,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../libs/cgse-common/" class="md-nav__link ">
+            <a href="../../libs/cgse-common/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1019,7 +1077,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../libs/cgse-common/settings/" class="md-nav__link">
+      <a href="../../libs/cgse-common/settings/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1040,7 +1098,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../libs/cgse-common/setup/" class="md-nav__link">
+      <a href="../../libs/cgse-common/setup/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1090,7 +1148,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../libs/cgse-core/" class="md-nav__link ">
+            <a href="../../libs/cgse-core/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1147,7 +1205,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../libs/cgse-coordinates/" class="md-nav__link ">
+            <a href="../../libs/cgse-coordinates/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1204,7 +1262,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../libs/cgse-gui/" class="md-nav__link ">
+            <a href="../../libs/cgse-gui/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1272,7 +1330,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../projects/" class="md-nav__link ">
+            <a href="../../projects/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1305,7 +1363,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../projects/cgse-tools/" class="md-nav__link">
+      <a href="../../projects/cgse-tools/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1326,7 +1384,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../projects/symetrie-hexapod/" class="md-nav__link">
+      <a href="../../projects/symetrie-hexapod/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1367,6 +1425,32 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-unit-test-for-each-package-separately" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running the unit test for each package separately
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-unit-tests-of-all-packages" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running the unit tests of all packages
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1383,8 +1467,48 @@
   
 
 
-<h1 id="user-guide">User Guide<a class="headerlink" href="#user-guide" title="Permanent link">&para;</a></h1>
-<p>Welcome to the CGSE user guide! An in-depth reference on how to use the CGSE.</p>
+<h1 id="testing-the-software">Testing the Software<a class="headerlink" href="#testing-the-software" title="Permanent link">&para;</a></h1>
+<p>We use the <code>pytest</code> package to unit test our modules and packages. The <code>pyproject.toml</code> files are configured for 
+each package to perform the testing. This section will guide you through the steps to run the tests and also explain 
+how we configured the tests and some guidelines we used.</p>
+<h2 id="running-the-unit-test-for-each-package-separately">Running the unit test for each package separately<a class="headerlink" href="#running-the-unit-test-for-each-package-separately" title="Permanent link">&para;</a></h2>
+<p>If you are working on a particular package and want to run its unit test, make sure you are in the root folder of 
+that package, e.g. for the <code>cgse-common</code> package, do the following:</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/github/cgse/libs/cgse-common/
+$<span class="w"> </span>uv<span class="w"> </span>sync
+$<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>-v
+<span class="o">================================================================</span><span class="w"> </span><span class="nb">test</span><span class="w"> </span>session<span class="w"> </span><span class="nv">starts</span><span class="w"> </span><span class="o">=================================================================</span>
+platform<span class="w"> </span>darwin<span class="w"> </span>--<span class="w"> </span>Python<span class="w"> </span><span class="m">3</span>.9.20,<span class="w"> </span>pytest-8.3.4,<span class="w"> </span>pluggy-1.5.0<span class="w"> </span>--<span class="w"> </span>/Users/rik/github/cgse/.venv/bin/python3
+cachedir:<span class="w"> </span>.pytest_cache
+rootdir:<span class="w"> </span>/Users/rik/github/cgse/libs/cgse-common
+configfile:<span class="w"> </span>pyproject.toml
+plugins:<span class="w"> </span>cov-6.0.0,<span class="w"> </span>mock-3.14.0
+collected<span class="w"> </span><span class="m">161</span><span class="w"> </span>items
+
+test_bits.py::test_clear_bit<span class="w"> </span>PASSED<span class="w">                                                                                                            </span><span class="o">[</span><span class="w">  </span><span class="m">0</span>%<span class="o">]</span>
+test_bits.py::test_set_bit<span class="w"> </span>PASSED<span class="w">                                                                                                              </span><span class="o">[</span><span class="w">  </span><span class="m">1</span>%<span class="o">]</span>
+test_bits.py::test_toggle_bit<span class="w"> </span>PASSED<span class="w">                                                                                                           </span><span class="o">[</span><span class="w">  </span><span class="m">1</span>%<span class="o">]</span>
+test_bits.py::test_beautify_binary<span class="w"> </span>PASSED<span class="w">                                                                                                      </span><span class="o">[</span><span class="w">  </span><span class="m">2</span>%<span class="o">]</span>
+test_bits.py::test_set_bits<span class="w"> </span>PASSED<span class="w">                                                                                                             </span><span class="o">[</span><span class="w">  </span><span class="m">3</span>%<span class="o">]</span>
+test_bits.py::test_alternative_set_bits<span class="w"> </span>PASSED<span class="w">                                                                                                 </span><span class="o">[</span><span class="w">  </span><span class="m">3</span>%<span class="o">]</span>
+test_bits.py::test_clear_bits<span class="w"> </span>PASSED<span class="w">                                                                                                           </span><span class="o">[</span><span class="w">  </span><span class="m">4</span>%<span class="o">]</span>
+test_bits.py::test_crc_calc<span class="w"> </span>PASSED<span class="w">                                                                                                             </span><span class="o">[</span><span class="w">  </span><span class="m">4</span>%<span class="o">]</span>
+test_bits.py::test_humanize_bytes<span class="w"> </span>PASSED<span class="w">                                                                                                       </span><span class="o">[</span><span class="w">  </span><span class="m">5</span>%<span class="o">]</span>
+test_bits.py::test_s16<span class="w"> </span>PASSED<span class="w">                                                                                                                  </span><span class="o">[</span><span class="w">  </span><span class="m">6</span>%<span class="o">]</span>
+test_bits.py::test_s32<span class="w"> </span>PASSED<span class="w">                                                                                                                  </span><span class="o">[</span><span class="w">  </span><span class="m">6</span>%<span class="o">]</span>
+test_command.py::test_dry_run<span class="w"> </span>PASSED<span class="w">                                                                                                           </span><span class="o">[</span><span class="w">  </span><span class="m">7</span>%<span class="o">]</span>
+test_command.py::test_command_class<span class="w"> </span>PASSED<span class="w">                                                                                                     </span><span class="o">[</span><span class="w">  </span><span class="m">8</span>%<span class="o">]</span>
+test_command.py::test_return_code_of_execute<span class="w"> </span>PASSED<span class="w">                                                                                            </span><span class="o">[</span><span class="w">  </span><span class="m">8</span>%<span class="o">]</span>
+...
+</code></pre></div>
+<h2 id="running-the-unit-tests-of-all-packages">Running the unit tests of all packages<a class="headerlink" href="#running-the-unit-tests-of-all-packages" title="Permanent link">&para;</a></h2>
+<p>Before releasing the software, we should run all the unit tests of all the packages in the monorepo and have green 
+light 🟢. Running these unit tests is as simple as for the individual packages. You will need to be in the root folder 
+of the monorepo and sync your virtual environment for all the packages in the workspace.</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/gitbug/cgse
+$<span class="w"> </span>uv<span class="w"> </span>sync<span class="w"> </span>--all-packages
+$<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>-v
+</code></pre></div>
 
 
 
@@ -1414,7 +1538,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../dev_guide/unit_testing/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Testing the Software">
+          <a href="../plugins/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Plugins">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1424,20 +1548,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Testing the Software
+                Plugins
               </div>
             </div>
           </a>
         
         
           
-          <a href="../libs/" class="md-footer__link md-footer__link--next" aria-label="Next: Libraries">
+          <a href="../../user_guide/" class="md-footer__link md-footer__link--next" aria-label="Next: User Guide">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Libraries
+                User Guide
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1483,10 +1607,10 @@
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.indexes", "navigation.tabs.sticky", "navigation.footer", "content.code.annotate", "content.code.copy"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.indexes", "navigation.tabs.sticky", "navigation.footer", "content.code.annotate", "content.code.copy"], "search": "../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.88dd0f4e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.88dd0f4e.min.js"></script>
       
     
   </body>
