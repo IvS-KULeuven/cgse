@@ -75,6 +75,20 @@ their functionality is fully replaced by this `egse.resource` module.
 
 """
 
+__all__ = [
+    "AmbiguityError",
+    "NoSuchFileError",
+    "ResourceError",
+    "add_resource_id",
+    "get_resource",
+    "get_resource_dirs",
+    "get_resource_locations",
+    "get_resource_path",
+    "initialise_resources",
+    "print_resources",
+]
+
+import contextlib
 import errno
 import logging
 import re
@@ -107,18 +121,6 @@ class AmbiguityError(ResourceError):
 class NoSuchFileError(ResourceError):
     """Raised when no file could be found for the given resource."""
 
-
-__all__ = [
-    "get_resource",
-    "get_resource_locations",
-    "get_resource_dirs",
-    "get_resource_path",
-    "add_resource_id",
-    "initialise_resources",
-    "ResourceError",
-    "AmbiguityError",
-    "NoSuchFileError",
-]
 
 # Testing regex: https://pythex.org
 
@@ -386,16 +388,20 @@ def get_resource(resource_locator: str) -> Path:
                 if contains_wildcard(filename):
                     files = list(find_files(filename, root=resource_location))
 
-                    if len(files) == 1:
-                        filename = files[0]
-                    elif len(files) == 0:
-                        raise NoSuchFileError(f"No file found that matches {filename=} for the given "
-                                              f"resource '{resource_id}'.")
+                    if len(files) == 0:
+                        continue
+                    elif len(files) == 1:
+                        return files[0]
                     else:
                         raise AmbiguityError(f"The {filename=} found {len(files)} matches for "
                                              f"the given resource '{resource_id}'.")
 
-                return check_if_file_exists(resource_location / filename, resource_id)
+                with contextlib.suppress(NoSuchFileError):
+                    return check_if_file_exists(resource_location / filename, resource_id)
+            else:
+                raise NoSuchFileError(
+                    f"No file found that matches {filename=} for the given resource '{resource_id}'."
+                )
 
         elif match[2] == "*/":
             # This will return the first occurrence of the filename
@@ -404,17 +410,37 @@ def get_resource(resource_locator: str) -> Path:
 
                 files = list(find_files(filename, root=resource_location))
 
-                if len(files) == 1:
+                if len(files) == 0:
+                    continue
+                elif len(files) == 1:
                     return files[0]
-                elif len(files) == 0:
-                    raise NoSuchFileError(
-                        f"The {filename=} could not be found for the given resource '{resource_id}'."
-                    )
                 else:
-                    raise AmbiguityError(f"The {filename=} was found {len(files)} times for "
-                                         f"the given resource location '{resource_location}'.")
+                    raise AmbiguityError(f"The {filename=} found {len(files)} matches for "
+                                         f"the given resource '{resource_id}'.")
+
+            else:
+                raise NoSuchFileError(
+                    f"No file found that matches {filename=} for the given resource '{resource_id}'."
+                )
+
         elif match[2] == '**/':
-            raise NotImplementedError("The '**' to walk the tree is not yet implemented.")
+            for resource_location in resource_locations:
+
+                files = list(find_files(filename, root=resource_location))
+
+                if len(files) == 0:
+                    continue
+                elif len(files) == 1:
+                    return files[0]
+                else:
+                    raise AmbiguityError(f"The {filename=} found {len(files)} matches for "
+                                         f"the given resource '{resource_id}'.")
+
+            else:
+                raise NoSuchFileError(
+                    f"No file found that matches {filename=} for the given resource '{resource_id}'."
+                )
+
         else:
             raise InternalError(
                 f"This shouldn't happen, the match is {match[2]=} for {resource_locator=}")
