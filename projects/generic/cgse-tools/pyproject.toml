@@ -1,6 +1,6 @@
 [project]
 name = "cgse-tools"
-version = "0.4.0"
+version = "0.5.0"
 description = "Tools for CGSE"
 authors = [
     {name = "IVS KU Leuven"}
@@ -19,9 +19,8 @@ keywords = [
     "software framework"
 ]
 dependencies = [
-    "cgse-core",
-    "textual>=1.0.0",
-    "rich>=13.9.4",
+    "cgse-common",
+    "textual>=2.0.0",
 ]
 
 [project.optional-dependencies]
