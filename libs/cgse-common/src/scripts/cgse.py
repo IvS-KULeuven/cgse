@@ -27,10 +27,10 @@ from rich.traceback import Traceback
 
 from egse.plugin import entry_points
 from egse.system import get_package_description
-from scripts import services
+# from scripts import services
 
 app = typer.Typer(add_completion=True)
-app.add_typer(services.app, name="core")
+# app.add_typer(services.app, name="core")
 
 
 @app.command()

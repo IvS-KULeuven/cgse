@@ -1,6 +1,6 @@
 [project]
 name = "cgse-core"
-version = "0.4.0"
+version = "0.5.0"
 description = "Core services for the CGSE framework"
 authors = [
     {name = "IVS KU Leuven"}
@@ -21,12 +21,6 @@ keywords = [
 dependencies = [
     "cgse-common",
     "apscheduler>=3.11.0",
-    "click>=8.1.8",
-    "gitpython>=3.1.44",
-    "prometheus-client>=0.21.1",
-    "pyzmq == 23.2.1",
-    "rich>=13.9.4",
-    "typer>=0.15.1",
 ]
 
 [project.scripts]
@@ -35,13 +29,14 @@ sm_cs = 'egse.storage.storage_cs:app'
 cm_cs = 'egse.confman.confman_cs:app'
 pm_cs = 'egse.procman.procman_cs:cli'
 
-cgse = 'scripts.cgse:app'
-
 [project.entry-points."cgse.version"]
 cgse-core = 'egse.version:get_version_installed'
 
 [project.entry-points."cgse.settings"]
 cgse-core = "cgse_core:settings.yaml"
+
+[project.entry-points."cgse.service"]
+core = 'scripts.services:app'
 
 [project.entry-points."cgse.explore"]
 explore = "cgse_core.cgse_explore"
