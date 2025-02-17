@@ -1,6 +1,6 @@
 [project]
 name = "cgse"
-version = "0.4.0"
+version = "0.5.0"
 description = "Generic Common-EGSE: Commanding and monitoring lab equipment"
 authors = [
     {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
