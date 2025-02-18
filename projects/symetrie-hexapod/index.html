@@ -1333,6 +1333,17 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    The Symétrie Hexapods
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -1342,6 +1353,34 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#settings-up-your-system-for-the-puna-hexapod" class="md-nav__link">
+    <span class="md-ellipsis">
+      Settings up your system for the PUNA Hexapod
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1375,6 +1414,23 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#settings-up-your-system-for-the-puna-hexapod" class="md-nav__link">
+    <span class="md-ellipsis">
+      Settings up your system for the PUNA Hexapod
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1392,6 +1448,23 @@
 
 
 <h1 id="the-symetrie-hexapods">The Symétrie Hexapods<a class="headerlink" href="#the-symetrie-hexapods" title="Permanent link">&para;</a></h1>
+<h2 id="settings-up-your-system-for-the-puna-hexapod">Settings up your system for the PUNA Hexapod<a class="headerlink" href="#settings-up-your-system-for-the-puna-hexapod" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>We need some work here... we want to be able to use multiple hexapods in the same Setup and 
+they can be the same type or different types. So, how do we specify two PUNA hexapods used 
+to position two different parts of your test equiopment?  </p>
+</div>
+<p>The system needs to know the following information on the hexapod:</p>
+<ul>
+<li>device name: specified in the Setup under <code>setup.gse.hexapod.device_args.device_name</code></li>
+<li>device id: specified in the Setup under <code>setup.gse.hexapod.device_args.device_id</code></li>
+</ul>
+<p>These above settings can olso be specified in the environment variables:</p>
+<ul>
+<li>SYMETRIE_HEXAPOD_NAME</li>
+<li>SYMETRIE_HEXAPOD_ID</li>
+</ul>
 
 
 

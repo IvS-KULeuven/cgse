@@ -1400,7 +1400,47 @@ resides on the GitHub  server) you will create pull requests. Install a clone of
 your local machine or laptop.</p>
 <p><img alt="img.png" src="../../images/github-fork-clone.png#only-light" />
 <img alt="img.png" src="../../images/github-fork-clone-dark.png#only-dark" /></p>
-<p>TBW</p>
+<p>So, when you have created a fork in your GitHub account, clone the repository on your local 
+machine.  For the purpose of this guide we will clone the repo in the <code>~/github/cgse</code> folder. 
+The following commands will create the required folders and clone the repo.</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span>~/github
+$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/github
+$<span class="w"> </span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:IvS-KULeuven/cgse.git
+$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/github/cgse
+</code></pre></div>
+<p>Now you will have to create a virtual environment and populated it with all the dependencies. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<h1 id="tldr">TL;DR<a class="headerlink" href="#tldr" title="Permanent link">&para;</a></h1>
+<p>The following three commands will get you going quickly:
+<div class="highlight"><pre><span></span><code>$ uv venv --python 3.9.20
+$ uv sync --all-packages
+$ uv run cgse
+
+Usage: cgse [OPTIONS] COMMAND [ARGS]...
+
+The main cgse command to inspect, configure, monitor the core services and device control 
+servers.
+
+╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --install-completion          Install completion for the current shell.                                        │
+│ --show-completion             Show completion for the current shell, to copy it or customize the installation. │
+│ --help                        Show this message and exit.                                                      │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ─────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ version   Prints the version of the cgse-core and other registered packages.                                   │
+│ top       A top-like interface for core services and device control servers.                                   │
+│ clock     Showcase for running an in-line Textual App.                                                         │
+│ init      Initialize your project.                                                                             │
+│ show      Show information about settings, environment, setup, ...                                             │
+│ check     Check installation, settings, required files, etc.                                                   │
+│ dev-x     device-x is an imaginary device that serves as an example                                            │
+│ core      handle core services: start, stop, status                                                            │
+│ puna      PUNA Positioning Hexapod, Symétrie                                                                   │
+│ daq6510   DAQ6510 Data Acquisition Unit, Keithley, temperature monitoring                                      │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+</code></pre></div></p>
+</div>
 
 
 

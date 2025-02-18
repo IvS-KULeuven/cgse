@@ -1468,27 +1468,28 @@
 
 
 <h1 id="initialize-your-project">Initialize your project<a class="headerlink" href="#initialize-your-project" title="Permanent link">&para;</a></h1>
-<p>So, we have seen how to get started with some basic commands and only the <code>cgse-common</code> package. It's time now to 
-initialize your project properly with all the necessary services.</p>
+<p>So, we have seen how to get started with some basic commands and only the <code>cgse-common</code> package.
+It's time now to initialize your project properly with all the necessary services.</p>
 <h2 id="set-up-your-environment">Set up your environment<a class="headerlink" href="#set-up-your-environment" title="Permanent link">&para;</a></h2>
-<p>I assume you are in the same environment that we have set up in the <a href="../getting_started/">previous section</a> where 
-also the <code>cgse-common</code> package was installed. We will install another package that will provide us with the full 
-functionality of the <code>cgse</code> command. Install the <code>cgse-tools</code> package which depends on <code>cgse-core</code> and will also 
-install that package.</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>cgse-tools
+<p>I assume you are in the same environment that we have set up in
+the <a href="../getting_started/">previous section</a> where also the <code>cgse-common</code> package was installed. We
+will install another package that will provide us with the full functionality of the <code>cgse</code> command.
+Install the <code>cgse-tools</code> and <code>cgse-core</code> packages which depends on
+<code>cgse-core</code> and will also install that package.</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>cgse-tools<span class="w"> </span>cgse-core
 </code></pre></div>
 <p>You should now have at least the follow three packages installed in your virtual environment:</p>
 <div class="highlight"><pre><span></span><code>$ pip list | grep cgse
-cgse-common       2025.0.8
-cgse-core         2025.0.8
-cgse-tools        2025.0.8
+cgse-common       0.5.0
+cgse-core         0.5.0
+cgse-tools        0.5.0
 </code></pre></div>
 <h2 id="the-cgse-command">The <code>cgse</code> command<a class="headerlink" href="#the-cgse-command" title="Permanent link">&para;</a></h2>
-<p>The two new packages that have been installed (<code>cgse-core</code> and <code>cgse-tools</code>) provide the <code>cgse</code> command that we will 
-use to initialize your environment, but this command is also used to inspect different parts of the system, manage core 
-services and device drivers, etc.</p>
+<p>The two new packages that have been installed (<code>cgse-core</code> and <code>cgse-tools</code>) provide the <code>cgse</code>
+command that we will use to initialize your environment, but this command is also used to inspect
+different parts of the system, manage core services and device drivers, etc.</p>
 <p>When you run the <code>cgse</code> command without any arguments, it will show something like this:</p>
-<p><div class="highlight"><pre><span></span><code>$ cgse
+<div class="highlight"><pre><span></span><code>$ cgse
 
  Usage: cgse [OPTIONS] COMMAND [ARGS]...
 
@@ -1509,21 +1510,22 @@ services and device drivers, etc.</p>
 │ dev-x     device-x is an imaginary device that serves as an example                                                                                          │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 </code></pre></div>
-The <code>cgse</code> command is actually an app that is the starting point for a number of commands that can be used to maintain 
-the system, manage and inspect services and devices. For example, to check the version of the different components, 
-use:</p>
+<p>The <code>cgse</code> command is actually an app that is the starting point for a number of commands that can
+be used to maintain the system, manage and inspect services and devices. For example, to check the
+version of the different components, use:</p>
 <div class="highlight"><pre><span></span><code>$ cgse version
-CGSE-COMMON installed version = 2025.0.8
-CGSE-CORE installed version = 2025.0.8
-CGSE-TOOLS installed version = 2025.0.8
+CGSE-COMMON installed version = 0.5.0 — Software framework to support hardware testing
+CGSE-CORE installed version = 0.5.0 — Core services for the CGSE framework
+CGSE-TOOLS installed version = 0.5.0 — Tools for CGSE
 </code></pre></div>
-<p>We will for now concentrate on the <code>init</code> command. This command will guide us through a number of steps to define 
-the location of our device data, configuration data, etc. We will basically define some environment variables that 
-are used by the CGSE framework. The PROJECT is he name of the project your will be working on, the SITE_ID is the 
-identifier for the LAB or Setup that you are using to perform the tests. As you see below, the environment 
-variables all start with the project name allowing you to work on different projects simultaneously. If you accept all 
-the defaults, the result of the <code>cgse init</code> command will look something like this:</p>
-<p><div class="highlight"><pre><span></span><code>$ cgse init --project marvel
+<p>We will for now concentrate on the <code>init</code> command. This command will guide us through a number of
+steps to define the location of our device data, configuration data, etc. We will basically define
+some environment variables that are used by the CGSE framework. The PROJECT is he name of the
+project your will be working on, the SITE_ID is the identifier for the LAB or Setup that you are
+using to perform the tests. As you see below, the environment variables all start with the project
+name allowing you to work on different projects simultaneously. If you accept all the defaults, the
+result of the <code>cgse init</code> command will look something like this:</p>
+<div class="highlight"><pre><span></span><code>$ cgse init --project marvel
 Please note default values are given between [brackets].
 What is the name of the project [MARVEL] ?:
 What is the site identifier ?: lab02
@@ -1542,10 +1544,12 @@ export MARVEL_CONF_DATA_LOCATION=~/data/MARVEL/LAB02/conf/
 export MARVEL_LOG_FILE_LOCATION=~/data/MARVEL/LAB02/log/
 export MARVEL_LOCAL_SETTINGS=~/data/MARVEL/LAB02/local_settings.yaml
 </code></pre></div>
-If you answered 'Y' to the last question, you should log in to the shell again with <code>exec bash -login</code> or a similar 
-command for other shells, or you should start a new terminal to activate the environment variables.</p>
-<p>Add this point you are ready to go and start the core services and any device control servers that you need.
-You can explore other commands of the <code>cgse</code> app in the <a href="../user_guide/">user guide</a>.</p>
+<p>If you answered 'Y' to the last question, you should log in to the shell again
+with <code>exec bash -login</code> or a similar command for other shells, or you should start a new terminal to
+activate the environment variables.</p>
+<p>Add this point you are ready to go and start the core services and any device control servers that
+you need. You can explore other commands of the <code>cgse</code> app in
+the <a href="../user_guide/">user guide</a>.</p>
 
 
 

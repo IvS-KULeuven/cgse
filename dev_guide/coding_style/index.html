@@ -1618,10 +1618,23 @@
 </table>
 <h2 id="general">General<a class="headerlink" href="#general" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Name the class or variable or function with what it is, what it does or what it contains. A variable named <code>user_list</code> might look good at first, but what if at some point you want to change the list to a set so it can not contain duplicates. Are you going to rename everything into <code>user_set</code> or would <code>user_info</code> be a better name?</li>
-<li>Never use dashes in any name, they will raise a <code>SyntaxError: invalid syntax</code>.</li>
-<li>We introduce a number of relaxations to not break backward compatibility for the sake of a naming convention. As described in <a href="https://legacy.python.org/dev/peps/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds">A Foolish Consistency is the Hobgoblin of Little Minds</a>: <em>Consistency with this style guide is important. Consistency within a project is more important. Consistency within one module or function is the most important. [...] do not break backwards compatibility just to comply with this PEP!</em></li>
+<li>
+<p>Name the class or variable or function with what it is, what it does or what it contains. A variable named <code>user_list</code> might look good at first, but what if at some point you want to change the list to a set so it can not contain duplicates. Are you going to rename everything into <code>user_set</code> or would <code>user_info</code> be a better name?</p>
+</li>
+<li>
+<p>Never use dashes in any name that will be interpreted by Python, they will raise a <code>SyntaxError: 
+  invalid syntax</code>.</p>
+</li>
+<li>
+<p>We introduce a number of relaxations to not break backward compatibility for the sake of a naming convention. As described in <a href="https://legacy.python.org/dev/peps/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds">A Foolish Consistency is the Hobgoblin of Little Minds</a>: <em>Consistency with this style guide is important. Consistency within a project is more important. Consistency within one module or function is the most important. [...] do not break backwards compatibility just to comply with this PEP!</em></p>
+</li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You will sometimes see that we use one or two words between <code>&lt; &gt;</code> angle brakcets. That means 
+you will have to replace that text AND the brackets with your own text. As an example,
+if you see <code>--prompt &lt;venv name&gt;</code>, replace this with something like <code>--prompt cgse-venv</code>.  </p>
+</div>
 <h2 id="classes">Classes<a class="headerlink" href="#classes" title="Permanent link">&para;</a></h2>
 <p>Always use CamelCase (Python uses CapWords) for class names. When using acronyms, keep them all UPPER case.</p>
 <ul>

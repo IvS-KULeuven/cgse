@@ -1563,9 +1563,12 @@ will be only one virtual environment at the root of the monorepo, despite the fa
 several individual packages in our workspace. Don't worry, <code>uv</code> will always use the virtual 
 environment at the root and keep it up-to-date with the project your are currently working in.</p>
 <p>When creating a virtual environment make sure you are in the root folder, e.g. <code>~/github/cgse</code>.</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/github/cgse
+<p><div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/github/cgse
 $<span class="w"> </span>uv<span class="w"> </span>venv<span class="w"> </span>--python<span class="w"> </span><span class="m">3</span>.9.20
 </code></pre></div>
+If you want to name your virtual environment, use the optional argument <code>--prompt &lt;venv name&gt;</code> in 
+the above command, otherwise the virtual environment will get the same name as the project, i.e. 
+<code>cgse</code>.</p>
 <p>Now, navigate to the package you will be working in and update the projects' environment, 
 assuming you are going to work in <code>cgse-core</code>, this will be:</p>
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/github/cgse/libs/cgse-core
