@@ -11,7 +11,7 @@ PMAC Controller:
 
     H_1A:
         TYPE:                   ALPHA
-        HOSTNAME:     XXX.XXX.XXX.X1A
+        HOSTNAME:           127.0.0.1
         PORT:                    1025
 
     H_1B:
@@ -30,7 +30,7 @@ PMAC Controller:
         PORT:                    1025
 
 
-Hexapod PUNA Control Server:                           # PUNA CS
+Hexapod PUNA Control Server:                   # PUNA CS
 
     PROTOCOL:                     tcp
     HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. on the same machine
@@ -41,7 +41,7 @@ Hexapod PUNA Control Server:                           # PUNA CS
     DELAY:                         10          # The delay time between publishing status information [seconds]
     USE_SIMULATOR:                 NO          # Use the HexapodSimulator class instead of the actual Hexapod class
 
-Hexapod ZONDA Control Server:                          # ZONDA CS
+Hexapod ZONDA Control Server:                  # ZONDA CS
 
     PROTOCOL:                     tcp
     HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. on the same machine
