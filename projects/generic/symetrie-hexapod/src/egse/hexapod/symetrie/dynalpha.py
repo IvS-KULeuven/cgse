@@ -25,14 +25,14 @@ from typing import Dict
 from typing import List
 from typing import Tuple
 
-from egse.control import Failure
-from egse.control import Success
 from egse.device import DeviceConnectionError
 from egse.device import DeviceConnectionInterface
 from egse.device import DeviceInterface
 from egse.device import DeviceTransport
 from egse.mixin import add_cr_lf
 from egse.mixin import dynamic_command
+from egse.response import Failure
+from egse.response import Success
 from egse.settings import Settings
 from egse.system import Timer
 from egse.system import wait_until
