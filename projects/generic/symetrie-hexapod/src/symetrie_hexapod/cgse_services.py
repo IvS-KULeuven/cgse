@@ -19,7 +19,7 @@ puna = typer.Typer(
 def start_puna(
         simulator: Annotated[
             bool,
-            typer.Option("--simulator", "--sim", help="start the hexapod PUNA simulator")
+            typer.Option("--simulator", "--sim", help="use a device simulator as the backend")
         ] = False,
         background: Annotated[
             bool,
@@ -30,7 +30,7 @@ def start_puna(
     Start the PUNA hexapod control server. The control server is always started in the background.
 
     Args:
-        - simulator: start the PUNA simulator to be used as the device simulator..
+        - simulator: use the PUNA device simulator as the backend.
 
     """
     if background:
