@@ -1,4 +1,9 @@
+import logging
+
 from egse.decorators import dynamic_interface
+
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class AlphaControllerInterface:
@@ -709,14 +714,14 @@ class AlphaControllerInterface:
         """
 
         pos = self.get_user_positions()
-        logger.info(
+        _LOGGER.info(
             f"Object [in User]     : "
             f"{pos[0]:2.5f}, {pos[1]:2.5f}, {pos[2]:2.5f}, {pos[3]:2.5f}, {pos[4]:2.5f}, "
             f"{pos[5]:2.5f}"
         )
 
         pos = self.get_machine_positions()
-        logger.info(
+        _LOGGER.info(
             f"Platform [in Machine]: "
             f"{pos[0]:2.5f}, {pos[1]:2.5f}, {pos[2]:2.5f}, {pos[3]:2.5f}, {pos[4]:2.5f}, "
             f"{pos[5]:2.5f}"
