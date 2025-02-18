@@ -20,7 +20,11 @@ def start_puna(
         simulator: Annotated[
             bool,
             typer.Option("--simulator", "--sim", help="start the hexapod PUNA simulator")
-        ] = False
+        ] = False,
+        background: Annotated[
+            bool,
+            typer.Option(help="start the hexapod PUNA in the background")
+        ] = True,
 ):
     """
     Start the PUNA hexapod control server. The control server is always started in the background.
@@ -29,24 +33,28 @@ def start_puna(
         - simulator: start the PUNA simulator to be used as the device simulator..
 
     """
-    location = get_log_file_location()
-    output_fn = 'puna_cs.start.out'
-    output_path = Path(location, output_fn).expanduser()
+    if background:
+        location = get_log_file_location()
+        output_fn = 'puna_cs.start.out'
+        output_path = Path(location, output_fn).expanduser()
 
-    rich.print(f"Starting the PUNA hexapod control server – {simulator = }")
-    rich.print(f"Output will be redirected to {output_path!s}")
+        rich.print(f"Starting the PUNA hexapod control server – {simulator = }")
+        rich.print(f"Output will be redirected to {output_path!s}")
 
-    out = open(output_path, 'w')
+        out = open(output_path, 'w')
 
-    cmd = [sys.executable, '-m', 'egse.hexapod.symetrie.puna_cs', 'start']
-    if simulator:
-        cmd.append("--simulator")
+        cmd = [sys.executable, '-m', 'egse.hexapod.symetrie.puna_cs', 'start']
+        if simulator:
+            cmd.append("--simulator")
 
-    subprocess.Popen(
-        cmd,
-        stdout=out, stderr=out, stdin=subprocess.DEVNULL,
-        close_fds=True
-    )
+        subprocess.Popen(
+            cmd,
+            stdout=out, stderr=out, stdin=subprocess.DEVNULL,
+            close_fds=True
+        )
+    else:
+        from egse.hexapod.symetrie import puna_cs
+        puna_cs.start(simulator)
 
 
 @puna.command(name="stop")
