@@ -22,6 +22,7 @@ from egse.decorators import deprecate
 from egse.exceptions import InvalidOperationError
 
 LOGGER = logging.getLogger(__name__)
+DEBUG = False
 
 
 def transformationToString(transformation):
@@ -100,7 +101,7 @@ class ReferenceFrame(object):
     def __new__(cls, transformation, ref, name=None, rot_config=_ROT_CONFIG_DEFAULT):
         """Create a new ReferenceFrame class."""
 
-        LOGGER.debug(
+        DEBUG and LOGGER.debug(
             f"transformation={transformationToString(transformation)}, ref={ref!r}, name={name}, rot_config={rot_config}"
         )
 
@@ -149,7 +150,7 @@ class ReferenceFrame(object):
 
         self.debug = False
 
-        LOGGER.debug(
+        DEBUG and LOGGER.debug(
             f"transformation={transformationToString(transformation)}, ref={ref!r}, name={name}, rot_config={rot_config}"
         )
 
@@ -210,7 +211,7 @@ class ReferenceFrame(object):
         ref_master.linkedTo = {}
         ref_master.referenceFor = []
 
-        LOGGER.debug(
+        DEBUG and LOGGER.debug(
             f"NEW MASTER CREATED: {id(ref_master)}, ref = {id(ref_master.ref)}, "
             f"name = {ref_master.name}"
         )
@@ -242,8 +243,7 @@ class ReferenceFrame(object):
         else:
 
             if name in cls._names_used:
-                LOGGER.log(
-                    0,
+                DEBUG and LOGGER.warning(
                     f"name ('{name}') is already defined, now you have more than one "
                     f"ReferenceFrame with the same name.",
                 )
@@ -511,15 +511,16 @@ class ReferenceFrame(object):
         if transformation is None:
             transformation = self.getActiveTransformationTo(ref)
         else:
-            LOGGER.info("Deprecation warning: transformation will be automatically set to "
-                        "the current relation between {self.name} and {ref.name}")
-            LOGGER.debug("Requested:")
-            LOGGER.debug(np.round(transformation, decimals=3))
-            LOGGER.debug("Auto (enforced):")
+            if DEBUG:
+                LOGGER.info("Deprecation warning: transformation will be automatically set to "
+                            "the current relation between {self.name} and {ref.name}")
+                LOGGER.debug("Requested:")
+                LOGGER.debug(np.round(transformation, decimals=3))
+                LOGGER.debug("Auto (enforced):")
 
             transformation = self.getActiveTransformationTo(ref)
 
-            LOGGER.debug(np.round(transformation, decimals=3))
+            DEBUG and LOGGER.debug(np.round(transformation, decimals=3))
 
         self.linkedTo[ref] = transformation
 
@@ -551,21 +552,21 @@ class ReferenceFrame(object):
 
         Passive transformation : the point is static, we change the reference frame around it
         """
-        LOGGER.debug("PASSIVE TO self {self.name} target {targetFrame.name}")
+        DEBUG and LOGGER.debug("PASSIVE TO self {self.name} target {targetFrame.name}")
         if targetFrame is self:
             """
             Nothing to do here, we already have the right coordinates
             """
-            LOGGER.debug("case 1")
+            DEBUG and LOGGER.debug("case 1")
             result = np.identity(4)
 
         elif targetFrame.ref is self:
             """
             The target frame is defined in self => the requested transformation is the targetFrame definition
             """
-            LOGGER.debug("=== 2 start ===")
+            DEBUG and LOGGER.debug("=== 2 start ===")
             result = t3add.affine_inverse(targetFrame.transformation)
-            LOGGER.debug("=== 2 end   ===")
+            DEBUG and LOGGER.debug("=== 2 end   ===")
         elif targetFrame.ref is self.ref:
             """
             targetFrame and self are defined wrt the same reference frame
@@ -579,25 +580,26 @@ class ReferenceFrame(object):
             inverse(definition)    targetFrame definition
 
             """
-            LOGGER.debug("=== 3 start ===")
-            LOGGER.debug(" ref   \n{0}".format(self.ref))
-            LOGGER.debug("===")
-            LOGGER.debug("self   \n{0}".format(self))
-            LOGGER.debug("===")
-            LOGGER.debug("targetFrame \n{0}".format(targetFrame))
-            LOGGER.debug("===")
+            if DEBUG:
+                LOGGER.debug("=== 3 start ===")
+                LOGGER.debug(" ref   \n{0}".format(self.ref))
+                LOGGER.debug("===")
+                LOGGER.debug("self   \n{0}".format(self))
+                LOGGER.debug("===")
+                LOGGER.debug("targetFrame \n{0}".format(targetFrame))
+                LOGGER.debug("===")
 
             selfToRef = self.transformation
-            LOGGER.debug("selfToRef \n{0}".format(selfToRef))
+            DEBUG and LOGGER.debug("selfToRef \n{0}".format(selfToRef))
 
             # refToRef = I
 
             refToTarget = t3add.affine_inverse(targetFrame.transformation)
-            LOGGER.debug("refToTarget \n{0}".format(refToTarget))
+            DEBUG and LOGGER.debug("refToTarget \n{0}".format(refToTarget))
 
             result = np.dot(refToTarget, selfToRef)
-            LOGGER.debug("result \n{0}".format(result))
-            LOGGER.debug("=== 3 end   ===")
+            DEBUG and LOGGER.debug("result \n{0}".format(result))
+            DEBUG and LOGGER.debug("=== 3 end   ===")
         else:
             """
             We are after the transformation from
@@ -624,12 +626,12 @@ class ReferenceFrame(object):
                   the assumption that the entire set of reference frames is connex,
                   i.e. defined upon a unique master reference frame.
             """
-            LOGGER.debug("=== 4 start ===")
+            DEBUG and LOGGER.debug("=== 4 start ===")
             selfToRef = self.transformation
             selfRefToTargetRef = self.ref.getPassiveTransformationTo(targetFrame.ref)
             refToTarget = t3add.affine_inverse(targetFrame.transformation)
             result = np.dot(refToTarget, np.dot(selfRefToTargetRef, selfToRef))
-            LOGGER.debug("=== 4 end   ===")
+            DEBUG and LOGGER.debug("=== 4 end   ===")
 
         return result
 
@@ -676,7 +678,7 @@ class ReferenceFrame(object):
         returns the transformation matrix  that, applied to a point defined
         in source returns its coordinates in self
         """
-        LOGGER.debug("PASSIVE FROM self {self.name} source {source.name}")
+        DEBUG and LOGGER.debug("PASSIVE FROM self {self.name} source {source.name}")
         return source.getPassiveTransformationTo(self)
 
     def getPassiveTranslationRotationVectorsFrom(
@@ -728,7 +730,7 @@ class ReferenceFrame(object):
             to target
 
         """
-        LOGGER.debug("ACTIVE TO self {self.name} target {target.name}")
+        DEBUG and LOGGER.debug("ACTIVE TO self {self.name} target {target.name}")
         return target.getPassiveTransformationTo(self)
 
     def getActiveTranslationRotationVectorsTo(
@@ -776,7 +778,7 @@ class ReferenceFrame(object):
             i.e. the transformation from ``source`` to ``self``
 
         """
-        LOGGER.debug("ACTIVE FROM self {self.name} source {source.name}")
+        DEBUG and LOGGER.debug("ACTIVE FROM self {self.name} source {source.name}")
         return self.getPassiveTransformationTo(source)
 
     def getActiveTranslationRotationVectorsFrom(
@@ -819,7 +821,7 @@ class ReferenceFrame(object):
         Identify subset of 'linked_frames of which the reference does not belong to linked_frames
             --> returned as 'finalEnds'
         """
-        LOGGER.debug(
+        DEBUG and LOGGER.debug(
             f"{level:-2d}{2*level*' '} Current: {frame.name} --  ends: {[f.name for f in ends]} -- visited {[f.name for f in visited]}"
         )
         # if verbose: print (f"{level:-2d}{2*level*' '} Current: {frame.name} --  ends: {[f.name for f in ends]} -- visited {[f.name for f in visited]}")
@@ -834,7 +836,7 @@ class ReferenceFrame(object):
                 level += 1
             if frame.ref not in frame.linkedTo:
                 ends.append(frame)
-                LOGGER.debug(f"{(10+2*level)*' '}{frame.name}: new end")
+                DEBUG and LOGGER.debug(f"{(10+2*level)*' '}{frame.name}: new end")
                 # if verbose: LOGGER.info(f"{(10+2*level)*' '}{frame.name}: new end")
             for linkedFrame in frame.linkedTo:
                 ends, visited = self._findEnds(
@@ -945,7 +947,7 @@ class ReferenceFrame(object):
                 if child not in visitedFrames:
                     impacted.append(child)
 
-        LOGGER.debug(f"Impacted (not moving, defined in moving) {[f.name for f in impacted]}")
+        DEBUG and LOGGER.debug(f"Impacted (not moving, defined in moving) {[f.name for f in impacted]}")
 
         # B2. save the location of all impacted frames
         # tempReference has the only purpose of avoiding that every frame must know the master
@@ -986,14 +988,15 @@ class ReferenceFrame(object):
 
             relativeTransformation = up @ request @ down
 
-            LOGGER.debug(
-                f"\nAdjusting {bottom.name} to {self.name}\nUpdated {[i.name for i in updated]}"
-            )
-            LOGGER.debug(f"\ninput transformation \n{np.round(transformation,3)}")
-            LOGGER.debug(
-                f"\nup \n{np.round(up,3)}\ntransformation\n{np.round(request,3)}\ndown\n{np.round(down,3)}"
-            )
-            LOGGER.debug(f"\nrelativeTransformation \n{np.round(relativeTransformation,3)}")
+            if DEBUG:
+                LOGGER.debug(
+                    f"\nAdjusting {bottom.name} to {self.name}\nUpdated {[i.name for i in updated]}"
+                )
+                LOGGER.debug(f"\ninput transformation \n{np.round(transformation,3)}")
+                LOGGER.debug(
+                    f"\nup \n{np.round(up,3)}\ntransformation\n{np.round(request,3)}\ndown\n{np.round(down,3)}"
+                )
+                LOGGER.debug(f"\nrelativeTransformation \n{np.round(relativeTransformation,3)}")
 
             bottom.transformation = bottom.transformation @ relativeTransformation
 
@@ -1054,7 +1057,7 @@ class ReferenceFrame(object):
 
         rmat = RotationMatrix(rotx, roty, rotz, rot_config=rot_config, active=active)
 
-        LOGGER.debug(t3.affines.compose(translation, rmat.R, Z=zdef, S=sdef))
+        DEBUG and LOGGER.debug(t3.affines.compose(translation, rmat.R, Z=zdef, S=sdef))
 
         transformation = t3.affines.compose(translation, rmat.R, Z=zdef, S=sdef)
 
@@ -1181,31 +1184,31 @@ class ReferenceFrame(object):
         """
 
         if other is self:
-            LOGGER.debug(
+            DEBUG and LOGGER.debug(
                 "self and other are the same object (beware: this message might occur with recursion from self.ref != self.other)"
             )
             return True
 
         if isinstance(other, ReferenceFrame):
-            LOGGER.debug(f"comparing {self.name} and {other.name}")
+            DEBUG and LOGGER.debug(f"comparing {self.name} and {other.name}")
             if not np.array_equal(self.transformation, other.transformation):
-                LOGGER.debug("self.transformation not equals other.transformation")
+                DEBUG and LOGGER.debug("self.transformation not equals other.transformation")
                 return False
             if self.rot_config != other.rot_config:
-                LOGGER.debug("self.rot_config not equals other.rot_config")
+                DEBUG and LOGGER.debug("self.rot_config not equals other.rot_config")
                 return False
             # The following tests are here to prevent recursion to go infinite when self and other
             # point to itself
             if self.ref is self and other.ref is other:
-                LOGGER.debug("both self.ref and other.ref point to themselves")
+                DEBUG and LOGGER.debug("both self.ref and other.ref point to themselves")
                 pass
             else:
-                LOGGER.debug("one of self.ref or other.ref doesn't points to itself")
+                DEBUG and LOGGER.debug("one of self.ref or other.ref doesn't points to itself")
                 if self.ref != other.ref:
-                    LOGGER.debug("self.ref not equals other.ref")
+                    DEBUG and LOGGER.debug("self.ref not equals other.ref")
                     return False
             if self.name is not other.name:
-                LOGGER.debug(
+                DEBUG and LOGGER.debug(
                     f"When checking two reference frames for equality, only their names differ: '{self.name}' not equals '{other.name}'"
                 )
                 pass
@@ -1230,31 +1233,31 @@ class ReferenceFrame(object):
         """
 
         if other is self:
-            LOGGER.debug(
+            DEBUG and LOGGER.debug(
                 "self and other are the same object (beware: this message might occur with recursion from self.ref != self.other)"
             )
             return True
 
         if isinstance(other, ReferenceFrame):
-            LOGGER.debug(f"comparing {self.name} and {other.name}")
+            DEBUG and LOGGER.debug(f"comparing {self.name} and {other.name}")
             if not np.array_equal(self.transformation, other.transformation):
-                LOGGER.debug("self.transformation not equals other.transformation")
+                DEBUG and LOGGER.debug("self.transformation not equals other.transformation")
                 return False
             if self.rot_config != other.rot_config:
-                LOGGER.debug("self.rot_config not equals other.rot_config")
+                DEBUG and LOGGER.debug("self.rot_config not equals other.rot_config")
                 return False
             # The following tests are here to prevent recursion to go infinite when self and other
             # point to itself
             if self.ref is self and other.ref is other:
-                LOGGER.debug("both self.ref and other.ref point to themselves")
+                DEBUG and LOGGER.debug("both self.ref and other.ref point to themselves")
                 pass
             else:
-                LOGGER.debug("one of self.ref or other.ref doesn't points to itself")
+                DEBUG and LOGGER.debug("one of self.ref or other.ref doesn't points to itself")
                 if self.ref != other.ref:
-                    LOGGER.debug("self.ref not equals other.ref")
+                    DEBUG and LOGGER.debug("self.ref not equals other.ref")
                     return False
             if self.name is not other.name:
-                LOGGER.debug(
+                DEBUG and LOGGER.debug(
                     f"When checking two reference frames for equality, only their names differ: '{self.name}' not equals '{other.name}'"
                 )
                 return False
@@ -1268,12 +1271,12 @@ class ReferenceFrame(object):
 
     def __copy__(self):
 
-        LOGGER.debug(
+        DEBUG and LOGGER.debug(
             f'Copying {self!r} unless {self.name} is "Master" in which case the Master itself is returned.'
         )
 
         if self.isMaster():
-            LOGGER.debug(f"Returning Master itself instead of a copy.")
+            DEBUG and LOGGER.debug(f"Returning Master itself instead of a copy.")
             return self
 
         return ReferenceFrame(self.transformation, self.ref, self.name, self.rot_config)

@@ -1,0 +1,53 @@
+PACKAGES:
+    SYMETRIE-HEXAPOD: Device driver for the Symétrie Hexapods PUNA, ZONDA, and JORAN
+
+PUNA Alpha+ Controller:
+    user_name: provide username in local settings
+    password: provide password in local settings
+
+PMAC Controller:
+
+    DEFAULT_SPEED:                  2          # Default actuator speed
+
+    H_1A:
+        TYPE:                   ALPHA
+        HOSTNAME:           127.0.0.1
+        PORT:                    1025
+
+    H_1B:
+        TYPE:                   ALPHA
+        HOSTNAME:     XXX.XXX.XXX.X1B
+        PORT:                    1025
+
+    H_2A:
+        TYPE:                   ALPHA
+        HOSTNAME:     XXX.XXX.XXX.X2A
+        PORT:                    1025
+
+    H_2B:
+        TYPE:                   ALPHA
+        HOSTNAME:     XXX.XXX.XXX.X2B
+        PORT:                    1025
+
+
+Hexapod PUNA Control Server:                   # PUNA CS
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. on the same machine
+    COMMANDING_PORT:             6700          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6701          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6702          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6703          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                         10          # The delay time between publishing status information [seconds]
+    USE_SIMULATOR:                 NO          # Use the HexapodSimulator class instead of the actual Hexapod class
+
+Hexapod ZONDA Control Server:                  # ZONDA CS
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. on the same machine
+    COMMANDING_PORT:             6704          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:             6705          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                6706          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                6707          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                         10          # The delay time between publishing status information [seconds]
+    USE_SIMULATOR:                 NO          # Use the HexapodSimulator class instead of the actual Hexapod class

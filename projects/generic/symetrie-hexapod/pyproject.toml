@@ -21,6 +21,7 @@ keywords = [
 dependencies = [
     "cgse-common",
     "cgse-core",
+    "cgse-tools",
     "cgse-gui",
     "cgse-coordinates",
     "PyQt5>=5.15.11",
@@ -28,11 +29,8 @@ dependencies = [
     "invoke"
 ]
 
-[project.optional-dependencies]
-test = ["pytest", "pytest-mock", "pytest-cov"]
-
 [project.scripts]
-puna_cs = 'egse.hexapod.symetrie.puna_cs:cli'
+puna_cs = 'egse.hexapod.symetrie.puna_cs:app'
 
 [project.gui-scripts]
 puna_ui = "egse.hexapod.symetrie.puna_ui:main"
@@ -42,6 +40,9 @@ symetrie-hexapod = 'egse.version:get_version_installed'
 
 [project.entry-points."cgse.service"]
 puna = 'symetrie_hexapod.cgse_services:puna'
+
+[project.entry-points."cgse.settings"]
+symetrie-hexapod = "symetrie_hexapod:settings.yaml"
 
 [project.entry-points."cgse.explore"]
 explore = "symetrie_hexapod.cgse_explore"
@@ -65,3 +66,10 @@ extend-select = ["E501"]
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.9.0",
+]

@@ -15,18 +15,20 @@ all device behavior correctly, e.g. timing, error conditions, etc.
 
 """
 import logging
+from typing import Annotated
+
+import typer
 
 from egse.hexapod.symetrie import ProxyFactory
 from egse.hexapod.symetrie import get_hexapod_controller_pars
-from egse.process import SubProcess
 
 if __name__ != "__main__":
     import multiprocessing
+
     multiprocessing.current_process().name = "puna_cs"
 
 import sys
 
-import click
 import rich
 import zmq
 
@@ -36,17 +38,17 @@ from egse.zmq_ser import connect_address
 from prometheus_client import start_http_server
 
 from egse.control import ControlServer
-from egse.hexapod.symetrie.puna import PunaProxy
 from egse.hexapod.symetrie.puna_protocol import PunaProtocol
 from egse.settings import Settings
 
-logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 CTRL_SETTINGS = Settings.load("Hexapod PUNA Control Server")
 
 
 class PunaControlServer(ControlServer):
-    """PunaControlServer - Command and monitor the Hexapod PUNA hardware.
+    """
+    PunaControlServer - Command and monitor the Hexapod PUNA hardware.
 
     This class works as a command and monitoring server to control the Symétrie Hexapod PUNA.
     This control server shall be used as the single point access for controlling the hardware
@@ -63,10 +65,10 @@ class PunaControlServer(ControlServer):
 
     """
 
-    def __init__(self):
+    def __init__(self, simulator: bool = False):
         super().__init__()
 
-        self.device_protocol = PunaProtocol(self)
+        self.device_protocol = PunaProtocol(self, simulator=simulator)
 
         self.logger.info(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()}")
 
@@ -96,24 +98,26 @@ class PunaControlServer(ControlServer):
         start_http_server(CTRL_SETTINGS.METRICS_PORT)
 
 
-@click.group()
-def cli():
-    pass
+app = typer.Typer()
 
 
-@cli.command()
-@click.option("--simulator", "--sim", is_flag=True,
-              help="Start the Hexapod Puna Simulator as the backend.")
-def start(simulator):
-    """Start the Hexapod Puna Control Server."""
+@app.command()
+def start(
+        simulator: Annotated[
+            bool,
+            typer.Option("--simulator", "--sim", help="start the hexapod PUNA simulator in the background")
+        ] = False
+):
+    """
+    Start the Hexapod PUNA Control Server.
 
-    if simulator:
-
-        Settings.set_simulation_mode(True)
+    Args:
+        simulator: start the hexapod PUNA simulator in the background.
+    """
 
     try:
 
-        controller = PunaControlServer()
+        controller = PunaControlServer(simulator)
         controller.serve()
 
     except KeyboardInterrupt:
@@ -127,26 +131,16 @@ def start(simulator):
 
     except Exception:
 
-        logger.exception("Cannot start the Hexapod Puna Control Server")
+        _LOGGER.exception("Cannot start the Hexapod Puna Control Server")
 
-        # The above line does exactly the same as the traceback, but on the logger
+        # The above line does exactly the same as the traceback, but on the _LOGGER
         # import traceback
         # traceback.print_exc(file=sys.stdout)
 
     return 0
 
 
-@cli.command()
-@click.option("--simulator", "--sim", is_flag=True,
-              help="Start the Hexapod Puna Simulator as the backend.")
-def start_bg(simulator):
-    """Start the PUNA Control Server in the background."""
-    sim = "--simulator" if simulator else ""
-    proc = SubProcess("puna_cs", ["puna_cs", "start", sim])
-    proc.execute()
-
-
-@cli.command()
+@app.command()
 def stop():
     """Send a 'quit_server' command to the Hexapod Puna Control Server."""
 
@@ -162,7 +156,7 @@ def stop():
         rich.print("[red]Couldn't connect to 'puna_cs', process probably not running. ")
 
 
-@cli.command()
+@app.command()
 def status():
     """Request status information from the Control Server."""
 
@@ -194,4 +188,4 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG, format=Settings.LOG_FORMAT_FULL)
 
-    sys.exit(cli())
+    sys.exit(app())
