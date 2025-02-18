@@ -41,7 +41,7 @@ from egse.control import ControlServer
 from egse.hexapod.symetrie.puna_protocol import PunaProtocol
 from egse.settings import Settings
 
-logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 CTRL_SETTINGS = Settings.load("Hexapod PUNA Control Server")
 
@@ -131,9 +131,9 @@ def start(
 
     except Exception:
 
-        logger.exception("Cannot start the Hexapod Puna Control Server")
+        _LOGGER.exception("Cannot start the Hexapod Puna Control Server")
 
-        # The above line does exactly the same as the traceback, but on the logger
+        # The above line does exactly the same as the traceback, but on the _LOGGER
         # import traceback
         # traceback.print_exc(file=sys.stdout)
 
