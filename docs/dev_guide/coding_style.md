@@ -19,8 +19,18 @@ The following sections will give the most used conventions with a few examples o
 ## General
 
 * Name the class or variable or function with what it is, what it does or what it contains. A variable named `user_list` might look good at first, but what if at some point you want to change the list to a set so it can not contain duplicates. Are you going to rename everything into `user_set` or would `user_info` be a better name?
-* Never use dashes in any name, they will raise a `SyntaxError: invalid syntax`.
+
+* Never use dashes in any name that will be interpreted by Python, they will raise a `SyntaxError: 
+  invalid syntax`.
+
 * We introduce a number of relaxations to not break backward compatibility for the sake of a naming convention. As described in [A Foolish Consistency is the Hobgoblin of Little Minds](https://legacy.python.org/dev/peps/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds): _Consistency with this style guide is important. Consistency within a project is more important. Consistency within one module or function is the most important. [...] do not break backwards compatibility just to comply with this PEP!_
+
+!!! NOTE 
+
+    You will sometimes see that we use one or two words between `< >` angle brakcets. That means 
+    you will have to replace that text AND the brackets with your own text. As an example,
+    if you see `--prompt <venv name>`, replace this with something like `--prompt cgse-venv`.  
+
 
 ## Classes
 

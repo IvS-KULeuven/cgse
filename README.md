@@ -19,6 +19,7 @@ We have the following generic packages:
 
 - `cgse-tools`: Tools for the `cgse` command.
 - `symetrie-hexapod`: The Symétrie Hexapod drivers. We put this in the generic folder because it is a generic device driver that can be used by different projects.
+- `keithley-tempcontrol`: The DAQ6510 data acquisition and logging multimeter from Keithley.
 
 We have the following project specific packages:
 
