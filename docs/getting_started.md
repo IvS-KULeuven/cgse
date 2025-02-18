@@ -38,8 +38,8 @@ probably be higher and more lines will appear when other packages are installed.
 
 ```shell
 $ py -m egse.version
-CGSE version in Settings: 2025.0.5
-Installed version for cgse-common= 2025.0.5
+CGSE version in Settings: 0.5.0
+Installed version for cgse-common= 0.5.0
 ```
 
 Check your environment with the command below. This will probably print out some warning since you have not defined 

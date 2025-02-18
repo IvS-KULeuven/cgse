@@ -85,6 +85,9 @@ When creating a virtual environment make sure you are in the root folder, e.g. `
 $ cd ~/github/cgse
 $ uv venv --python 3.9.20
 ```
+If you want to name your virtual environment, use the optional argument `--prompt <venv name>` in 
+the above command, otherwise the virtual environment will get the same name as the project, i.e. 
+`cgse`.
 
 Now, navigate to the package you will be working in and update the projects' environment, 
 assuming you are going to work in `cgse-core`, this will be:

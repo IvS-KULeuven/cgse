@@ -22,6 +22,8 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.tabbed:
       alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
   - admonition
   - def_list
   - meta
@@ -98,6 +100,7 @@ nav:
     - dev_guide/docs.md
     - dev_guide/plugins.md
     - dev_guide/unit_testing.md
+    - dev_guide/versioning.md
   - User Guide:
     - user_guide/index.md
   - Libs:
@@ -116,3 +119,4 @@ nav:
     - projects/index.md
     - projects/cgse-tools.md
     - projects/symetrie-hexapod.md
+  - roadmap.md
