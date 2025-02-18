@@ -42,14 +42,16 @@ control the hexapod and monitor its positions and status.
 
 """
 import os
+import textwrap
 
 from egse.device import DeviceFactoryInterface
 from egse.settings import Settings, SettingsError
+from egse.setup import Setup
 
 PUNA_SETTINGS = Settings.load("PMAC Controller")
 
 
-def get_hexapod_controller_pars(setup: 'Setup' = None) -> (str, int, str, str, str):
+def get_hexapod_controller_pars(setup: Setup = None) -> (str, int, str, str, str):
     """
     Returns the hostname (str), port number (int), hexapod id (str), hexapod name (str),
     and type (str) for the hexapod controller as defined in the Setup and Settings.
@@ -64,13 +66,8 @@ def get_hexapod_controller_pars(setup: 'Setup' = None) -> (str, int, str, str, s
     setup = setup or load_setup()
 
     try:
-        try:
-            hexapod_id = setup.gse.hexapod.device_args.device_id
-            hexapod_name: str = setup.gse.hexapod.device_args.device_name
-        except AttributeError:
-            # Handle older Setups where no device_args existed for the PUNA hexapod
-            hexapod_id = setup.gse.hexapod.ID
-            hexapod_name: str = setup.gse.hexapod.device_name
+        hexapod_id = setup.gse.hexapod.device_args.device_id
+        hexapod_name: str = setup.gse.hexapod.device_args.device_name
     except AttributeError as exc:
 
         # Before quitting, try to load from environment variables
@@ -79,7 +76,20 @@ def get_hexapod_controller_pars(setup: 'Setup' = None) -> (str, int, str, str, s
         hexapod_name = os.environ.get("SYMETRIE_HEXAPOD_NAME")
 
         if hexapod_id is None or hexapod_name is None:
-            raise SetupError("The Setup doesn't contain proper controller parameters for the Hexapod.") from exc
+            raise SetupError(
+                textwrap.dedent(
+                    """
+                    Some information on the PUNA Hexapod is missing:
+                      
+                    - The Setup doesn't contain proper controller parameters for the Hexapod. 
+                      The device name and/or id is missing.
+                    - The SYMETRIE_HEXAPOD_ID or SYMETRIE_HEXAPOD_NAME environment variable is 
+                      not set.
+                      
+                    Check the documentation on the PUNA settings.
+                    """
+                )
+            ) from exc
 
     hexapod_id = f"H_{hexapod_id}"
 

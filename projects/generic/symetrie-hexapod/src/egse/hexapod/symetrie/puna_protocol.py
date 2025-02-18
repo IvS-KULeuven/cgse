@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 from egse.command import ClientServerCommand
 from egse.control import ControlServer
@@ -13,11 +14,13 @@ from egse.settings import Settings
 from egse.system import format_datetime
 from egse.zmq_ser import bind_address
 
-logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
+
+_HERE = Path(__file__).parent
 
 ctrl_settings = Settings.load("Hexapod PUNA Control Server")
 PUNA_SETTINGS = Settings.load("PMAC Controller")
-DEVICE_SETTINGS = Settings.load(filename="puna.yaml")
+DEVICE_SETTINGS = Settings.load(filename="puna.yaml", location=_HERE)
 
 
 class PunaCommand(ClientServerCommand):
@@ -25,13 +28,14 @@ class PunaCommand(ClientServerCommand):
 
 
 class PunaProtocol(CommandProtocol):
-    def __init__(self, control_server: ControlServer):
+    def __init__(self, control_server: ControlServer, simulator: bool = False):
         super().__init__()
         self.control_server = control_server
+        self.simulator = simulator
 
         # self.hk_conversion_table = read_conversion_dict(self.control_server.get_storage_mnemonic(), use_site=True)
 
-        if Settings.simulation_mode():
+        if self.simulator:
             self.hexapod = PunaSimulator()
         else:
             hostname, port, device_id, device_name, controller_type = get_hexapod_controller_pars()
@@ -44,7 +48,7 @@ class PunaProtocol(CommandProtocol):
         try:
             self.hexapod.connect()
         except ConnectionError:
-            logger.warning("Couldn't establish a connection to the PUNA Hexapod, check the log messages.")
+            _LOGGER.warning("Couldn't establish a connection to the PUNA Hexapod, check the log messages.")
 
         self.load_commands(DEVICE_SETTINGS.Commands, PunaCommand, PunaInterface)
         self.build_device_method_lookup_table(self.hexapod)
@@ -62,7 +66,7 @@ class PunaProtocol(CommandProtocol):
 
         status = super().get_status()
 
-        if self.state == DeviceConnectionState.DEVICE_NOT_CONNECTED and not Settings.simulation_mode():
+        if self.state == DeviceConnectionState.DEVICE_NOT_CONNECTED and not self.simulator:
             return status
 
         mach_positions = self.hexapod.get_machine_positions()
@@ -78,7 +82,7 @@ class PunaProtocol(CommandProtocol):
         result = dict()
         result["timestamp"] = format_datetime()
 
-        if self.state == DeviceConnectionState.DEVICE_NOT_CONNECTED and not Settings.simulation_mode():
+        if self.state == DeviceConnectionState.DEVICE_NOT_CONNECTED and not self.simulator:
             return result
 
         mach_positions = self.hexapod.get_machine_positions()
@@ -90,7 +94,7 @@ class PunaProtocol(CommandProtocol):
 
         if mach_positions is None or user_positions is None or actuator_length is None:
             if not self.hexapod.is_connected():
-                logger.warning("Hexapod PUNA disconnected.")
+                _LOGGER.warning("Hexapod PUNA disconnected.")
                 self.update_connection_state(DeviceConnectionState.DEVICE_NOT_CONNECTED)
             return result
 
