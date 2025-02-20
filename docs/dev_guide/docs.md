@@ -22,7 +22,7 @@ whenever you make a change in the files below the `docs` folder. After starting 
 navigate to the `http://127.0.0.1:8000/cgse/` site in your favorite browser.
 
 ```shell
-$ mkdocs serve
+$ uv run mkdocs serve
 ```
 
 Now you can update files, create new folders in `docs/*`, create new Markdown files and all changes
@@ -31,8 +31,8 @@ will be reloaded live in the browser.
 When you are ready with updating, you will need to build the site and publish it on GitHub pages:
 
 ```shell
-$ mkdocs build
-$ mkdocs gh-deploy -r upstream -m "documentation update on .."
+$ uv run mkdocs build
+$ uv run mkdocs gh-deploy -r upstream -m "documentation update on .."
 ```
 
 ## Commands
