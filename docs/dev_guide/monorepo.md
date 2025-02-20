@@ -67,7 +67,7 @@ The structure currently is as follows (example from cgse-common):
     └── pytest modules (test_*.py)
 ```
 
-Note that each library or project is a standalone Poetry package with its own `pyproject.toml` file,
+Note that each library or project is a standalone Python package with its own `pyproject.toml` file,
 source code and unit tests.
 
 ## Package versions
