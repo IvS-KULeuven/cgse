@@ -1469,6 +1469,39 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-cgse-command" class="md-nav__link">
+    <span class="md-ellipsis">
+      The cgse Command
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#settings-setup-and-the-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Settings, Setup and the environment
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#common-functionality" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common functionality
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1559,6 +1592,39 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-cgse-command" class="md-nav__link">
+    <span class="md-ellipsis">
+      The cgse Command
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#settings-setup-and-the-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Settings, Setup and the environment
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#common-functionality" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common functionality
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1630,8 +1696,9 @@
 <h1 id="roadmap">Roadmap<a class="headerlink" href="#roadmap" title="Permanent link">&para;</a></h1>
 <p>Don't worry, the feature set will grow..</p>
 <h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
+<h3 id="the-cgse-command">The <code>cgse</code> Command<a class="headerlink" href="#the-cgse-command" title="Permanent link">&para;</a></h3>
+<p>Provide a <code>cgse</code> command that is extensible with new commands and command groups:</p>
 <ul class="task-list">
-<li>A <code>cgse</code> command that is extensible with new commands and command groups:<ul class="task-list">
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> a command to initialise your environment.</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> a command to check versions of installed packages.</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> a command to check your installation, settings, setups, environment ..</li>
@@ -1639,16 +1706,18 @@
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> a command to list running CGSE processes.</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> device drivers shall be able to plug in their own command groups.</li>
 </ul>
-</li>
+<h3 id="settings-setup-and-the-environment">Settings, Setup and the environment<a class="headerlink" href="#settings-setup-and-the-environment" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> A modular/decomposed <code>settings.yaml</code> file.</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> A clear set of environment variables.</li>
-<li>Setups:<ul class="task-list">
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> automatic submit to GitHub</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> a TUI for inspecting the loaded Setup</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> automatic submit of new Setups to GitHub.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> a TUI for inspecting the loaded Setup.</li>
 </ul>
-</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>tui-executor</code> integration</li>
+<h3 id="common-functionality">Common functionality<a class="headerlink" href="#common-functionality" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Reference Frames and coordinate transformations -&gt; Graphs</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Metrics for all devices will be handled using InfluxDB</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Use of Grafana to visualize the metrics</li>
 </ul>
 <h2 id="devices">Devices<a class="headerlink" href="#devices" title="Permanent link">&para;</a></h2>
 <ul class="task-list">
@@ -1664,6 +1733,7 @@
 <h2 id="guis-and-tuis">GUIs and TUIs<a class="headerlink" href="#guis-and-tuis" title="Permanent link">&para;</a></h2>
 <ul class="task-list">
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> A Process Manager TUI</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>tui-executor</code> integration</li>
 </ul>
 <h2 id="removals">Removals<a class="headerlink" href="#removals" title="Permanent link">&para;</a></h2>
 <ul class="task-list">
