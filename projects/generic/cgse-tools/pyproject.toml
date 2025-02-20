@@ -23,9 +23,6 @@ dependencies = [
     "textual>=2.0.0",
 ]
 
-[project.optional-dependencies]
-test = ["pytest", "pytest-mock", "pytest-cov"]
-
 [project.scripts]
 cgse-status = "egse.tools.status:main"
 
@@ -68,5 +65,7 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
     "ruff>=0.9.0",
 ]
