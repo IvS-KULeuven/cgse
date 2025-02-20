@@ -1576,29 +1576,29 @@
 
 <h1 id="building-the-documentation">Building the documentation<a class="headerlink" href="#building-the-documentation" title="Permanent link">&para;</a></h1>
 <ul>
-<li>Make sure you are in a virtual environment with Python 3.10+</li>
+<li>Make sure you are in a virtual environment with Python 3.9+ or use the <code>uv</code> commands as
+  demonstrated below.</li>
 <li>Run the <code>mkdocs serve</code> from the project root older</li>
 <li>Create new pages by adding folder and Markdown files inside <code>docs/*</code></li>
 </ul>
 <h2 id="set-up-your-environment">Set up your environment<a class="headerlink" href="#set-up-your-environment" title="Permanent link">&para;</a></h2>
-<p>I created a virtual environment using <code>pyenv</code> and when I'm working on the documentation, I start up a shell with 
-this environment. Currently, only <code>mkdocs</code> and <code>mkdocs-material</code> are needed. Of course, you need to install these 
-only once.</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>pyenv<span class="w"> </span>virtualenv<span class="w"> </span><span class="m">3</span>.10<span class="w"> </span>cgse-doc-3.10
-$<span class="w"> </span>pyenv<span class="w"> </span>shell<span class="w"> </span>cgse-doc-3.10
-$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>pip<span class="w"> </span>setuptools<span class="w"> </span>wheel
-$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>mkdocs
-$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>mkdocs-material
-</code></pre></div>
-<p>From this shell, navigate to the project root folder and start the <em>live-reload</em> server of <code>mkdocs</code>.</p>
+<p>The <code>pyproject.toml</code> file of the <code>cgse</code> root contains additional dependencies for running the
+<code>mkdocs</code> commands. When working on the documentation, make sure you have installed the 'docs'
+dependency group. Currently, only <code>mkdocs</code> and <code>mkdocs-material</code> are needed. Of course, you need to
+install these only once.</p>
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/github/cgse
-$<span class="w"> </span>mkdocs<span class="w"> </span>serve
+$<span class="w"> </span>uv<span class="w"> </span>sync<span class="w"> </span>--only-group<span class="w"> </span>docs
 </code></pre></div>
-<p>Now you can update files, create new folders in <code>docs/*</code>, create new Markdown files and all changes will be reloaded 
-live in the browser.</p>
+<p>Now you can start the <em>live-reload</em> server of <code>mkdocs</code>. This will recreate the documentation 
+whenever you make a change in the files below the <code>docs</code> folder. After starting this command, 
+navigate to the <code>http://127.0.0.1:8000/cgse/</code> site in your favorite browser.</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>mkdocs<span class="w"> </span>serve
+</code></pre></div>
+<p>Now you can update files, create new folders in <code>docs/*</code>, create new Markdown files and all changes
+will be reloaded live in the browser.</p>
 <p>When you are ready with updating, you will need to build the site and publish it on GitHub pages:</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>mkdocs<span class="w"> </span>build
-$<span class="w"> </span>mkdocs<span class="w"> </span>gh-deploy<span class="w"> </span>-r<span class="w"> </span>upstream<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;documentation update on ..&quot;</span>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>mkdocs<span class="w"> </span>build
+$<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>mkdocs<span class="w"> </span>gh-deploy<span class="w"> </span>-r<span class="w"> </span>upstream<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;documentation update on ..&quot;</span>
 </code></pre></div>
 <h2 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link">&para;</a></h2>
 <ul>
@@ -1608,10 +1608,28 @@ $<span class="w"> </span>mkdocs<span class="w"> </span>gh-deploy<span class="w">
 <li><code>mkdocs -h</code> — print a help message for more options</li>
 </ul>
 <h2 id="project-layout">Project layout<a class="headerlink" href="#project-layout" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code>mkdocs.yml     # the mkdocs configuration file
-docs/
-    index.md   # the documentation homepage
-    ...        # other markdown pages, image, folders, ...
+<p>The documentation pages follow more or less the structure of the code in terms of libs and 
+projects. Below I have laid out this structure leaving out less important files and folders. </p>
+<div class="highlight"><pre><span></span><code>mkdocs.yml         # the mkdocs configuration file
+docs
+├── index.md       # the documentation homepage
+├── initialize.md
+├── getting_started.md
+├── package_list.md
+├── dev_guide/
+├── user_guide/
+├── libs
+│   ├── cgse-common/
+│   ├── cgse-coordinates/
+│   ├── cgse-core/
+│   ├── cgse-gui/
+│   └── index.md
+├── projects/
+│   ├── cgse-tools.md
+│   ├── symetrie-hexapod.md
+│   └── index.md
+├── images/
+└── roadmap.md
 </code></pre></div>
 
 
