@@ -1584,10 +1584,10 @@
 <h2 id="set-up-your-environment">Set up your environment<a class="headerlink" href="#set-up-your-environment" title="Permanent link">&para;</a></h2>
 <p>The <code>pyproject.toml</code> file of the <code>cgse</code> root contains additional dependencies for running the
 <code>mkdocs</code> commands. When working on the documentation, make sure you have installed the 'docs'
-dependency group. Currently, only <code>mkdocs</code> and <code>mkdocs-material</code> are needed. Of course, you need to
-install these only once.</p>
+dependency group. Currently, only <code>mkdocs</code> and <code>mkdocs-material</code> are needed. You can use the 
+following command to add the documentation dependencies to your development environment.</p>
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/github/cgse
-$<span class="w"> </span>uv<span class="w"> </span>sync<span class="w"> </span>--only-group<span class="w"> </span>docs
+$<span class="w"> </span>uv<span class="w"> </span>sync<span class="w"> </span>--all-packages<span class="w"> </span>--all-groups
 </code></pre></div>
 <p>Now you can start the <em>live-reload</em> server of <code>mkdocs</code>. This will recreate the documentation 
 whenever you make a change in the files below the <code>docs</code> folder. After starting this command, 
