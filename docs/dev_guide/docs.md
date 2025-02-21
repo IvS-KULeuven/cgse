@@ -9,12 +9,12 @@
 
 The `pyproject.toml` file of the `cgse` root contains additional dependencies for running the
 `mkdocs` commands. When working on the documentation, make sure you have installed the 'docs'
-dependency group. Currently, only `mkdocs` and `mkdocs-material` are needed. Of course, you need to
-install these only once.
+dependency group. Currently, only `mkdocs` and `mkdocs-material` are needed. You can use the 
+following command to add the documentation dependencies to your development environment.
 
 ```shell
 $ cd ~/github/cgse
-$ uv sync --only-group docs
+$ uv sync --all-packages --all-groups
 ```
 
 Now you can start the _live-reload_ server of `mkdocs`. This will recreate the documentation 
