@@ -737,7 +737,7 @@ class Setup(NavigableDict):
             warnings.warn(f"Setup file doesn't have a 'Setup' group: {filename!s}")
 
         setup = Setup(setup_dict, label="Setup")
-        setup.set_private_attribute("_filename", filename)
+        setup.set_private_attribute("_filename", Path(filename))
         if setup_id := _parse_filename_for_setup_id(str(filename)):
             setup.set_private_attribute("_setup_id", setup_id)
 
@@ -777,7 +777,7 @@ class Setup(NavigableDict):
 
             self._save(fd, indent=1)
 
-        self.set_private_attribute("_filename", filename)
+        self.set_private_attribute("_filename", Path(filename))
 
     @staticmethod
     def compare(setup_1: NavigableDict, setup_2: NavigableDict):
