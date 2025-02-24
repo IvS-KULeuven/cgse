@@ -3,6 +3,10 @@ import asyncio
 import rich
 import typer
 
+from ._start import start_log_cs, start_sm_cs, start_cm_cs
+from ._stop import stop_log_cs, stop_sm_cs, stop_cm_cs
+from ._status import run_all_status
+
 app = typer.Typer(
     name="core",
     help="handle core services: start, stop, status",
@@ -13,7 +17,6 @@ app = typer.Typer(
 @app.command(name="start")
 def start_core_services():
     """Start the core services in the background."""
-    from scripts._start import start_log_cs, start_sm_cs, start_cm_cs
 
     rich.print("[green]Starting the core services...[/]")
 
@@ -25,7 +28,6 @@ def start_core_services():
 @app.command(name="stop")
 def stop_core_services():
     """Stop the core services."""
-    from scripts._stop import stop_log_cs, stop_sm_cs, stop_cm_cs
 
     rich.print("[green]Terminating the core services...[/]")
 
@@ -41,7 +43,6 @@ def status_core_services(full: bool = False):
 
     rich.print("[green]Status of the core services...[/]")
 
-    from scripts._status import run_all_status
     asyncio.run(run_all_status(full))
 
     # status_log_cs()
