@@ -36,7 +36,7 @@ cgse-core = 'egse.version:get_version_installed'
 cgse-core = "cgse_core:settings.yaml"
 
 [project.entry-points."cgse.service"]
-core = 'scripts.services:app'
+core = 'cgse_core.services:app'
 
 [project.entry-points."cgse.explore"]
 explore = "cgse_core.cgse_explore"
@@ -64,7 +64,7 @@ exclude = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/egse", "src/scripts", "src/cgse_core"]
+packages = ["src/egse", "src/cgse_core"]
 
 [tool.ruff]
 line-length = 120
