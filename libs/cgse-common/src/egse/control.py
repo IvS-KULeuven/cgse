@@ -84,9 +84,9 @@ class ControlServer(metaclass=abc.ABCMeta):
 
     The subclass shall define the following:
 
-        - Define the device protocol class -> `self.device_protocol`
-        - Bind the command socket to the device protocol -> `self.dev_ctrl_cmd_sock`
-        - Register the command socket in the poll set -> `self.poller`
+    - Define the device protocol class -> `self.device_protocol`
+    - Bind the command socket to the device protocol -> `self.dev_ctrl_cmd_sock`
+    - Register the command socket in the poll set -> `self.poller`
 
     """
 
@@ -112,8 +112,8 @@ class ControlServer(metaclass=abc.ABCMeta):
         self.scheduled_tasks = []
 
         self.interrupted = False
-        self.mon_delay = 1000   # Delay between publish status information [ms]
-        self.hk_delay = 1000    # Delay between saving housekeeping information [ms]
+        self.mon_delay = 1000  # Delay between publish status information [ms]
+        self.hk_delay = 1000  # Delay between saving housekeeping information [ms]
         self.scheduled_task_delay = 10  # delay time between successive executions of scheduled tasks [seconds]
 
         self.zcontext = zmq.Context.instance()
@@ -147,7 +147,8 @@ class ControlServer(metaclass=abc.ABCMeta):
     def get_communication_protocol(self) -> str:
         """ Returns the communication protocol used by the Control Server.
 
-        Returns: Communication protocol used by the Control Server, as specified in the settings.
+        Returns:
+            Communication protocol used by the Control Server, as specified in the settings.
         """
 
         pass
@@ -156,31 +157,34 @@ class ControlServer(metaclass=abc.ABCMeta):
     def get_commanding_port(self) -> int:
         """ Returns the commanding port used by the Control Server.
 
-        Returns: Commanding port used by the Control Server, as specified in the settings.
+        Returns:
+            Commanding port used by the Control Server, as specified in the settings.
         """
 
         pass
 
     @abc.abstractmethod
     def get_service_port(self) -> int:
-        """ Returns the service port used by the Control Server.
+        """Returns the service port used by the Control Server.
 
-        Returns: Service port used by the Control Server, as specified in the settings.
+        Returns:
+            Service port used by the Control Server, as specified in the settings.
         """
 
         pass
 
     @abc.abstractmethod
     def get_monitoring_port(self) -> int:
-        """ Returns the monitoring port used by the Control Server.
+        """Returns the monitoring port used by the Control Server.
 
-        Returns: Monitoring port used by the Control Server, as specified in the settings.
+        Returns:
+            Monitoring port used by the Control Server, as specified in the settings.
         """
 
         pass
 
     def get_ip_address(self) -> str:
-
+        """Returns the IP address of the current host."""
         return get_host_ip()
 
     def get_storage_mnemonic(self) -> str:
@@ -189,7 +193,8 @@ class ControlServer(metaclass=abc.ABCMeta):
         This is a string that will appear in the filename with the housekeeping information of the device, as a way of
         identifying the device.  If this is not implemented in the subclass, then the class name will be used.
 
-        Returns: Storage mnemonics used by the Control Server, as specified in the settings.
+        Returns:
+            Storage mnemonics used by the Control Server, as specified in the settings.
         """
 
         return self.__class__.__name__
@@ -197,7 +202,8 @@ class ControlServer(metaclass=abc.ABCMeta):
     def get_process_status(self) -> dict:
         """ Returns the process status of the Control Server.
 
-        Returns: Dictionary with the process status of the Control Server.
+        Returns:
+            Dictionary with the process status of the Control Server.
         """
 
         return self._process_status.as_dict()
@@ -205,8 +211,9 @@ class ControlServer(metaclass=abc.ABCMeta):
     def get_average_execution_times(self) -> dict:
         """ Returns the average execution times of all functions that have been monitored by this process.
 
-        Returns: Dictionary with the average execution times of all functions that have been monitored by this process.
-                 The dictionary keys are the function names, and the values are the average execution times in ms.
+        Returns:
+            Dictionary with the average execution times of all functions that have been monitored by this process.
+              The dictionary keys are the function names, and the values are the average execution times in ms.
         """
 
         return get_average_execution_times()
@@ -224,7 +231,8 @@ class ControlServer(metaclass=abc.ABCMeta):
         Args:
             seconds (float): Number of seconds between the monitoring calls
 
-        Returns: Delay that was set [ms].
+        Returns:
+            Delay that was set [ms].
         """
 
         execution_time = get_average_execution_time(self.device_protocol.get_status)
@@ -245,7 +253,8 @@ class ControlServer(metaclass=abc.ABCMeta):
         Args:
             seconds (float): Number of seconds between the housekeeping calls
 
-        Returns: Delay that was set [ms].
+        Returns:
+            Delay that was set [ms].
         """
 
         execution_time = get_average_execution_time(self.device_protocol.get_housekeeping)
@@ -267,14 +276,13 @@ class ControlServer(metaclass=abc.ABCMeta):
         """ Sets the logging level to the given level.
 
         Allowed logging levels are:
-            - "CRITICAL" or 50
-            - "FATAL" or CRITICAL
-            - "ERROR" or 40
-            - "WARNING" or 30
-            - "WARN" or WARNING
-            - "INFO" or 20
-            - "DEBUG" or 10
-            - "NOTSET" or 0
+
+        - "CRITICAL" or "FATAL" or 50
+        - "ERROR" or 40
+        - "WARNING" or "WARN" or 30
+        - "INFO" or 20
+        - "DEBUG" or 10
+        - "NOTSET" or 0
 
         Args:
             level (int | str): Logging level to use, specified as either a string or an integer
@@ -288,12 +296,18 @@ class ControlServer(metaclass=abc.ABCMeta):
         self.interrupted = True
 
     def before_serve(self) -> None:
-        """ Steps to take before the Control Server is activated."""
+        """
+        This method needs to be overridden by the subclass if certain actions need to be executed before the control
+        server is activated.
+        """
 
         pass
 
     def after_serve(self) -> None:
-        """ Steps to take after the Control Server has been deactivated."""
+        """
+        This method needs to be overridden by the subclass if certain actions need to be executed after the control
+        server has been deactivated.
+        """
 
         pass
 
@@ -306,11 +320,12 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         Note: If this method returns True, the following methods shall also be implemented by the subclass:
 
-            - register_to_storage_manager()
-            - unregister_from_storage_manager()
-            - store_housekeeping_information()
+        - register_to_storage_manager()
+        - unregister_from_storage_manager()
+        - store_housekeeping_information()
 
-        Returns: True if the Storage Manager is active; False otherwise.
+        Returns:
+            True if the Storage Manager is active; False otherwise.
         """
 
         return False
@@ -400,18 +415,18 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         This comprises the following steps:
 
-            - Executing the `before_serve` method;
-            - Checking if the Storage Manager is active and registering the Control Server to it;
-            - Start listening  for keyboard interrupts;
-            - Start accepting (listening to) commands;
-            - Start sending out monitoring information;
-            - Start sending out housekeeping information;
-            - Start listening for quit commands;
-            - After a quit command has been received:
-                - Unregister from the Storage Manager;
-                - Execute the `after_serve` method;
-                - Close all sockets;
-                - Clean up all threads.
+        - Executing the `before_serve` method;
+        - Checking if the Storage Manager is active and registering the Control Server to it;
+        - Start listening  for keyboard interrupts;
+        - Start accepting (listening to) commands;
+        - Start sending out monitoring information;
+        - Start sending out housekeeping information;
+        - Start listening for quit commands;
+        - After a quit command has been received:
+            - Unregister from the Storage Manager;
+            - Execute the `after_serve` method;
+            - Close all sockets;
+            - Clean up all threads.
         """
 
         self.before_serve()
@@ -460,14 +475,15 @@ class ControlServer(metaclass=abc.ABCMeta):
                         save_average_execution_time(self.device_protocol.get_status)
                     )
                 except Exception as exc:
-                    _LOGGER.error(textwrap.dedent(
-                        f"""\
+                    _LOGGER.error(
+                        textwrap.dedent(
+                            f"""\
                         An Exception occurred while collecting status info from the control server {self.__class__.__name__}.
                         This might be a temporary problem, still needs to be looked into:
 
                         {exc}
                         """
-                    ))
+                        ))
 
             if time_in_ms() - last_time_hk >= self.hk_delay:
                 last_time_hk = time_in_ms()
@@ -478,14 +494,15 @@ class ControlServer(metaclass=abc.ABCMeta):
                             save_average_execution_time(self.device_protocol.get_housekeeping)
                         )
                     except Exception as exc:
-                        _LOGGER.error(textwrap.dedent(
-                            f"""\
+                        _LOGGER.error(
+                            textwrap.dedent(
+                                f"""\
                             An Exception occurred while collecting housekeeping from the device to be stored in {self.get_storage_mnemonic()}.
                             This might be a temporary problem, still needs to be looked into:
 
                             {exc}
                             """
-                        ))
+                            ))
 
             # Handle scheduled tasks/callback functions
 
@@ -537,7 +554,7 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         Args:
             data (dict): a dictionary containing parameter name and value of all device housekeeping. There is also
-            a timestamp that represents the date/time when the HK was received from the device.
+              a timestamp that represents the date/time when the HK was received from the device.
         """
         pass
 
@@ -553,15 +570,16 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         The following   information is required for the registration:
 
-            - origin: Storage mnemonic, which can be retrieved from `self.get_storage_mnemonic()`
-            - persistence_class: Persistence layer (one of the TYPES in egse.storage.persistence)
-            - prep: depending on the type of the persistence class (see respective documentation)
+        - origin: Storage mnemonic, which can be retrieved from `self.get_storage_mnemonic()`
+        - persistence_class: Persistence layer (one of the TYPES in egse.storage.persistence)
+        - prep: depending on the type of the persistence class (see respective documentation)
 
         The `egse.storage` module provides a convenience method that can be called from the method in the subclass:
 
             >>> from egse.storage import register_to_storage_manager  # noqa
 
-        Note: the `egse.storage` module might not be available, it is provided by the `cgse-core` package.
+        Note:
+            the `egse.storage` module might not be available, it is provided by the `cgse-core` package.
         """
         pass
 
@@ -572,13 +590,14 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         The following information is required for the registration:
 
-            - origin: Storage mnemonic, which can be retrieved from `self.get_storage_mnemonic()`
+        - origin: Storage mnemonic, which can be retrieved from `self.get_storage_mnemonic()`
 
         The `egse.storage` module provides a convenience method that can be called from the method in the subclass:
 
             >>> from egse.storage import unregister_from_storage_manager  # noqa
 
-        Note: the `egse.storage` module might not be available, it is provided by the `cgse-core` package.
+        Note:
+            the `egse.storage` module might not be available, it is provided by the `cgse-core` package.
         """
 
         pass
@@ -606,8 +625,9 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         self.logger.info(f"Notifying listeners for {EVENT_ID(event_id).name}")
 
-        retry_thread = threading.Thread(target=self.listeners.notify_listeners,
-                                        args=(Event(event_id=event_id, context=context),))
+        retry_thread = threading.Thread(
+            target=self.listeners.notify_listeners,
+            args=(Event(event_id=event_id, context=context),))
         retry_thread.daemon = True
         retry_thread.start()
 
@@ -635,6 +655,7 @@ class ControlServer(metaclass=abc.ABCMeta):
             The function runs in a separate daemon thread to avoid blocking the main thread.
 
         """
+
         @retry_with_exponential_backoff(exceptions=[ConnectionError])
         def _add_listener(proxy, listener):
             with proxy() as x, x.get_service_proxy() as srv:
@@ -670,6 +691,7 @@ class ControlServer(metaclass=abc.ABCMeta):
             finish before the ZeroMQ context is destroyed.
 
         """
+
         @retry(times=5, exceptions=[ConnectionError])
         def _remove_listener(proxy, listener):
             with proxy() as x, x.get_service_proxy() as srv:

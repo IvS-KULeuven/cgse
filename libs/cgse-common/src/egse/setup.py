@@ -1,4 +1,6 @@
 """
+# Setup
+
 This module defines the Setup, which contains the complete configuration information for a test.
 
 The Setup class contains all configuration items that are specific for a test or observation
@@ -32,11 +34,11 @@ To get a full printout of the Setup, you can use the `pretty_str()` method. Be c
 this can print out a lot of information when a full Setup is loaded.
 
     >>> print(setup)
-    gse:
-        hexapod:
-            ID: 42
-            calibration: [0, 1, 2, 3, 4, 5]
-    <BLANKLINE>
+    Setup
+    └── gse
+        └── hexapod
+            ├── ID: 42
+            └── calibration: [0, 1, 2, 3, 4, 5]
 
 ### Special Values
 
@@ -45,9 +47,11 @@ processed before returning. Examples are the device classes and calibration/data
 following values are treated special if they start with:
 
 * `class//`: instantiate the class and return the object
+* `factory//`: instantiates a factory and executes its `create()` method
 * `csv//`: load the CSV file and return a numpy array
 * `yaml//`: load the YAML file and return a dictionary
-* `enum//`: dynamically create the enumeration and return the Enum object
+* `pandas//`: load a CSV file into a pandas Dataframe
+* `int-enum//`: dynamically create the enumeration and return the Enum object
 
 #### Device Classes
 
@@ -55,14 +59,16 @@ Most of the hardware components in the Setup will have a `device` key that defin
 the device controller. The `device` keys have a value that starts with `class//` and it will
 return the device object. As an example, the following defines the Hexapod device:
 
-    >>> setup = Setup({
+    >>> setup = Setup(
+    ...   {
     ...     "gse": {
-    ...         "hexapod": {"ID": 42, "device": "class//egse.hexapod.symetrie.puna.PunaSimulator"}
+    ...       "hexapod": {"ID": 42, "device": "class//egse.hexapod.symetrie.puna.PunaSimulator"}
     ...     }
-    ... })
+    ...   }
+    ... )
     >>> setup.gse.hexapod.device.is_homing_done()
     False
-    >>> setup.gse.hexapod.device.info()  # doctest: +ELLIPSIS
+    >>> setup.gse.hexapod.device.info()
     'Info about the PunaSimulator...'
 
 In the above example you see that we can call the `is_homing_done()` and `info()` methodes
@@ -70,15 +76,15 @@ directly on the device by navigating the Setup. It would however be better (more
 put the device object in a variable and work with that variable:
 
     >>> hexapod = setup.gse.hexapod.device
-    >>> _ = hexapod.homing()
+    >>> hexapod.homing()
     >>> hexapod.is_homing_done()
     True
-    >>> _ = hexapod.get_user_positions()
+    >>> hexapod.get_user_positions()
 
 If you need, for some reason, to have access to the actual raw value of the hexapod device key,
 use the `get_raw_value()` method:
 
-    >>> setup.gse.hexapod.get_raw_value("device")  # doctest: +ELLIPSIS
+    >>> setup.gse.hexapod.get_raw_value("device")
     <egse.hexapod.symetrie.puna.PunaSimulator object at ...
 
 #### Data Files
@@ -95,8 +101,12 @@ starts with `csv//` or `yaml//`.
     >>> setup.instrument.coeff[0, 4]
     5.0
 
-Note: the resource location is always relative to the path defined by the PLATO_CONF_DATA_LOCATION
+Note: the resource location is always relative to the path defined by the *PROJECT*_CONF_DATA_LOCATION
 environment variable.
+
+The Setup inherits from a NavigableDict (aka navdict) which is also defined in this module.
+
+---
 
 """
 
@@ -285,7 +295,7 @@ def disentangle_filename(filename: str) -> tuple:
         filename (str): the filename or fully qualified file path as a string.
 
     Returns:
-          A tuple (site_id, setup_id).
+        A tuple (site_id, setup_id).
     """
     if filename is None:
         return ()
@@ -362,7 +372,7 @@ class NavigableDict(dict):
         >>> assert setup['site_id'] == setup.site_id
         >>> assert setup['version'] == setup.version
 
-    .. note::
+    Note:
         We always want **all** keys to be accessible as attributes, or none. That means all
         keys of the original dictionary shall be of type `str`.
 
@@ -372,6 +382,7 @@ class NavigableDict(dict):
         """
         Args:
             head (dict): the original dictionary
+            label (str): a label or name that is used when printing the navdict
         """
         head = head or {}
         super().__init__(head)
@@ -505,9 +516,6 @@ class NavigableDict(dict):
             key (str): the name of the private attribute (must start with an underscore character).
             value: the value for this private attribute
 
-        Returns:
-            None.
-
         Examples:
             >>> setup = NavigableDict({'a': 1, 'b': 2, 'c': 3})
             >>> setup.set_private_attribute("_loaded_from_dict", True)
@@ -526,7 +534,7 @@ class NavigableDict(dict):
             )
         self.__dict__[key] = value
 
-    def get_private_attribute(self, key: str):
+    def get_private_attribute(self, key: str) -> Any:
         """Returns the value of the given private attribute.
 
         Args:
@@ -535,7 +543,7 @@ class NavigableDict(dict):
         Returns:
             the value of the private attribute given in `key`.
 
-        .. note::
+        Note:
             Because of the implementation, this private attribute can also be accessed as a 'normal'
             attribute of the object. This use is however discouraged as it will make your code less
             understandable. Use the methods to access these 'private' attributes.
@@ -590,7 +598,7 @@ class NavigableDict(dict):
         Args:
             indent (int): number of indentations (of four spaces)
 
-        .. note::
+        Note:
             The indent argument is intended for the recursive call of this function.
         """
         msg = ""
@@ -752,7 +760,7 @@ class Setup(NavigableDict):
         Args:
             filename (str|Path): the path of the YAML file where to save the data
 
-        .. note::
+        Note:
             This method will **overwrite** the original or given YAML file and therefore you might
             lose proper formatting and/or comments.
 
@@ -800,7 +808,7 @@ class Setup(NavigableDict):
     #     return devices
 
     @staticmethod
-    def find_devices(node: NavigableDict, devices: dict = None):
+    def find_devices(node: NavigableDict, devices: dict = None) -> dict:
         """
         Returns a dictionary with the devices that are included in the setup.  The keys
         in the dictionary are taken from the "device_name" entries in the setup file. The
@@ -808,11 +816,11 @@ class Setup(NavigableDict):
         setup file.
 
         Args:
-            - node: Dictionary in which to look for the devices (and their names).
-            - devices: Dictionary in which to include the devices in the setup.
+            node: Dictionary in which to look for the devices (and their names).
+            devices: Dictionary in which to include the devices in the setup.
 
         Returns:
-            - Dictionary with the devices that are included in the setup.
+            Dictionary with the devices that are included in the setup.
         """
         devices = devices or {}
 
@@ -838,20 +846,20 @@ class Setup(NavigableDict):
         return devices
 
     @staticmethod
-    def walk(node: dict, key_of_interest, leaf_list):
+    def walk(node: dict, key_of_interest, leaf_list) -> list:
 
         """
         Walk through the given dictionary, in a recursive way, appending the leaf with
         the given keyword to the given list.
 
         Args:
-            - node: Dictionary in which to look for leaves with the given keyword.
-            - key_of_interest: Key to look for in the leaves of the given dictionary.
-            - leaf_list: List to which to add the leaves with the given keyword.
+            node: Dictionary in which to look for leaves with the given keyword.
+            key_of_interest: Key to look for in the leaves of the given dictionary.
+            leaf_list: List to which to add the leaves with the given keyword.
 
         Returns:
-            - Given list with the leaves (with the given keyword) in the given dictionary
-              appended to it.
+            Given list with the leaves (with the given keyword) in the given dictionary \
+            appended to it.
         """
 
         for key, sub_node in node.items():
@@ -899,13 +907,13 @@ def list_setups(**attr):
     allows us to find all Setups that adhere to the key:value pairs, e.g. to find all Setups for
     CSL at position 2, use:
 
-    >>> list_setups(site_id="CSL", position=2)
+        >>> list_setups(site_id="CSL", position=2)
 
     To have a nested keyword search (i.e. search by `gse.hexapod.ID`) then pass in
     `gse__hexapod__ID` as the keyword argument. Replace the '.' notation with double underscores
     '__'.
 
-    >>> list_setups(gse__hexapod__ID=4)
+        >>> list_setups(gse__hexapod__ID=4)
     """
 
     try:
@@ -1020,11 +1028,11 @@ def get_path_of_setup_file(setup_id: int, site_id: str) -> Path:
         The full path to the requested Setup file.
 
     Raises:
-        LookupError when the environment variable is not set.
+        LookupError: when the environment variable is not set.
 
-        NotADirectoryError when either the repository folder or the Setups folder doesn't exist.
+        NotADirectoryError: when either the repository folder or the Setups folder doesn't exist.
 
-        FileNotFound when no Setup file can be found for the given arguments.
+        FileNotFoundError: when no Setup file can be found for the given arguments.
 
     """
 
@@ -1053,7 +1061,7 @@ def get_path_of_setup_file(setup_id: int, site_id: str) -> Path:
 
 def load_setup(
         setup_id: int = None,
-        site_id: str = None, from_disk: bool = False):
+        site_id: str = None, from_disk: bool = False) -> Setup:
     """
     This function loads the Setup corresponding with the given `setup_id`.
 
@@ -1070,7 +1078,7 @@ def load_setup(
         from_disk (bool): True if the Setup needs to be loaded from disk
 
     Returns:
-        The requested Setup or None when the Setup could not be loaded from the
+        The requested Setup or None when the Setup could not be loaded from the \
         configuration manager.
 
     """
@@ -1118,7 +1126,7 @@ def load_setup(
     return GlobalState.load_setup()
 
 
-def submit_setup(setup: Setup, description: str):
+def submit_setup(setup: Setup, description: str) -> str | None:
     """
     Submit the given Setup to the Configuration Manager.
 
@@ -1130,6 +1138,7 @@ def submit_setup(setup: Setup, description: str):
     Args:
         setup (Setup): a (new) Setup to submit to the configuration manager
         description (str): one-liner to help identifying the Setup afterwards
+
     Returns:
         The Setup ID of the newly created Setup or None.
     """

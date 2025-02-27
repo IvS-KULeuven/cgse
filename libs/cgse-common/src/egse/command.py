@@ -4,7 +4,7 @@ with commands that operate hardware devices. The goal is to be able to define /
 create commands transparently from a YAML file without having to write (too much)
 code.
 
-A few definitions for the classes defined in this module:
+# Definitions
 
 **command**
 
@@ -40,10 +40,12 @@ or if the number of arguments is not matching expectations
 
 The basic interface is:
 
-    cmd = Command(name     = <command name>,
-                  cmd      = <command string>,
-                  response = <callable to retreive a response>,
-                  wait     = <callable to wait a specific time/delay>)
+```python
+cmd = Command(name     = <command name>,
+              cmd      = <command string>,
+              response = <callable to retreive a response>,
+              wait     = <callable to wait a specific time/delay>)
+```
 
 where:
 
@@ -51,15 +53,15 @@ where:
 * cmd: the command string to send or execute, see further for details
 * response: send a second command to read or get a response on the 'cmd' sent
 * wait: a function object that will wait for a specific duration,
-  e.g. ```partial(time.sleep, 10)```
+  e.g. `partial(time.sleep, 10)`.
 
-How to format device command strings
+# Formatting device command strings
 
-The ``cmd`` argument is a string that contains placeholders (replacement fields)
+The `cmd` argument is a string that contains placeholders (replacement fields)
 for future arguments that will be passed when calling the Command. The replacement
 fields are marked with curly braces and are mandatory. When a name is provided
 in the curly braces, the argument shall be provided as a keyword argument, otherwise
-a positional argument is expected. In the current implementation the ``cmd``
+a positional argument is expected. In the current implementation the `cmd`
 can only contain either positional arguments or keyword argument, not a mix of both.
 
 The replacement fields may also have a format specifier to specify a precise format
@@ -67,17 +69,18 @@ for that field.
 
 **Examples**
 
-    moveAbsolute = Command(
-        name = "moveAbsolute",
-        cmd  = "&2 Q70=0 Q71={tx:.6f} Q72={ty:.6f} Q73={tz:.6f} "
-               "Q74={rx:.6f} Q75={ry:.6f} Q76={rz:.6f} Q20=11"
-    )
+```python
+moveAbsolute = Command(
+    name = "moveAbsolute",
+    cmd  = "&2 Q70=0 Q71={tx:.6f} Q72={ty:.6f} Q73={tz:.6f} "
+           "Q74={rx:.6f} Q75={ry:.6f} Q76={rz:.6f} Q20=11"
+)
 
-    response = moveAbsolute(1, 1, 1, 0, 0, 20)
-    response = moveAbsolute(tx=1, ty=1, tz=1, rx=0, ry=0, rz=20)
+response = moveAbsolute(1, 1, 1, 0, 0, 20)
+response = moveAbsolute(tx=1, ty=1, tz=1, rx=0, ry=0, rz=20)
+```
 
-
-Questions
+# Questions
 
 Do we need additional hooks into this commanding?
 
@@ -228,17 +231,16 @@ class CommandExecution:
     automatically. That is the responsibility of the caller to actually execute
     the command with the given parameters.
 
-    Developer info
+    Developer info:
+        you can see this as a partial (functools) which defines the command and
+        its arguments, but doesn't execute until explicitly called. You can execute
+        the command by calling the `cmd` with the given arguments:
 
-    you can see this as a partial (functools) which defines the command and
-    its arguments, but doesn't execute until explicitly called. You can execute
-    the command by calling the `cmd` with the given arguments:
-
-       ```
-       ce = CommandExecution(cmd, 20.0)
-       ...
-       response = ce.run()
-       ```
+        ```python
+        ce = CommandExecution(cmd, 20.0)
+        ...
+        response = ce.run()
+        ```
     """
 
     def __init__(self, cmd, *args, **kwargs):
@@ -274,16 +276,17 @@ class CommandExecution:
 
 
 class InvalidCommandExecution(CommandExecution):
-    """A invalid command execution."""
+    """
+    A invalid command execution.
+
+    Args:
+        exc: the Exception that was raised and describes the problem
+        cmd: the Command object
+        *args: the positional arguments that were given
+        **kwargs: the keyword arguments that were given
+    """
 
     def __init__(self, exc, cmd, *args, **kwargs):
-        """
-        Args:
-            exc: the Exception that was raised and describes the problem
-            cmd: the Command object
-            *args: the positional arguments that were given
-            **kwargs: the keyword arguments that were given
-        """
         super().__init__(cmd, *args, **kwargs)
         self._exc = exc
 
@@ -541,7 +544,7 @@ class ClientServerCommand(Command):
         return 0
 
 
-def get_method(parent_obj, method_name: str):
+def get_method(parent_obj, method_name: str) -> Callable:
     """
     Returns a bound method from a given class instance.
 
@@ -552,7 +555,7 @@ def get_method(parent_obj, method_name: str):
     Returns:
         the method [type: method].
 
-    .. note::
+    Note:
         The method returned is an bound class instance method and therefore
         this method *does not* expects as its first argument the class
         instance, i.e. self, when you call this as a function.
@@ -572,7 +575,7 @@ def get_method(parent_obj, method_name: str):
     return None
 
 
-def get_function(parent_class, method_name: str):
+def get_function(parent_class, method_name: str) -> Callable:
     """
     Returns a function (unbound method) from a given class.
 
@@ -583,7 +586,7 @@ def get_function(parent_class, method_name: str):
     Returns:
         the method [type: function].
 
-    .. note::
+    Note:
         The function returned is an unbound class instance method and
         therefore this function expects as its first argument the class
         instance, i.e. self, when you call it as a function.
@@ -609,7 +612,7 @@ def load_commands(protocol_class, command_settings, command_class, device_class)
     dictionary containing the command names as keys and the corresponding ``Command`` class objects
     as values.
 
-    The ``command_settings`` is usually loaded from a YAML configuration file containing the
+    The `command_settings` is usually loaded from a YAML configuration file containing the
     command definitions for the device.
 
     Args:
