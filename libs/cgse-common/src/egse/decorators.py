@@ -26,9 +26,12 @@ def static_vars(**kwargs):
 
     The static variable can be accessed with <function name>.<variable name> inside the function body.
 
+    Example:
+        ```python
         @static_vars(count=0)
         def special_count():
             return special_count.count += 2
+        ```
 
     """
     def decorator(func):
@@ -205,11 +208,13 @@ def time_it(count: int = 1000, precision: int = 4):
         the ``Timer`` context manager located in ``egse.system``.
 
     Usage:
+        ```python
         @time_it(count=10000)
         def function(args):
             pass
 
         time_it(10000)(function)(args)
+        ```
     """
 
     def actual_decorator(func):
@@ -230,7 +235,7 @@ def time_it(count: int = 1000, precision: int = 4):
 
 
 def debug(func):
-    """Print the function signature and return value"""
+    """Logs the function signature and return value."""
 
     @functools.wraps(func)
     def wrapper_debug(*args, **kwargs):
@@ -250,11 +255,6 @@ def debug(func):
 
 def profile_func(output_file=None, sort_by='cumulative', lines_to_print=None, strip_dirs=False):
     """A time profiler decorator.
-
-    This code was taken from: https://gist.github.com/ekhoda/2de44cf60d29ce24ad29758ce8635b78
-
-    Inspired by and modified the profile decorator of Giampaolo Rodola:
-    http://code.activestate.com/recipes/577817-profile-decorator/
 
     Args:
         output_file: str or None. Default is None
@@ -276,6 +276,15 @@ def profile_func(output_file=None, sort_by='cumulative', lines_to_print=None, st
 
     Returns:
         Profile of the decorated function
+
+    Note:
+        This code was taken from this gist: [a profile
+        decorator](https://gist.github.com/ekhoda/2de44cf60d29ce24ad29758ce8635b78).
+
+        Inspired by and modified the profile decorator of Giampaolo Rodola:
+        [profile decorato](http://code.activestate.com/recipes/577817-profile-decorator/).
+
+
     """
 
     def inner(func):
@@ -344,7 +353,7 @@ class Profiler:
     - count: count the number of times this function is executed
     - duration: measure the total and average duration of the function [seconds]
 
-    Example:
+    Examples:
           >>> from egse.decorators import Profiler
           >>> @Profiler.count()
           ... def square(x):
@@ -463,10 +472,17 @@ def deprecate(reason: Optional[str] = None,
     it is called from. If the optional parameters `reason` and `alternative` are given, that
     information will be printed with the warning.
 
+    Examples:
+
+        @deprecate(reason="it doesn't follow PEP8", alternative="set_color()")
+        def setColor(self, color):
+            self.set_color(color)
+
     Args:
         reason: provide a short explanation why this function is deprecated. Generates 'because {reason}'
         alternative: provides an alternative function/parameters to be used. Generates 'Use {alternative}
         as an alternative'
+
     Returns:
         The decorated function.
     """
@@ -496,7 +512,8 @@ def singleton(cls):
     """
     Use class as a singleton.
 
-    from: https://wiki.python.org/moin/PythonDecoratorLibrary#Singleton
+    from:
+        [Decorator library: Signleton](https://wiki.python.org/moin/PythonDecoratorLibrary#Singleton)
     """
 
     cls.__new_original__ = cls.__new__
@@ -522,7 +539,9 @@ def borg(cls):
     """
     Use the Borg pattern to make a class with a shared state between its instances and subclasses.
 
-    from: http://code.activestate.com/recipes/66531-singleton-we-dont-need-no-stinkin-singleton-the-bo/
+    from:
+        [we don't need no singleton](
+        http://code.activestate.com/recipes/66531-singleton-we-dont-need-no-stinkin-singleton-the-bo/)
     """
 
     cls._shared_state = {}
@@ -540,7 +559,7 @@ def borg(cls):
 class classproperty:
     """Defines a read-only class property.
 
-    Usage:
+    Examples:
 
         >>> class Message:
         ...     def __init__(self, msg):
@@ -585,15 +604,18 @@ def spy_on_attr_change(obj: object, obj_name: str = None) -> None:
         obj_name (str): the variable name of the object that was given in the code, if None than
             the class name will be printed.
 
-    Examples:
+    Example:
+        ```python
+        class X:
+           pass
 
-        >>> class X:
-        ...    pass
-        >>> x = X()
-        >>> spy_on_attr_change(x, obj_name="x")
-        >>> x.a = 5
+        x = X()
+        spy_on_attr_change(x, obj_name="x")
+        x.a = 5
+        ```
 
-    From: https://nedbatchelder.com/blog/202206/adding_a_dunder_to_an_object.html
+    From:
+        [Adding a dunder to an object](https://nedbatchelder.com/blog/202206/adding_a_dunder_to_an_object.html)
     """
     logger = logging.getLogger("egse.spy")
 
@@ -624,9 +646,9 @@ def retry_with_exponential_backoff(max_attempts=5, initial_wait=1.0, backoff_fac
     calling function, otherwise the functions return value will be returned.
 
     Args:
-    - max_attempts: The maximum number of attempts to make.
-    - initial_wait: The initial waiting time in seconds before retrying after the first failure.
-    - backoff_factor: The factor by which the wait time increases after each failure.
+        max_attempts: The maximum number of attempts to make.
+        initial_wait: The initial waiting time in seconds before retrying after the first failure.
+        backoff_factor: The factor by which the wait time increases after each failure.
 
     Returns:
         The response from the executed function.
@@ -692,9 +714,11 @@ def retry(times: int = 3, wait: float = 10.0, exceptions: List = None):
     Example:
         Apply the retry decorator to a function with specific retry settings:
 
-            @retry(times=5, wait=15.0, exceptions=[ConnectionError, TimeoutError])
-            def my_function():
-                # Function logic here
+        ```python
+        @retry(times=5, wait=15.0, exceptions=[ConnectionError, TimeoutError])
+        def my_function():
+            # Function logic here
+        ```
 
     Note:
         The decorator catches specified exceptions and retries the function, logging

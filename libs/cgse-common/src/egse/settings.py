@@ -4,15 +4,15 @@ a [`YAML`](http://yaml.org) file.
 
 The idea is that settings are grouped by components or any arbitrary grouping that makes sense for
 the application or for the user. Settings are also modular and provided by each package by means
-of entry-points.The Settings class can read from different YAML files.
+of entry-points. The Settings class can read from different YAML files.
 
 By default, settings are loaded from a file called `settings.yaml`, but this can be changed in the entry-point
 definition.
 
-The yaml configuration files are provided as entry-points by the packages that provided an entry-point
-group 'cgse.settings'. The Settings dictionary (attrdict) is constructed from the configuration YAML
-files from each of the packages. Settings can be overwritten by the next package configuration file.
-So, make sure the group names in each package configuration file are unique.
+The yaml configuration files are provided as entry points by the packages that specified an entry-point group
+'_cgse.settings_' in the `pyproject.toml`. The Settings dictionary (attrdict) is constructed from the configuration
+YAML files from each of the packages. Settings can be overwritten by the next package configuration file. So,
+make sure the group names in each package configuration file are unique.
 
 The YAML file is read and the configuration parameters for the given group are
 available as instance variables of the returned class.
@@ -23,10 +23,8 @@ The intended use is as follows:
 
     dsi_settings = Settings.load("DSI")
 
-    if (dsi_settings.RMAP_BASE_ADDRESS
-        <= addr
-        < dsi_settings.RMAP_BASE_ADDRESS + dsi_settings.RMAP_MEMORY_SIZE):
-        # do something here
+    if 0x000C <= dsi_settings.RMAP_BASE_ADDRESS <= 0x00FF:
+        ...  # do something here
     else:
         raise RMAPError("Attempt to access outside the RMAP memory map.")
 
@@ -59,6 +57,8 @@ If that file is located at a specific location, also use the `location=` keyword
 
 The above code will read the YAML file from the given location and not from the entry-points.
 
+---
+
 """
 from __future__ import annotations
 
@@ -80,6 +80,7 @@ _HERE = Path(__file__).resolve().parent
 
 
 class SettingsError(Exception):
+    """A settings-specific error."""
     pass
 
 
@@ -89,13 +90,14 @@ class SettingsError(Exception):
 SAFE_LOADER = yaml.SafeLoader
 SAFE_LOADER.add_implicit_resolver(
     u'tag:yaml.org,2002:float',
-    re.compile(u"""^(?:
-     [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
-    |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
-    |\\.[0-9_]+(?:[eE][-+][0-9]+)?
-    |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
-    |[-+]?\\.(?:inf|Inf|INF)
-    |\\.(?:nan|NaN|NAN))$""", re.X),
+    re.compile(
+        u"""^(?:
+             [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
+            |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
+            |\\.[0-9_]+(?:[eE][-+][0-9]+)?
+            |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
+            |[-+]?\\.(?:inf|Inf|INF)
+            |\\.(?:nan|NaN|NAN))$""", re.X),
     list(u'-+0123456789.'))
 
 
@@ -104,20 +106,20 @@ def load_settings_file(path: Path, filename: str, force: bool = False) -> attrdi
     Loads the YAML configuration file that is located at `path / filename`.
 
     Args:
-        - path (PATH): the folder where the YAML file is located
-        - filename (str): the name of the YAML configuration file
-        - force (bool): force reloading, i.e. don't use the cached information
+        path (PATH): the folder where the YAML file is located
+        filename (str): the name of the YAML configuration file
+        force (bool): force reloading, i.e. don't use the cached information
 
     Raises:
-        A SettingsError when the configuration file doesn't exist or cannot be found.
-
-        A SettingsError when there was an error reading the configuration file.
+        SettingsError: when the configuration file doesn't exist or cannot be found or \
+        when there was an error reading the configuration file.
 
     Returns:
          A dictionary (attrdict) with all the settings from the given file.
 
-         Note that, in case of an empty configuration file, and empty dictionary
-         is returned and a warning message is issued.
+    Note:
+        in case of an empty configuration file, and empty dictionary \
+        is returned and a warning message is issued.
     """
     try:
         yaml_document = read_configuration_file(path / filename, force=force)
@@ -143,11 +145,11 @@ def load_global_settings(entry_point: str = 'cgse.settings', force: bool = False
     `pyproject.toml` files of the packages that export their global settings.
 
     Args:
-         - entry_point (str): the name of the entry-point group [default: 'cgse.settings']
-         - force (bool): force reloading the settings, i.e. ignore the cache
+         entry_point (str): the name of the entry-point group [default: 'cgse.settings']
+         force (bool): force reloading the settings, i.e. ignore the cache
 
     Returns:
-        A dictionary (attrdict) containing a collection of all the settings exported by the packages
+        A dictionary (attrdict) containing a collection of all the settings exported by the packages \
         through the given entry-point.
 
     """
@@ -166,7 +168,8 @@ def load_global_settings(entry_point: str = 'cgse.settings', force: bool = False
 
 def load_local_settings(force: bool = False) -> attrdict:
     """
-    Loads the local settings file that is defined from the environment variable <PROJECT>_LOCAL_SETTINGS.
+    Loads the local settings file that is defined from the environment variable *PROJECT*_LOCAL_SETTINGS (where
+    *PROJECT* is the name of your project, defined in the environment variable of the same name).
 
     This function might return an empty dictionary when
 
@@ -175,12 +178,13 @@ def load_local_settings(force: bool = False) -> attrdict:
 
     in both cases a warning message is logged.
 
+    Raises:
+        SettingsError: when the local settings YAML file is not found. Check the *PROJECT*_LOCAL_SETTINGS \
+        environment variable.
+
     Returns:
         A dictionary (attrdict) with all local settings.
 
-    Raises:
-        A SettingsError when the local settings YAML file is not found. Check the <PROJECT>_LOCAL_SETTINGS
-        environment variable.
     """
     local_settings = attrdict()
 
@@ -193,7 +197,7 @@ def load_local_settings(force: bool = False) -> attrdict:
     return local_settings
 
 
-def read_configuration_file(filename: Path, *, force=False):
+def read_configuration_file(filename: Path, *, force=False) -> dict:
     """
     Read the YAML input configuration file. The configuration file is only read
     once and memoized as load optimization.
@@ -203,7 +207,7 @@ def read_configuration_file(filename: Path, *, force=False):
         force (bool): force reloading the file, even when it was memoized
 
     Raises:
-        A SettingsError when there was an error reading the YAML file.
+        SettingsError: when there was an error reading the YAML file.
 
     Returns:
         a dictionary containing all the configuration settings from the YAML file.
@@ -333,7 +337,7 @@ class Settings:
             cls,
             group_name=None, filename="settings.yaml", location=None,
             *, add_local_settings=True, force=False
-    ):
+    ) -> attrdict:
         """
         Load the settings for the given group. When no group is provided, the
         complete configuration is returned.
@@ -355,7 +359,7 @@ class Settings:
             a dynamically created class with the configuration parameters as instance variables.
 
         Raises:
-            a SettingsError when the group is not defined in the YAML file.
+            SettingsError: when the group is not defined in the YAML file.
         """
         if group_name:
             return cls._load_group(group_name, add_local_settings=add_local_settings, force=force)
@@ -403,8 +407,9 @@ def main(args: list | None = None):  # pragma: no cover
         ),
     )
     parser.add_argument("--local", action="store_true", help="print only the local settings.")
-    parser.add_argument("--global", action="store_true",
-                        help="print only the global settings, don't include local settings.")
+    parser.add_argument(
+        "--global", action="store_true",
+        help="print only the global settings, don't include local settings.")
     parser.add_argument("--group", help="print only settings for this group")
     args = parser.parse_args(args or [])
 

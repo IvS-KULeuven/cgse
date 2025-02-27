@@ -122,10 +122,11 @@ def bits_set(value: int, *args) -> bool:
     Args:
         value (int): the value to check
         args: a set of indices of the bits to check, starting from 0 at the LSB
+
     Returns:
         True if all the bits are set (1).
 
-    For example:
+    Examples:
         >>> assert bits_set(0b0101_0000_1011, [0, 1, 3, 8, 10])
         >>> assert bits_set(0b0101_0000_1011, [3, 8])
         >>> assert not bits_set(0b0101_0000_1011, [1, 2, 3])
@@ -136,7 +137,7 @@ def bits_set(value: int, *args) -> bool:
     return all([bit_set(value, bit) for bit in args])
 
 
-def beautify_binary(value: int, sep: str = " ", group: int = 8, prefix: str = "", size: int = 0):
+def beautify_binary(value: int, sep: str = " ", group: int = 8, prefix: str = "", size: int = 0) -> str:
     """
     Returns a binary representation of the given value. The bits are presented
     in groups of 8 bits for clarity by default (can be changed with the `group` keyword).
@@ -151,7 +152,7 @@ def beautify_binary(value: int, sep: str = " ", group: int = 8, prefix: str = ""
     Returns:
         a binary string representation.
 
-    For example:
+    Examples:
         >>> status = 2**14 + 2**7
         >>> assert beautify_binary(status) == "01000000 10000000"
     """
@@ -170,18 +171,16 @@ def humanize_bytes(n: int, base: Union[int, str] = 2, precision: int = 3) -> str
     """
     Represents the size `n` in human readable form, i.e. as byte, KiB, MiB, GiB, ...
 
-    Please note that, by default, I use the IEC standard (International Engineering Consortium)
-    which is in `base=2` (binary), i.e. 1024 bytes = 1.0 KiB. If you need SI units (International
-    System of Units), you need to specify `base=10` (decimal), i.e. 1000 bytes = 1.0 kB.
-
     Args:
         n (int): number of byte
         base (int, str): binary (2) or decimal (10)
         precision (int): the number of decimal places [default=3]
+
     Returns:
         a human readable size, like 512 byte or 2.300 TiB
+
     Raises:
-        ValueError when base is different from 2 (binary) or 10 (decimal).
+        ValueError: when base is different from 2 (binary) or 10 (decimal).
 
     Examples:
         >>> assert humanize_bytes(55) == "55 bytes"
@@ -191,6 +190,12 @@ def humanize_bytes(n: int, base: Union[int, str] = 2, precision: int = 3) -> str
         >>> assert humanize_bytes(1000000000, base=10) == '1.000 GB'
         >>> assert humanize_bytes(1073741824) == '1.000 GiB'
         >>> assert humanize_bytes(1024**5 - 1, precision=0) == '1024 TiB'
+
+    Note:
+        Please note that, by default, I use the IEC standard (International Engineering Consortium)
+        which is in `base=2` (binary), i.e. 1024 bytes = 1.0 KiB. If you need SI units (International
+        System of Units), you need to specify `base=10` (decimal), i.e. 1000 bytes = 1.0 kB.
+
     """
 
     if base not in [2, 10, "binary", "decimal"]:
@@ -509,39 +514,43 @@ def crc_calc(data, start: int, len: int) -> int:
     return crc
 
 
-def s16(value: int):
+def s16(value: int) -> int:
     """
     Return the signed equivalent of a hex or binary number.
 
-    Since integers in Python are objects and stored in a variable number of bits, Python doesn't
-    know the concept of twos-complement for negative integers. For example, this 16-bit number
+    Returns:
+        The negative equivalent of a twos-complement binary number.
+
+    Examples:
+        Since integers in Python are objects and stored in a variable number of bits, Python doesn't
+        know the concept of twos-complement for negative integers. For example, this 16-bit number
 
         >>> 0b1000_0000_0001_0001
         32785
 
-    which in twos-complement is actually a negative value:
+        which in twos-complement is actually a negative value:
 
         >>> s16(0b1000_0000_0001_0001)
         -32751
 
-    The 'bin()' fuction will return a strange representation of this number:
+        The 'bin()' fuction will return a strange representation of this number:
 
         >>> bin(-32751)
         '-0b111111111101111'
 
-    when we however mask the value we get:
+        when we however mask the value we get:
 
         >>> bin(-32751 & 0b1111_1111_1111_1111)
         '0b1000000000010001'
 
     See:
-        https://stackoverflow.com/questions/1604464/twos-complement-in-python and
-        https://stackoverflow.com/questions/46993519/python-representation-of-negative-integers and
-        https://stackoverflow.com/questions/25096755/signed-equivalent-of-a-2s-complement-hex-value
-        and https://stackoverflow.com/a/32262478/4609203
+        [Twos complement in Python](https://stackoverflow.com/questions/1604464/twos-complement-in-python) and \
+        [Pythons representation of negative integers](
+        https://stackoverflow.com/questions/46993519/python-representation-of-negative-integers) and \
+        [Signed equivalent of a twos-complement hex-value](
+        https://stackoverflow.com/questions/25096755/signed-equivalent-of-a-2s-complement-hex-value) and \
+        [SO Twos complement in Python](https://stackoverflow.com/a/32262478/4609203).
 
-    Returns:
-        The negative equivalent of a twos-complement binary number.
     """
     return ctypes.c_int16(value).value
 
@@ -550,18 +559,20 @@ def s32(value: int):
     """
     Return the signed equivalent of a hex or binary number.
 
-    Since integers in Python are objects and stored in a variable number of bits, Python doesn't
-    know the concept of twos-complement for negative integers. For example, this 32-bit number
+    Returns:
+        The negative equivalent of a twos-complement binary number.
+
+    Examples:
+        Since integers in Python are objects and stored in a variable number of bits, Python doesn't
+        know the concept of twos-complement for negative integers. For example, this 32-bit number
 
         >>> 0b1000_0000_0000_0000_0000_0000_0001_0001
         2147483665
 
-    which in twos-complement is actually a negative value:
+        which in twos-complement is actually a negative value:
 
         >>> s32(0b1000_0000_0000_0000_0000_0000_0001_0001)
         -2147483631
 
-    Returns:
-        The negative equivalent of a twos-complement binary number.
     """
     return ctypes.c_int32(value).value

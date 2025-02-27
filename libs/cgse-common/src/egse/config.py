@@ -1,5 +1,5 @@
 """
-This module provides convenience functions to properly configure the Common-EGSE
+This module provides convenience functions to properly configure the CGSE
 and to find paths and resources.
 """
 from __future__ import annotations
@@ -17,16 +17,16 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
+from typing import Generator
 
 import git
-
 from egse.decorators import deprecate
 
 _HERE = Path(__file__).parent.resolve()
 _LOGGER = logging.getLogger(__name__)
 
 
-def find_first_occurrence_of_dir(pattern: str, root: Path | str = None) -> Optional[Path]:
+def find_first_occurrence_of_dir(pattern: str, root: Path | str = None) -> Path | None:
     """
     Returns the full path of the directory that first matches the pattern. The directory hierarchy is
     traversed in alphabetical order. The pattern is matched first against all directories in the root
@@ -69,7 +69,7 @@ def find_first_occurrence_of_dir(pattern: str, root: Path | str = None) -> Optio
     return None
 
 
-def find_dir(pattern: str, root: str = None) -> Optional[Path]:
+def find_dir(pattern: str, root: str = None) -> Path | None:
     """
     Find the first folder that matches the given pattern.
 
@@ -91,7 +91,7 @@ def find_dir(pattern: str, root: str = None) -> Optional[Path]:
     return None
 
 
-def find_dirs(pattern: str, root: str = None):
+def find_dirs(pattern: str, root: str = None) -> Generator[Path, None, None]:
     """
     Generator for returning directory paths from a walk started at `root` and matching pattern.
 
@@ -100,19 +100,22 @@ def find_dirs(pattern: str, root: str = None):
     The pattern can contain a directory separator '/' which means
     the last part of the path needs to match these folders.
 
-    Examples:
-        >>> for folder in find_dirs("/egse/images"):
-        ...     assert folder.match('*/egse/images')
-
-        >>> folders = list(find_dirs("/egse/images"))
-        >>> assert len(folders)
-
     Args:
         pattern (str): pattern to match (use * for wildcard)
         root (str): the top level folder to search [default=common-egse-root]
 
     Returns:
-         Paths of folders matching pattern, from root.
+         Generator: Paths of folders matching pattern, from root.
+
+    Example:
+        ```python
+        >>> for folder in find_dirs("/egse/images"):
+        ...     assert folder.match('*/egse/images')
+
+        >>> folders = list(find_dirs("/egse/images"))
+        >>> assert len(folders)
+        ```
+
     """
     root = Path(root).resolve() if root else get_common_egse_root()
     if not root.is_dir():
@@ -171,7 +174,7 @@ def find_files(pattern: str, root: PurePath | str = None, in_dir: str = None):
             yield Path(path) / name
 
 
-def find_file(name: str, root: str = None, in_dir: str = None) -> Optional[Path]:
+def find_file(name: str, root: str = None, in_dir: str = None) -> Path | None:
     """
     Find the path to the given file starting from the root directory of the
     distribution.
@@ -349,7 +352,7 @@ def get_resource_path(name: str, resource_root_dir: Union[str, PurePath] = None)
 
     Returns:
         the absolute path of the data file with the given name. The first name that matches
-        is returned. If no file with the given name or path exists, a FileNotFoundError is raised.
+          is returned. If no file with the given name or path exists, a FileNotFoundError is raised.
 
     """
     for resource_dir in get_resource_dirs(resource_root_dir):
@@ -379,20 +382,21 @@ class WorkingDirectory:
     This context manager has a property `path` which returns the absolute path of the
     current directory.
 
-    Examples:
-        >>> with WorkingDirectory(find_dir("/egse/images")) as wdir:
-        ...     for file in wdir.path.glob('*'):
-        ...         assert file.exists()  # do something with the image files
+    Args:
+        path (str, Path): the folder to change to within this context
 
+    Raises:
+        ValueError: when the given path doesn't exist.
+
+    Example:
+        ```python
+        with WorkingDirectory(find_dir("/egse/images")) as wdir:
+            for file in wdir.path.glob('*'):
+                assert file.exists()  # do something with the image files
+        ```
     """
 
     def __init__(self, path):
-        """
-        Args:
-            path (str, Path): the folder to change to within this context
-        Raises:
-            ValueError when the given path doesn't exist.
-        """
         self._temporary_path = Path(path)
         if not self._temporary_path.exists():
             raise ValueError(f"The given path ({path}) doesn't exist.")
