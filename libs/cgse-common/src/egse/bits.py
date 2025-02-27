@@ -47,11 +47,13 @@ def set_bit(value: int, bit) -> int:
 def set_bits(value: int, bits: tuple) -> int:
     """
     Set the given bits in value to 1.
+
     Args:
         value (int): the value where the given bits shall be changed
         bits (tuple): a tuple with start and stop bits
+
     Returns:
-        the changed value
+        the changed value.
     """
     for i in range(bits[0], bits[1]):
         value |= 1 << i
@@ -75,9 +77,11 @@ def clear_bit(value: int, bit) -> int:
 def clear_bits(value: int, bits: tuple) -> int:
     """
     Set the given bits in value to 0.
+
     Args:
         value (int): the value where the given bits shall be changed
         bits (tuple): a tuple with start and stop bits
+
     Returns:
         the changed value
     """
@@ -486,11 +490,6 @@ def crc_calc(data, start: int, len: int) -> int:
     """
     Calculate the checksum for (part of) the data.
 
-    Reference:
-        The description of the CRC calculation for RMAP is given in the ECSS document
-        _Space Engineering: SpaceWire - Remote Memory Access Protocol_, section A.3
-        on page 80 [ECSS‐E‐ST‐50‐52C].
-
     Args:
         data: the data for which the checksum needs to be calculated
         start: offset into the data array [byte]
@@ -498,6 +497,12 @@ def crc_calc(data, start: int, len: int) -> int:
 
     Returns:
         the calculated checksum.
+
+    Reference:
+        The description of the CRC calculation for RMAP is given in the ECSS document
+        _Space Engineering: SpaceWire - Remote Memory Access Protocol_, section A.3
+        on page 80 [ECSS‐E‐ST‐50‐52C].
+
     """
     crc: int = 0
 
@@ -517,6 +522,9 @@ def crc_calc(data, start: int, len: int) -> int:
 def s16(value: int) -> int:
     """
     Return the signed equivalent of a hex or binary number.
+
+    Args:
+        value: an integer value.
 
     Returns:
         The negative equivalent of a twos-complement binary number.
@@ -558,6 +566,9 @@ def s16(value: int) -> int:
 def s32(value: int):
     """
     Return the signed equivalent of a hex or binary number.
+
+    Args:
+        value: an integer value.
 
     Returns:
         The negative equivalent of a twos-complement binary number.
