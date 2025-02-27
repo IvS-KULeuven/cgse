@@ -1,46 +1,17 @@
-"""
-The Exception Hierarchy:
 
-Exception
- +-- CommonEGSEException
-      +-- Warning
-      +-- Error
-          +-- InvalidOperationError
-          +-- DeviceNotFoundError (should move to subclass of DeviceError)
-          +-- InternalStateError
-          +-- DeviceError
-               +-- DeviceControllerError
-               +-- DeviceConnectionError
-               +-- DeviceTimeoutError
-               +-- DeviceInterfaceError
- +-- Failure
- +-- HexapodError
- +-- PMACError
- +-- OGSEError
- +-- ESLError
- +-- FilterWheelError
- +-- FilterWheel8smc4Error
- +-- ShutterKSC1010Error
- +-- WindowSizeError
- +-- SettingsError
- +-- StagesError
-
-"""
-
-
-class CommonEGSEException(Exception):
+class CGSEException(Exception):
     """The base exception for all errors and warnings in the Common-EGSE."""
 
     pass
 
 
-class Error(CommonEGSEException):
+class Error(CGSEException):
     """The base class for all Common-EGSE Errors."""
 
     pass
 
 
-class Warning(CommonEGSEException):
+class Warning(CGSEException):
     """The base class for all Common-EGSE Warnings."""
 
     pass

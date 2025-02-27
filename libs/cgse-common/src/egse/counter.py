@@ -1,3 +1,6 @@
+"""
+This module manages files that have a counter in their filename.
+"""
 from __future__ import annotations
 
 __all__ = [
@@ -20,10 +23,16 @@ def counter_filename(location: Path, filename: Path | str) -> Path:
     Creates an absolute filename to be used as a counter file. A counter file usually has a 'count' extension
     but that is not enforced by this module. The location can be a relative path, even '.' or '..' are accepted.
 
-    NOTE: If the file doesn't exist, it is NOT created.
+    Args:
+        location: the location of the counter file.
+        filename: the name of the counter file, use the '.count' extension.
 
     Returns:
          An absolute filename.
+
+    Note:
+        If the file doesn't exist, it is NOT created.
+
     """
     return (location / filename).resolve()
 
@@ -32,23 +41,33 @@ def counter_exists(filename: Path) -> bool:
     """
     Returns True if the given file exists, False otherwise.
 
-    NOTE: no checking is done if the file is indeed a counter file, i.e. if it contains the correct content.
-          So, this function basically only checks if the given Path exists and if it is a regular file.
+    Args:
+        filename: path of the counter file
 
     Returns:
         True if the given filename exists, False otherwise.
 
     Raises:
         An OSError might be raised.
+
+    Note:
+        No checking is done if the file is indeed a counter file, i.e. if it contains the correct content.
+          So, this function basically only checks if the given Path exists and if it is a regular file.
+
     """
     return filename.exists() if filename.is_file() else False
 
 
-def new_counter(filename: Path, pattern: str):
+def new_counter(filename: Path, pattern: str) -> int:
     """
     Create a counter based on the files that already exist for the given pattern.
 
+    Args:
+        filename: the name of the counter file
+        pattern: a pattern to match the filenames
 
+    Returns:
+        The next counter value as an integer.
     """
     if not counter_exists(filename):
         location = filename.parent
@@ -96,13 +115,14 @@ def get_next_counter(filename: Path) -> int:
     """
     Read the counter from a dedicated file, add one and save the counter back to the file.
 
-    NOTE: This will create the counter file if it doesn't exist.
-
     Args:
-        - file_path: full pathname of the file that contains the required counter
+        file_path: full pathname of the file that contains the required counter
 
     Returns:
         The value of the next counter, 1 if no previous files were found or if an error occurred.
+
+    Note:
+        This will create the counter file if it doesn't exist.
     """
 
     counter = _read_counter(filename)
@@ -112,15 +132,15 @@ def get_next_counter(filename: Path) -> int:
     return counter
 
 
-def determine_counter_from_dir_list(location, pattern, index: int = -1):
+def determine_counter_from_dir_list(location, pattern, index: int = -1) -> int:
     """
     Determine counter for a new file at the given location and with the given pattern.
     The next counter is determined from the sorted list of files that match the given pattern.
 
     Args:
-        - location: Location where the file should be stored.
-        - pattern: Pattern for the filename.
-        - index: the location of the counter in the filename after it is split on '_' [default=-1]
+        location: Location where the file should be stored.
+        pattern: Pattern for the filename.
+        index: the location of the counter in the filename after it is split on '_' [default=-1]
 
     Returns:
         The value of the next counter, 1 if no previous files were found or if an error occurred.

@@ -73,49 +73,91 @@ theme:
 
 plugins:
   search:
+  mkdocstrings:
+    default_handler: python
+    handlers:
+      python:
+        options:
+            modernize_annotations: false
+            docstring_style: google
+            docstring_section_style: table
+            docstring_options:
+                ignore_init_summary: true
+            merge_init_into_class: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            show_signature_annotations: false
+            show_root_heading: false
+            separate_signature: true
+            signature_crossrefs: true
+            parameter_headings: false
+            relative_crossrefs: true
+            scoped_crossrefs: true
+            signature_crossrefs: true
+            summary: true
+            show_source: false
+            filters:
+            - "!^_"
+            - "^__init__$"
+
+watch:
+- libs/cgse-common/src/egse
 
 extra_css:
   - stylesheets/custom.css
 
 extra:
   social:
-    - icon: fontawesome/brands/github
-      link: https://github.com/IvS-KULeuven/cgse/
-      name: CGSE on Github
+  - icon: fontawesome/brands/github
+    link: https://github.com/IvS-KULeuven/cgse/
+    name: CGSE on Github
 
 nav:
-  - index.md
-  - Introduction:
-    - getting_started.md
-    - package_list.md
-    - initialize.md
-    - help.md
-  - Developer Guide:
-    - dev_guide/index.md
-    - dev_guide/monorepo.md
-    - dev_guide/installation.md
-    - dev_guide/uv.md
-    - dev_guide/coding_style.md
-    - dev_guide/docs.md
-    - dev_guide/plugins.md
-    - dev_guide/unit_testing.md
-    - dev_guide/versioning.md
-  - User Guide:
-    - user_guide/index.md
-  - Libs:
-    - libs/index.md
-    - cgse-common:
-      - libs/cgse-common/index.md
-      - libs/cgse-common/settings.md
-      - libs/cgse-common/setup.md
-    - cgse-core:
-      - libs/cgse-core/index.md
-    - cgse-coordinates:
-      - libs/cgse-coordinates/index.md
-    - cgse-gui:
-      - libs/cgse-gui/index.md
-  - Projects:
-    - projects/index.md
-    - projects/cgse-tools.md
-    - projects/symetrie-hexapod.md
-  - roadmap.md
+- index.md
+- Introduction:
+  - getting_started.md
+  - package_list.md
+  - initialize.md
+  - help.md
+- Developer Guide:
+  - dev_guide/index.md
+  - dev_guide/monorepo.md
+  - dev_guide/installation.md
+  - dev_guide/uv.md
+  - dev_guide/coding_style.md
+  - dev_guide/docs.md
+  - dev_guide/plugins.md
+  - dev_guide/unit_testing.md
+  - dev_guide/versioning.md
+- User Guide:
+  - user_guide/index.md
+- Libs:
+  - libs/index.md
+  - cgse-common:
+    - libs/cgse-common/index.md
+    - libs/cgse-common/settings.md
+    - libs/cgse-common/setup.md
+  - cgse-core:
+    - libs/cgse-core/index.md
+  - cgse-coordinates:
+    - libs/cgse-coordinates/index.md
+  - cgse-gui:
+    - libs/cgse-gui/index.md
+- Projects:
+  - projects/index.md
+  - projects/cgse-tools.md
+  - projects/symetrie-hexapod.md
+- API:
+    - api/index.md
+    - api/bits.md
+    - api/calibration.md
+    - api/command.md
+    - api/config.md
+    - api/control.md
+    - api/counter.md
+    - api/decorators.md
+    - api/exceptions.md
+    - api/settings.md
+    - api/setup.md
+
+- roadmap.md

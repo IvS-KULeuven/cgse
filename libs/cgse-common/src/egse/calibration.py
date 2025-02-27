@@ -1,6 +1,10 @@
+"""
+This module provides functions to calibrate sensor values.
+"""
+
 import numpy as np
 
-from egse.setup import NavigableDict, Setup, SetupError
+from egse.setup import navdict, Setup, SetupError
 
 
 def apply_gain_offset(counts: float, gain: float, offset: float) -> float:
@@ -11,17 +15,14 @@ def apply_gain_offset(counts: float, gain: float, offset: float) -> float:
         gain: Gain to apply
         offset: Offset to apply
 
-    Returns: Counts after applying the given gain and offset.
+    Returns:
+        Counts after applying the given gain and offset.
     """
 
     return counts * gain + offset
 
-#########################
-# Temperature calibration
-#########################
 
-
-def counts_to_temperature(sensor_name: str, counts: float, sensor_info: NavigableDict, setup: Setup):
+def counts_to_temperature(sensor_name: str, counts: float, sensor_info: NavigableDict, setup: Setup) -> float:
     """ Converts the given counts for the given sensor to temperature.
 
     This conversion can be done as follows:
@@ -36,7 +37,8 @@ def counts_to_temperature(sensor_name: str, counts: float, sensor_info: Navigabl
         sensor_info: Calibration information for the given sensor (type)
         setup: Setup
 
-    Returns: Calibrated temperature [°C] for the given sensor
+    Returns:
+        Calibrated temperature [°C] for the given sensor
     """
 
     # (1) Conversion: temperature = counts * gain + offset
@@ -63,7 +65,7 @@ def counts_to_temperature(sensor_name: str, counts: float, sensor_info: Navigabl
         return resistance_to_temperature(sensor_name, resistance, sensor_info, setup)
 
 
-def counts_to_resistance(sensor_name: str, counts: float, sensor_info: NavigableDict):
+def counts_to_resistance(sensor_name: str, counts: float, sensor_info: NavigableDict) -> float:
     """ Converts the given counts for the given sensor to resistance.
 
     Args:
@@ -71,7 +73,8 @@ def counts_to_resistance(sensor_name: str, counts: float, sensor_info: Navigable
         counts: Uncalibrated, raw data [ADU]
         sensor_info: Calibration information for the given sensor (type)
 
-    Returns: Resistance [Ohm] for the given sensor.
+    Returns:
+        Resistance [Ohm] for the given sensor.
     """
 
     # Offset (if any)
@@ -99,7 +102,7 @@ def counts_to_resistance(sensor_name: str, counts: float, sensor_info: Navigable
     raise SetupError(f"Setup does not contain info for conversion from counts to resistance for {sensor_name}")
 
 
-def resistance_to_temperature(sensor_name: str, resistance: float, sensor_info: NavigableDict, setup: Setup):
+def resistance_to_temperature(sensor_name: str, resistance: float, sensor_info: NavigableDict, setup: Setup) -> floaf:
     """ Converts the given resistance for the given sensor to temperature.
 
     Args:
@@ -108,7 +111,8 @@ def resistance_to_temperature(sensor_name: str, resistance: float, sensor_info: 
         sensor_info: Calibration information for the given sensor (type)
         setup: Setup
 
-    Returns: Temperature [°C] for the given sensor.
+    Returns:
+        Temperature [°C] for the given sensor.
     """
 
     resistance_to_temperature_info = sensor_info.resistance_to_temperature
@@ -152,15 +156,15 @@ def resistance_to_temperature(sensor_name: str, resistance: float, sensor_info: 
         raise SetupError(f"Setup does not contain info for conversion from resistance to temperature for {sensor_name}")
 
 
-def solve_temperature(temperature_to_resistance_coefficients, resistance: float):
+def solve_temperature(temperature_to_resistance_coefficients, resistance: float) -> float:
     """ Solves the temperature from the temperature -> resistance polynomial.
 
     For the given temperature -> resistance polynomial and the given resistance, we determine what the corresponding
     temperature is by:
 
-        - Finding the roots of polynomial(temperature) = resistance;
-        - Discarding the roots with an imaginary component;
-        - Selecting the remaining root in the relevant temperature regime (here: [-200°C, 200°C]).
+    - Finding the roots of polynomial(temperature) = resistance;
+    - Discarding the roots with an imaginary component;
+    - Selecting the remaining root in the relevant temperature regime (here: [-200°C, 200°C]).
     """
 
     temperature_to_resistance_poly = np.poly1d(temperature_to_resistance_coefficients)
@@ -171,7 +175,7 @@ def solve_temperature(temperature_to_resistance_coefficients, resistance: float)
             return temperature.real
 
 
-def callendar_van_dusen(resistance: float, ref_resistance: float, standard: str, setup: Setup):
+def callendar_van_dusen(resistance: float, ref_resistance: float, standard: str, setup: Setup) -> float:
     """ Solves the Callendar - van Dusen equation for temperature.
 
     Args:
@@ -180,7 +184,8 @@ def callendar_van_dusen(resistance: float, ref_resistance: float, standard: str,
         standard: Sensor standard
         setup: Setup
 
-    Returns: Temperature [°C] corresponding to the given resistance.
+    Returns:
+        Temperature [°C] corresponding to the given resistance.
     """
 
     # Resistances higher than the reference resistance correspond to
@@ -205,7 +210,7 @@ def callendar_van_dusen(resistance: float, ref_resistance: float, standard: str,
     return solve_temperature(resistance_to_temperature_coefficients, resistance)
 
 
-def chebychev(resistance: float, sensor_info: NavigableDict):
+def chebychev(resistance: float, sensor_info: navdict) -> float:
     """ Solves the Chebychev equation for temperature.
 
     Implemented as specified in the calibration certificate of the LakeShore Cernox sensors.
@@ -214,7 +219,8 @@ def chebychev(resistance: float, sensor_info: NavigableDict):
         resistance:Resistance [Ohm] for which to calculate the temperature
         sensor_info: Calibration information
 
-    Returns: Temperature [°C] corresponding to the given resistance.
+    Returns:
+        Temperature [°C] corresponding to the given resistance.
     """
 
     num_fit_ranges = sensor_info.num_fit_ranges
@@ -243,8 +249,5 @@ def chebychev(resistance: float, sensor_info: NavigableDict):
 
             return temperature
 
-############################
-# Supply voltage calibration
-############################
 
-# TODO
+# TODO: Supply voltage calibration
