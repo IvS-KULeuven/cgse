@@ -12,28 +12,28 @@
         <meta name="author" content="Rik Huygen">
       
       
-        <link rel="canonical" href="https://ivs-kuleuven.github.io/cgse/user_guide/">
+        <link rel="canonical" href="https://ivs-kuleuven.github.io/cgse/api/settings/">
       
       
-        <link rel="prev" href="../dev_guide/versioning/">
+        <link rel="prev" href="../exceptions/">
       
       
-        <link rel="next" href="../libs/">
+        <link rel="next" href="../setup/">
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.5">
     
     
       
-        <title>User Guide - CGSE</title>
+        <title>egse.settings - CGSE</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.8608ea7d.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.8608ea7d.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
       
       
   
@@ -93,11 +93,11 @@
       
     
     
-      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../stylesheets/custom.css">
+      <link rel="stylesheet" href="../../stylesheets/custom.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -110,9 +110,9 @@
 <!-- / Fathom -->
 
 
-<meta property="og:title" content="CGSE - User Guide">
+<meta property="og:title" content="CGSE - egse.settings">
 <meta property="og:type" content="article">
-<meta property="og:url" content="https://ivs-kuleuven.github.io/cgse/user_guide/">
+<meta property="og:url" content="https://ivs-kuleuven.github.io/cgse/api/settings/">
 <meta property="og:site_name" content="CGSE Documentation">
 <meta property="og:description" content="CGSE is an instrument test framework for Python.">
 <meta property="og:image" content="https://raw.githubusercontent.com/IvS-KULeuven/cgse/refs/heads/main/docs/images/icons/cgse-logo.svg">
@@ -152,7 +152,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#user-guide" class="md-skip">
+        <a href="#egse.settings" class="md-skip">
           Skip to content
         </a>
       
@@ -168,9 +168,9 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="CGSE" class="md-header__button md-logo" aria-label="CGSE" data-md-component="logo">
+    <a href="../.." title="CGSE" class="md-header__button md-logo" aria-label="CGSE" data-md-component="logo">
       
-  <img src="../images/icons/cgse-logo.svg" alt="logo">
+  <img src="../../images/icons/cgse-logo.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -187,7 +187,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              User Guide
+              egse.settings
             
           </span>
         </div>
@@ -288,7 +288,7 @@
   
   
     <li class="md-tabs__item">
-      <a href=".." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
     
@@ -307,7 +307,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../getting_started/" class="md-tabs__link">
+        <a href="../../getting_started/" class="md-tabs__link">
           
   
     
@@ -327,7 +327,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../dev_guide/" class="md-tabs__link">
+        <a href="../../dev_guide/" class="md-tabs__link">
           
   
     
@@ -343,13 +343,11 @@
         
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="./" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../user_guide/" class="md-tabs__link">
           
   
     
@@ -369,7 +367,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../libs/" class="md-tabs__link">
+        <a href="../../libs/" class="md-tabs__link">
           
   
     
@@ -389,7 +387,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../projects/" class="md-tabs__link">
+        <a href="../../projects/" class="md-tabs__link">
           
   
     
@@ -405,11 +403,13 @@
         
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../api/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
     
@@ -427,7 +427,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../roadmap/" class="md-tabs__link">
+      <a href="../../roadmap/" class="md-tabs__link">
         
   
     
@@ -467,9 +467,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="CGSE" class="md-nav__button md-logo" aria-label="CGSE" data-md-component="logo">
+    <a href="../.." title="CGSE" class="md-nav__button md-logo" aria-label="CGSE" data-md-component="logo">
       
-  <img src="../images/icons/cgse-logo.svg" alt="logo">
+  <img src="../../images/icons/cgse-logo.svg" alt="logo">
 
     </a>
     CGSE
@@ -496,7 +496,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -566,7 +566,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting_started/" class="md-nav__link">
+      <a href="../../getting_started/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -588,7 +588,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../package_list/" class="md-nav__link">
+      <a href="../../package_list/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -610,7 +610,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../initialize/" class="md-nav__link">
+      <a href="../../initialize/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -632,7 +632,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../help/" class="md-nav__link">
+      <a href="../../help/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -698,7 +698,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../dev_guide/" class="md-nav__link ">
+            <a href="../../dev_guide/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -732,7 +732,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dev_guide/monorepo/" class="md-nav__link">
+      <a href="../../dev_guide/monorepo/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -754,7 +754,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dev_guide/installation/" class="md-nav__link">
+      <a href="../../dev_guide/installation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -776,7 +776,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dev_guide/uv/" class="md-nav__link">
+      <a href="../../dev_guide/uv/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -798,7 +798,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dev_guide/coding_style/" class="md-nav__link">
+      <a href="../../dev_guide/coding_style/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -820,7 +820,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dev_guide/docs/" class="md-nav__link">
+      <a href="../../dev_guide/docs/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -842,7 +842,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dev_guide/plugins/" class="md-nav__link">
+      <a href="../../dev_guide/plugins/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -864,7 +864,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dev_guide/unit_testing/" class="md-nav__link">
+      <a href="../../dev_guide/unit_testing/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -886,7 +886,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dev_guide/versioning/" class="md-nav__link">
+      <a href="../../dev_guide/versioning/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -912,8 +912,6 @@
       
   
   
-    
-  
   
   
     
@@ -926,22 +924,19 @@
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="./" class="md-nav__link md-nav__link--active">
+            <a href="../../user_guide/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -954,7 +949,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             User Guide
@@ -1006,7 +1001,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../libs/" class="md-nav__link ">
+            <a href="../../libs/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1065,7 +1060,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../libs/cgse-common/" class="md-nav__link ">
+            <a href="../../libs/cgse-common/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1099,7 +1094,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../libs/cgse-common/settings/" class="md-nav__link">
+      <a href="../../libs/cgse-common/settings/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1121,7 +1116,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../libs/cgse-common/setup/" class="md-nav__link">
+      <a href="../../libs/cgse-common/setup/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1172,7 +1167,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../libs/cgse-core/" class="md-nav__link ">
+            <a href="../../libs/cgse-core/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1230,7 +1225,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../libs/cgse-coordinates/" class="md-nav__link ">
+            <a href="../../libs/cgse-coordinates/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1288,7 +1283,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../libs/cgse-gui/" class="md-nav__link ">
+            <a href="../../libs/cgse-gui/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1357,7 +1352,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../projects/" class="md-nav__link ">
+            <a href="../../projects/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1391,7 +1386,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../projects/cgse-tools/" class="md-nav__link">
+      <a href="../../projects/cgse-tools/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1413,7 +1408,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../projects/symetrie-hexapod/" class="md-nav__link">
+      <a href="../../projects/symetrie-hexapod/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1439,6 +1434,8 @@
       
   
   
+    
+  
   
   
     
@@ -1471,19 +1468,22 @@
     
     
       
+        
+        
+      
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../api/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1495,13 +1495,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             API
@@ -1517,7 +1517,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/bits/" class="md-nav__link">
+      <a href="../bits/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1539,7 +1539,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/calibration/" class="md-nav__link">
+      <a href="../calibration/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1561,7 +1561,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/command/" class="md-nav__link">
+      <a href="../command/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1583,7 +1583,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/config/" class="md-nav__link">
+      <a href="../config/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1605,7 +1605,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/control/" class="md-nav__link">
+      <a href="../control/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1627,7 +1627,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/counter/" class="md-nav__link">
+      <a href="../counter/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1649,7 +1649,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/decorators/" class="md-nav__link">
+      <a href="../decorators/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1671,7 +1671,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/exceptions/" class="md-nav__link">
+      <a href="../exceptions/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1690,10 +1690,29 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../api/settings/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    egse.settings
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -1703,6 +1722,111 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#egse.settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;settings
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#egse.settings.Settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Settings
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#egse.settings.Settings.load" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;load
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.settings.Settings.to_string" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;to_string
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#egse.settings.SettingsError" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SettingsError
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#egse.settings.load_global_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;load_global_settings
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#egse.settings.load_local_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;load_local_settings
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#egse.settings.load_settings_file" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;load_settings_file
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#egse.settings.read_configuration_file" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;read_configuration_file
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1715,7 +1839,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/setup/" class="md-nav__link">
+      <a href="../setup/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1744,7 +1868,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../roadmap/" class="md-nav__link">
+      <a href="../../roadmap/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1775,8 +1899,101 @@
   
   
   
-    
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#egse.settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;settings
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#egse.settings.Settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Settings
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#egse.settings.Settings.load" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;load
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.settings.Settings.to_string" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;to_string
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#egse.settings.SettingsError" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SettingsError
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#egse.settings.load_global_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;load_global_settings
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#egse.settings.load_local_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;load_local_settings
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#egse.settings.load_settings_file" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;load_settings_file
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#egse.settings.read_configuration_file" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;read_configuration_file
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -1795,14 +2012,893 @@
   
 
 
-<h1 id="user-guide">User Guide<a class="headerlink" href="#user-guide" title="Permanent link">&para;</a></h1>
-<p>Welcome to the CGSE user guide! An in-depth reference on how to use the CGSE.</p>
+  <h1>egse.settings</h1>
+
+<div class="doc doc-object doc-module">
+
+
+
+<a id="egse.settings"></a>
+    <div class="doc doc-contents first">
+
+        <p>The Settings class handles user and configuration settings that are provided in
+a <a href="http://yaml.org"><code>YAML</code></a> file.</p>
+<p>The idea is that settings are grouped by components or any arbitrary grouping that makes sense for
+the application or for the user. Settings are also modular and provided by each package by means
+of entry-points. The Settings class can read from different YAML files.</p>
+<p>By default, settings are loaded from a file called <code>settings.yaml</code>, but this can be changed in the entry-point
+definition.</p>
+<p>The yaml configuration files are provided as entry points by the packages that specified an entry-point group
+'<em>cgse.settings</em>' in the <code>pyproject.toml</code>. The Settings dictionary (attrdict) is constructed from the configuration
+YAML files from each of the packages. Settings can be overwritten by the next package configuration file. So,
+make sure the group names in each package configuration file are unique.</p>
+<p>The YAML file is read and the configuration parameters for the given group are
+available as instance variables of the returned class.</p>
+<p>The intended use is as follows:</p>
+<pre><code>from egse.settings import Settings
+
+dsi_settings = Settings.load("DSI")
+
+if 0x000C &lt;= dsi_settings.RMAP_BASE_ADDRESS &lt;= 0x00FF:
+    ...  # do something here
+else:
+    raise RMAPError("Attempt to access outside the RMAP memory map.")
+</code></pre>
+<p>The above code reads the settings from the default YAML file for a group called <code>DSI</code>.
+The settings will then be available as variables of the returned class, in this case
+<code>dsi_settings</code>. The returned class is and behaves also like a dictionary, so you can
+check if a configuration parameter is defined like this:</p>
+<pre><code>if "DSI_FEE_IP_ADDRESS" not in dsi_settings:
+    # define the IP address of the DSI
+</code></pre>
+<p>The YAML section for the above code looks like this:</p>
+<pre><code>DSI:
+
+    # DSI Specific Settings
+
+    DSI_FEE_IP_ADDRESS  10.33.178.144   # IP address of the DSI EtherSpaceLink interface
+    LINK_SPEED:                   100   # SpW link speed used for both up- and downlink
+
+    # RMAP Specific Settings
+
+    RMAP_BASE_ADDRESS:     0x00000000   # The start of the RMAP memory map managed by the FEE
+    RMAP_MEMORY_SIZE:            4096   # The size of the RMAP memory map managed by the FEE
+</code></pre>
+<p>When you want to read settings from another YAML file, specify the <code>filename=</code> keyword.
+If that file is located at a specific location, also use the <code>location=</code> keyword.</p>
+<pre><code>my_settings = Settings.load(filename="user.yaml", location="/Users/JohnDoe")
+</code></pre>
+<p>The above code will read the YAML file from the given location and not from the entry-points.</p>
+<hr />
 
 
 
 
 
 
+
+<p><span class="doc-section-title">Classes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="egse.settings.Settings" href="#egse.settings.Settings">Settings</a></code></td>
+            <td>
+              <div class="doc-md-description">
+                <p>The Settings class provides a load() method that loads configuration settings for a group</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="egse.settings.SettingsError" href="#egse.settings.SettingsError">SettingsError</a></code></td>
+            <td>
+              <div class="doc-md-description">
+                <p>A settings-specific error.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+<p><span class="doc-section-title">Functions:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title="egse.settings.load_global_settings" href="#egse.settings.load_global_settings">load_global_settings</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Loads the settings that are defined by the given entry_point. The entry-points are defined in the</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title="egse.settings.load_local_settings" href="#egse.settings.load_local_settings">load_local_settings</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Loads the local settings file that is defined from the environment variable <em>PROJECT</em>_LOCAL_SETTINGS (where</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title="egse.settings.load_settings_file" href="#egse.settings.load_settings_file">load_settings_file</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Loads the YAML configuration file that is located at <code>path / filename</code>.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title="egse.settings.read_configuration_file" href="#egse.settings.read_configuration_file">read_configuration_file</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Read the YAML input configuration file. The configuration file is only read</p>
+                </div>
+              </td>
+            </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="egse.settings.Settings" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">Settings</span>
+
+
+<a href="#egse.settings.Settings" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+
+        <p>The Settings class provides a load() method that loads configuration settings for a group
+into a dynamically created class as instance variables.</p>
+
+
+
+
+
+
+
+
+
+<p><span class="doc-section-title">Methods:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title="egse.settings.Settings.load" href="#egse.settings.Settings.load">load</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Load the settings for the given group. When no group is provided, the</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title="egse.settings.Settings.to_string" href="#egse.settings.Settings.to_string">to_string</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Returns a simple string representation of the cached configuration of this Settings class.</p>
+                </div>
+              </td>
+            </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.settings.Settings.load" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">load</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#egse.settings.Settings.load" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">load</span><span class="p">(</span>
+    <span class="n">group_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;settings.yaml&quot;</span><span class="p">,</span>
+    <span class="n">location</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">add_local_settings</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Load the settings for the given group. When no group is provided, the
+complete configuration is returned.</p>
+<p>The Settings are loaded from entry-points that are defined in each of the
+packages that provide a Settings file.</p>
+<p>If a location is explicitly provided, the Settings will be loaded from that
+location, using the given filename or the default (which is settings.yaml).</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>group_name</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the name of one of the main groups from the YAML file</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>filename</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the name of the YAML file to read [default=settings.yaml]</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;settings.yaml&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>location</code>
+            </td>
+            <td>
+                  <code>(<span title="str">str</span>, <span title="pathlib.Path">Path</span>)</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the path to the location of the YAML file</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>force</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>force reloading the file</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>add_local_settings</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>update the Settings with site specific local settings</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="egse.system.attrdict">attrdict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>a dynamically created class with the configuration parameters as instance variables.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="egse.settings.SettingsError" href="#egse.settings.SettingsError">SettingsError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>when the group is not defined in the YAML file.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.settings.Settings.to_string" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">to_string</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#egse.settings.Settings.to_string" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">to_string</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns a simple string representation of the cached configuration of this Settings class.</p>
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="egse.settings.SettingsError" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">SettingsError</span>
+
+
+<a href="#egse.settings.SettingsError" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="Exception">Exception</span></code></p>
+
+
+        <p>A settings-specific error.</p>
+
+
+
+
+
+
+
+
+
+
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="egse.settings.load_global_settings" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">load_global_settings</span>
+
+
+<a href="#egse.settings.load_global_settings" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">load_global_settings</span><span class="p">(</span>
+    <span class="n">entry_point</span><span class="o">=</span><span class="s2">&quot;cgse.settings&quot;</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Loads the settings that are defined by the given entry_point. The entry-points are defined in the
+<code>pyproject.toml</code> files of the packages that export their global settings.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>entry_point</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the name of the entry-point group [default: 'cgse.settings']</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;cgse.settings&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>force</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>force reloading the settings, i.e. ignore the cache</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="egse.system.attrdict">attrdict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A dictionary (attrdict) containing a collection of all the settings exported by the packages         through the given entry-point.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="egse.settings.load_local_settings" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">load_local_settings</span>
+
+
+<a href="#egse.settings.load_local_settings" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">load_local_settings</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Loads the local settings file that is defined from the environment variable <em>PROJECT</em>_LOCAL_SETTINGS (where
+<em>PROJECT</em> is the name of your project, defined in the environment variable of the same name).</p>
+<p>This function might return an empty dictionary when</p>
+<ul>
+<li>the local settings YAML file is empty</li>
+<li>the local settings environment variable is not defined.</li>
+</ul>
+<p>in both cases a warning message is logged.</p>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="egse.settings.SettingsError" href="#egse.settings.SettingsError">SettingsError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>when the local settings YAML file is not found. Check the <em>PROJECT</em>_LOCAL_SETTINGS         environment variable.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="egse.system.attrdict">attrdict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A dictionary (attrdict) with all local settings.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="egse.settings.load_settings_file" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">load_settings_file</span>
+
+
+<a href="#egse.settings.load_settings_file" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">load_settings_file</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Loads the YAML configuration file that is located at <code>path / filename</code>.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>path</code>
+            </td>
+            <td>
+                  <code><span title="PATH">PATH</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the folder where the YAML file is located</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>filename</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the name of the YAML configuration file</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>force</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>force reloading, i.e. don't use the cached information</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="egse.settings.SettingsError" href="#egse.settings.SettingsError">SettingsError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>when the configuration file doesn't exist or cannot be found or         when there was an error reading the configuration file.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="egse.system.attrdict">attrdict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A dictionary (attrdict) with all the settings from the given file.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>in case of an empty configuration file, and empty dictionary         is returned and a warning message is issued.</p>
+</details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="egse.settings.read_configuration_file" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">read_configuration_file</span>
+
+
+<a href="#egse.settings.read_configuration_file" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">read_configuration_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Read the YAML input configuration file. The configuration file is only read
+once and memoized as load optimization.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>filename</code>
+            </td>
+            <td>
+                  <code><span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the fully qualified filename of the YAML file</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>force</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>force reloading the file, even when it was memoized</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="egse.settings.SettingsError" href="#egse.settings.SettingsError">SettingsError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>when there was an error reading the YAML file.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>a dictionary containing all the configuration settings from the YAML file.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+  
+  
 
 
 
@@ -1826,7 +2922,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../dev_guide/versioning/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Semantic Versioning">
+          <a href="../exceptions/" class="md-footer__link md-footer__link--prev" aria-label="Previous: egse.exceptions">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1836,20 +2932,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Semantic Versioning
+                egse.exceptions
               </div>
             </div>
           </a>
         
         
           
-          <a href="../libs/" class="md-footer__link md-footer__link--next" aria-label="Next: Libraries">
+          <a href="../setup/" class="md-footer__link md-footer__link--next" aria-label="Next: egse.setup">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Libraries
+                egse.setup
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1895,10 +2991,10 @@
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.indexes", "navigation.tabs.sticky", "navigation.footer", "content.code.annotate", "content.code.copy"], "search": "../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.indexes", "navigation.tabs.sticky", "navigation.footer", "content.code.annotate", "content.code.copy"], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.f1b6f286.min.js"></script>
+      <script src="../../assets/javascripts/bundle.f1b6f286.min.js"></script>
       
     
   </body>
