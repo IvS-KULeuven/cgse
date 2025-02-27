@@ -2669,12 +2669,77 @@ in groups of 8 bits for clarity by default (can be changed with the <code>group<
 
     <div class="doc doc-contents ">
 
-        <p>Set the given bits in value to 0.
-Args:
-    value (int): the value where the given bits shall be changed
-    bits (tuple): a tuple with start and stop bits
-Returns:
-    the changed value</p>
+        <p>Set the given bits in value to 0.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>value</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the value where the given bits shall be changed</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>bits</code>
+            </td>
+            <td>
+                  <code><span title="tuple">tuple</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>a tuple with start and stop bits</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the changed value</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
     </div>
 
@@ -2695,13 +2760,6 @@ Returns:
 
         <p>Calculate the checksum for (part of) the data.</p>
 
-
-<details class="reference" open>
-  <summary>Reference</summary>
-  <p>The description of the CRC calculation for RMAP is given in the ECSS document
-<em>Space Engineering: SpaceWire - Remote Memory Access Protocol</em>, section A.3
-on page 80 [ECSS‐E‐ST‐50‐52C].</p>
-</details>
 
 <p><span class="doc-section-title">Parameters:</span></p>
     <table>
@@ -2787,6 +2845,13 @@ on page 80 [ECSS‐E‐ST‐50‐52C].</p>
       </tbody>
     </table>
 
+
+<details class="reference" open>
+  <summary>Reference</summary>
+  <p>The description of the CRC calculation for RMAP is given in the ECSS document
+<em>Space Engineering: SpaceWire - Remote Memory Access Protocol</em>, section A.3
+on page 80 [ECSS‐E‐ST‐50‐52C].</p>
+</details>
     </div>
 
 </div>
@@ -3058,6 +3123,37 @@ System of Units), you need to specify <code>base=10</code> (decimal), i.e. 1000 
         <p>Return the signed equivalent of a hex or binary number.</p>
 
 
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>value</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>an integer value.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
     <p><span class="doc-section-title">Returns:</span></p>
     <table>
       <thead>
@@ -3123,6 +3219,37 @@ know the concept of twos-complement for negative integers. For example, this 16-
     <div class="doc doc-contents ">
 
         <p>Return the signed equivalent of a hex or binary number.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>value</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>an integer value.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     <p><span class="doc-section-title">Returns:</span></p>
@@ -3264,12 +3391,77 @@ know the concept of twos-complement for negative integers. For example, this 32-
 
     <div class="doc doc-contents ">
 
-        <p>Set the given bits in value to 1.
-Args:
-    value (int): the value where the given bits shall be changed
-    bits (tuple): a tuple with start and stop bits
-Returns:
-    the changed value</p>
+        <p>Set the given bits in value to 1.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>value</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the value where the given bits shall be changed</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>bits</code>
+            </td>
+            <td>
+                  <code><span title="tuple">tuple</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>a tuple with start and stop bits</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the changed value.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
     </div>
 
