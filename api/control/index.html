@@ -1465,6 +1465,14 @@
       
         
       
+        
+      
+        
+      
+        
+      
+        
+      
     
     
       
@@ -1655,9 +1663,10 @@
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
+    <nav class="md-nav" aria-label=" control">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#egse.control.ControlServer" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;ControlServer
@@ -1896,13 +1905,18 @@
     </nav>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#egse.control.is_control_server_active" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;is_control_server_active
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1949,6 +1963,72 @@
   
   <span class="md-ellipsis">
     egse.decorators
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../device/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    egse.device
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dict/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    egse.dicts
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dummy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    egse.dummy
     
   </span>
   
@@ -2025,6 +2105,28 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    egse.system
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2084,9 +2186,10 @@
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
+    <nav class="md-nav" aria-label=" control">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#egse.control.ControlServer" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;ControlServer
@@ -2325,13 +2428,18 @@
     </nav>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#egse.control.is_control_server_active" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;is_control_server_active
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2360,7 +2468,12 @@
 
 
 
-<a id="egse.control"></a>
+<h2 id="egse.control" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <span class="doc doc-object-name doc-module-name">egse.control</span>
+
+
+<a href="#egse.control" class="headerlink" title="Permanent link">&para;</a></h2>
+
     <div class="doc doc-contents first">
 
         <p>This module defines the abstract class for any Control Server and some convenience functions.</p>
@@ -2381,7 +2494,7 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer" href="#egse.control.ControlServer">ControlServer</a></code></td>
+            <td><code><a class="autorefs autorefs-internal" title=" ControlServer (egse.control.ControlServer)" href="#egse.control.ControlServer">ControlServer</a></code></td>
             <td>
               <div class="doc-md-description">
                 <p>Base class for all device control servers and for the Storage Manager and Configuration Manager.</p>
@@ -2404,7 +2517,7 @@
       </thead>
       <tbody>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.is_control_server_active" href="#egse.control.is_control_server_active">is_control_server_active</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" is_control_server_active (egse.control.is_control_server_active)" href="#egse.control.is_control_server_active">is_control_server_active</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Checks if the Control Server is running.</p>
@@ -2431,11 +2544,11 @@
 
 
 
-<h2 id="egse.control.ControlServer" class="doc doc-heading">
+<h3 id="egse.control.ControlServer" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">ControlServer</span>
 
 
-<a href="#egse.control.ControlServer" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#egse.control.ControlServer" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">ControlServer</span><span class="p">()</span>
 </code></pre></div>
 
@@ -2470,7 +2583,7 @@ of the commanding protocol class.</p>
       </thead>
       <tbody>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.after_serve" href="#egse.control.ControlServer.after_serve">after_serve</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" after_serve (egse.control.ControlServer.after_serve)" href="#egse.control.ControlServer.after_serve">after_serve</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>This method needs to be overridden by the subclass if certain actions need to be executed after the control</p>
@@ -2478,7 +2591,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.before_serve" href="#egse.control.ControlServer.before_serve">before_serve</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" before_serve (egse.control.ControlServer.before_serve)" href="#egse.control.ControlServer.before_serve">before_serve</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>This method needs to be overridden by the subclass if certain actions need to be executed before the control</p>
@@ -2486,7 +2599,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.get_average_execution_times" href="#egse.control.ControlServer.get_average_execution_times">get_average_execution_times</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" get_average_execution_times (egse.control.ControlServer.get_average_execution_times)" href="#egse.control.ControlServer.get_average_execution_times">get_average_execution_times</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Returns the average execution times of all functions that have been monitored by this process.</p>
@@ -2494,7 +2607,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.get_commanding_port" href="#egse.control.ControlServer.get_commanding_port">get_commanding_port</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" get_commanding_port (egse.control.ControlServer.get_commanding_port)" href="#egse.control.ControlServer.get_commanding_port">get_commanding_port</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Returns the commanding port used by the Control Server.</p>
@@ -2502,7 +2615,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.get_communication_protocol" href="#egse.control.ControlServer.get_communication_protocol">get_communication_protocol</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" get_communication_protocol (egse.control.ControlServer.get_communication_protocol)" href="#egse.control.ControlServer.get_communication_protocol">get_communication_protocol</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Returns the communication protocol used by the Control Server.</p>
@@ -2510,7 +2623,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.get_ip_address" href="#egse.control.ControlServer.get_ip_address">get_ip_address</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" get_ip_address (egse.control.ControlServer.get_ip_address)" href="#egse.control.ControlServer.get_ip_address">get_ip_address</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Returns the IP address of the current host.</p>
@@ -2518,7 +2631,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.get_monitoring_port" href="#egse.control.ControlServer.get_monitoring_port">get_monitoring_port</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" get_monitoring_port (egse.control.ControlServer.get_monitoring_port)" href="#egse.control.ControlServer.get_monitoring_port">get_monitoring_port</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Returns the monitoring port used by the Control Server.</p>
@@ -2526,7 +2639,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.get_process_status" href="#egse.control.ControlServer.get_process_status">get_process_status</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" get_process_status (egse.control.ControlServer.get_process_status)" href="#egse.control.ControlServer.get_process_status">get_process_status</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Returns the process status of the Control Server.</p>
@@ -2534,7 +2647,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.get_service_port" href="#egse.control.ControlServer.get_service_port">get_service_port</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" get_service_port (egse.control.ControlServer.get_service_port)" href="#egse.control.ControlServer.get_service_port">get_service_port</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Returns the service port used by the Control Server.</p>
@@ -2542,7 +2655,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.get_storage_mnemonic" href="#egse.control.ControlServer.get_storage_mnemonic">get_storage_mnemonic</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" get_storage_mnemonic (egse.control.ControlServer.get_storage_mnemonic)" href="#egse.control.ControlServer.get_storage_mnemonic">get_storage_mnemonic</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Returns the storage mnemonics used by the Control Server.</p>
@@ -2550,7 +2663,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.handle_scheduled_tasks" href="#egse.control.ControlServer.handle_scheduled_tasks">handle_scheduled_tasks</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" handle_scheduled_tasks (egse.control.ControlServer.handle_scheduled_tasks)" href="#egse.control.ControlServer.handle_scheduled_tasks">handle_scheduled_tasks</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Executes or reschedules tasks in the <code>serve()</code> event loop.</p>
@@ -2558,7 +2671,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.is_storage_manager_active" href="#egse.control.ControlServer.is_storage_manager_active">is_storage_manager_active</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" is_storage_manager_active (egse.control.ControlServer.is_storage_manager_active)" href="#egse.control.ControlServer.is_storage_manager_active">is_storage_manager_active</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Checks if the Storage Manager is active.</p>
@@ -2566,7 +2679,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.notify_listeners" href="#egse.control.ControlServer.notify_listeners">notify_listeners</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" notify_listeners (egse.control.ControlServer.notify_listeners)" href="#egse.control.ControlServer.notify_listeners">notify_listeners</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Notifies registered listeners about an event.</p>
@@ -2574,7 +2687,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.quit" href="#egse.control.ControlServer.quit">quit</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" quit (egse.control.ControlServer.quit)" href="#egse.control.ControlServer.quit">quit</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Interrupts the Control Server.</p>
@@ -2582,7 +2695,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.register_as_listener" href="#egse.control.ControlServer.register_as_listener">register_as_listener</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" register_as_listener (egse.control.ControlServer.register_as_listener)" href="#egse.control.ControlServer.register_as_listener">register_as_listener</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Registers a listener with the specified proxy.</p>
@@ -2590,7 +2703,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.register_to_storage_manager" href="#egse.control.ControlServer.register_to_storage_manager">register_to_storage_manager</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" register_to_storage_manager (egse.control.ControlServer.register_to_storage_manager)" href="#egse.control.ControlServer.register_to_storage_manager">register_to_storage_manager</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Registers this Control Server to the Storage Manager.</p>
@@ -2598,7 +2711,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.schedule_task" href="#egse.control.ControlServer.schedule_task">schedule_task</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" schedule_task (egse.control.ControlServer.schedule_task)" href="#egse.control.ControlServer.schedule_task">schedule_task</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Schedules a task to run in the control server event loop.</p>
@@ -2606,7 +2719,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.serve" href="#egse.control.ControlServer.serve">serve</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" serve (egse.control.ControlServer.serve)" href="#egse.control.ControlServer.serve">serve</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Activation of the Control Server.</p>
@@ -2614,7 +2727,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.set_hk_delay" href="#egse.control.ControlServer.set_hk_delay">set_hk_delay</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" set_hk_delay (egse.control.ControlServer.set_hk_delay)" href="#egse.control.ControlServer.set_hk_delay">set_hk_delay</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Sets the delay time for housekeeping.</p>
@@ -2622,7 +2735,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.set_logging_level" href="#egse.control.ControlServer.set_logging_level">set_logging_level</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" set_logging_level (egse.control.ControlServer.set_logging_level)" href="#egse.control.ControlServer.set_logging_level">set_logging_level</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Sets the logging level to the given level.</p>
@@ -2630,7 +2743,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.set_mon_delay" href="#egse.control.ControlServer.set_mon_delay">set_mon_delay</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" set_mon_delay (egse.control.ControlServer.set_mon_delay)" href="#egse.control.ControlServer.set_mon_delay">set_mon_delay</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Sets the delay time for monitoring.</p>
@@ -2638,7 +2751,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.set_scheduled_task_delay" href="#egse.control.ControlServer.set_scheduled_task_delay">set_scheduled_task_delay</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" set_scheduled_task_delay (egse.control.ControlServer.set_scheduled_task_delay)" href="#egse.control.ControlServer.set_scheduled_task_delay">set_scheduled_task_delay</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Sets the delay time between successive executions of scheduled tasks.</p>
@@ -2646,7 +2759,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.store_housekeeping_information" href="#egse.control.ControlServer.store_housekeeping_information">store_housekeeping_information</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" store_housekeeping_information (egse.control.ControlServer.store_housekeeping_information)" href="#egse.control.ControlServer.store_housekeeping_information">store_housekeeping_information</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Sends housekeeping information to the Storage Manager.</p>
@@ -2654,7 +2767,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.unregister_as_listener" href="#egse.control.ControlServer.unregister_as_listener">unregister_as_listener</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" unregister_as_listener (egse.control.ControlServer.unregister_as_listener)" href="#egse.control.ControlServer.unregister_as_listener">unregister_as_listener</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Removes a registered listener from the specified proxy.</p>
@@ -2662,7 +2775,7 @@ of the commanding protocol class.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="egse.control.ControlServer.unregister_from_storage_manager" href="#egse.control.ControlServer.unregister_from_storage_manager">unregister_from_storage_manager</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" unregister_from_storage_manager (egse.control.ControlServer.unregister_from_storage_manager)" href="#egse.control.ControlServer.unregister_from_storage_manager">unregister_from_storage_manager</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Unregisters the Control Server from the Storage Manager.</p>
@@ -2690,11 +2803,11 @@ of the commanding protocol class.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.after_serve" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.after_serve" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">after_serve</span>
 
 
-<a href="#egse.control.ControlServer.after_serve" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.after_serve" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">after_serve</span><span class="p">()</span>
 </code></pre></div>
 
@@ -2710,11 +2823,11 @@ server has been deactivated.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.before_serve" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.before_serve" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">before_serve</span>
 
 
-<a href="#egse.control.ControlServer.before_serve" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.before_serve" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">before_serve</span><span class="p">()</span>
 </code></pre></div>
 
@@ -2730,11 +2843,11 @@ server is activated.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.get_average_execution_times" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.get_average_execution_times" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_average_execution_times</span>
 
 
-<a href="#egse.control.ControlServer.get_average_execution_times" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.get_average_execution_times" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_average_execution_times</span><span class="p">()</span>
 </code></pre></div>
 
@@ -2754,7 +2867,7 @@ server is activated.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="dict">dict</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2773,7 +2886,7 @@ The dictionary keys are the function names, and the values are the average execu
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.get_commanding_port" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.get_commanding_port" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_commanding_port</span>
 
 
@@ -2781,7 +2894,7 @@ The dictionary keys are the function names, and the values are the average execu
       <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
   </span>
 
-<a href="#egse.control.ControlServer.get_commanding_port" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.get_commanding_port" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_commanding_port</span><span class="p">()</span>
 </code></pre></div>
 
@@ -2801,7 +2914,7 @@ The dictionary keys are the function names, and the values are the average execu
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="int">int</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2819,7 +2932,7 @@ The dictionary keys are the function names, and the values are the average execu
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.get_communication_protocol" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.get_communication_protocol" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_communication_protocol</span>
 
 
@@ -2827,7 +2940,7 @@ The dictionary keys are the function names, and the values are the average execu
       <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
   </span>
 
-<a href="#egse.control.ControlServer.get_communication_protocol" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.get_communication_protocol" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_communication_protocol</span><span class="p">()</span>
 </code></pre></div>
 
@@ -2847,7 +2960,7 @@ The dictionary keys are the function names, and the values are the average execu
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="str">str</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2865,11 +2978,11 @@ The dictionary keys are the function names, and the values are the average execu
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.get_ip_address" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.get_ip_address" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_ip_address</span>
 
 
-<a href="#egse.control.ControlServer.get_ip_address" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.get_ip_address" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_ip_address</span><span class="p">()</span>
 </code></pre></div>
 
@@ -2884,7 +2997,7 @@ The dictionary keys are the function names, and the values are the average execu
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.get_monitoring_port" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.get_monitoring_port" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_monitoring_port</span>
 
 
@@ -2892,7 +3005,7 @@ The dictionary keys are the function names, and the values are the average execu
       <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
   </span>
 
-<a href="#egse.control.ControlServer.get_monitoring_port" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.get_monitoring_port" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_monitoring_port</span><span class="p">()</span>
 </code></pre></div>
 
@@ -2912,7 +3025,7 @@ The dictionary keys are the function names, and the values are the average execu
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="int">int</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2930,11 +3043,11 @@ The dictionary keys are the function names, and the values are the average execu
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.get_process_status" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.get_process_status" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_process_status</span>
 
 
-<a href="#egse.control.ControlServer.get_process_status" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.get_process_status" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_process_status</span><span class="p">()</span>
 </code></pre></div>
 
@@ -2954,7 +3067,7 @@ The dictionary keys are the function names, and the values are the average execu
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="dict">dict</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2972,7 +3085,7 @@ The dictionary keys are the function names, and the values are the average execu
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.get_service_port" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.get_service_port" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_service_port</span>
 
 
@@ -2980,7 +3093,7 @@ The dictionary keys are the function names, and the values are the average execu
       <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
   </span>
 
-<a href="#egse.control.ControlServer.get_service_port" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.get_service_port" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_service_port</span><span class="p">()</span>
 </code></pre></div>
 
@@ -3000,7 +3113,7 @@ The dictionary keys are the function names, and the values are the average execu
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="int">int</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3018,11 +3131,11 @@ The dictionary keys are the function names, and the values are the average execu
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.get_storage_mnemonic" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.get_storage_mnemonic" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_storage_mnemonic</span>
 
 
-<a href="#egse.control.ControlServer.get_storage_mnemonic" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.get_storage_mnemonic" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_storage_mnemonic</span><span class="p">()</span>
 </code></pre></div>
 
@@ -3044,7 +3157,7 @@ identifying the device.  If this is not implemented in the subclass, then the cl
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="str">str</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3062,11 +3175,11 @@ identifying the device.  If this is not implemented in the subclass, then the cl
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.handle_scheduled_tasks" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.handle_scheduled_tasks" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">handle_scheduled_tasks</span>
 
 
-<a href="#egse.control.ControlServer.handle_scheduled_tasks" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.handle_scheduled_tasks" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">handle_scheduled_tasks</span><span class="p">()</span>
 </code></pre></div>
 
@@ -3081,11 +3194,11 @@ identifying the device.  If this is not implemented in the subclass, then the cl
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.is_storage_manager_active" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.is_storage_manager_active" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">is_storage_manager_active</span>
 
 
-<a href="#egse.control.ControlServer.is_storage_manager_active" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.is_storage_manager_active" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">is_storage_manager_active</span><span class="p">()</span>
 </code></pre></div>
 
@@ -3113,7 +3226,7 @@ identifying the device.  If this is not implemented in the subclass, then the cl
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="bool">bool</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3131,11 +3244,11 @@ identifying the device.  If this is not implemented in the subclass, then the cl
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.notify_listeners" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.notify_listeners" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">notify_listeners</span>
 
 
-<a href="#egse.control.ControlServer.notify_listeners" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.notify_listeners" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">notify_listeners</span><span class="p">(</span><span class="n">event_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
@@ -3162,7 +3275,7 @@ and notifies all registered listeners with the created event.</p>
                 <code>event_id</code>
             </td>
             <td>
-                  <code><span title="int">int</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3178,7 +3291,7 @@ and notifies all registered listeners with the created event.</p>
                 <code>context</code>
             </td>
             <td>
-                  <code><span title="dict">dict</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3208,11 +3321,11 @@ chain.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.quit" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.quit" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">quit</span>
 
 
-<a href="#egse.control.ControlServer.quit" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.quit" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">quit</span><span class="p">()</span>
 </code></pre></div>
 
@@ -3227,11 +3340,11 @@ chain.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.register_as_listener" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.register_as_listener" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">register_as_listener</span>
 
 
-<a href="#egse.control.ControlServer.register_as_listener" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.register_as_listener" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">register_as_listener</span><span class="p">(</span><span class="n">proxy</span><span class="p">,</span> <span class="n">listener</span><span class="p">)</span>
 </code></pre></div>
 
@@ -3259,7 +3372,7 @@ making up to 5 attempts to add the listener.</p>
                 <code>proxy</code>
             </td>
             <td>
-                  <code><span title="typing.Type">Type</span></code>
+                  <code><a class="autorefs autorefs-external" title="typing.Type" href="https://docs.python.org/3/library/typing.html#typing.Type">Type</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3275,7 +3388,7 @@ making up to 5 attempts to add the listener.</p>
                 <code>listener</code>
             </td>
             <td>
-                  <code><span title="dict">dict</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3302,7 +3415,7 @@ listener details.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="ConnectionError">ConnectionError</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ConnectionError">ConnectionError</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3326,11 +3439,11 @@ multiple retry attempts.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.register_to_storage_manager" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.register_to_storage_manager" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">register_to_storage_manager</span>
 
 
-<a href="#egse.control.ControlServer.register_to_storage_manager" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.register_to_storage_manager" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">register_to_storage_manager</span><span class="p">()</span>
 </code></pre></div>
 
@@ -3363,11 +3476,11 @@ the information in a dedicated CSV file.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.schedule_task" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.schedule_task" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">schedule_task</span>
 
 
-<a href="#egse.control.ControlServer.schedule_task" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.schedule_task" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">schedule_task</span><span class="p">(</span><span class="n">callback</span><span class="p">,</span> <span class="n">after</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">when</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
@@ -3398,11 +3511,11 @@ the information in a dedicated CSV file.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.serve" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.serve" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">serve</span>
 
 
-<a href="#egse.control.ControlServer.serve" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.serve" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">serve</span><span class="p">()</span>
 </code></pre></div>
 
@@ -3434,11 +3547,11 @@ the information in a dedicated CSV file.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.set_hk_delay" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.set_hk_delay" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">set_hk_delay</span>
 
 
-<a href="#egse.control.ControlServer.set_hk_delay" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.set_hk_delay" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_hk_delay</span><span class="p">(</span><span class="n">seconds</span><span class="p">)</span>
 </code></pre></div>
 
@@ -3468,7 +3581,7 @@ the server from blocking when a too short delay time is requested.</p>
                 <code>seconds</code>
             </td>
             <td>
-                  <code><span title="float">float</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3494,7 +3607,7 @@ the server from blocking when a too short delay time is requested.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="float">float</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3512,11 +3625,11 @@ the server from blocking when a too short delay time is requested.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.set_logging_level" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.set_logging_level" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">set_logging_level</span>
 
 
-<a href="#egse.control.ControlServer.set_logging_level" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.set_logging_level" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_logging_level</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
 </code></pre></div>
 
@@ -3550,7 +3663,7 @@ the server from blocking when a too short delay time is requested.</p>
                 <code>level</code>
             </td>
             <td>
-                  <code><span title="int">int</span> | <span title="str">str</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3571,11 +3684,11 @@ the server from blocking when a too short delay time is requested.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.set_mon_delay" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.set_mon_delay" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">set_mon_delay</span>
 
 
-<a href="#egse.control.ControlServer.set_mon_delay" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.set_mon_delay" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_mon_delay</span><span class="p">(</span><span class="n">seconds</span><span class="p">)</span>
 </code></pre></div>
 
@@ -3605,7 +3718,7 @@ server from blocking when a too short delay time is requested.</p>
                 <code>seconds</code>
             </td>
             <td>
-                  <code><span title="float">float</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3631,7 +3744,7 @@ server from blocking when a too short delay time is requested.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="float">float</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3649,11 +3762,11 @@ server from blocking when a too short delay time is requested.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.set_scheduled_task_delay" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.set_scheduled_task_delay" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">set_scheduled_task_delay</span>
 
 
-<a href="#egse.control.ControlServer.set_scheduled_task_delay" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.set_scheduled_task_delay" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_scheduled_task_delay</span><span class="p">(</span><span class="n">seconds</span><span class="p">)</span>
 </code></pre></div>
 
@@ -3698,11 +3811,11 @@ server from blocking when a too short delay time is requested.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.store_housekeeping_information" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.store_housekeeping_information" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">store_housekeeping_information</span>
 
 
-<a href="#egse.control.ControlServer.store_housekeeping_information" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.store_housekeeping_information" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">store_housekeeping_information</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 </code></pre></div>
 
@@ -3729,7 +3842,7 @@ saved.</p>
                 <code>data</code>
             </td>
             <td>
-                  <code><span title="dict">dict</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3751,11 +3864,11 @@ a timestamp that represents the date/time when the HK was received from the devi
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.unregister_as_listener" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.unregister_as_listener" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">unregister_as_listener</span>
 
 
-<a href="#egse.control.ControlServer.unregister_as_listener" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.unregister_as_listener" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">unregister_as_listener</span><span class="p">(</span><span class="n">proxy</span><span class="p">,</span> <span class="n">listener</span><span class="p">)</span>
 </code></pre></div>
 
@@ -3783,7 +3896,7 @@ making up to 5 attempts to add the listener.</p>
                 <code>proxy</code>
             </td>
             <td>
-                  <code><span title="typing.Type">Type</span></code>
+                  <code><a class="autorefs autorefs-external" title="typing.Type" href="https://docs.python.org/3/library/typing.html#typing.Type">Type</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3799,7 +3912,7 @@ making up to 5 attempts to add the listener.</p>
                 <code>listener</code>
             </td>
             <td>
-                  <code><span title="dict">dict</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3826,7 +3939,7 @@ listener details.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="ConnectionError">ConnectionError</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ConnectionError">ConnectionError</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3852,11 +3965,11 @@ finish before the ZeroMQ context is destroyed.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.control.ControlServer.unregister_from_storage_manager" class="doc doc-heading">
+<h4 id="egse.control.ControlServer.unregister_from_storage_manager" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">unregister_from_storage_manager</span>
 
 
-<a href="#egse.control.ControlServer.unregister_from_storage_manager" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.control.ControlServer.unregister_from_storage_manager" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">unregister_from_storage_manager</span><span class="p">()</span>
 </code></pre></div>
 
@@ -3893,11 +4006,11 @@ finish before the ZeroMQ context is destroyed.</p>
 <div class="doc doc-object doc-function">
 
 
-<h2 id="egse.control.is_control_server_active" class="doc doc-heading">
+<h3 id="egse.control.is_control_server_active" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">is_control_server_active</span>
 
 
-<a href="#egse.control.is_control_server_active" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#egse.control.is_control_server_active" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">is_control_server_active</span><span class="p">(</span><span class="n">endpoint</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
 </code></pre></div>
 
@@ -3924,7 +4037,7 @@ period.</p>
                 <code>endpoint</code>
             </td>
             <td>
-                  <code><span title="str">str</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3940,7 +4053,7 @@ period.</p>
                 <code>timeout</code>
             </td>
             <td>
-                  <code><span title="float">float</span></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
             </td>
             <td>
               <div class="doc-md-description">

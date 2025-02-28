@@ -768,6 +768,18 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Installation Guide for Developers
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -778,6 +790,43 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#python" class="md-nav__link">
+    <span class="md-ellipsis">
+      Python
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#github" class="md-nav__link">
+    <span class="md-ellipsis">
+      GitHub
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1478,6 +1527,14 @@
       
         
       
+        
+      
+        
+      
+        
+      
+        
+      
     
     
       
@@ -1681,6 +1738,72 @@
   
   
     <li class="md-nav__item">
+      <a href="../../api/device/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    egse.device
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dict/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    egse.dicts
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dummy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    egse.dummy
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../api/exceptions/" class="md-nav__link">
         
   
@@ -1740,6 +1863,28 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/system/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    egse.system
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1788,6 +1933,32 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#python" class="md-nav__link">
+    <span class="md-ellipsis">
+      Python
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#github" class="md-nav__link">
+    <span class="md-ellipsis">
+      GitHub
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1806,7 +1977,18 @@
 
 
 <h1 id="installation-guide-for-developers">Installation Guide for Developers<a class="headerlink" href="#installation-guide-for-developers" title="Permanent link">&para;</a></h1>
-<h1 id="github">GitHub<a class="headerlink" href="#github" title="Permanent link">&para;</a></h1>
+<h2 id="python">Python<a class="headerlink" href="#python" title="Permanent link">&para;</a></h2>
+<p>You will notice that I use the <code>py</code> command often in examples. This is not just a shortcut, but 
+the command that is installed by the <code>python-launcer</code> and determines which Python executable 
+shall be started. You can install the <code>python-launcher</code> with:</p>
+<pre><code>$ cargo install python-launcher
+</code></pre>
+<p>Then add the following line to your <code>.bash_profile</code> if not already there:</p>
+<pre><code>export PATH=~/.local/bin:~/.cargo/bin:$PATH`
+</code></pre>
+<p>If you do not want to install the <code>python-launcher</code>, just replace <code>py</code> with <code>python</code> or 
+<code>python3</code> in the examples.</p>
+<h2 id="github">GitHub<a class="headerlink" href="#github" title="Permanent link">&para;</a></h2>
 <p>Before starting, make sure you have a <em>fork</em> of the <code>cgse</code> repository. Through this fork (which 
 resides on the GitHub  server) you will create pull requests. Install a clone of your fork on 
 your local machine or laptop.</p>
