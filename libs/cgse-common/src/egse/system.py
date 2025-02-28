@@ -6,6 +6,7 @@ The module has external dependencies to:
 
 * __distro__: for determining the Linux distribution
 * __psutil__: for system statistics
+* __rich__: for console output
 
 """
 from __future__ import annotations
@@ -41,6 +42,7 @@ from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Type
 from typing import Union
 
 import distro  # For determining the Linux distribution
@@ -68,8 +70,10 @@ def all_logging_disabled(highest_level=logging.CRITICAL, flag=True):
             Defaults to True.
 
     Example:
-        >>> with all_logging_disabled():
-        ...     # Your code with logging messages disabled
+        ```python
+        with all_logging_disabled():
+            ...  # Your code with logging messages disabled
+        ```
 
     Note:
         This context manager is designed to prevent any logging messages triggered during its body
@@ -149,7 +153,8 @@ def now(utc: bool = True):
         return datetime.datetime.now()
 
 
-def format_datetime(dt: Union[str, datetime.datetime] = None, fmt: str = None, width: int = 6, precision: int = 3):
+def format_datetime(
+        dt: Union[str, datetime.datetime] = None, fmt: str = None, width: int = 6, precision: int = 3) -> str:
     """Format a datetime as YYYY-mm-ddTHH:MM:SS.μs+0000.
 
     If the given argument is not timezone aware, the last part, i.e. `+0000` will not be there.
@@ -164,6 +169,7 @@ def format_datetime(dt: Union[str, datetime.datetime] = None, fmt: str = None, w
     This format string will be used with the `strftime()` method and should obey those conventions.
 
     Example:
+        ```python
         >>> format_datetime(datetime.datetime(2020, 6, 13, 14, 45, 45, 696138))
         '2020-06-13T14:45:45.696'
         >>> format_datetime(datetime.datetime(2020, 6, 13, 14, 45, 45, 696138), precision=6)
@@ -178,12 +184,14 @@ def format_datetime(dt: Union[str, datetime.datetime] = None, fmt: str = None, w
         '20220214'
         >>> format_datetime("yesterday", fmt="%d/%m/%Y")
         '14/02/2022'
+        ```
 
     Args:
         dt (datetime): a datetime object or an agreed string like yesterday, tomorrow, ...
         fmt (str): a format string that is accepted by `strftime()`
         width (int): the width to use for formatting the microseconds
         precision (int): the precision for the microseconds
+
     Returns:
         a string representation of the current time in UTC, e.g. `2020-04-29T12:30:04.862+0000`.
 
@@ -210,7 +218,7 @@ def format_datetime(dt: Union[str, datetime.datetime] = None, fmt: str = None, w
         width = min(width, precision)
         timestamp = (
             f"{dt.strftime('%Y-%m-%dT%H:%M')}:"
-            f"{dt.second:02d}.{dt.microsecond//10**(6-precision):0{width}d}{dt.strftime('%z')}"
+            f"{dt.second:02d}.{dt.microsecond // 10 ** (6 - precision):0{width}d}{dt.strftime('%z')}"
         )
 
     return timestamp
@@ -221,9 +229,9 @@ SECONDS_IN_AN_HOUR = 60 * 60
 SECONDS_IN_A_MINUTE = 60
 
 
-def humanize_seconds(seconds: float, include_micro_seconds: bool = True):
+def humanize_seconds(seconds: float, include_micro_seconds: bool = True) -> str:
     """
-    The number of seconds is represented as "[#D]d [#H]h[#M]m[#S]s.MS" where:
+    The number of seconds is represented as `[#D]d [#H]h[#M]m[#S]s.MS` where:
 
     * `#D` is the number of days if days > 0
     * `#H` is the number of hours if hours > 0
@@ -231,7 +239,12 @@ def humanize_seconds(seconds: float, include_micro_seconds: bool = True):
     * `#S` is the number of seconds
     * `MS` is the number of microseconds
 
-    Examples:
+    Args:
+        seconds: the number of seconds
+        include_micro_seconds: True if microseconds shall be included
+
+    Example:
+        ```python
         >>> humanize_seconds(20)
         '20s.000'
         >>> humanize_seconds(10*24*60*60)
@@ -240,6 +253,7 @@ def humanize_seconds(seconds: float, include_micro_seconds: bool = True):
         '10d 03h00m42s.023'
         >>> humanize_seconds(10*86400 + 3*3600 + 42.023, include_micro_seconds=False)
         '10d 03h00m42s'
+        ```
 
     Returns:
          a string representation for the number of seconds.
@@ -275,13 +289,15 @@ def humanize_seconds(seconds: float, include_micro_seconds: bool = True):
     return result
 
 
-def str_to_datetime(datetime_string: str):
-    """Convert the given string to a datetime object.
+def str_to_datetime(datetime_string: str) -> datetime.datetime:
+    """
+    Convert the given string to a datetime object.
 
     Args:
-        - datatime_string: String representing a datetime, in the format %Y-%m-%dT%H:%M:%S.%f%z.
+        datetime_string: String representing a datetime, in the format `%Y-%m-%dT%H:%M:%S.%f%z`.
 
-    Returns: Datetime object.
+    Returns:
+        a datetime object.
     """
 
     return datetime.datetime.strptime(datetime_string.strip("\r"), TIME_FORMAT)
@@ -313,13 +329,15 @@ def duration(dt_start: str | datetime.datetime, dt_end: str | datetime.datetime)
     return dt_end - dt_start if dt_end > dt_start else dt_start - dt_end
 
 
-def time_since_epoch_1958(datetime_string: str):
-    """Calculate the time since epoch 1958 for the given string representation of a datetime.
+def time_since_epoch_1958(datetime_string: str) -> float:
+    """
+    Calculate the time since epoch 1958 for the given string representation of a datetime.
 
     Args:
-        - datetime_string: String representing a datetime, in the format %Y-%m-%dT%H:%M:%S.%f%z.
+        datetime_string: String representing a datetime, in the format `%Y-%m-%dT%H:%M:%S.%f%z`.
 
-    Returns: Time since the 1958 epoch [s].
+    Returns:
+        Time since the 1958 epoch [s].
     """
 
     time_since_epoch_1970 = str_to_datetime(datetime_string).timestamp()  # Since Jan 1st, 1970, midnight
@@ -340,14 +358,6 @@ class Timer(object):
     Log messages are sent to the logger (including egse_logger for egse.system) and the logging
     level can be passed in as an optional argument. Default logging level is INFO.
 
-    Examples:
-        >>> with Timer("Some calculation") as timer:
-        ...     # do some calculations
-        ...     timer.log_elapsed()
-        ...     # do some more calculations
-        ...     print(f"Elapsed seconds: {timer()}")  # doctest: +ELLIPSIS
-        Elapsed seconds: ...
-
     Args:
         name (str): a name for the Timer, will be printed in the logging message
         precision (int): the precision for the presentation of the elapsed time
@@ -356,6 +366,16 @@ class Timer(object):
 
     Returns:
         a context manager class that records the elapsed time.
+
+    Example:
+        ```Python
+        with Timer("Some calculation") as timer:
+            # do some calculations
+            timer.log_elapsed()
+            # do some more calculations
+            print(f"Elapsed seconds: {timer()}")
+        Elapsed seconds: ...
+        ```
     """
 
     def __init__(self, name="Timer", precision=3, log_level=logging.INFO):
@@ -383,8 +403,9 @@ class Timer(object):
         # Overwrite self.end() so that it always returns the fixed end time
         self.end = self._end
 
-        logger.log(self.log_level, f"{self.name} [ {self.filename}:{self.func}:{self.lineno} ]: "
-                                   f"{self.end() - self.start:0.{self.precision}f} seconds")
+        logger.log(
+            self.log_level, f"{self.name} [ {self.filename}:{self.func}:{self.lineno} ]: "
+                            f"{self.end() - self.start:0.{self.precision}f} seconds")
         return False
 
     def __call__(self):
@@ -409,7 +430,7 @@ class Timer(object):
         return self._total_elapsed
 
 
-def ping(host, timeout: float = 3.0):
+def ping(host, timeout: float = 3.0) -> bool:
     """
     Sends a ping request to the given host.
 
@@ -423,7 +444,7 @@ def ping(host, timeout: float = 3.0):
         True when host responds to a ping request.
 
     Reference:
-        https://stackoverflow.com/a/32684938
+        [SO – Pinging servers in Python](https://stackoverflow.com/a/32684938)
     """
 
     # Option for the number of packets as a function of
@@ -479,12 +500,11 @@ def get_caller_info(level=1) -> CallerInfo:
     what you want so the default level is 1 which returns information about the function
     where the call to `get_caller_info` was made.
 
-    There is no check
     Args:
         level (int): the number of levels to go back in the stack
 
     Returns:
-        a namedtuple: CallerInfo['filename', 'function', 'lineno'].
+        a namedtuple: `CallerInfo['filename', 'function', 'lineno']`.
     """
     frame = inspect.currentframe()
     for _ in range(level):
@@ -508,7 +528,9 @@ def get_caller_breadcrumbs(prefix: str = "call stack: ", limit: int = 5, with_fi
     Use this function for example if you need to find out when and where a function is called in your process.
 
     Example:
+        ```text
         state.py:load_setup[126] <- state.py:setup[103] <- spw.py:__str__[167] <- nfeesim.py:run[575]
+        ```
 
     Args:
         prefix: a prefix for the calling sequence [default='call stack: '].
@@ -571,7 +593,7 @@ class AttributeDict(dict):
     Similarly, adding or defining attributes will make them also keys in the dict.
 
         >>> ad.d = 4  # creates a new attribute
-        >>> print(ad['d'])  # prints 4
+        >>> print(ad['d'])
         4
     """
 
@@ -606,6 +628,7 @@ class AttributeDict(dict):
 
 
 attrdict = AttributeDict
+"""Shortcut for the AttributeDict class."""
 
 
 def walk_dict_tree(dictionary: dict, tree: Tree, text_style: str = "green"):
@@ -618,7 +641,7 @@ def walk_dict_tree(dictionary: dict, tree: Tree, text_style: str = "green"):
             tree.add(text)
 
 
-def recursive_dict_update(this: dict, other: dict):
+def recursive_dict_update(this: dict, other: dict) -> dict:
     """
     Recursively update a dictionary `this` with the content of another dictionary `other`.
 
@@ -627,7 +650,7 @@ def recursive_dict_update(this: dict, other: dict):
 
     Please note that the update will be in-place, i.e. the `this` dictionaory will be
     changed/updated.
-
+    ```python
     >>> global_settings = {"A": "GA", "B": "GB", "C": "GC"}
     >>> local_settings = {"B": "LB", "D": "LD"}
     >>> {**global_settings, **local_settings}
@@ -642,13 +665,14 @@ def recursive_dict_update(this: dict, other: dict):
     >>> local_settings = {"A": {"B": {"C": 13, "D": 73}}}
     >>> recursive_dict_update(global_settings, local_settings)
     {'A': {'B': {'C': 13, 'D': 73}}}
+    ```
 
     Args:
         this (dict): The origin dictionary
         other (dict): Changes that shall be applied to `this`
 
     Returns:
-        A new dictionary with the recursive updates.
+        The original `this` dictionary with the recursive updates.
     """
 
     if not isinstance(this, dict) or not isinstance(other, dict):
@@ -665,21 +689,24 @@ def recursive_dict_update(this: dict, other: dict):
 
 def flatten_dict(source_dict: dict):
     """
-    Flatten the given dictionary concatenating the keys with a colon ':'.
-
-    >>> d = {"A": 1, "B": {"E": {"F": 2}}, "C": {"D": 3}}
-    >>> flatten_dict(d)
-    {'A': 1, 'B:E:F': 2, 'C:D': 3}
-
-    >>> d = {"A": 'a', "B": {"C": {"D": 'd', "E": 'e'}, "F": 'f'}}
-    >>> flatten_dict(d)
-    {'A': 'a', 'B:C:D': 'd', 'B:C:E': 'e', 'B:F': 'f'}
+    Flatten the given dictionary concatenating the keys with a colon '`:`'.
 
     Args:
         source_dict: the original dictionary that will be flattened
 
     Returns:
         A new flattened dictionary.
+
+    Example:
+        ```python
+        >>> d = {"A": 1, "B": {"E": {"F": 2}}, "C": {"D": 3}}
+        >>> flatten_dict(d)
+        {'A': 1, 'B:E:F': 2, 'C:D': 3}
+
+        >>> d = {"A": 'a', "B": {"C": {"D": 'd', "E": 'e'}, "F": 'f'}}
+        >>> flatten_dict(d)
+        {'A': 'a', 'B:C:D': 'd', 'B:C:E': 'e', 'B:F': 'f'}
+        ```
     """
 
     def expand(key, value):
@@ -693,7 +720,7 @@ def flatten_dict(source_dict: dict):
     return dict(items)
 
 
-def get_system_stats():
+def get_system_stats() -> dict:
     """
     Gather system information about the CPUs and memory usage and return a dictionary with the
     following information:
@@ -803,7 +830,8 @@ def get_os_version() -> str:
     return "unknown"
 
 
-def wait_until(condition, *args, interval=0.1, timeout=1, verbose=False, **kwargs) -> int:
+def wait_until(condition: Callable, *args: list, interval: float = 0.1, timeout: float = 1.0, verbose: bool = False,
+               **kwargs: dict) -> bool:
     """
     Sleep until the given condition is fulfilled. The arguments are passed into the condition
     callable which is called in a while loop until the condition is met or the timeout is reached.
@@ -811,18 +839,19 @@ def wait_until(condition, *args, interval=0.1, timeout=1, verbose=False, **kwarg
     Note that the condition can be a function, method or callable class object.
     An example of the latter is:
 
-        class SleepUntilCount:
-            def __init__(self, end):
-                self._end = end
-                self._count = 0
+    ```python
+    class SleepUntilCount:
+        def __init__(self, end):
+            self._end = end
+            self._count = 0
 
-            def __call__(self, *args, **kwargs):
-                self._count += 1
-                if self._count >= self._end:
-                    return True
-                else:
-                    return False
-
+        def __call__(self, *args, **kwargs):
+            self._count += 1
+            if self._count >= self._end:
+                return True
+            else:
+                return False
+    ```
 
     Args:
         condition: a callable that returns True when the condition is met, False otherwise
@@ -831,9 +860,10 @@ def wait_until(condition, *args, interval=0.1, timeout=1, verbose=False, **kwarg
             not met [s, default=1]
         verbose: log debugging messages if True
         *args: any arguments that will be passed into the condition function
+        **kwargs: any keyword arguments that will be passed into the condition function
 
     Returns:
-        True when function timed out, False otherwise
+        True when function timed out, False otherwise.
     """
 
     if inspect.isfunction(condition) or inspect.ismethod(condition):
@@ -860,7 +890,9 @@ def wait_until(condition, *args, interval=0.1, timeout=1, verbose=False, **kwarg
     return False
 
 
-def waiting_for(condition, *args, interval=0.1, timeout=1, verbose=False, **kwargs):
+def waiting_for(
+        condition: Callable, *args: list, interval: float = 0.1, timeout: float = 1.0, verbose: bool = False,
+        **kwargs: dict) -> float:
     """
     Sleep until the given condition is fulfilled. The arguments are passed into the condition
     callable which is called in a while loop until the condition is met or the timeout is reached.
@@ -868,18 +900,19 @@ def waiting_for(condition, *args, interval=0.1, timeout=1, verbose=False, **kwar
     Note that the condition can be a function, method or callable class object.
     An example of the latter is:
 
-        class SleepUntilCount:
-            def __init__(self, end):
-                self._end = end
-                self._count = 0
+    ```python
+    class SleepUntilCount:
+        def __init__(self, end):
+            self._end = end
+            self._count = 0
 
-            def __call__(self, *args, **kwargs):
-                self._count += 1
-                if self._count >= self._end:
-                    return True
-                else:
-                    return False
-
+        def __call__(self, *args, **kwargs):
+            self._count += 1
+            if self._count >= self._end:
+                return True
+            else:
+                return False
+    ```
 
     Args:
         condition: a callable that returns True when the condition is met, False otherwise
@@ -888,6 +921,10 @@ def waiting_for(condition, *args, interval=0.1, timeout=1, verbose=False, **kwar
             not met [s, default=1]
         verbose: log debugging messages if True
         *args: any arguments that will be passed into the condition function
+        **kwargs: any keyword arguments that will be passed into the condition function
+
+    Returns:
+        The duration until the condition was met.
 
     Raises:
         A TimeoutError when the condition was not fulfilled within the timeout period.
@@ -918,15 +955,15 @@ def waiting_for(condition, *args, interval=0.1, timeout=1, verbose=False, **kwar
     return duration
 
 
-def has_internet(host="8.8.8.8", port=53, timeout=3):
+def has_internet(host: str = "8.8.8.8", port: int = 53, timeout: float = 3.0):
     """Returns True if we have internet connection.
 
-    Host: 8.8.8.8 (google-public-dns-a.google.com)
-    OpenPort: 53/tcp
-    Service: domain (DNS/TCP)
+    Args:
+        host: hostname or IP address [default: 8.8.8.8 (google-public-dns-a.google.com)]
+        port: 53 [service: tcp]
+        timeout: the time to block before failing on a connection
 
-    .. Note::
-
+    Note:
         This might give the following error codes:
 
         * [Errno 51] Network is unreachable
@@ -956,7 +993,7 @@ def do_every(period: float, func: callable, *args) -> None:
     simple `sleep()` will cause a drift. This method will not drift.
 
     You can use this function in combination with the threading module to execute the
-    function in the background, but be careful as the function might not be thread safe.
+    function in the background, but be careful as the function `func` might not be thread safe.
 
     ```
     timer_thread = threading.Thread(target=do_every, args=(10, func))
@@ -995,12 +1032,11 @@ def chdir(dirname=None):
     Args:
         dirname (str or Path): temporary folder name to switch to within the context
 
-    Examples:
-
-        >>> with chdir('/tmp'):
-        ...     # do stuff in this writable tmp folder
-        ...     pass
-
+    Example:
+        ```python
+        with chdir('/tmp'):
+            ...  # do stuff in this writable /tmp folder
+        ```
     """
     current_dir = os.getcwd()
     try:
@@ -1019,12 +1055,12 @@ def env_var(**kwargs):
     Args:
         **kwargs: dictionary with environment variables that are needed
 
-    Examples:
-
-        >>> with env_var(PLATO_DATA_STORAGE_LOCATION="/Users/rik/data"):
-        ...    # do stuff that needs these alternate setting
-        ...    pass
-
+    Example:
+        ```python
+        with env_var(PLATO_DATA_STORAGE_LOCATION="/Users/rik/data"):
+           # do stuff that needs these alternate setting
+           ...
+        ```
     """
     saved_env = {}
 
@@ -1055,11 +1091,11 @@ def filter_by_attr(elements: Iterable, **attrs) -> List:
     considered a comparison function and the second value the actual value. The attribute
     is then compared to the value using this function.
 
-    ```
+    ```python
     result = filter_by_attr(setups, camera__model="EM", site_id=(is_in, ("CSL", "INTA")))
     ```
     The function `is_in` is defined as follows:
-    ```
+    ```python
     def is_in(a, b):
         return a in b
     ```
@@ -1069,7 +1105,7 @@ def filter_by_attr(elements: Iterable, **attrs) -> List:
     the value can be `True` or `False`. Use this to return all elements in the iterable
     that have the attribute, or not. The following example returns all Setups where the
     `gse.ogse.fwc_factor` is not defined:
-    ```
+    ```python
     result = filter_by_attr(setups, camera__model="EM", gse__ogse__fwc_factor=(hasattr, False)))
     ```
 
@@ -1109,10 +1145,13 @@ def filter_by_attr(elements: Iterable, **attrs) -> List:
 
 
 def replace_environment_variable(input_string: str):
-    """Returns the `input_string` with all occurrences of ENV['var'].
+    """
+    Returns the `input_string` with all occurrences of ENV['var'].
 
+    ```python
     >>> replace_environment_variable("ENV['HOME']/data/CSL")
     '/Users/rik/data/CSL'
+    ```
 
     Args:
         input_string (str): the string to replace
@@ -1161,14 +1200,17 @@ def read_last_line(filename: str | Path, max_line_length=5000):
             return ""
 
 
-def read_last_lines(filename: str | Path, num_lines: int):
-    """Return the last lines of a text file.
+def read_last_lines(filename: str | Path, num_lines: int) -> List[str]:
+    """
+    Return the last lines of a text file.
 
     Args:
-        - filename: Filename.
-        - num_lines: Number of lines at the back of the file that should be read and returned.
+        filename: Filename.
+        num_lines: Number of lines at the back of the file that should be read and returned.
 
-    Returns: Last lines of a text file.
+    Returns:
+        Last lines of a text file as a list of strings. An empty list is returned
+          when the file doesn't exist.
     """
 
     # See: https://www.geeksforgeeks.org/python-reading-last-n-lines-of-a-file/
@@ -1179,7 +1221,7 @@ def read_last_lines(filename: str | Path, num_lines: int):
     assert num_lines > 1
 
     if not filename.exists():
-        return None
+        return []
 
     assert num_lines >= 0
 
@@ -1210,25 +1252,34 @@ def read_last_lines(filename: str | Path, num_lines: int):
     return lines[-num_lines:]
 
 
-def is_namespace(module) -> bool:
+def is_namespace(module: str | ModuleType) -> bool:
     """
     Checks if a module represents a namespace package.
-
-    A namespace package is defined as a module that has a '__path__' attribute
-    and no '__file__' attribute.
 
     Args:
         module: The module to be checked.
 
     Returns:
-        bool: True if the module is a namespace package, False otherwise.
+        True if the argument is a namespace package, False otherwise.
 
     Note:
-        A namespace package is a special kind of package that does not contain
-        an actual implementation but serves as a container for other packages
-        or modules.
+        A namespace package is a special kind of package that spans multiple
+        directories or locations, but doesn't contain an `__init__.py` file
+        in any of its directories.
+
+        Technically, a namespace package is defined as a module that has a
+        `__path__` attribute and no `__file__` attribute.
+
+        A namespace package allows for package portions to be distributed
+        independently.
 
     """
+
+    if isinstance(module, str):
+        try:
+            module = importlib.import_module(module)
+        except (TypeError, ModuleNotFoundError):
+            return False
 
     if hasattr(module, '__path__') and getattr(module, '__file__', None) is None:
         return True
@@ -1236,8 +1287,39 @@ def is_namespace(module) -> bool:
         return False
 
 
+def is_module(module: str | ModuleType) -> bool:
+    """
+    Returns True if the argument is a module or represents a module, False otherwise.
+
+    Args:
+        module: a module or module name.
+
+    Returns:
+        True if the argument is a module, False otherwise.
+    """
+    if isinstance(module, ModuleType):
+        return True
+    elif isinstance(module, str):
+        try:
+            module = importlib.import_module(module)
+        except (TypeError, ModuleNotFoundError):
+            return False
+        else:
+            return True
+    else:
+        return False
+
+
 def get_package_description(package_name) -> str:
-    """Returns the description of the package as specified in the projects metadata Summary."""
+    """
+    Returns the description of the package as specified in the projects metadata Summary.
+
+    Example:
+        ```python
+        >>> get_package_description('cgse-common')
+        'Software framework to support hardware testing'
+        ```
+    """
     try:
         # Get the metadata for the package
         metadata = importlib.metadata.metadata(package_name)
@@ -1275,13 +1357,12 @@ def get_package_location(module: str) -> List[Path]:
         module_name = module.__name__
     elif isinstance(module, str):
         module_name = module
+        try:
+            module = importlib.import_module(module)
+        except TypeError:
+            warnings.warn(f"The module is not found or is not valid: {module_name}.")
+            return []
     else:
-        return []
-
-    try:
-        module = importlib.import_module(module)
-    except TypeError:
-        warnings.warn(f"The module is not found or is not valid: {module_name}.")
         return []
 
     if is_namespace(module):
@@ -1294,33 +1375,35 @@ def get_package_location(module: str) -> List[Path]:
         return [] if location is None else [location]
 
 
-def get_module_location(arg) -> Optional[Path]:
+def get_module_location(arg) -> Path | None:
     """
     Returns the location of the module as a Path object.
 
     The function can be given a string, which should then be a module name, or a function or module.
     For the latter two, the module name will be determined.
 
-    >>> get_module_location('egse')
-    >>> get_module_location(egse.system)
-    >>> get_module_location()
-
     Args:
         arg: can be one of the following: function, module, string
 
     Returns:
         The location of the module as a Path object or None when the location can not be determined or
-        an invalid argument was provided.
+          an invalid argument was provided.
 
     Example:
+        ```python
         >>> get_module_location('egse')
         Path('/path/to/egse')
 
         >>> get_module_location(egse.system)
         Path('/path/to/egse/system')
+        ```
 
     Note:
         If the module is not found or is not a valid module, None is returned.
+
+    Warning:
+        If the module is a namespace, None will be returned. Use the function [is_namespace()](
+        ./#egse.system.is_namespace) to determine if the 'module' is a namespace.
 
     """
     if isinstance(arg, FunctionType):
@@ -1357,7 +1440,6 @@ def get_module_location(arg) -> Optional[Path]:
         return None
 
 
-
 def get_full_classname(obj: object) -> str:
     """
     Returns the fully qualified class name for the given object.
@@ -1369,11 +1451,13 @@ def get_full_classname(obj: object) -> str:
         str: The fully qualified class name, including the module.
 
     Example:
+        ```python
         >>> get_full_classname("example")
         'builtins.str'
 
         >>> get_full_classname(42)
         'builtins.int'
+        ```
 
     Note:
         The function considers various scenarios, such as objects being classes,
@@ -1395,16 +1479,18 @@ def get_full_classname(obj: object) -> str:
     return module + "." + name
 
 
-def find_class(class_name: str):
+def find_class(class_name: str) -> Type:
     """Find and returns a class based on the fully qualified name.
 
     A class name can be preceded with the string `class//`. This is used in YAML
-    files where the class is then instantiated on load.
+    files where the class is then instantiated on load by the [Setup](../setup/#egse.setup.Setup).
 
     Args:
         class_name (str): a fully qualified name for the class
+
     Returns:
         The class object corresponding to the fully qualified class name.
+
     Raises:
         AttributeError: when the class is not found in the module.
         ValueError: when the class_name can not be parsed.
@@ -1424,12 +1510,18 @@ def type_name(var):
 
 
 def check_argument_type(obj: object, name: str, target_class: Union[type, Tuple[type]], allow_none: bool = False):
-    """Check that the given object is of a specific (sub)type of the given target_class.
+    """
+    Check that the given object is of a specific (sub)type of the given target_class.
+    The `target_class` can be a tuple of types.
 
-    The target_class can be a tuple of types.
+    Args:
+        obj: any object
+        name: the name of the object
+        target_class: the required type of the object (can be a tuple of types)
+        allow_none: True if the object can be None
 
     Raises:
-        TypeError when not of the required type or None when not allowed.
+        TypeError: when not of the required type or None when not allowed.
     """
     if obj is None and allow_none:
         return
@@ -1440,7 +1532,11 @@ def check_argument_type(obj: object, name: str, target_class: Union[type, Tuple[
 
 
 def check_str_for_slash(arg: str):
-    """Check if there is a slash in the given string, and raise a ValueError if so."""
+    """Check if there is a slash in the given string, and raise a ValueError if so.
+
+    Raises:
+        ValueError: if the string contains a slash '`/`'.
+    """
 
     if "/" in arg:
         ValueError(f"The given argument can not contain slashes, {arg=}.")
@@ -1459,7 +1555,9 @@ def check_is_a_string(var, allow_none=False):
         TypeError: If the variable is not a string or is None (when allow_none is False).
 
     Example:
-        >>> check_is_a_string("example")
+        ```python
+        check_is_a_string("example")
+        ```
 
     Note:
         This function is designed to validate that the input variable is a string.
@@ -1490,7 +1588,9 @@ def sanity_check(flag: bool, msg: str):
         AssertionError: If the flag is False.
 
     Example:
+        ```python
         >>> sanity_check(x > 0, "x must be greater than 0")
+        ```
 
     Note:
         This function is designed for production code to perform runtime checks
@@ -1503,7 +1603,8 @@ def sanity_check(flag: bool, msg: str):
 
 
 class NotSpecified:
-    """Class for NOT_SPECIFIED constant.
+    """
+    Class for NOT_SPECIFIED constant.
     Is used so that a parameter can have a default value other than None.
 
     Evaluate to False when converted to boolean.
@@ -1519,6 +1620,7 @@ class NotSpecified:
 
 
 NOT_SPECIFIED = NotSpecified()
+"""The constant that defines a not-specified value. Intended use is as a sentinel object."""
 
 # Do not try to catch SIGKILL (9) that will just terminate your script without any warning
 
@@ -1531,6 +1633,7 @@ SIGNAL_NAME = {
     30: "SIGUSR1",
     31: "SIGUSR2",
 }
+"""The signals that can be catch with the SignalCatcher."""
 
 
 class SignalCatcher:
@@ -1539,8 +1642,8 @@ class SignalCatcher:
     executed and a flag for termination or user action is set to True. Check for this
     flag in your application loop.
 
-    Termination signals: 1 HUP, 2 INT, 3 QUIT, 6 ABORT, 15 TERM
-    User signals: 30 USR1, 31 USR2
+    - Termination signals: 1=HUP, 2=INT, 3=QUIT, 6=ABORT, 15=TERM
+    - User signals: 30=USR1, 31=USR2
     """
 
     def __init__(self):
@@ -1558,10 +1661,12 @@ class SignalCatcher:
 
     @property
     def signal_number(self):
+        """The value of the signal that was caught."""
         return self._signal_number
 
     @property
     def signal_name(self):
+        """The name of the signal that was caught."""
         return self._signal_name
 
     def handler(self, signal_number, frame):
@@ -1612,8 +1717,8 @@ def execution_time(func):
     if you want —by default and always— have an idea of the average execution time
     of the given function.
 
-    Use this in conjunction with the `get_average_execution_time()` function to
-    retrieve the average execution time for the given function.
+    Use this in conjunction with the [get_average_execution_time()](./#egse.system.get_average_execution_time)
+    function to retrieve the average execution time for the given function.
     """
 
     @functools.wraps(func)
@@ -1628,7 +1733,8 @@ def save_average_execution_time(func: Callable, *args, **kwargs):
     Executes the function 'func' with the given arguments and saves the execution time. All positional
     arguments (in args) and keyword arguments (in kwargs) are passed into the function. The execution
     time is saved in a deque of maximum 100 elements. When more times are added, the oldest times are
-    discarded. This function is used in conjunction with the `get_average_execution_time()` function.
+    discarded. This function is used in conjunction with the
+    [get_average_execution_time()](./#egse.system.get_average_execution_time) function.
     """
 
     with Timer(log_level=logging.NOTSET) as timer:
@@ -1645,8 +1751,10 @@ def save_average_execution_time(func: Callable, *args, **kwargs):
 def get_average_execution_time(func: Callable) -> float:
     """
     Returns the average execution time of the given function. The function 'func' shall be previously executed using
-    the `save_average_execution_time()` function which remembers the last 100 execution times of the function.
-    You can also decorate your function with `@execution_time` to permanently monitor it.
+    the [save_average_execution_time()](./#egse.system.save_average_execution_time) function which remembers the last
+    100 execution times of the function.
+    You can also decorate your function with [@execution_time](./#egse.system.execution_time) to permanently
+    monitor it.
     The average time is a moving average over the last 100 times. If the function was never called before, 0.0 is
     returned.
 
@@ -1670,8 +1778,8 @@ def get_average_execution_time(func: Callable) -> float:
 
 def get_average_execution_times() -> dict:
     """
-    Returns a dictionary with "function name": average execution time, for all function that have been
-    monitored in this process.
+    Returns a dictionary with `key = <function name>` and  `value = <average execution time>`, for all function that
+    have been monitored in this process.
     """
     return {func.__name__: get_average_execution_time(func) for func in _function_timing}
 
@@ -1694,7 +1802,8 @@ def time_in_ms() -> int:
     """
     Returns the current time in milliseconds since the Epoch.
 
-    Note: if you are looking for a high performance timer, you should really be using perf_counter()
+    Note:
+        if you are looking for a high performance timer, you should really be using `perf_counter()`
           instead of this function.
     """
     return int(round(time.time() * 1000))
@@ -1708,12 +1817,13 @@ class Sentinel:
     object and check in the function if the argument value is a Sentinel object.
 
     Example:
-
-         def get_info(server_socket, timeout: int = Sentinel()):
-             if isinstance(timeout, Sentinel):
-                raise ValueError("You should enter a valid timeout or None")
-
+        ```python
+        def get_info(server_socket, timeout: int = Sentinel()):
+            if isinstance(timeout, Sentinel):
+               raise ValueError("You should enter a valid timeout or None")
+        ```
     """
+
     def __repr__(self):
         return "A default Sentinel object."
 
@@ -1722,7 +1832,8 @@ def touch(path: Path | str):
     """
     Unix-like 'touch', i.e. create a file if it doesn't exist and set the modification time to the current time.
 
-    NOTE: if the
+    Args:
+        path: full path to the file, can start with `~` which is automatically expanded.
     """
 
     path = Path(path).expanduser().resolve()

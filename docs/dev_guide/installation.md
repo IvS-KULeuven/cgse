@@ -1,7 +1,22 @@
 
 # Installation Guide for Developers
 
-# GitHub
+## Python
+
+You will notice that I use the `py` command often in examples. This is not just a shortcut, but 
+the command that is installed by the `python-launcer` and determines which Python executable 
+shall be started. You can install the `python-launcher` with:
+
+    $ cargo install python-launcher
+
+Then add the following line to your `.bash_profile` if not already there:
+
+    export PATH=~/.local/bin:~/.cargo/bin:$PATH`
+
+If you do not want to install the `python-launcher`, just replace `py` with `python` or 
+`python3` in the examples.
+
+## GitHub
 
 Before starting, make sure you have a _fork_ of the `cgse` repository. Through this fork (which 
 resides on the GitHub  server) you will create pull requests. Install a clone of your fork on 

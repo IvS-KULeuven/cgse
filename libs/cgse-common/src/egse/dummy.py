@@ -1,13 +1,13 @@
 """
-This module provides a dummy implementation for classes of the Commanding chain.
+This module provides a dummy implementation for classes of the commanding chain.
 
 Start the control server with:
 
-    python -m egse.dummy start-cs
+    py -m egse.dummy start-cs
 
 and stop the server with:
 
-    python -m egse.dummy stop-cs
+    py -m egse.dummy stop-cs
 
 Commands that can be used with the proxy:
 
@@ -16,7 +16,7 @@ Commands that can be used with the proxy:
 
 The device simulator can be started with:
 
-    python -m egse.dummy start-dev
+    py -m egse.dummy start-dev
 
 """
 from __future__ import annotations
@@ -67,12 +67,12 @@ DEV_PORT = 4446
 DEV_NAME = "Dummy Device"
 """The name used for theDummy Device, this is used in Exceptions and in the info command."""
 
-READ_TIMEOUT = 10.0  # seconds
-"""The maximum time to wait for a socket receive command."""
-WRITE_TIMEOUT = 1.0  # seconds
-"""The maximum time to wait for a socket send command."""
-CONNECT_TIMEOUT = 3.0  # seconds
-"""The maximum time to wait for establishing a socket connect."""
+READ_TIMEOUT = 10.0
+"""The maximum time in seconds to wait for a socket receive command."""
+WRITE_TIMEOUT = 1.0
+"""The maximum time in seconds to wait for a socket send command."""
+CONNECT_TIMEOUT = 3.0
+"""The maximum time in seconds to wait for establishing a socket connect."""
 
 # Especially DummyCommand and DummyController need to be defined in a known module
 # because those objects are pickled and when de-pickled at the clients side the class
@@ -88,7 +88,7 @@ ctrl_settings = attrdict(
         'SERVICE_PORT': 4444,
         'MONITORING_PORT': 4445,
         'PROTOCOL': 'tcp',
-        'TIMEOUT': 10_000,
+        'TIMEOUT': 10_000,  # milliseconds
         'HK_DELAY': 1.0,
     }
 )
@@ -113,26 +113,44 @@ commands = attrdict(
 
 
 def is_dummy_cs_active():
+    """Returns True if the dummy device control server is active."""
     return is_control_server_active(
         endpoint=connect_address(ctrl_settings.PROTOCOL, ctrl_settings.HOSTNAME, ctrl_settings.COMMANDING_PORT)
     )
 
 
 class DummyCommand(ClientServerCommand):
+    """The Command class for the dummy device."""
     pass
 
 
 class DummyInterface:
+    """The interface for the dummy device."""
     @dynamic_interface
-    def info(self):
+    def info(self) -> str:
+        """Return an info string from the device."""
         ...
 
     @dynamic_interface
-    def get_value(self, *args, **kwargs):
+    def get_value(self, *args, **kwargs) -> float:
+        """
+        Return a float value from the device.
+        This dummy implementation will return a random number between 0.0 and 1.0.
+        """
         ...
 
 
 class DummyProxy(Proxy, DummyInterface, EventInterface):
+    """
+    The Proxy class for the dummy device.
+
+    Args:
+        protocol: the transport protocol [default is taken from settings file]
+        hostname: location of the control server (IP address) [default is taken from settings file]
+        port: TCP port on which the control server is listening for commands [default is taken from settings file]
+        timeout: a socket timeout in milliseconds
+    """
+
     def __init__(
             self,
             protocol=ctrl_settings.PROTOCOL,
@@ -140,16 +158,15 @@ class DummyProxy(Proxy, DummyInterface, EventInterface):
             port=ctrl_settings.COMMANDING_PORT,
             timeout=ctrl_settings.TIMEOUT
     ):
-        """
-        Args:
-            protocol: the transport protocol [default is taken from settings file]
-            hostname: location of the control server (IP address) [default is taken from settings file]
-            port: TCP port on which the control server is listening for commands [default is taken from settings file]
-        """
         super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
 
 
 class DummyController(DummyInterface, EventInterface):
+    """
+    The controller class for the dummy device.
+
+    This class is used to directly communicate with the device.
+    """
     def __init__(self, control_server):
         self._cs = control_server
         self._dev = DummyDeviceEthernetInterface(DEV_HOST, DEV_PORT)
@@ -190,7 +207,15 @@ class DummyController(DummyInterface, EventInterface):
 
 
 class DummyProtocol(CommandProtocol):
+    """
+    The protocol class for the dummy device.
 
+    This class defines the communication between the client (usually a Proxy) and
+    the server (the control server) for this device.
+
+    Args:
+        control_server: the control server for the dummy device.
+    """
     def __init__(self, control_server: ControlServer):
         super().__init__()
         self.control_server = control_server
@@ -325,9 +350,9 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         Connects the TCP socket to the device controller.
 
         Raises:
-            - ValueError when hostname or port number are not initialized properly.
-            - DeviceConnectionError on any socket error except timeouts.
-            - DeviceTimeoutError on a socket timeout.
+            ValueError: when hostname or port number are not initialized properly.
+            DeviceConnectionError: on any socket error except timeouts.
+            DeviceTimeoutError: on a socket timeout.
         """
         # Sanity checks
 
@@ -403,7 +428,7 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         Disconnect the Ethernet connection from the device controller.
 
         Raises:
-             a DeviceConnectionError on failure.
+             DeviceConnectionError: on failure.
         """
         try:
             _LOGGER.debug(f'Disconnecting from {self.hostname}')
@@ -436,8 +461,9 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         Returns:
             A bytes object containing the response from the device. No processing is done
             on the response.
+
         Raises:
-            A DeviceTimeoutError when the read operation timed out.
+            DeviceTimeoutError: when the read operation timed out.
         """
         n_total = 0
         buf_size = 1024 * 10
@@ -506,7 +532,7 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
             on the response.
 
         Raises:
-            A DeviceTimeoutError when the sendall() timed out, and a DeviceConnectionError if
+            DeviceTimeoutError: when the sendall() timed out, and a DeviceConnectionError if
             there was a socket related error.
         """
         # MODULE_LOGGER.debug(f"{command.encode() = }")
@@ -567,6 +593,7 @@ error_msg = ""
 
 @app.command()
 def start_dev():
+    """Start the dummy device simulator."""
     global error_msg
 
     multiprocessing.current_process().name = "dummy_dev"

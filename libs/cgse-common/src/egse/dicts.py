@@ -17,7 +17,27 @@ LOGGER = logging.getLogger(__name__)
 
 def log_differences(dict_1, dict_2):
     """
-    Takes two flattened dictionaries and compares them. The differences are logged in a Rich Table at level=INFO.
+    Takes two flattened dictionaries and compares them. This function only compares those
+    keys that are common to both dictionaries. The key-value pairs that are unique to one
+    of the dictionaries are ignored. To inspect if there are keys unique to one dictionary,
+    use the [log_key_differences()](./#egse.dicts.log_key_differences) function.
+
+    The differences are logged in a Rich Table at level=INFO.
+
+    Example:
+        ```text
+        >>> d1 = { "A": 1, "B": 2, "C": 3 }
+        >>> d2 = { "A": 1, "B": 5, "C": 3 }
+        >>> log_differences(d1, d2)
+
+        2025-02-28 09:20:51,639:         MainProcess:    INFO:   37:__main__            :Value Differences
+
+        ┏━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┓
+        ┃ Name ┃ old value ┃ new value ┃
+        ┡━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━┩
+        │ B    │ 2         │ 5         │
+        └──────┴───────────┴───────────┘
+        ```
     """
 
     all_keys = dict_1.keys() & dict_2.keys()
@@ -39,6 +59,20 @@ def log_key_differences(dict_1, dict_2):
     """
     Takes two dictionaries and compares the top-level keys. The differences are logged in a Rich Table at level=INFO.
     Keys that are present on both dictionaries are not logged.
+
+    Example:
+        ```text
+        >>> d1 = {"A": 1, "B": 2, "C": 3}
+        >>> d2 = {"B": 2, "C": 3, "D": 4}
+        >>> log_key_differences(d1, d2)
+        2025-02-28 09:08:29,916:         MainProcess:    INFO:   60:__main__            :Key differences
+        ┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+        ┃ Dictionary 1 ┃ Dictionary 2 ┃
+        ┡━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━┩
+        │ A            │              │
+        │              │ D            │
+        └──────────────┴──────────────┘
+        ```
     """
     s1 = set(dict_1)
     s2 = set(dict_2)
@@ -62,6 +96,8 @@ def log_key_differences(dict_1, dict_2):
 
 if __name__ == '__main__':
 
+    import egse.logger  # activates the logger
+
     d1 = {
         "A": 1,
         "B": 2,
@@ -74,5 +110,13 @@ if __name__ == '__main__':
         "D": 4,
     }
 
+    d3 = {
+        "A": 1,
+        "B": 5,
+        "C": 3,
+    }
+
     log_differences(d1, d2)
     log_key_differences(d1, d2)
+
+    log_differences(d1, d3)
