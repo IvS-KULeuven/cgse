@@ -27,7 +27,6 @@ markdown_extensions:
   - def_list
   - meta
   - footnotes
-
   - toc:
       permalink: true
       baselevel: 1
@@ -72,33 +71,40 @@ theme:
               name: Switch to light mode
 
 plugins:
-  search:
-  mkdocstrings:
-    default_handler: python
-    handlers:
-      python:
-        options:
-            modernize_annotations: false
-            docstring_style: google
-            docstring_section_style: table
-            docstring_options:
-                ignore_init_summary: true
-            merge_init_into_class: true
-            show_symbol_type_heading: true
-            show_symbol_type_toc: true
-            show_signature_annotations: false
-            show_root_heading: false
-            separate_signature: true
-            signature_crossrefs: true
-            parameter_headings: false
-            relative_crossrefs: true
-            scoped_crossrefs: true
-            signature_crossrefs: true
-            summary: true
-            show_source: false
-            filters:
-            - "!^_"
-            - "^__init__$"
+    search:
+    autorefs:
+    mkdocstrings:
+        default_handler: python
+        handlers:
+            python:
+                import:
+                    - https://docs.python.org/3/objects.inv
+                    - https://rich.readthedocs.io/en/stable/objects.inv
+                
+                options:
+                    modernize_annotations: false
+                    docstring_style: google
+                    docstring_section_style: table
+                    docstring_options:
+                        ignore_init_summary: true
+                    cross_reference_types: true
+                    inherited_members: true
+                    merge_init_into_class: true
+                    parameter_headings: false
+                    relative_crossrefs: true
+                    scoped_crossrefs: true
+                    separate_signature: true
+                    show_root_heading: true
+                    show_signature_annotations: false
+                    show_source: false
+                    show_submodules: true
+                    show_symbol_type_heading: true
+                    show_symbol_type_toc: true
+                    signature_crossrefs: true
+                    summary: true
+                    filters:
+                    - "!^_"
+                    - "^__init__$"
 
 watch:
 - libs/cgse-common/src/egse
@@ -156,8 +162,12 @@ nav:
     - api/control.md
     - api/counter.md
     - api/decorators.md
+    - api/device.md
+    - api/dict.md
+    - api/dummy.md
     - api/exceptions.md
     - api/settings.md
     - api/setup.md
+    - api/system.md
 
 - roadmap.md
