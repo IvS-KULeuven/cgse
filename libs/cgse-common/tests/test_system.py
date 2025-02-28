@@ -33,6 +33,8 @@ from egse.system import get_system_name
 from egse.system import get_system_stats
 from egse.system import humanize_seconds
 from egse.system import is_in
+from egse.system import is_module
+from egse.system import is_namespace
 from egse.system import is_not_in
 from egse.system import ping
 from egse.system import read_last_line
@@ -554,13 +556,16 @@ def test_format_datetime():
 
     dts_today = format_datetime('today')
     dts_yesterday = format_datetime('yesterday')
+    dts_day_before_yesterday = format_datetime('day before yesterday')
     dts_tomorrow = format_datetime('tomorrow')
 
     dt_today = datetime.datetime.strptime(dts_today, "%Y%m%d")
     dt_yesterday = datetime.datetime.strptime(dts_yesterday, "%Y%m%d")
+    dt_day_before_yesterday = datetime.datetime.strptime(dts_day_before_yesterday, "%Y%m%d")
     dt_tomorrow = datetime.datetime.strptime(dts_tomorrow, "%Y%m%d")
 
     assert dt_today - dt_yesterday == datetime.timedelta(days=1)
+    assert dt_today - dt_day_before_yesterday == datetime.timedelta(days=2)
     assert dt_today - dt_tomorrow == datetime.timedelta(days=-1)
 
     with pytest.raises(ValueError):
@@ -827,3 +832,42 @@ def test_touch():
         assert fn.exists()
     finally:
         shutil.rmtree(fn.parent)
+
+
+def test_is_module():
+    import egse
+    import egse.version
+    from egse.system import get_os_name
+
+    assert is_module(egse)
+    assert is_module("egse")
+
+    assert is_module(egse.version)
+    assert is_module("egse.version")
+
+    assert not is_module(get_os_name)
+    assert not is_module("non-existing-module")
+
+
+def test_is_namespace():
+    import egse
+    import egse.version
+    from egse.system import get_os_name
+
+    assert is_namespace(egse)
+    assert is_namespace('egse')
+
+    assert not is_namespace(egse.version)
+    assert not is_namespace('egse.version')
+
+    assert not is_module(get_os_name)
+    assert not is_namespace("non-existing-module")
+
+
+def test_get_host_ip():
+
+    from egse.system import get_host_ip
+
+    ip = get_host_ip()
+    if ip:
+        assert '.' in ip

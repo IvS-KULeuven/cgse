@@ -17,7 +17,9 @@ class DeviceConnectionState(IntEnum):
 
     DEVICE_CONNECTION_NOT_SET = 0
     DEVICE_CONNECTED = 1
+    """The device is connected."""
     DEVICE_NOT_CONNECTED = 2
+    """The device is not connected."""
 
 
 class DeviceError(Error):
@@ -47,6 +49,7 @@ class DeviceControllerError(DeviceError):
         device_name (str): The name of the device
         message (str): a clear and brief description of the problem
     """
+
     def __init__(self, device_name: str, message: str):
         super().__init__(device_name, message)
 
@@ -58,6 +61,7 @@ class DeviceConnectionError(DeviceError):
         device_name (str): The name of the device
         message (str): a clear and brief description of the problem
     """
+
     def __init__(self, device_name: str, message: str):
         super().__init__(device_name, message)
 
@@ -69,6 +73,7 @@ class DeviceTimeoutError(DeviceError):
         device_name (str): The name of the device
         message (str): a clear and brief description of the problem
     """
+
     def __init__(self, device_name: str, message: str):
         super().__init__(device_name, message)
 
@@ -80,6 +85,7 @@ class DeviceInterfaceError(DeviceError):
         device_name (str): The name of the device
         message (str): a clear and brief description of the problem
     """
+
     def __init__(self, device_name: str, message: str):
         super().__init__(device_name, message)
 
@@ -90,6 +96,7 @@ class DeviceConnectionObserver:
     the class that inherits from DeviceConnectionObservable. The observable will notify an
     update of its state by calling the `update_connection_state()` method.
     """
+
     def __init__(self):
         self._state = DeviceConnectionState.DEVICE_NOT_CONNECTED
 
@@ -110,6 +117,7 @@ class DeviceConnectionObservable:
     is responsible for notifying the observers by calling the `notify_observers()` method
     with the correct state.
     """
+
     def __init__(self):
         self._observers: List[DeviceConnectionObserver] = []
 
@@ -192,7 +200,8 @@ class DeviceInterface(DeviceConnectionInterface):
 
         This can be useful for testing purposes or when doing actual movement simulations.
 
-        Returns: True if the Device is a Simulator; False if the Device is connected to real hardware.
+        Returns:
+            True if the Device is a Simulator; False if the Device is connected to real hardware.
         """
 
         raise NotImplementedError
@@ -215,7 +224,7 @@ class DeviceTransport:
 
     def read(self) -> bytes:
         """
-        Reads a string back from the instrument.
+        Reads a bytes object back from the instrument and returns it unaltered.
         """
 
         raise NotImplementedError
@@ -230,14 +239,14 @@ class DeviceTransport:
 
         Returns:
             Either a string returned by the controller (on success), or an error message (on
-            failure).
+              failure).
 
         Raises:
-            DeviceConnectionError when there was an I/O problem during communication with the
-            controller.
+            DeviceConnectionError: when there was an I/O problem during communication with the
+              controller.
 
-            DeviceTimeoutError when there was a timeout in either sending the command or
-            receiving the response.
+            DeviceTimeoutError: when there was a timeout in either sending the command or
+              receiving the response.
         """
 
         raise NotImplementedError
@@ -264,9 +273,17 @@ class DeviceFactoryInterface:
     Base class for creating a device factory class to access devices.
 
     This interface defines one interface method that shall be implemented by the Factory:
-
-        create(device_name: str, *, device_id: str, **_ignored)
+    ```python
+    create(device_name: str, *, device_id: str, **_ignored)
+    ```
     """
 
     def create(self, device_name: str, *, device_id: str, **_ignored):
+        """
+        Create and return a device class that implements the expected device interface.
+        The `device_name` and `device_id` can be useful for identifying the specific device.
+
+        Additional keyword arguments can be passed to the device factory in order to forward
+        them to the device constructor, but they will usually be ignored.
+        """
         ...
