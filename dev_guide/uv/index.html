@@ -97,6 +97,8 @@
     
       <link rel="stylesheet" href="../../stylesheets/custom.css">
     
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -850,6 +852,15 @@
   <a href="#create-a-virtual-environment" class="md-nav__link">
     <span class="md-ellipsis">
       Create a virtual environment
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-and-removing-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding and removing dependencies
     </span>
   </a>
   
@@ -1985,6 +1996,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#adding-and-removing-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding and removing dependencies
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#building-and-publishing-all-packages" class="md-nav__link">
     <span class="md-ellipsis">
       Building and publishing all packages
@@ -2115,6 +2135,23 @@ package you are in. So, each time you switch to another package and want to run 
 package, use </p>
 <div class="highlight"><pre><span></span><code>$ uv sync
 </code></pre></div>
+</div>
+<h2 id="adding-and-removing-dependencies">Adding and removing dependencies<a class="headerlink" href="#adding-and-removing-dependencies" title="Permanent link">&para;</a></h2>
+<p>If we need another Python package that we want to use and add this as a dependency to our 
+project, we don't just want to install it with the <code>pip</code> command, nor add it to the <code>pyproject.
+toml</code> file ourselves. Instead, we use the <code>uv add &lt;package name&gt;</code> command, e.g. to install flask,
+we do:</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>add<span class="w"> </span>flask
+</code></pre></div>
+<p>Like wise, removing a dependency, we do that with the <code>uv remove &lt;package name&gt;</code> command, 
+because that will also remove the packages on which flask depended.</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>remove<span class="w"> </span>flask
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The commands above to add and remove dependencies will work on the <code>pyproject.toml</code> file of 
+the package you are currently working in. For example, if you're working in 
+<code>cgse/libs/cgse-common</code>, that <code>pyproject.toml</code> file will get the extra 'flask' dependency.</p>
 </div>
 <h2 id="building-and-publishing-all-packages">Building and publishing all packages<a class="headerlink" href="#building-and-publishing-all-packages" title="Permanent link">&para;</a></h2>
 <p>We have chosen for one and the same version number for all packages in the <code>cgse</code> monorepo. That means that whenever 

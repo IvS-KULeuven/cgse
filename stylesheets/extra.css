@@ -1,0 +1,17 @@
+:root {
+  --md-admonition-icon--dbend: url('data:image/svg+xml;charset=utf-8,<svg width="120" height="160" xmlns="http://www.w3.org/2000/svg">   <g transform="scale(2, -2) translate(5, -35)">     <rect x="23" y="-39.6" width="4" height="68" fill="gray" stroke="black" stroke-width="1.44" stroke-linejoin="round"></rect>     <path d="M21 23 Q25 27 29 23 L48 4 Q52 0 48 -4 L29 -23 Q25 -27 21 -23 L2 -4 Q-2 0 2 4 Z" fill="white" stroke="black" stroke-width="1.44"></path>     <line x1="9" y1="-39.6" x2="41" y2="-39.6" stroke="black" stroke-width="1.44" stroke-linecap="round"></line>     <path d="M17 12 L33 9 A 3.027605014567413 3.027605014567413 0 0 0 33.50511019963996 3.1894163248649843 L16.494889800360042 -3.1894163248649843 A 3.027605014567413 3.027605014567413 0 0 1 17 -9 L33 -12" fill="none" stroke="black" stroke-width="5" stroke-linecap="butt"></path>   </g> </svg>')
+}
+.md-typeset .admonition.dbend,
+.md-typeset details.dbend {
+  border-color: rgb(43, 155, 70);
+}
+.md-typeset .dbend > .admonition-title,
+.md-typeset .dbend > summary {
+  background-color: rgba(43, 155, 70, 0.1);
+}
+.md-typeset .dbend > .admonition-title::before,
+.md-typeset .dbend > summary::before {
+  background-color: rgb(43, 155, 70);
+  -webkit-mask-image: var(--md-admonition-icon--dbend);
+          mask-image: var(--md-admonition-icon--dbend);
+}
