@@ -140,6 +140,30 @@ $ uv pip install -e <project location>
     $ uv sync
     ```
 
+## Adding and removing dependencies
+
+If we need another Python package that we want to use and add this as a dependency to our 
+project, we don't just want to install it with the `pip` command, nor add it to the `pyproject.
+toml` file ourselves. Instead, we use the `uv add <package name>` command, e.g. to install flask,
+we do:
+
+```shell
+$ uv add flask
+```
+
+Like wise, removing a dependency, we do that with the `uv remove <package name>` command, 
+because that will also remove the packages on which flask depended.
+
+```shell
+$ uv remove flask
+```
+
+!!! Note
+
+    The commands above to add and remove dependencies will work on the `pyproject.toml` file of 
+    the package you are currently working in. For example, if you're working in 
+    `cgse/libs/cgse-common`, that `pyproject.toml` file will get the extra 'flask' dependency.
+
 ## Building and publishing all packages
 
 We have chosen for one and the same version number for all packages in the `cgse` monorepo. That means that whenever 
