@@ -18,6 +18,9 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      options:
+        custom_icons:
+          - overrides/.icons/
   - pymdownx.superfences
   - pymdownx.snippets
   - pymdownx.tabbed:
@@ -107,10 +110,12 @@ plugins:
                     - "^__init__$"
 
 watch:
-- libs/cgse-common/src/egse
+  - overrides/
+  - libs/cgse-common/src/egse
 
 extra_css:
   - stylesheets/custom.css
+  - stylesheets/extra.css
 
 extra:
   social:
@@ -119,55 +124,55 @@ extra:
     name: CGSE on Github
 
 nav:
-- index.md
-- Introduction:
-  - getting_started.md
-  - package_list.md
-  - initialize.md
-  - help.md
-- Developer Guide:
-  - dev_guide/index.md
-  - dev_guide/monorepo.md
-  - dev_guide/installation.md
-  - dev_guide/uv.md
-  - dev_guide/coding_style.md
-  - dev_guide/docs.md
-  - dev_guide/plugins.md
-  - dev_guide/unit_testing.md
-  - dev_guide/versioning.md
-- User Guide:
-  - user_guide/index.md
-- Libs:
-  - libs/index.md
-  - cgse-common:
-    - libs/cgse-common/index.md
-    - libs/cgse-common/settings.md
-    - libs/cgse-common/setup.md
-  - cgse-core:
-    - libs/cgse-core/index.md
-  - cgse-coordinates:
-    - libs/cgse-coordinates/index.md
-  - cgse-gui:
-    - libs/cgse-gui/index.md
-- Projects:
-  - projects/index.md
-  - projects/cgse-tools.md
-  - projects/symetrie-hexapod.md
-- API:
-    - api/index.md
-    - api/bits.md
-    - api/calibration.md
-    - api/command.md
-    - api/config.md
-    - api/control.md
-    - api/counter.md
-    - api/decorators.md
-    - api/device.md
-    - api/dict.md
-    - api/dummy.md
-    - api/exceptions.md
-    - api/settings.md
-    - api/setup.md
-    - api/system.md
-
-- roadmap.md
+  - index.md
+  - Introduction:
+    - getting_started.md
+    - package_list.md
+    - initialize.md
+    - help.md
+  - Developer Guide:
+    - dev_guide/index.md
+    - dev_guide/monorepo.md
+    - dev_guide/installation.md
+    - dev_guide/uv.md
+    - dev_guide/coding_style.md
+    - dev_guide/docs.md
+    - dev_guide/plugins.md
+    - dev_guide/unit_testing.md
+    - dev_guide/versioning.md
+  - User Guide:
+    - user_guide/index.md
+  - Libs:
+    - libs/index.md
+    - cgse-common:
+      - libs/cgse-common/index.md
+      - libs/cgse-common/settings.md
+      - libs/cgse-common/setup.md
+    - cgse-core:
+      - libs/cgse-core/index.md
+    - cgse-coordinates:
+      - libs/cgse-coordinates/index.md
+    - cgse-gui:
+      - libs/cgse-gui/index.md
+  - Projects:
+    - projects/index.md
+    - projects/cgse-tools.md
+    - projects/symetrie-hexapod.md
+  - API:
+      - api/index.md
+      - api/bits.md
+      - api/calibration.md
+      - api/command.md
+      - api/config.md
+      - api/control.md
+      - api/counter.md
+      - api/decorators.md
+      - api/device.md
+      - api/dict.md
+      - api/dummy.md
+      - api/exceptions.md
+      - api/settings.md
+      - api/setup.md
+      - api/system.md
+  
+  - roadmap.md
