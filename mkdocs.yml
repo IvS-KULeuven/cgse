@@ -110,8 +110,8 @@ plugins:
                     - "^__init__$"
 
 watch:
-  - overrides/
   - libs/cgse-common/src/egse
+  - libs/cgse-core/src/egse
 
 extra_css:
   - stylesheets/custom.css
@@ -168,7 +168,7 @@ nav:
       - api/counter.md
       - api/decorators.md
       - api/device.md
-      - api/dict.md
+      - api/dicts.md
       - api/dummy.md
       - api/exceptions.md
       - api/settings.md

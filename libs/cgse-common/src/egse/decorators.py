@@ -95,7 +95,7 @@ def write_command(func):
     return func
 
 
-def average_time(*, name: str = "average_time", level: int = logging.INFO, precision: int = 6):
+def average_time(*, name: str = "average_time", level: int = logging.INFO, precision: int = 6) -> Callable:
     """
     This is a decorator that is intended mainly as a development aid. When you decorate your function with
     `@average_time`, the execution time of your function will be kept and accumulated. At anytime in your code,
@@ -182,7 +182,7 @@ def timer(*, name: str = "timer", level: int = logging.INFO, precision: int = 4)
     return actual_decorator
 
 
-def time_it(count: int = 1000, precision: int = 4):
+def time_it(count: int = 1000, precision: int = 4) -> Callable:
     """Print the runtime of the decorated function.
 
     This is a simple replacement for the builtin ``timeit`` function. The purpose is to simplify
@@ -253,7 +253,9 @@ def debug(func):
     return wrapper_debug
 
 
-def profile_func(output_file=None, sort_by='cumulative', lines_to_print=None, strip_dirs=False):
+def profile_func(
+        output_file: str = None, sort_by: str = 'cumulative', lines_to_print: int = None, strip_dirs: bool = False
+) -> Callable:
     """A time profiler decorator.
 
     Args:
@@ -481,7 +483,7 @@ def deprecate(reason: Optional[str] = None,
     Args:
         reason: provide a short explanation why this function is deprecated. Generates 'because {reason}'
         alternative: provides an alternative function/parameters to be used. Generates 'Use {alternative}
-        as an alternative'
+            as an alternative'
 
     Returns:
         The decorated function.
@@ -632,7 +634,9 @@ def spy_on_attr_change(obj: object, obj_name: str = None) -> None:
     obj.__class__.__name__ = class_name
 
 
-def retry_with_exponential_backoff(max_attempts=5, initial_wait=1.0, backoff_factor=2, exceptions: List = None):
+def retry_with_exponential_backoff(
+        max_attempts: int = 5, initial_wait: float = 1.0, backoff_factor: int = 2, exceptions: List = None
+) -> Callable:
     """
     Decorator for retrying a function with exponential backoff.
 
@@ -649,6 +653,7 @@ def retry_with_exponential_backoff(max_attempts=5, initial_wait=1.0, backoff_fac
         max_attempts: The maximum number of attempts to make.
         initial_wait: The initial waiting time in seconds before retrying after the first failure.
         backoff_factor: The factor by which the wait time increases after each failure.
+        exceptions: list of exceptions to ignore, if None all exceptions will be ignored `max_attempts`.
 
     Returns:
         The response from the executed function.
@@ -690,7 +695,7 @@ def retry_with_exponential_backoff(max_attempts=5, initial_wait=1.0, backoff_fac
     return actual_decorator
 
 
-def retry(times: int = 3, wait: float = 10.0, exceptions: List = None):
+def retry(times: int = 3, wait: float = 10.0, exceptions: List = None) -> Callable:
     """
     Decorator that retries a function multiple times with a delay between attempts.
 
