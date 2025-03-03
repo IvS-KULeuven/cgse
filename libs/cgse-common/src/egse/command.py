@@ -96,10 +96,11 @@ import inspect
 import logging
 import re
 from collections import namedtuple
+from typing import Any
 from typing import Callable
 
-from egse.response import Success
 from egse.exceptions import Error
+from egse.response import Success
 
 logger = logging.getLogger(__name__)
 
@@ -286,7 +287,7 @@ class InvalidCommandExecution(CommandExecution):
         **kwargs: the keyword arguments that were given
     """
 
-    def __init__(self, exc, cmd, *args, **kwargs):
+    def __init__(self, exc: Exception, cmd: type, *args: tuple, **kwargs: dict):
         super().__init__(cmd, *args, **kwargs)
         self._exc = exc
 
@@ -470,13 +471,13 @@ class Command:
 
 class ClientServerCommand(Command):
     @dry_run
-    def client_call(self, other, *args, **kwargs):
+    def client_call(self, other: type, *args: tuple, **kwargs: dict) -> Any:
         """
         This method is called at the client side. It is used by the Proxy
         as a generic command to send a command execution to the server.
 
         Args:
-            other: a sub-class of the Proxy class
+            other: a subclass of the Proxy class
             args: arguments that will be passed on to this command when executed
             kwargs: keyword arguments that will be passed on to this command when executed
 
@@ -504,13 +505,13 @@ class ClientServerCommand(Command):
 
         return rc
 
-    def server_call(self, other, *args, **kwargs):
+    def server_call(self, other: type, *args: tuple, **kwargs: dict) -> int:
         """
         This method is called at the server side. It is used by the CommandProtocol class in the
         ``execute`` method.
 
         Args:
-            other: a sub-class of the CommandProtocol
+            other: a subclass of the CommandProtocol
             args: arguments are passed on to the response method
             kwargs: keyword arguments are passed on to the response method
 
@@ -544,7 +545,7 @@ class ClientServerCommand(Command):
         return 0
 
 
-def get_method(parent_obj, method_name: str) -> Callable:
+def get_method(parent_obj: type, method_name: str) -> Callable:
     """
     Returns a bound method from a given class instance.
 
@@ -575,7 +576,7 @@ def get_method(parent_obj, method_name: str) -> Callable:
     return None
 
 
-def get_function(parent_class, method_name: str) -> Callable:
+def get_function(parent_class: type, method_name: str) -> Callable:
     """
     Returns a function (unbound method) from a given class.
 
@@ -606,7 +607,7 @@ def get_function(parent_class, method_name: str) -> Callable:
     return None
 
 
-def load_commands(protocol_class, command_settings, command_class, device_class):
+def load_commands(protocol_class: type, command_settings: dict, command_class: type, device_class: type) -> dict:
     """
     Loads the command definitions from the given ``command_settings`` and builds an internal
     dictionary containing the command names as keys and the corresponding ``Command`` class objects
@@ -616,10 +617,13 @@ def load_commands(protocol_class, command_settings, command_class, device_class)
     command definitions for the device.
 
     Args:
-        protocol_class: the CommandProtocol or a sub-class
+        protocol_class: the CommandProtocol or a subclass
         command_settings: a dictionary containing the command definitions for this device
         command_class: the type of command to create, a subclass of Command
         device_class: the type of the base device class from which the methods are loaded
+
+    Returns:
+        A dictionary with command names and their corresponding commands.
     """
     commands = {}
 

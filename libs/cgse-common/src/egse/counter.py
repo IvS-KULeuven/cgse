@@ -48,7 +48,7 @@ def counter_exists(filename: Path) -> bool:
         True if the given filename exists, False otherwise.
 
     Raises:
-        An OSError might be raised.
+        OSError: might be raised by Path.
 
     Note:
         No checking is done if the file is indeed a counter file, i.e. if it contains the correct content.
@@ -116,7 +116,7 @@ def get_next_counter(filename: Path) -> int:
     Read the counter from a dedicated file, add one and save the counter back to the file.
 
     Args:
-        file_path: full pathname of the file that contains the required counter
+        filename: full pathname of the file that contains the required counter
 
     Returns:
         The value of the next counter, 1 if no previous files were found or if an error occurred.
@@ -132,7 +132,7 @@ def get_next_counter(filename: Path) -> int:
     return counter
 
 
-def determine_counter_from_dir_list(location, pattern, index: int = -1) -> int:
+def determine_counter_from_dir_list(location: str, pattern: str, index: int = -1) -> int:
     """
     Determine counter for a new file at the given location and with the given pattern.
     The next counter is determined from the sorted list of files that match the given pattern.

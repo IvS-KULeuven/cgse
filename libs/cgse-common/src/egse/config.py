@@ -135,7 +135,7 @@ def find_dirs(pattern: str, root: str = None) -> Generator[Path, None, None]:
                 yield Path(path) / name
 
 
-def find_files(pattern: str, root: PurePath | str = None, in_dir: str = None):
+def find_files(pattern: str, root: PurePath | str = None, in_dir: str = None) -> Generator[Path, None, None]:
     """
     Generator for returning file paths from a top folder, matching the pattern.
 
@@ -352,7 +352,7 @@ def get_resource_path(name: str, resource_root_dir: Union[str, PurePath] = None)
 
     Returns:
         the absolute path of the data file with the given name. The first name that matches
-          is returned. If no file with the given name or path exists, a FileNotFoundError is raised.
+            is returned. If no file with the given name or path exists, a FileNotFoundError is raised.
 
     """
     for resource_dir in get_resource_dirs(resource_root_dir):

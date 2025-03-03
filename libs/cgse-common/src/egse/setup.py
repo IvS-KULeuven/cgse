@@ -503,7 +503,7 @@ class NavigableDict(dict):
         else:
             return value
 
-    def set_private_attribute(self, key: str, value) -> None:
+    def set_private_attribute(self, key: str, value: Any) -> None:
         """Sets a private attribute for this object.
 
         The name in key will be accessible as an attribute for this object, but the key will not
@@ -695,7 +695,7 @@ class Setup(NavigableDict):
         return Setup(my_dict, label="Setup")
 
     @staticmethod
-    def from_yaml_string(yaml_content: str = None):
+    def from_yaml_string(yaml_content: str = None) -> Setup:
         """Loads a Setup from the given YAML string.
 
         This method is mainly used for easy creation of Setups from strings during unit tests.
@@ -719,7 +719,7 @@ class Setup(NavigableDict):
 
     @staticmethod
     @lru_cache(maxsize=300)
-    def from_yaml_file(filename: Union[str, Path] = None, add_local_settings: bool = True):
+    def from_yaml_file(filename: Union[str, Path] = None, add_local_settings: bool = True) -> Setup:
         """Loads a Setup from the given YAML file.
 
         Args:
@@ -728,6 +728,9 @@ class Setup(NavigableDict):
 
         Returns:
             a Setup that was loaded from the given location.
+
+        Raises:
+            ValueError: when no filename is given.
         """
 
         if not filename:
@@ -808,7 +811,7 @@ class Setup(NavigableDict):
     #     return devices
 
     @staticmethod
-    def find_devices(node: NavigableDict, devices: dict = None) -> dict:
+    def find_devices(node: NavigableDict, devices: dict = None) -> dict[str, tuple[str, tuple]]:
         """
         Returns a dictionary with the devices that are included in the setup.  The keys
         in the dictionary are taken from the "device_name" entries in the setup file. The
@@ -820,7 +823,8 @@ class Setup(NavigableDict):
             devices: Dictionary in which to include the devices in the setup.
 
         Returns:
-            Dictionary with the devices that are included in the setup.
+            Dictionary with the devices that are included in the setup. The keys are the device name,
+                the values are tuples with the 'device' raw value and the device arguments as a tuple.
         """
         devices = devices or {}
 
@@ -846,7 +850,7 @@ class Setup(NavigableDict):
         return devices
 
     @staticmethod
-    def walk(node: dict, key_of_interest, leaf_list) -> list:
+    def walk(node: dict, key_of_interest: str, leaf_list: list) -> list:
 
         """
         Walk through the given dictionary, in a recursive way, appending the leaf with
@@ -871,6 +875,8 @@ class Setup(NavigableDict):
             elif key == key_of_interest:
 
                 leaf_list.append(sub_node)
+
+        return leaf_list
 
     def __rich__(self) -> Tree:
         tree = super().__rich__()
