@@ -196,7 +196,7 @@ def format_datetime(
         a string representation of the current time in UTC, e.g. `2020-04-29T12:30:04.862+0000`.
 
     Raises:
-        A ValueError will be raised when the given dt argument string is not understood.
+        ValueError: will be raised when the given dt argument string is not understood.
     """
     dt = dt or datetime.datetime.now(tz=datetime.timezone.utc)
     if isinstance(dt, str):
@@ -345,7 +345,7 @@ def time_since_epoch_1958(datetime_string: str) -> float:
     return time_since_epoch_1970 + EPOCH_1958_1970
 
 
-class Timer(object):
+class Timer:
     """
     Context manager to benchmark some lines of code.
 
@@ -361,11 +361,8 @@ class Timer(object):
     Args:
         name (str): a name for the Timer, will be printed in the logging message
         precision (int): the precision for the presentation of the elapsed time
-            (number of digits behind the comma ;)
+            (number of digits behind the comma)
         log_level (int): the log level to report the timing [default=INFO]
-
-    Returns:
-        a context manager class that records the elapsed time.
 
     Example:
         ```Python
@@ -687,7 +684,7 @@ def recursive_dict_update(this: dict, other: dict) -> dict:
     return this
 
 
-def flatten_dict(source_dict: dict):
+def flatten_dict(source_dict: dict) -> dict:
     """
     Flatten the given dictionary concatenating the keys with a colon '`:`'.
 
@@ -927,7 +924,7 @@ def waiting_for(
         The duration until the condition was met.
 
     Raises:
-        A TimeoutError when the condition was not fulfilled within the timeout period.
+        TimeoutError: when the condition was not fulfilled within the timeout period.
     """
 
     if inspect.isfunction(condition) or inspect.ismethod(condition):
@@ -985,7 +982,7 @@ def has_internet(host: str = "8.8.8.8", port: int = 53, timeout: float = 3.0):
             s.close()
 
 
-def do_every(period: float, func: callable, *args) -> None:
+def do_every(period: float, func: callable, *args: tuple[int, ...]) -> None:
     """
 
     This method executes a function periodically, taking into account
@@ -1048,7 +1045,7 @@ def chdir(dirname=None):
 
 
 @contextlib.contextmanager
-def env_var(**kwargs):
+def env_var(**kwargs: dict[str, str]):
     """
     Context manager to run some code that need alternate settings for environment variables.
 
@@ -1082,7 +1079,7 @@ def env_var(**kwargs):
             os.environ[k] = v
 
 
-def filter_by_attr(elements: Iterable, **attrs) -> List:
+def filter_by_attr(elements: Iterable, **attrs: dict[str, Any]) -> List:
     """
     A helper that returns the elements from the iterable that meet all the traits passed in `attrs`.
 
@@ -1210,7 +1207,7 @@ def read_last_lines(filename: str | Path, num_lines: int) -> List[str]:
 
     Returns:
         Last lines of a text file as a list of strings. An empty list is returned
-          when the file doesn't exist.
+            when the file doesn't exist.
     """
 
     # See: https://www.geeksforgeeks.org/python-reading-last-n-lines-of-a-file/
@@ -1375,7 +1372,7 @@ def get_package_location(module: str) -> List[Path]:
         return [] if location is None else [location]
 
 
-def get_module_location(arg) -> Path | None:
+def get_module_location(arg: Any) -> Path | None:
     """
     Returns the location of the module as a Path object.
 
@@ -1387,7 +1384,7 @@ def get_module_location(arg) -> Path | None:
 
     Returns:
         The location of the module as a Path object or None when the location can not be determined or
-          an invalid argument was provided.
+            an invalid argument was provided.
 
     Example:
         ```python
@@ -1402,8 +1399,9 @@ def get_module_location(arg) -> Path | None:
         If the module is not found or is not a valid module, None is returned.
 
     Warning:
-        If the module is a namespace, None will be returned. Use the function [is_namespace()](
-        ./#egse.system.is_namespace) to determine if the 'module' is a namespace.
+        If the module is a namespace, None will be returned. Use the function
+            [is_namespace()](system.md#egse.system.is_namespace) to determine if the 'module'
+            is a namespace.
 
     """
     if isinstance(arg, FunctionType):
@@ -1483,7 +1481,7 @@ def find_class(class_name: str) -> Type:
     """Find and returns a class based on the fully qualified name.
 
     A class name can be preceded with the string `class//`. This is used in YAML
-    files where the class is then instantiated on load by the [Setup](../setup/#egse.setup.Setup).
+    files where the class is then instantiated on load by the [Setup](setup.md#egse.setup.Setup).
 
     Args:
         class_name (str): a fully qualified name for the class
@@ -1542,7 +1540,7 @@ def check_str_for_slash(arg: str):
         ValueError(f"The given argument can not contain slashes, {arg=}.")
 
 
-def check_is_a_string(var, allow_none=False):
+def check_is_a_string(var: Any, allow_none=False):
     """
     Checks if the given variable is a string and raises a TypeError if the check fails.
 
@@ -1717,7 +1715,7 @@ def execution_time(func):
     if you want —by default and always— have an idea of the average execution time
     of the given function.
 
-    Use this in conjunction with the [get_average_execution_time()](./#egse.system.get_average_execution_time)
+    Use this in conjunction with the [get_average_execution_time()](system.md#egse.system.get_average_execution_time)
     function to retrieve the average execution time for the given function.
     """
 
@@ -1734,7 +1732,7 @@ def save_average_execution_time(func: Callable, *args, **kwargs):
     arguments (in args) and keyword arguments (in kwargs) are passed into the function. The execution
     time is saved in a deque of maximum 100 elements. When more times are added, the oldest times are
     discarded. This function is used in conjunction with the
-    [get_average_execution_time()](./#egse.system.get_average_execution_time) function.
+    [get_average_execution_time()](system.md#egse.system.get_average_execution_time) function.
     """
 
     with Timer(log_level=logging.NOTSET) as timer:
@@ -1751,9 +1749,10 @@ def save_average_execution_time(func: Callable, *args, **kwargs):
 def get_average_execution_time(func: Callable) -> float:
     """
     Returns the average execution time of the given function. The function 'func' shall be previously executed using
-    the [save_average_execution_time()](./#egse.system.save_average_execution_time) function which remembers the last
+    the [save_average_execution_time()](system.md#egse.system.save_average_execution_time) function which remembers the
+    last
     100 execution times of the function.
-    You can also decorate your function with [@execution_time](./#egse.system.execution_time) to permanently
+    You can also decorate your function with [@execution_time](system.md#egse.system.execution_time) to permanently
     monitor it.
     The average time is a moving average over the last 100 times. If the function was never called before, 0.0 is
     returned.

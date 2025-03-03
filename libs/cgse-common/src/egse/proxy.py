@@ -9,6 +9,7 @@ import logging
 import pickle
 import types
 from types import MethodType
+from typing import Any
 
 import zmq
 
@@ -349,7 +350,7 @@ class Proxy(BaseProxy, ControlServerConnectionInterface):
     def is_cs_connected(self) -> bool:
         return self.ping()
 
-    def send(self, data, retries: int = REQUEST_RETRIES, timeout: int = None):
+    def send(self, data, retries: int = REQUEST_RETRIES, timeout: int = None) -> Any:
         """
         Sends a command to the control server and waits for a response.
 
@@ -369,7 +370,7 @@ class Proxy(BaseProxy, ControlServerConnectionInterface):
             retries (int): the number of time we should retry to send the message
 
         Returns:
-            response: the response from the control server or ``None`` when there was
+            response: the response from the control server or `None` when there was
                 a problem or a timeout.
         """
         timeout = timeout or self._timeout
@@ -500,12 +501,8 @@ class Proxy(BaseProxy, ControlServerConnectionInterface):
         self._logger.debug(f"Check if control server is available: Ping - {return_code}")
         return return_code == "Pong"
 
-    def get_endpoint(self):
-        """ Returns the endpoint.
-
-        Returns:
-            - Endpoint.
-        """
+    def get_endpoint(self) -> str:
+        """ Returns the endpoint. """
 
         return self._endpoint
 

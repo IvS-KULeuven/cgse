@@ -2,6 +2,10 @@
 title: "egse.exceptions"
 ---
 
+!!! info "cgse-common"
+    This code is part of the `cgse-common` package.
+
+
 ```text
 Exception
  ├── CGSEException

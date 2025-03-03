@@ -153,10 +153,10 @@ class DummyProxy(Proxy, DummyInterface, EventInterface):
 
     def __init__(
             self,
-            protocol=ctrl_settings.PROTOCOL,
-            hostname=ctrl_settings.HOSTNAME,
-            port=ctrl_settings.COMMANDING_PORT,
-            timeout=ctrl_settings.TIMEOUT
+            protocol: str = ctrl_settings.PROTOCOL,
+            hostname: str = ctrl_settings.HOSTNAME,
+            port: int = ctrl_settings.COMMANDING_PORT,
+            timeout: int = ctrl_settings.TIMEOUT
     ):
         super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
 
@@ -504,8 +504,8 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
             command: the command string including terminators.
 
         Raises:
-            A DeviceTimeoutError when the sendall() timed out, and a DeviceConnectionError if
-            there was a socket related error.
+            DeviceTimeoutError: when the sendall() timed out, and a DeviceConnectionError if
+                there was a socket related error.
         """
 
         # _LOGGER.debug(f"{command.encode() = }")
@@ -533,7 +533,7 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
 
         Raises:
             DeviceTimeoutError: when the sendall() timed out, and a DeviceConnectionError if
-            there was a socket related error.
+                there was a socket related error.
         """
         # MODULE_LOGGER.debug(f"{command.encode() = }")
 

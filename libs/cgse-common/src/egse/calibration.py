@@ -22,7 +22,7 @@ def apply_gain_offset(counts: float, gain: float, offset: float) -> float:
     return counts * gain + offset
 
 
-def counts_to_temperature(sensor_name: str, counts: float, sensor_info: NavigableDict, setup: Setup) -> float:
+def counts_to_temperature(sensor_name: str, counts: float, sensor_info: navdict, setup: Setup) -> float:
     """ Converts the given counts for the given sensor to temperature.
 
     This conversion can be done as follows:

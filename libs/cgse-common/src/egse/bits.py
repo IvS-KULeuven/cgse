@@ -116,10 +116,10 @@ def bit_set(value: int, bit) -> bool:
         True if the bit is set (1).
     """
     bit_value = 1 << bit
-    return value & (bit_value) == bit_value
+    return value & bit_value == bit_value
 
 
-def bits_set(value: int, *args) -> bool:
+def bits_set(value: int, *args: tuple[int, ...]) -> bool:
     """
     Return True if all the bits are set.
 
@@ -486,14 +486,14 @@ CRC_TABLE = [
 ]
 
 
-def crc_calc(data, start: int, len: int) -> int:
+def crc_calc(data: list[Union[bytes, int]], start: int, len_: int) -> int:
     """
     Calculate the checksum for (part of) the data.
 
     Args:
         data: the data for which the checksum needs to be calculated
         start: offset into the data array [byte]
-        len: number of bytes to incorporate into the calculation
+        len_: number of bytes to incorporate into the calculation
 
     Returns:
         the calculated checksum.
@@ -510,10 +510,10 @@ def crc_calc(data, start: int, len: int) -> int:
     # and the individual elements have then type 'bytes'.
 
     if isinstance(data[0], bytes):
-        for idx in range(start, start + len):
+        for idx in range(start, start + len_):
             crc = CRC_TABLE[crc ^ (int.from_bytes(data[idx], byteorder="big") & 0xFF)]
     elif isinstance(data[0], int):
-        for idx in range(start, start + len):
+        for idx in range(start, start + len_):
             crc = CRC_TABLE[crc ^ (data[idx] & 0xFF)]
 
     return crc
@@ -563,7 +563,7 @@ def s16(value: int) -> int:
     return ctypes.c_int16(value).value
 
 
-def s32(value: int):
+def s32(value: int) -> int:
     """
     Return the signed equivalent of a hex or binary number.
 

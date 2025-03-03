@@ -20,7 +20,7 @@ def log_differences(dict_1, dict_2):
     Takes two flattened dictionaries and compares them. This function only compares those
     keys that are common to both dictionaries. The key-value pairs that are unique to one
     of the dictionaries are ignored. To inspect if there are keys unique to one dictionary,
-    use the [log_key_differences()](./#egse.dicts.log_key_differences) function.
+    use the [log_key_differences()](dicts.md#egse.dicts.log_key_differences) function.
 
     The differences are logged in a Rich Table at level=INFO.
 

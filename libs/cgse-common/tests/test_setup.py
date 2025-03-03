@@ -1040,3 +1040,63 @@ def test_beer_factory():
     assert isinstance(beer, Beer)
     assert beer.name == "Achel Blond Extra"
     assert beer.alcohol == 9.5
+
+
+def test_walk():
+
+    setup = Setup.from_yaml_string(
+        """
+        xxx:
+            device: dev-xxx
+        
+        yyy:
+            device: dev-yyy
+        
+        zzz:
+            aaa:
+                device-args: [1,2,3]
+                device: dev-zzz-aaa
+            bbb:
+                device-name: BBB
+                device: dev-zzz-bbb
+        """
+    )
+
+    leafs = []
+    Setup.walk(setup, "device", leafs)
+
+    assert len(leafs) == 4
+    assert "dev-yyy" in leafs
+    assert "dev-zzz-aaa" in leafs
+
+
+def test_find_devices():
+
+    setup = Setup.from_yaml_string(
+        """
+        xxx:
+            device: dev-xxx
+            device_name: XXX
+        
+        yyy:
+            device: dev-yyy
+            device_name: YYY
+        
+        zzz:
+            aaa:
+                device_args: [1,2,3]
+                device_name: AAA
+                device: dev-zzz-aaa
+            bbb:
+                device_name: BBB
+                device: dev-zzz-bbb
+        
+        """
+    )
+
+    devices = {}
+    devices = Setup.find_devices(setup, devices)
+
+    assert len(devices) == 4
+    assert devices["BBB"] == ("dev-zzz-bbb", ())
+    assert devices["AAA"] == ("dev-zzz-aaa", [1, 2, 3])

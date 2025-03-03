@@ -213,7 +213,7 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         Returns:
             Dictionary with the average execution times of all functions that have been monitored by this process.
-              The dictionary keys are the function names, and the values are the average execution times in ms.
+                The dictionary keys are the function names, and the values are the average execution times in ms.
         """
 
         return get_average_execution_times()
@@ -262,7 +262,7 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         return self.hk_delay
 
-    def set_scheduled_task_delay(self, seconds):
+    def set_scheduled_task_delay(self, seconds: float):
         """
         Sets the delay time between successive executions of scheduled tasks.
 
@@ -554,7 +554,7 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         Args:
             data (dict): a dictionary containing parameter name and value of all device housekeeping. There is also
-              a timestamp that represents the date/time when the HK was received from the device.
+                a timestamp that represents the date/time when the HK was received from the device.
         """
         pass
 

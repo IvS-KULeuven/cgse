@@ -238,15 +238,12 @@ class DeviceTransport:
             command: is the command to be sent to the instrument
 
         Returns:
-            Either a string returned by the controller (on success), or an error message (on
-              failure).
+            Either a string returned by the controller (on success), or an error message (on failure).
 
         Raises:
-            DeviceConnectionError: when there was an I/O problem during communication with the
-              controller.
+            DeviceConnectionError: when there was an I/O problem during communication with the controller.
 
-            DeviceTimeoutError: when there was a timeout in either sending the command or
-              receiving the response.
+            DeviceTimeoutError: when there was a timeout in either sending the command or receiving the response.
         """
 
         raise NotImplementedError

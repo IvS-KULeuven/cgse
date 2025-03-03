@@ -13,6 +13,8 @@ import abc
 import inspect
 import logging
 import pickle
+from typing import Any
+from typing import Type
 
 from prometheus_client import Counter
 from prometheus_client import Summary
@@ -482,7 +484,7 @@ class CommandProtocol(DeviceConnectionObserver, metaclass=abc.ABCMeta):
         """
         self.send(self._commands)
 
-    def load_commands(self, command_settings, command_class, device_class):
+    def load_commands(self, command_settings: dict, command_class: Type[Command], device_class: Any):
         """
         Loads the command definitions from the given ``command_settings`` and builds an internal
         dictionary containing the command names as keys and the corresponding ``Command`` class
@@ -556,7 +558,7 @@ class CommandProtocol(DeviceConnectionObserver, metaclass=abc.ABCMeta):
                 device_method=device_method,
             )
 
-    def build_device_method_lookup_table(self, device_obj):
+    def build_device_method_lookup_table(self, device_obj: Any):
         """
         Fill the lookup table with device command methods that are bound to the device object.
 
@@ -569,7 +571,7 @@ class CommandProtocol(DeviceConnectionObserver, metaclass=abc.ABCMeta):
             if method is not None:
                 self._method_lookup[method_name] = method
 
-    def handle_device_method(self, cmd: Command, *args, **kwargs):
+    def handle_device_method(self, cmd: Command, *args: list, **kwargs: dict):
         """
         Call the device method with the given arguments.
 
