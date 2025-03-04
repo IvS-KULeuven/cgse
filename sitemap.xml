@@ -113,6 +113,18 @@
          <lastmod>2025-03-04</lastmod>
     </url>
     <url>
+         <loc>https://ivs-kuleuven.github.io/cgse/api/persistence/</loc>
+         <lastmod>2025-03-04</lastmod>
+    </url>
+    <url>
+         <loc>https://ivs-kuleuven.github.io/cgse/api/plugin/</loc>
+         <lastmod>2025-03-04</lastmod>
+    </url>
+    <url>
+         <loc>https://ivs-kuleuven.github.io/cgse/api/process/</loc>
+         <lastmod>2025-03-04</lastmod>
+    </url>
+    <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/reload/</loc>
          <lastmod>2025-03-04</lastmod>
     </url>
