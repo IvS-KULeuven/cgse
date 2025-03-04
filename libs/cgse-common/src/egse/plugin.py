@@ -40,6 +40,10 @@ def load_plugins(entry_point: str) -> dict:
     """
     Returns a dictionary with plugins loaded. The keys are the names of the entry-points,
     the values are the loaded modules or objects.
+
+    Note:
+        When an entry point cannot be loaded, an error is logged and the value for that
+        entry point in the returned dictionary will be None.
     """
     eps = {}
     for ep in entry_points(entry_point):
@@ -57,11 +61,11 @@ def get_file_infos(entry_point: str) -> dict[str, tuple[Path, str]]:
     Returns a dictionary with location and filename of all the entries found for
     the given entry-point name.
 
-    The entry-points are interpreted as follows: <name> = "<module>:<filename>" where
+    The entry-points are interpreted as follows: `<name> = "<module>:<filename>"` where
 
-    - <name> is the name of the entry-point given in the pyproject.toml file
-    - <module> is a valid module name that can be imported and from which the location can be determined.
-    - <filename> is the name of the target file, e.g. a YAML file
+    - `<name>` is the name of the entry-point given in the pyproject.toml file
+    - `<module>` is a valid module name that can be imported and from which the location can be determined.
+    - `<filename>` is the name of the target file, e.g. a YAML file
 
     As an example, for the `cgse-common` settings, the following entry in the `pyproject.toml`:
 
@@ -116,6 +120,8 @@ def handle_click_plugins(plugins):
 
     return decorator
 
+
+# This class is filtered and will not be included in the API docs, see `mkdocs.yml`.
 
 class BrokenCommand(click.Command):
     """

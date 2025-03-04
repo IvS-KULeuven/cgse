@@ -36,6 +36,8 @@ class ProcessStatus:
     * memory info: memory information on the process
     * cpu usage, percentage and count (number of physical cores)
 
+    Parameters:
+        metrics_prefix: the prefix that identifies the process for which these metrics are gathered.
     """
 
     def __init__(self, *, metrics_prefix: Optional[str] = None):
@@ -110,7 +112,7 @@ class ProcessStatus:
         self.metrics["PSUTIL_NUMBER_OF_THREADS"].set(threading.active_count())
         self.metrics["PSUTIL_PROC_UPTIME"].set(self._uptime)
 
-    def update(self):
+    def update(self) -> ProcessStatus:
         """
         Updates those values that change during execution, like memory usage, number of
         connections, ...
@@ -129,7 +131,7 @@ class ProcessStatus:
 
         return self
 
-    def as_dict(self):
+    def as_dict(self) -> dict:
         """Returns all process information as a dictionary.
 
         This runs the `update()` method first to bring the numbers up-to-date.
@@ -179,8 +181,8 @@ class SubProcess:
 
     Usage:
 
-        hexapod_ui = SubProcess("MyApp", [sys.executable, "-m", "egse.hexapod.hexapod_ui"])
-        hexapod_ui.execute()
+        proc = SubProcess("MyApp", [sys.executable, "-m", "egse.<module>.<module>"])
+        proc.execute()
 
     """
 
@@ -197,13 +199,16 @@ class SubProcess:
         self._stdout = stdout
         self._stderr = stderr
 
-    def execute(self, detach_from_parent=False) -> bool:
+    def execute(self, detach_from_parent: bool = False) -> bool:
         """ Execute the sub-process.
 
         Args:
-            - detach_from_parent: Boolean indicating whether the sub-process should be detached from the
-                                  parent process.  If set to False, the sub-process will be killed whenever the
-                                  parent process is interrupted or stopped.
+            detach_from_parent: Boolean indicating whether the sub-process should be detached from the
+                parent process.  If set to False, the sub-process will be killed whenever the
+                parent process is interrupted or stopped.
+
+        Returns:
+            True if the process could be started, False on error.
         """
 
         try:
@@ -280,21 +285,32 @@ class SubProcess:
         """
         return psutil.pid_exists(self.pid)
 
-    def quit(self):
+    def quit(self) -> int:
         """
         Send a request to quit to the process.
 
-        This sends a ZeroMQ message "Quit" to the process. The process is expected to answer with
-        "Quiting" and then
-        actually ends its execution.
+        This will first send a SIGTERM signal to the process, if that fails,
+        a SIGKILL will be sent.
 
         Returns:
-            True when received the answer "Quiting", False otherwise.
+            0 if the process and its sub-processes are all terminated. Will
+                return > 0 to indicate the number of processes that survived the
+                SIGKILL.
         """
         return self.reap_children()
 
-    def reap_children(self, timeout=3):
-        """Tries hard to terminate and ultimately kill all the children of this process."""
+    def reap_children(self, timeout=3) -> int:
+        """
+        Tries hard to terminate and ultimately kill all the children of this process.
+
+        This will first send a SIGTERM signal to the process, if that fails,
+        a SIGKILL will be sent.
+
+        Returns:
+            0 if the process and its sub-processes are all terminated. Will
+                return > 0 to indicate the number of processes that survived the
+                SIGKILL.
+        """
 
         def on_terminate(proc):
             LOGGER.info(f"process {proc} terminated with exit code {proc.returncode}")
