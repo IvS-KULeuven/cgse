@@ -2,8 +2,9 @@
 This module defines Mixin classes that can be used for adding methods and properties to
 classes without strict inheritance.
 
-Be careful, some of the Mixin classes require certain attributes to be defined in the
-outer subclass. Read the docstrings carefully to understand what is needed.
+Warning:
+    Be careful, some of the Mixin classes require certain attributes to be defined in the
+    outer subclass. Read the docstrings carefully to understand what is needed.
 """
 
 import contextlib
@@ -24,11 +25,13 @@ from egse.protocol import get_function
 LOGGER = logging.getLogger(__name__)
 
 __all__ = [
-    "add_lf",
-    "add_cr_lf",
-    "dynamic_command",
+    "CommandType",
     "DynamicCommandMixin",
-    "CommandType"
+    "add_cr_lf",
+    "add_eot",
+    "add_etx",
+    "add_lf",
+    "dynamic_command",
 ]
 
 # ----- Mixin for dynamic commanding ---------------------------------------------------------------
@@ -46,7 +49,7 @@ LINE_FEED = "\x0A"
 CARRIAGE_RETURN = "\x0D"
 
 
-def add_etx(cmd_string: str):
+def add_etx(cmd_string: str) -> str:
     """
     Add an end-of-text ETX (ASCII code 0x03) to the command string.
 
@@ -59,7 +62,7 @@ def add_etx(cmd_string: str):
     return cmd_string if cmd_string.endswith(ETX) else cmd_string + ETX
 
 
-def add_eot(cmd_string: str):
+def add_eot(cmd_string: str) -> str:
     """
     Add an end-of-transmission EOT (ASCII code 0x04) to the command string.
 
@@ -72,13 +75,14 @@ def add_eot(cmd_string: str):
     return cmd_string if cmd_string.endswith(EOT) else cmd_string + EOT
 
 
-def add_lf(cmd_string: str):
+def add_lf(cmd_string: str) -> str:
     """ Add a line feed to the given command string, if not added yet.
 
     Args:
-        - cmd_string: Command string.
+        cmd_string: Command string.
 
-    Returns: Given command string with a line feed appended (if not present yet).
+    Returns:
+        Given command string with a line feed appended (if not present yet).
     """
 
     if not cmd_string.endswith(LINE_FEED):
@@ -88,13 +92,14 @@ def add_lf(cmd_string: str):
     return cmd_string
 
 
-def add_cr_lf(cmd_string: str):
+def add_cr_lf(cmd_string: str) -> str:
     """ Add a carriage return and line feed to the given command string, if not added yet.
 
     Args:
-        - cmd_string: Command string.
+        cmd_string: Command string.
 
-    Returns: Given command string with a carriage return and line feed appended (if not present yet).
+    Returns:
+        Given command string with a carriage return and line feed appended (if not present yet).
     """
 
     if not cmd_string.endswith(CARRIAGE_RETURN + LINE_FEED):
@@ -110,7 +115,7 @@ def expand_kwargs(kwargs: Dict):
 
 
 class CommandType(str, enum.Enum):
-
+    """The type of the command, i.e. read, write, or transaction."""
     READ = "read"
     WRITE = "write"
     TRANSACTION = "transaction"
@@ -166,14 +171,14 @@ def dynamic_command(
 
     This decorator can add the following static attributes to the method:
 
-    * __dynamic_interface
-    * __read_command, __write_command, __query_command, __transaction_command
-    * __cmd_string
-    * __process_response
-    * __process_cmd_string
-    * __use_format
-    * __pre_cmd
-    * __post_cmd
+    * `__dynamic_interface`
+    * `__read_command`, `__write_command`, `__query_command`, `__transaction_command`
+    * `__cmd_string`
+    * `__process_response`
+    * `__process_cmd_string`
+    * `__use_format`
+    * `__pre_cmd`
+    * `__post_cmd`
 
     Args:
         cmd_type (str): one of 'read', 'write', 'query', or 'transaction' [required keyword]
@@ -319,7 +324,7 @@ class DynamicCommandMixin:
 
         return cmd_string
 
-    def handle_dynamic_command(self, attr):
+    def handle_dynamic_command(self, attr: Callable) -> Callable:
         """
         Creates a command wrapper calling the appropriate transport methods that are associated
         with the interface definition as passed into this method with the attr argument.
@@ -329,11 +334,11 @@ class DynamicCommandMixin:
 
         Returns:
             Command wrapper with the read or write command, depending on the decorators used
-            for that method in the corresponding Interface class.
+                for that method in the corresponding Interface class.
 
         Raises:
             AttributeError: If the command is not listed in the YAML file and/or
-            has not been listed.
+                has not been listed.
         """
 
         @functools.wraps(attr)
