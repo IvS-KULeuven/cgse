@@ -108,6 +108,7 @@ plugins:
                     filters:
                     - "!^_"
                     - "^__init__$"
+                    - "!BrokenCommand"
 
 watch:
   - libs/cgse-common/src/egse
@@ -180,6 +181,9 @@ nav:
       - api/monitoring.md
       - api/observer.md
       - api/obsid.md
+      - api/persistence.md
+      - api/plugin.md
+      - api/process.md
       - api/reload.md
       - api/settings.md
       - api/setup.md

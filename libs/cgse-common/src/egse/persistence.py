@@ -1,3 +1,6 @@
+__all__ = [
+    "PersistenceLayer",
+]
 from abc import ABC
 from abc import abstractmethod
 
@@ -20,7 +23,7 @@ class PersistenceLayer(ABC):
 
     @abstractmethod
     def exists(self):
-        """Does the resource exists."""
+        """Returns True if the resource exists, False otherwise."""
         raise NotImplementedError("Persistence layers must implement the exists method")
 
     @abstractmethod
