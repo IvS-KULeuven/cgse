@@ -170,7 +170,17 @@ nav:
       - api/device.md
       - api/dicts.md
       - api/dummy.md
+      - api/env.md
       - api/exceptions.md
+      - api/heartbeat.md
+      - api/hk.md
+      - api/listener.md
+      - api/metrics.md
+      - api/mixin.md
+      - api/monitoring.md
+      - api/observer.md
+      - api/obsid.md
+      - api/reload.md
       - api/settings.md
       - api/setup.md
       - api/system.md

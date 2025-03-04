@@ -1,7 +1,14 @@
+"""
+This module implements a standard Observer <-> Observable pattern.
+
+!!! Bug
+    The methods in the Observable are not PEP8 compliant and need to be deprecated and changed.
+"""
 import abc
 
 
 class Observer(abc.ABC):
+    """The observer that needs to take action when notified."""
     @abc.abstractmethod
     def update(self, changed_object):
         pass
@@ -12,6 +19,7 @@ class Observer(abc.ABC):
 
 
 class Observable:
+    """The object that sends out notifications to the observers. """
     def __init__(self):
         self.observers = []
 

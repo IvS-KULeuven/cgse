@@ -15,21 +15,22 @@ Mandatory environment variables:
 
 The following environment variables are used by the project:
 
-- <PROJECT>_DATA_STORAGE_LOCATION: the root of the data storage location.
-- <PROJECT>_CONF_DATA_LOCATION: the location of the configuration data.
-- <PROJECT>_CONF_REPO_LOCATION: the location of the configuration data GitHub repository.
-- <PROJECT>_LOG_FILE_LOCATION: the location of the log files.
-- <PROJECT>_LOCAL_SETTINGS: the YAML file that contains site specific local settings.
+- `<PROJECT>_DATA_STORAGE_LOCATION`: the root of the data storage location.
+- `<PROJECT>_CONF_DATA_LOCATION`: the location of the configuration data.
+- `<PROJECT>_CONF_REPO_LOCATION`: the location of the configuration data GitHub repository.
+- `<PROJECT>_LOG_FILE_LOCATION`: the location of the log files.
+- `<PROJECT>_LOCAL_SETTINGS`: the YAML file that contains site specific local settings.
 
-Do not use the environment variables directly, but use the functions provided by this module to get the locations.
+Do not use the environment variables directly in your code, but use the functions provided by this module to get the
+locations and settings.
 
-- get_data_storage_location(): returns the full path of the data storage location.
-- get_conf_data_location(): returns the full path of the location of the configuration data.
-- get_conf_repo_location(): returns the full path of the location of the configuration data repository.
-- get_log_file_location(): returns the full path of the location of the log files.
-- get_local_settings(): returns the fully qualified filename of the local settings YAML file.
+- `get_data_storage_location()`: returns the full path of the data storage location.
+- `get_conf_data_location()`: returns the full path of the location of the configuration data.
+- `get_conf_repo_location()`: returns the full path of the location of the configuration data repository.
+- `get_log_file_location()`: returns the full path of the location of the log files.
+- `get_local_settings()`: returns the fully qualified filename of the local settings YAML file.
 
-WARNING:
+!!! warning
 
     These environment variables shall not be changed outside the processes that use them and also not using the
     `os.environ` within the code. For the known environment variables, use the dedicated 'setters' that are provided
@@ -197,7 +198,7 @@ def set_default_environment(
     set_local_settings(local_settings)
 
 
-def get_project_name():
+def get_project_name() -> str:
     """Get the PROJECT name. Return None when the PROJECT is not set."""
     return _env.get("PROJECT") or None
 
@@ -208,7 +209,7 @@ def set_project_name(name: str):
     _env.set("PROJECT", name)
 
 
-def get_site_id():
+def get_site_id() -> str:
     """Get the SITE_ID. Return None if the SITE_ID is not set."""
     return _env.get("SITE_ID") or None
 
@@ -229,7 +230,7 @@ def set_data_storage_location(location: str | Path | None):
     """
     Sets the environment variable and the internal representation to the given value.
 
-    Warnings:
+    Warning:
         Issues a warning when the given location doesn't exist.
     """
     env_name = get_data_storage_location_env_name()
@@ -255,12 +256,13 @@ def get_data_storage_location(site_id: str = None) -> str:
 
     If the site_id is None, it is determined from the environment variable SITE_ID.
 
-    If the ${PROJECT}_DATA_STORAGE_LOCATION environment variable does not end with
+    If the `${PROJECT}_DATA_STORAGE_LOCATION` environment variable does not end with
     the site_id, the site_id will be appended to the path on return. That means
     the actual data storage location will always be site specific.
 
-    Note: when you specify the `site_id` as an argument, it takes precedence
-          over the SITE_ID environment variable.
+    Note:
+        when you specify the `site_id` as an argument, it takes precedence
+            over the SITE_ID environment variable.
 
     Args:
         site_id: the site identifier (to be used instead of the SITE_ID environment variable)
@@ -269,7 +271,7 @@ def get_data_storage_location(site_id: str = None) -> str:
         The full path of data storage location as a string.
 
     Raises:
-        A ValueError when the SITE_ID or the ${PROJECT}_DATA_STORAGE_LOCATION is not set.
+        ValueError: when the SITE_ID or the ${PROJECT}_DATA_STORAGE_LOCATION is not set.
     """
     global _env
 
@@ -297,7 +299,7 @@ def set_conf_data_location(location: str | Path | None):
     """
     Sets the environment variable and the internal representation to the given value.
 
-    Warnings:
+    Warning:
         Issues a warning when the given location doesn't exist.
     """
 
@@ -320,12 +322,12 @@ def set_conf_data_location(location: str | Path | None):
 
 def get_conf_data_location(site_id: str = None) -> str:
     """
-    Returns the full path of the location of the configuration data for the Site.
+    Returns the full path of the location of the configuration data for the site id.
 
     If the site_id is None, it is determined from the environment variable SITE_ID.
 
-    When the ${PROJECT}_CONF_DATA_LOCATION environment variable is not set, the configuration data
-    location will be the ${PROJECT}_DATA_STORAGE_LOCATION + '/conf'.
+    When the `${PROJECT}_CONF_DATA_LOCATION` environment variable is not set, the configuration data
+    location will be the `${PROJECT}_DATA_STORAGE_LOCATION + '/conf'`.
 
     Args:
         site_id: the site identifier (to be used instead of the SITE_ID environment variable)
@@ -334,7 +336,7 @@ def get_conf_data_location(site_id: str = None) -> str:
         The full path of location of the configuration data as a string.
 
     Raises:
-        A ValueError when the SITE_ID or the ${PROJECT}_DATA_STORAGE_LOCATION is not set.
+        ValueError: when the SITE_ID or the `${PROJECT}_DATA_STORAGE_LOCATION` is not set.
     """
 
     conf_data_root = _env.get("CONF_DATA_LOCATION")
@@ -365,7 +367,7 @@ def set_log_file_location(location: str | Path | None):
     """
     Sets the environment variable and the internal representation to the given value.
 
-    Warnings:
+    Warning:
         Issues a warning when the given location doesn't exist.
     """
 
@@ -389,10 +391,10 @@ def set_log_file_location(location: str | Path | None):
 def get_log_file_location(site_id: str = None) -> str:
     """
     Returns the full path of the location of the log files. The log file location is read from the environment
-    variable ${PROJECT}_LOG_FILE_LOCATION. The location shall be independent of any setting that is subject to change.
+    variable `${PROJECT}_LOG_FILE_LOCATION`. The location shall be independent of any setting that is subject to change.
 
     If the environment variable is not set, a default log file location is created from the data storage location as
-    follows: <PROJECT>_DATA_STORAGE_LOCATION/<SITE_ID>/log.
+    follows: `<PROJECT>_DATA_STORAGE_LOCATION/<SITE_ID>/log`.
 
     Args:
         site_id: the site identifier
@@ -401,7 +403,7 @@ def get_log_file_location(site_id: str = None) -> str:
         The full path of location of the log files as a string.
 
     Raises:
-        A ValueError when the SITE_ID or the ${PROJECT}_DATA_STORAGE_LOCATION is not set.
+        ValueError: when the SITE_ID or the ${PROJECT}_DATA_STORAGE_LOCATION is not set.
 
     """
 
@@ -434,7 +436,7 @@ def set_local_settings(path: str | Path | None):
 
     When the path is set to None, the environment variable will be unset.
 
-    Warnings:
+    Warning:
         Issues a warning when the given path doesn't exist.
     """
 
@@ -460,7 +462,9 @@ def get_local_settings_path() -> str or None:
     Returns the fully qualified filename of the local settings YAML file. When the local settings environment
     variable is not defined or is an empty string, None is returned.
 
-    Warnings:
+    Warning:
+        The function will generate a warning when
+
         - When the local settings environment variable is not defined, or
         - when the path defined by the environment variable doesn't exist.
     """
@@ -524,7 +528,7 @@ def set_conf_repo_location(location: str | Path | None):
     When the location is None, the environment variable will be unset and its internal
     representation will be NoValue().
 
-    Warnings:
+    Warning:
         Issues a warning when the given location doesn't exist.
     """
 
@@ -568,22 +572,24 @@ def print_env():
 
 
 @contextlib.contextmanager
-def env_var(**kwargs):
+def env_var(**kwargs: dict):
     """
     Context manager to run some code that need alternate settings for environment variables.
     This will automatically initialize the CGSE environment upon entry and re-initialize upon exit.
 
-    NOTE: This context manager is different from the one from `egse.system` because of the CGSE environment changes.
+    Note:
+        This context manager is different from the one in `egse.system` because of the CGSE environment changes.
 
     Args:
         **kwargs: dictionary with environment variables that are needed
 
-    Examples:
-
-        >>> from egse.env import env_var
-        >>> with env_var(PLATO_DATA_STORAGE_LOCATION="/Users/rik/data"):
-        ...    # do stuff that needs these alternate setting
-        ...    pass
+    Example:
+        ```python
+        from egse.env import env_var
+        with env_var(PLATO_DATA_STORAGE_LOCATION="/Users/rik/data"):
+            # do stuff that needs these alternate setting
+            ...
+        ```
 
     """
     saved_env = {}

@@ -11,12 +11,12 @@ import time
 import zmq
 
 from egse.system import format_datetime
-from egse.zmq import MessageIdentifier
+from egse.zmq_ser import MessageIdentifier
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def g_tick(period: float):
+def _g_tick(period: float):
     """Generator for ticks every period [s]."""
     next_time = time.monotonic()
     while True:
@@ -26,14 +26,17 @@ def g_tick(period: float):
 
 class HeartbeatBroadcaster(threading.Thread):
     """
-    Sends a heartbeat signal to the endpoint using a PUB-SUB protocol. The heartbeat message is send by default
-    every second, but that can be changed by the `period` argument (which is in fractional seconds).
+    Sends a heartbeat signal to the endpoint using a PUB-SUB protocol.
+
+    The heartbeat message is sent by default every second, but that can be changed
+    by the `period` argument (which is in fractional seconds).
 
     Since the broadcaster runs in a thread, it is not a full prove method that the parent process is still running.
     Therefore, the parent process can set a custom messages on the queue. That custom message will be broadcast at
     the same time as the next heartbeat, which is probably not the time that the custom message was set. Keep that
     in mind.
     """
+
     def __init__(self, period: float = 1.0, endpoint: str = "tcp://*:5555"):
         super().__init__()
         self._period = period
@@ -51,7 +54,7 @@ class HeartbeatBroadcaster(threading.Thread):
         self._socket.bind(self._endpoint)
         self._running = True
 
-        g = g_tick(self._period)
+        g = _g_tick(self._period)
         while True:
             if self._canceled.is_set():
                 break

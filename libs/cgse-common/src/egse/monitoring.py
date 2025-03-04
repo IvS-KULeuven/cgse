@@ -8,9 +8,10 @@ import time
 from typing import Callable
 from typing import Tuple
 
-import click
 import typer
 import zmq
+from zmq import ZMQError
+
 from egse.control import ControlServer
 from egse.protocol import CommandProtocol
 from egse.settings import Settings
@@ -18,7 +19,6 @@ from egse.setup import load_setup
 from egse.system import format_datetime
 from egse.zmq_ser import MessageIdentifier
 from egse.zmq_ser import bind_address
-from zmq import ZMQError
 
 _LOGGER = logging.getLogger("egse.monitoring")
 
@@ -46,6 +46,17 @@ class MonitoringProtocol(CommandProtocol):
 
 
 class Monitoring:
+    """Context manager to monitor processes.
+
+    Most control servers publish status information on their `MONITORING_PORT`.
+
+    Parameters:
+        endpoint: the endpoint to which the service will connect
+        subscribe: subscription string, default is 'ALL'
+        use_pickle: use pickle to process responses, currently always True
+        callback: function that is called to process the response
+        timeout: stop monitoring after timeout seconds
+    """
     def __init__(
             self,
             endpoint: str,
@@ -226,7 +237,7 @@ PROCESS_NAMES = {
 }
 
 
-def determine_port(proc_name: str):
+def _determine_port(proc_name: str):
     """
     Determine the port number for the given process name. The process names are specific for this tool and defined
     in the PROCESS_NAMES dictionary.
@@ -270,12 +281,12 @@ def monitoring(
         return
 
     _LOGGER.info(f"{type(hostname) = }, {hostname = }")
-    _LOGGER.info(f"{type(port) = }, {port = }, {determine_port(port) = }")
+    _LOGGER.info(f"{type(port) = }, {port = }, {_determine_port(port) = }")
 
     try:
         port = int(port)
     except ValueError:
-        port = determine_port(port_name := port)
+        port = _determine_port(port_name := port)
         if port is None:
             print(f"[red]ERROR[/]: Couldn't determine port number from {port_name}, "
                   f"use the '--list-names' flag to see available names.")
