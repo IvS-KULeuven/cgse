@@ -12,13 +12,13 @@
         <meta name="author" content="Rik Huygen">
       
       
-        <link rel="canonical" href="https://ivs-kuleuven.github.io/cgse/api/settings/">
+        <link rel="canonical" href="https://ivs-kuleuven.github.io/cgse/api/env/">
       
       
-        <link rel="prev" href="../reload/">
+        <link rel="prev" href="../dummy/">
       
       
-        <link rel="next" href="../setup/">
+        <link rel="next" href="../exceptions/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -26,7 +26,7 @@
     
     
       
-        <title>egse.settings - CGSE</title>
+        <title>egse.env - CGSE</title>
       
     
     
@@ -112,9 +112,9 @@
 <!-- / Fathom -->
 
 
-<meta property="og:title" content="CGSE - egse.settings">
+<meta property="og:title" content="CGSE - egse.env">
 <meta property="og:type" content="article">
-<meta property="og:url" content="https://ivs-kuleuven.github.io/cgse/api/settings/">
+<meta property="og:url" content="https://ivs-kuleuven.github.io/cgse/api/env/">
 <meta property="og:site_name" content="CGSE Documentation">
 <meta property="og:description" content="CGSE is an instrument test framework for Python.">
 <meta property="og:image" content="https://raw.githubusercontent.com/IvS-KULeuven/cgse/refs/heads/main/docs/images/icons/cgse-logo.svg">
@@ -154,7 +154,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#egse.settings" class="md-skip">
+        <a href="#egse.env" class="md-skip">
           Skip to content
         </a>
       
@@ -189,7 +189,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              egse.settings
+              egse.env
             
           </span>
         </div>
@@ -1764,10 +1764,29 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../env/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    egse.env
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -1777,6 +1796,246 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#egse.env" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;env
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" env">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.NoValue" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;NoValue
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.env_var" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;env_var
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_conf_data_location" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_conf_data_location
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_conf_data_location_env_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_conf_data_location_env_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_conf_repo_location" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_conf_repo_location
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_conf_repo_location_env_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_conf_repo_location_env_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_data_storage_location" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_data_storage_location
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_data_storage_location_env_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_data_storage_location_env_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_local_settings_env_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_local_settings_env_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_local_settings_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_local_settings_path
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_log_file_location" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_log_file_location
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_log_file_location_env_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_log_file_location_env_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_project_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_project_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_site_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_site_id
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.initialize" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;initialize
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.print_env" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;print_env
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.set_conf_data_location" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_conf_data_location
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.set_conf_repo_location" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_conf_repo_location
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.set_data_storage_location" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_data_storage_location
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.set_local_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_local_settings
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.set_log_file_location" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_log_file_location
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.set_project_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_project_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.set_site_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_site_id
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2006,29 +2265,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    egse.settings
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../settings/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2038,117 +2278,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#egse.settings" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;settings
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" settings">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#egse.settings.Settings" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Settings
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" Settings">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#egse.settings.Settings.load" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;load
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.settings.Settings.to_string" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;to_string
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.settings.SettingsError" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SettingsError
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.settings.load_global_settings" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;load_global_settings
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.settings.load_local_settings" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;load_local_settings
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.settings.load_settings_file" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;load_settings_file
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.settings.read_configuration_file" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;read_configuration_file
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2251,88 +2380,217 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#egse.settings" class="md-nav__link">
+  <a href="#egse.env" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;settings
+      <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;env
     </span>
   </a>
   
-    <nav class="md-nav" aria-label=" settings">
+    <nav class="md-nav" aria-label=" env">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#egse.settings.Settings" class="md-nav__link">
+  <a href="#egse.env.NoValue" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Settings
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" Settings">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#egse.settings.Settings.load" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;load
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;NoValue
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#egse.settings.Settings.to_string" class="md-nav__link">
+  <a href="#egse.env.env_var" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;to_string
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.settings.SettingsError" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SettingsError
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;env_var
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#egse.settings.load_global_settings" class="md-nav__link">
+  <a href="#egse.env.get_conf_data_location" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;load_global_settings
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_conf_data_location
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#egse.settings.load_local_settings" class="md-nav__link">
+  <a href="#egse.env.get_conf_data_location_env_name" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;load_local_settings
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_conf_data_location_env_name
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#egse.settings.load_settings_file" class="md-nav__link">
+  <a href="#egse.env.get_conf_repo_location" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;load_settings_file
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_conf_repo_location
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#egse.settings.read_configuration_file" class="md-nav__link">
+  <a href="#egse.env.get_conf_repo_location_env_name" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;read_configuration_file
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_conf_repo_location_env_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_data_storage_location" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_data_storage_location
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_data_storage_location_env_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_data_storage_location_env_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_local_settings_env_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_local_settings_env_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_local_settings_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_local_settings_path
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_log_file_location" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_log_file_location
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_log_file_location_env_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_log_file_location_env_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_project_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_project_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.get_site_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_site_id
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.initialize" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;initialize
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.print_env" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;print_env
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.set_conf_data_location" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_conf_data_location
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.set_conf_repo_location" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_conf_repo_location
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.set_data_storage_location" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_data_storage_location
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.set_local_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_local_settings
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.set_log_file_location" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_log_file_location
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.set_project_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_project_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.set_site_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_site_id
     </span>
   </a>
   
@@ -2362,7 +2620,7 @@
   
 
 
-  <h1>egse.settings</h1>
+  <h1>egse.env</h1>
 
 <div class="admonition info">
 <p class="admonition-title">cgse-common</p>
@@ -2374,97 +2632,54 @@
 
 
 
-<h2 id="egse.settings" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <span class="doc doc-object-name doc-module-name">egse.settings</span>
+<h2 id="egse.env" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <span class="doc doc-object-name doc-module-name">egse.env</span>
 
 
-<a href="#egse.settings" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#egse.env" class="headerlink" title="Permanent link">&para;</a></h2>
 
     <div class="doc doc-contents first">
 
-        <p>The Settings class handles user and configuration settings that are provided in
-a <a href="http://yaml.org"><code>YAML</code></a> file.</p>
-<p>The idea is that settings are grouped by components or any arbitrary grouping that makes sense for
-the application or for the user. Settings are also modular and provided by each package by means
-of entry-points. The Settings class can read from different YAML files.</p>
-<p>By default, settings are loaded from a file called <code>settings.yaml</code>, but this can be changed in the entry-point
-definition.</p>
-<p>The yaml configuration files are provided as entry points by the packages that specified an entry-point group
-'<em>cgse.settings</em>' in the <code>pyproject.toml</code>. The Settings dictionary (attrdict) is constructed from the configuration
-YAML files from each of the packages. Settings can be overwritten by the next package configuration file. So,
-make sure the group names in each package configuration file are unique.</p>
-<p>The YAML file is read and the configuration parameters for the given group are
-available as instance variables of the returned class.</p>
-<p>The intended use is as follows:</p>
-<pre><code>from egse.settings import Settings
-
-dsi_settings = Settings.load("DSI")
-
-if 0x000C &lt;= dsi_settings.RMAP_BASE_ADDRESS &lt;= 0x00FF:
-    ...  # do something here
-else:
-    raise RMAPError("Attempt to access outside the RMAP memory map.")
-</code></pre>
-<p>The above code reads the settings from the default YAML file for a group called <code>DSI</code>.
-The settings will then be available as variables of the returned class, in this case
-<code>dsi_settings</code>. The returned class is and behaves also like a dictionary, so you can
-check if a configuration parameter is defined like this:</p>
-<pre><code>if "DSI_FEE_IP_ADDRESS" not in dsi_settings:
-    # define the IP address of the DSI
-</code></pre>
-<p>The YAML section for the above code looks like this:</p>
-<pre><code>DSI:
-
-    # DSI Specific Settings
-
-    DSI_FEE_IP_ADDRESS  10.33.178.144   # IP address of the DSI EtherSpaceLink interface
-    LINK_SPEED:                   100   # SpW link speed used for both up- and downlink
-
-    # RMAP Specific Settings
-
-    RMAP_BASE_ADDRESS:     0x00000000   # The start of the RMAP memory map managed by the FEE
-    RMAP_MEMORY_SIZE:            4096   # The size of the RMAP memory map managed by the FEE
-</code></pre>
-<p>When you want to read settings from another YAML file, specify the <code>filename=</code> keyword.
-If that file is located at a specific location, also use the <code>location=</code> keyword.</p>
-<pre><code>my_settings = Settings.load(filename="user.yaml", location="/Users/JohnDoe")
-</code></pre>
-<p>The above code will read the YAML file from the given location and not from the entry-points.</p>
-<hr />
+        <p>This module provides functionality to work with and check your environment variables.</p>
+<p>The module provides functions to get/set the location of the data storage, the configuration data, and the log files.
+The locations are determined from the environment variables that are set for the project.</p>
+<p>Two important and mandatory environment variables are PROJECT and SITE_ID. The PROJECT environment variable is
+used to construct the names of the other environment variables that are specific to the project. The SITE_ID
+environment variable is used in the value that is returned for some the of project specific environment variables.</p>
+<p>Mandatory environment variables:</p>
+<ul>
+<li>PROJECT: the name of the project, e.g. PLATO, ARIEL. [shall be UPPER case]</li>
+<li>SITE_ID: the site identifier, e.g. the lab name or organisation acronym. [shall be UPPER case]</li>
+</ul>
+<p>The following environment variables are used by the project:</p>
+<ul>
+<li><code>&lt;PROJECT&gt;_DATA_STORAGE_LOCATION</code>: the root of the data storage location.</li>
+<li><code>&lt;PROJECT&gt;_CONF_DATA_LOCATION</code>: the location of the configuration data.</li>
+<li><code>&lt;PROJECT&gt;_CONF_REPO_LOCATION</code>: the location of the configuration data GitHub repository.</li>
+<li><code>&lt;PROJECT&gt;_LOG_FILE_LOCATION</code>: the location of the log files.</li>
+<li><code>&lt;PROJECT&gt;_LOCAL_SETTINGS</code>: the YAML file that contains site specific local settings.</li>
+</ul>
+<p>Do not use the environment variables directly in your code, but use the functions provided by this module to get the
+locations and settings.</p>
+<ul>
+<li><code>get_data_storage_location()</code>: returns the full path of the data storage location.</li>
+<li><code>get_conf_data_location()</code>: returns the full path of the location of the configuration data.</li>
+<li><code>get_conf_repo_location()</code>: returns the full path of the location of the configuration data repository.</li>
+<li><code>get_log_file_location()</code>: returns the full path of the location of the log files.</li>
+<li><code>get_local_settings()</code>: returns the fully qualified filename of the local settings YAML file.</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>These environment variables shall not be changed outside the processes that use them and also not using the
+<code>os.environ</code> within the code. For the known environment variables, use the dedicated 'setters' that are provided
+by this module. If there is a need to change the environment variables, e.g. in unit tests, make sure to call the
+<code>egse.env.initialize()</code> to reset the proper state.</p>
+</div>
 
 
 
 
 
-
-
-<p><span class="doc-section-title">Classes:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td><code><a class="autorefs autorefs-internal" title=" Settings (egse.settings.Settings)" href="#egse.settings.Settings">Settings</a></code></td>
-            <td>
-              <div class="doc-md-description">
-                <p>The Settings class provides a load() method that loads configuration settings for a group</p>
-              </div>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td><code><a class="autorefs autorefs-internal" title=" SettingsError (egse.settings.SettingsError)" href="#egse.settings.SettingsError">SettingsError</a></code></td>
-            <td>
-              <div class="doc-md-description">
-                <p>A settings-specific error.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
 
 
 
@@ -2479,34 +2694,146 @@ If that file is located at a specific location, also use the <code>location=</co
       </thead>
       <tbody>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title=" load_global_settings (egse.settings.load_global_settings)" href="#egse.settings.load_global_settings">load_global_settings</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" env_var (egse.env.env_var)" href="#egse.env.env_var">env_var</a></code></td>
               <td>
                 <div class="doc-md-description">
-                  <p>Loads the settings that are defined by the given entry_point. The entry-points are defined in the</p>
+                  <p>Context manager to run some code that need alternate settings for environment variables.</p>
                 </div>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title=" load_local_settings (egse.settings.load_local_settings)" href="#egse.settings.load_local_settings">load_local_settings</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" get_conf_data_location (egse.env.get_conf_data_location)" href="#egse.env.get_conf_data_location">get_conf_data_location</a></code></td>
               <td>
                 <div class="doc-md-description">
-                  <p>Loads the local settings file that is defined from the environment variable <em>PROJECT</em>_LOCAL_SETTINGS (where</p>
+                  <p>Returns the full path of the location of the configuration data for the site id.</p>
                 </div>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title=" load_settings_file (egse.settings.load_settings_file)" href="#egse.settings.load_settings_file">load_settings_file</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" get_conf_data_location_env_name (egse.env.get_conf_data_location_env_name)" href="#egse.env.get_conf_data_location_env_name">get_conf_data_location_env_name</a></code></td>
               <td>
                 <div class="doc-md-description">
-                  <p>Loads the YAML configuration file that is located at <code>path / filename</code>.</p>
+                  <p>Returns the name of the environment variable for the project.</p>
                 </div>
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title=" read_configuration_file (egse.settings.read_configuration_file)" href="#egse.settings.read_configuration_file">read_configuration_file</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title=" get_conf_repo_location (egse.env.get_conf_repo_location)" href="#egse.env.get_conf_repo_location">get_conf_repo_location</a></code></td>
               <td>
                 <div class="doc-md-description">
-                  <p>Read the YAML input configuration file. The configuration file is only read</p>
+                  <p>Returns the fully qualified name of the location of the repository with</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" get_conf_repo_location_env_name (egse.env.get_conf_repo_location_env_name)" href="#egse.env.get_conf_repo_location_env_name">get_conf_repo_location_env_name</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Returns the name of the environment variable for the project.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" get_data_storage_location (egse.env.get_data_storage_location)" href="#egse.env.get_data_storage_location">get_data_storage_location</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Returns the full path of the data storage location for the given site_id.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" get_data_storage_location_env_name (egse.env.get_data_storage_location_env_name)" href="#egse.env.get_data_storage_location_env_name">get_data_storage_location_env_name</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Returns the name of the environment variable for the project.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" get_local_settings_env_name (egse.env.get_local_settings_env_name)" href="#egse.env.get_local_settings_env_name">get_local_settings_env_name</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Returns the name of the environment variable for the project.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" get_local_settings_path (egse.env.get_local_settings_path)" href="#egse.env.get_local_settings_path">get_local_settings_path</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Returns the fully qualified filename of the local settings YAML file. When the local settings environment</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" get_log_file_location (egse.env.get_log_file_location)" href="#egse.env.get_log_file_location">get_log_file_location</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Returns the full path of the location of the log files. The log file location is read from the environment</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" get_log_file_location_env_name (egse.env.get_log_file_location_env_name)" href="#egse.env.get_log_file_location_env_name">get_log_file_location_env_name</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Returns the name of the environment variable for the project.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" get_project_name (egse.env.get_project_name)" href="#egse.env.get_project_name">get_project_name</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Get the PROJECT name. Return None when the PROJECT is not set.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" get_site_id (egse.env.get_site_id)" href="#egse.env.get_site_id">get_site_id</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Get the SITE_ID. Return None if the SITE_ID is not set.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" set_conf_data_location (egse.env.set_conf_data_location)" href="#egse.env.set_conf_data_location">set_conf_data_location</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Sets the environment variable and the internal representation to the given value.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" set_conf_repo_location (egse.env.set_conf_repo_location)" href="#egse.env.set_conf_repo_location">set_conf_repo_location</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Sets the environment variable and the internal representation to the given value.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" set_data_storage_location (egse.env.set_data_storage_location)" href="#egse.env.set_data_storage_location">set_data_storage_location</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Sets the environment variable and the internal representation to the given value.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" set_local_settings (egse.env.set_local_settings)" href="#egse.env.set_local_settings">set_local_settings</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Sets the environment variable and the internal representation to the given value.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" set_log_file_location (egse.env.set_log_file_location)" href="#egse.env.set_log_file_location">set_log_file_location</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Sets the environment variable and the internal representation to the given value.</p>
                 </div>
               </td>
             </tr>
@@ -2530,18 +2857,18 @@ If that file is located at a specific location, also use the <code>location=</co
 
 
 
-<h3 id="egse.settings.Settings" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">Settings</span>
+<h3 id="egse.env.NoValue" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">NoValue</span>
 
 
-<a href="#egse.settings.Settings" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#egse.env.NoValue" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
 
 
-        <p>The Settings class provides a load() method that loads configuration settings for a group
-into a dynamically created class as instance variables.</p>
+        <p>Represents a no value object, an environment variable that was not set.</p>
+<p>The truth value of this object is always False, and it is equal to any other NoValue object.</p>
 
 
 
@@ -2549,35 +2876,6 @@ into a dynamically created class as instance variables.</p>
 
 
 
-
-
-<p><span class="doc-section-title">Methods:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title=" load (egse.settings.Settings.load)" href="#egse.settings.Settings.load">load</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  <p>Load the settings for the given group. When no group is provided, the</p>
-                </div>
-              </td>
-            </tr>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title=" to_string (egse.settings.Settings.to_string)" href="#egse.settings.Settings.to_string">to_string</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  <p>Returns a simple string representation of the cached configuration of this Settings class.</p>
-                </div>
-              </td>
-            </tr>
-      </tbody>
-    </table>
 
 
 
@@ -2593,205 +2891,6 @@ into a dynamically created class as instance variables.</p>
 
 
 
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="egse.settings.Settings.load" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">load</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
-  </span>
-
-<a href="#egse.settings.Settings.load" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">load</span><span class="p">(</span>
-    <span class="n">group_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;settings.yaml&quot;</span><span class="p">,</span>
-    <span class="n">location</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="o">*</span><span class="p">,</span>
-    <span class="n">add_local_settings</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Load the settings for the given group. When no group is provided, the
-complete configuration is returned.</p>
-<p>The Settings are loaded from entry-points that are defined in each of the
-packages that provide a Settings file.</p>
-<p>If a location is explicitly provided, the Settings will be loaded from that
-location, using the given filename or the default (which is settings.yaml).</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>group_name</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>the name of one of the main groups from the YAML file</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>filename</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>the name of the YAML file to read [default=settings.yaml]</p>
-              </div>
-            </td>
-            <td>
-                  <code>&#39;settings.yaml&#39;</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>location</code>
-            </td>
-            <td>
-                  <code>(<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a>)</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>the path to the location of the YAML file</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>force</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>force reloading the file</p>
-              </div>
-            </td>
-            <td>
-                  <code>False</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>add_local_settings</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>update the Settings with site specific local settings</p>
-              </div>
-            </td>
-            <td>
-                  <code>True</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-internal" title=" attrdict (egse.system.attrdict)" href="../system/#egse.system.attrdict">attrdict</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>a dynamically created class with the configuration parameters as instance variables.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-<p><span class="doc-section-title">Raises:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-internal" title=" SettingsError (egse.settings.SettingsError)" href="#egse.settings.SettingsError">SettingsError</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>when the group is not defined in the YAML file.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="egse.settings.Settings.to_string" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">to_string</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
-  </span>
-
-<a href="#egse.settings.Settings.to_string" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">to_string</span><span class="p">()</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Returns a simple string representation of the cached configuration of this Settings class.</p>
-
-    </div>
-
-</div>
 
 
 
@@ -2801,331 +2900,67 @@ location, using the given filename or the default (which is settings.yaml).</p>
 
 </div>
 
-<div class="doc doc-object doc-class">
-
-
-
-<h3 id="egse.settings.SettingsError" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">SettingsError</span>
-
-
-<a href="#egse.settings.SettingsError" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#Exception">Exception</a></code></p>
-
-
-        <p>A settings-specific error.</p>
-
-
-
-
-
-
-
-
-
-
-
-    </div>
-
-</div>
-
 
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.settings.load_global_settings" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">load_global_settings</span>
+<h3 id="egse.env.env_var" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">env_var</span>
 
 
-<a href="#egse.settings.load_global_settings" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">load_global_settings</span><span class="p">(</span>
-    <span class="n">entry_point</span><span class="o">=</span><span class="s2">&quot;cgse.settings&quot;</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span>
-<span class="p">)</span>
+<a href="#egse.env.env_var" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">env_var</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Loads the settings that are defined by the given entry_point. The entry-points are defined in the
-<code>pyproject.toml</code> files of the packages that export their global settings.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>entry_point</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>the name of the entry-point group [default: 'cgse.settings']</p>
-              </div>
-            </td>
-            <td>
-                  <code>&#39;cgse.settings&#39;</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>force</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>force reloading the settings, i.e. ignore the cache</p>
-              </div>
-            </td>
-            <td>
-                  <code>False</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-internal" title=" attrdict (egse.system.attrdict)" href="../system/#egse.system.attrdict">attrdict</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>A dictionary (attrdict) containing a collection of all the settings exported by the packages         through the given entry-point.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="egse.settings.load_local_settings" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">load_local_settings</span>
-
-
-<a href="#egse.settings.load_local_settings" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">load_local_settings</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Loads the local settings file that is defined from the environment variable <em>PROJECT</em>_LOCAL_SETTINGS (where
-<em>PROJECT</em> is the name of your project, defined in the environment variable of the same name).</p>
-<p>This function might return an empty dictionary when</p>
-<ul>
-<li>the local settings YAML file is empty</li>
-<li>the local settings environment variable is not defined.</li>
-</ul>
-<p>in both cases a warning message is logged.</p>
-
-
-<p><span class="doc-section-title">Raises:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-internal" title=" SettingsError (egse.settings.SettingsError)" href="#egse.settings.SettingsError">SettingsError</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>when the local settings YAML file is not found. Check the <em>PROJECT</em>_LOCAL_SETTINGS         environment variable.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-internal" title=" attrdict (egse.system.attrdict)" href="../system/#egse.system.attrdict">attrdict</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>A dictionary (attrdict) with all local settings.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="egse.settings.load_settings_file" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">load_settings_file</span>
-
-
-<a href="#egse.settings.load_settings_file" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">load_settings_file</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Loads the YAML configuration file that is located at <code>path / filename</code>.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>path</code>
-            </td>
-            <td>
-                  <code><span title="PATH">PATH</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>the folder where the YAML file is located</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>filename</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>the name of the YAML configuration file</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>force</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>force reloading, i.e. don't use the cached information</p>
-              </div>
-            </td>
-            <td>
-                  <code>False</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-<p><span class="doc-section-title">Raises:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-internal" title=" SettingsError (egse.settings.SettingsError)" href="#egse.settings.SettingsError">SettingsError</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>when the configuration file doesn't exist or cannot be found or         when there was an error reading the configuration file.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-internal" title=" attrdict (egse.system.attrdict)" href="../system/#egse.system.attrdict">attrdict</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>A dictionary (attrdict) with all the settings from the given file.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
+        <p>Context manager to run some code that need alternate settings for environment variables.
+This will automatically initialize the CGSE environment upon entry and re-initialize upon exit.</p>
 
 
 <details class="note" open>
   <summary>Note</summary>
-  <p>in case of an empty configuration file, and empty dictionary         is returned and a warning message is issued.</p>
+  <p>This context manager is different from the one in <code>egse.system</code> because of the CGSE environment changes.</p>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>**kwargs</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>dictionary with environment variables that are needed</p>
+              </div>
+            </td>
+            <td>
+                  <code>{}</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">egse.env</span><span class="w"> </span><span class="kn">import</span> <span class="n">env_var</span>
+<span class="k">with</span> <span class="n">env_var</span><span class="p">(</span><span class="n">PLATO_DATA_STORAGE_LOCATION</span><span class="o">=</span><span class="s2">&quot;/Users/rik/data&quot;</span><span class="p">):</span>
+    <span class="c1"># do stuff that needs these alternate setting</span>
+    <span class="o">...</span>
+</code></pre></div>
 </details>
     </div>
 
@@ -3134,18 +2969,20 @@ location, using the given filename or the default (which is settings.yaml).</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.settings.read_configuration_file" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">read_configuration_file</span>
+<h3 id="egse.env.get_conf_data_location" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">get_conf_data_location</span>
 
 
-<a href="#egse.settings.read_configuration_file" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">read_configuration_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a href="#egse.env.get_conf_data_location" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_conf_data_location</span><span class="p">(</span><span class="n">site_id</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Read the YAML input configuration file. The configuration file is only read
-once and memoized as load optimization.</p>
+        <p>Returns the full path of the location of the configuration data for the site id.</p>
+<p>If the site_id is None, it is determined from the environment variable SITE_ID.</p>
+<p>When the <code>${PROJECT}_CONF_DATA_LOCATION</code> environment variable is not set, the configuration data
+location will be the <code>${PROJECT}_DATA_STORAGE_LOCATION + '/conf'</code>.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -3161,57 +2998,18 @@ once and memoized as load optimization.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>filename</code>
+                <code>site_id</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>the fully qualified filename of the YAML file</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>force</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>force reloading the file, even when it was memoized</p>
+                <p>the site identifier (to be used instead of the SITE_ID environment variable)</p>
               </div>
             </td>
             <td>
-                  <code>False</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-<p><span class="doc-section-title">Raises:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-internal" title=" SettingsError (egse.settings.SettingsError)" href="#egse.settings.SettingsError">SettingsError</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>when there was an error reading the YAML file.</p>
-              </div>
+                  <code>None</code>
             </td>
           </tr>
       </tbody>
@@ -3229,16 +3027,631 @@ once and memoized as load optimization.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>a dictionary containing all the configuration settings from the YAML file.</p>
+                <p>The full path of location of the configuration data as a string.</p>
               </div>
             </td>
           </tr>
       </tbody>
     </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>when the SITE_ID or the <code>${PROJECT}_DATA_STORAGE_LOCATION</code> is not set.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.get_conf_data_location_env_name" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">get_conf_data_location_env_name</span>
+
+
+<a href="#egse.env.get_conf_data_location_env_name" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_conf_data_location_env_name</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the name of the environment variable for the project.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.get_conf_repo_location" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">get_conf_repo_location</span>
+
+
+<a href="#egse.env.get_conf_repo_location" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_conf_repo_location</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the fully qualified name of the location of the repository with
+configuration and calibration data.</p>
+<p>Returns None if no environment variable was defined or if the location doesn't exist.
+In both cases a Warning is issued.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.get_conf_repo_location_env_name" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">get_conf_repo_location_env_name</span>
+
+
+<a href="#egse.env.get_conf_repo_location_env_name" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_conf_repo_location_env_name</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the name of the environment variable for the project.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.get_data_storage_location" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">get_data_storage_location</span>
+
+
+<a href="#egse.env.get_data_storage_location" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_data_storage_location</span><span class="p">(</span><span class="n">site_id</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the full path of the data storage location for the given site_id.</p>
+<p>If the site_id is None, it is determined from the environment variable SITE_ID.</p>
+<p>If the <code>${PROJECT}_DATA_STORAGE_LOCATION</code> environment variable does not end with
+the site_id, the site_id will be appended to the path on return. That means
+the actual data storage location will always be site specific.</p>
+
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>when you specify the <code>site_id</code> as an argument, it takes precedence
+    over the SITE_ID environment variable.</p>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>site_id</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the site identifier (to be used instead of the SITE_ID environment variable)</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The full path of data storage location as a string.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>when the SITE_ID or the ${PROJECT}_DATA_STORAGE_LOCATION is not set.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.get_data_storage_location_env_name" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">get_data_storage_location_env_name</span>
+
+
+<a href="#egse.env.get_data_storage_location_env_name" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_data_storage_location_env_name</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the name of the environment variable for the project.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.get_local_settings_env_name" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">get_local_settings_env_name</span>
+
+
+<a href="#egse.env.get_local_settings_env_name" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_local_settings_env_name</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the name of the environment variable for the project.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.get_local_settings_path" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">get_local_settings_path</span>
+
+
+<a href="#egse.env.get_local_settings_path" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_local_settings_path</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the fully qualified filename of the local settings YAML file. When the local settings environment
+variable is not defined or is an empty string, None is returned.</p>
+
+
+<details class="warning" open>
+  <summary>Warning</summary>
+  <p>The function will generate a warning when</p>
+<ul>
+<li>When the local settings environment variable is not defined, or</li>
+<li>when the path defined by the environment variable doesn't exist.</li>
+</ul>
+</details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.get_log_file_location" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">get_log_file_location</span>
+
+
+<a href="#egse.env.get_log_file_location" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_log_file_location</span><span class="p">(</span><span class="n">site_id</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the full path of the location of the log files. The log file location is read from the environment
+variable <code>${PROJECT}_LOG_FILE_LOCATION</code>. The location shall be independent of any setting that is subject to change.</p>
+<p>If the environment variable is not set, a default log file location is created from the data storage location as
+follows: <code>&lt;PROJECT&gt;_DATA_STORAGE_LOCATION/&lt;SITE_ID&gt;/log</code>.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>site_id</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the site identifier</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The full path of location of the log files as a string.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>when the SITE_ID or the ${PROJECT}_DATA_STORAGE_LOCATION is not set.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.get_log_file_location_env_name" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">get_log_file_location_env_name</span>
+
+
+<a href="#egse.env.get_log_file_location_env_name" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_log_file_location_env_name</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the name of the environment variable for the project.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.get_project_name" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">get_project_name</span>
+
+
+<a href="#egse.env.get_project_name" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_project_name</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Get the PROJECT name. Return None when the PROJECT is not set.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.get_site_id" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">get_site_id</span>
+
+
+<a href="#egse.env.get_site_id" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_site_id</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Get the SITE_ID. Return None if the SITE_ID is not set.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.initialize" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">initialize</span>
+
+
+<a href="#egse.env.initialize" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">initialize</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Initialize the environment variables that are required for the CGSE to function properly.
+This function will print a warning if any of the mandatory environment variables is not set.</p>
+<p>This function is automatically called on import and can be called whenever the environment
+variables have been changed, e.g. in unit tests.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.print_env" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">print_env</span>
+
+
+<a href="#egse.env.print_env" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">print_env</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Prints out the mandatory and known environment variables at the time of the
+function call. The function and lineno is also printed for information.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.set_conf_data_location" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">set_conf_data_location</span>
+
+
+<a href="#egse.env.set_conf_data_location" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_conf_data_location</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Sets the environment variable and the internal representation to the given value.</p>
+
+
+<details class="warning" open>
+  <summary>Warning</summary>
+  <p>Issues a warning when the given location doesn't exist.</p>
+</details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.set_conf_repo_location" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">set_conf_repo_location</span>
+
+
+<a href="#egse.env.set_conf_repo_location" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_conf_repo_location</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Sets the environment variable and the internal representation to the given value.</p>
+<p>When the location is None, the environment variable will be unset and its internal
+representation will be NoValue().</p>
+
+
+<details class="warning" open>
+  <summary>Warning</summary>
+  <p>Issues a warning when the given location doesn't exist.</p>
+</details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.set_data_storage_location" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">set_data_storage_location</span>
+
+
+<a href="#egse.env.set_data_storage_location" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_data_storage_location</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Sets the environment variable and the internal representation to the given value.</p>
+
+
+<details class="warning" open>
+  <summary>Warning</summary>
+  <p>Issues a warning when the given location doesn't exist.</p>
+</details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.set_local_settings" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">set_local_settings</span>
+
+
+<a href="#egse.env.set_local_settings" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_local_settings</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Sets the environment variable and the internal representation to the given value.</p>
+<p>When the path is set to None, the environment variable will be unset.</p>
+
+
+<details class="warning" open>
+  <summary>Warning</summary>
+  <p>Issues a warning when the given path doesn't exist.</p>
+</details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.set_log_file_location" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">set_log_file_location</span>
+
+
+<a href="#egse.env.set_log_file_location" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_log_file_location</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Sets the environment variable and the internal representation to the given value.</p>
+
+
+<details class="warning" open>
+  <summary>Warning</summary>
+  <p>Issues a warning when the given location doesn't exist.</p>
+</details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.set_project_name" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">set_project_name</span>
+
+
+<a href="#egse.env.set_project_name" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_project_name</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Set the environment variable PROJECT and its internal representation.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.set_site_id" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">set_site_id</span>
+
+
+<a href="#egse.env.set_site_id" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_site_id</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Set the environment variable SITE_ID and its internal representation.</p>
 
     </div>
 
@@ -3283,7 +3696,7 @@ once and memoized as load optimization.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../reload/" class="md-footer__link md-footer__link--prev" aria-label="Previous: egse.reload">
+          <a href="../dummy/" class="md-footer__link md-footer__link--prev" aria-label="Previous: egse.dummy">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3293,20 +3706,20 @@ once and memoized as load optimization.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                egse.reload
+                egse.dummy
               </div>
             </div>
           </a>
         
         
           
-          <a href="../setup/" class="md-footer__link md-footer__link--next" aria-label="Next: egse.setup">
+          <a href="../exceptions/" class="md-footer__link md-footer__link--next" aria-label="Next: egse.exceptions">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                egse.setup
+                egse.exceptions
               </div>
             </div>
             <div class="md-footer__button md-icon">

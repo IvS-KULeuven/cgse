@@ -12,28 +12,28 @@
         <meta name="author" content="Rik Huygen">
       
       
-        <link rel="canonical" href="https://ivs-kuleuven.github.io/cgse/libs/cgse-common/setup/">
+        <link rel="canonical" href="https://ivs-kuleuven.github.io/cgse/api/obsid/">
       
       
-        <link rel="prev" href="../settings/">
+        <link rel="prev" href="../observer/">
       
       
-        <link rel="next" href="../../cgse-core/">
+        <link rel="next" href="../reload/">
       
       
-      <link rel="icon" href="../../../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.5">
     
     
       
-        <title>The Setup - CGSE</title>
+        <title>egse.obsid - CGSE</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.8608ea7d.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.8608ea7d.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
       
       
   
@@ -93,13 +93,13 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../../../stylesheets/custom.css">
+      <link rel="stylesheet" href="../../stylesheets/custom.css">
     
-      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -112,9 +112,9 @@
 <!-- / Fathom -->
 
 
-<meta property="og:title" content="CGSE - The Setup">
+<meta property="og:title" content="CGSE - egse.obsid">
 <meta property="og:type" content="article">
-<meta property="og:url" content="https://ivs-kuleuven.github.io/cgse/libs/cgse-common/setup/">
+<meta property="og:url" content="https://ivs-kuleuven.github.io/cgse/api/obsid/">
 <meta property="og:site_name" content="CGSE Documentation">
 <meta property="og:description" content="CGSE is an instrument test framework for Python.">
 <meta property="og:image" content="https://raw.githubusercontent.com/IvS-KULeuven/cgse/refs/heads/main/docs/images/icons/cgse-logo.svg">
@@ -154,7 +154,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#the-setup" class="md-skip">
+        <a href="#egse.obsid" class="md-skip">
           Skip to content
         </a>
       
@@ -170,9 +170,9 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="CGSE" class="md-header__button md-logo" aria-label="CGSE" data-md-component="logo">
+    <a href="../.." title="CGSE" class="md-header__button md-logo" aria-label="CGSE" data-md-component="logo">
       
-  <img src="../../../images/icons/cgse-logo.svg" alt="logo">
+  <img src="../../images/icons/cgse-logo.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -189,7 +189,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              The Setup
+              egse.obsid
             
           </span>
         </div>
@@ -290,7 +290,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../.." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
     
@@ -309,7 +309,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../getting_started/" class="md-tabs__link">
+        <a href="../../getting_started/" class="md-tabs__link">
           
   
     
@@ -329,7 +329,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../dev_guide/" class="md-tabs__link">
+        <a href="../../dev_guide/" class="md-tabs__link">
           
   
     
@@ -349,7 +349,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../user_guide/" class="md-tabs__link">
+        <a href="../../user_guide/" class="md-tabs__link">
           
   
     
@@ -365,13 +365,11 @@
         
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../libs/" class="md-tabs__link">
           
   
     
@@ -391,7 +389,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../projects/" class="md-tabs__link">
+        <a href="../../projects/" class="md-tabs__link">
           
   
     
@@ -407,11 +405,13 @@
         
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../../api/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
     
@@ -429,7 +429,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../../roadmap/" class="md-tabs__link">
+      <a href="../../roadmap/" class="md-tabs__link">
         
   
     
@@ -469,9 +469,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="CGSE" class="md-nav__button md-logo" aria-label="CGSE" data-md-component="logo">
+    <a href="../.." title="CGSE" class="md-nav__button md-logo" aria-label="CGSE" data-md-component="logo">
       
-  <img src="../../../images/icons/cgse-logo.svg" alt="logo">
+  <img src="../../images/icons/cgse-logo.svg" alt="logo">
 
     </a>
     CGSE
@@ -498,7 +498,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../.." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -568,7 +568,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../getting_started/" class="md-nav__link">
+      <a href="../../getting_started/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -590,7 +590,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../package_list/" class="md-nav__link">
+      <a href="../../package_list/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -612,7 +612,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../initialize/" class="md-nav__link">
+      <a href="../../initialize/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -634,7 +634,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../help/" class="md-nav__link">
+      <a href="../../help/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -700,7 +700,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../dev_guide/" class="md-nav__link ">
+            <a href="../../dev_guide/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -734,7 +734,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../dev_guide/monorepo/" class="md-nav__link">
+      <a href="../../dev_guide/monorepo/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -756,7 +756,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../dev_guide/installation/" class="md-nav__link">
+      <a href="../../dev_guide/installation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -778,7 +778,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../dev_guide/uv/" class="md-nav__link">
+      <a href="../../dev_guide/uv/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -800,7 +800,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../dev_guide/coding_style/" class="md-nav__link">
+      <a href="../../dev_guide/coding_style/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -822,7 +822,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../dev_guide/docs/" class="md-nav__link">
+      <a href="../../dev_guide/docs/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -844,7 +844,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../dev_guide/plugins/" class="md-nav__link">
+      <a href="../../dev_guide/plugins/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -866,7 +866,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../dev_guide/unit_testing/" class="md-nav__link">
+      <a href="../../dev_guide/unit_testing/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -888,7 +888,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../dev_guide/versioning/" class="md-nav__link">
+      <a href="../../dev_guide/versioning/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -938,7 +938,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../user_guide/" class="md-nav__link ">
+            <a href="../../user_guide/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -971,8 +971,6 @@
       
   
   
-    
-  
   
   
     
@@ -993,22 +991,19 @@
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../" class="md-nav__link ">
+            <a href="../../libs/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1020,13 +1015,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Libs
@@ -1039,8 +1034,6 @@
                 
   
   
-    
-  
   
   
     
@@ -1060,16 +1053,16 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../libs/cgse-common/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1087,7 +1080,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5_2">
             <span class="md-nav__icon md-icon"></span>
             cgse-common
@@ -1103,7 +1096,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../settings/" class="md-nav__link">
+      <a href="../../libs/cgse-common/settings/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1122,19 +1115,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../libs/cgse-common/setup/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1144,7 +1128,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -1186,7 +1169,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../cgse-core/" class="md-nav__link ">
+            <a href="../../libs/cgse-core/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1244,7 +1227,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../cgse-coordinates/" class="md-nav__link ">
+            <a href="../../libs/cgse-coordinates/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1302,7 +1285,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../cgse-gui/" class="md-nav__link ">
+            <a href="../../libs/cgse-gui/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1371,7 +1354,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../projects/" class="md-nav__link ">
+            <a href="../../projects/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1405,7 +1388,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../projects/cgse-tools/" class="md-nav__link">
+      <a href="../../projects/cgse-tools/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1427,7 +1410,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../projects/symetrie-hexapod/" class="md-nav__link">
+      <a href="../../projects/symetrie-hexapod/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1453,6 +1436,8 @@
       
   
   
+    
+  
   
   
     
@@ -1513,19 +1498,22 @@
     
     
       
+        
+        
+      
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../api/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1537,13 +1525,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             API
@@ -1559,7 +1547,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/bits/" class="md-nav__link">
+      <a href="../bits/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1581,7 +1569,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/calibration/" class="md-nav__link">
+      <a href="../calibration/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1603,7 +1591,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/command/" class="md-nav__link">
+      <a href="../command/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1625,7 +1613,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/config/" class="md-nav__link">
+      <a href="../config/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1647,7 +1635,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/control/" class="md-nav__link">
+      <a href="../control/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1669,7 +1657,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/counter/" class="md-nav__link">
+      <a href="../counter/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1691,7 +1679,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/decorators/" class="md-nav__link">
+      <a href="../decorators/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1713,7 +1701,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/device/" class="md-nav__link">
+      <a href="../device/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1735,7 +1723,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/dicts/" class="md-nav__link">
+      <a href="../dicts/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1757,7 +1745,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/dummy/" class="md-nav__link">
+      <a href="../dummy/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1779,7 +1767,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/env/" class="md-nav__link">
+      <a href="../env/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1801,7 +1789,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/exceptions/" class="md-nav__link">
+      <a href="../exceptions/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1823,7 +1811,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/heartbeat/" class="md-nav__link">
+      <a href="../heartbeat/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1845,7 +1833,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/hk/" class="md-nav__link">
+      <a href="../hk/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1867,7 +1855,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/listener/" class="md-nav__link">
+      <a href="../listener/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1889,7 +1877,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/metrics/" class="md-nav__link">
+      <a href="../metrics/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1911,7 +1899,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/mixin/" class="md-nav__link">
+      <a href="../mixin/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1933,7 +1921,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/monitoring/" class="md-nav__link">
+      <a href="../monitoring/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1955,7 +1943,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/observer/" class="md-nav__link">
+      <a href="../observer/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1974,10 +1962,29 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../../api/obsid/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    egse.obsid
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -1987,6 +1994,72 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#egse.obsid" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;obsid
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" obsid">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#egse.obsid.ObservationIdentifier" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;ObservationIdentifier
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" ObservationIdentifier">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#egse.obsid.ObservationIdentifier.create_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;create_id
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.obsid.obsid_from_storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;obsid_from_storage
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1999,7 +2072,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/reload/" class="md-nav__link">
+      <a href="../reload/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2021,7 +2094,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/settings/" class="md-nav__link">
+      <a href="../settings/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2043,7 +2116,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/setup/" class="md-nav__link">
+      <a href="../setup/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2065,7 +2138,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/system/" class="md-nav__link">
+      <a href="../system/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2094,7 +2167,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../roadmap/" class="md-nav__link">
+      <a href="../../roadmap/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2125,8 +2198,62 @@
   
   
   
-    
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#egse.obsid" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;obsid
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" obsid">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#egse.obsid.ObservationIdentifier" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;ObservationIdentifier
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" ObservationIdentifier">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#egse.obsid.ObservationIdentifier.create_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;create_id
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.obsid.obsid_from_storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;obsid_from_storage
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -2145,13 +2272,403 @@
   
 
 
-<h1 id="the-setup">The Setup<a class="headerlink" href="#the-setup" title="Permanent link">&para;</a></h1>
+  <h1>egse.obsid</h1>
+
+<div class="admonition info">
+<p class="admonition-title">cgse-common</p>
+<p>This code is part of the <code>cgse-common</code> package.</p>
+</div>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="egse.obsid" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <span class="doc doc-object-name doc-module-name">egse.obsid</span>
+
+
+<a href="#egse.obsid" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents first">
+
+        <p>An ObservationIdentifier or OBSID is a unique identifier for an observation or test.</p>
+<p>Each observation or test needs a unique identification that can be used as a key in a
+database or in a filename for test data etc.</p>
 
 
 
 
 
 
+
+<p><span class="doc-section-title">Classes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title=" ObservationIdentifier (egse.obsid.ObservationIdentifier)" href="#egse.obsid.ObservationIdentifier">ObservationIdentifier</a></code></td>
+            <td>
+              <div class="doc-md-description">
+                <p>A unique identifier for each observation or test.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+<p><span class="doc-section-title">Functions:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" obsid_from_storage (egse.obsid.obsid_from_storage)" href="#egse.obsid.obsid_from_storage">obsid_from_storage</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Return the name of the folder for the given obsid in the 'obs' sub-folder of data_dir.</p>
+                </div>
+              </td>
+            </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="egse.obsid.ObservationIdentifier" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">ObservationIdentifier</span>
+
+
+<a href="#egse.obsid.ObservationIdentifier" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">ObservationIdentifier</span><span class="p">(</span>
+    <span class="n">lab_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">setup_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">test_id</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+        <p>A unique identifier for each observation or test.</p>
+
+        <pre><code>setup_id: the identifier for the setup that is used for the test
+test_id: the test identifier or test number
+</code></pre>
+
+
+
+
+
+
+
+
+
+<p><span class="doc-section-title">Methods:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" create_id (egse.obsid.ObservationIdentifier.create_id)" href="#egse.obsid.ObservationIdentifier.create_id">create_id</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Creates a string representation of the observation identifier.</p>
+                </div>
+              </td>
+            </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="egse.obsid.ObservationIdentifier.create_id" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">create_id</span>
+
+
+<a href="#egse.obsid.ObservationIdentifier.create_id" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">create_id</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n"><span title="egse.obsid.LAB_SETUP_TEST">LAB_SETUP_TEST</span></span><span class="p">,</span> <span class="n">camera_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Creates a string representation of the observation identifier.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>order</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the order in which the parts are concatenated</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="egse.obsid.LAB_SETUP_TEST">LAB_SETUP_TEST</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>camera_name</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>if a camera name is given, it will be appended in lower case</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A string representation of the obsid with or without camera name attached.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.obsid.obsid_from_storage" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">obsid_from_storage</span>
+
+
+<a href="#egse.obsid.obsid_from_storage" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">obsid_from_storage</span><span class="p">(</span>
+    <span class="n">obsid</span><span class="p">,</span> <span class="n">data_dir</span><span class="p">,</span> <span class="n">site_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">camera_name</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return the name of the folder for the given obsid in the 'obs' sub-folder of data_dir.</p>
+<p>For the oldest observations, the obsid used in the directory structure and filenames was of the format
+TEST_LAB_SETUP.  All files in this folder also have the obsid in that format in their name.  At some point, we
+decided to change this to TEST_LAB, but we still need to be able to re-process the old data (with the setup ID in
+the names of the directories and files).</p>
+<p>For newer observations (&gt;= 2023.6.0+CGSE), the camera name is appended to the folder name and also included
+in the filenames in that folder.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>obsid</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a>[<a class="autorefs autorefs-internal" title=" ObservationIdentifier (egse.obsid.ObservationIdentifier)" href="#egse.obsid.ObservationIdentifier">ObservationIdentifier</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Observation identifier.  This can be an ObservationIdentifier object, a string in format TEST_LAB or
+TEST_LAB_SETUP, or an integer representing the test ID. In this last case, the site id is taken from the
+Settings.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>data_dir</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>root folder in which the observations are stored. This folder shall have a sub-folder 'obs'.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>site_id</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>a site id like 'CSL1' or 'IAS', when <code>None</code>, the <code>SITE.ID</code> from the Settings will be used</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>camera_name</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>if not None, append the camera name to the result</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The name of the folder for the given obsid in the 'obs' sub-folder of data_dir.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+  
+  
 
 
 
@@ -2175,7 +2692,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../settings/" class="md-footer__link md-footer__link--prev" aria-label="Previous: The Settings">
+          <a href="../observer/" class="md-footer__link md-footer__link--prev" aria-label="Previous: egse.observer">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2185,20 +2702,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                The Settings
+                egse.observer
               </div>
             </div>
           </a>
         
         
           
-          <a href="../../cgse-core/" class="md-footer__link md-footer__link--next" aria-label="Next: Core Services">
+          <a href="../reload/" class="md-footer__link md-footer__link--next" aria-label="Next: egse.reload">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Core Services
+                egse.reload
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -2244,10 +2761,10 @@
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs", "navigation.indexes", "navigation.tabs.sticky", "navigation.footer", "content.code.annotate", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.indexes", "navigation.tabs.sticky", "navigation.footer", "content.code.annotate", "content.code.copy"], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.f1b6f286.min.js"></script>
+      <script src="../../assets/javascripts/bundle.f1b6f286.min.js"></script>
       
     
   </body>
