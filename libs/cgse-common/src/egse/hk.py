@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 __all__ = [
-    "get_housekeeping",
-    "convert_hk_names",
-    "read_conversion_dict",
+    "HKError",
     "TmDictionaryColumns",
+    "convert_hk_names",
+    "get_housekeeping",
+    "get_hk_info",
+    "read_conversion_dict",
 ]
 import csv
 import datetime
@@ -14,6 +18,7 @@ from typing import Union
 
 import dateutil.parser as date_parser
 import numpy as np
+import pandas as pd
 from egse.config import find_files
 from egse.env import get_data_storage_location
 from egse.env import get_site_id
@@ -36,13 +41,14 @@ class TmDictionaryColumns(str, Enum):
 
     The relevant columns are:
 
-        - STORAGE_MNEMONIC: Column with the storage mnemonic of the process that generated the HK;
-        - CORRECT_HK_NAMES: Column with the correct HK names (that can be used in `get_housekeeping`);
-        - ORIGINAL_EGSE_HK_NAMES: Column with the names that were originally used in `get_housekeeping` the device
-                                  protocol;
-        - SYNOPTICS_ORIGIN: Column with the origin of the synoptics at the current site;
-        - TIMESTAMP_NAMES: Column with the name of the timestamps.
-        - DASHBOARD: Column with the name of the dashboard that holds the HK metric
+    | Name | Description |
+    | ---- | ----------- |
+    | STORAGE_MNEMONIC | Column with the storage mnemonic of the process that generated the HK |
+    | CORRECT_HK_NAMES | Column with the correct HK names (that can be used in `get_housekeeping`) |
+    | ORIGINAL_EGSE_HK_NAMES | Column with the names that were originally used in `get_housekeeping` the device protocol |
+    | SYNOPTICS_ORIGIN | Column with the origin of the synoptics at the current site |
+    | TIMESTAMP_NAMES | Column with the name of the timestamps |
+    | DASHBOARD | Column with the name of the dashboard that holds the HK metric |
     """
 
     STORAGE_MNEMONIC = "Storage mnemonic"
@@ -59,8 +65,10 @@ class HKError(Exception):
     pass
 
 
-def get_housekeeping(hk_name: str, obsid: Union[ObservationIdentifier, str, int] = None, od: str = None,
-                     time_window: int = None, data_dir=None, setup: Optional[Setup] = None):
+def get_housekeeping(
+        hk_name: str, obsid: Union[ObservationIdentifier, str, int] = None, od: str = None,
+        time_window: int = None, data_dir: str = None, setup: Optional[Setup] = None
+) -> tuple | np.ndarray:
     """
     Returns the timestamp(s) and housekeeping value(s) for the housekeeping parameter with the given name.
 
@@ -82,22 +90,23 @@ def get_housekeeping(hk_name: str, obsid: Union[ObservationIdentifier, str, int]
         hk_name: Name of the housekeeping parameter.
         obsid: Observation identifier.  This can be an ObservationIdentifier object, a string in format TEST_LAB or
             TEST_LAB_SETUP, or an integer representing the test ID; optional.
-        od: Identifier for the OD (yyyymmdd); optional.
+        od: Identifier for the OD (YYYYMMDD); optional.
         time_window: Length of the time window over which to retrieve the housekeeping [s].  The time window ends at
             the moment this method is called.  If not given, the latest housekeeping value is returned.
         data_dir: Folder (with sub-folders /daily and /obs) in which the HK files are stored. If this argument is not
-            provided, the data_dir will be determined from the environment variable PLATO_DATA_STORAGE_LOCATION.
-        setup: Setup
+            provided, the data_dir will be determined from the environment variable `${PROJECT}_DATA_STORAGE_LOCATION`.
+        setup: the Setup to use, if None, the setup will be loaded from the configuration manager
 
     Raises:
-        A HKError when one of the following problems occur
+        HKError: when one of the following problems occur
             * no obsid nor an od argument was provided
             * no HK measures were found for the given parameter and obsid/od
 
     Returns:
-        - If the time window has not been specified: the most recent timestamp and housekeeping value.
-        - If the time window has been specified: an array of timestamps and an array of housekeeping values, belonging
-          to the specified time window.
+        A tuple or an array based on the time window:
+            - If the time window has not been specified: the most recent timestamp and housekeeping value.
+            - If the time window has been specified: an array of timestamps and an array of housekeeping values, belonging
+              to the specified time window.
 
     """
 
@@ -247,7 +256,7 @@ def _get_housekeeping_od(hk_name: str, data_dir, od: str, time_window: int = Non
     Args:
         - hk_name: Name of the housekeeping parameter.
         - data_dir: Folder (with sub-folders /daily and /obs) in which the HK files are stored.
-        - od: Identifier for the OD (yyyymmdd).
+        - od: Identifier for the OD (YYYYMMDD).
         - time_window: Length of the time window over which to retrieve the housekeeping [s].  The time window ends at
                        the moment this method is called.  If not given, the latest HK-value is returned.
         - setup: Setup.
@@ -487,15 +496,16 @@ def _get_housekeeping_daily(hk_name: str, data_dir, time_window: int = None, set
         return timestamp_array, hk_array
 
 
-def get_last_non_empty(filename: str, timestamp_index: int, hk_index: int):
+def get_last_non_empty(filename: str, timestamp_index: int, hk_index: int) -> tuple:
     """  Return the timestamp and HK value for last real value.
 
     Args:
-         - filename: HK file in which to look for the given HK parameter.
-         - timestamp_index: Index of the column with the timestamps.
-         - hk_index: Index of the column with the HK parameter with the given name.
+         filename: HK file in which to look for the given HK parameter.
+         timestamp_index: Index of the column with the timestamps.
+         hk_index: Index of the column with the HK parameter with the given name.
 
-    Returns:  The timestamp and HK value with the last real value.
+    Returns:
+        The timestamp and HK value with the last real value.
     """
 
     timestamp = None
@@ -552,17 +562,19 @@ def get_last_non_empty(filename: str, timestamp_index: int, hk_index: int):
         return None, None
 
 
-def get_indices(filename: str, hk_name: str, timestamp_name: str):
+def get_indices(filename: str, hk_name: str, timestamp_name: str) -> tuple:
     """ Return the column number of the timestamp and given HK parameter in the given HK file.
 
     Args:
-        - filename: HK file in which to look for the given HK parameter.
-        - hk_name: Name of the HK parameter.
-        - timestamp_name: Name of the corresponding timestamp.
+        filename: HK file in which to look for the given HK parameter.
+        hk_name: Name of the HK parameter.
+        timestamp_name: Name of the corresponding timestamp.
 
     Returns:
-        - Index of the column with the timestamps.
-        - Index of the column with the HK parameter with the given name.
+        A tuple with:
+
+            - Index of the column with the timestamps.
+            - Index of the column with the HK parameter with the given name.
     """
 
     with open(filename, "r") as f:
@@ -584,15 +596,17 @@ def get_indices(filename: str, hk_name: str, timestamp_name: str):
     return timestamp_index, hk_index
 
 
-def get_sampling_rate(filename: str, timestamp_name: str):
+def get_sampling_rate(filename: str, timestamp_name: str) -> float:
     """ Return the sampling rate for the HK file with the given name [s].
 
-    The sampling rate is determine as the difference between the timestamps of the last two lines of the HK file.
+    The sampling rate is determined as the difference between the timestamps of the last two lines of the HK file.
 
     Args:
-        - filename: Name of the HK file.  We do not check explicitly whether this file exists.
+        filename: Name of the HK file.  We do not check explicitly whether this file exists.
+        timestamp_name: the name of the column containing the timestamp
 
-    Returns: Sampling rate for the HK file with the given name [s].
+    Returns:
+        Sampling rate for the HK file with the given name [s].
     """
 
     # Determine which column comprises the timestamp
@@ -625,8 +639,8 @@ def convert_hk_names(original_hk: dict, conversion_dict: dict) -> dict:
     returned.
 
     Args:
-        - original_hk: Original dictionary of HK parameters.
-        - conversion_dict: Dictionary with the original HK names as keys and the new HK names as values.
+        original_hk: Original dictionary of HK parameters.
+        conversion_dict: Dictionary with the original HK names as keys and the new HK names as values.
 
     Returns:
         A new dictionary of HK parameters with the corrected HK names.
@@ -646,7 +660,7 @@ def convert_hk_names(original_hk: dict, conversion_dict: dict) -> dict:
     return converted_hk
 
 
-def read_conversion_dict(storage_mnemonic: str, use_site: bool = False, setup: Optional[Setup] = None):
+def read_conversion_dict(storage_mnemonic: str, use_site: bool = False, setup: Optional[Setup] = None) -> dict:
     """ Read the HK spreadsheet and compose conversion dictionary for HK names.
 
     The spreadsheet contains the following information:
@@ -657,11 +671,12 @@ def read_conversion_dict(storage_mnemonic: str, use_site: bool = False, setup: O
         - name of the column (in the HK file) with the corresponding timestamp
 
     Args:
-        - storage_mnemonic: Storage mnemonic of the component for which to compose the conversion dictionary
-        - use_site: Indicate whether the prefixes of the new HK names are TH-specific
-        - setup: Setup.
+        storage_mnemonic: Storage mnemonic of the component for which to compose the conversion dictionary
+        use_site: Indicate whether the prefixes of the new HK names are TH-specific
+        setup: the Setup to be used, if None, the setup will be loaded from the configuration manager.
 
-    Returns: Dictionary with the original HK names as keys and the converted HK names as values.
+    Returns:
+        Dictionary with the original HK names as keys and the converted HK names as values.
     """
 
     setup = setup or load_setup()
@@ -701,23 +716,28 @@ def read_conversion_dict(storage_mnemonic: str, use_site: bool = False, setup: O
         return dict(zip(original_name_col, correct_name_col))
 
 
-def get_hk_info(hk_name: str, setup: Optional[Setup] = None):
+def get_hk_info(hk_name: str, setup: Optional[Setup] = None) -> tuple:
     """ Read the HK spreadsheet and extract information for the given HK parameter.
 
     The spreadsheet contains the following information:
-
         - storage mnemonic of the component that generates the HK
         - original HK name
         - HK name with the correct prefix
         - name of the column (in the HK file) with the corresponding timestamp
 
     Args:
-        - hk_name: Name of the HK parameter.
-        - setup: Setup.
+        hk_name: Name of the HK parameter.
+        setup: the Setup to use, if None, the setup will be loaded from the configuration manager.
 
     Returns:
-        - storage mnemonic of the component that generates the given HK parameter
-        - name of the column in the HK file with the corresponding timestamp
+        A tuple where
+            (1) the first field contains the storage mnemonic of the component that
+            generates the given HK parameter, and
+            (2) the second field contains the name of the column in the HK file
+            with the corresponding timestamp.
+
+    Raises:
+        HKError: when `hk_name` is not known.
     """
 
     setup = setup or load_setup()
@@ -735,13 +755,14 @@ def get_hk_info(hk_name: str, setup: Optional[Setup] = None):
         raise HKError(f"HK parameter {hk_name} unknown")
 
 
-def get_storage_mnemonics(setup: Setup = None):
+def get_storage_mnemonics(setup: Setup = None) -> list:
     """ Return the list of the storage mnemonics from the TM dictionary.
 
     Args:
-          - setup: Setup.
+        setup: the Setup to be used, if None, the setup will be loaded from the configuration manager.
 
-    Returns: List of the storage mnemonics from the TM dictionary.
+    Returns:
+        List of the storage mnemonics from the TM dictionary.
     """
 
     setup = setup or load_setup()
@@ -749,32 +770,35 @@ def get_storage_mnemonics(setup: Setup = None):
     hk_info_table = setup.telemetry.dictionary
     storage_mnemonics = hk_info_table[TmDictionaryColumns.STORAGE_MNEMONIC].values
 
-    return np.unique(storage_mnemonics)
+    return np.unique(storage_mnemonics).tolist()
 
 
-def get_housekeeping_names(name_filter=None, device_filter=None, setup: Setup = None):
+def get_housekeeping_names(name_filter: str = None, device_filter: str = None, setup: Setup = None) -> pd.DataFrame:
     """ Return HK names, storage mnemonic, and description.
 
     The TM dictionary is read into a Pandas DataFrame.  If a device filter is given, only the rows pertaining to the
-    given storage mnemonic are kept.  If a name filter is given, only the rows for which the HK parameter name contains
-    the given name filter are kept.
+    given storage mnemonic are kept.  If a name filter is given, only keep the rows for which the HK parameter name
+    contains the given name filter.
 
-    The result is returned as a Pandas DataFrame with the following columns:
-        - "CAM EGSE mnemonic": Name of the HK parameter;
-        - "Storage mnemonic": Storage mnemonic of the device producing the HK;
-        - "Description": Description of the HK parameter.
+    The result is as a Pandas DataFrame with the following columns:
+
+    - "CAM EGSE mnemonic": Name of the HK parameter;
+    - "Storage mnemonic": Storage mnemonic of the device producing the HK;
+    - "Description": Description of the HK parameter.
 
     Synopsis:
-        - get_housekeeping_names(name_filter="RAW", device_filter="N-FEE-HK")
-        - get_housekeeping_names(name_filter="RAW", device_filter="N-FEE-HK", setup=setup)
+
+    - `get_housekeeping_names(name_filter="RAW", device_filter="N-FEE-HK")`
+    - `get_housekeeping_names(name_filter="RAW", device_filter="N-FEE-HK", setup=setup)`
 
     Args:
-        - name_filter: Filter the HK dataframe, based on (a part of) the name of the HK parameter(s)
-        - device: Filter the HK dataframe, based on the given storage mnemonic
-        - setup: Setup.
+        name_filter: Filter the HK dataframe, based on (a part of) the name of the HK parameter(s)
+        device_filter: Filter the HK dataframe, based on the given storage mnemonic
+        setup: the Setup to be used, if None, the setup will be loaded from the configuration manager.
 
-    Returns: Pandas DataFrame with the HK name, storage mnemonic, and description of the HK parameters that pass the
-             given filter.
+    Returns:
+        Pandas DataFrame with the HK name, storage mnemonic, and description of the HK parameters that pass the
+            given filter.
     """
 
     setup = setup or load_setup()
