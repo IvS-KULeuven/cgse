@@ -11,16 +11,14 @@ The actual numbers are updated for each release in the `settings.yaml` configura
 """
 from __future__ import annotations
 
-# WARNING: Make sure you are not importing any `egse` packages at the module level.
-# This module is magically loaded by pip to determine the VERSION number before the
-# package has been installed (see pyproject.py).
-# Any imports from an 'egse' package will result in a ModuleNotFound error.
-
 import os
 import subprocess
 from pathlib import Path
 
-from egse.system import get_package_location
+# WARNING: Make sure you are not importing any `egse` packages at the module level.
+# This module is magically loaded by pip to determine the VERSION number before the
+# package has been installed (see pyproject.py).
+# Any imports from an 'egse' package will result in a ModuleNotFound error.
 
 HERE = Path(__file__).parent.resolve()
 
@@ -149,7 +147,7 @@ def get_version_installed(package_name: str) -> str:
 
         try:
             version = version(package_name)
-        except PackageNotFoundError as exc:
+        except PackageNotFoundError:
             version = None
 
     return version

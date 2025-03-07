@@ -235,13 +235,13 @@ class BaseCommandProtocol(DeviceConnectionObserver):
         elif cmd_name == "send_commands":
             logger.warning("send_commands was commanded for a DynamicCommandProtocol!")
         elif cmd_name == "get_service_port":
-            self.send(self.__control_server.get_service_port())
+            self.send(cs.get_service_port())
         elif cmd_name == "get_monitoring_port":
-            self.send(self.__control_server.get_monitoring_port())
+            self.send(cs.get_monitoring_port())
         elif cmd_name == "get_commanding_port":
-            self.send(self.__control_server.get_commanding_port())
+            self.send(cs.get_commanding_port())
         elif cmd_name == "get_ip_address":
-            self.send(self.__control_server.get_ip_address())
+            self.send(cs.get_ip_address())
         elif cmd:
             COMMAND_REQUESTS.labels(target="device").inc()
             cmd.server_call(self, *args, **kwargs)
@@ -257,7 +257,6 @@ class BaseCommandProtocol(DeviceConnectionObserver):
         """
 
         logger.info("quit() method called on Protocol base class.")
-
 
 
 class DynamicCommandProtocol(BaseCommandProtocol, metaclass=abc.ABCMeta):

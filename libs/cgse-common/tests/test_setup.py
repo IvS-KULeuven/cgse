@@ -1017,7 +1017,7 @@ def test_beer_factory():
                     beer_name: Achel Blond
                     percent_alcohol: 8.0
 
-            AchelExtra:                    
+            AchelExtra:
                 beer: factory//test_setup.BeerFactory
                 beer_args:
                     beer_name: Achel Blond Extra
@@ -1048,10 +1048,10 @@ def test_walk():
         """
         xxx:
             device: dev-xxx
-        
+
         yyy:
             device: dev-yyy
-        
+
         zzz:
             aaa:
                 device-args: [1,2,3]
@@ -1077,11 +1077,11 @@ def test_find_devices():
         xxx:
             device: dev-xxx
             device_name: XXX
-        
+
         yyy:
             device: dev-yyy
             device_name: YYY
-        
+
         zzz:
             aaa:
                 device_args: [1,2,3]
@@ -1090,7 +1090,7 @@ def test_find_devices():
             bbb:
                 device_name: BBB
                 device: dev-zzz-bbb
-        
+
         """
     )
 
