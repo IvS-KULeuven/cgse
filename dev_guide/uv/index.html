@@ -2345,7 +2345,9 @@
 
 
 <h1 id="working-with-uv">Working with <code>uv</code><a class="headerlink" href="#working-with-uv" title="Permanent link">&para;</a></h1>
-<p><code>uv</code> is an extremely fast Python package and project manager, written in Rust. We will use <code>uv</code> as the single tool that replaces <code>pip</code>, <code>virtualenv</code>, <code>pyenv</code>, and more. The main tasks for which we will use <code>uv</code> are:</p>
+<p><code>uv</code> is an extremely fast Python package and project manager, written in Rust. We will use <code>uv</code> as
+the single tool that replaces <code>pip</code>, <code>virtualenv</code>, <code>pyenv</code>, and more. The main tasks for which we
+will use <code>uv</code> are:</p>
 <ul>
 <li>run and install Python versions</li>
 <li>installing and managing a virtual environment</li>
@@ -2357,10 +2359,12 @@
 <p>On macOS and Linux you can install <code>uv</code> using <code>curl</code>:</p>
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span>curl<span class="w"> </span>-LsSf<span class="w"> </span>https://astral.sh/uv/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh
 </code></pre></div>
-<p>If you need more specific information on installing and upgrading <code>uv</code>, please refer to the <a href="https://docs.astral.sh/uv/getting-started/installation/">official documentation</a>.</p>
+<p>If you need more specific information on installing and upgrading <code>uv</code>, please refer to
+the <a href="https://docs.astral.sh/uv/getting-started/installation/">official documentation</a>.</p>
 <h2 id="installing-a-python-version">Installing a Python version<a class="headerlink" href="#installing-a-python-version" title="Permanent link">&para;</a></h2>
-<p>The CGSE is guaranteed to work with Python 3.9.x. We will gradually include higher versions of Python, but currently 
-these have not been tested. So, we will for the moment stick with Python 3.9.20. Install this version as follows:</p>
+<p>The CGSE is guaranteed to work with Python 3.9.x. We will gradually include higher versions of
+Python, but currently these have not been tested. So, we will for the moment stick with Python
+3.9.20. Install this version as follows:</p>
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>python<span class="w"> </span>install<span class="w"> </span><span class="m">3</span>.9.20
 </code></pre></div>
 <div class="admonition note">
@@ -2397,26 +2401,26 @@ cpython-3.8.17-macos-aarch64-none     /Users/rik/Library/Application Support/uv/
 </code></pre></div>
 <p><code>uv</code> will search for a pinned version in the parent folders up to the root folder or your home directory.</p>
 </div>
-<p>You can create a virtual environment with <code>uv</code> for the specific Python version as follows. The 
-'<code>--python</code>' is optional  and <code>uv</code> will use the default (pinned) Python version when creating a 
-<code>venv</code> without this option. We are working in a monorepo or what <code>uv</code> calls a workspace. There 
-will be only one virtual environment at the root of the monorepo, despite the fact that we have 
-several individual packages in our workspace. Don't worry, <code>uv</code> will always use the virtual 
-environment at the root and keep it up-to-date with the project your are currently working in.</p>
+<p>You can create a virtual environment with <code>uv</code> for the specific Python version as follows. The
+'<code>--python</code>' is optional and <code>uv</code> will use the default (pinned) Python version when creating a
+<code>venv</code> without this option. We are working in a monorepo or what <code>uv</code> calls a workspace. There will
+be only one virtual environment at the root of the monorepo, despite the fact that we have several
+individual packages in our workspace. Don't worry, <code>uv</code> will always use the virtual environment at
+the root and keep it up-to-date with the project your are currently working in.</p>
 <p>When creating a virtual environment make sure you are in the root folder, e.g. <code>~/github/cgse</code>.</p>
-<p><div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/github/cgse
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/github/cgse
 $<span class="w"> </span>uv<span class="w"> </span>venv<span class="w"> </span>--python<span class="w"> </span><span class="m">3</span>.9.20
 </code></pre></div>
-If you want to name your virtual environment, use the optional argument <code>--prompt &lt;venv name&gt;</code> in 
-the above command, otherwise the virtual environment will get the same name as the project, i.e. 
+<p>If you want to name your virtual environment, use the optional argument <code>--prompt &lt;venv name&gt;</code> in
+the above command, otherwise the virtual environment will get the same name as the project, i.e.
 <code>cgse</code>.</p>
-<p>Now, navigate to the package you will be working in and update the projects' environment, 
-assuming you are going to work in <code>cgse-core</code>, this will be:</p>
+<p>Now, navigate to the package you will be working in and update the projects' environment, assuming
+you are going to work in <code>cgse-core</code>, this will be:</p>
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/github/cgse/libs/cgse-core
 $<span class="w"> </span>uv<span class="w"> </span>sync
 </code></pre></div>
-<p>Your package(s) from the workspace should be installed as an editable install. You can check 
-this with the command:</p>
+<p>Your package(s) from the workspace should be installed as an editable install. You can check this
+with the command:</p>
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>pip<span class="w"> </span>list<span class="w"> </span>-v
 Using<span class="w"> </span>Python<span class="w"> </span><span class="m">3</span>.9.20<span class="w"> </span>environment<span class="w"> </span>at:<span class="w"> </span>/Users/rik/github/cgse/.venv
 Package<span class="w">           </span>Version<span class="w">     </span>Editable<span class="w"> </span>project<span class="w"> </span>location
@@ -2449,14 +2453,13 @@ package, use </p>
 </code></pre></div>
 </div>
 <h2 id="adding-and-removing-dependencies">Adding and removing dependencies<a class="headerlink" href="#adding-and-removing-dependencies" title="Permanent link">&para;</a></h2>
-<p>If we need another Python package that we want to use and add this as a dependency to our 
-project, we don't just want to install it with the <code>pip</code> command, nor add it to the <code>pyproject.
-toml</code> file ourselves. Instead, we use the <code>uv add &lt;package name&gt;</code> command, e.g. to install flask,
-we do:</p>
+<p>If we need another Python package that we want to use and add this as a dependency to our project,
+we don't just want to install it with the <code>pip</code> command, nor add it to the <code>pyproject. toml</code> file
+ourselves. Instead, we use the <code>uv add &lt;package name&gt;</code> command, e.g. to install flask, we do:</p>
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>add<span class="w"> </span>flask
 </code></pre></div>
-<p>Like wise, removing a dependency, we do that with the <code>uv remove &lt;package name&gt;</code> command, 
-because that will also remove the packages on which flask depended.</p>
+<p>Like wise, removing a dependency, we do that with the <code>uv remove &lt;package name&gt;</code> command, because
+that will also remove the packages on which flask depended.</p>
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>remove<span class="w"> </span>flask
 </code></pre></div>
 <div class="admonition note">
@@ -2466,8 +2469,9 @@ the package you are currently working in. For example, if you're working in
 <code>cgse/libs/cgse-common</code>, that <code>pyproject.toml</code> file will get the extra 'flask' dependency.</p>
 </div>
 <h2 id="building-and-publishing-all-packages">Building and publishing all packages<a class="headerlink" href="#building-and-publishing-all-packages" title="Permanent link">&para;</a></h2>
-<p>We have chosen for one and the same version number for all packages in the <code>cgse</code> monorepo. That means that whenever 
-we make a change to one of the packages and want to release that change, all packages shall be rebuild and published.</p>
+<p>We have chosen for one and the same version number for all packages in the <code>cgse</code> monorepo. That
+means that whenever we make a change to one of the packages and want to release that change, all
+packages shall be rebuilt and published.</p>
 <div class="admonition warning inline end">
 <p class="admonition-title">Warning</p>
 <p>When working in a workspace, keep in mind that the commands <code>uv run</code> and <code>uv sync</code> by default work on the 
@@ -2476,24 +2480,25 @@ workspace root will be updated or created if it didn't exist. Similar for the <c
 one <code>uv.lock</code> file at the root of the workspace.  </p>
 </div>
 <p>Fortunately, with <code>uv</code>, that is done in a few commands.</p>
-<p>When you are in the monorepo root folder, you can build all packages at once. They will be placed in the <code>dist</code> folder 
-of the root package. Before building, make sure you update the version in the <code>pyproject.toml</code> of the root package 
-and then bump the versions. Before building, clean up the <code>dist</code> folder, then you can do a default <code>uv publish</code> afterwards.</p>
-<p><div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>&lt;monorepo<span class="w"> </span>root&gt;
+<p>When you are in the monorepo root folder, you can build all packages at once. They will be placed in
+the <code>dist</code> folder of the root package. The <code>bump</code> script will automatically increase the version
+number based on your input, i.e. 'patch', 'minor', or 'major'. Before building, clean up the <code>dist</code>
+folder, then you can do a default <code>uv publish</code> afterwards.</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>&lt;monorepo<span class="w"> </span>root&gt;
 $<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>bump.py<span class="w"> </span>&lt;part&gt;
 $<span class="w"> </span>rm<span class="w"> </span>-r<span class="w"> </span>dist
 $<span class="w"> </span>uv<span class="w"> </span>build<span class="w"> </span>--all-packages
 </code></pre></div>
-where <code>&lt;monorepo root&gt;</code> is the root folder of your local clone, e.g. <code>~/github/cgse</code>, and 
+<p>where <code>&lt;monorepo root&gt;</code> is the root folder of your local clone, e.g. <code>~/github/cgse</code>, and
 <code>&lt;part&gt;</code> stands for the <em>part</em> of the version number that shall be bumped, i.e. 'patch', 'minor',
 or 'major'.</p>
-<p>Publish all packages in the root dist folder to PyPI. The UV_PUBLISH_TOKEN can be defined in a (read protected) ~/.
-setenv.bash file:</p>
+<p>Publish all packages in the root dist folder to PyPI. The UV_PUBLISH_TOKEN can be defined in a (read
+protected) ~/. setenv.bash file:</p>
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>publish<span class="w"> </span>--token<span class="w"> </span><span class="nv">$UV_PUBLISH_TOKEN</span>
 </code></pre></div>
-<p>The above command will publish all package to PyPI. If you don't want the token to be in a shell variable, you can 
-omit the <code>--token</code> in the command above. You will then be asked for a username, use <code>__token__</code> as the username and 
-then provide the token as a password.</p>
+<p>The above command will publish all package to PyPI. If you don't want the token to be in a shell
+variable, you can omit the <code>--token</code> in the command above. You will then be asked for a username,
+use <code>__token__</code> as the username and then provide the token as a password.</p>
 
 
 
