@@ -13,17 +13,25 @@ import logging
 import pickle
 import sys
 import time
+from pathlib import Path
 
 import zmq
 
+from egse.config import find_file
 from egse.process import ProcessStatus
+from egse.process import SubProcess
 
 LOGGER = logging.getLogger("egse.tests")
-
-PORT = 5556
+HERE = Path(__file__).parent
+PORT = 5557
 
 
 def main():
+
+    # Start a SubProcess
+
+    empty = SubProcess("Child", [sys.executable, str(find_file('empty_process.py', root=HERE).resolve())])
+    empty.execute()
 
     status = ProcessStatus()
 
@@ -56,6 +64,7 @@ def main():
         #  Do some 'work'
         time.sleep(0.1)
 
+    empty.quit()
     process_socket.close(linger=0)
 
 

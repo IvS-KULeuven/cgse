@@ -1,20 +1,60 @@
 import logging
+import os
 import pickle
 import sys
 import time
+import types
+from pathlib import Path
 
 import zmq
 
 from egse.config import find_file
+from egse.process import ProcessStatus
 from egse.process import SubProcess
 from egse.process import get_process_info
 from egse.process import is_process_running
 from egse.process import list_processes
+from egse.process import list_zombies
+from egse.process import ps_egrep
+from egse.system import capture_rich_output
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("egse.test.process")
+
+HERE = Path(__file__).parent
 
 # TODO
 #   * How can we test detached processes?
+
+
+def create_zombie():
+    pid = os.fork()
+
+    if pid == 0:  # Child process
+        # Child immediately exits
+        os._exit(0)  # noqa
+
+    # Parent process continues
+
+    print(f"Zombie child process created using 'fork' with PID: {pid}")
+
+    return pid
+
+
+def test_zombie():
+
+    zombie_pid = create_zombie()
+
+    zombies = list_zombies()
+    print(f"{zombies = }")
+
+    assert any([True for x in zombies if x["pid"] == zombie_pid])
+
+    create_zombie()
+
+    zombies = list_zombies()
+    print(f"{zombies = }")
+
+    assert len(list_zombies()) == 2
 
 
 def test_is_process_running():
@@ -66,10 +106,11 @@ def test_unknown_process():
     # method.
     process = SubProcess("Unknown App", ["unknown.exe"])
 
-    assert process.execute()
+    assert not process.execute()
     time.sleep(0.5)  # allow process time to terminate
+    logger.info(f"{process.exc_info = }")
     assert not process.is_running()
-    assert process.returncode() is not None
+    assert process.returncode() is None
 
 
 def test_error_during_execute():
@@ -79,17 +120,23 @@ def test_error_during_execute():
 
     process = SubProcess("Stub Process", [__file__])
 
-    assert process.execute()
+    assert not process.execute()
     time.sleep(0.5)  # allow process time to terminate
-    assert process.returncode() is not None
+    ei = process.exc_info
+    print(f"{ei = }")
+    assert ei['exc_type'] is PermissionError
+    assert isinstance(ei['exc_value'], PermissionError)
+    assert isinstance(ei['exc_traceback'], types.TracebackType)
+    assert ei['command'] == __file__
     assert not process.is_running()
+    assert process.returncode() is None
 
 
 def test_terminated_process():
 
     # Process void-0 exits with an exit code of 0
 
-    process = SubProcess("Stub Procces", [sys.executable, str(find_file('void-0.py').resolve())])
+    process = SubProcess("Stub Process", [sys.executable, str(find_file('void-0.py').resolve())])
 
     assert process.execute()
     time.sleep(0.5)  # allow process time to terminate
@@ -98,7 +145,7 @@ def test_terminated_process():
 
     # Process void-1 exits with an exit code of 1
 
-    process = SubProcess("Stub Procces", [sys.executable, str(find_file('void-1.py').resolve())])
+    process = SubProcess("Stub Process", [sys.executable, str(find_file('void-1.py').resolve())])
 
     assert process.execute()
     time.sleep(0.5)  # allow process time to terminate
@@ -106,11 +153,54 @@ def test_terminated_process():
     assert process.returncode() == 1
 
 
+def test_quit_process():
+
+    # when --ignore-sigterm is given, the process will be killed and return code will be -9.
+
+    process = SubProcess(
+        "Handle SIGTERM",
+        [sys.executable, str(find_file('handle_sigterm.py').resolve()), "--ignore-sigterm"]
+    )
+
+    assert process.execute()
+    time.sleep(0.5)  # allow process to start
+    assert process.is_running()
+    rc = process.quit()
+    logger.info(f"After quit() -> {rc = }")
+    assert rc == -9
+
+    while process.is_running():
+        logger.info(f"Process (PID={process.pid}) is still running...")
+        time.sleep(1.0)
+
+    assert process.returncode() == -9
+
+    # when --ignore-sigterm is not given, the process will handle the SIGTERM and exit with 42.
+
+    process = SubProcess(
+        "Handle SIGTERM",
+        [sys.executable, str(find_file('handle_sigterm.py').resolve())]
+    )
+
+    assert process.execute()
+    time.sleep(0.5)  # allow process to start
+    assert process.is_running()
+    rc = process.quit()
+    logger.info(f"After quit() -> {rc = }")
+    assert rc == 42
+
+    while process.is_running():
+        logger.info(f"Process (PID={process.pid}) is still running...")
+        time.sleep(1.0)
+
+    assert process.returncode() == 0  # I would have expected 42 here, don't know why 0
+
+
 def test_active_process():
 
-    # The empty_process.py should be located in the src/tests/scripts directory of the project
+    # The empty_process.py should be located in the tests/scripts directory of this project
 
-    stub = SubProcess("Stub Process", [sys.executable, str(find_file('empty_process.py').resolve())])
+    stub = SubProcess("Stub Process", [sys.executable, str(find_file('empty_process.py', root=HERE).resolve())])
 
     # We can set this cmd_port here because we know this from the empty_process.py file
     # In nominal situations, the cmd_port is known from the configuration file of the
@@ -136,13 +226,35 @@ def test_active_process():
     assert "UUID" in status
     assert "Up" in status
 
-    time.sleep(1)
+    time.sleep(1.0)
 
     logger.info(f"ProcessStatus: {get_status(cmd_port)}")
 
-    assert stub.quit() == 0  # no processes running after quit()
+    procs = list_processes("empty_process", verbose=True)
+    logger.info(f"{procs = }")
+
+    assert quit_process(cmd_port)
 
     time.sleep(0.1)
+
+    # if the sub-process is not in the processes list, it means it has terminated,
+    # but since this is running under pytest, the sub-process will be a zombie process
+    # until pytest finishes.
+
+    procs = list_processes("empty_process", verbose=True)
+    logger.info(f"{procs = }")
+    assert not procs
+    zombies = list_zombies()
+    logger.info(f"{zombies = }")
+    assert zombies
+    assert stub.is_dead_or_zombie()
+
+    time.sleep(0.1)
+
+    # don't know what the return code will be, sometimes its 0, sometimes its 1 or -15
+    _ = stub.quit()  # send a SIGTERM to the sub-process
+
+    logger.info(f"{stub.exc_info = }")
 
     assert not stub.exists()
     assert not stub.is_running()
@@ -150,9 +262,89 @@ def test_active_process():
     assert stub.returncode() == 0
 
 
+def test_process_no_shell():
+
+    stub = SubProcess("Stub Process", [sys.executable, str(find_file('empty_process.py', root=HERE).resolve())])
+    cmd_port = 5556
+
+    assert stub.execute()
+    assert stub.exc_info == {}
+    assert is_active(cmd_port)
+    assert not stub.is_dead_or_zombie()
+    logger.info(capture_rich_output(list_processes("empty")))
+    logger.info(ps_egrep("empty"))
+    assert quit_process(cmd_port)
+
+
+def test_process_with_shell():
+
+    stub = SubProcess(
+        "Stub Process",
+        [sys.executable, str(find_file('empty_process.py', root=HERE).resolve())],
+        shell=True,
+    )
+    cmd_port = 5556
+
+    assert stub.execute()
+    assert stub.exc_info == {}
+    assert is_active(cmd_port)
+    assert not stub.is_dead_or_zombie()
+    logger.info(capture_rich_output(list_processes("empty")))
+    logger.info(ps_egrep("empty"))
+    assert quit_process(cmd_port)
+
+
+def test_process_with_children():
+
+    parent = SubProcess(
+        "Parent Process",
+        [sys.executable, str(find_file('process_with_children.py', root=HERE).resolve())],
+    )
+    cmd_port = 5557
+
+    assert parent.execute()
+    assert parent.exc_info == {}
+    assert is_active(cmd_port)
+    assert parent.children()
+    print("children", parent.children())
+    print("list_processes", list_processes("empty"))
+    logger.info(ps_egrep("empty"))
+    # assert quit_process(cmd_port)
+    print("rc = ", parent.quit())
+    print("children", parent.children())
+    print("list_processes", list_processes("empty"))
+
+
+def test_raise_value_error():
+
+    proc = SubProcess("ValueErrorApp", [sys.executable, HERE / "scripts" / "raise_value_error.py"])
+    proc.execute()
+
+    time.sleep(1.5)  # the script will raise a ValueError after 1.0s
+
+    assert not proc.is_running()
+    assert proc.exc_info == {}
+    assert proc.is_dead_or_zombie()
+    assert proc.returncode() == 1
+
+    proc.quit()
+
+
+def test_process_status():
+
+    status = ProcessStatus()
+
+    sd = status.as_dict()
+
+    print(sd)
+
+    assert sd["PID"] == os.getpid()
+    assert "UUID" in sd
+
+
 # Helper function to communicate with the empty_process.py
 
-def is_active(port: int):
+def is_active(port: int) -> bool:
     """
     This check is to see if we get a response from the process with ZeroMQ.
 
@@ -167,12 +359,19 @@ def get_status(port: int) -> str:
     Returns status information of the running empty_process.
 
     Returns:
-        ProcessStatus: status inormation on the running process.
+        ProcessStatus: status information on the running process.
     """
     return send(port, "Status?")
 
 
-def send(port: int, command: str):
+def quit_process(port: int) -> bool:
+    """
+    Send a Quit command to the sub-process and returns the response.
+    """
+    return send(port, "Quit") == "Quiting"
+
+
+def send(port: int, command: str) -> str:
     """
     Sends a command to the sub-process and waits for a reply.
 

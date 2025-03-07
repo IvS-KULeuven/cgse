@@ -174,7 +174,7 @@ def find_files(pattern: str, root: PurePath | str = None, in_dir: str = None) ->
             yield Path(path) / name
 
 
-def find_file(name: str, root: str = None, in_dir: str = None) -> Path | None:
+def find_file(name: str, root: PurePath | str = None, in_dir: str = None) -> Path | None:
     """
     Find the path to the given file starting from the root directory of the
     distribution.
@@ -194,7 +194,7 @@ def find_file(name: str, root: str = None, in_dir: str = None) -> Path | None:
 
     Args:
         name (str): the name of the file
-        root (str): the top level folder to search [default=common-egse-root]
+        root (Path | str): the top level folder to search [default=common-egse-root]
         in_dir (str): the 'leaf' directory in which the file shall be
 
     Returns:
