@@ -19,6 +19,7 @@ The device simulator can be started with:
     py -m egse.dummy start-dev
 
 """
+
 from __future__ import annotations
 
 import logging
@@ -83,30 +84,27 @@ CONNECT_TIMEOUT = 3.0
 
 ctrl_settings = attrdict(
     {
-        'HOSTNAME': 'localhost',
-        'COMMANDING_PORT': 4443,
-        'SERVICE_PORT': 4444,
-        'MONITORING_PORT': 4445,
-        'PROTOCOL': 'tcp',
-        'TIMEOUT': 10_000,  # milliseconds
-        'HK_DELAY': 1.0,
+        "HOSTNAME": "localhost",
+        "COMMANDING_PORT": 4443,
+        "SERVICE_PORT": 4444,
+        "MONITORING_PORT": 4445,
+        "PROTOCOL": "tcp",
+        "TIMEOUT": 10_000,  # milliseconds
+        "HK_DELAY": 1.0,
     }
 )
 
 commands = attrdict(
     {
-        'info': {
-            'description': 'Info on the Dummy Device.',
-            'response': 'handle_device_method'
+        "info": {"description": "Info on the Dummy Device.", "response": "handle_device_method"},
+        "get_value": {
+            "description": "Read a value from the device.",
         },
-        'get_value': {
-            'description': 'Read a value from the device.',
-        },
-        'handle_event': {
-            'description': "Notification of an event",
-            'device_method': 'handle_event',
-            'cmd': '{event}',
-            'response': 'handle_device_method'
+        "handle_event": {
+            "description": "Notification of an event",
+            "device_method": "handle_event",
+            "cmd": "{event}",
+            "response": "handle_device_method",
         },
     }
 )
@@ -121,11 +119,13 @@ def is_dummy_cs_active():
 
 class DummyCommand(ClientServerCommand):
     """The Command class for the dummy device."""
+
     pass
 
 
 class DummyInterface:
     """The interface for the dummy device."""
+
     @dynamic_interface
     def info(self) -> str:
         """Return an info string from the device."""
@@ -152,11 +152,11 @@ class DummyProxy(Proxy, DummyInterface, EventInterface):
     """
 
     def __init__(
-            self,
-            protocol: str = ctrl_settings.PROTOCOL,
-            hostname: str = ctrl_settings.HOSTNAME,
-            port: int = ctrl_settings.COMMANDING_PORT,
-            timeout: int = ctrl_settings.TIMEOUT
+        self,
+        protocol: str = ctrl_settings.PROTOCOL,
+        hostname: str = ctrl_settings.HOSTNAME,
+        port: int = ctrl_settings.COMMANDING_PORT,
+        timeout: int = ctrl_settings.TIMEOUT,
     ):
         super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
 
@@ -167,6 +167,7 @@ class DummyController(DummyInterface, EventInterface):
 
     This class is used to directly communicate with the device.
     """
+
     def __init__(self, control_server):
         self._cs = control_server
         self._dev = DummyDeviceEthernetInterface(DEV_HOST, DEV_PORT)
@@ -179,7 +180,6 @@ class DummyController(DummyInterface, EventInterface):
         return float(self._dev.trans("get_value").decode().strip())
 
     def handle_event(self, event: Event) -> str:
-
         _exec_in_thread = False
 
         def _handle_event(_event):
@@ -216,6 +216,7 @@ class DummyProtocol(CommandProtocol):
     Args:
         control_server: the control server for the dummy device.
     """
+
     def __init__(self, control_server: ControlServer):
         super().__init__()
         self.control_server = control_server
@@ -235,7 +236,6 @@ class DummyProtocol(CommandProtocol):
         return super().get_status()
 
     def get_housekeeping(self) -> dict:
-
         # _LOGGER.debug(f"Executing get_housekeeping function for {self.__class__.__name__}.")
 
         self._count += 1
@@ -246,10 +246,10 @@ class DummyProtocol(CommandProtocol):
         # time.sleep(2.0)
 
         return {
-            'timestamp': format_datetime(),
-            'COUNT': self._count,
-            'PI': 3.14159,  # just to have a constant parameter
-            'Random': random.randint(0, 100),  # just to have a variable parameter
+            "timestamp": format_datetime(),
+            "COUNT": self._count,
+            "PI": 3.14159,  # just to have a constant parameter
+            "Random": random.randint(0, 100),  # just to have a variable parameter
         }
 
     def quit(self):
@@ -297,11 +297,11 @@ class DummyControlServer(ControlServer):
 
         self.register_as_listener(
             proxy=ConfigurationManagerProxy,
-            listener={'name': 'Dummy CS', 'proxy': DummyProxy, 'event_id': EVENT_ID.SETUP}
+            listener={"name": "Dummy CS", "proxy": DummyProxy, "event_id": EVENT_ID.SETUP},
         )
 
     def get_communication_protocol(self):
-        return 'tcp'
+        return "tcp"
 
     def get_commanding_port(self):
         return ctrl_settings.COMMANDING_PORT
@@ -320,7 +320,7 @@ class DummyControlServer(ControlServer):
 
         from egse.confman import ConfigurationManagerProxy
 
-        self.unregister_as_listener(proxy=ConfigurationManagerProxy, listener={'name': 'Dummy CS'})
+        self.unregister_as_listener(proxy=ConfigurationManagerProxy, listener={"name": "Dummy CS"})
 
 
 class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
@@ -333,8 +333,8 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
 
         port (int): the IP port number to connect to.
     """
-    def __init__(self, hostname: str = None, port: int = None):
 
+    def __init__(self, hostname: str = None, port: int = None):
         super().__init__()
 
         # Basic connection settings, loaded from the configuration YAML file
@@ -393,24 +393,16 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
             self.sock.settimeout(None)
         except ConnectionRefusedError as exc:
             self.sock.close()
-            raise DeviceConnectionError(
-                DEV_NAME, f"Connection refused to {self.hostname}:{self.port}."
-            ) from exc
+            raise DeviceConnectionError(DEV_NAME, f"Connection refused to {self.hostname}:{self.port}.") from exc
         except TimeoutError as exc:
             self.sock.close()
-            raise DeviceTimeoutError(
-                DEV_NAME, f"Connection to {self.hostname}:{self.port} timed out."
-            ) from exc
+            raise DeviceTimeoutError(DEV_NAME, f"Connection to {self.hostname}:{self.port} timed out.") from exc
         except socket.gaierror as exc:
             self.sock.close()
-            raise DeviceConnectionError(
-                DEV_NAME, f"socket address info error for {self.hostname}"
-            ) from exc
+            raise DeviceConnectionError(DEV_NAME, f"socket address info error for {self.hostname}") from exc
         except socket.herror as exc:
             self.sock.close()
-            raise DeviceConnectionError(
-                DEV_NAME, f"socket host address error for {self.hostname}"
-            ) from exc
+            raise DeviceConnectionError(DEV_NAME, f"socket host address error for {self.hostname}") from exc
         except OSError as exc:
             self.sock.close()
             raise DeviceConnectionError(DEV_NAME, f"OSError caught ({exc}).") from exc
@@ -431,12 +423,11 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
              DeviceConnectionError: on failure.
         """
         try:
-            _LOGGER.debug(f'Disconnecting from {self.hostname}')
+            _LOGGER.debug(f"Disconnecting from {self.hostname}")
             self.sock.close()
             self.is_connection_open = False
         except Exception as exc:
-            raise DeviceConnectionError(
-                DEV_NAME, f"Could not close socket to {self.hostname}") from exc
+            raise DeviceConnectionError(DEV_NAME, f"Could not close socket to {self.hostname}") from exc
 
     def reconnect(self):
         """Disconnect from the device, then connect again."""
@@ -574,6 +565,7 @@ def start_cs():
         sys.exit(-1)
     except Exception:  # noqa
         import traceback
+
         traceback.print_exc(file=sys.stdout)
 
 
@@ -641,14 +633,10 @@ def start_dev():
     _LOGGER.info("Dummy Device terminated.")
 
 
-COMMAND_ACTIONS_RESPONSES = {
-    "info": (None, f"Dummy Device {__version__}"),
-    "get_value": (None, random.random)
-}
+COMMAND_ACTIONS_RESPONSES = {"info": (None, f"Dummy Device {__version__}"), "get_value": (None, random.random)}
 
 
 def process_command(command_string: str) -> str | None:
-
     _LOGGER.debug(f"{command_string = }")
 
     try:
@@ -660,6 +648,7 @@ def process_command(command_string: str) -> str | None:
             return response if isinstance(response, str) else response()
     except KeyError:
         from egse.system import get_caller_breadcrumbs
+
         _LOGGER.info(get_caller_breadcrumbs())
         raise NotImplementedError(f"{command_string} not yet implemented..")
 

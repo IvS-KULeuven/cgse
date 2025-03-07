@@ -162,14 +162,15 @@ __all__ = [
 ]
 
 if __name__ == "__main__":
-
     from rich import print
 
-    print(textwrap.dedent(
-        f"""\
+    print(
+        textwrap.dedent(
+            f"""\
             GlobalState info:
               Setup loaded: {GlobalState.setup.get_id()}
-              Dry run: {'ON' if GlobalState.dry_run else 'OFF'}
+              Dry run: {"ON" if GlobalState.dry_run else "OFF"}
               Command Sequence: {GlobalState.get_command_sequence()} \
-        """)
+        """
+        )
     )

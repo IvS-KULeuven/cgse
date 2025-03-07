@@ -1,6 +1,7 @@
 """
 This module provides convenience functions to inspect and compare dictionaries when debugging.
 """
+
 __all__ = [
     "flatten_dict",
     "log_differences",
@@ -43,7 +44,6 @@ def log_differences(dict_1, dict_2):
     all_keys = dict_1.keys() & dict_2.keys()
 
     if mismatched := {key for key in all_keys if dict_1[key] != dict_2[key]}:
-
         table = Table("Name", "old value", "new value", title="Value Differences", title_justify="left")
 
         for name in sorted(mismatched):
@@ -94,8 +94,7 @@ def log_key_differences(dict_1, dict_2):
     LOGGER.info(capture_rich_output(table))
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     import egse.logger  # noqa activates the logger
 
     d1 = {

@@ -15,7 +15,6 @@ _HERE = Path(__file__).parent.resolve()
 
 
 def test_find_first_occurrence_of_dir():
-
     assert str(find_first_occurrence_of_dir("conf", root=_HERE)).endswith("tests/data/conf")
     assert str(find_first_occurrence_of_dir("dev1", root=_HERE)).endswith("tests/data/lib/dev1")
     assert str(find_first_occurrence_of_dir("dev2", root=_HERE)).endswith("tests/data/lib/dev2")
@@ -24,7 +23,7 @@ def test_find_first_occurrence_of_dir():
 
     # Pass in a different root directory
 
-    assert str(find_first_occurrence_of_dir("dev1", root=_HERE/"data")).endswith("lib/dev1")
+    assert str(find_first_occurrence_of_dir("dev1", root=_HERE / "data")).endswith("lib/dev1")
 
     folders = (
         _HERE / "x_data/01/kul",
@@ -51,7 +50,6 @@ def test_find_first_occurrence_of_dir():
 
 
 def test_find_root():
-
     assert find_root(None) is None
     assert find_root("/") is None
     assert find_root("/", tests=("tmp",)) == Path("/")
@@ -59,7 +57,6 @@ def test_find_root():
 
 
 def test_get_common_egse_root():
-
     print()
 
     # for the following test I assume that we are in the repository, but we can not test
@@ -73,13 +70,11 @@ def test_get_common_egse_root():
 
 
 def test_find_root_exceptions():
-
     assert find_root("/non-existing-path") is None
     assert find_root(None) is None
 
 
 def test_get_common_egse_root_with_env():
-
     import os
 
     os.environ["COMMON_EGSE_PATH"] = "/Users/rik/git"
@@ -148,7 +143,6 @@ def test_find_dirs():
 
 
 def test_find_file():
-
     assert find_file("pyproject.toml")
     assert find_file("data-file.txt")
     assert not find_file("non-existing-file.txt")
@@ -171,7 +165,7 @@ def test_working_directory():
 
     with WorkingDirectory(_HERE.parent) as wdir:
         assert wdir.path / "tests" == _HERE
-        for file in wdir.path.glob('tests'):
+        for file in wdir.path.glob("tests"):
             assert str(file) == str(_HERE)
 
     assert cwd == os.getcwd()

@@ -7,9 +7,8 @@ from egse.response import Success
 
 
 def test_failure():
-
     try:
-        1/0
+        1 / 0
     except ZeroDivisionError as exc:
         failure = Failure("You cannot divide one by zero")
 
@@ -33,8 +32,9 @@ def test_failure():
 
         failure = Failure("You cannot divide one by zero", cause=exc)
 
-        assert f"{failure!r}" == ("Failure('You cannot divide one by zero: division by zero', "
-                                  "cause=ZeroDivisionError('division by zero'))")
+        assert f"{failure!r}" == (
+            "Failure('You cannot divide one by zero: division by zero', cause=ZeroDivisionError('division by zero'))"
+        )
         assert failure.message == str(failure) == f"{failure}" == "You cannot divide one by zero: division by zero"
         assert isinstance(failure.cause, ZeroDivisionError)
         assert f"{failure.cause!r}" == "ZeroDivisionError('division by zero')"
@@ -47,8 +47,9 @@ def test_failure():
 
         failure = pickle.loads(data)
 
-        assert f"{failure!r}" == ("Failure('You cannot divide one by zero: division by zero', "
-                                  "cause=ZeroDivisionError('division by zero'))")
+        assert f"{failure!r}" == (
+            "Failure('You cannot divide one by zero: division by zero', cause=ZeroDivisionError('division by zero'))"
+        )
         assert failure.message == str(failure) == f"{failure}" == "You cannot divide one by zero: division by zero"
         assert isinstance(failure.cause, ZeroDivisionError)
         assert f"{failure.cause!r}" == "ZeroDivisionError('division by zero')"
@@ -57,7 +58,6 @@ def test_failure():
 
 
 def test_success():
-
     success = Success("This is a great success!")
 
     assert f"{success!r}" == "Success('This is a great success!')"
@@ -102,7 +102,6 @@ def test_success():
 
 
 def test_message():
-
     msg = Message("Hello, World!")
 
     assert f"{msg!r}" == "Message('Hello, World!')"

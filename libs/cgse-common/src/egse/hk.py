@@ -37,7 +37,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class TmDictionaryColumns(str, Enum):
-    """ Enumeration of the relevant columns in the TM dictionary spreadsheet.
+    """Enumeration of the relevant columns in the TM dictionary spreadsheet.
 
     The relevant columns are:
 
@@ -62,12 +62,17 @@ class TmDictionaryColumns(str, Enum):
 
 class HKError(Exception):
     """An HK-specific error."""
+
     pass
 
 
 def get_housekeeping(
-        hk_name: str, obsid: Union[ObservationIdentifier, str, int] = None, od: str = None,
-        time_window: int = None, data_dir: str = None, setup: Optional[Setup] = None
+    hk_name: str,
+    obsid: Union[ObservationIdentifier, str, int] = None,
+    od: str = None,
+    time_window: int = None,
+    data_dir: str = None,
+    setup: Optional[Setup] = None,
 ) -> tuple | np.ndarray:
     """
     Returns the timestamp(s) and housekeeping value(s) for the housekeeping parameter with the given name.
@@ -115,7 +120,6 @@ def get_housekeeping(
     # Either specify the obsid or the OD (or neither of them) but not both
 
     if obsid is not None and od is not None:
-
         raise HKError(f"Both the obsid ({obsid}) and the OD ({od}) were specified.")
 
     # Specified obsid (as integer or as string)
@@ -123,7 +127,6 @@ def get_housekeeping(
     data_dir = data_dir or get_data_storage_location()
 
     if obsid:
-
         try:
             return _get_housekeeping_obsid(hk_name, data_dir, obsid=obsid, time_window=time_window, setup=setup)
         except (ValueError, StopIteration, FileNotFoundError) as exc:
@@ -132,7 +135,6 @@ def get_housekeeping(
     # Specified OD
 
     if od:
-
         try:
             return _get_housekeeping_od(hk_name, data_dir, od=od, time_window=time_window, setup=setup)
         except (ValueError, StopIteration, FileNotFoundError) as exc:
@@ -147,7 +149,7 @@ def get_housekeeping(
 
 
 def _get_housekeeping(hk_name: str, timestamp_name: str, hk_dir: str, files, time_window: int = None):
-    """ Return the timestamp(s) and HK value(s) for the HK parameter with the given name, for the given files.
+    """Return the timestamp(s) and HK value(s) for the HK parameter with the given name, for the given files.
 
     When the time window has not been specified, the last timestamp and HK value will be returned for the given OD.
     It is possible that a component stopped writing HK for some reason, and that the last HK value is older than you
@@ -182,20 +184,17 @@ def _get_housekeeping(hk_name: str, timestamp_name: str, hk_dir: str, files, tim
     # No time window specified: return the last value
 
     if time_window is None:
-
         return get_last_non_empty(hk_dir + filename, timestamp_index, hk_index)
 
     # Time window specified
 
     else:
-
         # We will return an array of timestamps and an array of HK values
 
         timestamp_array = np.array([])
         hk_array = np.array([])
 
         with open(hk_dir + filename) as file:
-
             csv_reader = csv.reader(file)
             next(csv_reader)
             first_timepoint = next(csv_reader)[0].split(",")[timestamp_index]  # Skip the header
@@ -206,14 +205,12 @@ def _get_housekeeping(hk_name: str, timestamp_name: str, hk_dir: str, files, tim
         # The time window is shorter than the timespan covered by the file
 
         if time_window < elapsed:
-
             sampling_rate = get_sampling_rate(hk_dir + filename, timestamp_name)  # Time between subsequent samples
             num_samples = int(round(time_window / sampling_rate))
 
             lines = read_last_lines(hk_dir + filename, num_samples)
 
             for line in lines:
-
                 line = line.split(",")
 
                 timestamp_array = np.append(timestamp_array, line[timestamp_index])
@@ -222,26 +219,22 @@ def _get_housekeeping(hk_name: str, timestamp_name: str, hk_dir: str, files, tim
         # The time window is longer than the timespan covered by the file: read all lines
 
         else:
-
             with open(hk_dir + filename) as file:
-
                 csv_reader = csv.reader(file)
                 next(csv_reader)  # Skip the header
 
                 for row in csv_reader:
-
                     timestamp_array = np.append(timestamp_array, row[timestamp_index])
                     hk_array = np.append(hk_array, row[hk_index])
 
         for index in range(len(timestamp_array)):
-
             timestamp_array[index] = time_since_epoch_1958(timestamp_array[index])
 
         return timestamp_array, hk_array
 
 
 def _get_housekeeping_od(hk_name: str, data_dir, od: str, time_window: int = None, setup: Optional[Setup] = None):
-    """ Return the timestamp(s) and HK value(s) for the HK parameter with the given name, for the given OD.
+    """Return the timestamp(s) and HK value(s) for the HK parameter with the given name, for the given OD.
 
     When the time window has not been specified, the last timestamp and HK value will be returned for the given OD.
     It is possible that a component stopped writing HK for some reason, and that the last HK value is older than you
@@ -271,11 +264,9 @@ def _get_housekeeping_od(hk_name: str, data_dir, od: str, time_window: int = Non
     hk_dir = f"{data_dir}/daily/"  # Where the HK is stored
 
     try:
-
         origin, timestamp_name = get_hk_info(hk_name, setup=setup)
 
     except KeyError:
-
         raise HKError(f"Cannot determine which EGSE component generated HK parameter {hk_name}")
 
     hk_dir += f"{od}/"
@@ -284,9 +275,14 @@ def _get_housekeeping_od(hk_name: str, data_dir, od: str, time_window: int = Non
     return _get_housekeeping(hk_name, timestamp_name, hk_dir, hk_files, time_window=time_window)
 
 
-def _get_housekeeping_obsid(hk_name: str, data_dir, obsid: Union[ObservationIdentifier, str, int],
-                            time_window: int = None, setup: Optional[Setup] = None):
-    """ Return the timestamp(s) and HK value(s) for the HK parameter with the given name, for the given obsid.
+def _get_housekeeping_obsid(
+    hk_name: str,
+    data_dir,
+    obsid: Union[ObservationIdentifier, str, int],
+    time_window: int = None,
+    setup: Optional[Setup] = None,
+):
+    """Return the timestamp(s) and HK value(s) for the HK parameter with the given name, for the given obsid.
 
     When the time window has not been specified, the last timestamp and HK value will be returned for the given obsid.
     It is possible that a component stopped writing HK for some reason, and that the last HK value is older than you
@@ -318,21 +314,18 @@ def _get_housekeeping_obsid(hk_name: str, data_dir, obsid: Union[ObservationIden
     hk_dir = f"{data_dir}/obs/"  # Where the HK is stored
 
     try:
-
         origin, timestamp_name = get_hk_info(hk_name, setup=setup)
 
     except KeyError:
-
         raise HKError(f"Cannot determine which EGSE component generated HK parameter {hk_name}")
 
-    obsid = obsid_from_storage(obsid, data_dir=data_dir)     # Convert the obsid to the correct format
+    obsid = obsid_from_storage(obsid, data_dir=data_dir)  # Convert the obsid to the correct format
 
     hk_dir += f"{obsid}/"
     pattern = f"{obsid}_{origin}_*.csv"
     hk_files = sorted(find_files(pattern=pattern, root=hk_dir))
 
     if len(hk_files) == 0:
-
         raise HKError(f"No HK found for the {origin} at {get_site_id()} for obsid {obsid}")
 
     hk_files = [hk_files[-1].name]
@@ -341,7 +334,7 @@ def _get_housekeeping_obsid(hk_name: str, data_dir, obsid: Union[ObservationIden
 
 
 def _get_housekeeping_daily(hk_name: str, data_dir, time_window: int = None, setup: Optional[Setup] = None):
-    """ Return the timestamp(s) and HK value(s) for the HK parameter with the given name.
+    """Return the timestamp(s) and HK value(s) for the HK parameter with the given name.
 
     When the time window has not been specified, the last timestamp and HK value will be returned.  It is possible that
     a component stopped writing HK for some reason, and that the last HK value is older than you would want.  It is
@@ -379,17 +372,14 @@ def _get_housekeeping_daily(hk_name: str, data_dir, time_window: int = None, set
     hk_dir = f"{data_dir}/daily/"  # Where the HK is stored
 
     try:
-
         origin, timestamp_name = get_hk_info(hk_name, setup=setup)
 
     except KeyError:
-
         raise HKError(f"Cannot determine which EGSE component generated HK parameter {hk_name}")
 
     # No time window specified: return the last value
 
     if time_window is None:
-
         # Look for the last file of this component
 
         timestamp = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%d")
@@ -402,7 +392,6 @@ def _get_housekeeping_daily(hk_name: str, data_dir, time_window: int = None, set
     # Time window specified
 
     else:
-
         # We will return an array of timestamps and an array of HK values
 
         timestamp_array = np.array([])
@@ -422,7 +411,6 @@ def _get_housekeeping_daily(hk_name: str, data_dir, time_window: int = None, set
         filename = f"{start_od}/{start_od}_{get_site_id()}_{origin}.csv"
 
         if Path(hk_dir + filename).exists():
-
             timestamp_index, hk_index = get_indices(hk_dir + filename, hk_name, timestamp_name)
 
             # Determine how many time samples you need to read in the first relevant HK file (starting from the back)
@@ -430,11 +418,9 @@ def _get_housekeeping_daily(hk_name: str, data_dir, time_window: int = None, set
             sampling_rate = get_sampling_rate(hk_dir + filename, timestamp_name)  # Time between subsequent samples
 
             if time_window <= elapsed_since_midnight:
-
                 num_samples_first_day = int(round(time_window / sampling_rate))
 
             else:
-
                 time_window_first_day = (time_window - elapsed_since_midnight) % SECONDS_IN_A_DAY
                 num_samples_first_day = int(round(time_window_first_day / sampling_rate))  # TODO Round or floor?
 
@@ -443,7 +429,6 @@ def _get_housekeeping_daily(hk_name: str, data_dir, time_window: int = None, set
             lines_first_day = read_last_lines(hk_dir + filename, num_samples_first_day)
 
             for line in lines_first_day:
-
                 line = line.split(",")
 
                 timestamp_array = np.append(timestamp_array, line[timestamp_index])
@@ -453,22 +438,17 @@ def _get_housekeeping_daily(hk_name: str, data_dir, time_window: int = None, set
         # (those will have to be read entirely)
 
         else:
-
-            _LOGGER.warning(f"No HK available for {origin} on "
-                           f"{start_time.day}/{start_time.month}/{start_time.year}")
+            _LOGGER.warning(f"No HK available for {origin} on {start_time.day}/{start_time.month}/{start_time.year}")
 
         day = (start_time + datetime.timedelta(days=1)).date()  # The day after the first day
         last_day = datetime.date(now.year, now.month, now.day)  # Today
 
         while day <= last_day:
-
             od = f"{day.year}{day.month:02d}{day.day:02d}"
             filename = f"{od}/{od}_{get_site_id()}_{origin}.csv"
 
             if Path(hk_dir + filename).exists():
-
                 with open(hk_dir + filename) as file:
-
                     csv_reader = csv.reader(file)
 
                     header = next(csv_reader)  # Skip the header
@@ -479,25 +459,22 @@ def _get_housekeeping_daily(hk_name: str, data_dir, time_window: int = None, set
                         raise HKError(f"Cannot find column {hk_name} in {filename}")
 
                     for row in csv_reader:
-
                         timestamp_array = np.append(timestamp_array, row[timestamp_index])
                         hk_array = np.append(hk_array, row[hk_index])
 
             else:
-
                 _LOGGER.warning(f"No HK available for {origin} on {day.day}/{day.month}/{day.year}")
 
             day += datetime.timedelta(days=1)
 
         for index in range(len(timestamp_array)):
-
             timestamp_array[index] = time_since_epoch_1958(timestamp_array[index])
 
         return timestamp_array, hk_array
 
 
 def get_last_non_empty(filename: str, timestamp_index: int, hk_index: int) -> tuple:
-    """  Return the timestamp and HK value for last real value.
+    """Return the timestamp and HK value for last real value.
 
     Args:
          filename: HK file in which to look for the given HK parameter.
@@ -519,11 +496,9 @@ def get_last_non_empty(filename: str, timestamp_index: int, hk_index: int) -> tu
     # Declaring variable to implement exponential search
 
     try:
-
         num_lines = 1
 
         while hk_value == " " or hk_value == "":
-
             pos = num_lines + 1
 
             # List to store last N lines
@@ -531,20 +506,15 @@ def get_last_non_empty(filename: str, timestamp_index: int, hk_index: int) -> tu
             lines = []
 
             with open(filename) as f:
-
                 while len(lines) <= num_lines:
-
                     try:
-
                         f.seek(-pos, 2)
 
                     except IOError:
-
                         f.seek(0)
                         break
 
                     finally:
-
                         lines = list(f)
 
                     # Increasing value of variable exponentially
@@ -563,7 +533,7 @@ def get_last_non_empty(filename: str, timestamp_index: int, hk_index: int) -> tu
 
 
 def get_indices(filename: str, hk_name: str, timestamp_name: str) -> tuple:
-    """ Return the column number of the timestamp and given HK parameter in the given HK file.
+    """Return the column number of the timestamp and given HK parameter in the given HK file.
 
     Args:
         filename: HK file in which to look for the given HK parameter.
@@ -578,7 +548,6 @@ def get_indices(filename: str, hk_name: str, timestamp_name: str) -> tuple:
     """
 
     with open(filename, "r") as f:
-
         reader = csv.reader(f)
         header = next(reader)  # Skip the header
 
@@ -586,18 +555,16 @@ def get_indices(filename: str, hk_name: str, timestamp_name: str) -> tuple:
     # timestamp_index = 0
 
     try:
-
         hk_index = header.index(hk_name)
 
     except ValueError:
-
         raise HKError(f"Cannot find column {hk_name} in {filename}")
 
     return timestamp_index, hk_index
 
 
 def get_sampling_rate(filename: str, timestamp_name: str) -> float:
-    """ Return the sampling rate for the HK file with the given name [s].
+    """Return the sampling rate for the HK file with the given name [s].
 
     The sampling rate is determined as the difference between the timestamps of the last two lines of the HK file.
 
@@ -612,7 +579,6 @@ def get_sampling_rate(filename: str, timestamp_name: str) -> float:
     # Determine which column comprises the timestamp
 
     with open(filename, "r") as f:
-
         reader = csv.reader(f)
         header = next(reader)  # Skip the header
 
@@ -649,11 +615,10 @@ def convert_hk_names(original_hk: dict, conversion_dict: dict) -> dict:
     converted_hk = {}
 
     for orig_key in original_hk:
-
         try:
             new_key = conversion_dict[orig_key]
         except KeyError:
-            new_key = orig_key   # no conversion, just copy the key:value pair
+            new_key = orig_key  # no conversion, just copy the key:value pair
 
         converted_hk[new_key] = original_hk[orig_key]
 
@@ -661,7 +626,7 @@ def convert_hk_names(original_hk: dict, conversion_dict: dict) -> dict:
 
 
 def read_conversion_dict(storage_mnemonic: str, use_site: bool = False, setup: Optional[Setup] = None) -> dict:
-    """ Read the HK spreadsheet and compose conversion dictionary for HK names.
+    """Read the HK spreadsheet and compose conversion dictionary for HK names.
 
     The spreadsheet contains the following information:
 
@@ -696,28 +661,28 @@ def read_conversion_dict(storage_mnemonic: str, use_site: bool = False, setup: O
     original_name_col = original_name_col[selection]
 
     if use_site:
-
         th_prefix = f"G{get_site_id()}_"
 
         th_conversion_dict = {}
 
-        for (original_name, correct_name) in zip(original_name_col, correct_name_col):
+        for original_name, correct_name in zip(original_name_col, correct_name_col):
             if str.startswith(str(correct_name), th_prefix):
                 th_conversion_dict[original_name] = correct_name
 
         return th_conversion_dict
 
     else:
-
         if len(original_name_col) != len(correct_name_col):
-            _LOGGER.error(f"Name columns in TM dictionary have different length: "
-                          f"{len(original_name_col)} != {len(correct_name_col)}")
+            _LOGGER.error(
+                f"Name columns in TM dictionary have different length: "
+                f"{len(original_name_col)} != {len(correct_name_col)}"
+            )
 
         return dict(zip(original_name_col, correct_name_col))
 
 
 def get_hk_info(hk_name: str, setup: Optional[Setup] = None) -> tuple:
-    """ Read the HK spreadsheet and extract information for the given HK parameter.
+    """Read the HK spreadsheet and extract information for the given HK parameter.
 
     The spreadsheet contains the following information:
         - storage mnemonic of the component that generates the HK
@@ -756,7 +721,7 @@ def get_hk_info(hk_name: str, setup: Optional[Setup] = None) -> tuple:
 
 
 def get_storage_mnemonics(setup: Setup = None) -> list:
-    """ Return the list of the storage mnemonics from the TM dictionary.
+    """Return the list of the storage mnemonics from the TM dictionary.
 
     Args:
         setup: the Setup to be used, if None, the setup will be loaded from the configuration manager.
@@ -774,7 +739,7 @@ def get_storage_mnemonics(setup: Setup = None) -> list:
 
 
 def get_housekeeping_names(name_filter: str = None, device_filter: str = None, setup: Setup = None) -> pd.DataFrame:
-    """ Return HK names, storage mnemonic, and description.
+    """Return HK names, storage mnemonic, and description.
 
     The TM dictionary is read into a Pandas DataFrame.  If a device filter is given, only the rows pertaining to the
     given storage mnemonic are kept.  If a name filter is given, only keep the rows for which the HK parameter name
@@ -812,5 +777,6 @@ def get_housekeeping_names(name_filter: str = None, device_filter: str = None, s
     if name_filter:
         hk_info_table = hk_info_table.query(f'`{TmDictionaryColumns.CORRECT_HK_NAMES}`.str.contains("{name_filter}")')
 
-    return hk_info_table[[TmDictionaryColumns.CORRECT_HK_NAMES, TmDictionaryColumns.STORAGE_MNEMONIC,
-                          TmDictionaryColumns.DESCRIPTION]]
+    return hk_info_table[
+        [TmDictionaryColumns.CORRECT_HK_NAMES, TmDictionaryColumns.STORAGE_MNEMONIC, TmDictionaryColumns.DESCRIPTION]
+    ]

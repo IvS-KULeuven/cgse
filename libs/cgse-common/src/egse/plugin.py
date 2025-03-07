@@ -1,6 +1,7 @@
 """
 This module provides function to load plugins and settings from entry-points.
 """
+
 __all__ = [
     "load_plugins",
     "get_file_infos",
@@ -102,6 +103,7 @@ def get_file_infos(entry_point: str) -> dict[str, tuple[Path, str]]:
 # The following code was adapted from the inspiring package click-plugins
 # at https://github.com/click-contrib/click-plugins/
 
+
 def handle_click_plugins(plugins):
     def decorator(group):
         if not isinstance(group, click.Group):
@@ -123,6 +125,7 @@ def handle_click_plugins(plugins):
 
 # This class is filtered and will not be included in the API docs, see `mkdocs.yml`.
 
+
 class BrokenCommand(click.Command):
     """
     Rather than completely crash the CLI when a broken plugin is loaded, this
@@ -140,7 +143,7 @@ class BrokenCommand(click.Command):
         click.Command.__init__(self, name)
 
         util_name = os.path.basename(sys.argv and sys.argv[0] or __file__)
-        icon = u'\u2020'
+        icon = "\u2020"
 
         self.help = textwrap.dedent(
             f"""\

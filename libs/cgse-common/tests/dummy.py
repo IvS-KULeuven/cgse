@@ -1,6 +1,7 @@
 """
 This module provides dummy implementation for classes of the Commanding chain.
 """
+
 import logging
 import random
 import sys
@@ -32,28 +33,25 @@ LOGGER = logging.getLogger("egse.dummy")
 
 ctrl_settings = AttributeDict(
     {
-        'HOSTNAME': 'localhost',
-        'COMMANDING_PORT': 4443,
-        'SERVICE_PORT': 4444,
-        'MONITORING_PORT': 4445,
-        'PROTOCOL': 'tcp',
-        'TIMEOUT': 10,
-        'HK_DELAY': 1.0,
+        "HOSTNAME": "localhost",
+        "COMMANDING_PORT": 4443,
+        "SERVICE_PORT": 4444,
+        "MONITORING_PORT": 4445,
+        "PROTOCOL": "tcp",
+        "TIMEOUT": 10,
+        "HK_DELAY": 1.0,
     }
 )
 
 commands = AttributeDict(
     {
-        'info': {
-            'description': 'Info on the Dummy Controller',
-            'response': 'handle_device_method'
+        "info": {"description": "Info on the Dummy Controller", "response": "handle_device_method"},
+        "response": {
+            "description": "send a command to the device and return it's response",
+            "device_method": "response",
+            "cmd": "{one} {two} {fake}",
+            "response": "handle_device_method",
         },
-        'response': {
-            'description': 'send a command to the device and return it\'s response',
-            'device_method': 'response',
-            'cmd': '{one} {two} {fake}',
-            'response': 'handle_device_method'
-        }
     }
 )
 
@@ -70,16 +68,15 @@ class DummyCommand(ClientServerCommand):
 
 class DummyInterface:
     @dynamic_interface
-    def info(self):
-        ...
+    def info(self): ...
     @dynamic_interface
-    def response(self, *args, **kwargs):
-        ...
+    def response(self, *args, **kwargs): ...
 
 
 class DummyProxy(Proxy, DummyInterface):
-    def __init__(self,
-                 protocol=ctrl_settings.PROTOCOL, hostname=ctrl_settings.HOSTNAME, port=ctrl_settings.COMMANDING_PORT):
+    def __init__(
+        self, protocol=ctrl_settings.PROTOCOL, hostname=ctrl_settings.HOSTNAME, port=ctrl_settings.COMMANDING_PORT
+    ):
         """
         Args:
             protocol: the transport protocol [default is taken from settings file]
@@ -98,7 +95,6 @@ class DummyController(DummyInterface):
 
 
 class DummyProtocol(CommandProtocol):
-
     def __init__(self, control_server: ControlServer):
         super().__init__()
         self.control_server = control_server
@@ -118,7 +114,6 @@ class DummyProtocol(CommandProtocol):
         return super().get_status()
 
     def get_housekeeping(self) -> dict:
-
         LOGGER.debug(f"Executing get_housekeeping function for {self.__class__.__name__}.")
 
         self._count += 1
@@ -128,12 +123,11 @@ class DummyProtocol(CommandProtocol):
         # import time
         # time.sleep(2.0)
 
-
         return {
-            'timestamp': format_datetime(),
-            'COUNT': self._count,
-            'PI': 3.14159,  # just to have a constant parameter
-            'Random': random.randint(0, 100),  # just to have a variable parameter
+            "timestamp": format_datetime(),
+            "COUNT": self._count,
+            "PI": 3.14159,  # just to have a constant parameter
+            "Random": random.randint(0, 100),  # just to have a variable parameter
         }
 
 
@@ -165,7 +159,7 @@ class DummyControlServer(ControlServer):
         self.set_hk_delay(ctrl_settings.HK_DELAY)
 
     def get_communication_protocol(self):
-        return 'tcp'
+        return "tcp"
 
     def get_commanding_port(self):
         return ctrl_settings.COMMANDING_PORT
@@ -204,6 +198,7 @@ def start():
         sys.exit(1)
     except Exception:
         import traceback
+
         traceback.print_exc(file=sys.stdout)
 
 

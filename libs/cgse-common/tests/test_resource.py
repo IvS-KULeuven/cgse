@@ -21,11 +21,11 @@ HERE = Path(__file__).parent.resolve()
 @pytest.fixture
 def reset_resource():
     import egse.resource
+
     egse.resource.resources.clear()
 
 
 def test_find_file_in_resource_location():
-
     print()
 
     data_root = Path(__file__).parent / "data"
@@ -38,15 +38,15 @@ def test_find_file_in_resource_location():
     # Find file in first resource location, both with and without wildcard
 
     fn = get_resource(":/icons/sponge.svg")
-    assert 'egse/gui/icons/sponge' in str(fn)
+    assert "egse/gui/icons/sponge" in str(fn)
 
     fn = get_resource(":/icons/busy*.svg")
-    assert 'egse/gui/icons/busy.svg' in str(fn)
+    assert "egse/gui/icons/busy.svg" in str(fn)
 
     # Find file in second resource location, both with and without wildcard
 
     fn = get_resource(":/icons/keyboard.png")
-    assert 'tests/data/icons/keyboard' in str(fn)
+    assert "tests/data/icons/keyboard" in str(fn)
 
     with create_empty_file(filename=data_root / "icons" / f"file_with_timestamp_{format_datetime('today')}.txt"):
         fn = get_resource(":/icons/file_with_timestamp*.txt")
@@ -54,14 +54,13 @@ def test_find_file_in_resource_location():
 
     # File is not found in any resource location
 
-    with pytest.raises(NoSuchFileError, match='unknown.png') as exc_info:
+    with pytest.raises(NoSuchFileError, match="unknown.png") as exc_info:
         _ = get_resource(":/icons/unknown.png")
     assert exc_info.type is NoSuchFileError
     assert "No file found that matches" in exc_info.value.args[0]
 
 
 def test_find_file_in_resource_location_with_wildcard():
-
     print()
 
     data_root = Path(__file__).parent / "data"
@@ -71,10 +70,11 @@ def test_find_file_in_resource_location_with_wildcard():
         print_resources()
 
         fn = get_resource(":/icons/*/screen.png")
-        assert 'tests/data/icons/flat/screen' in str(fn)
+        assert "tests/data/icons/flat/screen" in str(fn)
 
-        with create_empty_file(filename=data_root / "icons" / "flat" / f"file_with_timestamp_"
-                                                                       f"{format_datetime('today')}.txt"):
+        with create_empty_file(
+            filename=data_root / "icons" / "flat" / f"file_with_timestamp_{format_datetime('today')}.txt"
+        ):
             fn = get_resource(":/icons/*/file_with_timestamp*.txt")
             assert f"tests/data/icons/flat/file_with_timestamp_{format_datetime('today')}.txt" in str(fn)
 
@@ -83,17 +83,16 @@ def test_find_file_in_resource_location_with_wildcard():
         print_resources()
 
         fn = get_resource(":/icons/**/table.png")
-        assert 'tests/data/icons/double/flat/table' in str(fn)
+        assert "tests/data/icons/double/flat/table" in str(fn)
 
         with create_empty_file(
-                filename=data_root / "icons" / "double" / "flat" / f"file_with_timestamp_{format_datetime()}.txt"
+            filename=data_root / "icons" / "double" / "flat" / f"file_with_timestamp_{format_datetime()}.txt"
         ):
             fn = get_resource(":/icons/**/file_with_timestamp*.txt")
             assert "tests/data/icons/double/flat/file_with" in str(fn)
 
 
 def test_initialisation(caplog):
-
     print()
 
     # The resource module initialises itself with root=__file__
@@ -120,7 +119,6 @@ def test_initialisation(caplog):
 
 
 def test_initialisation_ambiguity(reset_resource):
-
     print()
 
     # Let's first create a directory hierarchy that contains ambiguity in the sense that the same folder
@@ -128,11 +126,11 @@ def test_initialisation_ambiguity(reset_resource):
     # that for this test.
 
     folders = (
-            HERE / "x_resources" / "aaa" / "xdata",
-            HERE / "x_resources" / "xxx" / "data",
-            HERE / "x_resources" / "xxx" / "one" / "data",
-            HERE / "x_resources" / "xxx" / "two" / "data",
-            HERE / "x_resources" / "bbb" / "one" / "data",
+        HERE / "x_resources" / "aaa" / "xdata",
+        HERE / "x_resources" / "xxx" / "data",
+        HERE / "x_resources" / "xxx" / "one" / "data",
+        HERE / "x_resources" / "xxx" / "two" / "data",
+        HERE / "x_resources" / "bbb" / "one" / "data",
     )
 
     for folder in folders:
@@ -146,7 +144,7 @@ def test_initialisation_ambiguity(reset_resource):
 
     print(f"{resource_locations = }")
 
-    for location in resource_locations['data']:
+    for location in resource_locations["data"]:
         if location.match("*/x_resources/bbb/one/data"):
             break
     else:
@@ -156,7 +154,6 @@ def test_initialisation_ambiguity(reset_resource):
 
 
 def test_get_resource(reset_resource):
-
     print()
 
     # Need to call initialise here because we reset the module in the fixture
@@ -187,7 +184,6 @@ def test_get_resource(reset_resource):
 
 
 def test_get_resource_with_wildcard(reset_resource):
-
     print()
 
     root = Path(__file__).parent / "data"
@@ -257,7 +253,6 @@ def test_get_resource_with_wildcard(reset_resource):
 
 
 def test_add_resource(reset_resource):
-
     print()
 
     assert get_resource_locations() == {}
@@ -269,8 +264,8 @@ def test_add_resource(reset_resource):
 
     resources = get_resource_locations()
 
-    assert 'icons' in resources
-    assert 'data' in resources
+    assert "icons" in resources
+    assert "data" in resources
 
     new_dir = "fancy-plugs"
     new_resource = "plugs"
@@ -300,12 +295,11 @@ def test_add_resource(reset_resource):
     finally:
         # Remove folder created for this test
 
-        for folder in root/new_dir, root/"xxx", root/"yyy":
+        for folder in root / new_dir, root / "xxx", root / "yyy":
             shutil.rmtree(folder)
 
 
 def test_get_resource_dirs(caplog):
-
     assert len(get_resource_dirs(__file__)) > 0
 
     # We have a data folder in the tests, so check if this folder is part of the resource dirs
@@ -319,7 +313,6 @@ def test_get_resource_dirs(caplog):
 
 
 def test_get_resource_path():
-
     with pytest.raises(FileNotFoundError):
         get_resource_path("non-existing-file")
 

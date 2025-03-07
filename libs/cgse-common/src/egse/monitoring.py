@@ -33,7 +33,7 @@ class MonitoringProtocol(CommandProtocol):
 
     def get_status(self):
         return {
-            'timestamp': format_datetime(),
+            "timestamp": format_datetime(),
         }
 
     def send_status(self, status):
@@ -41,7 +41,7 @@ class MonitoringProtocol(CommandProtocol):
 
     def get_housekeeping(self) -> dict:
         return {
-            'timestamp': format_datetime(),
+            "timestamp": format_datetime(),
         }
 
 
@@ -57,13 +57,14 @@ class Monitoring:
         callback: function that is called to process the response
         timeout: stop monitoring after timeout seconds
     """
+
     def __init__(
-            self,
-            endpoint: str,
-            subscribe: Tuple[str] = None,
-            use_pickle: bool = True,
-            callback: Callable = None,
-            timeout: float = None,  # in fractional seconds
+        self,
+        endpoint: str,
+        subscribe: Tuple[str] = None,
+        use_pickle: bool = True,
+        callback: Callable = None,
+        timeout: float = None,  # in fractional seconds
     ):
         self._subscribe = subscribe or ["ALL"]
         self._endpoint = endpoint
@@ -109,17 +110,15 @@ class Monitoring:
         self._subscriptions.clear()
 
     def unsubscribe(self, sync_id: int):
-        subscribe_string = sync_id.to_bytes(1, byteorder='big') if sync_id else b''
+        subscribe_string = sync_id.to_bytes(1, byteorder="big") if sync_id else b""
         try:
             self._subscriptions.remove(subscribe_string)
             self._socket.unsubscribe(subscribe_string)
         except KeyError:
-            _LOGGER.warning(
-                f"Trying to unsubscribe a key that was not previously subscribed: {subscribe_string}"
-            )
+            _LOGGER.warning(f"Trying to unsubscribe a key that was not previously subscribed: {subscribe_string}")
 
     def subscribe(self, sync_id: int = None):
-        subscribe_string = sync_id.to_bytes(1, byteorder='big') if sync_id else b''
+        subscribe_string = sync_id.to_bytes(1, byteorder="big") if sync_id else b""
 
         _LOGGER.debug(f"Subscribing {sync_id}")
 
@@ -130,7 +129,6 @@ class Monitoring:
         self._subscriptions.add(subscribe_string)
 
     def _clear_message_queue(self):
-
         # unsubscribing and subscribing again doesn't seem to work, so we close and re-open the socket.
         # Then we subscribe to restore the previous state.
 
@@ -144,7 +142,7 @@ class Monitoring:
 
     def handle_multi_part(self, message_id) -> Tuple[int, list]:
         message_parts = []
-        message_id = int.from_bytes(message_id, byteorder='big')
+        message_id = int.from_bytes(message_id, byteorder="big")
         while True:
             message_parts.append(pickle.loads(self._socket.recv()))
             if not self._socket.getsockopt(zmq.RCVMORE):
@@ -159,7 +157,6 @@ class Monitoring:
         return message_id, [response]
 
     def run(self):
-
         for item in self._subscribe or ["ALL"]:
             try:
                 sync_id = MessageIdentifier[item.upper()]
@@ -173,7 +170,6 @@ class Monitoring:
         return self._monitoring_loop()
 
     def _monitoring_loop(self):
-
         start_time = time.monotonic()
 
         while True:
@@ -232,7 +228,6 @@ PROCESS_NAMES = {
     "SM_CS": ("Storage Control Server", "MONITORING_PORT"),
     "PM_CS": ("Process Manager Control Server", "MONITORING_PORT"),
     "SYN_CS": ("Synoptics Manager Control Server", "MONITORING_PORT"),
-
     "DATA_DISTRIBUTION": ("DPU Processor", "DATA_DISTRIBUTION_PORT"),
 }
 
@@ -258,8 +253,12 @@ app = typer.Typer()
 
 @app.command()
 def monitoring(
-        hostname: str, port: str,
-        subscribe: Tuple[str] = None, use_pickle: bool = True, list_names: bool = False, callback: str = None
+    hostname: str,
+    port: str,
+    subscribe: Tuple[str] = None,
+    use_pickle: bool = True,
+    list_names: bool = False,
+    callback: str = None,
 ):
     """
     Monitor the status of a control server on hostname:port.
@@ -273,7 +272,7 @@ def monitoring(
     from rich import print
 
     if list_names:
-        print("The available process names as aliases for port numbers are: ", end='')
+        print("The available process names as aliases for port numbers are: ", end="")
         print(", ".join(PROCESS_NAMES))
         return
     elif hostname is None or port is None:
@@ -288,12 +287,14 @@ def monitoring(
     except ValueError:
         port = _determine_port(port_name := port)
         if port is None:
-            print(f"[red]ERROR[/]: Couldn't determine port number from {port_name}, "
-                  f"use the '--list-names' flag to see available names.")
+            print(
+                f"[red]ERROR[/]: Couldn't determine port number from {port_name}, "
+                f"use the '--list-names' flag to see available names."
+            )
             return
 
     if callback is not None:
-        callback_module = importlib.import_module('egse.monitoring')
+        callback_module = importlib.import_module("egse.monitoring")
         callback = getattr(callback_module, callback, None)
 
     with Monitoring(f"tcp://{hostname}:{port}", subscribe=subscribe, use_pickle=use_pickle, callback=callback) as moni:
@@ -301,5 +302,4 @@ def monitoring(
 
 
 if __name__ == "__main__":
-
     app()

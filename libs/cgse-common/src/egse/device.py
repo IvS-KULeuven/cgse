@@ -1,6 +1,7 @@
 """
 This module defines the generic interfaces to connect devices.
 """
+
 from enum import IntEnum
 from typing import List
 
@@ -196,7 +197,7 @@ class DeviceInterface(DeviceConnectionInterface):
 
     @dynamic_interface
     def is_simulator(self) -> bool:
-        """ Checks whether the device is a simulator rather than a real hardware controller.
+        """Checks whether the device is a simulator rather than a real hardware controller.
 
         This can be useful for testing purposes or when doing actual movement simulations.
 

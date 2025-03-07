@@ -99,13 +99,15 @@ class ServiceProtocol(CommandProtocol):
             name = args[0]
             level = int(args[1])
         else:
-            name = kwargs['name']
-            level = int(kwargs['level'])
+            name = kwargs["name"]
+            level = int(kwargs["level"])
 
-        if name == 'all':
-            for logger in [logging.getLogger(logger_name)
-                           for logger_name in logging.root.manager.loggerDict
-                           if logger_name.startswith('egse')]:
+        if name == "all":
+            for logger in [
+                logging.getLogger(logger_name)
+                for logger_name in logging.root.manager.loggerDict
+                if logger_name.startswith("egse")
+            ]:
                 logger.setLevel(level)
             msg = f"Logging level set to {level} for ALL 'egse' loggers"
         elif name in logging.root.manager.loggerDict:
@@ -169,40 +171,31 @@ class ServiceProtocol(CommandProtocol):
         except ValueError as exc:
             self.send(("", exc))  # Why not sent back a Failure object?
 
+
 class ServiceInterface:
     @dynamic_interface
-    def set_monitoring_frequency(self, freq: float):
-        ...
+    def set_monitoring_frequency(self, freq: float): ...
     @dynamic_interface
-    def set_hk_frequency(self, freq: float):
-        ...
+    def set_hk_frequency(self, freq: float): ...
     @dynamic_interface
-    def set_logging_level(self, name: str, level: int):
-        ...
+    def set_logging_level(self, name: str, level: int): ...
     @dynamic_interface
-    def quit_server(self):
-        ...
+    def quit_server(self): ...
     @dynamic_interface
-    def get_process_status(self):
-        ...
+    def get_process_status(self): ...
     @dynamic_interface
-    def get_cs_module(self):
-        ...
+    def get_cs_module(self): ...
     @dynamic_interface
-    def get_average_execution_times(self):
-        ...
+    def get_average_execution_times(self): ...
     @dynamic_interface
-    def get_storage_mnemonic(self):
-        ...
+    def get_storage_mnemonic(self): ...
     @dynamic_interface
-    def add_listener(self, listener: dict):
-        ...
+    def add_listener(self, listener: dict): ...
     @dynamic_interface
-    def remove_listener(self, listener: dict):
-        ...
+    def remove_listener(self, listener: dict): ...
     @dynamic_interface
-    def get_listener_names(self, listener: dict):
-        ...
+    def get_listener_names(self, listener: dict): ...
+
 
 class ServiceProxy(Proxy, ServiceInterface):
     """
@@ -237,7 +230,7 @@ class ServiceProxy(Proxy, ServiceInterface):
         # if still _protocol is not set, neither by ctrl_settings, nor by the protocol argument, use a default
 
         if _protocol is None:
-            _protocol = 'tcp'
+            _protocol = "tcp"
 
         if hostname:
             _hostname = hostname
