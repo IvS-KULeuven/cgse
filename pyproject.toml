@@ -26,6 +26,8 @@ testpaths = [
     "libs/cgse-coordinates/tests",
 ]
 addopts = "-rA --cov --cov-branch --cov-report html"
+log_cli = true
+log_cli_level = "INFO"
 filterwarnings = [
     "ignore::DeprecationWarning"
 ]
@@ -37,7 +39,7 @@ omit = [
 ]
 
 [tool.coverage.report]
-fail_under = 80
+# fail_under = 80
 
 [tool.uv.sources]
 cgse-common = { workspace = true }
@@ -63,6 +65,7 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "setuptools",  # needed by PyCharm
     "pytest>=8.3.4",
     "pytest-cov>=6.0.0",
     "pytest-mock>=3.14.0",

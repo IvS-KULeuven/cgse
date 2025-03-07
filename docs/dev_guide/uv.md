@@ -169,7 +169,7 @@ $ uv remove flask
 We have chosen for one and the same version number for all packages in the `cgse` monorepo. That means that whenever 
 we make a change to one of the packages and want to release that change, all packages shall be rebuild and published.
 
-!!! inline end warning
+!!! warning inline end
 
     When working in a workspace, keep in mind that the commands `uv run` and `uv sync` by default work on the 
     workspace root. That means that when you run the `uv run pip install <package>` command, the `.venv` at the 
@@ -184,10 +184,13 @@ and then bump the versions. Before building, clean up the `dist` folder, then yo
 
 ```shell
 $ cd <monorepo root>
-$ uv run bump.py
+$ uv run bump.py <part>
 $ rm -r dist
 $ uv build --all-packages
 ```
+where `<monorepo root>` is the root folder of your local clone, e.g. `~/github/cgse`, and 
+`<part>` stands for the _part_ of the version number that shall be bumped, i.e. 'patch', 'minor',
+or 'major'.
 
 Publish all packages in the root dist folder to PyPI. The UV_PUBLISH_TOKEN can be defined in a (read protected) ~/.
 setenv.bash file:
