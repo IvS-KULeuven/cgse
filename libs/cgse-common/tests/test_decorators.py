@@ -3,13 +3,16 @@ import time
 from pathlib import Path
 
 import pytest
-
+from egse.decorators import borg
+from egse.decorators import classproperty
 from egse.decorators import debug
+from egse.decorators import deprecate
 from egse.decorators import dynamic_interface
 from egse.decorators import profile
 from egse.decorators import profile_func
 from egse.decorators import query_command
 from egse.decorators import read_command
+from egse.decorators import singleton
 from egse.decorators import spy_on_attr_change
 from egse.decorators import static_vars
 from egse.decorators import time_it
@@ -20,13 +23,6 @@ from egse.decorators import write_command
 from egse.settings import Settings
 
 MODULE_LOGGER = logging.getLogger(__name__)
-
-from egse.decorators import (
-    singleton,
-    deprecate,
-    classproperty,
-    borg,
-)
 
 
 def test_static_vars():

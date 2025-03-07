@@ -159,7 +159,7 @@ def test_var_names():
     a_var = 42
     assert get_referenced_var_name(a_var) == ["a_var"]
 
-    b_var = a_var
+    b_var = a_var  # noqa
     assert "b_var" in get_referenced_var_name(a_var)
     assert "a_var" in get_referenced_var_name(a_var)
 
@@ -173,7 +173,7 @@ def test_var_names():
         def __str__(self):
             return ", ".join(get_referenced_var_name(self))
 
-    my_class = this_class = MyClass()
+    my_class = this_class = MyClass()  # noqa
 
     assert "my_class" in f"{my_class}"
     assert "this_class" in f"{my_class}"
@@ -807,11 +807,11 @@ def test_get_active_loggers():
     assert "testing.active" not in get_active_loggers()
     assert "testing.active.loggers" not in get_active_loggers()
 
-    logger = logging.getLogger("testing_active_loggers")
+    _ = logging.getLogger("testing_active_loggers")
 
     assert "testing_active_loggers" in get_active_loggers()
 
-    logger = logging.getLogger("testing.active.loggers")
+    _ = logging.getLogger("testing.active.loggers")
 
     assert "testing" in get_active_loggers()
     assert "testing.active" in get_active_loggers()

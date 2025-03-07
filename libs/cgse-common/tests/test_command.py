@@ -69,10 +69,10 @@ def test_command_class(mocker):
 
     cmd = Command(name="mock-test", cmd="mock-test {flag} {arg}")
 
-    rc = cmd(flag="-a", arg="mock-execute-method")
+    _ = cmd(flag="-a", arg="mock-execute-method")
     cmd.execute.assert_called_with("mock-test -a mock-execute-method")
 
-    rc = cmd("-a", "mock-execute-method")
+    _ = cmd("-a", "mock-execute-method")
     cmd.execute.assert_called_with("mock-test -a mock-execute-method")
 
 
@@ -101,22 +101,22 @@ def test_number_of_argument(monkeypatch):
     assert aCommand() == "cmd no-arguments"
 
     with pytest.raises(CommandError):
-        rc = aCommand(1)
+        _ = aCommand(1)
     with pytest.raises(CommandError):
-        rc = aCommand(rc=2)
+        _ = aCommand(rc=2)
     with pytest.raises(CommandError):
-        rc = aCommand(1, rc=2)
+        _ = aCommand(1, rc=2)
 
     aCommand = Command(name="aCommand", cmd="cmd args = {}")
 
     assert aCommand("one argument") == "cmd args = one argument"
 
     with pytest.raises(CommandError):
-        rc = aCommand()
+        _ = aCommand()
     with pytest.raises(CommandError):
-        rc = aCommand(rc=2)
+        _ = aCommand(rc=2)
     with pytest.raises(CommandError):
-        rc = aCommand(1, rc=2)
+        _ = aCommand(1, rc=2)
 
     aCommand = Command(name="aCommand", cmd="cmd args = {sw}")
 
@@ -124,9 +124,9 @@ def test_number_of_argument(monkeypatch):
     assert aCommand(1) == "cmd args = 1"
 
     with pytest.raises(CommandError):
-        rc = aCommand()
+        _ = aCommand()
     with pytest.raises(CommandError):
-        rc = aCommand(1, sw=2)
+        _ = aCommand(1, sw=2)
 
     aCommand = Command("aCommand", "&2 Q{qvar1} Q{qvar2}")
 
@@ -193,7 +193,8 @@ def test_wait_and_respond(monkeypatch):
 
     getQ20 = HexapodCommand(name="getQ20", cmd="&2 Q20")
 
-    waitForQ20 = WaitCommand(getQ20, lambda x: x in [0, -1, -2])
+    waitForQ20 = WaitCommand(getQ20, lambda x: x in [0, -1, -2])  # noqa
+
     waitFor10Seconds = WaitCommand(partial(time.sleep, 1), lambda x: True)
 
     checkQVars = HexapodCommand(name="QVars?", cmd="&2 Q20 Q{var},{count},{step}")

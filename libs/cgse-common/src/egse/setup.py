@@ -1177,7 +1177,7 @@ def submit_setup(setup: Setup, description: str) -> str | None:
                     [green]
                     Your new setup has been submitted and pushed to GitHub. The new setup is also
                     activated in the configuration manager. Load the new setup in your session with:
-    
+
                         setup = load_setup()
                     [/]
                     """

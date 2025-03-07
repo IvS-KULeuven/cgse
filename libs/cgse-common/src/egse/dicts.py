@@ -96,7 +96,7 @@ def log_key_differences(dict_1, dict_2):
 
 if __name__ == '__main__':
 
-    import egse.logger  # activates the logger
+    import egse.logger  # noqa activates the logger
 
     d1 = {
         "A": 1,

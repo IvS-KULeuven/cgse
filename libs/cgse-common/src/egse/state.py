@@ -126,14 +126,16 @@ class _GlobalState:
             with ConfigurationManagerProxy() as cm_proxy:
                 self._setup = cm_proxy.get_setup()
         else:
-            LOGGER.warning(textwrap.dedent(
-                f"""\
+            LOGGER.warning(
+                textwrap.dedent(
+                    """\
                     Could not reach the Configuration Manager to request the Setup, returning the current local Setup.
-                    
-                    Check if the Configuration Manager is running and why it can not be consulted. When it's 
-                    back on-line, do a 'load_setup()'. 
-                """
-            ))
+
+                    Check if the Configuration Manager is running and why it can not be consulted. When it's
+                    back on-line, do a 'load_setup()'.
+                    """
+                )
+            )
 
         return self._setup
 
