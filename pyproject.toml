@@ -1,13 +1,16 @@
 [project]
 name = "cgse"
-version = "0.5.1"
+version = "0.6.1"
 description = "Generic Common-EGSE: Commanding and monitoring lab equipment"
 authors = [
+    {name = "IvS KU Leuven"}
+]
+maintainers = [
     {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
     {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"}
 ]
+readme = {"file" = "README.md", "content-type" = "text/markdown"}
 license = {text = "MIT"}
-readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "rich>=13.9.4",

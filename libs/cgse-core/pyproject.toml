@@ -1,9 +1,9 @@
 [project]
 name = "cgse-core"
-version = "0.5.1"
+version = "0.6.1"
 description = "Core services for the CGSE framework"
 authors = [
-    {name = "IVS KU Leuven"}
+    {name = "IvS KU Leuven"}
 ]
 maintainers = [
     {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
