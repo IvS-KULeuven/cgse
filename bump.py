@@ -110,7 +110,7 @@ def update_all_projects_in_monorepo(root_dir: pathlib.Path, part: str, dry_run: 
         if "pyproject.toml" in files:
             verbose and print(f"Updating version for project in {subdir}")
             if not dry_run:
-                update_project_version(subdir, master_version)
+                update_project_version(subdir, new_version)
 
 
 app = typer.Typer()

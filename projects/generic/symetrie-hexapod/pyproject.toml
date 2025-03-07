@@ -1,9 +1,9 @@
 [project]
 name = "symetrie-hexapod"
-version = "0.5.1"
+version = "0.6.1"
 description = "Symetrie Hexapod implementation for CGSE"
 authors = [
-    {name = "IVS KU Leuven"}
+    {name = "IvS KU Leuven"}
 ]
 maintainers = [
     {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},

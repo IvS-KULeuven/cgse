@@ -1,9 +1,9 @@
 [project]
 name = "plato-hdf5"
-version = "0.5.1"
+version = "0.6.1"
 description = "HDF5 Persistence sub-class for CGSE"
 authors = [
-    {name = "IVS KU Leuven"}
+    {name = "IvS KU Leuven"}
 ]
 maintainers = [
     {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
