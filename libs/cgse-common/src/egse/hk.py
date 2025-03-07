@@ -49,7 +49,7 @@ class TmDictionaryColumns(str, Enum):
     | SYNOPTICS_ORIGIN | Column with the origin of the synoptics at the current site |
     | TIMESTAMP_NAMES | Column with the name of the timestamps |
     | DASHBOARD | Column with the name of the dashboard that holds the HK metric |
-    """
+    """  # noqa
 
     STORAGE_MNEMONIC = "Storage mnemonic"
     CORRECT_HK_NAMES = "CAM EGSE mnemonic"
@@ -105,8 +105,8 @@ def get_housekeeping(
     Returns:
         A tuple or an array based on the time window:
             - If the time window has not been specified: the most recent timestamp and housekeeping value.
-            - If the time window has been specified: an array of timestamps and an array of housekeeping values, belonging
-              to the specified time window.
+            - If the time window has been specified: an array of timestamps and an array of housekeeping values,
+              belonging to the specified time window.
 
     """
 

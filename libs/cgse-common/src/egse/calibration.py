@@ -1,6 +1,7 @@
 """
 This module provides functions to calibrate sensor values.
 """
+from __future__ import annotations
 
 import numpy as np
 
@@ -22,7 +23,7 @@ def apply_gain_offset(counts: float, gain: float, offset: float) -> float:
     return counts * gain + offset
 
 
-def counts_to_temperature(sensor_name: str, counts: float, sensor_info: navdict, setup: Setup) -> float:
+def counts_to_temperature(sensor_name: str, counts: float, sensor_info: navdict, setup: Setup) -> float | np.ndarray:
     """ Converts the given counts for the given sensor to temperature.
 
     This conversion can be done as follows:
@@ -65,7 +66,7 @@ def counts_to_temperature(sensor_name: str, counts: float, sensor_info: navdict,
         return resistance_to_temperature(sensor_name, resistance, sensor_info, setup)
 
 
-def counts_to_resistance(sensor_name: str, counts: float, sensor_info: NavigableDict) -> float:
+def counts_to_resistance(sensor_name: str, counts: float, sensor_info: navdict) -> float:
     """ Converts the given counts for the given sensor to resistance.
 
     Args:
@@ -102,7 +103,8 @@ def counts_to_resistance(sensor_name: str, counts: float, sensor_info: Navigable
     raise SetupError(f"Setup does not contain info for conversion from counts to resistance for {sensor_name}")
 
 
-def resistance_to_temperature(sensor_name: str, resistance: float, sensor_info: NavigableDict, setup: Setup) -> floaf:
+def resistance_to_temperature(
+        sensor_name: str, resistance: float, sensor_info: navdict, setup: Setup) -> float | np.ndarray:
     """ Converts the given resistance for the given sensor to temperature.
 
     Args:

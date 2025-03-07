@@ -478,11 +478,12 @@ class ControlServer(metaclass=abc.ABCMeta):
                     _LOGGER.error(
                         textwrap.dedent(
                             f"""\
-                        An Exception occurred while collecting status info from the control server {self.__class__.__name__}.
-                        This might be a temporary problem, still needs to be looked into:
+                            An Exception occurred while collecting status info from the control server \
+                             {self.__class__.__name__}.
+                            This might be a temporary problem, still needs to be looked into:
 
-                        {exc}
-                        """
+                            {exc}
+                            """
                         ))
 
             if time_in_ms() - last_time_hk >= self.hk_delay:
@@ -497,11 +498,12 @@ class ControlServer(metaclass=abc.ABCMeta):
                         _LOGGER.error(
                             textwrap.dedent(
                                 f"""\
-                            An Exception occurred while collecting housekeeping from the device to be stored in {self.get_storage_mnemonic()}.
-                            This might be a temporary problem, still needs to be looked into:
+                                An Exception occurred while collecting housekeeping from the device to be stored in \
+                                 {self.get_storage_mnemonic()}.
+                                This might be a temporary problem, still needs to be looked into:
 
-                            {exc}
-                            """
+                                {exc}
+                                """
                             ))
 
             # Handle scheduled tasks/callback functions

@@ -2,8 +2,6 @@ import shutil
 from pathlib import Path
 
 import pytest
-
-from egse.exceptions import InternalError
 from egse.resource import AmbiguityError
 from egse.resource import NoSuchFileError
 from egse.resource import ResourceError
