@@ -1,4 +1,3 @@
-
 class CGSEException(Exception):
     """The base exception for all errors and warnings in the Common-EGSE."""
 
@@ -19,6 +18,7 @@ class Warning(CGSEException):
 
 class FileIsEmptyError(Error):
     """Raised when a file is empty and that is unexpected."""
+
     pass
 
 
@@ -32,7 +32,7 @@ class InvalidOperationError(Error):
 
 
 class InvalidInputError(Error):
-    """ Exception raised when the input is invalid after editing."""
+    """Exception raised when the input is invalid after editing."""
 
     pass
 

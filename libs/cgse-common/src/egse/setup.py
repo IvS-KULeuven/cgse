@@ -157,7 +157,8 @@ MODULE_LOGGER = logging.getLogger(__name__)
 
 
 class SetupError(Exception):
-    """ A setup-specific error."""
+    """A setup-specific error."""
+
     pass
 
 
@@ -192,13 +193,12 @@ def _load_csv(resource_name: str):
         csv_location = Path(conf_location) / in_dir / fn
         content = genfromtxt(csv_location, delimiter=",", skip_header=1)
     except TypeError as exc:
-        raise ValueError(
-            f"Couldn't load resource '{resource_name}' from default {conf_location=}") from exc
+        raise ValueError(f"Couldn't load resource '{resource_name}' from default {conf_location=}") from exc
     return content
 
 
 def _load_int_enum(enum_name: str, enum_content):
-    """ Dynamically build (and return) and IntEnum.
+    """Dynamically build (and return) and IntEnum.
 
     Args:
         - enum_name: Enumeration name (potentially prepended with "int_enum//").
@@ -209,7 +209,6 @@ def _load_int_enum(enum_name: str, enum_content):
 
     definition = {}
     for side_name, side_definition in enum_content.items():
-
         if "alias" in side_definition:
             aliases = side_definition["alias"]
         else:
@@ -235,8 +234,7 @@ def _load_yaml(resource_name: str):
         yaml_location = Path(conf_location) / in_dir
         content = NavigableDict(Settings.load(location=yaml_location, filename=fn, add_local_settings=False))
     except (TypeError, SettingsError) as exc:
-        raise ValueError(
-            f"Couldn't load resource '{resource_name}' from default {conf_location=}") from exc
+        raise ValueError(f"Couldn't load resource '{resource_name}' from default {conf_location=}") from exc
     return content
 
 
@@ -261,8 +259,7 @@ def _load_pandas(resource_name: str, separator: str):
         pandas_file_location = Path(conf_location) / in_dir / fn
         return pandas.read_csv(pandas_file_location, sep=separator)
     except TypeError as exc:
-        raise ValueError(
-            f"Couldn't load resource '{resource_name}' from default {conf_location=}") from exc
+        raise ValueError(f"Couldn't load resource '{resource_name}' from default {conf_location=}") from exc
 
 
 def _get_attribute(self, name, default):
@@ -336,7 +333,7 @@ def load_last_setup_id(site_id: str = None) -> int:
 
     last_setup_id_file_path = get_last_setup_id_file_path(site_id=site_id)
     try:
-        with last_setup_id_file_path.open('r') as fd:
+        with last_setup_id_file_path.open("r") as fd:
             setup_id = int(fd.read().strip())
     except FileNotFoundError:
         setup_id = 0
@@ -356,7 +353,7 @@ def save_last_setup_id(setup_id: int | str, site_id: str = None):
     """
 
     last_setup_id_file_path = get_last_setup_id_file_path(site_id=site_id)
-    with last_setup_id_file_path.open('w') as fd:
+    with last_setup_id_file_path.open("w") as fd:
         fd.write(f"{int(setup_id):d}")
 
 
@@ -442,12 +439,12 @@ class NavigableDict(dict):
         value = object.__getattribute__(self, key)
         if isinstance(value, str) and value.startswith("class//"):
             try:
-                dev_args = object.__getattribute__(self, 'device_args')
+                dev_args = object.__getattribute__(self, "device_args")
             except AttributeError:
                 dev_args = ()
             return _load_class(value)(*dev_args)
         if isinstance(value, str) and value.startswith("factory//"):
-            factory_args = _get_attribute(self, f'{key}_args', {})
+            factory_args = _get_attribute(self, f"{key}_args", {})
             return _load_class(value)().create(**factory_args)
         if isinstance(value, str) and value.startswith("int_enum//"):
             content = object.__getattribute__(self, "content")
@@ -465,7 +462,7 @@ class NavigableDict(dict):
             self.__dict__["_memoized"][key] = content
             return content
         if isinstance(value, str) and value.startswith("pandas//"):
-            separator = object.__getattribute__(self, 'separator')
+            separator = object.__getattribute__(self, "separator")
             return _load_pandas(value, separator)
         else:
             return value
@@ -491,7 +488,7 @@ class NavigableDict(dict):
         value = super().__getitem__(key)
         if isinstance(value, str) and value.startswith("class//"):
             try:
-                dev_args = object.__getattribute__(self, 'device_args')
+                dev_args = object.__getattribute__(self, "device_args")
             except AttributeError:
                 dev_args = ()
             return _load_class(value)(*dev_args)
@@ -525,13 +522,9 @@ class NavigableDict(dict):
 
         """
         if key in self:
-            raise ValueError(
-                f"Invalid argument key='{key}', this key already exists in dictionary."
-            )
+            raise ValueError(f"Invalid argument key='{key}', this key already exists in dictionary.")
         if not key.startswith("_"):
-            raise ValueError(
-                f"Invalid argument key='{key}', must start with underscore character '_'."
-            )
+            raise ValueError(f"Invalid argument key='{key}', must start with underscore character '_'.")
         self.__dict__[key] = value
 
     def get_private_attribute(self, key: str) -> Any:
@@ -549,9 +542,7 @@ class NavigableDict(dict):
             understandable. Use the methods to access these 'private' attributes.
         """
         if not key.startswith("_"):
-            raise ValueError(
-                f"Invalid argument key='{key}', must start with underscore character '_'."
-            )
+            raise ValueError(f"Invalid argument key='{key}', must start with underscore character '_'.")
         return self.__dict__[key]
 
     def has_private_attribute(self, key):
@@ -605,10 +596,10 @@ class NavigableDict(dict):
 
         for k, v in self.items():
             if isinstance(v, NavigableDict):
-                msg += f"{'    '*indent}{k}:\n"
+                msg += f"{'    ' * indent}{k}:\n"
                 msg += v.pretty_str(indent + 1)
             else:
-                msg += f"{'    '*indent}{k}: {v}\n"
+                msg += f"{'    ' * indent}{k}: {v}\n"
 
         return msg
 
@@ -635,7 +626,6 @@ class NavigableDict(dict):
         # _processed_ value.
 
         for k, v in self.items():
-
             # history shall be saved last, skip it for now
 
             if k == "history":
@@ -647,7 +637,7 @@ class NavigableDict(dict):
                 k = '"' + k + '"'
 
             if isinstance(v, NavigableDict):
-                fd.write(f"{'    '*indent}{k}:\n")
+                fd.write(f"{'    ' * indent}{k}:\n")
                 v._save(fd, indent + 1)
                 fd.flush()
                 continue
@@ -656,7 +646,7 @@ class NavigableDict(dict):
                 v = f"class//{v.__module__}.{v.__class__.__name__}"
             if isinstance(v, float):
                 v = f"{v:.6E}"
-            fd.write(f"{'    '*indent}{k}: {v}\n")
+            fd.write(f"{'    ' * indent}{k}: {v}\n")
             fd.flush()
 
         # now save the history as the last item
@@ -777,12 +767,7 @@ class Setup(NavigableDict):
         print(f"Saving Setup to {filename!s}")
 
         with Path(filename).open("w") as fd:
-
-            fd.write(
-                f"# Setup generated by:\n"
-                f"#\n"
-                f"#    Setup.to_yaml_file(setup, filename='{filename}')\n#\n"
-            )
+            fd.write(f"# Setup generated by:\n#\n#    Setup.to_yaml_file(setup, filename='{filename}')\n#\n")
             fd.write(f"# Created on {format_datetime()}\n\n")
             fd.write("Setup:\n")
 
@@ -829,11 +814,8 @@ class Setup(NavigableDict):
         devices = devices or {}
 
         for sub_node in node.values():
-
             if isinstance(sub_node, NavigableDict):
-
                 if ("device" in sub_node) and ("device_name" in sub_node):
-
                     device = sub_node.get_raw_value("device")
 
                     if "device_args" in sub_node:
@@ -844,14 +826,12 @@ class Setup(NavigableDict):
                     devices[sub_node["device_name"]] = (device, device_args)
 
                 else:
-
                     Setup.find_devices(sub_node, devices=devices)
 
         return devices
 
     @staticmethod
     def walk(node: dict, key_of_interest: str, leaf_list: list) -> list:
-
         """
         Walk through the given dictionary, in a recursive way, appending the leaf with
         the given keyword to the given list.
@@ -867,13 +847,10 @@ class Setup(NavigableDict):
         """
 
         for key, sub_node in node.items():
-
             if isinstance(sub_node, dict):
-
                 Setup.walk(sub_node, key_of_interest, leaf_list)
 
             elif key == key_of_interest:
-
                 leaf_list.append(sub_node)
 
         return leaf_list
@@ -881,24 +858,24 @@ class Setup(NavigableDict):
     def __rich__(self) -> Tree:
         tree = super().__rich__()
         if self.has_private_attribute("_setup_id"):
-            setup_id = self.get_private_attribute('_setup_id')
+            setup_id = self.get_private_attribute("_setup_id")
             tree.add(f"Setup ID: {setup_id}", style="grey50")
         if self.has_private_attribute("_filename"):
-            filename = self.get_private_attribute('_filename')
+            filename = self.get_private_attribute("_filename")
             tree.add(f"Loaded from: {filename}", style="grey50")
         return tree
 
     def get_id(self) -> Optional[str]:
         """Returns the Setup ID (as a string) or None when no setup id could be identified."""
         if self.has_private_attribute("_setup_id"):
-            return self.get_private_attribute('_setup_id')
+            return self.get_private_attribute("_setup_id")
         else:
             return None
 
     def get_filename(self) -> Optional[str]:
         """Returns the filename for this Setup or None when no filename could be determined."""
         if self.has_private_attribute("_filename"):
-            return self.get_private_attribute('_filename')
+            return self.get_private_attribute("_filename")
         else:
             return None
 
@@ -999,7 +976,7 @@ def _check_conditions_for_get_path_of_setup_file(site_id: str) -> Path:
     print_env()
 
     repo_location = Path(repo_location)
-    setup_location = repo_location / 'data' / site_id / 'conf'
+    setup_location = repo_location / "data" / site_id / "conf"
 
     if not repo_location.is_dir():
         raise NotADirectoryError(
@@ -1048,16 +1025,16 @@ def get_path_of_setup_file(setup_id: int, site_id: str) -> Path:
         setup_location = _check_conditions_for_get_path_of_setup_file(site_id)
 
     if setup_id:
-        files = list(setup_location.glob(f'SETUP_{site_id}_{setup_id:05d}_*.yaml'))
+        files = list(setup_location.glob(f"SETUP_{site_id}_{setup_id:05d}_*.yaml"))
 
         if not files:
             raise FileNotFoundError(f"No Setup found for {setup_id=} and {site_id=}.")
 
         file_path = Path(setup_location) / files[-1]
     else:
-        files = setup_location.glob('SETUP*.yaml')
+        files = setup_location.glob("SETUP*.yaml")
 
-        last_file_parts = sorted([file.name.split('_') for file in files])[-1]
+        last_file_parts = sorted([file.name.split("_") for file in files])[-1]
         file_path = Path(setup_location) / "_".join(last_file_parts)
 
     sanity_check(file_path.is_file(), f"The expected Setup file doesn't exist: {file_path!s}")
@@ -1065,9 +1042,7 @@ def get_path_of_setup_file(setup_id: int, site_id: str) -> Path:
     return file_path
 
 
-def load_setup(
-        setup_id: int = None,
-        site_id: str = None, from_disk: bool = False) -> Setup:
+def load_setup(setup_id: int = None, site_id: str = None, from_disk: bool = False) -> Setup:
     """
     This function loads the Setup corresponding with the given `setup_id`.
 
@@ -1092,8 +1067,7 @@ def load_setup(
 
     if from_disk:
         if site_id is None:
-            raise ValueError(
-                "The site_id argument can not be empty when from_disk is given and True")
+            raise ValueError("The site_id argument can not be empty when from_disk is given and True")
 
         setup_file_path = get_path_of_setup_file(setup_id, site_id)
 
@@ -1117,9 +1091,7 @@ def load_setup(
                 proxy.load_setup(setup_id)
 
         except ConnectionError:
-            MODULE_LOGGER.warning(
-                "Could not make a connection with the Configuration Manager, no Setup to show you."
-            )
+            MODULE_LOGGER.warning("Could not make a connection with the Configuration Manager, no Setup to show you.")
             rich.print(
                 "\n"
                 "If you are not running this from an operational machine, do not have a CM "
@@ -1228,13 +1200,12 @@ def main(args: list = None):  # pragma: no cover
             Print out the Setup for the given setup-id. The Setup will
             be loaded from the location given by the environment variable
             PLATO_CONF_DATA_LOCATION. If this env is not set, the Setup
-            will be searched from the current directory."""
-        ),
-        epilog=f"PLATO_CONF_DATA_LOCATION={location}"
+            will be searched from the current directory."""),
+        epilog=f"PLATO_CONF_DATA_LOCATION={location}",
     )
     parser.add_argument(
-        "--setup-id", type=int, default=-1,
-        help="the Setup ID. If not given, the last Setup will be selected.")
+        "--setup-id", type=int, default=-1, help="the Setup ID. If not given, the last Setup will be selected."
+    )
     parser.add_argument("--list", "-l", action="store_true", help="list available Setups.")
     parser.add_argument("--use-cm", action="store_true", help="use the configuration manager.")
     args = parser.parse_args(args or [])
@@ -1277,4 +1248,5 @@ def main(args: list = None):  # pragma: no cover
 
 if __name__ == "__main__":
     import sys
+
     main(sys.argv[1:])

@@ -16,7 +16,6 @@ HERE = Path(__file__).parent
 
 
 def test_get_housekeeping(default_env):
-
     data_dir = Path(default_env.data_root)
 
     # The get_housekeeping() function will by default search for HK telemetry in the daily CSV file that contains the
@@ -31,8 +30,10 @@ def test_get_housekeeping(default_env):
 
     tm_dictionary_path = data_dir / "../common/telemetry/tm-dictionary.csv"
 
-    create_text_file(tm_dictionary_path, textwrap.dedent(
-        """\
+    create_text_file(
+        tm_dictionary_path,
+        textwrap.dedent(
+            """\
         TM source;Storage mnemonic;CAM EGSE mnemonic;Original name in EGSE;Name of corresponding timestamp;\
         Origin of synoptics at CSL;Origin of synoptics at CSL1;Origin of synoptics at CSL2;\
         Origin of synoptics at SRON;Origin of synoptics at IAS;Origin of synoptics at INTA;\
@@ -42,17 +43,22 @@ def test_get_housekeeping(default_env):
         Unit Test Manager;DAQ-TM;TEMP_ABC_001;ABC_001;timestamp;;;;;;;Temperature of ABC;;;;;;;;;;
 
         """
-    ), create_folder=True)
+        ),
+        create_folder=True,
+    )
 
     hk_path = data_dir / f"daily/{today}/{today}_{get_site_id()}_DAQ-TM.csv"
 
-    create_text_file(hk_path, textwrap.dedent(
+    create_text_file(
+        hk_path,
+        textwrap.dedent(
             f"""\
             timestamp,TEMPT_ABC_000,TEMP_ABC_001,TEMP_ABC_002
             {today_with_dash}T00:00:23.324+0000,21.333,23.3421,26.234
             {today_with_dash}T00:00:42.123+0000,22.145,23.4567,27.333
             """
-        ), create_folder=True
+        ),
+        create_folder=True,
     )
 
     # The TM dictionary will be loaded relative from the configuration data location as defined by
@@ -79,7 +85,7 @@ def test_get_housekeeping(default_env):
 
         rich.print(f"{timestamp}, {dt}, {data}")
 
-        assert data.strip() == '23.4567'
+        assert data.strip() == "23.4567"
         assert format_datetime(dt, fmt="%Y-%m-%d").startswith(today_with_dash)
 
     finally:
@@ -91,19 +97,18 @@ def test_get_housekeeping(default_env):
 
 
 def test_convert_hk_names():
-
     a = {
-        'aaa': 1,
-        'bbb': 2,
-        'ccc': 3,
-        'eee': 4,
+        "aaa": 1,
+        "bbb": 2,
+        "ccc": 3,
+        "eee": 4,
     }
 
     c = {
-        'aaa': 'AAA',
-        'bbb': 'BBB',
-        'ccc': 'CCC',
-        'ddd': 'DDD',
+        "aaa": "AAA",
+        "bbb": "BBB",
+        "ccc": "CCC",
+        "ddd": "DDD",
     }
 
     from egse.hk import convert_hk_names
@@ -115,19 +120,19 @@ def test_convert_hk_names():
     #  * all keys in 'a' that do not have a conversion in 'c', shall be in 'b' with their original key
     #  * all conversion keys that are in 'c' but not in 'a' shall just be ignored
 
-    assert 'AAA' in b
-    assert 'BBB' in b
-    assert 'CCC' in b
-    assert 'eee' in b
+    assert "AAA" in b
+    assert "BBB" in b
+    assert "CCC" in b
+    assert "eee" in b
 
-    assert 'aaa' not in b
-    assert 'bbb' not in b
-    assert 'ccc' not in b
-    assert 'ddd' not in b
-    assert 'DDD' not in b
+    assert "aaa" not in b
+    assert "bbb" not in b
+    assert "ccc" not in b
+    assert "ddd" not in b
+    assert "DDD" not in b
 
     for k, v in a.items():
-        if k == 'eee':
+        if k == "eee":
             assert b[k] == v
         else:
             assert b[k.upper()] == v

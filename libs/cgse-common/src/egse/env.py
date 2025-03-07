@@ -38,6 +38,7 @@ locations and settings.
     `egse.env.initialize()` to reset the proper state.
 
 """
+
 from __future__ import annotations
 
 __all__ = [
@@ -71,6 +72,7 @@ from egse.system import get_caller_info
 from egse.system import ignore_m_warning
 
 from rich.console import Console
+
 console = Console(width=100)
 
 # Every project shall have a PROJECT and a SITE_ID environment variable set. This variable will be used to
@@ -175,19 +177,18 @@ def _check_no_value(var_name, value):
         project = _env.get("PROJECT")
         env_name = var_name if var_name in ("PROJECT", "SITE_ID") else f"{project}_{var_name}"
         raise ValueError(
-            f"The environment variable {env_name} is not set. "
-            f"Please set the environment variable before proceeding."
+            f"The environment variable {env_name} is not set. Please set the environment variable before proceeding."
         )
 
 
 def set_default_environment(
-        project: str,
-        site_id: str,
-        data_storage_location: str | Path,
-        conf_data_location: str | Path | None = None,
-        conf_repo_location: str | Path | None = None,
-        log_file_location: str | Path | None = None,
-        local_settings: str | Path | None = None,
+    project: str,
+    site_id: str,
+    data_storage_location: str | Path,
+    conf_data_location: str | Path | None = None,
+    conf_repo_location: str | Path | None = None,
+    log_file_location: str | Path | None = None,
+    local_settings: str | Path | None = None,
 ):
     set_project_name(project)
     set_site_id(site_id)
@@ -242,12 +243,10 @@ def set_data_storage_location(location: str | Path | None):
         return
 
     if not Path(location).exists():
-        warnings.warn(
-            f"The location you provided for the environment variable {env_name} doesn't exist: {location}."
-        )
+        warnings.warn(f"The location you provided for the environment variable {env_name} doesn't exist: {location}.")
 
     os.environ[env_name] = str(location)
-    _env.set('DATA_STORAGE_LOCATION', str(location))
+    _env.set("DATA_STORAGE_LOCATION", str(location))
 
 
 def get_data_storage_location(site_id: str = None) -> str:
@@ -284,7 +283,7 @@ def get_data_storage_location(site_id: str = None) -> str:
     data_root = _env.get("DATA_STORAGE_LOCATION")
     _check_no_value("DATA_STORAGE_LOCATION", data_root)
 
-    data_root = data_root.rstrip('/')
+    data_root = data_root.rstrip("/")
 
     return data_root if data_root.endswith(site_id) else f"{data_root}/{site_id}"
 
@@ -312,12 +311,10 @@ def set_conf_data_location(location: str | Path | None):
         return
 
     if not Path(location).exists():
-        warnings.warn(
-            f"The location you provided for the environment variable {env_name} doesn't exist: {location}."
-        )
+        warnings.warn(f"The location you provided for the environment variable {env_name} doesn't exist: {location}.")
 
     os.environ[env_name] = location
-    _env.set('CONF_DATA_LOCATION', location)
+    _env.set("CONF_DATA_LOCATION", location)
 
 
 def get_conf_data_location(site_id: str = None) -> str:
@@ -351,7 +348,7 @@ def get_conf_data_location(site_id: str = None) -> str:
                 f"data storage location is unknown."
             )
 
-        data_root = data_root.rstrip('/')
+        data_root = data_root.rstrip("/")
         conf_data_root = f"{data_root}/conf"
 
     return conf_data_root
@@ -380,12 +377,10 @@ def set_log_file_location(location: str | Path | None):
         return
 
     if not Path(location).exists():
-        warnings.warn(
-            f"The location you provided for the environment variable {env_name} doesn't exist: {location}."
-        )
+        warnings.warn(f"The location you provided for the environment variable {env_name} doesn't exist: {location}.")
 
     os.environ[env_name] = location
-    _env.set('LOG_FILE_LOCATION', location)
+    _env.set("LOG_FILE_LOCATION", location)
 
 
 def get_log_file_location(site_id: str = None) -> str:
@@ -418,7 +413,7 @@ def get_log_file_location(site_id: str = None) -> str:
                 f"The environment variable {get_log_file_location_env_name()} is not set and also the "
                 f"data storage location is unknown."
             )
-        data_root = data_root.rstrip('/')
+        data_root = data_root.rstrip("/")
         log_data_root = f"{data_root}/log"
 
     return log_data_root
@@ -445,16 +440,14 @@ def set_local_settings(path: str | Path | None):
     if path is None:
         if env_name in os.environ:
             del os.environ[env_name]
-        _env.set('LOCAL_SETTINGS', None)
+        _env.set("LOCAL_SETTINGS", None)
         return
 
     if not Path(path).exists():
-        warnings.warn(
-            f"The location you provided for the environment variable {env_name} doesn't exist: {path}."
-        )
+        warnings.warn(f"The location you provided for the environment variable {env_name} doesn't exist: {path}.")
 
     os.environ[env_name] = path
-    _env.set('LOCAL_SETTINGS', path)
+    _env.set("LOCAL_SETTINGS", path)
 
 
 def get_local_settings_path() -> str or None:
@@ -472,8 +465,10 @@ def get_local_settings_path() -> str or None:
     local_settings = _env.get("LOCAL_SETTINGS")
 
     if not local_settings:
-        warnings.warn(f"The local settings environment variable '{get_local_settings_env_name()}' "
-                      f"is not defined or is an empty string.")
+        warnings.warn(
+            f"The local settings environment variable '{get_local_settings_env_name()}' "
+            f"is not defined or is an empty string."
+        )
         return None
 
     if not Path(local_settings).exists():
@@ -541,12 +536,10 @@ def set_conf_repo_location(location: str | Path | None):
         return
 
     if not Path(location).exists():
-        warnings.warn(
-            f"The location you provided for the environment variable {env_name} doesn't exist: {location}."
-        )
+        warnings.warn(f"The location you provided for the environment variable {env_name} doesn't exist: {location}.")
 
     os.environ[env_name] = location
-    _env.set('CONF_REPO_LOCATION', location)
+    _env.set("CONF_REPO_LOCATION", location)
 
 
 def print_env():
@@ -617,7 +610,6 @@ def env_var(**kwargs: dict):
 
 
 def main(args: list | None = None):  # pragma: no cover
-
     import argparse
     import sys
     import rich
@@ -645,12 +637,11 @@ def main(args: list | None = None):  # pragma: no cover
     args = parser.parse_args(args or [])
 
     def check_env_dir(env_var: str):
-
         value = _env.get(env_var)
 
         if value == NoValue():
             value = "[bold red]not set"
-        elif not value.startswith('/'):
+        elif not value.startswith("/"):
             value = f"[default]{value} [bold orange3](this is a relative path!)"
         elif not os.path.exists(value):
             value = f"[default]{value} [bold red](location doesn't exist!)"
@@ -661,7 +652,6 @@ def main(args: list | None = None):  # pragma: no cover
         return value
 
     def check_env_file(env_var: str):
-
         value = _env.get(env_var)
 
         if not value:
@@ -812,9 +802,10 @@ def main(args: list | None = None):  # pragma: no cover
     # PLATO_COMMON_EGSE_PATH - YES
 
 
-ignore_m_warning('egse.env')
+ignore_m_warning("egse.env")
 
 
 if __name__ == "__main__":
     import sys
+
     main(sys.argv[1:])

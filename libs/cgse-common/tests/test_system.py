@@ -114,9 +114,8 @@ def test_attr_dict():
 
 
 def test_get_call_sequence():
-
     assert get_caller_breadcrumbs().startswith("call stack: test_get_call_sequence[")
-    assert len(get_caller_breadcrumbs().split(' <- ')) == 5
+    assert len(get_caller_breadcrumbs().split(" <- ")) == 5
 
     assert get_caller_breadcrumbs(prefix="XXX: ").startswith("XXX: test_get")
     assert "<-" not in get_caller_breadcrumbs(limit=1)
@@ -125,7 +124,6 @@ def test_get_call_sequence():
 
 
 def test_caller():
-
     assert "test_caller" in get_caller_info()
     assert "test_caller" == get_caller_info().function
     assert __file__ in get_caller_info()
@@ -155,7 +153,6 @@ def test_caller():
 
 
 def test_var_names():
-
     a_var = 42
     assert get_referenced_var_name(a_var) == ["a_var"]
 
@@ -184,14 +181,12 @@ def test_var_names():
 
 
 def test_ping():
-
     assert ping("10.0.0.1") is False
     assert ping("127.0.0.1") is True
     assert ping("localhost") is True
 
 
 def test_timer():
-
     with Timer("Testing Timer context manager", precision=4) as timer:
         time.sleep(1.0)
         timer.log_elapsed()
@@ -212,7 +207,6 @@ def test_timer():
 
 
 def test_system_stats():
-
     with Timer():
         stats = get_system_stats()
 
@@ -226,7 +220,6 @@ def test_system_stats():
 
 
 def test_wait_until():
-
     class SleepUntilCount:
         def __init__(self, end):
             self._end = end
@@ -238,7 +231,6 @@ def test_wait_until():
 
         def check_count(self):
             return self.__call__()
-
 
     assert wait_until(SleepUntilCount(10), interval=0.5) is True
     assert wait_until(SleepUntilCount(10), timeout=10) is False
@@ -249,7 +241,6 @@ def test_wait_until():
 
 
 def test_waiting_for():
-
     class SleepUntilCount:
         def __init__(self, end):
             self._end = end
@@ -261,7 +252,6 @@ def test_waiting_for():
 
         def check_count(self):
             return self.__call__()
-
 
     with pytest.raises(TimeoutError):
         waiting_for(SleepUntilCount(10), interval=0.5)
@@ -277,7 +267,6 @@ def test_waiting_for():
 
 
 def test_os_name_and_version():
-
     # We test primarily for 'unknown' because if this happens, the code needs to be updated.
 
     assert get_os_name() != "unknown"
@@ -295,7 +284,6 @@ def test_os_name_and_version():
 
 
 def test_humanize_seconds():
-
     assert humanize_seconds(0) == "00s.000"
     assert humanize_seconds(0.123) == "00s.123"
     assert humanize_seconds(53.43) == "53s.430"
@@ -308,10 +296,7 @@ def test_humanize_seconds():
 
     assert humanize_seconds(3 * 24 * 60 * 60 + 0 * 60 * 60 + 24 * 60 + 0.020) == "3d 24m00s.020"
 
-    assert (
-        humanize_seconds(365 * 24 * 60 * 60 + 14 * 60 * 60 + 0 * 60 + 16 + 0.7)
-        == "365d 14h00m16s.700"
-    )
+    assert humanize_seconds(365 * 24 * 60 * 60 + 14 * 60 * 60 + 0 * 60 + 16 + 0.7) == "365d 14h00m16s.700"
 
     assert humanize_seconds(2351 * 24 * 60 * 60) == "2351d 00s.000"
     assert humanize_seconds(2351 * 24 * 60 * 60, include_micro_seconds=False) == "2351d 00s"
@@ -322,7 +307,6 @@ def test_humanize_seconds():
 
 
 def test_replace_environment_variable():
-
     assert replace_environment_variable("PLAIN_STRING") == "PLAIN_STRING"
 
     os.environ["DATA_STORAGE_LOCATION"] = "/Users/rik/data/CSL"
@@ -377,7 +361,6 @@ def test_filter_by_attr():
 
 
 def test_filter_by_attr_with_attribute_dict():
-
     a_list = [
         AttributeDict({"a": 1, "b": 1}),
         AttributeDict({"a": 1, "b": 2}),
@@ -497,7 +480,6 @@ def test_filter_by_attr_has_with_attribute_dict():
 
 
 def test_read_last_line():
-
     # non-existing file
 
     line = read_last_line("/xxx")
@@ -512,19 +494,21 @@ def test_read_last_line():
 
     filename = prefix / "data/data_file.txt"
 
-    with create_text_file(filename, textwrap.dedent(
-        """\
+    with create_text_file(
+        filename,
+        textwrap.dedent(
+            """\
         001 002 003
         002 003 001
         003 002 001
         """
-    )):
+        ),
+    ):
         line = read_last_line(filename)
     assert line == "003 002 001"
 
 
 def test_format_datetime():
-
     dt = datetime.datetime(2020, 6, 13, 14, 45, 45, 696138)
 
     dts = format_datetime(dt=dt)
@@ -554,10 +538,10 @@ def test_format_datetime():
     dts = format_datetime(dt=dt, precision=6)
     assert dts == "2020-06-13T14:45:59.999501+0000"
 
-    dts_today = format_datetime('today')
-    dts_yesterday = format_datetime('yesterday')
-    dts_day_before_yesterday = format_datetime('day before yesterday')
-    dts_tomorrow = format_datetime('tomorrow')
+    dts_today = format_datetime("today")
+    dts_yesterday = format_datetime("yesterday")
+    dts_day_before_yesterday = format_datetime("day before yesterday")
+    dts_tomorrow = format_datetime("tomorrow")
 
     dt_today = datetime.datetime.strptime(dts_today, "%Y%m%d")
     dt_yesterday = datetime.datetime.strptime(dts_yesterday, "%Y%m%d")
@@ -573,24 +557,22 @@ def test_format_datetime():
 
     dts = format_datetime()
 
-    assert dts.startswith(format_datetime('today', fmt="%Y-%m-%d"))
+    assert dts.startswith(format_datetime("today", fmt="%Y-%m-%d"))
 
 
 def test_full_classname():
-
-    assert get_full_classname(print) == 'builtins.print'
-    assert get_full_classname(int) == 'builtins.int'
-    assert get_full_classname(get_full_classname) == 'egse.system.get_full_classname'
-    assert get_full_classname(int(2)) == 'builtins.int'
-    assert get_full_classname(3.14) == 'builtins.float'
-    assert get_full_classname(3 + 6j) == 'builtins.complex'
-    assert get_full_classname(AttributeDict) == 'egse.system.AttributeDict'
-    assert get_full_classname(AttributeDict()) == 'egse.system.AttributeDict'
+    assert get_full_classname(print) == "builtins.print"
+    assert get_full_classname(int) == "builtins.int"
+    assert get_full_classname(get_full_classname) == "egse.system.get_full_classname"
+    assert get_full_classname(int(2)) == "builtins.int"
+    assert get_full_classname(3.14) == "builtins.float"
+    assert get_full_classname(3 + 6j) == "builtins.complex"
+    assert get_full_classname(AttributeDict) == "egse.system.AttributeDict"
+    assert get_full_classname(AttributeDict()) == "egse.system.AttributeDict"
     assert get_full_classname(datetime.datetime(2020, 6, 13, 14, 45, 45, 696138)) == "datetime.datetime"
 
 
 def test_argument_type():
-
     check_argument_type("a string", "name", (int, str), allow_none=True)
     check_argument_type(None, "name", (int, str), allow_none=True)
     with pytest.raises(TypeError):
@@ -603,7 +585,6 @@ def test_argument_type():
 
 
 def test_signals():
-
     killer = SignalCatcher()
 
     pid = os.getpid()
@@ -630,7 +611,6 @@ def test_signals():
 
 
 def test_env_var_context_manager():
-
     os.environ["TEST_ENV_VAR_1"] = "before context manager"
 
     assert os.environ.get("TEST_ENV_VAR_1") == "before context manager"
@@ -647,9 +627,9 @@ def test_env_var_context_manager():
 # The following is a slow test, it takes about 8s.
 # You can deselect this test by running: `pytest -m 'not slow' src/tests/test_system.py`
 
+
 @pytest.mark.slow
 def test_function_timing():
-
     print()
 
     def one_second():
@@ -699,7 +679,6 @@ def test_function_timing():
 
 
 def test_get_module_location():
-
     import egse
     from egse.system import get_module_location
     import multiprocessing.dummy
@@ -710,7 +689,7 @@ def test_get_module_location():
 
     # egse.system is a module (.py file) and its location is in the `egse` module/namespace
     assert get_module_location(egse.system) == Path(egse.system.__file__).parent
-    assert get_module_location('egse.system') == Path(egse.system.__file__).parent
+    assert get_module_location("egse.system") == Path(egse.system.__file__).parent
 
     # get_module_location is a function, its location is in the system module in the egse namespace
     assert get_module_location(get_module_location) == Path(egse.system.__file__).parent
@@ -723,7 +702,7 @@ def test_get_module_location():
 def test_get_system_architecture():
     from egse.system import get_system_architecture
 
-    assert 'x86' in get_system_architecture() or 'arm' in get_system_architecture()
+    assert "x86" in get_system_architecture() or "arm" in get_system_architecture()
 
 
 def test_duration():
@@ -749,16 +728,15 @@ def test_duration():
     date_1963 = format_datetime(dt(1963, 2, 16, 12, 00, 00, tzinfo=tz.utc))
     date_2023 = format_datetime(dt(2023, 2, 16, 12, 00, 00, tzinfo=tz.utc))
     date_2024 = format_datetime(dt(2024, 2, 16, 12, 00, 00, tzinfo=tz.utc))
-    assert str(duration(date_2024, date_1963)) == '22280 days, 0:00:00'
-    assert str(duration(date_2024, date_2023)) == '365 days, 0:00:00'
+    assert str(duration(date_2024, date_1963)) == "22280 days, 0:00:00"
+    assert str(duration(date_2024, date_2023)) == "365 days, 0:00:00"
 
     yesterday = now - td(days=1)
-    assert str(duration(now, yesterday)) == '1 day, 0:00:00'
-    assert str(duration(now + td(minutes=3.0, seconds=27), yesterday)) == '1 day, 0:03:27'
+    assert str(duration(now, yesterday)) == "1 day, 0:00:00"
+    assert str(duration(now + td(minutes=3.0, seconds=27), yesterday)) == "1 day, 0:03:27"
 
 
 def test_log_levels_disabled(caplog):
-
     print()
 
     import logging
@@ -799,7 +777,6 @@ def test_log_levels_disabled(caplog):
 
 
 def test_get_active_loggers():
-
     from egse.system import get_active_loggers
 
     assert "testing_active_loggers" not in get_active_loggers()
@@ -819,7 +796,6 @@ def test_get_active_loggers():
 
 
 def test_touch():
-
     touch(__file__)
 
     assert Path(__file__).exists()
@@ -855,19 +831,18 @@ def test_is_namespace():
     from egse.system import get_os_name
 
     assert is_namespace(egse)
-    assert is_namespace('egse')
+    assert is_namespace("egse")
 
     assert not is_namespace(egse.version)
-    assert not is_namespace('egse.version')
+    assert not is_namespace("egse.version")
 
     assert not is_module(get_os_name)
     assert not is_namespace("non-existing-module")
 
 
 def test_get_host_ip():
-
     from egse.system import get_host_ip
 
     ip = get_host_ip()
     if ip:
-        assert '.' in ip
+        assert "." in ip

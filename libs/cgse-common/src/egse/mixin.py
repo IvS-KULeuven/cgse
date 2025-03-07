@@ -45,8 +45,8 @@ COMMAND_TYPES = {
 STX = "\x02"  # start-of-text
 ETX = "\x03"  # end-of-text
 EOT = "\x04"  # end-of-transmission
-LINE_FEED = "\x0A"
-CARRIAGE_RETURN = "\x0D"
+LINE_FEED = "\x0a"
+CARRIAGE_RETURN = "\x0d"
 
 
 def add_etx(cmd_string: str) -> str:
@@ -76,7 +76,7 @@ def add_eot(cmd_string: str) -> str:
 
 
 def add_lf(cmd_string: str) -> str:
-    """ Add a line feed to the given command string, if not added yet.
+    """Add a line feed to the given command string, if not added yet.
 
     Args:
         cmd_string: Command string.
@@ -86,14 +86,13 @@ def add_lf(cmd_string: str) -> str:
     """
 
     if not cmd_string.endswith(LINE_FEED):
-
         cmd_string += LINE_FEED
 
     return cmd_string
 
 
 def add_cr_lf(cmd_string: str) -> str:
-    """ Add a carriage return and line feed to the given command string, if not added yet.
+    """Add a carriage return and line feed to the given command string, if not added yet.
 
     Args:
         cmd_string: Command string.
@@ -103,7 +102,6 @@ def add_cr_lf(cmd_string: str) -> str:
     """
 
     if not cmd_string.endswith(CARRIAGE_RETURN + LINE_FEED):
-
         cmd_string += CARRIAGE_RETURN + LINE_FEED
 
     return cmd_string
@@ -116,21 +114,22 @@ def expand_kwargs(kwargs: Dict):
 
 class CommandType(str, enum.Enum):
     """The type of the command, i.e. read, write, or transaction."""
+
     READ = "read"
     WRITE = "write"
     TRANSACTION = "transaction"
 
 
 def dynamic_command(
-        *,
-        cmd_type: str,  # required keyword-only argument
-        cmd_string: str = None,
-        process_response: Callable = None,
-        process_cmd_string: Callable = None,
-        process_kwargs: Callable = None,
-        use_format: bool = False,
-        pre_cmd: Callable = None,
-        post_cmd: Callable = None,
+    *,
+    cmd_type: str,  # required keyword-only argument
+    cmd_string: str = None,
+    process_response: Callable = None,
+    process_cmd_string: Callable = None,
+    process_kwargs: Callable = None,
+    use_format: bool = False,
+    pre_cmd: Callable = None,
+    post_cmd: Callable = None,
 ):
     """Convert an interface method into a dynamic command.
 
@@ -196,7 +195,7 @@ def dynamic_command(
     if cmd_type not in COMMAND_TYPES:
         raise ValueError(f"Unknown type passed into dynamic command decorator: {type=}")
 
-    if cmd_type in ('write', 'query', 'transaction') and cmd_string is None:
+    if cmd_type in ("write", "query", "transaction") and cmd_string is None:
         raise ValueError(f"No cmd_string was provided for {cmd_type=}.")
 
     def func_wrapper(func: Callable):
@@ -291,8 +290,8 @@ class DynamicCommandMixin:
             bound = sig.bind(*args, **kwargs)
         except TypeError as exc:
             raise CommandError(
-                f"Arguments {args}, {kwargs} do not match function signature for "
-                f"{func.__name__}{sig}") from exc
+                f"Arguments {args}, {kwargs} do not match function signature for {func.__name__}{sig}"
+            ) from exc
 
         variables = {}
         for idx, par in enumerate(sig.parameters.values()):
@@ -310,10 +309,7 @@ class DynamicCommandMixin:
         if hasattr(func, "__use_format"):
             cmd_string = template_str.format(**variables)
         else:
-            variables = {
-                k: v.value if isinstance(v, enum.Enum) else v
-                for k, v in variables.items()
-            }
+            variables = {k: v.value if isinstance(v, enum.Enum) else v for k, v in variables.items()}
             cmd_string = template.safe_substitute(variables)
 
         try:
@@ -353,8 +349,9 @@ class DynamicCommandMixin:
             response = None
 
             with contextlib.suppress(AttributeError):
-                getattr(attr, "__pre_cmd")(transport=self.transport,
-                                           function_name=attr.__name__, cmd_str=cmd_str, args=args, kwargs=kwargs)
+                getattr(attr, "__pre_cmd")(
+                    transport=self.transport, function_name=attr.__name__, cmd_str=cmd_str, args=args, kwargs=kwargs
+                )
 
             if hasattr(attr, "__write_command"):
                 self.transport.write(cmd_str)
@@ -365,8 +362,9 @@ class DynamicCommandMixin:
             elif hasattr(attr, "__transaction_command"):
                 response = self.transport.trans(cmd_str)
             else:
-                raise CommandError(f"Interface method '{attr.__name__}' shall be decorated with "
-                                   f"a command type decorator.")
+                raise CommandError(
+                    f"Interface method '{attr.__name__}' shall be decorated with a command type decorator."
+                )
 
             with contextlib.suppress(AttributeError):
                 response = getattr(attr, "__post_cmd")(transport=self.transport, response=response)
@@ -406,7 +404,6 @@ class DynamicCommandMixin:
         attr = object.__getattribute__(self, item)
 
         if hasattr(attr, "__dynamic_interface"):
-
             # We come here when the method is defined in the Interface class (where it is
             # decorated with the @dynamic_interface), but not in the subclass. So, the method
             # is not overridden. We let the handle_dynamic_command() method handle this.
@@ -425,13 +422,13 @@ class DynamicClientCommandMixin:
         This mixin overrides the `__getattribute__` method!
 
     """
+
     def __getattribute__(self, item):
         # If item is not known, an AttributeError will be raised and __getattr__() will be called.
 
         attr = object.__getattribute__(self, item)
 
         if hasattr(attr, "__dynamic_interface"):
-
             # We come here when the method is defined in the Interface class (where it is
             # decorated with the @dynamic_interface), but not in the subclass. So, the method
             # is not overridden. We let the handle_dynamic_command() method handle this.
@@ -441,10 +438,8 @@ class DynamicClientCommandMixin:
         return attr
 
     def handle_dynamic_command(self, attr):
-
         @functools.wraps(attr)
         def command_wrapper(*args, **kwargs):
-
             attr_name = getattr(attr, "__name__")
 
             # This will ensure that the function is called with the proper arguments
@@ -459,10 +454,12 @@ class DynamicClientCommandMixin:
             # to the control server for execution.
 
             device_method = get_function(self.__class__, attr_name)
-            cmd = ClientServerCommand(name=attr_name,
-                                      cmd=getattr(attr, "__cmd_string", ""),
-                                      response=DynamicCommandProtocol.handle_device_method,
-                                      device_method=device_method)
+            cmd = ClientServerCommand(
+                name=attr_name,
+                cmd=getattr(attr, "__cmd_string", ""),
+                response=DynamicCommandProtocol.handle_device_method,
+                device_method=device_method,
+            )
             ce = CommandExecution(cmd, *args, **kwargs)
 
             # Send the command to the control server for execution

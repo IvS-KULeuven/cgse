@@ -9,6 +9,7 @@ and understands the following commands:
 * Status?: returns status information of the SubProcess
 
 """
+
 import logging
 import pickle
 import sys
@@ -24,7 +25,6 @@ PORT = 5556
 
 
 def main():
-
     status = ProcessStatus()
 
     context = zmq.Context.instance()
@@ -60,7 +60,6 @@ def main():
 
 
 if __name__ == "__main__":
-
     logging.basicConfig(level=logging.INFO)
 
     sys.exit(main())

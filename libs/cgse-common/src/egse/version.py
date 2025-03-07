@@ -9,6 +9,7 @@ number is then available as:
 The actual numbers are updated for each release in the `settings.yaml` configuration file.
 
 """
+
 from __future__ import annotations
 
 import os
@@ -156,12 +157,12 @@ def get_version_installed(package_name: str) -> str:
 # The version will be the installed version of the `egse.common`, because this is the package that is guaranteed
 # to be installed, and not necessarily `cgse`.
 
-VERSION = get_version_installed('cgse-common')
+VERSION = get_version_installed("cgse-common")
 
 # The __PYPI_VERSION__ is the version number that will be used for the installation.
 # The version will appear in PyPI and also as the `installed version`.
 
-__PYPI_VERSION__ = VERSION.split('+')[0]
+__PYPI_VERSION__ = VERSION.split("+")[0]
 
 
 if __name__ == "__main__":

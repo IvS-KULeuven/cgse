@@ -5,6 +5,7 @@ controller.
 The module also provides the connection state interface and classes for
 maintaining the state of the Proxy connection to the control server.
 """
+
 import logging
 import pickle
 import types
@@ -142,9 +143,7 @@ class BaseProxy(ControlServerConnectionInterface):
         self._poller.register(self._socket, zmq.POLLIN)
 
     def reset_cs_connection(self):
-        self._logger.log(
-            10, f"Trying to reset the connection from {self.__class__.__name__} to {self._endpoint}"
-        )
+        self._logger.log(10, f"Trying to reset the connection from {self.__class__.__name__} to {self._endpoint}")
 
         self.disconnect_cs()
         self.connect_cs()
@@ -230,23 +229,23 @@ class BaseProxy(ControlServerConnectionInterface):
         return return_code == "Pong"
 
     def get_endpoint(self):
-        """ Returns the endpoint."""
+        """Returns the endpoint."""
         return self._endpoint
 
     def get_monitoring_port(self) -> int:
-        """ Returns the monitoring port. """
+        """Returns the monitoring port."""
         return self.send("get_monitoring_port")
 
     def get_commanding_port(self) -> int:
-        """ Returns the commanding port."""
+        """Returns the commanding port."""
         return self.send("get_commanding_port")
 
     def get_service_port(self) -> int:
-        """ Returns the service port. """
+        """Returns the service port."""
         return self.send("get_service_port")
 
     def get_ip_address(self) -> int:
-        """ Returns the hostname of the control server."""
+        """Returns the hostname of the control server."""
         return self.send("get_ip_address")
 
     def get_service_proxy(self):
@@ -257,9 +256,7 @@ class BaseProxy(ControlServerConnectionInterface):
 
         port = self.send("get_service_port")
 
-        return ServiceProxy(
-            AttributeDict({"PROTOCOL": transport, "HOSTNAME": address, "SERVICE_PORT": port})
-        )
+        return ServiceProxy(AttributeDict({"PROTOCOL": transport, "HOSTNAME": address, "SERVICE_PORT": port}))
 
 
 class DynamicProxy(BaseProxy, DynamicClientCommandMixin):
@@ -268,6 +265,7 @@ class DynamicProxy(BaseProxy, DynamicClientCommandMixin):
 
 
 # TODO (rik): remove all methods from Proxy that are also define in the BaseProxy
+
 
 class Proxy(BaseProxy, ControlServerConnectionInterface):
     """
@@ -340,9 +338,7 @@ class Proxy(BaseProxy, ControlServerConnectionInterface):
         self._poller.register(self._socket, zmq.POLLIN)
 
     def reset_cs_connection(self):
-        self._logger.log(
-            10, f"Trying to reset the connection from {self.__class__.__name__} to {self._endpoint}"
-        )
+        self._logger.log(10, f"Trying to reset the connection from {self.__class__.__name__} to {self._endpoint}")
 
         self.disconnect_cs()
         self.connect_cs()
@@ -432,12 +428,9 @@ class Proxy(BaseProxy, ControlServerConnectionInterface):
         for key in self._commands:
             if hasattr(self, key):
                 attribute = getattr(self, key)
-                if isinstance(attribute, types.MethodType) and not hasattr(
-                    attribute, "__dynamic_interface"
-                ):
+                if isinstance(attribute, types.MethodType) and not hasattr(attribute, "__dynamic_interface"):
                     self._logger.warning(
-                        f"{self.__class__.__name__} already has an attribute '{key}', "
-                        f"not overwriting."
+                        f"{self.__class__.__name__} already has an attribute '{key}', not overwriting."
                     )
                     continue
             command = self._commands[key]
@@ -453,9 +446,7 @@ class Proxy(BaseProxy, ControlServerConnectionInterface):
 
         port = self.send("get_service_port")
 
-        return ServiceProxy(
-            AttributeDict({"PROTOCOL": transport, "HOSTNAME": address, "SERVICE_PORT": port})
-        )
+        return ServiceProxy(AttributeDict({"PROTOCOL": transport, "HOSTNAME": address, "SERVICE_PORT": port}))
 
     def load_commands(self):
         """
@@ -502,26 +493,26 @@ class Proxy(BaseProxy, ControlServerConnectionInterface):
         return return_code == "Pong"
 
     def get_endpoint(self) -> str:
-        """ Returns the endpoint. """
+        """Returns the endpoint."""
 
         return self._endpoint
 
     def get_monitoring_port(self) -> int:
-        """ Returns the monitoring port. """
+        """Returns the monitoring port."""
 
         return self.send("get_monitoring_port")
 
     def get_commanding_port(self) -> int:
-        """ Returns the commanding port."""
+        """Returns the commanding port."""
 
         return self.send("get_commanding_port")
 
     def get_service_port(self) -> int:
-        """ Returns the service port. """
+        """Returns the service port."""
 
         return self.send("get_service_port")
 
     def get_ip_address(self) -> int:
-        """ Returns the hostname of the control server."""
+        """Returns the hostname of the control server."""
 
         return self.send("get_ip_address")

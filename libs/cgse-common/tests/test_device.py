@@ -4,7 +4,6 @@ from egse.device import DeviceError
 
 
 def test_device_error():
-
     # DeviceError expects two positional arguments: 'device_name' and 'message'
 
     with pytest.raises(TypeError):

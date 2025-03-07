@@ -24,8 +24,10 @@ from egse.system import time_in_ms
 try:
     from egse.logger import close_all_zmq_handlers
 except ImportError:
+
     def close_all_zmq_handlers():  # noqa
         pass
+
 
 from egse.process import ProcessStatus
 from egse.settings import Settings
@@ -42,7 +44,7 @@ PROCESS_SETTINGS = Settings.load("PROCESS")
 
 
 def is_control_server_active(endpoint: str = None, timeout: float = 0.5) -> bool:
-    """ Checks if the Control Server is running.
+    """Checks if the Control Server is running.
 
     This function sends a *Ping* message to the Control Server and expects a *Pong* answer back within the timeout
     period.
@@ -77,7 +79,7 @@ def is_control_server_active(endpoint: str = None, timeout: float = 0.5) -> bool
 
 
 class ControlServer(metaclass=abc.ABCMeta):
-    """ Base class for all device control servers and for the Storage Manager and Configuration Manager.
+    """Base class for all device control servers and for the Storage Manager and Configuration Manager.
 
     A Control Server reads commands from a ZeroMQ socket and executes these commands by calling the `execute()` method
     of the commanding protocol class.
@@ -91,7 +93,7 @@ class ControlServer(metaclass=abc.ABCMeta):
     """
 
     def __init__(self):
-        """ Initialisation of a new Control Server."""
+        """Initialisation of a new Control Server."""
 
         from egse.monitoring import MonitoringProtocol
         from egse.services import ServiceProtocol
@@ -99,7 +101,8 @@ class ControlServer(metaclass=abc.ABCMeta):
         self._process_status = ProcessStatus()
 
         self._timer_thread = threading.Thread(
-            target=do_every, args=(PROCESS_SETTINGS.METRICS_INTERVAL, self._process_status.update))
+            target=do_every, args=(PROCESS_SETTINGS.METRICS_INTERVAL, self._process_status.update)
+        )
         self._timer_thread.daemon = True
         self._timer_thread.start()
 
@@ -145,7 +148,7 @@ class ControlServer(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_communication_protocol(self) -> str:
-        """ Returns the communication protocol used by the Control Server.
+        """Returns the communication protocol used by the Control Server.
 
         Returns:
             Communication protocol used by the Control Server, as specified in the settings.
@@ -155,7 +158,7 @@ class ControlServer(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_commanding_port(self) -> int:
-        """ Returns the commanding port used by the Control Server.
+        """Returns the commanding port used by the Control Server.
 
         Returns:
             Commanding port used by the Control Server, as specified in the settings.
@@ -188,7 +191,7 @@ class ControlServer(metaclass=abc.ABCMeta):
         return get_host_ip()
 
     def get_storage_mnemonic(self) -> str:
-        """ Returns the storage mnemonics used by the Control Server.
+        """Returns the storage mnemonics used by the Control Server.
 
         This is a string that will appear in the filename with the housekeeping information of the device, as a way of
         identifying the device.  If this is not implemented in the subclass, then the class name will be used.
@@ -200,7 +203,7 @@ class ControlServer(metaclass=abc.ABCMeta):
         return self.__class__.__name__
 
     def get_process_status(self) -> dict:
-        """ Returns the process status of the Control Server.
+        """Returns the process status of the Control Server.
 
         Returns:
             Dictionary with the process status of the Control Server.
@@ -209,7 +212,7 @@ class ControlServer(metaclass=abc.ABCMeta):
         return self._process_status.as_dict()
 
     def get_average_execution_times(self) -> dict:
-        """ Returns the average execution times of all functions that have been monitored by this process.
+        """Returns the average execution times of all functions that have been monitored by this process.
 
         Returns:
             Dictionary with the average execution times of all functions that have been monitored by this process.
@@ -219,7 +222,7 @@ class ControlServer(metaclass=abc.ABCMeta):
         return get_average_execution_times()
 
     def set_mon_delay(self, seconds: float) -> float:
-        """ Sets the delay time for monitoring.
+        """Sets the delay time for monitoring.
 
         The delay time is the time between two successive executions of the `get_status()` function of the device
         protocol.
@@ -241,7 +244,7 @@ class ControlServer(metaclass=abc.ABCMeta):
         return self.mon_delay
 
     def set_hk_delay(self, seconds: float) -> float:
-        """ Sets the delay time for housekeeping.
+        """Sets the delay time for housekeeping.
 
         The delay time is the time between two successive executions of the `get_housekeeping()` function of the device
         protocol.
@@ -273,7 +276,7 @@ class ControlServer(metaclass=abc.ABCMeta):
         self.scheduled_task_delay = seconds
 
     def set_logging_level(self, level: Union[int, str]) -> None:
-        """ Sets the logging level to the given level.
+        """Sets the logging level to the given level.
 
         Allowed logging levels are:
 
@@ -291,7 +294,7 @@ class ControlServer(metaclass=abc.ABCMeta):
         self.logger.setLevel(level=level)
 
     def quit(self) -> None:
-        """ Interrupts the Control Server."""
+        """Interrupts the Control Server."""
 
         self.interrupted = True
 
@@ -312,7 +315,7 @@ class ControlServer(metaclass=abc.ABCMeta):
         pass
 
     def is_storage_manager_active(self) -> bool:
-        """ Checks if the Storage Manager is active.
+        """Checks if the Storage Manager is active.
 
         This method has to be implemented by the subclass if you need to store information.
 
@@ -349,9 +352,7 @@ class ControlServer(metaclass=abc.ABCMeta):
 
             condition = task_info.get("when")
             if condition and not condition():
-                _LOGGER.debug(
-                    f"Task {task_name} rescheduled in {self.scheduled_task_delay}s, condition not met...."
-                )
+                _LOGGER.debug(f"Task {task_name} rescheduled in {self.scheduled_task_delay}s, condition not met....")
                 self.logger.info(f"Task {task_name} rescheduled in {self.scheduled_task_delay}s")
                 current_time = datetime.datetime.now(tz=datetime.timezone.utc)
                 scheduled_time = current_time + datetime.timedelta(seconds=self.scheduled_task_delay)
@@ -411,7 +412,7 @@ class ControlServer(metaclass=abc.ABCMeta):
         self.scheduled_tasks.append({"task": callback, "name": name, "after": scheduled_time, "when": when})
 
     def serve(self) -> None:
-        """ Activation of the Control Server.
+        """Activation of the Control Server.
 
         This comprises the following steps:
 
@@ -471,9 +472,7 @@ class ControlServer(metaclass=abc.ABCMeta):
                 last_time = time_in_ms()
                 # self.logger.debug("Sending status to monitoring processes.")
                 try:
-                    self.monitoring_protocol.send_status(
-                        save_average_execution_time(self.device_protocol.get_status)
-                    )
+                    self.monitoring_protocol.send_status(save_average_execution_time(self.device_protocol.get_status))
                 except Exception as exc:
                     _LOGGER.error(
                         textwrap.dedent(
@@ -484,7 +483,8 @@ class ControlServer(metaclass=abc.ABCMeta):
 
                             {exc}
                             """
-                        ))
+                        )
+                    )
 
             if time_in_ms() - last_time_hk >= self.hk_delay:
                 last_time_hk = time_in_ms()
@@ -504,31 +504,26 @@ class ControlServer(metaclass=abc.ABCMeta):
 
                                 {exc}
                                 """
-                            ))
+                            )
+                        )
 
             # Handle scheduled tasks/callback functions
 
             self.handle_scheduled_tasks()
 
             if self.interrupted:
-                self.logger.info(
-                    f"Quit command received, closing down the {self.__class__.__name__}."
-                )
+                self.logger.info(f"Quit command received, closing down the {self.__class__.__name__}.")
                 break
 
             if killer.term_signal_received:
-                self.logger.info(
-                    f"TERM Signal received, closing down the {self.__class__.__name__}."
-                )
+                self.logger.info(f"TERM Signal received, closing down the {self.__class__.__name__}.")
                 break
 
             # Some device protocol subclasses might start a number of threads or processes to support the commanding.
             # Check if these threads/processes are still alive and terminate gracefully if they are not.
 
             if not self.device_protocol.is_alive():
-                self.logger.error(
-                    "Some Thread or sub-process that was started by Protocol has died, terminating..."
-                )
+                self.logger.error("Some Thread or sub-process that was started by Protocol has died, terminating...")
                 break
 
         storage_manager and self.unregister_from_storage_manager()
@@ -549,7 +544,7 @@ class ControlServer(metaclass=abc.ABCMeta):
         self.zcontext.term()
 
     def store_housekeeping_information(self, data: dict) -> None:
-        """ Sends housekeeping information to the Storage Manager.
+        """Sends housekeeping information to the Storage Manager.
 
         This method has to be overwritten by the subclasses if they want the device housekeeping information to be
         saved.
@@ -561,7 +556,7 @@ class ControlServer(metaclass=abc.ABCMeta):
         pass
 
     def register_to_storage_manager(self) -> None:
-        """ Registers this Control Server to the Storage Manager.
+        """Registers this Control Server to the Storage Manager.
 
         By doing so, the housekeeping information of the device will be sent to the Storage Manager, which will store
         the information in a dedicated CSV file.
@@ -586,7 +581,7 @@ class ControlServer(metaclass=abc.ABCMeta):
         pass
 
     def unregister_from_storage_manager(self) -> None:
-        """ Unregisters the Control Server from the Storage Manager.
+        """Unregisters the Control Server from the Storage Manager.
 
         This method has to be overwritten by the subclasses.
 
@@ -628,8 +623,8 @@ class ControlServer(metaclass=abc.ABCMeta):
         self.logger.info(f"Notifying listeners for {EVENT_ID(event_id).name}")
 
         retry_thread = threading.Thread(
-            target=self.listeners.notify_listeners,
-            args=(Event(event_id=event_id, context=context),))
+            target=self.listeners.notify_listeners, args=(Event(event_id=event_id, context=context),)
+        )
         retry_thread.daemon = True
         retry_thread.start()
 

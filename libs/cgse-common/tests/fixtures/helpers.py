@@ -27,7 +27,6 @@ def is_process_not_running(items: List):
 
 
 def setup_conf_data(tmp_data_dir: Path):
-
     site_id = get_site_id()
     data_root = tmp_data_dir / site_id / "conf"
     data_root.mkdir(parents=True, exist_ok=True)
@@ -44,7 +43,7 @@ def setup_conf_data(tmp_data_dir: Path):
                 history:
                     0: Initial zero Setup for {site_id}
             """
-        )
+        ),
     )
 
     create_text_file(
@@ -60,16 +59,14 @@ def setup_conf_data(tmp_data_dir: Path):
                     0: Initial zero Setup for {site_id}
                     28: I just jumped straight to twenty eight
             """
-        )
+        ),
     )
 
 
-def teardown_conf_data(data_dir: Path):
-    ...
+def teardown_conf_data(data_dir: Path): ...
 
 
-def teardown_data_storage_layout(data_dir: Path):
-    ...
+def teardown_data_storage_layout(data_dir: Path): ...
 
 
 def setup_data_storage_layout(tmp_data_dir: Path) -> Path:
@@ -131,9 +128,9 @@ def create_empty_file(filename: str | Path, create_folder: bool = False):
     Returns:
         The filename as a Path.
     """
+
     class _ContextManager:
         def __init__(self, filename: str | Path, create_folder: bool):
-
             self.filename = Path(filename)
 
             if self.filename.exists():
@@ -142,14 +139,13 @@ def create_empty_file(filename: str | Path, create_folder: bool = False):
             if create_folder and not self.filename.parent.exists():
                 self.filename.parent.mkdir(parents=True)
 
-            with self.filename.open(mode='w'):
+            with self.filename.open(mode="w"):
                 pass
 
         def __enter__(self):
             return self.filename
 
         def __exit__(self, exc_type, exc_val, exc_tb):
-
             self.filename.unlink()
 
     return _ContextManager(filename, create_folder)
@@ -170,9 +166,9 @@ def create_text_file(filename: str | Path, content: str, create_folder: bool = F
     Returns:
         The filename as a Path.
     """
+
     class _ContextManager:
         def __init__(self, filename: str | Path, create_folder: bool):
-
             self.filename = Path(filename)
 
             if self.filename.exists():
@@ -181,7 +177,7 @@ def create_text_file(filename: str | Path, content: str, create_folder: bool = F
             if create_folder and not self.filename.parent.exists():
                 self.filename.parent.mkdir(parents=True)
 
-            with filename.open(mode='w') as fd:
+            with filename.open(mode="w") as fd:
                 fd.write(content)
 
         def __enter__(self):
@@ -194,6 +190,7 @@ def create_text_file(filename: str | Path, content: str, create_folder: bool = F
 
 
 # Test the helper functions
+
 
 def main():
     print(f"cwd = {os.getcwd()}")
@@ -211,13 +208,16 @@ def main():
 
     # Test the create_a_text_file() helper function
 
-    with create_text_file(fn, textwrap.dedent(
-        """\
+    with create_text_file(
+        fn,
+        textwrap.dedent(
+            """\
         A,B,C,D
         1,2,3,4
         5,6,7,8
         """
-    )) as filename:
+        ),
+    ) as filename:
         assert fn.exists()
         assert filename == fn
 
@@ -233,5 +233,5 @@ def main():
     assert not fn.exists()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

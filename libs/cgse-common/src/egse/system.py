@@ -9,6 +9,7 @@ The module has external dependencies to:
 * __rich__: for console output
 
 """
+
 from __future__ import annotations
 
 import builtins
@@ -154,7 +155,8 @@ def now(utc: bool = True):
 
 
 def format_datetime(
-        dt: Union[str, datetime.datetime] = None, fmt: str = None, width: int = 6, precision: int = 3) -> str:
+    dt: Union[str, datetime.datetime] = None, fmt: str = None, width: int = 6, precision: int = 3
+) -> str:
     """Format a datetime as YYYY-mm-ddTHH:MM:SS.μs+0000.
 
     If the given argument is not timezone aware, the last part, i.e. `+0000` will not be there.
@@ -401,8 +403,10 @@ class Timer:
         self.end = self._end
 
         logger.log(
-            self.log_level, f"{self.name} [ {self.filename}:{self.func}:{self.lineno} ]: "
-                            f"{self.end() - self.start:0.{self.precision}f} seconds")
+            self.log_level,
+            f"{self.name} [ {self.filename}:{self.func}:{self.lineno} ]: "
+            f"{self.end() - self.start:0.{self.precision}f} seconds",
+        )
         return False
 
     def __call__(self):
@@ -415,7 +419,7 @@ class Timer:
             self.log_level,
             f"{self.name} [ {self.func}:{self.lineno} ]: "
             f"{current_lap - self.start:0.{self.precision}f} seconds elapsed, "
-            f"{current_lap - self._last_elapsed:0.{self.precision}f}s since last lap."
+            f"{current_lap - self._last_elapsed:0.{self.precision}f}s since last lap.",
         )
         self._last_elapsed = current_lap
 
@@ -543,12 +547,12 @@ def get_caller_breadcrumbs(prefix: str = "call stack: ", limit: int = 5, with_fi
         fi = inspect.getframeinfo(frame)
         if with_filename:
             filename = Path(fi.filename)
-            if filename.name == '__init__.py':
+            if filename.name == "__init__.py":
                 filename = f"{filename.parent.name}/{filename.name}:"
             else:
                 filename = f"{filename.name}:"
         else:
-            filename = ''
+            filename = ""
         msg.append(f"{filename}{fi.function}[{fi.lineno}]")
         if (limit := limit - 1) == 0:
             break
@@ -827,8 +831,9 @@ def get_os_version() -> str:
     return "unknown"
 
 
-def wait_until(condition: Callable, *args: list, interval: float = 0.1, timeout: float = 1.0, verbose: bool = False,
-               **kwargs: dict) -> bool:
+def wait_until(
+    condition: Callable, *args: list, interval: float = 0.1, timeout: float = 1.0, verbose: bool = False, **kwargs: dict
+) -> bool:
     """
     Sleep until the given condition is fulfilled. The arguments are passed into the condition
     callable which is called in a while loop until the condition is met or the timeout is reached.
@@ -875,8 +880,7 @@ def wait_until(condition: Callable, *args: list, interval: float = 0.1, timeout:
     while not condition(*args, **kwargs):
         if time.time() - start > timeout:
             logger.warning(
-                f"Timeout after {timeout} sec, from {caller.filename} at {caller.lineno},"
-                f" {func_name}{args} not met."
+                f"Timeout after {timeout} sec, from {caller.filename} at {caller.lineno}, {func_name}{args} not met."
             )
             return True
         time.sleep(interval)
@@ -888,8 +892,8 @@ def wait_until(condition: Callable, *args: list, interval: float = 0.1, timeout:
 
 
 def waiting_for(
-        condition: Callable, *args: list, interval: float = 0.1, timeout: float = 1.0, verbose: bool = False,
-        **kwargs: dict) -> float:
+    condition: Callable, *args: list, interval: float = 0.1, timeout: float = 1.0, verbose: bool = False, **kwargs: dict
+) -> float:
     """
     Sleep until the given condition is fulfilled. The arguments are passed into the condition
     callable which is called in a while loop until the condition is met or the timeout is reached.
@@ -939,8 +943,7 @@ def waiting_for(
     while not condition(*args, **kwargs):
         if time.time() - start > timeout:
             raise TimeoutError(
-                f"Timeout after {timeout} sec, from {caller.filename} at {caller.lineno},"
-                f" {func_name}{args} not met."
+                f"Timeout after {timeout} sec, from {caller.filename} at {caller.lineno}, {func_name}{args} not met."
             )
         time.sleep(interval)
 
@@ -1278,7 +1281,7 @@ def is_namespace(module: str | ModuleType) -> bool:
         except (TypeError, ModuleNotFoundError):
             return False
 
-    if hasattr(module, '__path__') and getattr(module, '__file__', None) is None:
+    if hasattr(module, "__path__") and getattr(module, "__file__", None) is None:
         return True
     else:
         return False
@@ -1321,10 +1324,10 @@ def get_package_description(package_name) -> str:
         # Get the metadata for the package
         metadata = importlib.metadata.metadata(package_name)
         # Extract the description
-        description = metadata.get('Summary', 'Description not found')
+        description = metadata.get("Summary", "Description not found")
         return description
     except importlib.metadata.PackageNotFoundError:
-        return 'Package not found'
+        return "Package not found"
 
 
 def get_package_location(module: str) -> List[Path]:
@@ -1363,10 +1366,7 @@ def get_package_location(module: str) -> List[Path]:
         return []
 
     if is_namespace(module):
-        return [
-            Path(location)
-            for location in module.__path__
-        ]
+        return [Path(location) for location in module.__path__]
     else:
         location = get_module_location(module)
         return [] if location is None else [location]
@@ -1840,7 +1840,7 @@ def touch(path: Path | str):
     if not basedir.exists():
         basedir.mkdir(parents=True, exist_ok=True)
 
-    with path.open('a'):
+    with path.open("a"):
         os.utime(path)
 
 

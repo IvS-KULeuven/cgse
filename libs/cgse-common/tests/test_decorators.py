@@ -26,7 +26,6 @@ MODULE_LOGGER = logging.getLogger(__name__)
 
 
 def test_static_vars():
-
     @static_vars(counter=-1)
     def increment(amount: int = 1):
         increment.counter += amount
@@ -38,7 +37,6 @@ def test_static_vars():
 
 
 def test_timer(caplog):
-
     caplog.set_level(logging.INFO)
 
     @timer(level=logging.INFO, precision=1)
@@ -53,12 +51,11 @@ def test_timer(caplog):
 
 
 def test_time_it(caplog):
-
     caplog.set_level(logging.INFO)
 
     @time_it(count=1000_000)
     def func(x: float = 1.0):
-        return x ** 2
+        return x**2
 
     func()
     assert "Finished 'func' in " in caplog.text
@@ -76,29 +73,27 @@ def test_debug(caplog):
 
     @debug
     def func2(x, y):
-        return x*y
+        return x * y
 
     func2(2, 3)
     assert "Calling func2(2, 3)" in caplog.text
 
-    func2('#', 5)
+    func2("#", 5)
     assert "Calling func2('#', 5)" in caplog.text
     assert "'func2' returned '#####'"
 
 
 def test_to_be_implemented(caplog):
-
     @to_be_implemented
     def func():
         pass
 
     func()
-    assert 'WARNING' in caplog.text
-    assert 'func is not yet implemented'
+    assert "WARNING" in caplog.text
+    assert "func is not yet implemented"
 
 
 def test_profile(capsys):
-
     @profile
     def func(name: str = "World"):
         return f"hello, {name}!"
@@ -121,15 +116,14 @@ def test_profile(capsys):
 
 
 def test_profile_func(caplog):
-
     caplog.set_level(level=logging.DEBUG)
 
     def power(x: float, exp: int = 2):
-        return x ** exp
+        return x**exp
 
     output_file = "profiling_func.prof"
 
-    @profile_func(output_file=output_file, strip_dirs=True, sort_by=('calls', 'cumulative'))
+    @profile_func(output_file=output_file, strip_dirs=True, sort_by=("calls", "cumulative"))
     def func(x: int = 0):
         return power(x)
 
@@ -143,30 +137,34 @@ def test_profile_func(caplog):
 
 
 def test_dynamic_interface():
-
     @dynamic_interface
     def func():
         return func.__dynamic_interface
+
     assert func() is True
 
     @query_command
     def query():
         return query.__query_command
+
     assert query() is True
 
     @transaction_command
     def transaction():
         return transaction.__transaction_command
+
     assert transaction() is True
 
     @read_command
     def read():
         return read.__read_command
+
     assert read() is True
 
     @write_command
     def write():
         return write.__write_command
+
     assert write() is True
 
 
@@ -272,7 +270,7 @@ def test_deprecation():
     """
 
     @deprecate(
-        reason="we are testing the @deprecate decorator " "on a simple function without arguments",
+        reason="we are testing the @deprecate decorator on a simple function without arguments",
         alternative="the new_function() instead",
     )
     def deprecated_function():
@@ -288,10 +286,7 @@ def test_deprecation():
         deprecated_function()
 
     class Foo:
-        @deprecate(
-            reason="we need to test if the @deprecate decorator also works "
-            "properly with (class) methods"
-        )
+        @deprecate(reason="we need to test if the @deprecate decorator also works properly with (class) methods")
         def is_deprecated(self):
             return True
 
@@ -302,12 +297,9 @@ def test_deprecation():
 
 
 def test_spy_on_attr_change(caplog):
+    class X: ...
 
-    class X:
-        ...
-
-    class Y:
-        ...
+    class Y: ...
 
     # Check if the changes are reported in the log messages
 

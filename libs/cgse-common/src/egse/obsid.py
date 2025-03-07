@@ -5,6 +5,7 @@ Each observation or test needs a unique identification that can be used as a key
 database or in a filename for test data etc.
 
 """
+
 from pathlib import Path
 from typing import Union
 
@@ -46,8 +47,7 @@ class ObservationIdentifier:
         elif order == TEST_LAB_SETUP:
             test_id, lab_id, setup_id = obsid.split("_")
         else:
-            raise ValueError(
-                f"The order argument can only be {LAB_SETUP_TEST=} or {TEST_LAB_SETUP=}")
+            raise ValueError(f"The order argument can only be {LAB_SETUP_TEST=} or {TEST_LAB_SETUP=}")
 
         return ObservationIdentifier(lab_id, int(setup_id), int(test_id))
 
@@ -95,8 +95,9 @@ class ObservationIdentifier:
             return f"{self._lab_id}_{self._setup_id:05d}_{self._test_id:05d}{camera}"
 
 
-def obsid_from_storage(obsid: Union[ObservationIdentifier, str, int], data_dir: str,
-                       site_id: str = None, camera_name: str = None) -> str:
+def obsid_from_storage(
+    obsid: Union[ObservationIdentifier, str, int], data_dir: str, site_id: str = None, camera_name: str = None
+) -> str:
     """
     Return the name of the folder for the given obsid in the 'obs' sub-folder of data_dir.
 
@@ -126,7 +127,7 @@ def obsid_from_storage(obsid: Union[ObservationIdentifier, str, int], data_dir: 
 
     if isinstance(obsid, ObservationIdentifier):
         test, site = obsid.test_id, obsid.lab_id
-    elif isinstance(obsid, str):    # TEST_LAB or TEST_LAB_SETUP
+    elif isinstance(obsid, str):  # TEST_LAB or TEST_LAB_SETUP
         test, site = obsid.split("_")[:2]
     else:
         test, site = obsid, site_id

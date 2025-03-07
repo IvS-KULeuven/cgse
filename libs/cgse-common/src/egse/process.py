@@ -18,6 +18,7 @@ like memory and CPU usage for the running process. Additionally, it will generat
 and update metrics that can be queried by the Prometheus timeseries database.
 
 """
+
 from __future__ import annotations
 
 __all__ = [
@@ -79,9 +80,7 @@ class ProcessStatus:
             # not sure if we need to use interval=0.1 as an argument in the next call
             self._cpu_percent: float = self._process.cpu_percent()
             self._cpu_times = self._process.cpu_times()
-            self._uptime = (
-                    datetime.datetime.now(tz=datetime.timezone.utc).timestamp() - self._create_time
-            )
+            self._uptime = datetime.datetime.now(tz=datetime.timezone.utc).timestamp() - self._create_time
             self._memory_info = self._process.memory_full_info()
         self._uuid: uuid.UUID = uuid.uuid1()
 
@@ -89,32 +88,24 @@ class ProcessStatus:
 
         self.metrics = dict(
             PSUTIL_NUMBER_OF_CPU=Gauge(
-                f"{metrics_prefix}psutil_number_of_cpu",
-                "Number of physical cores, excluding hyper thread CPUs"
+                f"{metrics_prefix}psutil_number_of_cpu", "Number of physical cores, excluding hyper thread CPUs"
             ),
             PSUTIL_CPU_TIMES=Gauge(
-                f"{metrics_prefix}psutil_cpu_times_seconds",
-                "Accumulated process time in seconds", ["type"]
+                f"{metrics_prefix}psutil_cpu_times_seconds", "Accumulated process time in seconds", ["type"]
             ),
             PSUTIL_CPU_PERCENT=Gauge(
-                f"{metrics_prefix}psutil_cpu_percent",
-                "The current process CPU utilization as a percentage"
+                f"{metrics_prefix}psutil_cpu_percent", "The current process CPU utilization as a percentage"
             ),
-            PSUTIL_PID=Gauge(
-                f"{metrics_prefix}psutil_pid", "Process ID"
-            ),
+            PSUTIL_PID=Gauge(f"{metrics_prefix}psutil_pid", "Process ID"),
             PSUTIL_MEMORY_INFO=Gauge(
-                f"{metrics_prefix}psutil_memory_info_bytes",
-                "Memory info for this instrumented process",
-                ["type"]
+                f"{metrics_prefix}psutil_memory_info_bytes", "Memory info for this instrumented process", ["type"]
             ),
             PSUTIL_NUMBER_OF_THREADS=Gauge(
-                f"{metrics_prefix}psutil_number_of_threads",
-                "Return the number of Thread objects currently alive"
+                f"{metrics_prefix}psutil_number_of_threads", "Return the number of Thread objects currently alive"
             ),
             PSUTIL_PROC_UPTIME=Gauge(
                 f"{metrics_prefix}psutil_process_uptime",
-                "Return the time in seconds that the process is up and running"
+                "Return the time in seconds that the process is up and running",
             ),
         )
 
@@ -219,8 +210,13 @@ class SubProcess:
     """
 
     def __init__(
-            self, name: str, cmd: List, args: List = None, shell: bool = False,
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        self,
+        name: str,
+        cmd: List,
+        args: List = None,
+        shell: bool = False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
     ):
         self._popen = None
         self._sub_process: psutil.Process | None = None
@@ -266,10 +262,10 @@ class SubProcess:
             _logger.error(f"Could not execute sub-process: {exc}", exc_info=True)
             exc_type, exc_value, exc_traceback = sys.exc_info()
             self._exc_info = {
-                'exc_type': exc_type,
-                'exc_value': exc_value,
-                'exc_traceback': exc_traceback,
-                'command': " ".join([*self._cmd, *self._args]),
+                "exc_type": exc_type,
+                "exc_value": exc_value,
+                "exc_traceback": exc_traceback,
+                "command": " ".join([*self._cmd, *self._args]),
             }
             return False
         return True
@@ -385,10 +381,10 @@ class SubProcess:
 
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 self._exc_info = {
-                    'exc_type': exc_type,
-                    'exc_value': exc_value,
-                    'exc_traceback': exc_traceback,
-                    'command': " ".join([*self._cmd, *self._args]),
+                    "exc_type": exc_type,
+                    "exc_value": exc_value,
+                    "exc_traceback": exc_traceback,
+                    "command": " ".join([*self._cmd, *self._args]),
                 }
 
                 self._sub_process.kill()
@@ -399,10 +395,10 @@ class SubProcess:
 
             exc_type, exc_value, exc_traceback = sys.exc_info()
             self._exc_info = {
-                'exc_type': exc_type,
-                'exc_value': exc_value,
-                'exc_traceback': exc_traceback,
-                'command': " ".join([*self._cmd, *self._args]),
+                "exc_type": exc_type,
+                "exc_value": exc_value,
+                "exc_traceback": exc_traceback,
+                "command": " ".join([*self._cmd, *self._args]),
             }
 
             return 0
@@ -410,7 +406,6 @@ class SubProcess:
         # now terminate the children
 
         if children:
-
             for p in children:
                 try:
                     _logger.info(f"Send a SIGTERM to child process with PID={p.pid}")
@@ -448,7 +443,7 @@ class SubProcess:
 
 
 def list_processes(
-        items: List[str] | str, contains: bool = True, case_sensitive: bool = False, verbose: bool = False
+    items: List[str] | str, contains: bool = True, case_sensitive: bool = False, verbose: bool = False
 ) -> list[dict]:
     """
     Returns and optionally prints the processes that match the given criteria in items.
@@ -470,19 +465,13 @@ def list_processes(
     for pid in procs:
         proc = psutil.Process(pid)
         status = proc.status()
-        cmdline = ' '.join(proc.cmdline())
-        result.append({'pid': pid, 'status': status, 'cmdline': cmdline})
+        cmdline = " ".join(proc.cmdline())
+        result.append({"pid": pid, "status": status, "cmdline": cmdline})
 
     if verbose:
         if result:
             print(f"{'PID':5s} {'Status':>20s} {'Commandline'}")
-            print(
-                "\n".join(
-                    [
-                        f"{entry['pid']:5d} {entry['status']:>20s} {entry['cmdline']}"
-                        for entry in result
-                    ]
-                ))
+            print("\n".join([f"{entry['pid']:5d} {entry['status']:>20s} {entry['cmdline']}" for entry in result]))
         else:
             print(f"No processes found for {items}.")
 
@@ -513,14 +502,14 @@ def list_zombies():
     """
     zombies = []
 
-    for proc in psutil.process_iter(['pid', 'name', 'status', 'cmdline']):
+    for proc in psutil.process_iter(["pid", "name", "status", "cmdline"]):
         try:
-            if proc.info['status'] == psutil.STATUS_ZOMBIE:
+            if proc.info["status"] == psutil.STATUS_ZOMBIE:
                 zombies.append(
                     {
-                        'pid': proc.info['pid'],
-                        'name': proc.info['name'],
-                        'cmdline': proc.info['cmdline'],
+                        "pid": proc.info["pid"],
+                        "name": proc.info["name"],
+                        "cmdline": proc.info["cmdline"],
                     }
                 )
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
@@ -530,8 +519,8 @@ def list_zombies():
 
 
 def is_process_running(
-        items: List[str] | str,
-        contains: bool = True, case_sensitive: bool = False, as_list: bool = False) -> (int | List[int]):
+    items: List[str] | str, contains: bool = True, case_sensitive: bool = False, as_list: bool = False
+) -> int | List[int]:
     """
     Check if there is any running process that contains the given items in its
     commandline.
@@ -569,7 +558,7 @@ def is_process_running(
 
     found = []
 
-    for proc in psutil.process_iter(attrs=['pid', 'cmdline', 'name'], ad_value='n/a'):
+    for proc in psutil.process_iter(attrs=["pid", "cmdline", "name"], ad_value="n/a"):
         with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             # _logger.info(f"{proc.name().lower() = }, {proc.cmdline() = }")
             if contains:
@@ -651,9 +640,9 @@ def get_process_info(items: List[str] | str, contains: bool = True, case_sensiti
             # _logger.info(f"{proc.name().lower() = }, {proc.cmdline() = }")
             if contains:
                 if all(any(case(y) in case(x) for x in proc.cmdline()) for y in items):
-                    response.append(proc.as_dict(attrs=['pid', 'cmdline', 'create_time']))
+                    response.append(proc.as_dict(attrs=["pid", "cmdline", "create_time"]))
             elif all(any(case(y) == case(x) for x in proc.cmdline()) for y in items):
-                response.append(proc.as_dict(attrs=['pid', 'cmdline', 'create_time']))
+                response.append(proc.as_dict(attrs=["pid", "cmdline", "create_time"]))
 
     return response
 
@@ -669,17 +658,11 @@ def ps_egrep(pattern):
     ps_process = subprocess.Popen(ps_command, stdout=subprocess.PIPE)
 
     # Launch second process and connect it to the first one
-    grep_process = subprocess.Popen(
-        grep_command, stdin=ps_process.stdout, stdout=subprocess.PIPE
-    )
+    grep_process = subprocess.Popen(grep_command, stdin=ps_process.stdout, stdout=subprocess.PIPE)
 
     # Let stream flow between them
     output, _ = grep_process.communicate()
 
-    response = [
-        line
-        for line in output.decode().rstrip().split('\n')
-        if line and "egrep " not in line
-    ]
+    response = [line for line in output.decode().rstrip().split("\n") if line and "egrep " not in line]
 
     return response

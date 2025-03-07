@@ -2,6 +2,7 @@
 This module provides convenience functions to properly configure the CGSE
 and to find paths and resources.
 """
+
 from __future__ import annotations
 
 import errno
@@ -245,8 +246,7 @@ def find_root(
 
 
 @lru_cache(maxsize=16)
-@deprecate(reason="the concept of CGSE root doesn't exist in a monorepo.",
-           alternative="a case-by-case alternative.")
+@deprecate(reason="the concept of CGSE root doesn't exist in a monorepo.", alternative="a case-by-case alternative.")
 def get_common_egse_root(path: Union[str, PurePath] = None) -> Optional[PurePath]:
     """
     Returns the absolute path to the installation directory for the Common-EGSE.
@@ -276,7 +276,6 @@ def get_common_egse_root(path: Union[str, PurePath] = None) -> Optional[PurePath
     egse_path: Union[str, PurePath, None] = os.getenv("COMMON_EGSE_PATH")
 
     if egse_path is None:
-
         # The root of the plato-common-egse installation shall be determined from the location
         # of this config module using git commands to find the git root folder.
         # This assumes the user has installed from git/GitHub (which is not always true)!
@@ -298,10 +297,7 @@ def get_common_egse_root(path: Union[str, PurePath] = None) -> Optional[PurePath
         _LOGGER.debug(f"Common-EGSE location is automatically determined: {egse_path}.")
 
     else:
-        _LOGGER.debug(
-            f"Common-EGSE location determined from environment variable "
-            f"PLATO_COMMON_EGSE_PATH: {egse_path}"
-        )
+        _LOGGER.debug(f"Common-EGSE location determined from environment variable PLATO_COMMON_EGSE_PATH: {egse_path}")
 
     return Path(egse_path)
 

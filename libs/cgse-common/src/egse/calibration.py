@@ -1,6 +1,7 @@
 """
 This module provides functions to calibrate sensor values.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -9,7 +10,7 @@ from egse.setup import navdict, Setup, SetupError
 
 
 def apply_gain_offset(counts: float, gain: float, offset: float) -> float:
-    """ Applies the given gain and offset to the given counts.
+    """Applies the given gain and offset to the given counts.
 
     Args:
         counts: Uncalibrated, raw data [ADU]
@@ -24,7 +25,7 @@ def apply_gain_offset(counts: float, gain: float, offset: float) -> float:
 
 
 def counts_to_temperature(sensor_name: str, counts: float, sensor_info: navdict, setup: Setup) -> float | np.ndarray:
-    """ Converts the given counts for the given sensor to temperature.
+    """Converts the given counts for the given sensor to temperature.
 
     This conversion can be done as follows:
 
@@ -45,15 +46,15 @@ def counts_to_temperature(sensor_name: str, counts: float, sensor_info: navdict,
     # (1) Conversion: temperature = counts * gain + offset
 
     if "counts_to_temperature_gain" in sensor_info and "counts_to_temperature_offset" in sensor_info:
-
-        return apply_gain_offset(counts,
-                                 gain=eval(str(sensor_info.counts_to_temperature_gain)),
-                                 offset=sensor_info.counts_to_temperature_offset)
+        return apply_gain_offset(
+            counts,
+            gain=eval(str(sensor_info.counts_to_temperature_gain)),
+            offset=sensor_info.counts_to_temperature_offset,
+        )
 
     # (2) Conversion: temperature = func(counts)
 
     if "counts_to_temperature" in sensor_info:
-
         # (2a) Polynomial
 
         if sensor_info.counts_to_temperature.method == "polynomial":
@@ -67,7 +68,7 @@ def counts_to_temperature(sensor_name: str, counts: float, sensor_info: navdict,
 
 
 def counts_to_resistance(sensor_name: str, counts: float, sensor_info: navdict) -> float:
-    """ Converts the given counts for the given sensor to resistance.
+    """Converts the given counts for the given sensor to resistance.
 
     Args:
         sensor_name: Sensor name
@@ -80,32 +81,31 @@ def counts_to_resistance(sensor_name: str, counts: float, sensor_info: navdict) 
 
     # Offset (if any)
 
-    counts_to_resistance_offset = sensor_info.counts_to_resistance_offset \
-        if "counts_to_resistance_offset" in sensor_info \
-        else 0
+    counts_to_resistance_offset = (
+        sensor_info.counts_to_resistance_offset if "counts_to_resistance_offset" in sensor_info else 0
+    )
 
     # Conversion: counts -> voltage -> resistance
 
     if "counts_to_voltage_gain" in sensor_info and "voltage_to_resistance_gain" in sensor_info:
-
-        return apply_gain_offset(counts,
-                                 gain=sensor_info.counts_to_voltage_gain * sensor_info.voltage_to_resistance_gain,
-                                 offset=counts_to_resistance_offset)
+        return apply_gain_offset(
+            counts,
+            gain=sensor_info.counts_to_voltage_gain * sensor_info.voltage_to_resistance_gain,
+            offset=counts_to_resistance_offset,
+        )
 
     # Conversion: counts -> resistance
 
     elif "counts_to_resistance_gain" in sensor_info:
-
-        return apply_gain_offset(counts,
-                                 gain=sensor_info.counts_to_resistance_gain,
-                                 offset=counts_to_resistance_offset)
+        return apply_gain_offset(counts, gain=sensor_info.counts_to_resistance_gain, offset=counts_to_resistance_offset)
 
     raise SetupError(f"Setup does not contain info for conversion from counts to resistance for {sensor_name}")
 
 
 def resistance_to_temperature(
-        sensor_name: str, resistance: float, sensor_info: navdict, setup: Setup) -> float | np.ndarray:
-    """ Converts the given resistance for the given sensor to temperature.
+    sensor_name: str, resistance: float, sensor_info: navdict, setup: Setup
+) -> float | np.ndarray:
+    """Converts the given resistance for the given sensor to temperature.
 
     Args:
         sensor_name: Sensor name
@@ -122,7 +122,6 @@ def resistance_to_temperature(
     # Series resistance (if any)
 
     if "series_resistance" in resistance_to_temperature_info:
-
         series_resistance = resistance_to_temperature_info.series_resistance
         if sensor_name in resistance_to_temperature_info:
             series_resistance = series_resistance[sensor_name]
@@ -136,7 +135,6 @@ def resistance_to_temperature(
     # Polynomial
 
     if method == "polynomial":
-
         # Coefficients given for conversion temperature -> resistance
 
         if "temperature_to_resistance_coefficients" in resistance_to_temperature_info:
@@ -148,7 +146,6 @@ def resistance_to_temperature(
             return np.polyval(resistance_to_temperature_info.resistance_to_temperature_coefficients, resistance)
 
     elif method == "callendar_van_dusen":
-
         standard = resistance_to_temperature_info.standard
         ref_resistance = resistance_to_temperature_info.ref_resistance
 
@@ -159,7 +156,7 @@ def resistance_to_temperature(
 
 
 def solve_temperature(temperature_to_resistance_coefficients, resistance: float) -> float:
-    """ Solves the temperature from the temperature -> resistance polynomial.
+    """Solves the temperature from the temperature -> resistance polynomial.
 
     For the given temperature -> resistance polynomial and the given resistance, we determine what the corresponding
     temperature is by:
@@ -178,7 +175,7 @@ def solve_temperature(temperature_to_resistance_coefficients, resistance: float)
 
 
 def callendar_van_dusen(resistance: float, ref_resistance: float, standard: str, setup: Setup) -> float:
-    """ Solves the Callendar - van Dusen equation for temperature.
+    """Solves the Callendar - van Dusen equation for temperature.
 
     Args:
         resistance: Resistance [Ohm] for which to calculate the temperature
@@ -197,23 +194,28 @@ def callendar_van_dusen(resistance: float, ref_resistance: float, standard: str,
     # Positive temperatures
 
     if resistance >= ref_resistance:
-        resistance_to_temperature_coefficients = [ref_resistance * coefficients.C,
-                                                  -ref_resistance * 100 * coefficients.C,
-                                                  ref_resistance * coefficients.B,
-                                                  ref_resistance * coefficients.A, ref_resistance * 1]
+        resistance_to_temperature_coefficients = [
+            ref_resistance * coefficients.C,
+            -ref_resistance * 100 * coefficients.C,
+            ref_resistance * coefficients.B,
+            ref_resistance * coefficients.A,
+            ref_resistance * 1,
+        ]
 
     # Negative temperatures
 
     else:
-        resistance_to_temperature_coefficients = [ref_resistance * coefficients.B,
-                                                  ref_resistance * coefficients.A,
-                                                  ref_resistance * 1]
+        resistance_to_temperature_coefficients = [
+            ref_resistance * coefficients.B,
+            ref_resistance * coefficients.A,
+            ref_resistance * 1,
+        ]
 
     return solve_temperature(resistance_to_temperature_coefficients, resistance)
 
 
 def chebychev(resistance: float, sensor_info: navdict) -> float:
-    """ Solves the Chebychev equation for temperature.
+    """Solves the Chebychev equation for temperature.
 
     Implemented as specified in the calibration certificate of the LakeShore Cernox sensors.
 
@@ -228,13 +230,11 @@ def chebychev(resistance: float, sensor_info: navdict) -> float:
     num_fit_ranges = sensor_info.num_fit_ranges
 
     for fit_range_index in range(1, num_fit_ranges + 1):
-
         range_info = sensor_info[f"range{fit_range_index}"]
 
         resistance_lower_limit, resistance_upper_limit = range_info.resistance_range
 
         if resistance_lower_limit <= resistance <= resistance_upper_limit:
-
             if range_info.fit_type == "LOG":
                 z = np.log10(resistance)
 
@@ -245,8 +245,7 @@ def chebychev(resistance: float, sensor_info: navdict) -> float:
             temperature = 0
 
             for index in range(0, order + 1):
-
-                k = ((z-zl)-(zu-z))/(zu-zl)
+                k = ((z - zl) - (zu - z)) / (zu - zl)
                 temperature += coefficients[index] * np.cos(index * np.arccos(k))
 
             return temperature

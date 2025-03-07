@@ -1,6 +1,7 @@
 """
 This module implements a random walk that can be used in simulators for devices like temperature sensors or power meter.
 """
+
 from __future__ import annotations
 
 import random
@@ -13,6 +14,7 @@ from typing import Optional
 # 1. https://isquared.digital/blog/2020-04-12-random-walk/
 # 2. https://isquared.digital/blog/2020-04-16-brownian-motion/
 # 3. https://isquared.digital/blog/2020-05-01-drifted-brownian-motion/
+
 
 class RandomWalk:
     """
@@ -36,8 +38,16 @@ class RandomWalk:
 
     By default, the returned values will represent a random walk between -1.0 and 1.0 in a step of 1.0.
     """
-    def __init__(self, start: float = 0.0, boundary: tuple = (-1.0, 1.0), threshold: tuple | float = 0.5,
-                 scale: float = 1.0, count: int = 1000, seed: Optional[int] = None):
+
+    def __init__(
+        self,
+        start: float = 0.0,
+        boundary: tuple = (-1.0, 1.0),
+        threshold: tuple | float = 0.5,
+        scale: float = 1.0,
+        count: int = 1000,
+        seed: Optional[int] = None,
+    ):
         """
 
         Args:
@@ -103,7 +113,6 @@ class RandomWalk:
 
 
 if __name__ == "__main__":
-
     # https://towardsdatascience.com/generating-synthetic-time-series-data-with-random-walks-8701bb9a56a8
 
     import matplotlib.pyplot as plt
@@ -150,7 +159,15 @@ if __name__ == "__main__":
     # Example 2: should give the same output as example 1
 
     plt.plot(
-        list(RandomWalk(start=25.0, boundary=(-100, 100), scale=0.2, count=1000000, seed=42,))
+        list(
+            RandomWalk(
+                start=25.0,
+                boundary=(-100, 100),
+                scale=0.2,
+                count=1000000,
+                seed=42,
+            )
+        )
     )
     plt.show()
 

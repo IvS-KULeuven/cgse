@@ -1,6 +1,7 @@
 """
 This module manages files that have a counter in their filename.
 """
+
 from __future__ import annotations
 
 __all__ = [
@@ -88,7 +89,7 @@ def _write_counter(counter: int, filename: Path):
         counter: the counter to save
         filename: the file to which the counter shall be saved
     """
-    with filename.open('w') as fd:
+    with filename.open("w") as fd:
         fd.write(f"{counter:d}")
 
 
@@ -104,7 +105,7 @@ def _read_counter(filename: Path) -> int:
         The counter that is read from the file or 0 if file doesn't exist.
     """
     try:
-        with filename.open('r') as fd:
+        with filename.open("r") as fd:
             counter = fd.read().strip()
     except FileNotFoundError:
         counter = 0
@@ -158,7 +159,6 @@ def determine_counter_from_dir_list(location: str, pattern: str, index: int = -1
     parts = last_file.name.split("_")
 
     try:
-
         # Observation files have the following pattern:
         #  <test ID>_<lab ID>_<setup ID>_<storage mnemonic>_<day YYYYmmdd>_<time HHMMSS>[_<counter>]
         #
@@ -168,7 +168,6 @@ def determine_counter_from_dir_list(location: str, pattern: str, index: int = -1
         # Any file:
         #  the counter is assumed to be the last part before the file extension and is preceded by an underscore.
         #  <anything here>_counter>.<extension>
-
 
         counter = int(parts[index].split(".")[0]) + 1
         _LOGGER.debug(f"{counter = }")

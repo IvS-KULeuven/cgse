@@ -60,6 +60,7 @@ The above code will read the YAML file from the given location and not from the 
 ---
 
 """
+
 from __future__ import annotations
 
 import logging
@@ -81,6 +82,7 @@ _HERE = Path(__file__).resolve().parent
 
 class SettingsError(Exception):
     """A settings-specific error."""
+
     pass
 
 
@@ -89,16 +91,19 @@ class SettingsError(Exception):
 
 SAFE_LOADER = yaml.SafeLoader
 SAFE_LOADER.add_implicit_resolver(
-    u'tag:yaml.org,2002:float',
+    "tag:yaml.org,2002:float",
     re.compile(
-        u"""^(?:
+        """^(?:
              [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
             |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
             |\\.[0-9_]+(?:[eE][-+][0-9]+)?
             |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
             |[-+]?\\.(?:inf|Inf|INF)
-            |\\.(?:nan|NaN|NAN))$""", re.X),
-    list(u'-+0123456789.'))
+            |\\.(?:nan|NaN|NAN))$""",
+        re.X,
+    ),
+    list("-+0123456789."),
+)
 
 
 def load_settings_file(path: Path, filename: str, force: bool = False) -> attrdict:
@@ -123,23 +128,20 @@ def load_settings_file(path: Path, filename: str, force: bool = False) -> attrdi
     """
     try:
         yaml_document = read_configuration_file(path / filename, force=force)
-        settings = attrdict(
-            {name: value for name, value in yaml_document.items()}
-        )
+        settings = attrdict({name: value for name, value in yaml_document.items()})
     except FileNotFoundError as exc:
-        raise SettingsError(
-            f"The Settings YAML file '{filename}' is not found at {path!s}. "
-        ) from exc
+        raise SettingsError(f"The Settings YAML file '{filename}' is not found at {path!s}. ") from exc
 
     if not settings:
         _LOGGER.warning(
             f"The Settings YAML file '{filename}' at {path!s} is empty. "
-            f"No local settings were loaded, an empty dictionary is returned.")
+            f"No local settings were loaded, an empty dictionary is returned."
+        )
 
     return settings
 
 
-def load_global_settings(entry_point: str = 'cgse.settings', force: bool = False) -> attrdict:
+def load_global_settings(entry_point: str = "cgse.settings", force: bool = False) -> attrdict:
     """
     Loads the settings that are defined by the given entry_point. The entry-points are defined in the
     `pyproject.toml` files of the packages that export their global settings.
@@ -215,7 +217,6 @@ def read_configuration_file(filename: Path, *, force=False) -> dict:
     filename = str(filename)
 
     if force or not Settings.is_memoized(filename):
-
         _LOGGER.debug(f"Parsing YAML configuration file {filename}.")
 
         with open(filename, "r") as stream:
@@ -241,12 +242,9 @@ class Settings:
 
     LOG_FORMAT_DEFAULT = "%(levelname)s:%(module)s:%(lineno)d:%(message)s"
     LOG_FORMAT_FULL = "%(asctime)23s:%(levelname)8s:%(lineno)5d:%(name)-20s: %(message)s"
-    LOG_FORMAT_THREAD = (
-        "%(asctime)23s:%(levelname)7s:%(lineno)5d:%(name)-20s(%(threadName)-15s): %(message)s"
-    )
+    LOG_FORMAT_THREAD = "%(asctime)23s:%(levelname)7s:%(lineno)5d:%(name)-20s(%(threadName)-15s): %(message)s"
     LOG_FORMAT_PROCESS = (
-        "%(asctime)23s:%(levelname)7s:%(lineno)5d:%(name)20s.%(funcName)-31s(%(processName)-20s): "
-        "%(message)s"
+        "%(asctime)23s:%(levelname)7s:%(lineno)5d:%(name)20s.%(funcName)-31s(%(processName)-20s): %(message)s"
     )
     LOG_FORMAT_DATE = "%d/%m/%Y %H:%M:%S"
 
@@ -280,9 +278,7 @@ class Settings:
 
     @staticmethod
     def _load_all(
-            entry_point: str = 'cgse.settings',
-            add_local_settings: bool = False,
-            force: bool = False
+        entry_point: str = "cgse.settings", add_local_settings: bool = False, force: bool = False
     ) -> attrdict:
         """
         Loads all settings from all package with the entry point 'cgse.settings'
@@ -299,20 +295,15 @@ class Settings:
 
     @staticmethod
     def _load_group(
-            group_name: str,
-            entry_point: str = 'cgse.settings',
-            add_local_settings: bool = False,
-            force: bool = False
+        group_name: str, entry_point: str = "cgse.settings", add_local_settings: bool = False, force: bool = False
     ) -> attrdict:
-
         global_settings = load_global_settings(entry_point, force)
 
         group_settings = attrdict(label=group_name)
 
         if group_name in global_settings:
             group_settings = attrdict(
-                {name: value for name, value in global_settings[group_name].items()},
-                label=group_name
+                {name: value for name, value in global_settings[group_name].items()}, label=group_name
             )
 
         if add_local_settings:
@@ -321,22 +312,17 @@ class Settings:
                 recursive_dict_update(group_settings, local_settings[group_name])
 
         if not group_settings:
-            raise SettingsError(
-                f"Group name '{group_name}' is not defined in the global nor in the local settings."
-            )
+            raise SettingsError(f"Group name '{group_name}' is not defined in the global nor in the local settings.")
 
         return group_settings
 
     @staticmethod
     def _load_one(location: str, filename: str, force=False) -> attrdict:
-
         return load_settings_file(Path(location).expanduser(), filename, force)
 
     @classmethod
     def load(
-            cls,
-            group_name=None, filename="settings.yaml", location=None,
-            *, add_local_settings=True, force=False
+        cls, group_name=None, filename="settings.yaml", location=None, *, add_local_settings=True, force=False
     ) -> attrdict:
         """
         Load the settings for the given group. When no group is provided, the
@@ -408,8 +394,8 @@ def main(args: list | None = None):  # pragma: no cover
     )
     parser.add_argument("--local", action="store_true", help="print only the local settings.")
     parser.add_argument(
-        "--global", action="store_true",
-        help="print only the global settings, don't include local settings.")
+        "--global", action="store_true", help="print only the global settings, don't include local settings."
+    )
     parser.add_argument("--group", help="print only settings for this group")
     args = parser.parse_args(args or [])
 
@@ -442,7 +428,6 @@ def main(args: list | None = None):  # pragma: no cover
 
 
 def get_site_id() -> str:
-
     site = Settings.load("SITE")
     return site.ID
 

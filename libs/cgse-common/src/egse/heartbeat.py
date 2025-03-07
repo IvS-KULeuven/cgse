@@ -45,8 +45,8 @@ class HeartbeatBroadcaster(threading.Thread):
         self._running = False
         self._canceled = threading.Event()
         self._queue = queue.Queue()
-        self._heartbeat_id = MessageIdentifier.HEARTBEAT.to_bytes(1, byteorder='big')
-        self._custom_id = MessageIdentifier.CUSTOM.to_bytes(1, byteorder='big')
+        self._heartbeat_id = MessageIdentifier.HEARTBEAT.to_bytes(1, byteorder="big")
+        self._custom_id = MessageIdentifier.CUSTOM.to_bytes(1, byteorder="big")
 
     def run(self):
         ctx = zmq.Context.instance()
@@ -78,8 +78,7 @@ class HeartbeatBroadcaster(threading.Thread):
         self._canceled.set()
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     broadcaster = HeartbeatBroadcaster()
     broadcaster.start()
 

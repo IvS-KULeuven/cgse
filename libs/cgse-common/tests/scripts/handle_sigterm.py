@@ -13,7 +13,6 @@ logger = logging.getLogger("egse.test.process")
 
 @app.command()
 def main(ignore_sigterm: bool = False):
-
     logging.basicConfig(level=logging.INFO)
 
     if ignore_sigterm:
@@ -25,14 +24,10 @@ def main(ignore_sigterm: bool = False):
 
 
 def _handle_sigterm():
-
     killer = SignalCatcher()
 
     while "waiting for a SIGTERM signal":
-        if (
-                killer.term_signal_received and
-                killer.signal_number == signal.SIGTERM
-        ):
+        if killer.term_signal_received and killer.signal_number == signal.SIGTERM:
             logger.info("SIGTERM received, terminating...")
             return 42
 
@@ -41,14 +36,10 @@ def _handle_sigterm():
 
 
 def _ignore_sigterm():
-
     killer = SignalCatcher()
 
     while "ignoring a SIGTERM signal":
-        if (
-                killer.term_signal_received and
-                killer.signal_number == signal.SIGTERM
-        ):
+        if killer.term_signal_received and killer.signal_number == signal.SIGTERM:
             logger.info("SIGTERM received and ignored.")
             killer.clear(term=True)
             continue
@@ -58,7 +49,6 @@ def _ignore_sigterm():
 
 
 if __name__ == "__main__":
-
     import egse.logger  # noqa : activate egse logger
 
     print(f"{sys.argv=}")
