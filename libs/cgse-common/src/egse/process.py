@@ -1,13 +1,41 @@
 """
 This module provides functions and classes to work with processes and sub-processes.
+
+We combine two great packages, the `subprocess` and the `psutils` packages, to
+provide a simplified, robust and user-friendly interface to work with sub-processes.
+The classes and functions are optimized to work with processes within the framework
+of the `cgse`, so we do not intend to be fully generic. If you need that, we recommend
+to use the `subprocess` and `psutil` packages directly.
+
+The main class provided is the `SubProcess` which by default, starts a sub-process
+in the background and detached from the parent process. That means there is no
+communication between the parent and the subprocess through pipes. Most (if not all)
+processes in the `cgse` framework communicate with ZeroMQ messages in different
+protocols like REQ-REP, PUSH-PULL and ROUTER-DEALER
+
+Another useful class is the `ProcessStatus`. This class provides status information
+like memory and CPU usage for the running process. Additionally, it will generate
+and update metrics that can be queried by the Prometheus timeseries database.
+
 """
 from __future__ import annotations
+
+__all__ = [
+    "get_process_info",
+    "is_process_running",
+    "list_processes",
+    "list_zombies",
+    "ps_egrep",
+    "ProcessStatus",
+    "SubProcess",
+]
 
 import contextlib
 import datetime
 import logging
 import os
 import subprocess
+import sys
 import threading
 import time
 import uuid
@@ -20,7 +48,7 @@ from prometheus_client import Gauge
 from egse.bits import humanize_bytes
 from egse.system import humanize_seconds
 
-LOGGER = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class ProcessStatus:
@@ -35,6 +63,8 @@ class ProcessStatus:
     * uuid: the UUID1 for this process
     * memory info: memory information on the process
     * cpu usage, percentage and count (number of physical cores)
+
+    The status will always be updated before returning or printing.
 
     Parameters:
         metrics_prefix: the prefix that identifies the process for which these metrics are gathered.
@@ -83,7 +113,7 @@ class ProcessStatus:
                 "Return the number of Thread objects currently alive"
             ),
             PSUTIL_PROC_UPTIME=Gauge(
-                f"{metrics_prefix}psutil_proccess_uptime",
+                f"{metrics_prefix}psutil_process_uptime",
                 "Return the time in seconds that the process is up and running"
             ),
         )
@@ -179,44 +209,46 @@ class SubProcess:
     """
     A SubProcess that is usually started by the ProcessManager.
 
-    Usage:
+    Example:
 
-        proc = SubProcess("MyApp", [sys.executable, "-m", "egse.<module>.<module>"])
+        proc = SubProcess("MyApp", [sys.executable, "-m", "egse.<module>"])
         proc.execute()
+
+
 
     """
 
     def __init__(
-            self, name: str, cmd: List, args: List = None, shell: bool = True,
+            self, name: str, cmd: List, args: List = None, shell: bool = False,
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     ):
         self._popen = None
         self._sub_process: psutil.Process | None = None
         self._name = name
-        self._cmd = cmd
-        self._args = args or []
+        self._cmd = [str(x) for x in cmd]
+        self._args = [str(x) for x in args] if args else []
         self._shell = shell
         self._stdout = stdout
         self._stderr = stderr
 
-    def execute(self, detach_from_parent: bool = False) -> bool:
-        """ Execute the sub-process.
+        self._exc_info = {}
 
-        Args:
-            detach_from_parent: Boolean indicating whether the sub-process should be detached from the
-                parent process.  If set to False, the sub-process will be killed whenever the
-                parent process is interrupted or stopped.
+    def execute(self) -> bool:
+        """
+        Execute the sub-process.
 
         Returns:
             True if the process could be started, False on error.
         """
+        self._exc_info = {}
 
         try:
-            command: List = [*self._cmd, *self._args]
-            LOGGER.debug(f"SubProcess command: {command}")
-            # self._popen = subprocess.Popen(command, env=os.environ, close_fds=detach_from_parent)
+            command: List | str = [*self._cmd, *self._args]
+            if self._shell:
+                command = " ".join(command)
+            _logger.debug(f"SubProcess command: {command}")
             self._popen = subprocess.Popen(
-                " ".join(command),
+                command,
                 env=os.environ,
                 shell=self._shell,  # executable='/bin/bash',
                 stdout=self._stdout,
@@ -225,16 +257,20 @@ class SubProcess:
             )
             self._sub_process = psutil.Process(self._popen.pid)
 
-            LOGGER.debug(
+            _logger.debug(
                 f"SubProcess started: {command}, pid={self._popen.pid}, sub_process="
                 f"{self._sub_process} [pid={self._sub_process.pid}]"
             )
-        except KeyError:
-            LOGGER.error(f"Unknown client process: {self._name}", exc_info=True)
-            return False
-        except (PermissionError, FileNotFoundError) as exc:
+        except Exception as exc:
             # This error is raised when the command is not an executable or is not found
-            LOGGER.error(f"Could not execute sub-process: {exc}", exc_info=True)
+            _logger.error(f"Could not execute sub-process: {exc}", exc_info=True)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            self._exc_info = {
+                'exc_type': exc_type,
+                'exc_value': exc_value,
+                'exc_traceback': exc_traceback,
+                'command': " ".join([*self._cmd, *self._args]),
+            }
             return False
         return True
 
@@ -246,6 +282,10 @@ class SubProcess:
     def pid(self) -> int:
         return self._sub_process.pid if self._sub_process else None
 
+    @property
+    def exc_info(self) -> dict:
+        return self._exc_info
+
     def cmdline(self) -> str:
         return " ".join(self._sub_process.cmdline())
 
@@ -255,7 +295,7 @@ class SubProcess:
     def is_child(self, pid: int):
         return any(pid == p.pid for p in self._sub_process.children(recursive=True))
 
-    def is_running(self):
+    def is_running(self) -> bool:
         """
         Check if this process is still running.
 
@@ -270,10 +310,19 @@ class SubProcess:
         if self._sub_process.is_running():
             # it still might be a zombie process
             if self._sub_process.status() in [psutil.STATUS_ZOMBIE, psutil.STATUS_DEAD]:
-                LOGGER.warning("The sub-process is dead or a zombie.")
+                _logger.warning("The sub-process is dead or a zombie.")
                 return False
             return True
-        # LOGGER.debug(f"Return value of the sub-process: {self._popen.returncode}")
+        # _logger.debug(f"Return value of the sub-process: {self._popen.returncode}")
+        return False
+
+    def is_dead_or_zombie(self):
+        if self._sub_process is None:
+            return False
+        if self._sub_process.is_running():
+            # it might be a zombie process
+            if self._sub_process.status() in [psutil.STATUS_ZOMBIE, psutil.STATUS_DEAD]:
+                return True
         return False
 
     def exists(self) -> bool:
@@ -313,37 +362,76 @@ class SubProcess:
         """
 
         def on_terminate(proc):
-            LOGGER.info(f"process {proc} terminated with exit code {proc.returncode}")
+            _logger.info(f"process {proc} terminated with exit code {proc.returncode}")
 
         return_code = 0
+        self._exc_info = {}
 
-        procs = [self._sub_process]
-        procs.extend(self._sub_process.children())
+        children = self._sub_process.children()
 
-        LOGGER.info(f"Processes: {procs}")
+        _logger.info(f"Children: {children}")
 
-        # send SIGTERM
-        for p in procs:
+        # send SIGTERM to subprocess
+
+        try:
+            _logger.info(f"Send a SIGTERM to process with PID={self.pid}")
+            self._sub_process.terminate()
             try:
-                LOGGER.info(f"Terminating process {p}")
-                p.terminate()
-            except psutil.NoSuchProcess:
-                pass
-        gone, alive = psutil.wait_procs(procs, timeout=timeout, callback=on_terminate)
-        if alive:
-            # send SIGKILL
-            for p in alive:
-                LOGGER.info(f"process {p} survived SIGTERM; trying SIGKILL")
+                return_code = self._sub_process.wait(timeout=5.0)  # make this timeout an instance parameter
+                _logger.info(f"{return_code = }")
+            except psutil.TimeoutExpired:
+                _logger.info(f"TimeoutExpired after 5s for PID={self.pid}")
+                _logger.info(f"Send a SIGKILL to process with PID={self.pid}")
+
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                self._exc_info = {
+                    'exc_type': exc_type,
+                    'exc_value': exc_value,
+                    'exc_traceback': exc_traceback,
+                    'command': " ".join([*self._cmd, *self._args]),
+                }
+
+                self._sub_process.kill()
+                return -9  # meaning the process was terminated by a SIGKILL
+        except psutil.NoSuchProcess:
+            # If we get here, the process died already and there are also no children to terminate
+            _logger.info(f"NoSuchProcess with PID={self._sub_process.pid}")
+
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            self._exc_info = {
+                'exc_type': exc_type,
+                'exc_value': exc_value,
+                'exc_traceback': exc_traceback,
+                'command': " ".join([*self._cmd, *self._args]),
+            }
+
+            return 0
+
+        # now terminate the children
+
+        if children:
+
+            for p in children:
                 try:
-                    p.kill()
+                    _logger.info(f"Send a SIGTERM to child process with PID={p.pid}")
+                    p.terminate()
                 except psutil.NoSuchProcess:
                     pass
-            gone, alive = psutil.wait_procs(alive, timeout=timeout, callback=on_terminate)
+            gone, alive = psutil.wait_procs(children, timeout=timeout, callback=on_terminate)
             if alive:
-                # give up
+                # send SIGKILL
                 for p in alive:
-                    LOGGER.info(f"process {p} survived SIGKILL; giving up")
-                    return_code += 1  # return code indicates how many processes are still running
+                    _logger.info(f"Child process {p} survived SIGTERM; trying SIGKILL")
+                    try:
+                        _logger.info(f"Send a SIGKILL to child process with PID={p.pid}")
+                        p.kill()
+                    except psutil.NoSuchProcess:
+                        pass
+                gone, alive = psutil.wait_procs(alive, timeout=timeout, callback=on_terminate)
+                if alive:
+                    # give up
+                    for p in alive:
+                        _logger.info(f"Child process {p} survived SIGKILL; giving up")
 
         return return_code
 
@@ -352,14 +440,16 @@ class SubProcess:
         Check if the sub-process is terminated and return its return code or None when the process
         is still running.
         """
-        return self._popen.poll()
+        return self._popen.poll() if self._popen else None
 
     def communicate(self) -> tuple[str, str]:
         output, error = self._popen.communicate()
         return output.decode() if output else None, error.decode() if error else None
 
 
-def list_processes(items: List[str] | str, contains: bool = True, case_sensitive: bool = False, verbose: bool = False):
+def list_processes(
+        items: List[str] | str, contains: bool = True, case_sensitive: bool = False, verbose: bool = False
+) -> list[dict]:
     """
     Returns and optionally prints the processes that match the given criteria in items.
 
@@ -370,40 +460,94 @@ def list_processes(items: List[str] | str, contains: bool = True, case_sensitive
         verbose: if True, the processes will be printed to the console
 
     Returns:
-        A list of lists for the matching processes. The inner list contains the PID, Status and commandline
-        of a process.
+        A list of dictionaries for the matching processes. The dict contains the
+            'pid', 'status' and 'cmdline' of a process.
     """
     procs = is_process_running(items, contains=contains, case_sensitive=case_sensitive, as_list=True)
 
     result = []
 
-    if verbose:
-        print(f"{'PID':5s} {'Status':>20s} {'Commandline'}")
     for pid in procs:
         proc = psutil.Process(pid)
         status = proc.status()
         cmdline = ' '.join(proc.cmdline())
-        result.append([pid, status, cmdline])
-        if verbose:
-            print(f"{pid:5d} {proc.status():>20s} {cmdline}")
+        result.append({'pid': pid, 'status': status, 'cmdline': cmdline})
+
+    if verbose:
+        if result:
+            print(f"{'PID':5s} {'Status':>20s} {'Commandline'}")
+            print(
+                "\n".join(
+                    [
+                        f"{entry['pid']:5d} {entry['status']:>20s} {entry['cmdline']}"
+                        for entry in result
+                    ]
+                ))
+        else:
+            print(f"No processes found for {items}.")
 
     return result
 
 
-def is_process_running(items: List[str] | str,
-                       contains: bool = True, case_sensitive: bool = False, as_list: bool = False) -> (int | List[int]):
+def list_zombies():
     """
-    Check if there is any running process that contains the given items in its commandline.
+    Returns a list of zombie processes.
 
-    Loops over all running processes and tries to match all items in 'cmd_line_items' to the command line
-    of the process. If all 'cmd_line_items' can be matched to a process, the function returns the PID of
-    that process.
+    A zombie process, also known as a defunct process, is a process that has
+    completed its execution but still has an entry in the process table.
+    This happens when a child process terminates, but the parent process hasn't
+    yet read its exit status by using a system call like wait(). As a result,
+    the process is "dead" (it has completed execution) but hasn't been "reaped"
+    or removed from the system's process table.
+
+    A zombie process can not be killed with SIGKILL because it's already dead, and
+    it's only removed when the parent process reads their exit status or when the
+    parent process itself terminates.
+
+    A zombie process does not block ports, so it's mostly harmless and will disappear
+    when the parent process terminates.
+
+    Returns:
+        A list of dictionaries with information on the zombie processes. The dict
+            contains the 'pid', 'name', and 'cmdline' of the zombie process.
+    """
+    zombies = []
+
+    for proc in psutil.process_iter(['pid', 'name', 'status', 'cmdline']):
+        try:
+            if proc.info['status'] == psutil.STATUS_ZOMBIE:
+                zombies.append(
+                    {
+                        'pid': proc.info['pid'],
+                        'name': proc.info['name'],
+                        'cmdline': proc.info['cmdline'],
+                    }
+                )
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+
+    return zombies
+
+
+def is_process_running(
+        items: List[str] | str,
+        contains: bool = True, case_sensitive: bool = False, as_list: bool = False) -> (int | List[int]):
+    """
+    Check if there is any running process that contains the given items in its
+    commandline.
+
+    Loops over all running processes and tries to match all items in the 'items'
+    argument to the command line of the process. If all 'items' can be matched
+    to a process, the function returns the PID of that process.
+
+    By default, only the first matching process PID is returned. If `as_list=True`
+    then all mathing process PIDs are returned as a list.
 
     Args:
         items: a string or a list of strings that should match command line parts
         contains: if True, the match is done with 'in' otherwise '==' [default: True]
         case_sensitive: if True, the match shall be case-sensitive [default: False]
-        as_list: return the PID off all matching processes as a list [default: False]
+        as_list: return the PID of all matching processes as a list [default: False]
 
     Returns:
         The PID(s) if there exists a running process with the given items, 0 or [] otherwise.
@@ -418,7 +562,7 @@ def is_process_running(items: List[str] | str,
     case = pass_through if case_sensitive else lower
 
     if not items:
-        LOGGER.warning("Expected at least one item in 'items', none were given. False returned.")
+        _logger.warning("Expected at least one item in 'items', none were given. False returned.")
         return [] if as_list else 0
 
     items = [items] if isinstance(items, str) else items
@@ -427,7 +571,7 @@ def is_process_running(items: List[str] | str,
 
     for proc in psutil.process_iter(attrs=['pid', 'cmdline', 'name'], ad_value='n/a'):
         with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            # LOGGER.info(f"{proc.name().lower() = }, {proc.cmdline() = }")
+            # _logger.info(f"{proc.name().lower() = }, {proc.cmdline() = }")
             if contains:
                 if all(any(case(y) in case(x) for x in proc.cmdline()) for y in items):
                     found.append(proc.pid)
@@ -497,14 +641,14 @@ def get_process_info(items: List[str] | str, contains: bool = True, case_sensiti
     case = pass_through if case_sensitive else lower
 
     if not items:
-        LOGGER.warning("Expected at least one item in 'items', none were given. Empty list returned.")
+        _logger.warning("Expected at least one item in 'items', none were given. Empty list returned.")
         return response
 
     items = [items] if isinstance(items, str) else items
 
     for proc in psutil.process_iter():
         with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            # LOGGER.info(f"{proc.name().lower() = }, {proc.cmdline() = }")
+            # _logger.info(f"{proc.name().lower() = }, {proc.cmdline() = }")
             if contains:
                 if all(any(case(y) in case(x) for x in proc.cmdline()) for y in items):
                     response.append(proc.as_dict(attrs=['pid', 'cmdline', 'create_time']))
