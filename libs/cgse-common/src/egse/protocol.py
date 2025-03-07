@@ -7,6 +7,7 @@ The protocol also knows how to load the commands from the YAML file that contain
 command definitions.
 
 """
+
 from __future__ import annotations
 
 import abc
@@ -90,15 +91,12 @@ def get_function(parent_class, method_name: str):
             return func
         logger.warning(f"{method_name} is not a function, type={type(func)}")
     else:
-        logger.warning(
-            f"{parent_class.__module__}.{parent_class.__name__} has no method called {method_name}"
-        )
+        logger.warning(f"{parent_class.__module__}.{parent_class.__name__} has no method called {method_name}")
 
     return None
 
 
 class BaseCommandProtocol(DeviceConnectionObserver):
-
     def __init__(self, control_server: ControlServer):
         super().__init__()
         self.__socket = None
@@ -172,9 +170,7 @@ class BaseCommandProtocol(DeviceConnectionObserver):
 
     def get_housekeeping(self) -> dict:
         """Returns a dictionary with housekeeping information about the device."""
-        raise NotImplementedError(
-            f"The get_housekeeping() method shall be implemented for {self.__class__.__name__}."
-        )
+        raise NotImplementedError(f"The get_housekeeping() method shall be implemented for {self.__class__.__name__}.")
 
     def get_device(self):
         """Returns the device object for the device that is controlled by this protocol."""
@@ -302,6 +298,7 @@ class DynamicCommandProtocol(BaseCommandProtocol, metaclass=abc.ABCMeta):
 
 
 # TODO (rik): The CommandProtocol shall also inherit from the BaseCommandProtocol
+
 
 class CommandProtocol(DeviceConnectionObserver, metaclass=abc.ABCMeta):
     """
@@ -452,9 +449,7 @@ class CommandProtocol(DeviceConnectionObserver, metaclass=abc.ABCMeta):
 
     def get_housekeeping(self) -> dict:
         """Returns a dictionary with housekeeping information about the device."""
-        raise NotImplementedError(
-            f"The get_housekeeping() method shall be implemented for {self.__class__.__name__}."
-        )
+        raise NotImplementedError(f"The get_housekeeping() method shall be implemented for {self.__class__.__name__}.")
 
     def send(self, data):
         """

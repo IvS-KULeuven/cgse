@@ -41,7 +41,6 @@ def create_zombie():
 
 
 def test_zombie():
-
     zombie_pid = create_zombie()
 
     zombies = list_zombies()
@@ -58,10 +57,9 @@ def test_zombie():
 
 
 def test_is_process_running():
-
     # The empty_process.py should be located in the src/tests/scripts directory of the project
 
-    stub = SubProcess("Stub Process", [sys.executable, str(find_file('empty_process.py').resolve())])
+    stub = SubProcess("Stub Process", [sys.executable, str(find_file("empty_process.py").resolve())])
     stub.execute()
 
     time.sleep(0.1)  # allow process time to start/terminate
@@ -84,7 +82,7 @@ def test_is_process_running():
 def test_get_process_info():
     # The empty_process.py should be located in the src/tests/scripts directory of the project
 
-    stub = SubProcess("Stub Process", [sys.executable, str(find_file('empty_process.py').resolve())])
+    stub = SubProcess("Stub Process", [sys.executable, str(find_file("empty_process.py").resolve())])
     stub.execute()
 
     time.sleep(0.1)  # allow process time to start/terminate
@@ -93,15 +91,14 @@ def test_get_process_info():
         logger.warning("Multiple process with 'empty_process' running.")
 
         # We would need this construct if multiple processes matching the criteria are running
-        assert any(stub.pid == p['pid'] for p in get_process_info(["empty_process"]))
+        assert any(stub.pid == p["pid"] for p in get_process_info(["empty_process"]))
     else:
-        assert get_process_info("empty_process")[0]['pid'] == stub.pid
+        assert get_process_info("empty_process")[0]["pid"] == stub.pid
 
     stub.quit()
 
 
 def test_unknown_process():
-
     # The file unknown.exe does not exist and this will raise a FileNotFoundError which is caught in the execute()
     # method.
     process = SubProcess("Unknown App", ["unknown.exe"])
@@ -114,7 +111,6 @@ def test_unknown_process():
 
 
 def test_error_during_execute():
-
     # The __file__  exists, but is not executable and will therefore raise a PermissionError which is caught in the
     # `execute()` method.
 
@@ -124,19 +120,18 @@ def test_error_during_execute():
     time.sleep(0.5)  # allow process time to terminate
     ei = process.exc_info
     print(f"{ei = }")
-    assert ei['exc_type'] is PermissionError
-    assert isinstance(ei['exc_value'], PermissionError)
-    assert isinstance(ei['exc_traceback'], types.TracebackType)
-    assert ei['command'] == __file__
+    assert ei["exc_type"] is PermissionError
+    assert isinstance(ei["exc_value"], PermissionError)
+    assert isinstance(ei["exc_traceback"], types.TracebackType)
+    assert ei["command"] == __file__
     assert not process.is_running()
     assert process.returncode() is None
 
 
 def test_terminated_process():
-
     # Process void-0 exits with an exit code of 0
 
-    process = SubProcess("Stub Process", [sys.executable, str(find_file('void-0.py').resolve())])
+    process = SubProcess("Stub Process", [sys.executable, str(find_file("void-0.py").resolve())])
 
     assert process.execute()
     time.sleep(0.5)  # allow process time to terminate
@@ -145,7 +140,7 @@ def test_terminated_process():
 
     # Process void-1 exits with an exit code of 1
 
-    process = SubProcess("Stub Process", [sys.executable, str(find_file('void-1.py').resolve())])
+    process = SubProcess("Stub Process", [sys.executable, str(find_file("void-1.py").resolve())])
 
     assert process.execute()
     time.sleep(0.5)  # allow process time to terminate
@@ -154,12 +149,10 @@ def test_terminated_process():
 
 
 def test_quit_process():
-
     # when --ignore-sigterm is given, the process will be killed and return code will be -9.
 
     process = SubProcess(
-        "Handle SIGTERM",
-        [sys.executable, str(find_file('handle_sigterm.py').resolve()), "--ignore-sigterm"]
+        "Handle SIGTERM", [sys.executable, str(find_file("handle_sigterm.py").resolve()), "--ignore-sigterm"]
     )
 
     assert process.execute()
@@ -177,10 +170,7 @@ def test_quit_process():
 
     # when --ignore-sigterm is not given, the process will handle the SIGTERM and exit with 42.
 
-    process = SubProcess(
-        "Handle SIGTERM",
-        [sys.executable, str(find_file('handle_sigterm.py').resolve())]
-    )
+    process = SubProcess("Handle SIGTERM", [sys.executable, str(find_file("handle_sigterm.py").resolve())])
 
     assert process.execute()
     time.sleep(0.5)  # allow process to start
@@ -197,10 +187,9 @@ def test_quit_process():
 
 
 def test_active_process():
-
     # The empty_process.py should be located in the tests/scripts directory of this project
 
-    stub = SubProcess("Stub Process", [sys.executable, str(find_file('empty_process.py', root=HERE).resolve())])
+    stub = SubProcess("Stub Process", [sys.executable, str(find_file("empty_process.py", root=HERE).resolve())])
 
     # We can set this cmd_port here because we know this from the empty_process.py file
     # In nominal situations, the cmd_port is known from the configuration file of the
@@ -263,8 +252,7 @@ def test_active_process():
 
 
 def test_process_no_shell():
-
-    stub = SubProcess("Stub Process", [sys.executable, str(find_file('empty_process.py', root=HERE).resolve())])
+    stub = SubProcess("Stub Process", [sys.executable, str(find_file("empty_process.py", root=HERE).resolve())])
     cmd_port = 5556
 
     assert stub.execute()
@@ -277,10 +265,9 @@ def test_process_no_shell():
 
 
 def test_process_with_shell():
-
     stub = SubProcess(
         "Stub Process",
-        [sys.executable, str(find_file('empty_process.py', root=HERE).resolve())],
+        [sys.executable, str(find_file("empty_process.py", root=HERE).resolve())],
         shell=True,
     )
     cmd_port = 5556
@@ -295,10 +282,9 @@ def test_process_with_shell():
 
 
 def test_process_with_children():
-
     parent = SubProcess(
         "Parent Process",
-        [sys.executable, str(find_file('process_with_children.py', root=HERE).resolve())],
+        [sys.executable, str(find_file("process_with_children.py", root=HERE).resolve())],
     )
     cmd_port = 5557
 
@@ -316,7 +302,6 @@ def test_process_with_children():
 
 
 def test_raise_value_error():
-
     proc = SubProcess("ValueErrorApp", [sys.executable, HERE / "scripts" / "raise_value_error.py"])
     proc.execute()
 
@@ -331,7 +316,6 @@ def test_raise_value_error():
 
 
 def test_process_status():
-
     status = ProcessStatus()
 
     sd = status.as_dict()
@@ -343,6 +327,7 @@ def test_process_status():
 
 
 # Helper function to communicate with the empty_process.py
+
 
 def is_active(port: int) -> bool:
     """

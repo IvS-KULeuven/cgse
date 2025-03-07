@@ -13,7 +13,7 @@ SITE_ID = Settings.load("SITE").ID
 
 
 def define_metrics(origin: str, dashboard: str = None, use_site: bool = False, setup: Optional[Setup] = None) -> dict:
-    """ Creates a metrics dictionary from the telemetry dictionary.
+    """Creates a metrics dictionary from the telemetry dictionary.
 
     Read the metric names and their descriptions from the telemetry dictionary, and create Prometheus gauges based on
     this information.
@@ -77,14 +77,11 @@ def define_metrics(origin: str, dashboard: str = None, use_site: bool = False, s
             th_syn_names.append(syn_name)
             th_descriptions.append(description)
 
-    return {
-        syn_name: Gauge(syn_name, description)
-        for syn_name, description in zip(th_syn_names, th_descriptions)
-    }
+    return {syn_name: Gauge(syn_name, description) for syn_name, description in zip(th_syn_names, th_descriptions)}
 
 
 def update_metrics(metrics: dict, updates: dict):
-    """ Updates the metrics parameters with the values from the updates dictionary.
+    """Updates the metrics parameters with the values from the updates dictionary.
 
     Only the metrics parameters for which the names are keys in the given updates dict are actually updated. Other
     metrics remain untouched.
@@ -99,7 +96,7 @@ def update_metrics(metrics: dict, updates: dict):
     for metric_name, value in updates.items():
         try:
             if value is None:
-                metrics[metric_name].set(float('nan'))
+                metrics[metric_name].set(float("nan"))
             else:
                 metrics[metric_name].set(float(value))
         except KeyError:

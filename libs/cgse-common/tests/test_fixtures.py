@@ -4,7 +4,6 @@ from egse.env import get_log_file_location
 
 
 def test_data_storage_layout(default_env):
-
     data_root = default_env.data_root
 
     assert get_data_storage_location() == data_root

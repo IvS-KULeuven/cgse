@@ -43,8 +43,10 @@ def version():
 
     for ep in sorted(entry_points("cgse.version"), key=lambda x: x.name):
         if installed_version := get_version_installed(ep.name):
-            rich.print(f"{ep.name.upper()} installed version = [bold default]{installed_version}[/] — "
-                       f"{get_package_description(ep.name)}")
+            rich.print(
+                f"{ep.name.upper()} installed version = [bold default]{installed_version}[/] — "
+                f"{get_package_description(ep.name)}"
+            )
 
 
 def broken_command(name: str, module: str, exc: Exception):
@@ -55,6 +57,7 @@ def broken_command(name: str, module: str, exc: Exception):
     the `--traceback` option a traceback is reported showing the exception the
     plugin loader encountered.
     """
+
     def broken_plugin(traceback: bool = False):
         rich.print(f"[red]ERROR: Couldn't load this plugin command: {name} ⟶ reason: {exc}[/]")
         if traceback:
@@ -71,9 +74,9 @@ def broken_command(name: str, module: str, exc: Exception):
 
 for ep in entry_points("cgse.command"):
     try:
-        if not ep.extras or 'command' in ep.extras:
+        if not ep.extras or "command" in ep.extras:
             app.command()(ep.load())
-        elif 'group' in ep.extras:
+        elif "group" in ep.extras:
             app.add_typer(ep.load(), name=ep.name)
         else:
             rich.print(f"\n[red]ERROR: don't know what to do with {ep.extras} for {ep.name}, command not added.[/]\n")

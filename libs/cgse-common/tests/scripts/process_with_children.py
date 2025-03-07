@@ -9,6 +9,7 @@ and understands the following commands:
 * Status?: returns status information of the SubProcess
 
 """
+
 import logging
 import pickle
 import sys
@@ -27,10 +28,9 @@ PORT = 5557
 
 
 def main():
-
     # Start a SubProcess
 
-    empty = SubProcess("Child", [sys.executable, str(find_file('empty_process.py', root=HERE).resolve())])
+    empty = SubProcess("Child", [sys.executable, str(find_file("empty_process.py", root=HERE).resolve())])
     empty.execute()
 
     status = ProcessStatus()
@@ -69,7 +69,6 @@ def main():
 
 
 if __name__ == "__main__":
-
     logging.basicConfig(level=logging.INFO)
 
     sys.exit(main())

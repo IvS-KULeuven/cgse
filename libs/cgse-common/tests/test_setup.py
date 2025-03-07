@@ -50,7 +50,6 @@ class DataFixture:
 
 @pytest.fixture()
 def default_test_setup(default_csv_test_data):
-
     conf_root = get_conf_data_location()
 
     setup_path = Path(conf_root) / "default_test_setup.yaml"
@@ -73,7 +72,7 @@ def default_test_setup(default_csv_test_data):
                     corrupt_yaml: yaml//data/corrupt.yaml
             """
         ),
-        create_folder=True
+        create_folder=True,
     )
 
     yield SetupFixture(setup_path=setup_path)
@@ -104,7 +103,7 @@ def default_device_setup():
                     device_args: [42, 73]
             """
         ),
-        create_folder=True
+        create_folder=True,
     )
 
     yield SetupFixture(setup_path=setup_path)
@@ -132,7 +131,7 @@ def default_calibration_setup():
                 corrupt_yaml: yaml//data/corrupt.yaml
             """
         ),
-        create_folder=True
+        create_folder=True,
     )
 
     yield SetupFixture(setup_path=setup_path)
@@ -142,7 +141,6 @@ def default_calibration_setup():
 
 @pytest.fixture()
 def default_csv_test_data():
-
     conf_root = get_conf_data_location()
 
     csv_data_filename = "default_csv_test_data.csv"
@@ -158,7 +156,7 @@ def default_csv_test_data():
             0, 0, 0, 10, 20, 30
             """
         ),
-        create_folder=True
+        create_folder=True,
     )
 
     yield DataFixture(data_path=csv_data_path)
@@ -168,7 +166,6 @@ def default_csv_test_data():
 
 @pytest.fixture()
 def default_csv_calibration_data():
-
     conf_root = get_conf_data_location()
 
     csv_data_filename = "calibration.csv"
@@ -184,7 +181,7 @@ def default_csv_calibration_data():
             7, 8, 9
             """
         ),
-        create_folder=True
+        create_folder=True,
     )
 
     yield DataFixture(data_path=csv_data_path)
@@ -194,7 +191,6 @@ def default_csv_calibration_data():
 
 @pytest.fixture()
 def default_yaml_calibration_data():
-
     conf_root = get_conf_data_location()
 
     yaml_data_filename = "calibration.yaml"
@@ -216,7 +212,7 @@ def default_yaml_calibration_data():
                 coefficients: [100.3, 24.5]
             """
         ),
-        create_folder=True
+        create_folder=True,
     )
 
     yield DataFixture(data_path=yaml_data_path)
@@ -225,7 +221,6 @@ def default_yaml_calibration_data():
 
 
 def test_setup():
-
     setup = Setup()
 
     assert setup == {}
@@ -235,7 +230,8 @@ def test_setup_from_yaml():
     """Perform some basic tests on data from the setup.yaml test data file."""
 
     setup = Setup.from_yaml_file(
-        filename=TEST_LOCATION / "data/conf/SETUP_20250114_1519.yaml", add_local_settings=False)
+        filename=TEST_LOCATION / "data/conf/SETUP_20250114_1519.yaml", add_local_settings=False
+    )
 
     assert setup.site_id == "HOME"
     assert setup.creation_date == datetime.date(2025, 1, 14)
@@ -249,7 +245,6 @@ def test_setup_from_yaml():
 
 
 def test_from_yaml_exceptions():
-
     with pytest.raises(ValueError):
         Setup.from_yaml_file("")
 
@@ -281,8 +276,9 @@ def test_setup_from_dict():
 def test_setup_set():
     """Test that new keys can be added to an existing Setup."""
 
-    setup = Setup.from_yaml_file(filename=TEST_LOCATION / "data/conf/SETUP_20250114_1519.yaml",
-                                 add_local_settings=False)
+    setup = Setup.from_yaml_file(
+        filename=TEST_LOCATION / "data/conf/SETUP_20250114_1519.yaml", add_local_settings=False
+    )
 
     setup.cal = navdict({"sma": {"h": None}})
 
@@ -302,9 +298,7 @@ def test_setup_set():
 def test_attr_dict_get():
     """Test some basic NavigableDict functionality for getting keys and attributes."""
 
-    n = NavigableDict(
-        {"x": 1, "y": {"a": "a", "b": "class//egse.device.DeviceTransport"}}
-    )
+    n = NavigableDict({"x": 1, "y": {"a": "a", "b": "class//egse.device.DeviceTransport"}})
 
     assert n.x == 1
     assert n["x"] == n.x == 1
@@ -327,9 +321,7 @@ class Simulator:
 def test_attr_dict_set():
     """Test some basic NavigableDict functionality for setting keys and attributes."""
 
-    nd = NavigableDict(
-        {"x": 1, "y": {"a": "a", "b": "class//test_setup.Simulator"}}
-    )
+    nd = NavigableDict({"x": 1, "y": {"a": "a", "b": "class//test_setup.Simulator"}})
 
     # Both key and attribute should return the same value
 
@@ -516,7 +508,6 @@ def test_clear():
 
 
 def test_hasattr():
-
     setup = Setup({"a": 1, "b": 2, "c": {"d": 4, "e": 5}})
 
     assert hasattr(setup, "a")
@@ -524,7 +515,6 @@ def test_hasattr():
 
 
 def test_private_keys():
-
     nd = NavigableDict({"a": 1, "b": 2, "c": 3, "d": 4})
 
     nd.set_private_attribute("_a", 11)
@@ -575,13 +565,13 @@ def test_save_to_yaml():
 
     if deep_diff:
         import rich
+
         rich.print(AttributeDict(deep_diff))
 
     Path(saved_setup_name).unlink()
 
 
 def test_save_to_yaml_exception():
-
     setup = Setup({"a": 1, "b": 2, "c": {"d": 4, "e": 5}})
 
     with pytest.raises(ValueError):
@@ -633,7 +623,6 @@ def test_lazy_load_value_from_yaml(default_test_setup):
 
 
 def test_pickling(default_test_setup, default_csv_test_data):
-
     Setup.from_yaml_file.cache_clear()  # needed because the same file is used elsewhere
 
     setup_path = default_test_setup.setup_path
@@ -650,7 +639,6 @@ def test_pickling(default_test_setup, default_csv_test_data):
 
 
 def test_raw_value(default_test_setup, default_csv_test_data):
-
     Setup.from_yaml_file.cache_clear()  # needed because the same file is used elsewhere
 
     setup_path = default_test_setup.setup_path
@@ -666,6 +654,7 @@ def test_raw_value(default_test_setup, default_csv_test_data):
 
 class TakeTwoOptionalArguments(DeviceInterface):
     """Test class for device with device_args."""
+
     def __init__(self, a=23, b=24):
         super().__init__()
         self._a = a
@@ -686,7 +675,6 @@ z:
 
 
 def test_device_args():
-
     d = yaml.safe_load(SETUP_YAML)
     nd = NavigableDict(d)
 
@@ -724,22 +712,20 @@ Setup:
 
 
 def test_load_yaml_for_a_field(default_yaml_calibration_data):
-
     setup = Setup.from_yaml_string(SETUP_YAML_FOR_FIELD)
 
-    assert setup.gse.get_raw_value('calibration').startswith("yaml//")
+    assert setup.gse.get_raw_value("calibration").startswith("yaml//")
     assert setup.gse.get_memoized_keys() == []
     assert setup.gse.calibration.cal_2.coefficients[1] == 24.5
-    assert setup.gse.get_memoized_keys() == ['calibration']
+    assert setup.gse.get_memoized_keys() == ["calibration"]
 
 
 def test_load_csv_for_a_field(default_csv_calibration_data):
-
     print()
 
     setup = Setup.from_yaml_string(SETUP_YAML_FOR_FIELD)
 
-    assert setup.gse.get_raw_value('table').startswith("csv//")
+    assert setup.gse.get_raw_value("table").startswith("csv//")
 
     rich.print(setup.gse.table)
 
@@ -748,12 +734,11 @@ def test_load_csv_for_a_field(default_csv_calibration_data):
 
 
 def test_csv_file_for_field_not_found():
-
     print()
 
     setup = Setup.from_yaml_string(SETUP_YAML_FOR_FIELD)
 
-    assert setup.gse.get_raw_value('non_existing_csv').startswith("csv//")
+    assert setup.gse.get_raw_value("non_existing_csv").startswith("csv//")
 
     with pytest.raises(ValueError) as ve:
         _ = setup.gse.non_existing_csv
@@ -762,12 +747,11 @@ def test_csv_file_for_field_not_found():
 
 
 def test_yaml_file_for_field_not_found():
-
     print()
 
     setup = Setup.from_yaml_string(SETUP_YAML_FOR_FIELD)
 
-    assert setup.gse.get_raw_value('non_existing_yaml').startswith("yaml//")
+    assert setup.gse.get_raw_value("non_existing_yaml").startswith("yaml//")
 
     with pytest.raises(ValueError) as ve:
         _ = setup.gse.non_existing_yaml
@@ -776,12 +760,11 @@ def test_yaml_file_for_field_not_found():
 
 
 def test_yaml_file_for_field_not_loaded():
-
     print()
 
     setup = Setup.from_yaml_string(SETUP_YAML_FOR_FIELD)
 
-    assert setup.gse.get_raw_value('corrupt_yaml').startswith("yaml//")
+    assert setup.gse.get_raw_value("corrupt_yaml").startswith("yaml//")
 
     with pytest.raises(ValueError) as ve:
         _ = setup.gse.corrupt_yaml
@@ -792,7 +775,6 @@ def test_yaml_file_for_field_not_loaded():
 
 
 def test_saving_setup_with_yaml_and_csv_resources(default_csv_calibration_data):
-
     setup = Setup.from_yaml_string(SETUP_YAML_FOR_FIELD)
 
     # make sure you have accessed the fields before saving
@@ -806,28 +788,28 @@ def test_saving_setup_with_yaml_and_csv_resources(default_csv_calibration_data):
 
 
 def test_get_path_of_last_setup_file():
-
     env_name = get_conf_data_location_env_name()
     env_repo_name = get_conf_repo_location_env_name()
 
     with env_var(PROJECT="CGSE"), env_var(**{env_name: None}), env_var(**{env_repo_name: None}):
-
         with pytest.raises(FileNotFoundError):
             get_path_of_setup_file(43, "SRON")
 
         with pytest.warns(UserWarning, match="CGSE_CONF_REPO_LOCATION doesn't exist: YYYY"):
-            set_conf_repo_location('YYYY')
+            set_conf_repo_location("YYYY")
 
-        with (pytest.raises(LookupError),
-              pytest.warns(UserWarning, match="configuration data repository doesn't exist: YYYY")):
-            get_path_of_setup_file(setup_id=43, site_id='XXXX')
+        with (
+            pytest.raises(LookupError),
+            pytest.warns(UserWarning, match="configuration data repository doesn't exist: YYYY"),
+        ):
+            get_path_of_setup_file(setup_id=43, site_id="XXXX")
 
         with env_var(**{env_repo_name: "/tmp/no-such-folder"}):
             with pytest.raises(LookupError):
-                get_path_of_setup_file(setup_id=43, site_id='XXXX')
+                get_path_of_setup_file(setup_id=43, site_id="XXXX")
 
             with pytest.raises(LookupError):
-                get_path_of_setup_file(setup_id=43, site_id='SRON')
+                get_path_of_setup_file(setup_id=43, site_id="SRON")
 
             # FIXME: these tests became invalid after a change in the strategy of checking in get_path_of_setup_file()
             # assert "SETUP_SRON_00031" in str(get_path_of_setup_file(setup_id=None, site_id="SRON"))
@@ -836,42 +818,40 @@ def test_get_path_of_last_setup_file():
 
 @pytest.mark.skip(reason="load_setup prefers the repo location over the conf data location.")
 def test_load_setup_from_disk():
-
     with pytest.raises(ValueError):
         _ = load_setup(from_disk=True)
 
     env_repo_name = get_conf_repo_location_env_name()
     with env_var(**{env_repo_name: "/tmp/no-such-folder-either"}):
-
         # This will always fail since the load_setup() -> get_path_of_setup_file() prefers the repo location
         # over the conf data location. Since we set the repo location to a non-existing folder, this will fail.
         # FIXME: provide a proper mocked repo location or se the conf data location.
 
-        setup = load_setup(site_id='SRON', from_disk=True)
+        setup = load_setup(site_id="SRON", from_disk=True)
 
-        assert setup.site_id == 'SRON'
+        assert setup.site_id == "SRON"
         assert setup.camera.fee.ID == 174057003
         assert 31 in setup.history
 
-        setup = load_setup(setup_id=28, site_id='SRON', from_disk=True)
+        setup = load_setup(setup_id=28, site_id="SRON", from_disk=True)
 
-        assert setup.site_id == 'SRON'
+        assert setup.site_id == "SRON"
         assert 29 not in setup.history
         assert "SETUP_SRON_00028" in str(setup.get_private_attribute("_filename"))
 
-        setup = load_setup(setup_id=28, site_id='CSL', from_disk=True)
+        setup = load_setup(setup_id=28, site_id="CSL", from_disk=True)
 
-        assert setup.site_id == 'CSL'
+        assert setup.site_id == "CSL"
         assert 29 not in setup.history
         assert "SETUP_CSL_00028" in str(setup.get_private_attribute("_filename"))
 
 
 def test_last_setup_id():
-
-    with (env_var(PROJECT="CGSE"),
-          env_var(SITE_ID="CSL"),
-          env_var(CGSE_DATA_STORAGE_LOCATION=str(TEST_LOCATION / 'data'))):
-
+    with (
+        env_var(PROJECT="CGSE"),
+        env_var(SITE_ID="CSL"),
+        env_var(CGSE_DATA_STORAGE_LOCATION=str(TEST_LOCATION / "data")),
+    ):
         get_last_setup_id_file_path().unlink(missing_ok=True)
 
         assert load_last_setup_id() == 0
@@ -891,13 +871,11 @@ def test_last_setup_id():
 
 
 def test_last_setup_site_dependence():
-
     # Test that successive calls for different site ids do not overwrite previously save setup ids for a site.
 
     site_setup_ids = {"SRON": 2, "INTA": 23, "IAS": 47, "CSL1": 17, "CSL2": 18}
 
-    with env_var(PROJECT="CGSE"), env_var(CGSE_DATA_STORAGE_LOCATION=str(TEST_LOCATION / 'data')):
-
+    with env_var(PROJECT="CGSE"), env_var(CGSE_DATA_STORAGE_LOCATION=str(TEST_LOCATION / "data")):
         for site_id, setup_id in site_setup_ids.items():
             assert site_id in str(get_last_setup_id_file_path(site_id=site_id))
             save_last_setup_id(setup_id=setup_id, site_id=site_id)
@@ -932,7 +910,6 @@ AAAADeviceFactory = BBBBDeviceFactory = CCCCDeviceFactory = DDDDDeviceFactory = 
 
 
 def test_device_factory():
-
     setup = Setup.from_yaml_string(
         textwrap.dedent(
             """
@@ -986,6 +963,7 @@ def test_device_factory():
 
 # Now in the following tests let's prove the factory implementation is device independent
 
+
 class Beer:
     def __init__(self, name: str, alcohol: float):
         self._name = name
@@ -1007,7 +985,6 @@ class BeerFactory:
 
 
 def test_beer_factory():
-
     setup = Setup.from_yaml_string(
         textwrap.dedent(
             """
@@ -1043,7 +1020,6 @@ def test_beer_factory():
 
 
 def test_walk():
-
     setup = Setup.from_yaml_string(
         """
         xxx:
@@ -1071,7 +1047,6 @@ def test_walk():
 
 
 def test_find_devices():
-
     setup = Setup.from_yaml_string(
         """
         xxx:

@@ -84,9 +84,7 @@ def test_return_code_of_execute(monkeypatch):
     assert checkQVars(var=36, count=1, step=1) == "&2 Q20 Q36,1,1"
     assert checkQVars(36, 1, 1) == "&2 Q20 Q36,1,1"
 
-    getSpeed = HexapodCommand(
-        name="CFG?SPEED", cmd="&2 Q20=35", response=partial(checkQVars, 80, 6, 1)
-    )
+    getSpeed = HexapodCommand(name="CFG?SPEED", cmd="&2 Q20=35", response=partial(checkQVars, 80, 6, 1))
 
     rc = getSpeed()
 
@@ -227,14 +225,12 @@ def test_command_execution():
 
 
 def test_doc_string():
-
     cmd = Command(name="Plain", cmd="plain_command", description="A Plain Command")
 
     assert "A Plain Command" in cmd.__doc__
 
 
 def test_validate_arguments():
-
     cmd = Command(name="Plain", cmd="plain_command", description="A Plain Command")
 
     # If this doesn't raise an exception, the arguments are validated.
@@ -276,10 +272,7 @@ def test_client_server_command():
 
 def test_stringify_function_call():
     def function(func: Callable, *args, **kwargs):
-
-        result = stringify_function_call(
-            {"func_name": func.__name__, "args": args, "kwargs": kwargs}
-        )
+        result = stringify_function_call({"func_name": func.__name__, "args": args, "kwargs": kwargs})
 
         return result
 

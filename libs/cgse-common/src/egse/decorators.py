@@ -1,6 +1,7 @@
 """
 A collection of useful decorator functions.
 """
+
 import cProfile
 import functools
 import logging
@@ -34,10 +35,12 @@ def static_vars(**kwargs):
         ```
 
     """
+
     def decorator(func):
         for kw in kwargs:
             setattr(func, kw, kwargs[kw])
         return func
+
     return decorator
 
 
@@ -64,32 +67,28 @@ def dynamic_interface(func):
 
 
 def query_command(func):
-    """Adds a static variable `__query_command` to a method.
-    """
+    """Adds a static variable `__query_command` to a method."""
 
     setattr(func, "__query_command", True)
     return func
 
 
 def transaction_command(func):
-    """Adds a static variable `__transaction_command` to a method.
-    """
+    """Adds a static variable `__transaction_command` to a method."""
 
     setattr(func, "__transaction_command", True)
     return func
 
 
 def read_command(func):
-    """Adds a static variable `__read_command` to a method.
-    """
+    """Adds a static variable `__read_command` to a method."""
 
     setattr(func, "__read_command", True)
     return func
 
 
 def write_command(func):
-    """Adds a static variable `__write_command` to a method.
-    """
+    """Adds a static variable `__write_command` to a method."""
 
     setattr(func, "__write_command", True)
     return func
@@ -120,6 +119,7 @@ def average_time(*, name: str = "average_time", level: int = logging.INFO, preci
         The decorated function.
 
     """
+
     def actual_decorator(func):
         func._run_time = 0.0
         func._call_count = 0
@@ -131,7 +131,7 @@ def average_time(*, name: str = "average_time", level: int = logging.INFO, preci
                     level,
                     f"{name}: "
                     f"average runtime of {func.__name__!r} is {average_time:.{precision}f}s, "
-                    f"#calls = {func._call_count}."
+                    f"#calls = {func._call_count}.",
                 )
             else:
                 _LOGGER.log(level, f"{name}: function {func.__name__!r} was never called.")
@@ -155,6 +155,7 @@ def average_time(*, name: str = "average_time", level: int = logging.INFO, preci
             return result
 
         return wrapper
+
     return actual_decorator
 
 
@@ -179,6 +180,7 @@ def timer(*, name: str = "timer", level: int = logging.INFO, precision: int = 4)
             return value
 
         return wrapper_timer
+
     return actual_decorator
 
 
@@ -226,11 +228,14 @@ def time_it(count: int = 1000, precision: int = 4) -> Callable:
                 value = func(*args, **kwargs)
             end_time = time.perf_counter()
             run_time = end_time - start_time
-            logging.info(f"Finished {func.__name__!r} in {run_time/count:.{precision}f} secs "
-                         f"(total time: {run_time:.2f}s, count: {count})")
+            logging.info(
+                f"Finished {func.__name__!r} in {run_time / count:.{precision}f} secs "
+                f"(total time: {run_time:.2f}s, count: {count})"
+            )
             return value
 
         return wrapper_timer
+
     return actual_decorator
 
 
@@ -254,7 +259,7 @@ def debug(func):
 
 
 def profile_func(
-        output_file: str = None, sort_by: str = 'cumulative', lines_to_print: int = None, strip_dirs: bool = False
+    output_file: str = None, sort_by: str = "cumulative", lines_to_print: int = None, strip_dirs: bool = False
 ) -> Callable:
     """A time profiler decorator.
 
@@ -292,14 +297,14 @@ def profile_func(
     def inner(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            _output_file = output_file or func.__name__ + '.prof'
+            _output_file = output_file or func.__name__ + ".prof"
             pr = cProfile.Profile()
             pr.enable()
             retval = func(*args, **kwargs)
             pr.disable()
             pr.dump_stats(_output_file)
 
-            with open(_output_file, 'w') as f:
+            with open(_output_file, "w") as f:
                 ps = pstats.Stats(pr, stream=f)
                 if strip_dirs:
                     ps.strip_dirs()
@@ -467,8 +472,8 @@ def to_be_implemented(func):
 
 # Taken and adapted from https://github.com/QCoDeS/Qcodes
 
-def deprecate(reason: Optional[str] = None,
-              alternative: Optional[str] = None) -> Callable:
+
+def deprecate(reason: Optional[str] = None, alternative: Optional[str] = None) -> Callable:
     """
     Deprecate a function or method. This will print a warning with the function name and where
     it is called from. If the optional parameters `reason` and `alternative` are given, that
@@ -493,12 +498,12 @@ def deprecate(reason: Optional[str] = None,
         @functools.wraps(func)
         def decorated_func(*args, **kwargs):
             caller = get_caller_info(2)
-            msg = f'The function \"{func.__name__}\" used at {caller.filename}:{caller.lineno} is deprecated'
+            msg = f'The function "{func.__name__}" used at {caller.filename}:{caller.lineno} is deprecated'
             if reason is not None:
-                msg += f', because {reason}'
+                msg += f", because {reason}"
             if alternative is not None:
-                msg += f'. Use {alternative} as an alternative'
-            msg += '.'
+                msg += f". Use {alternative} as an alternative"
+            msg += "."
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
             return func(*args, **kwargs)
 
@@ -522,7 +527,7 @@ def singleton(cls):
 
     @functools.wraps(cls.__new__)
     def singleton_new(cls, *args, **kw):
-        it = cls.__dict__.get('__it__')
+        it = cls.__dict__.get("__it__")
         if it is not None:
             return it
 
@@ -575,6 +580,7 @@ class classproperty:
         >>> assert "Message" == msg.name
 
     """
+
     def __init__(self, func):
         self.func = func
 
@@ -583,11 +589,13 @@ class classproperty:
 
     def __set__(self, instance, value):
         raise AttributeError(
-            f"Cannot change class property '{self.func.__name__}' for class '{instance.__class__.__name__}'.")
+            f"Cannot change class property '{self.func.__name__}' for class '{instance.__class__.__name__}'."
+        )
 
 
 class Nothing:
     """Just to get a nice repr for Nothing. It is kind of a Null object..."""
+
     def __repr__(self):
         return "<Nothing>"
 
@@ -622,11 +630,9 @@ def spy_on_attr_change(obj: object, obj_name: str = None) -> None:
     logger = logging.getLogger("egse.spy")
 
     class Wrapper(obj.__class__):
-
         def __setattr__(self, name, value):
             old = getattr(self, name, Nothing())
-            logger.warning(
-                f"Spy: in {obj_name or obj.__class__.__name__} -> {name}: {old!r} -> {value!r}")
+            logger.warning(f"Spy: in {obj_name or obj.__class__.__name__} -> {name}: {old!r} -> {value!r}")
             return super().__setattr__(name, value)
 
     class_name = obj.__class__.__name__
@@ -635,7 +641,7 @@ def spy_on_attr_change(obj: object, obj_name: str = None) -> None:
 
 
 def retry_with_exponential_backoff(
-        max_attempts: int = 5, initial_wait: float = 1.0, backoff_factor: int = 2, exceptions: List = None
+    max_attempts: int = 5, initial_wait: float = 1.0, backoff_factor: int = 2, exceptions: List = None
 ) -> Callable:
     """
     Decorator for retrying a function with exponential backoff.
@@ -662,7 +668,6 @@ def retry_with_exponential_backoff(
     exceptions = [Exception] if exceptions is None else exceptions
 
     def actual_decorator(func):
-
         @functools.wraps(func)
         def decorate_func(*args, **kwargs):
             attempt = 0
@@ -672,15 +677,13 @@ def retry_with_exponential_backoff(
             while attempt < max_attempts:
                 try:
                     response = func(*args, **kwargs)  # Attempt to call the function
-                    _LOGGER.info(
-                        f"{func.__name__} successfully executed."
-                    )
+                    _LOGGER.info(f"{func.__name__} successfully executed.")
                     return response
                 except tuple(exceptions) as exc:
                     last_exception = exc
                     attempt += 1
                     _LOGGER.info(
-                        f"Retry {attempt}: {func.__name__} will be executing again in {wait_time*backoff_factor}s. "
+                        f"Retry {attempt}: {func.__name__} will be executing again in {wait_time * backoff_factor}s. "
                         f"Received a {last_exception!r}."
                     )
                     time.sleep(wait_time)  # Wait before retrying
@@ -734,7 +737,6 @@ def retry(times: int = 3, wait: float = 10.0, exceptions: List = None) -> Callab
     exceptions = [Exception] if exceptions is None else exceptions
 
     def actual_decorator(func: Callable) -> Callable:
-
         @functools.wraps(func)
         def decorated_func(*args, **kwargs):
             previous_exception = None
@@ -750,6 +752,7 @@ def retry(times: int = 3, wait: float = 10.0, exceptions: List = None) -> Callab
                     )
                     time.sleep(wait)
             raise previous_exception
+
         return decorated_func
 
     return actual_decorator

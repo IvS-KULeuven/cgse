@@ -36,6 +36,7 @@ Example:
     func_b()  # will show the changes done in func_a
     ```
 """
+
 import importlib
 import itertools
 import typing
@@ -74,15 +75,16 @@ def reload_module(module: typing.Union[types.ModuleType, str], walk: bool = True
     """
     full_module_name = module.__name__ if isinstance(module, types.ModuleType) else module
 
-    module_names = itertools.accumulate(full_module_name.split('.'),
-                                        lambda x, y: f"{x}.{y}") if walk else [full_module_name]
+    module_names = (
+        itertools.accumulate(full_module_name.split("."), lambda x, y: f"{x}.{y}") if walk else [full_module_name]
+    )
 
     for module_name in module_names:
         try:
             module = importlib.import_module(module_name)
             importlib.reload(module)
         except (Exception,) as exc:
-            rich.print(f'[red]Failed to reload {module_name}[/red], {exc=}')
+            rich.print(f"[red]Failed to reload {module_name}[/red], {exc=}")
 
 
 def reload_function(func: types.FunctionType) -> types.FunctionType:
@@ -129,7 +131,7 @@ def reload_function(func: types.FunctionType) -> types.FunctionType:
     module_name = func.__module__
     func_name = func.__name__
 
-    if module_name == '__main__':
+    if module_name == "__main__":
         raise Abort("Cannot reload a function that is defined in the __main__ module.")
 
     reload_module(module_name)

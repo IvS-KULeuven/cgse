@@ -21,7 +21,6 @@ def set_address_port(url: str, port: int):
 
 
 def split_address(url: str):
-
     transport, address, port = url.split(":")
     if address.startswith("//"):
         address = address[2:]

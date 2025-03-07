@@ -163,8 +163,7 @@ def check_if_file_exists(filename: Union[Path, str], resource_id: str = None) ->
         return filename
 
     if resource_id:
-        raise NoSuchFileError(
-            f"The file '{filename.name}' could not be found for the given resource '{resource_id}'")
+        raise NoSuchFileError(f"The file '{filename.name}' could not be found for the given resource '{resource_id}'")
     else:
         raise NoSuchFileError(f"The file '{filename.name}' doesn't exist.")
 
@@ -174,9 +173,9 @@ def contains_wildcard(filename: str):
     Returns True if the filename contains a wildcard, otherwise False.
     A wildcard is an asterisk '*' or a question mark '?' character.
     """
-    if '*' in filename:
+    if "*" in filename:
         return True
-    if '?' in filename:
+    if "?" in filename:
         return True
 
     return False
@@ -365,8 +364,7 @@ def get_resource(resource_locator: str) -> Path:
     """
     # Try to match the special resource syntax `:/resource_id/` or `:/resource_id/*/`
 
-    if resource_locator.startswith(':'):
-
+    if resource_locator.startswith(":"):
         match = PATTERN.fullmatch(resource_locator)
         resource_id = match[1]
         filename = match[3]
@@ -381,7 +379,6 @@ def get_resource(resource_locator: str) -> Path:
         #   - '**/' to find the file in any sub-folder below the given resource
 
         if match[2] is None:
-
             # This will return the first occurrence of the filename
 
             for resource_location in resource_locations:
@@ -393,21 +390,19 @@ def get_resource(resource_locator: str) -> Path:
                     elif len(files) == 1:
                         return files[0]
                     else:
-                        raise AmbiguityError(f"The {filename=} found {len(files)} matches for "
-                                             f"the given resource '{resource_id}'.")
+                        raise AmbiguityError(
+                            f"The {filename=} found {len(files)} matches for the given resource '{resource_id}'."
+                        )
 
                 with contextlib.suppress(NoSuchFileError):
                     return check_if_file_exists(resource_location / filename, resource_id)
             else:
-                raise NoSuchFileError(
-                    f"No file found that matches {filename=} for the given resource '{resource_id}'."
-                )
+                raise NoSuchFileError(f"No file found that matches {filename=} for the given resource '{resource_id}'.")
 
         elif match[2] == "*/":
             # This will return the first occurrence of the filename
 
             for resource_location in resource_locations:
-
                 files = list(find_files(filename, root=resource_location))
 
                 if len(files) == 0:
@@ -415,17 +410,15 @@ def get_resource(resource_locator: str) -> Path:
                 elif len(files) == 1:
                     return files[0]
                 else:
-                    raise AmbiguityError(f"The {filename=} found {len(files)} matches for "
-                                         f"the given resource '{resource_id}'.")
+                    raise AmbiguityError(
+                        f"The {filename=} found {len(files)} matches for the given resource '{resource_id}'."
+                    )
 
             else:
-                raise NoSuchFileError(
-                    f"No file found that matches {filename=} for the given resource '{resource_id}'."
-                )
+                raise NoSuchFileError(f"No file found that matches {filename=} for the given resource '{resource_id}'.")
 
-        elif match[2] == '**/':
+        elif match[2] == "**/":
             for resource_location in resource_locations:
-
                 files = list(find_files(filename, root=resource_location))
 
                 if len(files) == 0:
@@ -433,17 +426,15 @@ def get_resource(resource_locator: str) -> Path:
                 elif len(files) == 1:
                     return files[0]
                 else:
-                    raise AmbiguityError(f"The {filename=} found {len(files)} matches for "
-                                         f"the given resource '{resource_id}'.")
+                    raise AmbiguityError(
+                        f"The {filename=} found {len(files)} matches for the given resource '{resource_id}'."
+                    )
 
             else:
-                raise NoSuchFileError(
-                    f"No file found that matches {filename=} for the given resource '{resource_id}'."
-                )
+                raise NoSuchFileError(f"No file found that matches {filename=} for the given resource '{resource_id}'.")
 
         else:
-            raise InternalError(
-                f"This shouldn't happen, the match is {match[2]=} for {resource_locator=}")
+            raise InternalError(f"This shouldn't happen, the match is {match[2]=} for {resource_locator=}")
     else:
         return check_if_file_exists(Path(resource_locator))
 
@@ -457,7 +448,6 @@ initialise_resources()
 
 
 if __name__ == "__main__":
-
     import rich
 
     rich.print("Default resources:")
