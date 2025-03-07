@@ -2228,6 +2228,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#egse.process.list_zombies" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;list_zombies
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2530,6 +2539,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#egse.process.list_zombies" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;list_zombies
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2575,6 +2593,19 @@
     <div class="doc doc-contents first">
 
         <p>This module provides functions and classes to work with processes and sub-processes.</p>
+<p>We combine two great packages, the <code>subprocess</code> and the <code>psutils</code> packages, to
+provide a simplified, robust and user-friendly interface to work with sub-processes.
+The classes and functions are optimized to work with processes within the framework
+of the <code>cgse</code>, so we do not intend to be fully generic. If you need that, we recommend
+to use the <code>subprocess</code> and <code>psutil</code> packages directly.</p>
+<p>The main class provided is the <code>SubProcess</code> which by default, starts a sub-process
+in the background and detached from the parent process. That means there is no
+communication between the parent and the subprocess through pipes. Most (if not all)
+processes in the <code>cgse</code> framework communicate with ZeroMQ messages in different
+protocols like REQ-REP, PUSH-PULL and ROUTER-DEALER</p>
+<p>Another useful class is the <code>ProcessStatus</code>. This class provides status information
+like memory and CPU usage for the running process. Additionally, it will generate
+and update metrics that can be queried by the Prometheus timeseries database.</p>
 
 
 
@@ -2634,7 +2665,7 @@
               <td><code><a class="autorefs autorefs-internal" title=" is_process_running (egse.process.is_process_running)" href="#egse.process.is_process_running">is_process_running</a></code></td>
               <td>
                 <div class="doc-md-description">
-                  <p>Check if there is any running process that contains the given items in its commandline.</p>
+                  <p>Check if there is any running process that contains the given items in its</p>
                 </div>
               </td>
             </tr>
@@ -2643,6 +2674,14 @@
               <td>
                 <div class="doc-md-description">
                   <p>Returns and optionally prints the processes that match the given criteria in items.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" list_zombies (egse.process.list_zombies)" href="#egse.process.list_zombies">list_zombies</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Returns a list of zombie processes.</p>
                 </div>
               </td>
             </tr>
@@ -2687,6 +2726,7 @@ process.</p>
 <li>memory info: memory information on the process</li>
 <li>cpu usage, percentage and count (number of physical cores)</li>
 </ul>
+<p>The status will always be updated before returning or printing.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -2888,7 +2928,7 @@ process execution:</p>
     <span class="n">name</span><span class="p">,</span>
     <span class="n">cmd</span><span class="p">,</span>
     <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">shell</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">stdout</span><span class="o">=</span><span class="n"><a class="autorefs autorefs-external" title="subprocess.DEVNULL" href="https://docs.python.org/3/library/subprocess.html#subprocess.DEVNULL">DEVNULL</a></span><span class="p">,</span>
     <span class="n">stderr</span><span class="o">=</span><span class="n"><a class="autorefs autorefs-external" title="subprocess.DEVNULL" href="https://docs.python.org/3/library/subprocess.html#subprocess.DEVNULL">DEVNULL</a></span><span class="p">,</span>
 <span class="p">)</span>
@@ -2898,8 +2938,8 @@ process execution:</p>
 
 
         <p>A SubProcess that is usually started by the ProcessManager.</p>
-<p>Usage:</p>
-<pre><code>proc = SubProcess("MyApp", [sys.executable, "-m", "egse.&lt;module&gt;.&lt;module&gt;"])
+<p>Example:</p>
+<pre><code>proc = SubProcess("MyApp", [sys.executable, "-m", "egse.&lt;module&gt;"])
 proc.execute()
 </code></pre>
 
@@ -2994,45 +3034,12 @@ proc.execute()
 
 
 <a href="#egse.process.SubProcess.execute" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">execute</span><span class="p">(</span><span class="n">detach_from_parent</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">execute</span><span class="p">()</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
         <p>Execute the sub-process.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>detach_from_parent</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Boolean indicating whether the sub-process should be detached from the
-parent process.  If set to False, the sub-process will be killed whenever the
-parent process is interrupted or stopped.</p>
-              </div>
-            </td>
-            <td>
-                  <code>False</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
 
 
     <p><span class="doc-section-title">Returns:</span></p>
@@ -3134,6 +3141,7 @@ parent process is interrupted or stopped.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3429,10 +3437,13 @@ processes.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Check if there is any running process that contains the given items in its commandline.</p>
-<p>Loops over all running processes and tries to match all items in 'cmd_line_items' to the command line
-of the process. If all 'cmd_line_items' can be matched to a process, the function returns the PID of
-that process.</p>
+        <p>Check if there is any running process that contains the given items in its
+commandline.</p>
+<p>Loops over all running processes and tries to match all items in the 'items'
+argument to the command line of the process. If all 'items' can be matched
+to a process, the function returns the PID of that process.</p>
+<p>By default, only the first matching process PID is returned. If <code>as_list=True</code>
+then all mathing process PIDs are returned as a list.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -3503,7 +3514,7 @@ that process.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>return the PID off all matching processes as a list [default: False]</p>
+                <p>return the PID of all matching processes as a list [default: False]</p>
               </div>
             </td>
             <td>
@@ -3651,19 +3662,65 @@ that process.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A list of lists for the matching processes. The inner list contains the PID, Status and commandline</p>
+                <p>A list of dictionaries for the matching processes. The dict contains the
+'pid', 'status' and 'cmdline' of a process.</p>
               </div>
             </td>
           </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.process.list_zombies" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">list_zombies</span>
+
+
+<a href="#egse.process.list_zombies" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">list_zombies</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns a list of zombie processes.</p>
+<p>A zombie process, also known as a defunct process, is a process that has
+completed its execution but still has an entry in the process table.
+This happens when a child process terminates, but the parent process hasn't
+yet read its exit status by using a system call like wait(). As a result,
+the process is "dead" (it has completed execution) but hasn't been "reaped"
+or removed from the system's process table.</p>
+<p>A zombie process can not be killed with SIGKILL because it's already dead, and
+it's only removed when the parent process reads their exit status or when the
+parent process itself terminates.</p>
+<p>A zombie process does not block ports, so it's mostly harmless and will disappear
+when the parent process terminates.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
           <tr class="doc-section-item">
             <td>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>of a process.</p>
+                <p>A list of dictionaries with information on the zombie processes. The dict
+contains the 'pid', 'name', and 'cmdline' of the zombie process.</p>
               </div>
             </td>
           </tr>
