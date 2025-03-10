@@ -110,7 +110,7 @@ commands = attrdict(
 )
 
 
-def is_dummy_cs_active():
+def is_dummy_cs_active() -> bool:
     """Returns True if the dummy device control server is active."""
     return is_control_server_active(
         endpoint=connect_address(ctrl_settings.PROTOCOL, ctrl_settings.HOSTNAME, ctrl_settings.COMMANDING_PORT)
