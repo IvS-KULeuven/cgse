@@ -3,28 +3,28 @@ import zlib
 from enum import IntEnum
 
 
-def connect_address(transport, address, port):
+def connect_address(transport: str, address: str, port: int) -> str:
     """Returns a properly formatted URL to connect to."""
     return f"{transport}://{address}:{port}"
 
 
-def bind_address(transport, port):
+def bind_address(transport: str, port: int) -> str:
     """Returns a properly formatted url to bind a socket to."""
     return f"{transport}://*:{port}"
 
 
-def set_address_port(url: str, port: int):
+def set_address_port(url: str, port: int) -> str:
     """Returns a url where the 'port' part is replaced with the given port."""
     transport, address, old_port = split_address(url)
 
     return f"{transport}://{address}:{port}"
 
 
-def split_address(url: str):
+def split_address(url: str) -> tuple[str, str, int]:
     transport, address, port = url.split(":")
     if address.startswith("//"):
         address = address[2:]
-    return transport, address, port
+    return transport, address, int(port)
 
 
 def send_zipped_pickle(socket, obj, flags=0, protocol=-1):

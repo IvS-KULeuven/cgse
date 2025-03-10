@@ -44,7 +44,7 @@ def static_vars(**kwargs):
     return decorator
 
 
-def dynamic_interface(func):
+def dynamic_interface(func) -> Callable:
     """Adds a static variable `__dynamic_interface` to a method.
 
     The intended use of this function is as a decorator for functions in an interface class.
