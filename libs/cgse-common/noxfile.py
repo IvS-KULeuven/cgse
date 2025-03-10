@@ -10,13 +10,14 @@ def tests(session: nox.Session):
 
     py_version = ["--python", f"{session.python}"]
     uv_run_cmd = ["uv", "run", "--active", *py_version]
+    uv_sync_cmd = ["uv", "sync", "--active", *py_version]
 
     session.run_install("uv", "python", "pin", f"{session.python}")
 
     session.run_install("uv", "venv", *py_version)
 
     session.run_install(
-        "uv", "sync", "--active", *py_version, "--all-packages", "--extra=test",
+        *uv_sync_cmd, "--all-packages", "--extra=test",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
     )
 
