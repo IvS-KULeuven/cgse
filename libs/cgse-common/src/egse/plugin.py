@@ -12,8 +12,15 @@ import os
 import sys
 import textwrap
 import traceback
-from importlib.metadata import EntryPoint
 from pathlib import Path
+
+if sys.version_info >= (3, 10):    # Use the standard library version (Python 3.10+)
+    from importlib.metadata import entry_points as lib_entry_points
+    from importlib.metadata import EntryPoint
+else:
+    # Fall back to the backport for Python 3.9
+    from importlib_metadata import entry_points as lib_entry_points
+    from importlib_metadata import EntryPoint
 
 import click
 import rich
@@ -21,17 +28,15 @@ import rich
 _LOGGER = logging.getLogger(__name__)
 
 
-def entry_points(name: str) -> set[EntryPoint]:
+def entry_points(group: str) -> set[EntryPoint]:
     """
     Returns a set with all entry-points for the given group name.
 
     When the name is not known as an entry-point group, an empty set will be returned.
     """
 
-    import importlib.metadata
-
     try:
-        x = importlib.metadata.entry_points()[name]
+        x = lib_entry_points().select(group=group)
         return {ep for ep in x}  # use of set here to remove duplicates
     except KeyError:
         return set()
