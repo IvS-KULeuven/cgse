@@ -141,6 +141,7 @@ nav:
     - dev_guide/plugins.md
     - dev_guide/unit_testing.md
     - dev_guide/nox.md
+    - dev_guide/project-configuration.md
     - dev_guide/versioning.md
   - User Guide:
     - user_guide/index.md
