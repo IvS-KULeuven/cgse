@@ -38,10 +38,10 @@ def test_find_file_in_resource_location():
     # Find file in first resource location, both with and without wildcard
 
     fn = get_resource(":/icons/sponge.svg")
-    assert "egse/gui/icons/sponge" in str(fn)
+    assert "tests/data/icons/sponge" in str(fn)
 
     fn = get_resource(":/icons/busy*.svg")
-    assert "egse/gui/icons/busy.svg" in str(fn)
+    assert "tests/data/icons/busy.svg" in str(fn)
 
     # Find file in second resource location, both with and without wildcard
 
