@@ -687,6 +687,8 @@
       
         
       
+        
+      
     
     
       
@@ -895,6 +897,28 @@
   
   <span class="md-ellipsis">
     Testing with nox
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev_guide/project-configuration/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Project Configuration
     
   </span>
   
@@ -2492,24 +2516,24 @@ make sure the group names in each package configuration file are unique.</p>
 <p>The YAML file is read and the configuration parameters for the given group are
 available as instance variables of the returned class.</p>
 <p>The intended use is as follows:</p>
-<pre><code>from egse.settings import Settings
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">egse.settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">Settings</span>
 
-dsi_settings = Settings.load("DSI")
+<span class="n">dsi_settings</span> <span class="o">=</span> <span class="n">Settings</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;DSI&quot;</span><span class="p">)</span>
 
-if 0x000C &lt;= dsi_settings.RMAP_BASE_ADDRESS &lt;= 0x00FF:
-    ...  # do something here
-else:
-    raise RMAPError("Attempt to access outside the RMAP memory map.")
-</code></pre>
+<span class="k">if</span> <span class="mh">0x000C</span> <span class="o">&lt;=</span> <span class="n">dsi_settings</span><span class="o">.</span><span class="n">RMAP_BASE_ADDRESS</span> <span class="o">&lt;=</span> <span class="mh">0x00FF</span><span class="p">:</span>
+    <span class="o">...</span>  <span class="c1"># do something here</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="n">RMAPError</span><span class="p">(</span><span class="s2">&quot;Attempt to access outside the RMAP memory map.&quot;</span><span class="p">)</span>
+</code></pre></div>
 <p>The above code reads the settings from the default YAML file for a group called <code>DSI</code>.
 The settings will then be available as variables of the returned class, in this case
 <code>dsi_settings</code>. The returned class is and behaves also like a dictionary, so you can
 check if a configuration parameter is defined like this:</p>
-<pre><code>if "DSI_FEE_IP_ADDRESS" not in dsi_settings:
-    # define the IP address of the DSI
-</code></pre>
-<p>The YAML section for the above code looks like this:</p>
-<pre><code>DSI:
+<p><div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="s2">&quot;DSI_FEE_IP_ADDRESS&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dsi_settings</span><span class="p">:</span>
+    <span class="c1"># define the IP address of the DSI</span>
+</code></pre></div>
+The YAML section for the above code looks like this:</p>
+<div class="highlight"><pre><span></span><code>DSI:
 
     # DSI Specific Settings
 
@@ -2520,7 +2544,7 @@ check if a configuration parameter is defined like this:</p>
 
     RMAP_BASE_ADDRESS:     0x00000000   # The start of the RMAP memory map managed by the FEE
     RMAP_MEMORY_SIZE:            4096   # The size of the RMAP memory map managed by the FEE
-</code></pre>
+</code></pre></div>
 <p>When you want to read settings from another YAML file, specify the <code>filename=</code> keyword.
 If that file is located at a specific location, also use the <code>location=</code> keyword.</p>
 <pre><code>my_settings = Settings.load(filename="user.yaml", location="/Users/JohnDoe")
