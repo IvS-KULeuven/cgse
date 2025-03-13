@@ -44,6 +44,9 @@ omit = [
 [tool.coverage.report]
 # fail_under = 80
 
+[tool.uv]
+default-groups = ["dev", "docs"]
+
 [tool.uv.sources]
 cgse-common = { workspace = true }
 cgse-core = { workspace = true }

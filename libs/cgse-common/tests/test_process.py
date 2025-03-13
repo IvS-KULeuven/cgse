@@ -156,7 +156,7 @@ def test_quit_process():
     )
 
     assert process.execute()
-    time.sleep(0.5)  # allow process to start
+    time.sleep(1.0)  # allow process to start
     assert process.is_running()
     rc = process.quit()
     logger.info(f"After quit() -> {rc = }")
@@ -173,7 +173,7 @@ def test_quit_process():
     process = SubProcess("Handle SIGTERM", [sys.executable, str(find_file("handle_sigterm.py").resolve())])
 
     assert process.execute()
-    time.sleep(0.5)  # allow process to start
+    time.sleep(1.0)  # allow process to start
     assert process.is_running()
     rc = process.quit()
     logger.info(f"After quit() -> {rc = }")
