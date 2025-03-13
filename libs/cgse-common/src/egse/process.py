@@ -478,7 +478,7 @@ def list_processes(
     return result
 
 
-def list_zombies():
+def list_zombies() -> list[dict]:
     """
     Returns a list of zombie processes.
 
