@@ -15,6 +15,9 @@ logger = logging.getLogger("egse.test.process")
 def main(ignore_sigterm: bool = False):
     logging.basicConfig(level=logging.INFO)
 
+    logger.info(f"{sys.version_info = }")
+    logger.info(f"{ignore_sigterm = }")
+
     if ignore_sigterm:
         rc = _ignore_sigterm()
     else:
@@ -27,9 +30,11 @@ def _handle_sigterm():
     killer = SignalCatcher()
 
     while "waiting for a SIGTERM signal":
-        if killer.term_signal_received and killer.signal_number == signal.SIGTERM:
-            logger.info("SIGTERM received, terminating...")
-            return 42
+        if killer.term_signal_received:
+            logger.info(f"{killer.signal_number = }")
+            if killer.signal_number == signal.SIGTERM:
+                logger.info("SIGTERM received, terminating...")
+                return 42
 
     # The following code will never execute
     return 0
@@ -39,20 +44,26 @@ def _ignore_sigterm():
     killer = SignalCatcher()
 
     while "ignoring a SIGTERM signal":
-        if killer.term_signal_received and killer.signal_number == signal.SIGTERM:
-            logger.info("SIGTERM received and ignored.")
-            killer.clear(term=True)
-            continue
+        if killer.term_signal_received:
+            logger.info(f"{killer.signal_number = }")
+            if killer.signal_number == signal.SIGTERM:
+                logger.info("SIGTERM received and ignored.")
+                killer.clear(term=True)
+                continue
 
     # The following code will never execute
     return 0
 
 
 if __name__ == "__main__":
-    import egse.logger  # noqa : activate egse logger
-
     print(f"{sys.argv=}")
     print(f"pid={os.getpid()}")
+
+    try:
+        from egse.logger import replace_zmq_handler
+    except (ModuleNotFoundError, ImportError):
+        def replace_zmq_handler():
+            ...
 
     try:
         app()
