@@ -22,9 +22,9 @@ from egse.system import SignalCatcher
 from egse.system import time_in_ms
 
 try:
+    # This function is only available when the cgse-core package is installed
     from egse.logger import close_all_zmq_handlers
 except ImportError:
-
     def close_all_zmq_handlers():  # noqa
         pass
 

@@ -19,36 +19,41 @@ available as instance variables of the returned class.
 
 The intended use is as follows:
 
-    from egse.settings import Settings
+```python
+from egse.settings import Settings
 
-    dsi_settings = Settings.load("DSI")
+dsi_settings = Settings.load("DSI")
 
-    if 0x000C <= dsi_settings.RMAP_BASE_ADDRESS <= 0x00FF:
-        ...  # do something here
-    else:
-        raise RMAPError("Attempt to access outside the RMAP memory map.")
+if 0x000C <= dsi_settings.RMAP_BASE_ADDRESS <= 0x00FF:
+    ...  # do something here
+else:
+    raise RMAPError("Attempt to access outside the RMAP memory map.")
+```
 
 The above code reads the settings from the default YAML file for a group called `DSI`.
 The settings will then be available as variables of the returned class, in this case
 `dsi_settings`. The returned class is and behaves also like a dictionary, so you can
 check if a configuration parameter is defined like this:
 
-    if "DSI_FEE_IP_ADDRESS" not in dsi_settings:
-        # define the IP address of the DSI
-
+```python
+if "DSI_FEE_IP_ADDRESS" not in dsi_settings:
+    # define the IP address of the DSI
+```
 The YAML section for the above code looks like this:
 
-    DSI:
+```text
+DSI:
 
-        # DSI Specific Settings
+    # DSI Specific Settings
 
-        DSI_FEE_IP_ADDRESS  10.33.178.144   # IP address of the DSI EtherSpaceLink interface
-        LINK_SPEED:                   100   # SpW link speed used for both up- and downlink
+    DSI_FEE_IP_ADDRESS  10.33.178.144   # IP address of the DSI EtherSpaceLink interface
+    LINK_SPEED:                   100   # SpW link speed used for both up- and downlink
 
-        # RMAP Specific Settings
+    # RMAP Specific Settings
 
-        RMAP_BASE_ADDRESS:     0x00000000   # The start of the RMAP memory map managed by the FEE
-        RMAP_MEMORY_SIZE:            4096   # The size of the RMAP memory map managed by the FEE
+    RMAP_BASE_ADDRESS:     0x00000000   # The start of the RMAP memory map managed by the FEE
+    RMAP_MEMORY_SIZE:            4096   # The size of the RMAP memory map managed by the FEE
+```
 
 When you want to read settings from another YAML file, specify the `filename=` keyword.
 If that file is located at a specific location, also use the `location=` keyword.
