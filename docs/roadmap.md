@@ -56,6 +56,7 @@ Provide a `cgse` command that is extensible with new commands and command groups
 
 ## Testing
 
+- [x] Add unit testing with `nox` running tests for Python 3.9, 3.10, 3.11, and 3.12
 - [ ] Add proper unit tests for all packages – using `pytest`
 - [ ] Add a CI test suite
 - [ ] Use GitHub Actions for running tests before merging
