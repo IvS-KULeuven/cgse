@@ -37,11 +37,11 @@ def test_find_file_in_resource_location():
 
     # Find file in first resource location, both with and without wildcard
 
-    fn = get_resource(":/icons/sponge.svg")
-    assert "tests/data/icons/sponge" in str(fn)
+    fn = get_resource(":/icons/soap_sponge.svg")
+    assert "tests/data/icons/soap_sponge" in str(fn)
 
-    fn = get_resource(":/icons/busy*.svg")
-    assert "tests/data/icons/busy.svg" in str(fn)
+    fn = get_resource(":/icons/hourglass*.svg")
+    assert "tests/data/icons/hourglass.svg" in str(fn)
 
     # Find file in second resource location, both with and without wildcard
 
@@ -112,7 +112,7 @@ def test_initialisation(caplog):
     print_resources()
     print(f"{caplog.text = }")
 
-    fn = get_resource(":/icons/sponge.svg")
+    fn = get_resource(":/icons/soap_sponge.svg")
     print(f"{fn = }")
     fn = get_resource(":/icons/keyboard.png")
     print(f"{fn = }")
