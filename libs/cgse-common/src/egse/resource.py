@@ -342,7 +342,7 @@ def get_resource(resource_locator: str) -> Path:
         ':/<resource_id>/[*/]<filename>'
 
     If the resource_locator starts with a colon ':', the name will be interpreted as a resource_id
-    and filename combination and parsed as such
+    and filename combination and parsed as such.
 
     If the resource_locator doesn't start with a colon ':', then the string will be interpreted as a
     Path name and returned if that path exists, otherwise a ResourceError is raised.
@@ -373,7 +373,7 @@ def get_resource(resource_locator: str) -> Path:
         except KeyError:
             raise ResourceError(f"Resource not defined: {resource_id}")
 
-        # Match can be only three things
+        # match[2] can be only three things
         #   - None in which case the file must be in the resource location directly
         #   - '*/' in which case the file must be in a sub-folder of the resource
         #   - '**/' to find the file in any sub-folder below the given resource
