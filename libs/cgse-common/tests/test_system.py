@@ -1,8 +1,10 @@
+import csv
 import datetime
 import logging
 import operator
 import os
 import pprint
+import random
 import shutil
 import textwrap
 import time
@@ -16,6 +18,7 @@ from egse.system import SignalCatcher
 from egse.system import Timer
 from egse.system import check_argument_type
 from egse.system import clear_average_execution_times
+from egse.system import do_every
 from egse.system import duration
 from egse.system import env_var
 from egse.system import execution_time
@@ -38,6 +41,7 @@ from egse.system import is_namespace
 from egse.system import is_not_in
 from egse.system import ping
 from egse.system import read_last_line
+from egse.system import read_last_lines
 from egse.system import replace_environment_variable
 from egse.system import save_average_execution_time
 from egse.system import touch
@@ -111,6 +115,29 @@ def test_attr_dict():
 
     with pytest.raises(AttributeError):
         assert ad.a == "2"
+
+
+def test_attr_dict_rich():
+    import rich
+
+    ad = AttributeDict({"a": 1, "b": 2, "c": 3})
+    rich.print(ad)
+    assert str(ad) == "AttributeDict({'a':1, 'b':2, 'c':3})"
+
+    ad = AttributeDict({"a": 1, "b": {'B': 2, 'BB': 22}, "c": 3}, label="nested dict")
+    rich.print(ad)
+    assert str(ad) == "AttributeDict({'a':1, 'b':{'B': 2, 'BB': 22}, 'c':3}, label='nested dict')"
+
+    ad = AttributeDict(
+        {
+            "a": 1, "b": {'B': 2, 'BB': 22}, "c": 3, "d": 4, "e": 5, "f": 6, "g": 7, "h": 8, "i": 9, "j": 10,
+            "k": 11, "l": 12
+        },
+        label="Long nested label"
+    )
+    rich.print(ad)
+    assert str(ad) == ("AttributeDict({'a':1, 'b':{'B': 2, 'BB': 22}, 'c':3, 'd':4, 'e':5, 'f':6, 'g':7, 'h':8, 'i':9, "
+                       "'j':10, ...}, label='Long nested label')")
 
 
 def test_get_call_sequence():
@@ -486,26 +513,78 @@ def test_read_last_line():
     assert line is None
 
     prefix = Path(__file__).parent
-    filename = prefix / "data/empty_data_file.txt"
+    filename = prefix / "data/tmp/empty_data_file.txt"
 
     with create_empty_file(filename, create_folder=True):
         line = read_last_line(filename)
     assert line == ""
 
-    filename = prefix / "data/data_file.txt"
+    filename = prefix / "data/tmp/data_file.txt"
 
     with create_text_file(
-        filename,
-        textwrap.dedent(
-            """\
-        001 002 003
-        002 003 001
-        003 002 001
-        """
-        ),
+            filename,
+            textwrap.dedent(
+                """\
+                001 002 003
+                002 003 001
+                003 002 001
+                """
+            ),
     ):
         line = read_last_line(filename)
     assert line == "003 002 001"
+
+
+def test_read_last_lines():
+
+    with pytest.raises(AssertionError, match="a positive number or zero"):
+        _ = read_last_lines("/xxx", -1)
+
+    assert read_last_lines("/xxx", 0) == []
+    assert read_last_lines("/xxx", 1) == []
+
+    prefix = Path(__file__).parent
+    filename = prefix / "data/tmp/empty_data_file.txt"
+
+    with create_empty_file(filename, create_folder=True):
+        line = read_last_lines(filename, 3)
+    assert line == []
+
+    filename = prefix / "data/tmp/data_file.txt"
+
+    with create_text_file(
+            filename,
+            textwrap.dedent(
+                """\
+                001 002 003
+                002 003 001
+                003 002 001
+                """
+            ),
+    ):
+        lines = read_last_lines(filename, 0)
+        assert lines == [""]
+
+        lines = read_last_lines(filename, 1)
+        assert lines == ["003 002 001"]
+
+        lines = read_last_lines(filename, 2)
+        assert lines == ["002 003 001", "003 002 001"]
+
+        lines = read_last_lines(filename, 10)
+        assert lines == ["001 002 003", "002 003 001", "003 002 001"]
+
+
+def test_read_last_lines_from_big_data_file(tmp_path):
+    temp_file = tmp_path / "data.csv"
+
+    fixed_data = generate_big_data_file(temp_file)
+
+    with Timer(name="log-file", precision=6):
+        lines = read_last_lines(temp_file, 5)
+        assert len(lines) == 5
+
+    assert lines == fixed_data[-5:]
 
 
 def test_format_datetime():
@@ -846,3 +925,86 @@ def test_get_host_ip():
     ip = get_host_ip()
     if ip:
         assert "." in ip
+
+
+def test_do_every(capsys):
+
+    with Timer():
+        do_every(0.5, lambda: print(f"{format_datetime()} Hello, World!"), count=0)
+    captured = capsys.readouterr()
+    assert captured.out == ''
+
+    do_every(0.5, lambda: print(f"{format_datetime()} Hello, World!"), count=1)
+    captured = capsys.readouterr()
+    assert len(captured.out.rstrip().split('\n')) == 1
+
+    do_every(0.5, lambda: print(f"{format_datetime()} Hello, World!"), count=3)
+    captured = capsys.readouterr()
+    print('\n'.join(captured.out.rstrip().split('\n')))
+    assert len(captured.out.rstrip().split('\n')) == 3
+
+
+def generate_big_data_file(filename: Path, total_n_rows: int = 500_000) -> list[str]:
+    """
+    Generates a big data file containing 500_000 rows (by default) with each row having a
+    timestamp and 10 datapoints of randomized temperatures. The last 10 rows have fixed
+    deterministic data that can be tested with pytest.
+
+    Returns:
+        The function returns the fixed data rows as a list of str with comma separated values.
+            The strings are the same as those written in the CSV file.
+    """
+    total_rows = 500000
+    columns = 10  # Number of temperature columns
+    start_date = datetime.datetime(2023, 1, 1, 0, 0, 0)
+    time_increment = datetime.timedelta(minutes=1)
+
+    # Deterministic data for the last 10 rows
+    deterministic_data = [
+        [20.0, 21.5, 22.0, 19.8, 23.1, 22.5, 21.8, 20.5, 19.7, 22.3],
+        [20.1, 21.6, 22.1, 19.9, 23.2, 22.6, 21.9, 20.6, 19.8, 22.4],
+        [20.2, 21.7, 22.2, 20.0, 23.3, 22.7, 22.0, 20.7, 19.9, 22.5],
+        [20.3, 21.8, 22.3, 20.1, 23.4, 22.8, 22.1, 20.8, 20.0, 22.6],
+        [20.4, 21.9, 22.4, 20.2, 23.5, 22.9, 22.2, 20.9, 20.1, 22.7],
+        [20.5, 22.0, 22.5, 20.3, 23.6, 23.0, 22.3, 21.0, 20.2, 22.8],
+        [20.6, 22.1, 22.6, 20.4, 23.7, 23.1, 22.4, 21.1, 20.3, 22.9],
+        [20.7, 22.2, 22.7, 20.5, 23.8, 23.2, 22.5, 21.2, 20.4, 23.0],
+        [20.8, 22.3, 22.8, 20.6, 23.9, 23.3, 22.6, 21.3, 20.5, 23.1],
+        [20.9, 22.4, 22.9, 20.7, 24.0, 23.4, 22.7, 21.4, 20.6, 23.2]
+    ]
+
+    def generate_random_temperature_data():
+        """Generate random temperature data between 15 and 35 ºC."""
+        return [round(random.uniform(15.0, 35.0), 1) for _ in range(columns)]
+
+    def format_timestamp(dt):
+        """Format datetime to ISO format."""
+        return dt.strftime('%Y-%m-%dT%H:%M:%S')
+
+    print(f"Generating {total_rows} rows of data to {filename}...")
+
+    with open(filename, 'w', newline='') as csvfile:
+        # Create header: timestamp, temp1, temp2, ..., temp10
+        header = ['timestamp'] + [f'temp{i + 1}' for i in range(columns)]
+
+        writer = csv.writer(csvfile)
+        writer.writerow(header)
+
+        # Generate random data for most rows
+        current_date = start_date
+        for i in range(total_rows - 10):
+            row_data = [format_timestamp(current_date)] + generate_random_temperature_data()
+            writer.writerow(row_data)
+            current_date += time_increment
+
+        # Add the last 10 rows with deterministic data
+        for i in range(10):
+            row_data = [format_timestamp(current_date)] + deterministic_data[i]
+            writer.writerow(row_data)
+            current_date += time_increment
+
+    return [
+        (f"{format_timestamp(start_date + time_increment * (total_rows - 10 + i))},"
+         f"{','.join([f'{x:3.1f}' for x in row])}")
+        for i, row in enumerate(deterministic_data)
+    ]
