@@ -2,6 +2,7 @@ import sys
 import time
 from typing import List
 
+import pytest
 import rich
 
 from egse.confman import ConfigurationManagerProxy
@@ -12,9 +13,10 @@ from egse.process import SubProcess
 
 def test_is_cm_cs_is_active():
 
-    assert is_configuration_manager_active()
+    assert is_configuration_manager_active() in (False, True)  # Should not raise an exception
 
 
+@pytest.mark.skipif(not is_configuration_manager_active(), reason="core service cm_cs not running")
 def test_list_setups():
 
     rich.print()
@@ -29,6 +31,7 @@ def test_list_setups():
     assert setups[0] == ('00000', 'VACUUM_LAB', 'Initial zero Setup for VACUUM_LAB', 'no sut_id')
 
 
+@pytest.mark.skipif(not is_configuration_manager_active(), reason="core service cm_cs not running")
 def test_load_setup():
 
     with ConfigurationManagerProxy() as cm:
@@ -44,6 +47,7 @@ def test_load_setup():
         assert setup.get_id() == '00001'
 
 
+@pytest.mark.skipif(not is_configuration_manager_active(), reason="core service cm_cs not running")
 def test_get_setup():
 
     with ConfigurationManagerProxy() as cm:
@@ -59,6 +63,7 @@ def test_get_setup():
         assert setup.get_id() == '00000'
 
 
+@pytest.mark.skipif(not is_configuration_manager_active(), reason="core service cm_cs not running")
 def test_listeners():
 
     dummy_dev = SubProcess("Dummy Device", [sys.executable, "-m", "egse.dummy", "start-dev"])

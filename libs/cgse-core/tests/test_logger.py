@@ -20,6 +20,10 @@ def test_logging_messages_of_different_levels(setup_log_service, caplog):
 
     lines = read_last_lines(filename=Path(log_location) / get_log_file_name(), num_lines=5)
 
+    print(f"{log_location = }")
+    for line in lines:
+        print(lines)
+
     # The DEBUG message should be in the log file that was created by the log_cs
 
     assert any([True if "This is a DEBUG message." in x else False for x in lines])
