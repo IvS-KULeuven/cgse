@@ -34,6 +34,8 @@ import time
 import warnings
 from collections import namedtuple
 from contextlib import contextmanager
+from io import SEEK_END
+from io import SEEK_SET
 from pathlib import Path
 from types import FunctionType
 from types import ModuleType
@@ -155,7 +157,7 @@ def now(utc: bool = True):
 
 
 def format_datetime(
-    dt: Union[str, datetime.datetime] = None, fmt: str = None, width: int = 6, precision: int = 3
+        dt: Union[str, datetime.datetime] = None, fmt: str = None, width: int = 6, precision: int = 3
 ) -> str:
     """Format a datetime as YYYY-mm-ddTHH:MM:SS.μs+0000.
 
@@ -605,6 +607,10 @@ class AttributeDict(dict):
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
+    @property
+    def label(self):
+        return self.__dict__["_label"]
+
     def __getattr__(self, key):
         try:
             return self[key]
@@ -623,9 +629,10 @@ class AttributeDict(dict):
         count = 10
         sub_msg = ", ".join(f"{k!r}:{v!r}" for k, v in itertools.islice(self.items(), 0, count))
 
-        # if we left out key:value pairs, print a ', ...' to indicate incompleteness
+        lbl = f", label='{self.__dict__['_label']}'" if self.label else ""
 
-        return self.__class__.__name__ + f"({{{sub_msg}{', ...' if len(self) > count else ''}}})"
+        # if we left out key:value pairs, print a ', ...' to indicate incompleteness
+        return self.__class__.__name__ + f"({{{sub_msg}{', ...' if len(self) > count else ''}}}{lbl})"
 
 
 attrdict = AttributeDict
@@ -832,7 +839,8 @@ def get_os_version() -> str:
 
 
 def wait_until(
-    condition: Callable, *args: list, interval: float = 0.1, timeout: float = 1.0, verbose: bool = False, **kwargs: dict
+        condition: Callable, *args: list, interval: float = 0.1, timeout: float = 1.0, verbose: bool = False,
+        **kwargs: dict
 ) -> bool:
     """
     Sleep until the given condition is fulfilled. The arguments are passed into the condition
@@ -892,7 +900,8 @@ def wait_until(
 
 
 def waiting_for(
-    condition: Callable, *args: list, interval: float = 0.1, timeout: float = 1.0, verbose: bool = False, **kwargs: dict
+        condition: Callable, *args: list, interval: float = 0.1, timeout: float = 1.0, verbose: bool = False,
+        **kwargs: dict
 ) -> float:
     """
     Sleep until the given condition is fulfilled. The arguments are passed into the condition
@@ -985,15 +994,15 @@ def has_internet(host: str = "8.8.8.8", port: int = 53, timeout: float = 3.0):
             s.close()
 
 
-def do_every(period: float, func: callable, *args: tuple[int, ...]) -> None:
+def do_every(period: float, func: callable, *args: tuple[int, ...], count: int = None) -> None:
     """
-
     This method executes a function periodically, taking into account
     that the function that is executed will take time also and using a
     simple `sleep()` will cause a drift. This method will not drift.
 
-    You can use this function in combination with the threading module to execute the
-    function in the background, but be careful as the function `func` might not be thread safe.
+    You can use this function in combination with the threading module
+    to execute the function in the background, but be careful as the
+    function `func` might not be thread safe.
 
     ```
     timer_thread = threading.Thread(target=do_every, args=(10, func))
@@ -1005,6 +1014,8 @@ def do_every(period: float, func: callable, *args: tuple[int, ...]) -> None:
         period: a time interval between successive executions [seconds]
         func: the function to be executed
         *args: optional arguments to be passed to the function
+        count: if you do not need an endless loop, provide the number of
+            iterations, if count=0 the function will not be executed.
     """
 
     # Code from SO:https://stackoverflow.com/a/28034554/4609203
@@ -1019,9 +1030,14 @@ def do_every(period: float, func: callable, *args: tuple[int, ...]) -> None:
             yield max(next_time - time.time(), 0)
 
     g = g_tick()
+    iteration = 0
+
     while True:
+        if count is not None and iteration >= count:
+            break
         time.sleep(next(g))
         func(*args)
+        iteration += 1
 
 
 @contextlib.contextmanager
@@ -1211,6 +1227,9 @@ def read_last_lines(filename: str | Path, num_lines: int) -> List[str]:
     Returns:
         Last lines of a text file as a list of strings. An empty list is returned
             when the file doesn't exist.
+
+    Raises:
+        AssertionError: when the requested num_lines is zero (0) or a negative number.
     """
 
     # See: https://www.geeksforgeeks.org/python-reading-last-n-lines-of-a-file/
@@ -1218,12 +1237,10 @@ def read_last_lines(filename: str | Path, num_lines: int) -> List[str]:
 
     filename = Path(filename)
 
-    assert num_lines > 1
+    sanity_check(num_lines >= 0, "the number of lines to read shall be a positive number or zero.")
 
     if not filename.exists():
         return []
-
-    assert num_lines >= 0
 
     # Declaring variable to implement exponential search
 
@@ -1234,16 +1251,18 @@ def read_last_lines(filename: str | Path, num_lines: int) -> List[str]:
     lines = []
 
     with open(filename) as f:
+        size = f.seek(0, SEEK_END)
         while len(lines) <= num_lines:
             try:
-                f.seek(-pos, 2)
-
-            except IOError:
+                f.seek(size - pos, SEEK_SET)
+            # ValueError: e.g. negative seek position
+            except (IOError, ValueError):
                 f.seek(0)
                 break
 
             finally:
                 lines = list(f)
+                lines = [x.rstrip() for x in lines]
 
             # Increasing value of variable exponentially
 
