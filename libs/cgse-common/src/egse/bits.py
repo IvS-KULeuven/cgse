@@ -1,6 +1,7 @@
 """
 This module contains a number of convenience functions to work with bits, bytes and integers.
 """
+
 from __future__ import annotations
 
 import ctypes
@@ -169,7 +170,7 @@ def beautify_binary(value: int, sep: str = " ", group: int = 8, prefix: str = ""
 
     b_str = f"{value:0{size}b}"
 
-    return prefix + sep.join([b_str[i:i + group] for i in range(0, len(b_str), group)])
+    return prefix + sep.join([b_str[i : i + group] for i in range(0, len(b_str), group)])
 
 
 def humanize_bytes(n: int, base: Union[int, str] = 2, precision: int = 3) -> str:
