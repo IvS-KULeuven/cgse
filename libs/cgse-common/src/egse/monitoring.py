@@ -25,8 +25,7 @@ _LOGGER = logging.getLogger("egse.monitoring")
 
 class MonitoringProtocol(CommandProtocol):
     def __init__(self, control_server: ControlServer):
-        super().__init__()
-        self.control_server = control_server
+        super().__init__(control_server)
 
     def get_bind_address(self):
         return bind_address(self.control_server.get_communication_protocol(), self.control_server.get_monitoring_port())

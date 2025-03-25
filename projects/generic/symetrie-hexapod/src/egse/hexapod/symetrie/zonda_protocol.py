@@ -24,8 +24,7 @@ class ZondaCommand(ClientServerCommand):
 
 class ZondaProtocol(CommandProtocol):
     def __init__(self, control_server: ControlServer):
-        super().__init__()
-        self.control_server = control_server
+        super().__init__(control_server)
 
         self.hk_conversion_table = read_conversion_dict(self.control_server.get_storage_mnemonic(), use_site=True)
 

@@ -218,8 +218,7 @@ class DummyProtocol(CommandProtocol):
     """
 
     def __init__(self, control_server: ControlServer):
-        super().__init__()
-        self.control_server = control_server
+        super().__init__(control_server)
 
         self.device_controller = DummyController(control_server)
 
