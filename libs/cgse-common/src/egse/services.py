@@ -34,16 +34,23 @@ class ServiceCommand(ClientServerCommand):
 
 class ServiceProtocol(CommandProtocol):
     def __init__(self, control_server: ControlServer):
-        super().__init__()
-        self.control_server = control_server
+        super().__init__(control_server)
 
         self.load_commands(SERVICE_SETTINGS.Commands, ServiceCommand, ServiceProtocol)
 
     def get_bind_address(self):
-        return bind_address(self.control_server.get_communication_protocol(), self.control_server.get_service_port())
+        """
+        Returns a string with the bind address, the endpoint, for accepting connections
+        and bind a socket to. The port to connect to is the service port in this case,
+        not the commanding port.
 
-    def get_status(self):
-        return super().get_status()
+        Returns:
+            a string with the protocol and port to bind a socket to.
+        """
+        return bind_address(
+            self._control_server.get_communication_protocol(),
+            self._control_server.get_service_port(),
+        )
 
     def handle_set_monitoring_frequency(self, freq: float):
         """
@@ -57,7 +64,7 @@ class ServiceProtocol(CommandProtocol):
         Returns:
             Sends back the selected delay time in milliseconds.
         """
-        delay = self.control_server.set_mon_delay(1.0 / freq)
+        delay = self.get_control_server().set_mon_delay(1.0 / freq)
 
         LOGGER.debug(f"Set monitoring frequency to {freq}Hz, ± every {delay:.0f}ms.")
 
@@ -75,7 +82,7 @@ class ServiceProtocol(CommandProtocol):
         Returns:
             Sends back the selected delay time in milliseconds.
         """
-        delay = self.control_server.set_hk_delay(1.0 / freq)
+        delay = self.get_control_server().set_hk_delay(1.0 / freq)
 
         LOGGER.debug(f"Set housekeeping frequency to {freq}Hz, ± every {delay:.0f}ms.")
 

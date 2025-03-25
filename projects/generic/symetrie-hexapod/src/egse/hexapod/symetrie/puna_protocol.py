@@ -29,8 +29,7 @@ class PunaCommand(ClientServerCommand):
 
 class PunaProtocol(CommandProtocol):
     def __init__(self, control_server: ControlServer, simulator: bool = False):
-        super().__init__()
-        self.control_server = control_server
+        super().__init__(control_server)
         self.simulator = simulator
 
         # self.hk_conversion_table = read_conversion_dict(self.control_server.get_storage_mnemonic(), use_site=True)

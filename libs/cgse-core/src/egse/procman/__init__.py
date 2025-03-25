@@ -112,11 +112,7 @@ class ProcessManagerProtocol(CommandProtocol):
                               to the Controller.
         """
 
-        super().__init__()
-
-        # Control Server for Process Management
-
-        self.control_server = control_server
+        super().__init__(control_server)
 
         # Create a new Controller for Process Management
 
