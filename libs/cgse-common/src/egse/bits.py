@@ -517,6 +517,8 @@ def crc_calc(data: list[Union[bytes, int]], start: int, len_: int) -> int:
     elif isinstance(data[0], int):
         for idx in range(start, start + len_):
             crc = CRC_TABLE[crc ^ (data[idx] & 0xFF)]
+    else:
+        ...
 
     return crc
 
