@@ -9,6 +9,7 @@ from egse.bits import bits_set
 from egse.bits import clear_bit
 from egse.bits import clear_bits
 from egse.bits import crc_calc
+from egse.bits import extract_bits
 from egse.bits import humanize_bytes
 from egse.bits import s16
 from egse.bits import s32
@@ -18,6 +19,14 @@ from egse.bits import toggle_bit
 
 logger = logging.getLogger(__name__)
 
+
+def test_extract_bits():
+
+    bf = 0b0010_1110
+
+    assert extract_bits(bf, 0, 3) == 0b0110
+    assert extract_bits(0b1001_0101, 0, 1) == 0b0001
+    assert extract_bits(0b1111_0000, 3, 2) == 0b0010
 
 def test_clear_bit():
     bf = 0b11111111
@@ -86,6 +95,10 @@ def test_beautify_binary():
     assert beautify_binary(0b0010, group=4) == "0000 0010"
     assert beautify_binary(0b1111_1111, group=4) == "1111 1111"
     assert beautify_binary(0b0000_0001_1111_1111) == "00000001 11111111"
+
+    assert beautify_binary(0b0010, group=4, size=4) == "0010"
+    assert beautify_binary(0b1111_1111, group=4, size=12) == "0000 1111 1111"
+    assert beautify_binary(0b0000_0001_1111_1111, group=12, size=12) == "000111111111"
 
     assert beautify_binary(2**7) == "10000000"
     assert beautify_binary(2**8) == "00000001 00000000"
@@ -170,6 +183,8 @@ def test_crc_calc():
 
     with pytest.raises(IndexError):
         assert crc_calc(b, 0, 28) == 0x63
+
+    assert crc_calc([0.0, 1.0, 2.0, 3.0], 0, 4) == 0
 
 
 def test_humanize_bytes():
