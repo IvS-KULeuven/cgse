@@ -2,6 +2,8 @@
 This module contains a number of convenience functions to work with bits, bytes and integers.
 """
 
+from __future__ import annotations
+
 import ctypes
 from typing import Union
 
@@ -119,7 +121,7 @@ def bit_set(value: int, bit) -> bool:
     return value & bit_value == bit_value
 
 
-def bits_set(value: int, *args: tuple[int, ...]) -> bool:
+def bits_set(value: int, *args: list[int] | tuple[int]) -> bool:
     """
     Return True if all the bits are set.
 
@@ -173,7 +175,7 @@ def beautify_binary(value: int, sep: str = " ", group: int = 8, prefix: str = ""
 
 def humanize_bytes(n: int, base: Union[int, str] = 2, precision: int = 3) -> str:
     """
-    Represents the size `n` in human readable form, i.e. as byte, KiB, MiB, GiB, ...
+    Represents the size `n` in human-readable form, i.e. as byte, KiB, MiB, GiB, ...
 
     Args:
         n (int): number of byte
@@ -181,7 +183,7 @@ def humanize_bytes(n: int, base: Union[int, str] = 2, precision: int = 3) -> str
         precision (int): the number of decimal places [default=3]
 
     Returns:
-        a human readable size, like 512 byte or 2.300 TiB
+        a human-readable size, like 512 byte or 2.300 TiB
 
     Raises:
         ValueError: when base is different from 2 (binary) or 10 (decimal).
@@ -205,7 +207,7 @@ def humanize_bytes(n: int, base: Union[int, str] = 2, precision: int = 3) -> str
     if base not in [2, 10, "binary", "decimal"]:
         raise ValueError(f"Only base 2 (binary) and 10 (decimal) are supported, got {base}.")
 
-    # By default we assume base == 2 or base == "binary"
+    # By default, we assume base == 2 or base == "binary"
 
     one_kilo = 1024
     units = ["KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"]
@@ -515,6 +517,8 @@ def crc_calc(data: list[Union[bytes, int]], start: int, len_: int) -> int:
     elif isinstance(data[0], int):
         for idx in range(start, start + len_):
             crc = CRC_TABLE[crc ^ (data[idx] & 0xFF)]
+    else:
+        ...
 
     return crc
 
