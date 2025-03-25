@@ -99,6 +99,7 @@ from collections import namedtuple
 from typing import Any
 from typing import Callable
 
+from egse.decorators import deprecate
 from egse.exceptions import Error
 from egse.response import Success
 
@@ -545,6 +546,7 @@ class ClientServerCommand(Command):
         return 0
 
 
+@deprecate(reason="it is a duplicate of get_method() from egse.protocol")
 def get_method(parent_obj: type, method_name: str) -> Callable:
     """
     Returns a bound method from a given class instance.
@@ -576,6 +578,7 @@ def get_method(parent_obj: type, method_name: str) -> Callable:
     return None
 
 
+@deprecate(reason="it is a duplicate of get_function() from egse.protocol")
 def get_function(parent_class: type, method_name: str) -> Callable:
     """
     Returns a function (unbound method) from a given class.
