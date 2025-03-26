@@ -643,12 +643,12 @@ def load_commands(protocol_class: type, command_settings: dict, command_class: t
             description = None
 
         # The response field is the name of a function from the CommandProtocol class
-        # or a sub-class. This function shall send a response back to the client (Proxy). That's
+        # or a subclass. This function shall send a response back to the client (Proxy). That's
         # why this field is called response.
         # By convention we like that this method name would start with `handle_` so that we can
         # make a distinction between response commands and normal methods in Protocol. Remember
         # that response methods should send a reply back to the client (which will be waiting for
-        # it..). If no response field is given, then the `handle_device_method` will be called.
+        # it). If no response field is given, then the `handle_device_method` will be called.
 
         if "response" in command_settings_name:
             response_method = get_function(protocol_class, command_settings_name["response"])
