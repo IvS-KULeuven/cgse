@@ -10,8 +10,10 @@ from egse.command import CommandError
 from egse.command import CommandExecution
 from egse.command import InvalidArgumentsError
 from egse.command import WaitCommand
+from egse.command import load_commands
 from egse.command import parse_format_string
 from egse.command import stringify_function_call
+from egse.protocol import CommandProtocol
 from egse.state import GlobalState
 
 
@@ -296,3 +298,11 @@ def test_stringify_function_call():
 
     result = stringify_function_call({})
     assert result == "unknown_function()"
+
+
+def test_load_commands():
+
+    class _TestCommandProtocol(CommandProtocol):
+        ...
+
+    commands = load_commands(protocol_class=_TestCommandProtocol)
