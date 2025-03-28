@@ -90,11 +90,13 @@ Do we need additional hooks into this commanding?
 * provide an execute method for the CommandExecution that executes the command
   with the saved parameters
 """
+from __future__ import annotations
 
 import functools
 import inspect
 import logging
 import re
+import typing
 from collections import namedtuple
 from typing import Any
 from typing import Callable
@@ -104,6 +106,9 @@ from egse.exceptions import Error
 from egse.response import Success
 
 logger = logging.getLogger(__name__)
+
+if typing.TYPE_CHECKING:
+    from egse.protocol import CommandProtocol
 
 
 def stringify_function_call(function_info: dict) -> str:
@@ -387,6 +392,7 @@ class Command:
             )
 
     def execute(self, cmd):
+        print(f'{self.__class__.__name__}({self._name}) executing "{cmd}"')
         return 0
 
     def get_name(self):
@@ -414,6 +420,7 @@ class Command:
         cmd_string = self.get_cmd_string(*args, **kwargs)
 
         # Now execute the cmd_string
+        logger.debug(f"{cmd_string = }")
 
         response = self.execute(cmd_string)
 
@@ -506,7 +513,7 @@ class ClientServerCommand(Command):
 
         return rc
 
-    def server_call(self, other: type, *args: tuple, **kwargs: dict) -> int:
+    def server_call(self, other: CommandProtocol, *args: tuple, **kwargs: dict) -> int:
         """
         This method is called at the server side. It is used by the CommandProtocol class in the
         ``execute`` method.
@@ -533,15 +540,15 @@ class ClientServerCommand(Command):
         if self._response.__name__ == "handle_device_method":
             # call the handle_device_method of the Protocol sub-class
 
-            logger.log(0, f"Executing Command {self._response.__name__}({other!r}, {self!r}, {args}, {kwargs})")
+            logger.debug(f"Executing Command {self._response.__name__}({other!r}, {self!r}, {args}, {kwargs})")
 
             rc = self._response(other, self, *args, **kwargs)
         else:
-            logger.log(0, f"Executing Command {self._response.__name__}({other!r}, {args}, {kwargs})")
+            logger.debug(f"Executing Command {self._response.__name__}({other!r}, {args}, {kwargs})")
 
             rc = self._response(other, *args, **kwargs)
 
-        logger.log(0, f"Response is {rc}.")
+        logger.debug(f"Response is {rc}.")
 
         return 0
 
@@ -610,11 +617,19 @@ def get_function(parent_class: type, method_name: str) -> Callable:
     return None
 
 
-def load_commands(protocol_class: type, command_settings: dict, command_class: type, device_class: type) -> dict:
+def load_commands(
+        protocol_class: type[CommandProtocol], command_settings: dict, command_class: type[Command],
+        device_class: type
+) -> dict[str, Command]:
     """
     Loads the command definitions from the given ``command_settings`` and builds an internal
     dictionary containing the command names as keys and the corresponding ``Command`` class objects
     as values.
+
+    The purpose of this function is to gather information about the commands that will be
+    transferred from the control server to the proxy. The actual response or device method
+    will therefore be a function instead of an instance method (because the instance will
+    not be known in the Proxy).
 
     The `command_settings` is usually loaded from a YAML configuration file containing the
     command definitions for the device.

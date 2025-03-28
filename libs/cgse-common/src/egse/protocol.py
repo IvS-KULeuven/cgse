@@ -474,21 +474,27 @@ class CommandProtocol(BaseCommandProtocol, metaclass=abc.ABCMeta):
         # We treat the get_response function special as it needs to send the ``cmd`` string
         # to the device we need to pass the processed cmd string into the method.
 
+        rc = 0
+
         try:
             if device_name == "get_response":
                 device_cmd_string = cmd.get_cmd_string(*args, *kwargs)
-                logger.log(5, f"Executing method {method.__name__}({device_cmd_string})")
+                logger.debug(f"Executing method {method.__name__}({device_cmd_string})")
                 response = method(device_cmd_string)
             else:
-                logger.log(5, f"Executing method {method.__name__}({args}, {kwargs})")
+                logger.debug(f"Executing method {method.__name__}({args}, {kwargs})")
                 response = method(*args, **kwargs)
         except Exception as exc:
             logger.exception(f"Executing {device_name} failed.")
             # Pass the exception on to the client as a Failure message
             response = Failure(f"Executing {device_name} failed: ", exc)
 
+            rc = -1  # indicating we got an exception when executing the command on the server
+
         # Enable the following message only when debugging, because this log message can become
         # very long for data storage commands.
-        # logger.debug(f"handle_device_method: {device_name}({args}, {kwargs}) -> {response!s}")
+        logger.debug(f"handle_device_method: {device_name}({args}, {kwargs}) -> {response!s}")
 
         self.send(response)
+
+        return rc
