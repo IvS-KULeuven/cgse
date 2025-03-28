@@ -1,11 +1,11 @@
 ---
 hide:
-  - navigation
+    - navigation
 ---
 
 # Roadmap
 
-Don't worry, the feature set will grow..
+Don't worry, the feature set will grow ...
 
 ## Features
 
@@ -33,6 +33,11 @@ Provide a `cgse` command that is extensible with new commands and command groups
 - [ ] Metrics for all devices will be handled using InfluxDB
 - [ ] Use of Grafana to visualize the metrics
 
+## Core Services
+
+- [ ] Process Manager needs to be added with optimised design and performance
+- [ ] Synoptic Manager
+
 ## Devices
 
 - [x] The Symétrie Hexapods: PUNA, ZONDA, JORAN
@@ -49,10 +54,22 @@ Provide a `cgse` command that is extensible with new commands and command groups
 - [ ] A Process Manager TUI
 - [ ] `tui-executor` integration
 
+## Maintenance and refactoring
+
+- [ ] Allow core services to register and/or re-register to another core service as a listener
+- [ ] The storage manager shall be able to restore registrations from devices after a restart/crash
+- [ ] Refactor the commanding protocol
+- [ ] The Proxy and Protocol classes should be refactored for full dynamic commanding. Eliminate the
+  use of command YAML files, replace `dynamic_interface` with `dynamic_command`.
+- [ ] Introduce asyncio into the commanding protocol, e.g. `getstatus()` and `get_housekeeping()`
+  shall be handled asynchronously.
+- [ ] GlobalState Setup needs some redesign, especially `GlobalState.setup` which should not consult
+  the configuration manager by default.
+
 ## Removals
 
-- [ ] The `get_common_egse_root()` is of no use anymore and needs to be removed or replaced in 
-  some cases.
+- [ ] The `get_common_egse_root()` is of no use anymore and needs to be removed or replaced in some
+  cases.
 
 ## Testing
 
