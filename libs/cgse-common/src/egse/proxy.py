@@ -10,7 +10,6 @@ import logging
 import pickle
 import types
 from types import MethodType
-from typing import Any
 
 import zmq
 
@@ -94,7 +93,7 @@ class ControlServerConnectionInterface:
 
 
 class BaseProxy(ControlServerConnectionInterface):
-    def __init__(self, endpoint, timeout: int = REQUEST_TIMEOUT):
+    def __init__(self, endpoint: str, timeout: int = REQUEST_TIMEOUT):
         """
         The `timeout` argument specifies the number of milliseconds to wait for a reply from the
         control server.
@@ -143,7 +142,7 @@ class BaseProxy(ControlServerConnectionInterface):
         self._poller.register(self._socket, zmq.POLLIN)
 
     def reset_cs_connection(self):
-        self._logger.log(10, f"Trying to reset the connection from {self.__class__.__name__} to {self._endpoint}")
+        self._logger.debug(f"Trying to reset the connection from {self.__class__.__name__} to {self._endpoint}")
 
         self.disconnect_cs()
         self.connect_cs()
@@ -211,8 +210,8 @@ class BaseProxy(ControlServerConnectionInterface):
                 self.disconnect_cs()
 
                 if retries_left == 0:
-                    self._logger.critical("Control Server seems to be off-line, abandoning")
-                    return None
+                    self._logger.critical(f"Control Server seems to be off-line, abandoning ({data})")
+                    return Failure(f"Control Server seems to be off-line, abandoning ({data})")
                 retries_left -= 1
 
                 self._logger.log(logging.CRITICAL, f"Reconnecting {self.__class__.__name__}, {retries_left=}")
@@ -228,7 +227,7 @@ class BaseProxy(ControlServerConnectionInterface):
         self._logger.log(0, f"Check if control server is available: Ping - {return_code}")
         return return_code == "Pong"
 
-    def get_endpoint(self):
+    def get_endpoint(self) -> str:
         """Returns the endpoint."""
         return self._endpoint
 
@@ -311,113 +310,6 @@ class Proxy(BaseProxy, ControlServerConnectionInterface):
 
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if not self._socket.closed:
-            self.disconnect_cs()
-
-    def connect_cs(self):
-        self._logger.log(0, f"Trying to connect {self.__class__.__name__} to {self._endpoint}")
-
-        self._socket = self._ctx.socket(zmq.REQ)
-        self._socket.connect(self._endpoint)
-        self._poller.register(self._socket, zmq.POLLIN)
-
-    def disconnect_cs(self):
-        self._socket.setsockopt(zmq.LINGER, 0)
-        self._socket.close()
-        self._poller.unregister(self._socket)
-
-    def reconnect_cs(self):
-        self._logger.log(20, f"Trying to reconnect {self.__class__.__name__} to {self._endpoint}")
-
-        if not self._socket.closed:
-            self._socket.close(linger=0)
-
-        self._socket = self._ctx.socket(zmq.REQ)
-        self._socket.connect(self._endpoint)
-        self._poller.register(self._socket, zmq.POLLIN)
-
-    def reset_cs_connection(self):
-        self._logger.log(10, f"Trying to reset the connection from {self.__class__.__name__} to {self._endpoint}")
-
-        self.disconnect_cs()
-        self.connect_cs()
-
-    def is_cs_connected(self) -> bool:
-        return self.ping()
-
-    def send(self, data, retries: int = REQUEST_RETRIES, timeout: int = None) -> Any:
-        """
-        Sends a command to the control server and waits for a response.
-
-        When not connected to the control server or when a timeout occurs, the
-        ``send()`` command retries a number of times to send the command.
-
-        The number of retries is hardcoded and currently set to '2', the request
-        timeout is set to 2.5 seconds.
-
-        The command data will be pickled before sending. Make sure the ``data``
-        argument can be dumped by pickle.
-
-        Args:
-            data (str): the command that is sent to the control server, usually a
-                string, but that is not enforced.
-            timeout (int): the time to wait for a reply [in milliseconds]
-            retries (int): the number of time we should retry to send the message
-
-        Returns:
-            response: the response from the control server or `None` when there was
-                a problem or a timeout.
-        """
-        timeout = timeout or self._timeout
-
-        pickle_string = pickle.dumps(data)
-
-        retries_left = retries
-
-        # When we enter this method, we assume the Proxy has been connected. It
-        # might be the server is not responding, but that is handled by the
-        # algorithm below where we have a number of retries to receive the response
-        # of the sent command. Remember that we are using ZeroMQ where the connect
-        # method returns gracefully even when no server is available.
-
-        if self._socket.closed:
-            self.reconnect_cs()
-
-        self._logger.log(0, f"Sending '{data}'")
-        self._socket.send(pickle_string)
-
-        while True:
-            socks = dict(self._poller.poll(timeout))
-
-            if self._socket in socks and socks[self._socket] == zmq.POLLIN:
-                pickle_string = self._socket.recv()
-                if not pickle_string:
-                    break
-                response = pickle.loads(pickle_string)
-                self._logger.log(0, f"Receiving response: {response}")
-                return response
-            else:
-                # timeout - server unavailable
-
-                # We should disconnect here because socket is possibly confused.
-                # Close the socket and remove from the poller.
-
-                self.disconnect_cs()
-
-                if retries_left == 0:
-                    self._logger.critical(f"Control Server seems to be off-line, abandoning ({data})")
-                    return Failure(f"Control Server seems to be off-line, abandoning ({data})")
-                retries_left -= 1
-
-                self._logger.log(logging.CRITICAL, f"Reconnecting {self.__class__.__name__}, {retries_left=}")
-
-                self.reconnect_cs()
-
-                # Now try to send the request again
-
-                self._socket.send(pickle_string)
-
     def _request_commands(self):
         response = self.send("send_commands")
         if isinstance(response, Failure):
@@ -437,16 +329,6 @@ class Proxy(BaseProxy, ControlServerConnectionInterface):
             new_method = MethodType(command.client_call, self)
             new_method = set_docstring(new_method, command)
             setattr(self, key, new_method)
-
-    def get_service_proxy(self):
-        """Return a ServiceProxy for the control server of this proxy object."""
-        from egse.services import ServiceProxy  # prevent circular import problem
-
-        transport, address, _ = split_address(self._endpoint)
-
-        port = self.send("get_service_port")
-
-        return ServiceProxy(AttributeDict({"PROTOCOL": transport, "HOSTNAME": address, "SERVICE_PORT": port}))
 
     def load_commands(self):
         """
@@ -486,33 +368,3 @@ class Proxy(BaseProxy, ControlServerConnectionInterface):
     def has_commands(self):
         """Return `True` if commands have been loaded."""
         return bool(self._commands)
-
-    def ping(self):
-        return_code = self.send("Ping", retries=0, timeout=1000)
-        self._logger.debug(f"Check if control server is available: Ping - {return_code}")
-        return return_code == "Pong"
-
-    def get_endpoint(self) -> str:
-        """Returns the endpoint."""
-
-        return self._endpoint
-
-    def get_monitoring_port(self) -> int:
-        """Returns the monitoring port."""
-
-        return self.send("get_monitoring_port")
-
-    def get_commanding_port(self) -> int:
-        """Returns the commanding port."""
-
-        return self.send("get_commanding_port")
-
-    def get_service_port(self) -> int:
-        """Returns the service port."""
-
-        return self.send("get_service_port")
-
-    def get_ip_address(self) -> int:
-        """Returns the hostname of the control server."""
-
-        return self.send("get_ip_address")

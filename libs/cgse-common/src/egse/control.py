@@ -56,6 +56,11 @@ def is_control_server_active(endpoint: str = None, timeout: float = 0.5) -> bool
     Returns: True if the Control Server is running and replied with the expected answer; False otherwise.
     """
 
+    if endpoint is None:
+        raise ValueError(
+            "endpoint argument not provided, please provide a string with this format: '<protocol>://<address>:<port>'"
+        )
+
     ctx = zmq.Context.instance()
 
     return_code = False

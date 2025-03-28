@@ -5,6 +5,7 @@ This module contains a number of convenience functions to work with bits, bytes 
 from __future__ import annotations
 
 import ctypes
+from collections.abc import Iterable
 from typing import Union
 
 
@@ -121,13 +122,15 @@ def bit_set(value: int, bit) -> bool:
     return value & bit_value == bit_value
 
 
-def bits_set(value: int, *args: list[int] | tuple[int]) -> bool:
+def bits_set(value: int, *args: Union[int, Iterable[int]]) -> bool:
     """
     Return True if all the bits are set.
 
     Args:
         value (int): the value to check
-        args: a set of indices of the bits to check, starting from 0 at the LSB
+        args: a set of indices of the bits to check, starting from 0 at the LSB.
+            All the indices can be given as separate arguments, or they can be passed
+            in as a list.
 
     Returns:
         True if all the bits are set (1).
@@ -216,7 +219,7 @@ def humanize_bytes(n: int, base: Union[int, str] = 2, precision: int = 3) -> str
         one_kilo = 1000
         units = ["kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
 
-    _n = n
+    _n: float = n
     if _n < one_kilo:
         return f"{_n} byte{'' if n == 1 else 's'}"
 
@@ -488,7 +491,7 @@ CRC_TABLE = [
 ]
 
 
-def crc_calc(data: list[Union[bytes, int]], start: int, len_: int) -> int:
+def crc_calc(data: list[bytes | int], start: int, len_: int) -> int:
     """
     Calculate the checksum for (part of) the data.
 
