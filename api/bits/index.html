@@ -2659,7 +2659,7 @@
               <td><code><a class="autorefs autorefs-internal" title=" humanize_bytes (egse.bits.humanize_bytes)" href="#egse.bits.humanize_bytes">humanize_bytes</a></code></td>
               <td>
                 <div class="doc-md-description">
-                  <p>Represents the size <code>n</code> in human readable form, i.e. as byte, KiB, MiB, GiB, ...</p>
+                  <p>Represents the size <code>n</code> in human-readable form, i.e. as byte, KiB, MiB, GiB, ...</p>
                 </div>
               </td>
             </tr>
@@ -3001,11 +3001,13 @@ in groups of 8 bits for clarity by default (can be changed with the <code>group<
                 <code>args</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>, ...]</code>
+                  <code><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>, <a class="autorefs autorefs-external" title="collections.abc.Iterable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable">Iterable</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>]]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>a set of indices of the bits to check, starting from 0 at the LSB</p>
+                <p>a set of indices of the bits to check, starting from 0 at the LSB.
+All the indices can be given as separate arguments, or they can be passed
+in as a list.</p>
               </div>
             </td>
             <td>
@@ -3259,7 +3261,7 @@ in groups of 8 bits for clarity by default (can be changed with the <code>group<
                 <code>data</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>]]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3457,7 +3459,7 @@ on page 80 [ECSS‐E‐ST‐50‐52C].</p>
 
     <div class="doc doc-contents ">
 
-        <p>Represents the size <code>n</code> in human readable form, i.e. as byte, KiB, MiB, GiB, ...</p>
+        <p>Represents the size <code>n</code> in human-readable form, i.e. as byte, KiB, MiB, GiB, ...</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -3538,7 +3540,7 @@ on page 80 [ECSS‐E‐ST‐50‐52C].</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>a human readable size, like 512 byte or 2.300 TiB</p>
+                <p>a human-readable size, like 512 byte or 2.300 TiB</p>
               </div>
             </td>
           </tr>

@@ -2287,6 +2287,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#core-services" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Services
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#devices" class="md-nav__link">
     <span class="md-ellipsis">
       Devices
@@ -2308,6 +2317,15 @@
   <a href="#guis-and-tuis" class="md-nav__link">
     <span class="md-ellipsis">
       GUIs and TUIs
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#maintenance-and-refactoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      Maintenance and refactoring
     </span>
   </a>
   
@@ -2410,6 +2428,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#core-services" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Services
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#devices" class="md-nav__link">
     <span class="md-ellipsis">
       Devices
@@ -2431,6 +2458,15 @@
   <a href="#guis-and-tuis" class="md-nav__link">
     <span class="md-ellipsis">
       GUIs and TUIs
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#maintenance-and-refactoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      Maintenance and refactoring
     </span>
   </a>
   
@@ -2476,7 +2512,7 @@
 
 
 <h1 id="roadmap">Roadmap<a class="headerlink" href="#roadmap" title="Permanent link">&para;</a></h1>
-<p>Don't worry, the feature set will grow..</p>
+<p>Don't worry, the feature set will grow ...</p>
 <h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
 <h3 id="the-cgse-command">The <code>cgse</code> Command<a class="headerlink" href="#the-cgse-command" title="Permanent link">&para;</a></h3>
 <p>Provide a <code>cgse</code> command that is extensible with new commands and command groups:</p>
@@ -2501,6 +2537,11 @@
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Metrics for all devices will be handled using InfluxDB</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Use of Grafana to visualize the metrics</li>
 </ul>
+<h2 id="core-services">Core Services<a class="headerlink" href="#core-services" title="Permanent link">&para;</a></h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Process Manager needs to be added with optimised design and performance</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Synoptic Manager</li>
+</ul>
 <h2 id="devices">Devices<a class="headerlink" href="#devices" title="Permanent link">&para;</a></h2>
 <ul class="task-list">
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> The Symétrie Hexapods: PUNA, ZONDA, JORAN</li>
@@ -2517,10 +2558,22 @@
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> A Process Manager TUI</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>tui-executor</code> integration</li>
 </ul>
+<h2 id="maintenance-and-refactoring">Maintenance and refactoring<a class="headerlink" href="#maintenance-and-refactoring" title="Permanent link">&para;</a></h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Allow core services to register and/or re-register to another core service as a listener</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> The storage manager shall be able to restore registrations from devices after a restart/crash</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Refactor the commanding protocol</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> The Proxy and Protocol classes should be refactored for full dynamic commanding. Eliminate the
+  use of command YAML files, replace <code>dynamic_interface</code> with <code>dynamic_command</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Introduce asyncio into the commanding protocol, e.g. <code>getstatus()</code> and <code>get_housekeeping()</code>
+  shall be handled asynchronously.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> GlobalState Setup needs some redesign, especially <code>GlobalState.setup</code> which should not consult
+  the configuration manager by default.</li>
+</ul>
 <h2 id="removals">Removals<a class="headerlink" href="#removals" title="Permanent link">&para;</a></h2>
 <ul class="task-list">
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> The <code>get_common_egse_root()</code> is of no use anymore and needs to be removed or replaced in 
-  some cases.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> The <code>get_common_egse_root()</code> is of no use anymore and needs to be removed or replaced in some
+  cases.</li>
 </ul>
 <h2 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">&para;</a></h2>
 <ul class="task-list">

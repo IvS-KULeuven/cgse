@@ -5316,7 +5316,7 @@ If <code>allow_none</code> is set to True, it allows the variable to be None wit
 
 
 <a href="#egse.system.do_every" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">do_every</span><span class="p">(</span><span class="n">period</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">do_every</span><span class="p">(</span><span class="n">period</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5324,8 +5324,9 @@ If <code>allow_none</code> is set to True, it allows the variable to be None wit
         <p>This method executes a function periodically, taking into account
 that the function that is executed will take time also and using a
 simple <code>sleep()</code> will cause a drift. This method will not drift.</p>
-<p>You can use this function in combination with the threading module to execute the
-function in the background, but be careful as the function <code>func</code> might not be thread safe.</p>
+<p>You can use this function in combination with the threading module
+to execute the function in the background, but be careful as the
+function <code>func</code> might not be thread safe.</p>
 <div class="highlight"><pre><span></span><code>timer_thread = threading.Thread(target=do_every, args=(10, func))
 timer_thread.daemon = True
 timer_thread.start()
@@ -5389,6 +5390,23 @@ timer_thread.start()
             </td>
             <td>
                   <code>()</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>count</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>if you do not need an endless loop, provide the number of
+iterations, if count=0 the function will not be executed.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
             </td>
           </tr>
       </tbody>
@@ -7628,6 +7646,29 @@ because this value is used to backtrack from the end of the file as an optimizat
               <div class="doc-md-description">
                 <p>Last lines of a text file as a list of strings. An empty list is returned
 when the file doesn't exist.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#AssertionError">AssertionError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>when the requested num_lines is zero (0) or a negative number.</p>
               </div>
             </td>
           </tr>
