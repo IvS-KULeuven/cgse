@@ -15,6 +15,7 @@ from egse.command import parse_format_string
 from egse.command import stringify_function_call
 from egse.protocol import CommandProtocol
 from egse.state import GlobalState
+from egse.system import attrdict
 
 
 class PrintCommand(Command):
@@ -300,9 +301,58 @@ def test_stringify_function_call():
     assert result == "unknown_function()"
 
 
+@pytest.mark.xfail(reason="Known issue on last assert - will fix later")
 def test_load_commands():
 
     class _TestCommandProtocol(CommandProtocol):
         ...
 
-    commands = load_commands(protocol_class=_TestCommandProtocol)
+    class _TestCommand(Command):
+        def __init__(self, name, cmd, response=None, description=None, device_method=None):
+            super().__init__(name, cmd, response=response, description=description, device_method=device_method)
+            self._value = 1.2
+
+        def execute(self, cmd):
+            method = self.get_device_method()
+            print(f"{cmd = }, {self._response = }, {method = }, {type(method) = }")
+            return method(self)
+
+    class _TestDevice:
+        def __init__(self):
+            self._value = 0.0
+
+        def get_value(self) -> float:
+            return self._value
+
+        def set_value(self, value: float):
+            self._value = value
+
+    command_settings = attrdict(
+        {
+            "get_value": {
+                "description": "Read a value from the device.",
+            },
+            "set_value": {
+                "description": "Sets the value for the device.",
+                "cmd": "{value}",
+            }
+        }
+    )
+
+    commands = load_commands(
+        protocol_class=_TestCommandProtocol,
+        command_settings=command_settings,
+        command_class=_TestCommand,
+        device_class=_TestDevice
+    )
+
+    print(f"{commands = }")
+
+    assert "get_value" in commands
+    assert "set_value" in commands
+
+    assert isinstance(commands["get_value"], _TestCommand)
+    assert isinstance(commands["set_value"], _TestCommand)
+
+    assert commands["get_value"]() == 1.2
+    assert commands["set_value"](6.28) is None

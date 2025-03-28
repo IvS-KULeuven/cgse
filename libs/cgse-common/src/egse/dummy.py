@@ -2,32 +2,37 @@
 This module provides a dummy implementation for classes of the commanding chain.
 
 Start the control server with:
-
-    py -m egse.dummy start-cs
-
+```shell
+py -m egse.dummy start-cs
+```
 and stop the server with:
-
-    py -m egse.dummy stop-cs
-
+```shell
+py -m egse.dummy stop-cs
+```
 Commands that can be used with the proxy:
 
   * info – returns an info message from the dummy device, e.g. "Dummy Device <__version__>"
   * get_value – returns a random float between 0.0 and 1.0
+  * division – returns the result of the division between arguments 'a' and 'b'.
+    This can be used also to induce a ZeroDivisionError that should return a Failure
+    object.
 
 The device simulator can be started with:
-
-    py -m egse.dummy start-dev
-
+```
+py -m egse.dummy start-dev
+```
 """
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import multiprocessing
 import random
 import select
 import socket
 import sys
+import textwrap
 import threading
 import time
 from functools import partial
@@ -36,7 +41,6 @@ import typer
 import zmq
 
 from egse.command import ClientServerCommand
-from egse.confman import is_configuration_manager_active
 from egse.control import ControlServer
 from egse.control import is_control_server_active
 from egse.decorators import dynamic_interface
@@ -48,6 +52,7 @@ from egse.listener import Event
 from egse.listener import EventInterface
 from egse.protocol import CommandProtocol
 from egse.proxy import Proxy
+from egse.response import Failure
 from egse.settings import Settings
 from egse.system import SignalCatcher
 from egse.system import attrdict
@@ -100,6 +105,10 @@ commands = attrdict(
         "get_value": {
             "description": "Read a value from the device.",
         },
+        "division": {
+            "description": "Return a / b",
+            "cmd": "{a} {b}"
+        },
         "handle_event": {
             "description": "Notification of an event",
             "device_method": "handle_event",
@@ -129,7 +138,7 @@ class DummyInterface:
     @dynamic_interface
     def info(self) -> str:
         """Return an info string from the device."""
-        ...
+        raise NotImplementedError("The info() method has not been loaded from the service.")
 
     @dynamic_interface
     def get_value(self, *args, **kwargs) -> float:
@@ -137,7 +146,16 @@ class DummyInterface:
         Return a float value from the device.
         This dummy implementation will return a random number between 0.0 and 1.0.
         """
-        ...
+        raise NotImplementedError("The get_value() method has not been loaded from the service.")
+
+    @dynamic_interface
+    def division(self, a: int | float, b: int | float) -> float:
+        """
+        Return the division of the number 'a' divided by the number 'b'.
+        This method can also be used during testing to cause a ZeroDivisionError
+        that will return a Failure object.
+        """
+        raise NotImplementedError("The division() method has not been loaded from the service.")
 
 
 class DummyProxy(Proxy, DummyInterface, EventInterface):
@@ -152,11 +170,11 @@ class DummyProxy(Proxy, DummyInterface, EventInterface):
     """
 
     def __init__(
-        self,
-        protocol: str = ctrl_settings.PROTOCOL,
-        hostname: str = ctrl_settings.HOSTNAME,
-        port: int = ctrl_settings.COMMANDING_PORT,
-        timeout: int = ctrl_settings.TIMEOUT,
+            self,
+            protocol: str = ctrl_settings.PROTOCOL,
+            hostname: str = ctrl_settings.HOSTNAME,
+            port: int = ctrl_settings.COMMANDING_PORT,
+            timeout: int = ctrl_settings.TIMEOUT,
     ):
         super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
 
@@ -179,14 +197,17 @@ class DummyController(DummyInterface, EventInterface):
     def get_value(self) -> float:
         return float(self._dev.trans("get_value").decode().strip())
 
+    def division(self, a, b) -> float:
+        return a / b
+
     def handle_event(self, event: Event) -> str:
         _exec_in_thread = False
 
         def _handle_event(_event):
             _LOGGER.info(f"An event is received, {_event=}")
-            _LOGGER.info(f"CM CS active? {is_configuration_manager_active()}")
+            _LOGGER.info(f"CM CS active? {is_control_server_active()}")
             time.sleep(5.0)
-            _LOGGER.info(f"CM CS active? {is_configuration_manager_active()}")
+            _LOGGER.info(f"CM CS active? {is_control_server_active()}")
             _LOGGER.info(f"An event is processed, {_event=}")
 
         if _exec_in_thread:
@@ -286,18 +307,34 @@ class DummyControlServer(ControlServer):
 
         self.set_hk_delay(ctrl_settings.HK_DELAY)
 
-        from egse.confman import ConfigurationManagerProxy
-        from egse.listener import EVENT_ID
+        try:
+            from egse.confman import ConfigurationManagerProxy
+            from egse.listener import EVENT_ID
 
-        # The following import is needed because without this import, DummyProxy would be <class '__main__.DummyProxy'>
-        # instead of `egse.dummy.DummyProxy` and the ConfigurationManager control server will not be able to de-pickle
-        # the register message.
-        from egse.dummy import DummyProxy  # noqa
+            # The following import is needed because without this import, DummyProxy would
+            # be <class '__main__.DummyProxy'> instead of `egse.dummy.DummyProxy` and the
+            # ConfigurationManager control server will not be able to de-pickle
+            # the register message.
 
-        self.register_as_listener(
-            proxy=ConfigurationManagerProxy,
-            listener={"name": "Dummy CS", "proxy": DummyProxy, "event_id": EVENT_ID.SETUP},
-        )
+            from egse.dummy import DummyProxy  # noqa
+
+            self.register_as_listener(
+                proxy=ConfigurationManagerProxy,
+                listener={"name": "Dummy CS", "proxy": DummyProxy, "event_id": EVENT_ID.SETUP},
+            )
+
+        except ModuleNotFoundError as exc:
+            _LOGGER.info(
+                textwrap.dedent(
+                    f"""\
+                    Caught a ModuleNotFoundException: {exc}
+
+                    This probably means you have not installed the `cgse-core` package and you don't have a
+                    configuration manager running. The DummyControlServer will not be registered as a listener and
+                    therefore will not receive notifications. Other then that, it should be fully functional.
+                    """
+                )
+            )
 
     def get_communication_protocol(self):
         return "tcp"
@@ -317,9 +354,9 @@ class DummyControlServer(ControlServer):
     def after_serve(self):
         _LOGGER.debug("After Serve: unregistering Dummy CS")
 
-        from egse.confman import ConfigurationManagerProxy
-
-        self.unregister_as_listener(proxy=ConfigurationManagerProxy, listener={"name": "Dummy CS"})
+        with contextlib.suppress(ModuleNotFoundError):
+            from egse.confman import ConfigurationManagerProxy
+            self.unregister_as_listener(proxy=ConfigurationManagerProxy, listener={"name": "Dummy CS"})
 
 
 class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
