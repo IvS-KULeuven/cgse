@@ -3,7 +3,7 @@ PACKAGES:
 
 
 Keithley DAQ6510:
-    HOSTNAME:               localhost
+    HOSTNAME:                 unknown
     PORT:                        5025
     MAC_ADDRESS:    08:00:11:24:0C:7A
     SERIAL_NUMBER:           04457823
