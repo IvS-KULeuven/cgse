@@ -266,6 +266,64 @@ class DeviceTransport:
         return self.trans(command)
 
 
+class AsyncDeviceTransport:
+    """
+    Base class for the asynchronous device transport layer.
+    """
+
+    async def write(self, command: str):
+        """
+        Sends a complete command to the device, handle line termination, and write timeouts.
+
+        Args:
+            command: the command to be sent to the instrument.
+        """
+
+        raise NotImplementedError()
+
+    async def read(self) -> bytes:
+        """
+        Reads a bytes object back from the instrument and returns it unaltered.
+        """
+
+        raise NotImplementedError
+
+    async def trans(self, command: str) -> bytes:
+        """
+        Send a single command to the device controller and block until a response from the
+        controller.
+
+        Args:
+            command: is the command to be sent to the instrument
+
+        Returns:
+            Either a string returned by the controller (on success), or an error message (on failure).
+
+        Raises:
+            DeviceConnectionError: when there was an I/O problem during communication with the controller.
+
+            DeviceTimeoutError: when there was a timeout in either sending the command or receiving the response.
+        """
+
+        raise NotImplementedError
+
+    async def query(self, command: str) -> bytes:
+        """
+        Send a query to the device and wait for the response.
+
+        This `query` method is an alias for the `trans` command. For some commands it might be
+        more intuitive to use the `query` instead of the `trans`action. No need to override this
+        method as it delegates to `trans`.
+
+        Args:
+            command (str): the query command.
+
+        Returns:
+            The response to the query.
+        """
+        return await self.trans(command)
+
+
 class DeviceFactoryInterface:
     """
     Base class for creating a device factory class to access devices.

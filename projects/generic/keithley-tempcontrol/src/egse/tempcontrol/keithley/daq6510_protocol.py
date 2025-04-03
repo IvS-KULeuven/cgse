@@ -12,7 +12,7 @@ from egse.system import format_datetime
 from egse.tempcontrol.keithley.daq6510 import DAQ6510Controller
 from egse.tempcontrol.keithley.daq6510 import DAQ6510Interface
 from egse.tempcontrol.keithley.daq6510 import DAQ6510Simulator
-from egse.tempcontrol.keithley.daq6510_devif import DAQ6510Command
+from egse.tempcontrol.keithley.daq6510_dev import DAQ6510Command
 from egse.zmq_ser import bind_address
 
 COMMAND_SETTINGS = Settings.load(filename="daq6510.yaml")
@@ -21,9 +21,8 @@ MODULE_LOGGER = logging.getLogger(__name__)
 
 
 class DAQ6510Protocol(CommandProtocol):
-
     def __init__(self, control_server: ControlServer):
-        """ Initialisation of a new Protocol for DAQ6510 Management.
+        """Initialisation of a new Protocol for DAQ6510 Management.
 
         Args:
             control_server: Control Server for which to send out status and monitoring information
@@ -40,8 +39,7 @@ class DAQ6510Protocol(CommandProtocol):
         try:
             self.daq.connect()
         except (ConnectionError, DeviceTimeoutError):
-            MODULE_LOGGER.warning(
-                f"Couldn't establish a connection to the DAQ6510, check the log messages.")
+            MODULE_LOGGER.warning("Couldn't establish a connection to the DAQ6510, check the log messages.")
 
         self.load_commands(COMMAND_SETTINGS.Commands, DAQ6510Command, DAQ6510Interface)
         self.build_device_method_lookup_table(self.daq)
@@ -55,7 +53,7 @@ class DAQ6510Protocol(CommandProtocol):
         self.metrics = define_metrics(origin="DAS-DAQ6510", use_site=True, setup=setup)
 
     def get_bind_address(self) -> str:
-        """ Returns a string with the bind address, the endpoint, for accepting connections and bind a socket to.
+        """Returns a string with the bind address, the endpoint, for accepting connections and bind a socket to.
 
 
         Returns: String with the protocol and port to bind a socket to.
@@ -67,7 +65,7 @@ class DAQ6510Protocol(CommandProtocol):
         )
 
     def get_status(self) -> dict:
-        """ Returns a dictionary with status information for the Control Server and the DAQ6510.
+        """Returns a dictionary with status information for the Control Server and the DAQ6510.
 
         Returns: Dictionary with status information for the Control Server and the DAQ6510.
         """
@@ -75,7 +73,7 @@ class DAQ6510Protocol(CommandProtocol):
         return super().get_status()
 
     def get_housekeeping(self) -> dict:
-        """ Returns a dictionary with housekeeping information about the DAQ6510.
+        """Returns a dictionary with housekeeping information about the DAQ6510.
 
         Returns: Dictionary with housekeeping information about the DAQ6510.
         """
@@ -98,7 +96,7 @@ class DAQ6510Protocol(CommandProtocol):
         return hk_dict
 
     def quit(self) -> None:
-        """ Clean up and stop threads that were started by the process. """
+        """Clean up and stop threads that were started by the process."""
 
         # TODO
         # self.synoptics.disconnect_cs()
