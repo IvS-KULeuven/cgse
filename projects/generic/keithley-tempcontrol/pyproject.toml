@@ -64,3 +64,15 @@ extend-select = ["E501"]
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "setuptools", # needed by PyCharm
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "ruff>=0.9.0",
+    "nox>=2025.2.9",
+    "setuptools>=75.8.2", # needed by PyCharm
+    "pytest-asyncio>=0.26.0",
+]

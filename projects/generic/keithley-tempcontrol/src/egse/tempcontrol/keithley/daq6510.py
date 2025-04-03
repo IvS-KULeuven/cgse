@@ -13,7 +13,7 @@ from egse.mixin import add_lf
 from egse.mixin import dynamic_command
 from egse.proxy import Proxy
 from egse.settings import Settings
-from egse.tempcontrol.keithley.daq6510_devif import DAQ6510EthernetInterface
+from egse.tempcontrol.keithley.daq6510_dev import DAQ6510EthernetInterface
 from egse.zmq_ser import connect_address
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ class DAQ6510Interface(DeviceInterface):
 
     @dynamic_interface
     def send_command(self, command: str, response: bool) -> Union[None, str]:
-        """ Sends the given SCPI command to the device.
+        """Sends the given SCPI command to the device.
 
         The valid commands are described in the DAQ6510 Reference Manual [DAQ6510-901-01 Rev. B / September 2019].
 
@@ -56,7 +56,7 @@ class DAQ6510Interface(DeviceInterface):
         process_cmd_string=add_lf,
     )
     def info(self) -> str:
-        """ Returns basic information about the device, its name, firmware version, etc.
+        """Returns basic information about the device, its name, firmware version, etc.
 
         The string returned is subject to change without notice and can not be used for parsing information.
 
@@ -71,7 +71,7 @@ class DAQ6510Interface(DeviceInterface):
         process_cmd_string=add_lf,
     )
     def reset(self) -> None:
-        """ Resets the DAQ6510.
+        """Resets the DAQ6510.
 
         This returns the instrument to default settings, and cancels all pending commands.
 
@@ -81,10 +81,11 @@ class DAQ6510Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE,
-                     cmd_string=":SYST:TIME ${year}, ${month}, ${day}, ${hour}, ${minute}, ${second}")
+    @dynamic_command(
+        cmd_type=CommandType.WRITE, cmd_string=":SYST:TIME ${year}, ${month}, ${day}, ${hour}, ${minute}, ${second}"
+    )
     def set_time(self, year: int, month: int, day: int, hour: int, minute: int, second: int) -> None:
-        """ Sets the absolute date and time for the device.
+        """Sets the absolute date and time for the device.
 
         Args:
             year (int): Year
@@ -99,7 +100,7 @@ class DAQ6510Interface(DeviceInterface):
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string=":SYST:TIME? 1")
     def get_time(self) -> str:
-        """ Gets the date and time from the device in UTC.
+        """Gets the date and time from the device in UTC.
 
         The returned string is of the format:
 
@@ -112,7 +113,7 @@ class DAQ6510Interface(DeviceInterface):
 
     @dynamic_interface
     def read_buffer(self, start: int, end: int, buffer_name: str, elements: List[str]):
-        """ Reads specific data elements (measurements) from the given buffer.
+        """Reads specific data elements (measurements) from the given buffer.
 
         Args:
             start: (int) First index of the buffer that should be returned (>= 1)
@@ -127,7 +128,7 @@ class DAQ6510Interface(DeviceInterface):
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string="TRAC:ACTUAL? ${buffer_name}")
     def get_buffer_count(self, buffer_name: str = DEFAULT_BUFFER_1):
-        """ Returns the number of data points in the specified buffer.
+        """Returns the number of data points in the specified buffer.
 
         Args:
             buffer_name (str): Name of the buffer
@@ -137,7 +138,7 @@ class DAQ6510Interface(DeviceInterface):
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string="TRACE:POINTS? ${buffer_name}")
     def get_buffer_capacity(self, buffer_name: str):
-        """ Returns the capacity of the specified buffer.
+        """Returns the capacity of the specified buffer.
 
         Args:
             buffer_name (str): Name of the buffer
@@ -147,7 +148,7 @@ class DAQ6510Interface(DeviceInterface):
 
     @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="TRACE:DELETE ${buffer_name}")
     def delete_buffer(self, buffer_name: str) -> None:
-        """ Deletes the specified buffer.
+        """Deletes the specified buffer.
 
         Args:
             buffer_name (str): Name of the buffer
@@ -157,7 +158,7 @@ class DAQ6510Interface(DeviceInterface):
 
     @dynamic_interface
     def clear_buffer(self, buffer_name: str) -> None:
-        """ Clears the given buffer.
+        """Clears the given buffer.
 
         Args:
             buffer_name (str): Name of the buffer
@@ -167,7 +168,7 @@ class DAQ6510Interface(DeviceInterface):
 
     @dynamic_interface
     def create_buffer(self, buffer_name: str, size: int) -> None:
-        """ Creates a reading buffer with the given name and size.
+        """Creates a reading buffer with the given name and size.
 
         Args:
             buffer_name (str): Name of the buffer
@@ -178,7 +179,7 @@ class DAQ6510Interface(DeviceInterface):
 
     @dynamic_interface
     def configure_sensors(self, channel_list: str, *, sense: Dict[str, List[Tuple]]):
-        """ Configures the DAQ6510 to sense the specified channels.
+        """Configures the DAQ6510 to sense the specified channels.
 
         Args:
             channel_list (str): List of channels, as understood by the device
@@ -189,7 +190,7 @@ class DAQ6510Interface(DeviceInterface):
 
     @dynamic_interface
     def setup_measurements(self, *, buffer_name: str, channel_list: str):
-        """ Sets up the measurements for the given channel list.
+        """Sets up the measurements for the given channel list.
 
         Args:
             buffer_name (str): Name of the buffer to use [default: defbuffer1]
@@ -200,7 +201,7 @@ class DAQ6510Interface(DeviceInterface):
 
     @dynamic_interface
     def perform_measurement(self, *, buffer_name: str, channel_list: str, count: int, interval: int) -> list:
-        """ Performs the actual measurements.
+        """Performs the actual measurements.
 
         Args:
             buffer_name (str): Name of the buffer
@@ -219,7 +220,7 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
     """
 
     def __init__(self, hostname: str = FW_SETTINGS.HOSTNAME, port: int = FW_SETTINGS.PORT):
-        """ Opens a TCP/IP socket connection with the Keithley DAQ6510 Hardware.
+        """Opens a TCP/IP socket connection with the Keithley DAQ6510 Hardware.
 
         Args:
             hostname (str): IP address or fully qualified hostname of the Hexapod hardware controller. The default is
@@ -241,7 +242,7 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
         self.buffer_name = DEFAULT_BUFFER_1
 
     def is_simulator(self) -> bool:
-        """ Indicates that the device is a real hardware controller
+        """Indicates that the device is a real hardware controller
 
         Returns: False.
         """
@@ -249,19 +250,19 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
         return False
 
     def connect(self) -> None:
-        """ Connects to the device controller."""
+        """Connects to the device controller."""
 
         self.daq.connect()
         self.notify_observers(DeviceConnectionState.DEVICE_CONNECTED)
 
     def disconnect(self) -> None:
-        """ Disconnects from the device controller."""
+        """Disconnects from the device controller."""
 
         self.daq.disconnect()
         self.notify_observers(DeviceConnectionState.DEVICE_NOT_CONNECTED)
 
     def reconnect(self) -> None:
-        """ Reconnects to the device controller."""
+        """Reconnects to the device controller."""
 
         if self.is_connected():
             self.disconnect()
@@ -269,7 +270,7 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
         self.connect()
 
     def is_connected(self) -> bool:
-        """ Checks whether the device controller is connected.
+        """Checks whether the device controller is connected.
 
         Returns: True if the device controller is connected; False otherwise.
         """
@@ -277,7 +278,7 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
         return self.daq.is_connected()
 
     def send_command(self, command: str, response: bool) -> Union[None, str]:
-        """ Sends an SCPI command to the device.
+        """Sends an SCPI command to the device.
 
         The valid commands are described in the DAQ6510 Reference Manual [DAQ6510-901-01 Rev. B / September 2019].
 
@@ -292,7 +293,7 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
         return self.daq.trans(command) if response else self.daq.write(command)
 
     def read_buffer(self, start: int, end: int, buffer_name: str = DEFAULT_BUFFER_1, elements: List[str] = None):
-        """ Reads specific data elements (measurements) from the given buffer.
+        """Reads specific data elements (measurements) from the given buffer.
 
         Elements that can be specified to read out:
 
@@ -320,7 +321,7 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
         return self.daq.trans(f'TRACE:DATA? {start}, {end}, "{buffer_name}", {elements}')
 
     def clear_buffer(self, buffer_name: str = DEFAULT_BUFFER_1) -> None:
-        """ Clears the given buffer.
+        """Clears the given buffer.
 
         Args:
             buffer_name (str): Name of the buffer
@@ -333,7 +334,7 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
         self.daq.write(f'TRACE:CLEAR "{buffer_name}"')
 
     def create_buffer(self, buffer_name: str, size: int = 1000) -> None:
-        """ Creates a reading buffer with the given name.
+        """Creates a reading buffer with the given name.
 
         The name of the buffer must adhere to the following rules:
 
@@ -361,7 +362,7 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
     #     self.daq.write("SYSTem:BEEPer 500, 0.1; :*RST; :SYSTem:BEEPer 1000, 0.1\n")
 
     def configure_sensors(self, channel_list: str, *, sense: Dict[str, List[Tuple]]) -> None:
-        """ Configures the different sensors in the `channel_list`.
+        """Configures the different sensors in the `channel_list`.
 
         Each sensor in the list will be configured according to the settings given in the `sense` dictionary.
 
@@ -391,7 +392,6 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
         """
 
         if "TEMPERATURE" in sense:
-
             # Allowed settings for TEMPERATURE:
             #
             # - TEMPERATURE:APERTURE                  (@<channelList>)
@@ -427,7 +427,7 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
                 self.daq.write(f"SENSE:TEMPERATURE:{cmd} {value}, {channel_list}")
 
     def setup_measurements(self, *, buffer_name: str = DEFAULT_BUFFER_1, channel_list: str) -> None:
-        """ Sets up the measurements for the given channel list.
+        """Sets up the measurements for the given channel list.
 
         Args:
             buffer_name (str): Name of the buffer to use [default: defbuffer1]
@@ -440,9 +440,15 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
         _ = self.daq.trans(f"ROUTE:CHANNEL:STATE? {channel_list}")
         self.daq.write("ROUTE:SCAN:START:STIMULUS NONE")
 
-    def perform_measurement(self, *, buffer_name: str = DEFAULT_BUFFER_1, channel_list: str, count: int = 1,
-                            interval: int = 2,) -> list:
-        """ Performs the actual measurements.
+    def perform_measurement(
+        self,
+        *,
+        buffer_name: str = DEFAULT_BUFFER_1,
+        channel_list: str,
+        count: int = 1,
+        interval: int = 2,
+    ) -> list:
+        """Performs the actual measurements.
 
         This function will wait until all measurements have completed, so be careful with the arguments `count` and
         `interval` as they will multiply into the number of seconds that you will have to wait for the response.
@@ -532,7 +538,7 @@ class DAQ6510Simulator(DAQ6510Interface):
         pass
 
     def is_simulator(self):
-        """ Indicates that the device is a simulator.
+        """Indicates that the device is a simulator.
 
         Returns: True.
         """
@@ -563,9 +569,9 @@ class DAQ6510Proxy(Proxy, DAQ6510Interface):
         protocol: str = CTRL_SETTINGS.PROTOCOL,
         hostname: str = CTRL_SETTINGS.HOSTNAME,
         port: int = CTRL_SETTINGS.COMMANDING_PORT,
-        timeout: int = CTRL_SETTINGS.TIMEOUT * 1000    # Timeout [ms]: > scan count * interval + (one scan duration)
+        timeout: int = CTRL_SETTINGS.TIMEOUT * 1000,  # Timeout [ms]: > scan count * interval + (one scan duration)
     ):
-        """ Initialisation of a DAQ6510Proxy.
+        """Initialisation of a DAQ6510Proxy.
 
         Args:
             protocol (str): Transport protocol [default is taken from settings file]
@@ -579,7 +585,7 @@ class DAQ6510Proxy(Proxy, DAQ6510Interface):
 
 
 def create_channel_list(*args) -> str:
-    """ Createa a channel list that is understood by the SCPI commands of the DAQ6510.
+    """Createa a channel list that is understood by the SCPI commands of the DAQ6510.
 
     Channel names contain both the slot number and the channel number. The slot number is the number of the slot where
     the card is installed at the back of the device.
@@ -613,7 +619,6 @@ def create_channel_list(*args) -> str:
     # arguments are given, I expect them all to be individual channels.
 
     if len(args) == 1:
-
         arg = args[0]
         if isinstance(arg, tuple):
             ch_list = f"(@{arg[0]}:{arg[1]})"
@@ -627,7 +632,7 @@ def create_channel_list(*args) -> str:
 
 
 def count_number_of_channels(channel_list: str) -> int:
-    """ Given a proper channel list, this function counts the number of channels.
+    """Given a proper channel list, this function counts the number of channels.
 
     For ranges, it returns the actual number of channels that are included in the range.
 
@@ -660,7 +665,7 @@ def count_number_of_channels(channel_list: str) -> int:
 
 
 def get_channel_names(channel_list: str) -> List[str]:
-    """ Generates a list of channel names from a given channel list.
+    """Generates a list of channel names from a given channel list.
 
     Args:
         channel_list (str): Channel list as understood by the SCPI commands of DAQ6510
@@ -684,7 +689,6 @@ def get_channel_names(channel_list: str) -> List[str]:
 
 
 if __name__ == "__main__":
-
     logging.basicConfig(level=20)
 
     print(f'{get_channel_names("(@101:105)")=}')

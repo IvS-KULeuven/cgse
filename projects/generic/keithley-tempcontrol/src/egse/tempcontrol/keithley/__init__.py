@@ -1,4 +1,4 @@
 class TemperatureControlError(Exception):
-    """ Temperature control error for Keithley temperature control systems."""
+    """Temperature control error for Keithley temperature control systems."""
 
     pass

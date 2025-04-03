@@ -2,17 +2,13 @@
 #
 import subprocess
 import sys
-import time
 from pathlib import Path
-from typing import Annotated
 
 import rich
 import typer
 
 daq6510 = typer.Typer(
-    name="daq6510",
-    help="DAQ6510 Data Acquisition Unit, Keithley, temperature monitoring",
-    no_args_is_help=True
+    name="daq6510", help="DAQ6510 Data Acquisition Unit, Keithley, temperature monitoring", no_args_is_help=True
 )
 
 
@@ -33,13 +29,15 @@ def status_daq6510():
     """Print status information on the daq6510 service."""
 
     proc = subprocess.Popen(
-        [sys.executable, '-m', 'egse.tempcontrol.keithley.daq6510_sim', 'status'],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.DEVNULL
+        [sys.executable, "-m", "egse.tempcontrol.keithley.daq6510_sim", "status"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        stdin=subprocess.DEVNULL,
     )
 
     stdout, stderr = proc.communicate()
 
-    rich.print(stdout.decode(), end='')
+    rich.print(stdout.decode(), end="")
     # if stderr:
     #     rich.print(f"[red]{stderr.decode()}[/]")
 
@@ -49,12 +47,14 @@ def start_daq6510_sim():
     """Start the DAQ6510 Simulator."""
     rich.print("Starting service DAQ6510 Simulator")
 
-    out = open(Path('~/.daq6510_sim.start.out').expanduser(), 'w')
+    out = open(Path("~/.daq6510_sim.start.out").expanduser(), "w")
 
     subprocess.Popen(
-        [sys.executable, '-m', 'egse.tempcontrol.keithley.daq6510_sim', 'start'],
-        stdout=out, stderr=out, stdin=subprocess.DEVNULL,
-        close_fds=True
+        [sys.executable, "-m", "egse.tempcontrol.keithley.daq6510_sim", "start"],
+        stdout=out,
+        stderr=out,
+        stdin=subprocess.DEVNULL,
+        close_fds=True,
     )
 
 
@@ -63,14 +63,16 @@ def stop_daq6510_sim():
     """Stop the DAQ6510 Simulator."""
     rich.print("Terminating the DAQ6510 simulator.")
 
-    out = open(Path('~/.daq6510_sim.stop.out').expanduser(), 'w')
+    out = open(Path("~/.daq6510_sim.stop.out").expanduser(), "w")
 
     subprocess.Popen(
-        [sys.executable, '-m', 'egse.tempcontrol.keithley.daq6510_sim', 'stop'],
-        stdout=out, stderr=out, stdin=subprocess.DEVNULL,
-        close_fds=True
+        [sys.executable, "-m", "egse.tempcontrol.keithley.daq6510_sim", "stop"],
+        stdout=out,
+        stderr=out,
+        stdin=subprocess.DEVNULL,
+        close_fds=True,
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     daq6510()

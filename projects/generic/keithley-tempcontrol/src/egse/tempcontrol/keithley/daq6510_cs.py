@@ -1,23 +1,18 @@
 import logging
-
-from prometheus_client import start_http_server
-
 import multiprocessing
-multiprocessing.current_process().name = "daq6510_cs"
-
 import sys
 
 import click
 import invoke
 import rich
 import zmq
-
 from egse.control import ControlServer
 from egse.control import is_control_server_active
 from egse.settings import Settings
 from egse.tempcontrol.keithley.daq6510 import DAQ6510Proxy
 from egse.tempcontrol.keithley.daq6510_protocol import DAQ6510Protocol
 from egse.zmq_ser import connect_address
+from prometheus_client import start_http_server
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +20,7 @@ CTRL_SETTINGS = Settings.load("Keithley Control Server")
 
 
 def is_daq6510_cs_active(timeout: float = 0.5) -> bool:
-    """ Checks if the DAQ6510 Control Server is running.
+    """Checks if the DAQ6510 Control Server is running.
 
     Args:
         timeout (float): Timeout when waiting for a reply [s, default=0.5]
@@ -33,9 +28,7 @@ def is_daq6510_cs_active(timeout: float = 0.5) -> bool:
     Returns:  True if the Control Server is running and replied with the expected answer; False otherwise.
     """
 
-    endpoint = connect_address(
-        CTRL_SETTINGS.PROTOCOL, CTRL_SETTINGS.HOSTNAME, CTRL_SETTINGS.COMMANDING_PORT
-    )
+    endpoint = connect_address(CTRL_SETTINGS.PROTOCOL, CTRL_SETTINGS.HOSTNAME, CTRL_SETTINGS.COMMANDING_PORT)
 
     return is_control_server_active(endpoint, timeout)
 
@@ -57,7 +50,7 @@ class DAQ6510ControlServer(ControlServer):
     """
 
     def __init__(self):
-        """ Initialisation of a DAQ6510 Control Server."""
+        """Initialisation of a DAQ6510 Control Server."""
 
         super().__init__()
 
@@ -70,7 +63,7 @@ class DAQ6510ControlServer(ControlServer):
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
     def get_communication_protocol(self) -> str:
-        """ Returns the communication protocol used by the Control Server.
+        """Returns the communication protocol used by the Control Server.
 
         Returns: Communication protocol used by the Control Server, as specified in the settings.
         """
@@ -78,7 +71,7 @@ class DAQ6510ControlServer(ControlServer):
         return CTRL_SETTINGS.PROTOCOL
 
     def get_commanding_port(self) -> int:
-        """ Returns the commanding port used by the Control Server.
+        """Returns the commanding port used by the Control Server.
 
         Returns: Commanding port used by the Control Server, as specified in the settings.
         """
@@ -86,7 +79,7 @@ class DAQ6510ControlServer(ControlServer):
         return CTRL_SETTINGS.COMMANDING_PORT
 
     def get_service_port(self):
-        """ Returns the service port used by the Control Server.
+        """Returns the service port used by the Control Server.
 
         Returns: Service port used by the Control Server, as specified in the settings.
         """
@@ -94,7 +87,7 @@ class DAQ6510ControlServer(ControlServer):
         return CTRL_SETTINGS.SERVICE_PORT
 
     def get_monitoring_port(self):
-        """ Returns the monitoring port used by the Control Server.
+        """Returns the monitoring port used by the Control Server.
 
         Returns: Monitoring port used by the Control Server, as specified in the settings.
         """
@@ -102,7 +95,7 @@ class DAQ6510ControlServer(ControlServer):
         return CTRL_SETTINGS.MONITORING_PORT
 
     def get_storage_mnemonic(self):
-        """ Returns the storage mnemonics used by the Control Server.
+        """Returns the storage mnemonics used by the Control Server.
 
         This is a string that will appear in the filename with the housekeeping information of the device, as a way of
         identifying the device.  If this is not implemented in the sub-class, then the class name will be used.
@@ -117,7 +110,7 @@ class DAQ6510ControlServer(ControlServer):
             return "DAQ6510"
 
     def before_serve(self):
-        """ Steps to take before the Control Server is activated."""
+        """Steps to take before the Control Server is activated."""
 
         start_http_server(CTRL_SETTINGS.METRICS_PORT)
 
@@ -129,7 +122,9 @@ def cli():
 
 @cli.command()
 def start():
-    """ Starts the Keithley DAQ6510 Control Server."""
+    """Starts the Keithley DAQ6510 Control Server."""
+
+    multiprocessing.current_process().name = "daq6510_cs (start)"
 
     try:
         control_server = DAQ6510ControlServer()
@@ -149,28 +144,32 @@ def start():
 
 @cli.command()
 def start_bg():
-    """ Starts the DAQ6510 Control Server in the background."""
+    """Starts the DAQ6510 Control Server in the background."""
 
     invoke.run("daq6510_cs start", disown=True)
 
 
 @cli.command()
 def stop():
-    """ Sends a 'quit_server' command to the Keithley DAQ6510 Control Server."""
+    """Sends a 'quit_server' command to the Keithley DAQ6510 Control Server."""
+
+    multiprocessing.current_process().name = "daq6510_cs (stop)"
 
     try:
         with DAQ6510Proxy() as daq:
             sp = daq.get_service_proxy()
             sp.quit_server()
-    except ConnectionError as exc:
+    except ConnectionError:
         msg = "Cannot stop the DAQ6510 Control Server"
-        logger.exception(msg)
+        logger.error(msg, exc_info=True)
         rich.print(f"[red]{msg}, could not send the Quit command. [black]Check log messages.")
 
 
 @cli.command()
 def status():
-    """ Requests status information from the Control Server."""
+    """Requests status information from the Control Server."""
+
+    multiprocessing.current_process().name = "daq6510_cs (status)"
 
     protocol = CTRL_SETTINGS.PROTOCOL
     hostname = CTRL_SETTINGS.HOSTNAME
@@ -179,7 +178,7 @@ def status():
     endpoint = connect_address(protocol, hostname, port)
 
     if is_control_server_active(endpoint):
-        rich.print(f"DAQ6510 CS: [green]active")
+        rich.print("DAQ6510 CS: [green]active")
         with DAQ6510Proxy() as daq6510:
             sim = daq6510.is_simulator()
             connected = daq6510.is_connected()
@@ -187,11 +186,10 @@ def status():
             rich.print(f"mode: {'simulator' if sim else 'device'}{' not' if not connected else ''} connected")
             rich.print(f"hostname: {ip}")
     else:
-        rich.print(f"DAQ6510 CS: [red]not active")
+        rich.print("DAQ6510 CS: [red]not active")
 
 
 if __name__ == "__main__":
-
     logging.basicConfig(level=logging.DEBUG, format=Settings.LOG_FORMAT_FULL)
 
     sys.exit(cli())
