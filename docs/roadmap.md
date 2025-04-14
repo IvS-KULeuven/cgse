@@ -37,11 +37,13 @@ Provide a `cgse` command that is extensible with new commands and command groups
 
 - [ ] Process Manager needs to be added with optimised design and performance
 - [ ] Synoptic Manager
+- [x] Distributed Service Registry: to allow dynamic port assignment for all 
+  services
 
 ## Devices
 
 - [x] The Symétrie Hexapods: PUNA, ZONDA, JORAN
-- [ ] The Keithley Data Acquisition Multimeter
+- [x] The Keithley Data Acquisition Multimeter
 - [ ] The Lakeshore temperature controller
 
 ## Projects
@@ -61,7 +63,8 @@ Provide a `cgse` command that is extensible with new commands and command groups
 - [ ] Refactor the commanding protocol
 - [ ] The Proxy and Protocol classes should be refactored for full dynamic commanding. Eliminate the
   use of command YAML files, replace `dynamic_interface` with `dynamic_command`.
-- [ ] Introduce asyncio into the commanding protocol, e.g. `getstatus()` and `get_housekeeping()`
+- [ ] Introduce asyncio into the commanding protocol, e.g. `get_status()` 
+  and `get_housekeeping()`
   shall be handled asynchronously.
 - [ ] GlobalState Setup needs some redesign, especially `GlobalState.setup` which should not consult
   the configuration manager by default.
