@@ -1,6 +1,8 @@
 import logging
 import time
 from pathlib import Path
+from typing import Protocol
+from typing import runtime_checkable
 
 import pytest
 from egse.decorators import borg
@@ -8,6 +10,7 @@ from egse.decorators import classproperty
 from egse.decorators import debug
 from egse.decorators import deprecate
 from egse.decorators import dynamic_interface
+from egse.decorators import implements_protocol
 from egse.decorators import profile
 from egse.decorators import profile_func
 from egse.decorators import query_command
@@ -341,3 +344,152 @@ def test_spy_on_attr_change(caplog):
     assert "in Y -> a: <Nothing> -> 8" in caplog.text
     xx.bb = 11
     assert "Spy: in xx -> bb: <Nothing> -> 11" in caplog.text
+
+
+# ---------- Test the implements protocol decorator ----------------------------
+
+# Define test protocols
+@runtime_checkable
+class SimpleProtocol(Protocol):
+    def method_a(self) -> str: ...
+
+    def method_b(self, value: int) -> bool: ...
+
+
+@runtime_checkable
+class AdvancedProtocol(Protocol):
+    def connect(self) -> bool: ...
+
+    def disconnect(self) -> None: ...
+
+    def process(self, data: dict) -> dict: ...
+
+
+# The TestImplementsProtocolDecorator class is not strictly necessary for the tests
+# to function, but it helps to group related tests together.
+
+class TestImplementsProtocolDecorator:
+    def test_documentation_addition(self):
+        """Test that the decorator properly adds documentation."""
+
+        # Test with existing docstring
+        @implements_protocol(SimpleProtocol)
+        class ClassWithDocs:
+            """This is an example class."""
+
+            def method_a(self):
+                return "a"
+
+            def method_b(self, value):
+                return value > 0
+
+        assert "This is an example class." in ClassWithDocs.__doc__
+        assert f"This class implements the {SimpleProtocol.__name__} protocol." in ClassWithDocs.__doc__
+
+        # Test with no existing docstring
+        @implements_protocol(SimpleProtocol)
+        class ClassWithoutDocs:
+            def method_a(self):
+                return "a"
+
+            def method_b(self, value):
+                return value > 0
+
+        assert ClassWithoutDocs.__doc__ == f"This class implements the {SimpleProtocol.__name__} protocol."
+
+    def test_protocol_reference_storage(self):
+        """Test that the protocol reference is properly stored in the class."""
+
+        @implements_protocol(SimpleProtocol)
+        class TestClass:
+            def method_a(self):
+                return "a"
+
+            def method_b(self, value):
+                return value > 0
+
+        assert hasattr(TestClass, "__implements_protocol__")
+        assert TestClass.__implements_protocol__ == SimpleProtocol
+
+    def test_verification_method_success(self):
+        """Test that verification method succeeds for compliant classes."""
+
+        @implements_protocol(SimpleProtocol)
+        class CompliantClass:
+            def method_a(self):
+                return "result"
+
+            def method_b(self, value):
+                return True
+
+        instance = CompliantClass()
+        assert instance.verify_protocol_compliance() is True
+        assert isinstance(instance, SimpleProtocol)
+
+    def test_verification_method_failure(self):
+        """Test that verification method fails for non-compliant classes."""
+
+        @implements_protocol(SimpleProtocol)
+        class NonCompliantClass:
+            # Missing method_b, so doesn't fully implement the protocol
+            def method_a(self):
+                return "result"
+
+        instance = NonCompliantClass()
+        with pytest.raises(TypeError) as excinfo:
+            instance.verify_protocol_compliance()
+
+        assert "does not correctly implement SimpleProtocol" in str(excinfo.value)
+
+    def test_multiple_protocols(self):
+        """Test with multiple protocols applied to different classes."""
+
+        @implements_protocol(SimpleProtocol)
+        class SimpleImpl:
+            def method_a(self):
+                return "a"
+
+            def method_b(self, value):
+                return value > 0
+
+        @implements_protocol(AdvancedProtocol)
+        class AdvancedImpl:
+            def connect(self):
+                return True
+
+            def disconnect(self):
+                pass
+
+            def process(self, data):
+                return data
+
+        simple = SimpleImpl()
+        advanced = AdvancedImpl()
+
+        assert simple.verify_protocol_compliance()
+        assert advanced.verify_protocol_compliance()
+        assert SimpleImpl.__implements_protocol__ == SimpleProtocol
+        assert AdvancedImpl.__implements_protocol__ == AdvancedProtocol
+
+    def test_inheritance_with_protocols(self):
+        """Test how the decorator works with class inheritance."""
+
+        @implements_protocol(SimpleProtocol)
+        class BaseClass:
+            def method_a(self):
+                return "base"
+
+            def method_b(self, value):
+                return value > 0
+
+        class SubClass(BaseClass):
+            def method_a(self):
+                return "sub"
+
+        base = BaseClass()
+        sub = SubClass()
+
+        assert base.verify_protocol_compliance()
+        # The subclass inherits the verification method
+        assert sub.verify_protocol_compliance()
+        assert isinstance(sub, SimpleProtocol)

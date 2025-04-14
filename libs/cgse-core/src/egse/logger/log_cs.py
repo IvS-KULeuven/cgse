@@ -232,6 +232,8 @@ def handle_command(command) -> dict:
     elif command.lower() == 'status':
         response.update(dict(
             status="ACK",
+            logging_port=CTRL_SETTINGS.LOGGING_PORT,
+            commanding_port=CTRL_SETTINGS.COMMANDING_PORT,
             file_logger_level=logging.getLevelName(LOG_LEVEL_FILE),
             stream_logger_level=logging.getLevelName(LOG_LEVEL_STREAM),
             file_logger_location=file_handler.baseFilename,
@@ -277,6 +279,8 @@ def status():
     if response.get("status") == "ACK":
         rich.print("Log Manager:")
         rich.print("    Status: [green]active")
+        rich.print(f"    Logging port: {response.get('logging_port')}")
+        rich.print(f"    Commanding port: {response.get('commanding_port')}")
         rich.print(f"    Level [grey50](file)[black]: {response.get('file_logger_level')}")
         rich.print(f"    Level [grey50](stdout)[black]: {response.get('stream_logger_level')}")
         rich.print(f"    Log file location: {response.get('file_logger_location')}")

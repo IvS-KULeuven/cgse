@@ -1,18 +1,39 @@
 import asyncio
 # import subprocess
 import sys
+import textwrap
 
 import rich
+
+from egse.registry.client import AsyncRegistryClient
 
 
 async def run_all_status(full: bool = False):
     tasks = [
+        status_rs_cs(),
         status_log_cs(),
         status_sm_cs(full),
         status_cm_cs(),
     ]
 
     await asyncio.gather(*tasks)
+
+
+async def status_rs_cs():
+    client = AsyncRegistryClient()
+    response = await client.server_status()
+
+    status_report = textwrap.dedent(
+        f"""\
+        Registry Service:
+            Status: {response['status']}
+            Requests port: {response['req_port']}
+            Notifications port: {response['pub_port']}
+            Registrations: {", ".join([f"({x['name']}, {x['health']})" for x in response['services']])}\
+        """
+    )
+
+    rich.print(status_report)
 
 
 async def status_log_cs():

@@ -5,6 +5,18 @@ from pathlib import Path
 import rich
 
 
+def stop_rs_cs():
+    rich.print("Terminating the registry service core service...")
+
+    out = open(Path('~/.rs_cs.stop.out').expanduser(), 'w')
+
+    subprocess.Popen(
+        [sys.executable, '-m', 'egse.registry.server', 'stop'],
+        stdout=out, stderr=out, stdin=subprocess.DEVNULL,
+        close_fds=True
+    )
+
+
 def stop_log_cs():
     rich.print("Terminating the logging core service...")
 
