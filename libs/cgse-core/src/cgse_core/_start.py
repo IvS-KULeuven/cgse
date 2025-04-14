@@ -5,6 +5,18 @@ from pathlib import Path
 import rich
 
 
+def start_rs_cs():
+    rich.print("Starting the registry service core service...")
+
+    out = open(Path('~/.rs_cs.start.out').expanduser(), 'w')
+
+    subprocess.Popen(
+        [sys.executable, '-m', 'egse.registry.server', 'start'],
+        stdout=out, stderr=out, stdin=subprocess.DEVNULL,
+        close_fds=True
+    )
+
+
 def start_log_cs():
     rich.print("Starting the logging core service...")
 

@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 import pickle
 import zlib
 from enum import IntEnum
+
+import zmq
 
 
 def connect_address(transport: str, address: str, port: int) -> str:
@@ -39,6 +43,19 @@ def recv_zipped_pickle(socket, flags=0, protocol=-1):
     z = socket.recv(flags)
     p = zlib.decompress(z)
     return pickle.loads(p)
+
+
+def get_port_number(socket: zmq.Socket) -> int | None:
+    """
+    Returns the port number associated with this socket. Returns None for sockets
+    that do not bind to a TCP or IPC transport.
+    """
+    endpoint = socket.getsockopt(zmq.LAST_ENDPOINT)
+    if endpoint:
+        port = endpoint.decode("utf-8").split(':')[-1]
+        return int(port)
+    else:
+        return None
 
 
 class MessageIdentifier(IntEnum):

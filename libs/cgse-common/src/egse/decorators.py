@@ -44,6 +44,40 @@ def static_vars(**kwargs):
     return decorator
 
 
+def implements_protocol(protocol):
+    """
+    Decorator to verify and document protocol compliance at class definition time.
+
+    Usage:
+        @implements_protocol(AsyncRegistryBackend)
+        class MyBackend:
+            ...
+    """
+
+    def decorator(cls):
+        # Add protocol documentation
+        if cls.__doc__:
+            cls.__doc__ += f"\n\nThis class implements the {protocol.__name__} protocol."
+        else:
+            cls.__doc__ = f"This class implements the {protocol.__name__} protocol."
+
+        # Store the protocol for reference
+        cls.__implements_protocol__ = protocol
+
+        # Add runtime verification method
+        def _verify_protocol_compliance(self):
+            if not isinstance(self, protocol):
+                raise TypeError(f"{self.__class__.__name__} does not correctly implement {protocol.__name__}")
+            return True
+
+        cls.verify_protocol_compliance = _verify_protocol_compliance
+
+        # Return the modified class
+        return cls
+
+    return decorator
+
+
 def dynamic_interface(func) -> Callable:
     """Adds a static variable `__dynamic_interface` to a method.
 
