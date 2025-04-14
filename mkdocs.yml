@@ -153,6 +153,7 @@ nav:
       - libs/cgse-common/setup.md
     - cgse-core:
       - libs/cgse-core/index.md
+      - libs/cgse-core/registry.md
     - cgse-coordinates:
       - libs/cgse-coordinates/index.md
     - cgse-gui:
