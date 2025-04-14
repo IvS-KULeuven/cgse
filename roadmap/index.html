@@ -1202,6 +1202,8 @@
           
         
       
+        
+      
     
     
       
@@ -1228,6 +1230,11 @@
 
             </a>
             
+              
+              <label class="md-nav__link " for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
           </div>
         
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
@@ -1237,6 +1244,28 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../libs/cgse-core/registry/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Service Registry
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
               
             
           </ul>
@@ -2541,11 +2570,13 @@
 <ul class="task-list">
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Process Manager needs to be added with optimised design and performance</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Synoptic Manager</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Distributed Service Registry: to allow dynamic port assignment for all 
+  services</li>
 </ul>
 <h2 id="devices">Devices<a class="headerlink" href="#devices" title="Permanent link">&para;</a></h2>
 <ul class="task-list">
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> The Symétrie Hexapods: PUNA, ZONDA, JORAN</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> The Keithley Data Acquisition Multimeter</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> The Keithley Data Acquisition Multimeter</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> The Lakeshore temperature controller</li>
 </ul>
 <h2 id="projects">Projects<a class="headerlink" href="#projects" title="Permanent link">&para;</a></h2>
@@ -2565,7 +2596,8 @@
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Refactor the commanding protocol</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> The Proxy and Protocol classes should be refactored for full dynamic commanding. Eliminate the
   use of command YAML files, replace <code>dynamic_interface</code> with <code>dynamic_command</code>.</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Introduce asyncio into the commanding protocol, e.g. <code>getstatus()</code> and <code>get_housekeeping()</code>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Introduce asyncio into the commanding protocol, e.g. <code>get_status()</code> 
+  and <code>get_housekeeping()</code>
   shall be handled asynchronously.</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> GlobalState Setup needs some redesign, especially <code>GlobalState.setup</code> which should not consult
   the configuration manager by default.</li>

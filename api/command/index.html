@@ -1202,6 +1202,8 @@
           
         
       
+        
+      
     
     
       
@@ -1228,6 +1230,11 @@
 
             </a>
             
+              
+              <label class="md-nav__link " for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
           </div>
         
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
@@ -1237,6 +1244,28 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../libs/cgse-core/registry/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Service Registry
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
               
             
           </ul>
@@ -3064,7 +3093,7 @@ as a generic command to send a command execution to the server.</p>
                 <code>other</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></code>
+                  <code><span title="egse.protocol.CommandProtocol">CommandProtocol</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3748,6 +3777,10 @@ instance, i.e. self, when you call this as a function.</p>
         <p>Loads the command definitions from the given <code>command_settings</code> and builds an internal
 dictionary containing the command names as keys and the corresponding <code>Command</code> class objects
 as values.</p>
+<p>The purpose of this function is to gather information about the commands that will be
+transferred from the control server to the proxy. The actual response or device method
+will therefore be a function instead of an instance method (because the instance will
+not be known in the Proxy).</p>
 <p>The <code>command_settings</code> is usually loaded from a YAML configuration file containing the
 command definitions for the device.</p>
 
@@ -3768,7 +3801,7 @@ command definitions for the device.</p>
                 <code>protocol_class</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<span title="egse.protocol.CommandProtocol">CommandProtocol</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3800,7 +3833,7 @@ command definitions for the device.</p>
                 <code>command_class</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<a class="autorefs autorefs-internal" title=" Command (egse.command.Command)" href="#egse.command.Command">Command</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3842,7 +3875,7 @@ command definitions for the device.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-internal" title=" Command (egse.command.Command)" href="#egse.command.Command">Command</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">

@@ -2,230 +2,234 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/getting_started/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/help/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/initialize/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/package_list/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/roadmap/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/tutorial/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/bits/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/calibration/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/command/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/config/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/control/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/counter/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/decorators/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/device/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/dicts/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/dummy/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/env/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/exceptions/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/heartbeat/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/hk/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/listener/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/metrics/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/mixin/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/monitoring/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/observer/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/obsid/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/persistence/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/plugin/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/process/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/reload/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/settings/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/setup/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/api/system/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/dev_guide/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/dev_guide/coding_style/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/dev_guide/docs/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/dev_guide/installation/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/dev_guide/monorepo/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/dev_guide/nox/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/dev_guide/plugins/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/dev_guide/project-configuration/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/dev_guide/unit_testing/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/dev_guide/uv/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/dev_guide/versioning/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/libs/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/libs/cgse-common/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/libs/cgse-common/settings/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/libs/cgse-common/setup/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/libs/cgse-coordinates/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/libs/cgse-core/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
+    </url>
+    <url>
+         <loc>https://ivs-kuleuven.github.io/cgse/libs/cgse-core/registry/</loc>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/libs/cgse-gui/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/projects/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/projects/cgse-tools/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/projects/symetrie-hexapod/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://ivs-kuleuven.github.io/cgse/user_guide/</loc>
-         <lastmod>2025-03-28</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
 </urlset>

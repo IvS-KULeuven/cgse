@@ -1202,6 +1202,8 @@
           
         
       
+        
+      
     
     
       
@@ -1228,6 +1230,11 @@
 
             </a>
             
+              
+              <label class="md-nav__link " for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
           </div>
         
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
@@ -1237,6 +1244,28 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../libs/cgse-core/registry/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Service Registry
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
               
             
           </ul>
@@ -1853,6 +1882,15 @@
   <a href="#egse.decorators.dynamic_interface" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;dynamic_interface
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.decorators.implements_protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;implements_protocol
     </span>
   </a>
   
@@ -2573,6 +2611,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#egse.decorators.implements_protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;implements_protocol
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.decorators.profile" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;profile
@@ -2835,6 +2882,14 @@
               <td>
                 <div class="doc-md-description">
                   <p>Adds a static variable <code>__dynamic_interface</code> to a method.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" implements_protocol (egse.decorators.implements_protocol)" href="#egse.decorators.implements_protocol">implements_protocol</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Decorator to verify and document protocol compliance at class definition time.</p>
                 </div>
               </td>
             </tr>
@@ -3430,6 +3485,32 @@ the <code>@dynamic_interface</code> does overwrite one or more of the decorated 
 these methods will not be dynamically overwritten when loading the interface from the
 control server. A warning will be logged instead.</p>
 
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.decorators.implements_protocol" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">implements_protocol</span>
+
+
+<a href="#egse.decorators.implements_protocol" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">implements_protocol</span><span class="p">(</span><span class="n">protocol</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Decorator to verify and document protocol compliance at class definition time.</p>
+
+
+<details class="usage" open>
+  <summary>Usage</summary>
+  <p>@implements_protocol(AsyncRegistryBackend)
+class MyBackend:
+    ...</p>
+</details>
     </div>
 
 </div>

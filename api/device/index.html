@@ -1202,6 +1202,8 @@
           
         
       
+        
+      
     
     
       
@@ -1228,6 +1230,11 @@
 
             </a>
             
+              
+              <label class="md-nav__link " for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
           </div>
         
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
@@ -1237,6 +1244,28 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../libs/cgse-core/registry/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Service Registry
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
               
             
           </ul>
@@ -1807,6 +1836,57 @@
   
     <nav class="md-nav" aria-label=" device">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#egse.device.AsyncDeviceTransport" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;AsyncDeviceTransport
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" AsyncDeviceTransport">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#egse.device.AsyncDeviceTransport.query" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;query
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.device.AsyncDeviceTransport.read" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;read
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.device.AsyncDeviceTransport.trans" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;trans
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.device.AsyncDeviceTransport.write" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;write
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#egse.device.DeviceConnectionError" class="md-nav__link">
@@ -2669,6 +2749,57 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#egse.device.AsyncDeviceTransport" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;AsyncDeviceTransport
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" AsyncDeviceTransport">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#egse.device.AsyncDeviceTransport.query" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;query
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.device.AsyncDeviceTransport.read" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;read
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.device.AsyncDeviceTransport.trans" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;trans
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.device.AsyncDeviceTransport.write" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;write
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.device.DeviceConnectionError" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;DeviceConnectionError
@@ -3096,6 +3227,14 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title=" AsyncDeviceTransport (egse.device.AsyncDeviceTransport)" href="#egse.device.AsyncDeviceTransport">AsyncDeviceTransport</a></code></td>
+            <td>
+              <div class="doc-md-description">
+                <p>Base class for the asynchronous device transport layer.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" title=" DeviceConnectionError (egse.device.DeviceConnectionError)" href="#egse.device.DeviceConnectionError">DeviceConnectionError</a></code></td>
             <td>
               <div class="doc-md-description">
@@ -3208,6 +3347,365 @@
 
 
 
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="egse.device.AsyncDeviceTransport" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">AsyncDeviceTransport</span>
+
+
+<a href="#egse.device.AsyncDeviceTransport" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+
+        <p>Base class for the asynchronous device transport layer.</p>
+
+
+
+
+
+
+
+
+
+<p><span class="doc-section-title">Methods:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" query (egse.device.AsyncDeviceTransport.query)" href="#egse.device.AsyncDeviceTransport.query">query</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Send a query to the device and wait for the response.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" read (egse.device.AsyncDeviceTransport.read)" href="#egse.device.AsyncDeviceTransport.read">read</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Reads a bytes object back from the instrument and returns it unaltered.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" trans (egse.device.AsyncDeviceTransport.trans)" href="#egse.device.AsyncDeviceTransport.trans">trans</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Send a single command to the device controller and block until a response from the</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" write (egse.device.AsyncDeviceTransport.write)" href="#egse.device.AsyncDeviceTransport.write">write</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Sends a complete command to the device, handle line termination, and write timeouts.</p>
+                </div>
+              </td>
+            </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="egse.device.AsyncDeviceTransport.query" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">query</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+<a href="#egse.device.AsyncDeviceTransport.query" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">query</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Send a query to the device and wait for the response.</p>
+<p>This <code>query</code> method is an alias for the <code>trans</code> command. For some commands it might be
+more intuitive to use the <code>query</code> instead of the <code>trans</code>action. No need to override this
+method as it delegates to <code>trans</code>.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>command</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the query command.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The response to the query.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="egse.device.AsyncDeviceTransport.read" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">read</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+<a href="#egse.device.AsyncDeviceTransport.read" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">read</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Reads a bytes object back from the instrument and returns it unaltered.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="egse.device.AsyncDeviceTransport.trans" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">trans</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+<a href="#egse.device.AsyncDeviceTransport.trans" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">trans</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Send a single command to the device controller and block until a response from the
+controller.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>command</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>is the command to be sent to the instrument</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Either a string returned by the controller (on success), or an error message (on failure).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title=" DeviceConnectionError (egse.device.DeviceConnectionError)" href="#egse.device.DeviceConnectionError">DeviceConnectionError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>when there was an I/O problem during communication with the controller.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title=" DeviceTimeoutError (egse.device.DeviceTimeoutError)" href="#egse.device.DeviceTimeoutError">DeviceTimeoutError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>when there was a timeout in either sending the command or receiving the response.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="egse.device.AsyncDeviceTransport.write" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">write</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+<a href="#egse.device.AsyncDeviceTransport.write" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">write</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Sends a complete command to the device, handle line termination, and write timeouts.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>command</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the command to be sent to the instrument.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
 
 <div class="doc doc-object doc-class">
 

@@ -1202,6 +1202,8 @@
           
         
       
+        
+      
     
     
       
@@ -1228,6 +1230,11 @@
 
             </a>
             
+              
+              <label class="md-nav__link " for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
           </div>
         
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
@@ -1237,6 +1244,28 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../libs/cgse-core/registry/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Service Registry
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
               
             
           </ul>
@@ -2250,6 +2279,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#egse.dummy.DummyInterface.division" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;division
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.dummy.DummyInterface.get_value" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_value
@@ -2413,6 +2451,15 @@
   
     <nav class="md-nav" aria-label=" DummyProxy">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#egse.dummy.DummyProxy.division" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;division
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#egse.dummy.DummyProxy.get_commanding_port" class="md-nav__link">
@@ -3420,6 +3467,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#egse.dummy.DummyInterface.division" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;division
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.dummy.DummyInterface.get_value" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_value
@@ -3583,6 +3639,15 @@
   
     <nav class="md-nav" aria-label=" DummyProxy">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#egse.dummy.DummyProxy.division" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;division
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#egse.dummy.DummyProxy.get_commanding_port" class="md-nav__link">
@@ -3787,20 +3852,23 @@
     <div class="doc doc-contents first">
 
         <p>This module provides a dummy implementation for classes of the commanding chain.</p>
-<p>Start the control server with:</p>
-<pre><code>py -m egse.dummy start-cs
-</code></pre>
-<p>and stop the server with:</p>
-<pre><code>py -m egse.dummy stop-cs
-</code></pre>
-<p>Commands that can be used with the proxy:</p>
+<p>Start the control server with:
+<div class="highlight"><pre><span></span><code>py<span class="w"> </span>-m<span class="w"> </span>egse.dummy<span class="w"> </span>start-cs
+</code></pre></div>
+and stop the server with:
+<div class="highlight"><pre><span></span><code>py<span class="w"> </span>-m<span class="w"> </span>egse.dummy<span class="w"> </span>stop-cs
+</code></pre></div>
+Commands that can be used with the proxy:</p>
 <ul>
 <li>info – returns an info message from the dummy device, e.g. "Dummy Device &lt;<strong>version</strong>&gt;"</li>
 <li>get_value – returns a random float between 0.0 and 1.0</li>
+<li>division – returns the result of the division between arguments 'a' and 'b'.
+    This can be used also to induce a ZeroDivisionError that should return a Failure
+    object.</li>
 </ul>
-<p>The device simulator can be started with:</p>
-<pre><code>py -m egse.dummy start-dev
-</code></pre>
+<p>The device simulator can be started with:
+<div class="highlight"><pre><span></span><code>py -m egse.dummy start-dev
+</code></pre></div></p>
 
 
 
@@ -4365,7 +4433,7 @@ as a generic command to send a command execution to the server.</p>
                 <code>other</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></code>
+                  <code><span title="egse.protocol.CommandProtocol">CommandProtocol</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -6429,6 +6497,14 @@ there was a socket related error.</p>
       </thead>
       <tbody>
             <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" division (egse.dummy.DummyInterface.division)" href="#egse.dummy.DummyInterface.division">division</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Return the division of the number 'a' divided by the number 'b'.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
               <td><code><a class="autorefs autorefs-internal" title=" get_value (egse.dummy.DummyInterface.get_value)" href="#egse.dummy.DummyInterface.get_value">get_value</a></code></td>
               <td>
                 <div class="doc-md-description">
@@ -6461,6 +6537,27 @@ there was a socket related error.</p>
 
 
 
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="egse.dummy.DummyInterface.division" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">division</span>
+
+
+<a href="#egse.dummy.DummyInterface.division" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">division</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return the division of the number 'a' divided by the number 'b'.
+This method can also be used during testing to cause a ZeroDivisionError
+that will return a Failure object.</p>
+
+    </div>
+
+</div>
 
 <div class="doc doc-object doc-function">
 
@@ -7274,6 +7371,14 @@ and is only serialized before sending over the ZeroMQ socket.</p>
       </thead>
       <tbody>
             <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" division (egse.dummy.DummyProxy.division)" href="#egse.dummy.DummyProxy.division">division</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Return the division of the number 'a' divided by the number 'b'.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
               <td><code><a class="autorefs autorefs-internal" title=" get_commanding_port (egse.dummy.DummyProxy.get_commanding_port)" href="#egse.dummy.DummyProxy.get_commanding_port">get_commanding_port</a></code></td>
               <td>
                 <div class="doc-md-description">
@@ -7394,6 +7499,27 @@ and is only serialized before sending over the ZeroMQ socket.</p>
 
 
 
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="egse.dummy.DummyProxy.division" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">division</span>
+
+
+<a href="#egse.dummy.DummyProxy.division" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">division</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return the division of the number 'a' divided by the number 'b'.
+This method can also be used during testing to cause a ZeroDivisionError
+that will return a Failure object.</p>
+
+    </div>
+
+</div>
 
 <div class="doc doc-object doc-function">
 
@@ -7761,7 +7887,6 @@ string, but that is not enforced.</p>
       <tbody>
           <tr class="doc-section-item">
 <td><code>response</code></td>            <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
             </td>
             <td>
               <div class="doc-md-description">
