@@ -12,6 +12,7 @@ The module has external dependencies to:
 
 from __future__ import annotations
 
+import asyncio
 import builtins
 import collections
 import contextlib
@@ -53,11 +54,33 @@ import psutil
 from rich.console import Console
 from rich.text import Text
 from rich.tree import Tree
+from typer.core import TyperCommand
 
 EPOCH_1958_1970 = 378691200
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%f%z"
 
 logger = logging.getLogger(__name__)
+
+
+class TyperAsyncCommand(TyperCommand):
+    """Runs an asyncio Typer command.
+
+    Example:
+
+        @add.command(cls=TyperAsyncCommand)
+        async def start():
+            ...
+
+    """
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        old_callback = self.callback
+
+        def new_callback(*args, **kwargs):
+            return asyncio.run(old_callback(*args, **kwargs))
+
+        self.callback = new_callback
 
 
 @contextmanager
