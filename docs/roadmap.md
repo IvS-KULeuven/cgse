@@ -37,8 +37,8 @@ Provide a `cgse` command that is extensible with new commands and command groups
 
 - [ ] Process Manager needs to be added with optimised design and performance
 - [ ] Synoptic Manager
-- [x] Distributed Service Registry: to allow dynamic port assignment for all 
-  services
+- [x] Distributed Service Registry
+- [ ] dynamic port assignment for all services
 
 ## Devices
 
@@ -59,13 +59,14 @@ Provide a `cgse` command that is extensible with new commands and command groups
 ## Maintenance and refactoring
 
 - [ ] Allow core services to register and/or re-register to another core service as a listener
-- [ ] The storage manager shall be able to restore registrations from devices after a restart/crash
+- [ ] The storage manager shall be able to restore registrations from 
+  devices after a restart/crash. This means the registration to the Storage 
+  manager needs to be persistent -> SQLite ?
 - [ ] Refactor the commanding protocol
 - [ ] The Proxy and Protocol classes should be refactored for full dynamic commanding. Eliminate the
   use of command YAML files, replace `dynamic_interface` with `dynamic_command`.
 - [ ] Introduce asyncio into the commanding protocol, e.g. `get_status()` 
-  and `get_housekeeping()`
-  shall be handled asynchronously.
+  and `get_housekeeping()` shall be handled asynchronously.
 - [ ] GlobalState Setup needs some redesign, especially `GlobalState.setup` which should not consult
   the configuration manager by default.
 
