@@ -2354,18 +2354,48 @@
 <p>Click <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M1 2.75A.75.75 0 0 1 1.75 2h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 2.75m0 5A.75.75 0 0 1 1.75 7h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 7.75M1.75 12h12.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1 0-1.5"/></svg></span> (top left) on mobile.</p>
 </div>
 <h1 id="welcome">Welcome<a class="headerlink" href="#welcome" title="Permanent link">&para;</a></h1>
-<p>Welcome to the <a href="https://github.com/IvS-KULeuven/cgse">CGSE</a> framework documentation.</p>
-<p><a class="md-button md-button--primary" href="getting_started/">Get started</a> or go straight to the <a href="tutorial/">Tutorial</a></p>
+<p>Welcome to the <a href="https://github.com/IvS-KULeuven/cgse">CGSE</a> framework
+documentation.</p>
+<p><a class="md-button md-button--primary" href="getting_started/">Get started</a> or go
+straight to the <a href="tutorial/">Tutorial</a></p>
 <h2 id="what-is-the-cgse">What is the CGSE?<a class="headerlink" href="#what-is-the-cgse" title="Permanent link">&para;</a></h2>
-<p>The CGSE is short for Common-EGSE, a framework for managing and running test equipment in a lab. The EGSE stands for 
-Electrical Ground Support Equipment, and this includes all equipment that is used to test or calibration an instrument.</p>
+<p>The CGSE (Common-EGSE) is a comprehensive framework for managing and operating
+test equipment in laboratory environments. EGSE stands for Electrical Ground
+Support Equipment, encompassing all hardware and software systems used to test,
+calibrate, and validate space instruments throughout their development
+lifecycle.</p>
+<p>The CGSE architecture typically includes:</p>
 <ul>
-<li>computers: a server running the CGSE and archiving test data and a client to control the test equipment</li>
-<li>temperature controllers: control heaters and monitor temperature sensors</li>
-<li>mechanisms: control mechanisms like hexapods or linear stages </li>
-<li>optics: control optical equipment like lasers and attenuators</li>
-<li>any other device that can be connected through an Ethernet or USB connection and with a open API.</li>
+<li>
+<p>Computing infrastructure: A dedicated server running the CGSE software suite
+  for test execution, data collection, and archiving, paired with client
+  workstations that provide user interfaces for equipment control and monitoring</p>
+</li>
+<li>
+<p>Temperature control systems: Precision controllers that regulate thermal
+  conditions by managing heaters and continuously monitoring temperature
+  sensors, essential for thermal vacuum testing and temperature calibration
+  procedures</p>
+</li>
+<li>
+<p>Mechanism controllers: Specialized systems that operate positioning equipment
+  such as hexapods (six-degree-of-freedom motion platforms), linear stages,
+  rotation stages, and other mechanical actuators with high precision</p>
+</li>
+<li>
+<p>Optical test equipment: Controllers for various optical instruments including
+  lasers, light sources, attenuators, spectrometers, and optical power meters
+  used in optical alignment and performance verification</p>
+</li>
+<li>
+<p>Additional instrumentation: Any measurement or control device with network
+  connectivity (Ethernet, USB) and an accessible API, including power supplies,
+  signal generators, multimeters, oscilloscopes, and custom test fixtures</p>
+</li>
 </ul>
+<p>The CGSE framework provides standardized interfaces, automated test sequences,
+data management capabilities, and synchronization between these diverse systems,
+enabling reproducible and efficient testing campaigns.</p>
 
 
 

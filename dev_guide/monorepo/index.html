@@ -818,9 +818,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#egse-versus-cgse" class="md-nav__link">
+  <a href="#understanding-egse-vs-cgse-terminology" class="md-nav__link">
     <span class="md-ellipsis">
-      egse versus cgse
+      Understanding EGSE vs. CGSE Terminology
     </span>
   </a>
   
@@ -2376,9 +2376,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#egse-versus-cgse" class="md-nav__link">
+  <a href="#understanding-egse-vs-cgse-terminology" class="md-nav__link">
     <span class="md-ellipsis">
-      egse versus cgse
+      Understanding EGSE vs. CGSE Terminology
     </span>
   </a>
   
@@ -2404,13 +2404,15 @@
 
 
 <h1 id="the-structure-of-this-monorepo">The structure of this monorepo<a class="headerlink" href="#the-structure-of-this-monorepo" title="Permanent link">&para;</a></h1>
-<p>Currently, the structure starts with two main folders in the root, i.e. <code>libs</code> and <code>projects</code>. Where
-<em>libs</em> contains library type packages like common modules, small generic gui and tui functions,
-reference frames, ... and <em>projects</em> contain packages that build upon these libraries and can be
-device drivers or stand-alone applications.</p>
-<p>There is one package that I think doesn't fit into this picture, that is <code>cgse-core</code>. This is not a
-library, but a – collection of – service(s). So, we might want to add a third top-level
-folder <code>services</code> but I also fear that this again more complicates the monorepo.</p>
+<p>Currently, the structure starts with two main folders in the root, i.e. <code>libs</code>
+and <code>projects</code>. Where
+<em>libs</em> contains library type packages like common modules, small generic gui and
+tui functions, reference frames, ... and <em>projects</em> contain packages that build
+upon these libraries and can be device drivers or stand-alone applications.</p>
+<p>There is one package that I think doesn't fit into this picture, that
+is <code>cgse-core</code>. This is not a library, but a – collection of – service(s). So,
+we might want to add a third top-level folder <code>services</code> but I also fear that
+this again more complicates the monorepo.</p>
 <p>Anyway, the overall structure of the monorepo is depicted below:</p>
 <div class="highlight"><pre><span></span><code>cgse/
 │── pyproject.toml
@@ -2442,15 +2444,18 @@ folder <code>services</code> but I also fear that this again more complicates th
         ├── plato-fits/
         └── plato-hdf5/
 </code></pre></div>
-<p>We will discuss the structure of individual packages in a later section, for now let's look at the
-root of the monorepo. The root also contains a <code>pyproject.toml</code> file although this is not a package
-that will be build and published. The purpose of this root <code>pyproject.toml</code> file is to define
-properties that are used to build the full repo or any individual package in it. In the root folder
-we will also put some maintenance/management scripts to help you maintain and bump versions of the
-projects, build and publish all projects, create and maintain a changelog etc.</p>
+<p>We will discuss the structure of individual packages in a later section, for now
+let's look at the root of the monorepo. The root also contains
+a <code>pyproject.toml</code> file although this is not a package that will be build and
+published. The purpose of this root <code>pyproject.toml</code> file is to define
+properties that are used to build the full repo or any individual package in it.
+In the root folder we will also put some maintenance/management scripts to help
+you maintain and bump versions of the projects, build and publish all projects,
+create and maintain a changelog etc.</p>
 <h2 id="package-structure">Package Structure<a class="headerlink" href="#package-structure" title="Permanent link">&para;</a></h2>
-<p>We try to keep the package structure as standard as possible and consistent over the whole monorepo.
-The structure currently is as follows (example from cgse-common):</p>
+<p>We try to keep the package structure as standard as possible and consistent over
+the whole monorepo. The structure currently is as follows (example from
+cgse-common):</p>
 <div class="highlight"><pre><span></span><code>├── README.md
 ├── pyproject.toml
 ├── src/
@@ -2461,35 +2466,87 @@ The structure currently is as follows (example from cgse-common):</p>
     ├── data
     └── pytest modules (test_*.py)
 </code></pre></div>
-<p>Note that each library or project is a standalone Python package with its own <code>pyproject.toml</code> file,
-source code and unit tests.</p>
+<p>Note that each library or project is a standalone Python package with its
+own <code>pyproject.toml</code> file, source code and unit tests.</p>
 <h2 id="package-versions">Package versions<a class="headerlink" href="#package-versions" title="Permanent link">&para;</a></h2>
-<p>All packages in the monorepo will have the same version. This can be maintained with the <code>bump.py</code>
-script. This script will read the version from the <code>pyproject.toml</code> file at the root of the monorepo
-and propagate the version to all libs and projects in the monorepo. Note that you –for now– will
-have to update the version number in the <code>pyproject.toml</code> file located at the monorepo root folder
-manually.</p>
+<p>All packages within the monorepo maintain synchronized versioning, ensuring
+consistency across the entire codebase. This unified versioning approach is
+managed through the <code>bump.py</code> utility script. When executed, this script first
+reads the current version from the root <code>pyproject.toml</code> file, which serves as
+the canonical version source. Based on semantic versioning principles, it then
+increments the specified component (major, minor, or patch) according to the
+development team's requirements:</p>
+<ul>
+<li>Major version increments (x.0.0) for backward-incompatible API changes</li>
+<li>Minor version increments (0.x.0) for backward-compatible feature additions</li>
+<li>Patch version increments (0.0.x) for backward-compatible bug fixes</li>
+</ul>
+<p>After determining the new version number, <code>bump.py</code> automatically propagates
+this updated version to all library and project configuration files throughout
+the monorepo structure, i.e. updating their respective <code>pyproject.toml</code>. This
+ensures that all components reference the same version number when built or
+published, simplifying dependency management and maintaining a clear release
+history across the entire project ecosystem.</p>
 <h2 id="the-egse-namespace">The egse namespace<a class="headerlink" href="#the-egse-namespace" title="Permanent link">&para;</a></h2>
-<p>You might have notices that all packages in this monorepo have a <code>src/egse</code> folder in which they
-maintain their source code, preferably in a sub-package. Note that the <code>egse</code> folder is not a normal
-Python package but a namespace. There are two important facts you need to remember about namespaces:</p>
+<p>You may have noticed that all packages in this monorepo follow a standardized
+structure with source code organized under <code>src/egse</code> directories, typically
+within subject-specific sub-packages. It's crucial to understand that the <code>egse</code>
+folder is not a conventional Python package but rather a PEP 420 namespace
+package. This distinction carries two critical implications:</p>
 <ol>
-<li>A namespace package <strong>does not</strong> contain an <code>__init__.py</code> module, never, in any of the packages
-   in this or any other repo. If you place an <code>__init__.py</code> module in one of your <code>egse</code> package
-   folders, you will break the namespace and therefore also the external contributions in plugins
-   etc.</li>
-<li>A namespace package is spread out over several directories that can reside in different packages
-   as distributed by PyPI.</li>
+<li>
+<p><strong>No <code>__init__.py</code> files in namespace directories</strong>: A namespace package must
+   <strong>never</strong> contain an <code>__init__.py</code> module at the namespace level. This
+   applies universally across all repositories using this namespace. Adding
+   an <code>__init__.py</code> file to any <code>egse</code> directory would compromise the namespace
+   mechanism, breaking compatibility with external plugins, extensions, and
+   contributions. The absence of this file is what enables Python to recognize
+   and properly resolve the distributed nature of the namespace.</p>
+</li>
+<li>
+<p><strong>Distributed implementation across multiple locations</strong>: Unlike traditional
+   packages that exist in a single location, namespace packages can span
+   multiple directories distributed across different installed packages. This
+   powerful feature allows the <code>egse</code> namespace to be extended by various
+   packages (both within this monorepo and from external sources like PyPI),
+   with Python correctly assembling the complete namespace at runtime by
+   discovering and including all relevant directories from the Python path.</p>
+</li>
 </ol>
-<h2 id="egse-versus-cgse"><code>egse</code> versus <code>cgse</code><a class="headerlink" href="#egse-versus-cgse" title="Permanent link">&para;</a></h2>
-<p>Why is there sometimes <code>egse</code> and sometimes <code>cgse</code> used in documentation, folder names etc.? The
-acronym EGSE stands for Electric Ground Support Equipment and the CGSE stands for Common-EGSE. So,
-the latter, CGSE, is what we use for the project name, to emphasise its common purpose as a
-framework for testing instrumentation and for external packages and device drivers to emphasise that
-they are intended to be common and work well with the CGSE framework. The <code>egse</code> is what the
-software is about, the electric ground support equipment, and therefore we use this for the
-namespace, i.e. the root of the library and projects. Using <code>egse</code> as the namespace also avoid 
-any conflicts with the <code>cgse</code> monorepo name.</p>
+<p>This namespace approach enables modular architecture, allowing separate teams to
+independently develop components that seamlessly integrate under the
+unified <code>egse</code> namespace without requiring centralized coordination for package
+imports.</p>
+<h2 id="understanding-egse-vs-cgse-terminology">Understanding EGSE vs. CGSE Terminology<a class="headerlink" href="#understanding-egse-vs-cgse-terminology" title="Permanent link">&para;</a></h2>
+<p>You may notice two related acronyms used throughout our documentation, folder
+structures, and codebase: <strong>EGSE</strong> and <strong>CGSE</strong>. This deliberate distinction
+serves an important purpose:</p>
+<ul>
+<li>
+<p><strong>EGSE</strong> (Electrical Ground Support Equipment) refers to the broader domain
+  that our software addresses—the physical and software systems used for
+  testing, calibration, and validation of instrumentation. This term represents
+  the underlying technical concept, which is why we've chosen it as our Python
+  namespace (<code>egse</code>). Using this domain-specific namespace provides clear
+  context for all code functionality while avoiding potential conflicts with
+  repository names.</p>
+</li>
+<li>
+<p><strong>CGSE</strong> (Common-EGSE) represents our specific implementation framework
+  designed to provide standardized, reusable solutions for EGSE requirements.
+  The "Common" prefix emphasizes our framework's core philosophy: creating a
+  unified ecosystem of interoperable components that can be shared across
+  multiple projects, teams, and institutions. We use CGSE for project naming,
+  repository identification, and when referring to the overall framework
+  ecosystem.</p>
+</li>
+</ul>
+<p>This naming convention enables clear differentiation between the technical
+domain (EGSE) and our specific framework implementation (CGSE). External
+packages and device drivers that are designed to integrate with our framework
+are labeled as CGSE-compatible to indicate their adherence to our
+interoperability standards while still residing within the <code>egse</code> namespace for
+technical consistency.</p>
 
 
 
