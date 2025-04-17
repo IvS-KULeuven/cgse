@@ -23,6 +23,7 @@ import importlib.metadata
 import inspect
 import itertools
 import logging
+import math
 import operator
 import os
 import platform  # For getting the operating system name
@@ -60,6 +61,198 @@ EPOCH_1958_1970 = 378691200
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%f%z"
 
 logger = logging.getLogger(__name__)
+
+
+# ACKNOWLEDGEMENT: The class is based on the textual.timer.Timer class from the Textual project.
+class Periodic:
+    """A timer that periodically invokes a function in the background.
+
+    If no callback is provided, a warning message will be logged. In a future, we might send out an event to the
+    application (will need an event handler).
+
+    When the function execution takes longer then the interval there re several options:
+
+    - if skip is True (default) the interval will take precedence and the
+    Args:
+        interval: The time between timer events, in seconds.
+        name: A name to assign the event (for debugging), defaults to `Periodic#`.
+        callback: A optional callback to invoke when the event is handled.
+        repeat: The number of times to repeat the timer, or None to repeat forever.
+        skip: Enable skipping of scheduled function calls that couldn't be sent in time.
+        pause: Start the timer paused. Use `resume()` to activate the timer.
+    """
+
+    _periodic_count: int = 0
+    """The number of Periodic instances that are created."""
+
+    def __init__(
+            self,
+            interval: float,
+            *,
+            name: str | None = None,
+            callback: Callable = None,
+            repeat: int | None = None,
+            skip: bool = True,
+            pause: bool = False,
+    ) -> None:
+        self._interval = interval
+        self.name = f"Periodic#{self._periodic_count}" if name is None else name
+        self._periodic_count += 1
+        self._callback = callback
+        self._repeat = repeat
+        self._skip = skip
+        self._active = asyncio.Event()
+        self._task: asyncio.Task | None = None
+        self._reset: bool = False
+        self._logger = logging.getLogger("periodic")
+        if not pause:
+            self._active.set()
+
+    def start(self) -> None:
+        """Start the timer."""
+        self._task = asyncio.create_task(self._run_timer(), name=self.name)
+
+    def stop(self) -> None:
+        """Stop the timer."""
+        if self._task is None:
+            return
+
+        self._active.clear()
+        self._task.cancel()
+        self._task = None
+
+    def is_running(self):
+        return self._active.is_set() and self._task is not None
+
+    def is_paused(self):
+        return not self._active.is_set()
+
+    def pause(self) -> None:
+        """Pause the timer.
+
+        A paused timer will not send events until it is resumed.
+        """
+        self._active.clear()
+
+    def reset(self) -> None:
+        """Reset the timer, so it starts from the beginning."""
+        self._active.set()
+        self._reset = True
+
+    def resume(self) -> None:
+        """Resume a paused timer."""
+        self._active.set()
+
+    async def _run_timer(self) -> None:
+        """Run the timer task."""
+        try:
+            await self._run()
+        except asyncio.CancelledError:
+            pass
+
+    async def _run(self) -> None:
+        """Run the timer."""
+        count = 0
+        _repeat = self._repeat
+        _interval = self._interval
+        await self._active.wait()
+        start = time.monotonic()
+        self._logger.info(f"{start = }")
+
+        while _repeat is None or count < _repeat:
+            next_timer = start + ((count + 1) * _interval)
+            now = time.monotonic()
+            # self._logger.info(f"{count = }, {next_timer = }, {now = }")
+            if self._skip and next_timer < now:
+                count = int((now - start) / _interval)
+                self._logger.info(f"Recalculated {count = }, {now - start = }, {(now - start) / _interval = }")
+                continue
+            now = time.monotonic()
+            wait_time = max(0.0, next_timer - now)
+            await asyncio.sleep(wait_time)
+            count += 1
+            await self._active.wait()
+            if self._reset:
+                start = time.monotonic()
+                count = 0
+                self._reset = False
+                continue
+
+            await self._tick()
+
+        self.stop()
+
+    async def _tick(self) -> None:
+        """Triggers the Timer's action: either call its callback, or logs a message."""
+
+        if self._callback is None:
+            self._logger.warning(f"Periodic – No callback provided for interval timer {self.name}.")
+            return
+
+        try:
+            await await_me_maybe(self._callback)
+        except asyncio.CancelledError as exc:
+            self._logger.warning(f"Caught {type(exc).__name__}: {exc}")
+            raise
+        except Exception as exc:
+            self._logger.error(f"{type(exc).__name__} caught: {exc}")
+
+    @property
+    def interval(self):
+        return self._interval
+
+
+def round_up(n: float | int, decimals: int = 0):
+    """
+    Round a number up to a specified number of decimal places.
+
+    This function rounds the input number upward (toward positive infinity)
+    regardless of the value of the digits being rounded. It uses math.ceil()
+    after multiplying by a power of 10 to achieve the specified precision.
+
+    Args:
+        n (float or int): The number to round up.
+        decimals (int, optional): The number of decimal places to round to.
+            Must be non-negative. Defaults to 0.
+
+    Returns:
+        float: The rounded number with the specified precision.
+
+    Examples:
+        >>> round_up(3.14159, 3)
+        3.142
+        >>> round_up(3.1409, 3)
+        3.141
+        >>> round_up(-3.14159, 3)
+        -3.141
+        >>> round_up(5, 2)
+        5.0
+
+    Note:
+        For negative numbers, "rounding up" means rounding toward zero,
+        so -3.14159 rounded up to 3 decimals is -3.141.
+    """
+    multiplier = 10 ** decimals
+    return math.ceil(n * multiplier) / multiplier
+
+
+async def await_me_maybe(callback: Callable, *params: object) -> Any:
+    """Invoke a callback with an arbitrary number of parameters.
+
+    The callback can be a coroutine (async def) or a plain old function.
+    The `await_me_maybe` awaits the result of the callback if it's an awaitable,
+    or simply returns the result if not.
+
+    Args:
+        callback: The callable to be invoked.
+
+    Returns:
+        The return value of the invoked callable.
+    """
+    result = callback(*params)
+    if inspect.isawaitable(result):
+        result = await result
+    return result
 
 
 class TyperAsyncCommand(TyperCommand):

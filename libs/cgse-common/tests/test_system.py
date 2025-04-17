@@ -1,3 +1,4 @@
+import asyncio
 import csv
 import datetime
 import logging
@@ -13,7 +14,9 @@ from pathlib import Path
 import pytest
 from pytest import approx
 
+from egse.decorators import execution_count
 from egse.system import AttributeDict
+from egse.system import Periodic
 from egse.system import SignalCatcher
 from egse.system import Timer
 from egse.system import check_argument_type
@@ -1008,3 +1011,71 @@ def generate_big_data_file(filename: Path, total_n_rows: int = 500_000) -> list[
          f"{','.join([f'{x:3.1f}' for x in row])}")
         for i, row in enumerate(deterministic_data)
     ]
+
+
+@pytest.mark.asyncio
+async def test_periodic():
+
+    count = 0
+
+    def plain_old_function():
+        nonlocal count
+        logging.info("I'm just a plain old Python function.")
+        count += 1
+        time.sleep(1.0)
+
+    async def async_function():
+        nonlocal count
+        logging.info("I'm a brand new async function.")
+        count += 1
+        await asyncio.sleep(0.5)
+
+    periodic = Periodic(callback=async_function, interval=1.0, skip=False, repeat=5)
+    periodic.start()
+
+    # Prevent the test from terminating
+
+    while periodic.is_running():
+        try:
+            await asyncio.sleep(0.05)
+        except asyncio.CancelledError:
+            logging.info("periodic_test cancelled")
+            logging.info(f"interval ended at {periodic.interval}")
+            break
+
+    assert count == 5
+
+    count = 0
+
+    periodic = Periodic(callback=async_function, interval=0.4, skip=True, repeat=5)
+    periodic.start()
+
+    # Prevent the test from terminating
+
+    while periodic.is_running():
+        try:
+            await asyncio.sleep(0.05)
+        except asyncio.CancelledError:
+            logging.info("periodic_test cancelled")
+            logging.info(f"interval ended at {periodic.interval}")
+            break
+
+    assert count == 3  # the function call is skipped twice
+
+
+@pytest.mark.asyncio
+async def test_periodic_exception(caplog):
+
+    # So, what happens when a callback throws an exception? Aa error message is logged.
+
+    @execution_count
+    def not_good():
+        raise ValueError("This is not good!")
+
+    periodic = Periodic(callback=not_good, interval=0.5, skip=True, repeat=2)
+    periodic.start()
+
+    await asyncio.sleep(1.2)
+
+    assert "ValueError caught: This is not good!" in caplog.text
+    assert not_good.counts() == 2
