@@ -790,3 +790,25 @@ def retry(times: int = 3, wait: float = 10.0, exceptions: List = None) -> Callab
         return decorated_func
 
     return actual_decorator
+
+
+def execution_count(func):
+    """Counts the number of times the function has been executed."""
+    func._call_count = 0
+
+    def counts():
+        return func._call_count
+
+    def reset():
+        func._call_count = 0
+
+    func.counts = counts
+    func.reset = reset
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        func._call_count += 1
+        value = func(*args, **kwargs)
+        return value
+
+    return wrapper
