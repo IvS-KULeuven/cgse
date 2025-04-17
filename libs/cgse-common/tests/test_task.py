@@ -4,29 +4,9 @@ import time
 
 import pytest
 
+from egse.decorators import execution_count
 from egse.task import AwaitTask
 from egse.task import task
-
-
-def execution_count(func):
-    func._call_count = 0
-
-    def counts():
-        return func._call_count
-
-    def reset():
-        func._call_count = 0
-
-    func.counts = counts
-    func.reset = reset
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        func._call_count += 1
-        value = func(*args, **kwargs)
-        return value
-
-    return wrapper
 
 
 @execution_count
