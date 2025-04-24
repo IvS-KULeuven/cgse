@@ -157,15 +157,14 @@ class Periodic:
         _interval = self._interval
         await self._active.wait()
         start = time.monotonic()
-        self._logger.info(f"{start = }")
 
         while _repeat is None or count < _repeat:
             next_timer = start + ((count + 1) * _interval)
             now = time.monotonic()
-            # self._logger.info(f"{count = }, {next_timer = }, {now = }")
+            # self._logger.debug(f"{count = }, {next_timer = }, {now = }")
             if self._skip and next_timer < now:
                 count = int((now - start) / _interval)
-                self._logger.info(f"Recalculated {count = }, {now - start = }, {(now - start) / _interval = }")
+                # self._logger.debug(f"Recalculated {count = }, {now - start = }, {(now - start) / _interval = }")
                 continue
             now = time.monotonic()
             wait_time = max(0.0, next_timer - now)
@@ -191,8 +190,8 @@ class Periodic:
 
         try:
             await await_me_maybe(self._callback)
-        except asyncio.CancelledError as exc:
-            self._logger.warning(f"Caught {type(exc).__name__}: {exc}")
+        except asyncio.CancelledError:
+            self._logger.debug("Caught CancelledError on callback function in Periodic.")
             raise
         except Exception as exc:
             self._logger.error(f"{type(exc).__name__} caught: {exc}")
@@ -680,7 +679,8 @@ def ping(host, timeout: float = 3.0) -> bool:
 
 
 def get_host_ip() -> Optional[str]:
-    """Returns the IP address."""
+    """Returns the IP address. If no IP address can be found, None will be returned and the caller can try
+    to use localhost."""
 
     host_ip = None
 
@@ -693,7 +693,7 @@ def get_host_ip() -> Optional[str]:
         host_ip = sock.getsockname()[0]
         sock.close()
     except Exception as exc:
-        logger.warning(f"Exception caught: {exc}")
+        logger.warning(f"{type(exc).__name__} caught: {exc}")
 
     if host_ip:
         return host_ip
@@ -703,8 +703,26 @@ def get_host_ip() -> Optional[str]:
         host_name = socket.gethostname()
         host_ip = socket.gethostbyname(host_name)
         return host_ip
-    except (Exception,):
-        return None
+    except Exception as exc:
+        logger.warning(f"{type(exc).__name__} caught: {exc}")
+
+    return None
+
+
+def get_current_location():
+    """
+    Returns the location where this function is called, i.e. the filename, line number, and function name.
+    """
+    frame = inspect.currentframe().f_back
+
+    filename = inspect.getframeinfo(frame).filename
+    line_number = inspect.getframeinfo(frame).lineno
+    function_name = inspect.getframeinfo(frame).function
+
+    # Clean up to prevent reference cycles
+    del frame
+
+    return filename, line_number, function_name
 
 
 CallerInfo = namedtuple("CallerInfo", "filename function lineno")
@@ -2079,7 +2097,7 @@ def touch(path: Path | str):
         os.utime(path)
 
 
-def capture_rich_output(obj: Any) -> str:
+def capture_rich_output(obj: Any, width: int = 120) -> str:
     """
     Capture the output of a Rich console print of the given object. If the object is a known Rich renderable or if
     the object implements the `__rich__()` method, the output string will contain escape sequences to format the
@@ -2089,11 +2107,12 @@ def capture_rich_output(obj: Any) -> str:
 
     Args:
         obj: any object
+        width: the console width to use, None for full width
 
     Returns:
         The output of the capture, a string that possibly contains escape sequences as a result of rendering rich text.
     """
-    console = Console(width=120)
+    console = Console(width=width)
 
     with console.capture() as capture:
         console.print(obj)
@@ -2101,6 +2120,19 @@ def capture_rich_output(obj: Any) -> str:
     captured_output = capture.get()
 
     return captured_output
+
+
+def log_rich_output(logger_: logging.Logger, level: int, obj: Any):
+
+    console = Console(width=None)
+
+    with console.capture() as capture:
+        console.print()  # start on a fresh line when logging
+        console.print(obj)
+
+    captured_output = capture.get()
+
+    logger_.log(level, captured_output)
 
 
 ignore_m_warning("egse.system")
