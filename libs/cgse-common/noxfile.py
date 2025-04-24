@@ -29,7 +29,7 @@ def uv_tests(session: nox.Session):
     session.run(*uv_run_cmd, "pytest", "-v", *session.posargs)
 
 
-@nox.session(python=python_versions)
+@nox.session(python=python_versions, default=False)
 def py_tests(session: nox.Session):
     """
     Run the unit and regular tests using plain Python.
