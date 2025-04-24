@@ -57,3 +57,7 @@ class InternalError(Error):
 
 class Abort(RuntimeError):
     """Internal Exception to signal a process to abort."""
+
+
+class InitialisationError(Error):
+    """Raised when an initialisation failed."""
