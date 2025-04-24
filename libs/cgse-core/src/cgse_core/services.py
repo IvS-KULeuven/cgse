@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 import rich
 import typer
@@ -42,6 +43,11 @@ def stop_core_services():
 def status_core_services(full: bool = False):
     """Print the status of the core services."""
     # from scripts._status import status_log_cs, status_sm_cs, status_cm_cs
+
+    logging.basicConfig(
+        level=logging.WARNING,
+        format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-20s %(lineno)5d:%(module)-20s %(message)s",
+    )
 
     rich.print("[green]Status of the core services...[/]")
 
