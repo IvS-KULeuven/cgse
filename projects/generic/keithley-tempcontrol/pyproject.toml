@@ -1,6 +1,6 @@
 [project]
 name = "keithley-tempcontrol"
-version = "0.7.0"
+version = "0.7.1"
 description = "Keithley Temperature Control for CGSE"
 authors = [
     {name = "IvS KU Leuven"}
@@ -30,7 +30,7 @@ dependencies = [
 test = ["pytest", "pytest-mock", "pytest-cov"]
 
 [project.scripts]
-daq6510_cs = 'egse.tempcontrol.keithley.daq6510_cs:cli'
+daq6510_cs = 'egse.tempcontrol.keithley.daq6510_cs:app'
 daq6510_sim = 'egse.tempcontrol.keithley.daq6510_sim:app'
 
 [project.gui-scripts]
@@ -44,6 +44,12 @@ keithley-tempcontrol = "keithley_tempcontrol:settings.yaml"
 
 [project.entry-points."cgse.service"]
 daq6510 = 'keithley_tempcontrol.cgse_services:daq6510'
+
+[project.entry-points."cgse.explore"]
+explore = "keithley_tempcontrol.cgse_explore"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
 
 [tool.hatch.build.targets.sdist]
 exclude = [
