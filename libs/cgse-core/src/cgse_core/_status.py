@@ -1,11 +1,7 @@
 import asyncio
-# import subprocess
 import sys
-import textwrap
 
 import rich
-
-from egse.registry.client import AsyncRegistryClient
 
 
 async def run_all_status(full: bool = False):
@@ -30,8 +26,8 @@ async def status_rs_cs():
     stdout, stderr = await proc.communicate()
 
     rich.print(stdout.decode().rstrip())
-    # if stderr:
-    #     rich.print(f"[red]{stderr.decode()}[/]")
+    if stderr:
+        rich.print(f"[red]{stderr.decode()}[/]")
 
 
 async def status_log_cs():
@@ -43,13 +39,6 @@ async def status_log_cs():
     )
 
     stdout, stderr = await proc.communicate()
-
-    # proc = subprocess.Popen(
-    #     [sys.executable, '-m', 'egse.logger.log_cs', 'status'],
-    #     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-    # )
-    #
-    # stdout, stderr = proc.communicate()
 
     rich.print(stdout.decode().rstrip())
     if stderr:
@@ -70,13 +59,6 @@ async def status_sm_cs(full: bool = False):
 
     stdout, stderr = await proc.communicate()
 
-    # proc = subprocess.Popen(
-    #     [sys.executable, '-m', 'egse.storage.storage_cs', 'status'],
-    #     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-    # )
-    #
-    # stdout, stderr = proc.communicate()
-
     rich.print(stdout.decode().rstrip())
     if stderr:
         rich.print(f"[red]{stderr.decode()}[/]")
@@ -91,13 +73,6 @@ async def status_cm_cs():
     )
 
     stdout, stderr = await proc.communicate()
-
-    # proc = subprocess.Popen(
-    #     [sys.executable, '-m', 'egse.confman.confman_cs', 'status'],
-    #     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-    # )
-    #
-    # stdout, stderr = proc.communicate()
 
     rich.print(stdout.decode().rstrip())
     if stderr:
