@@ -1,4 +1,5 @@
 import contextlib
+import logging
 import re
 import subprocess
 import sys
@@ -10,6 +11,7 @@ import rich
 import typer
 
 from egse.plugin import entry_points
+from egse.setup import Setup
 from egse.system import format_datetime
 
 app = typer.Typer()
@@ -173,8 +175,13 @@ check = typer.Typer(help="Check installation, settings, required files, etc.", n
 
 
 @check.command(name="setups")
-def check_setups():
+def check_setups(verbose: bool = False):
     """Perform a number of checks on the SETUP files."""
+
+    logging.basicConfig(
+        level=logging.CRITICAL,
+        format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-20s %(lineno)5d:%(module)-20s %(message)s",
+    )
 
     # What can we check with respect to the setups?
     #
@@ -185,33 +192,104 @@ def check_setups():
     from egse.config import find_files
 
     any_errors = 0
+    error_messages = []
 
-    conf_data_location = get_conf_data_location()
+    try:
+        conf_data_location = get_conf_data_location()
+    except ValueError:
+        conf_data_location = None
+
     site_id = get_site_id()
+
+    # ---------- check if the Site_ID is set
+
+    verbose and rich.print("Checking site id ...")
+
+    if not site_id:
+        any_errors += 1
+        error_messages.append(
+            "[red]The environment variable SITE_ID is not set. "
+            "SITE_ID is required to define the project settings and environment variables.[/]"
+        )
 
     # ---------- check if the <PROJECT>_CONF_DATA_LOCATION is set
 
+    verbose and rich.print("Checking configuration data location ...")
+
     if not conf_data_location:
         any_errors += 1
-        rich.print("[red]The location of the configuration data can not be determined, check your environment.[/]")
-
-    if not Path(conf_data_location).exists():
+        error_messages.append(
+            "[red]The location of the configuration data can not be determined, check your environment using `cgse "
+            "show env`.[/]"
+        )
+    elif not Path(conf_data_location).exists():
         any_errors += 1
-        rich.print(f"[red]The location of the configuration data doesn't exist: {conf_data_location!s}[/]")
+        error_messages.append(
+            f"[red]The location of the configuration data doesn't exist: {conf_data_location!s}[/]"
+        )
+
+    if any_errors:
+        print_error_messages(error_messages)
+        return
 
     # ---------- check if there is at least one SETUP in the configuration data folder
+
+    verbose and rich.print("Checking available SETUP files ...")
 
     files = list(find_files("SETUP*.yaml", root=conf_data_location))
 
     if not files:
         any_errors += 1
-        rich.print(f"[red]No SETUP files were found at {conf_data_location}[/]")
+        error_messages.append(
+            f"[red]No SETUP files were found at {conf_data_location}[/]"
+        )
+    else:
+        verbose and rich.print(f":arrow_forward: Found {len(files)} Setup files.")
 
     regex = re.compile(f"SETUP_{site_id}_00000_.*.yaml")
 
     if not any(True for file in files if regex.search(str(file))):
         any_errors += 1
-        rich.print(f"[red]The is no Zero SETUP for {site_id} in {conf_data_location}[/]")
+        error_messages.append(
+            f"[red]There is no 'Zero' SETUP for {site_id} in {conf_data_location}[/]"
+        )
+    else:
+        verbose and rich.print(f":arrow_forward: Found the 'Zero' Setup file: SETUP_{site_id}_00000_*.yaml")
 
-    if not any_errors:
+    if any_errors:
+        print_error_messages(error_messages)
+        return
+
+    # ---------- check for each SETUP file if the site_id matches the SITE_ID
+
+    verbose and rich.print("Checking site_id in setup files ...")
+
+    for file in files:
+        setup = Setup.from_yaml_file(file)
+        this_site_id = setup.get("site_id")
+        if this_site_id is None:
+            any_errors += 1
+            error_messages.append(f"There is no 'site_id' defined in '{file!s}'")
+        elif this_site_id != site_id:
+            any_errors = 1
+            error_messages.append(
+                f"[red]The site_id ('{this_site_id}') in '{file!s}' doesn't match the environment "
+                f"variable SITE_ID={site_id}[/]"
+            )
+
+    if any_errors:
+        print_error_messages(error_messages)
+    else:
         rich.print("[green]everything seems to be ok.[/]")
+
+
+def print_error_messages(messages: list[str]):
+    from rich.panel import Panel
+
+    content = "\n"
+
+    for msg in messages:
+        content += f":arrow_forward: {msg}\n"
+    content += "\n[orange1]Fix the above errors before proceeding.[/]"
+
+    rich.print(Panel(content, title="Errors found during analysis"))
