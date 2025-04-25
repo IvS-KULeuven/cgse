@@ -63,6 +63,7 @@ __all__ = [
 ]
 
 import contextlib
+import logging
 import os
 import warnings
 from pathlib import Path
@@ -74,6 +75,7 @@ from egse.system import ignore_m_warning
 from rich.console import Console
 
 console = Console(width=100)
+logger = logging.getLogger("egse.env")
 
 # Every project shall have a PROJECT and a SITE_ID environment variable set. This variable will be used to
 # create the other environment variables that are specific to the project.
@@ -112,7 +114,7 @@ def initialize():
         try:
             _env.set(name, os.environ[name])
         except KeyError:
-            warnings.warn(
+            logger.warning(
                 f"The environment variable {name} is not set. {name} is required to define the project settings and "
                 f"environment variables. Please set the environment variable {name} before proceeding."
             )
