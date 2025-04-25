@@ -10,6 +10,7 @@ import json
 import logging
 import signal
 import sys
+import textwrap
 import time
 import uuid
 from typing import Any
@@ -508,10 +509,32 @@ async def handle_signal(server):
 
 
 @app.command(cls=TyperAsyncCommand)
+async def status():
+
+    with AsyncRegistryClient() as client:
+        response = await client.server_status()
+
+    if response['success']:
+        status_report = textwrap.dedent(
+            f"""\
+            Registry Service:
+                Status: {response['status']}
+                Requests port: {response['req_port']}
+                Notifications port: {response['pub_port']}
+                Registrations: {", ".join([f"({x['name']}, {x['health']})" for x in response['services']])}\
+            """
+        )
+    else:
+        status_report = "Registry Service: not active"
+
+    print(status_report)
+
+
+@app.command(cls=TyperAsyncCommand)
 async def stop():
 
-    client = AsyncRegistryClient()
-    response = await client.terminate_registry_server()
+    with AsyncRegistryClient() as client:
+        response = await client.terminate_registry_server()
 
     if response:
         module_logger.info("Service registry server terminated.")
