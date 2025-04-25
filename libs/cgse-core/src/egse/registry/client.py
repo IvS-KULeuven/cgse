@@ -6,6 +6,7 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Any
 from typing import Callable
+from typing import Coroutine
 from typing import Union
 
 import zmq
@@ -85,12 +86,12 @@ class RegistryClient:
                 self.req_socket = self.context.socket(zmq.REQ)
                 self.req_socket.connect(self.registry_req_endpoint)
                 return {'success': False, 'error': 'Request timed out'}
-        except zmq.ZMQError as e:
-            self.logger.error(f"ZMQ error: {e}")
-            return {'success': False, 'error': str(e)}
-        except Exception as e:
-            self.logger.error(f"Error sending request: {e}")
-            return {'success': False, 'error': str(e)}
+        except zmq.ZMQError as exc:
+            self.logger.error(f"ZMQ error: {exc}")
+            return {'success': False, 'error': str(exc)}
+        except Exception as exc:
+            self.logger.error(f"Error sending request: {exc}")
+            return {'success': False, 'error': str(exc)}
 
     def register(
             self,
@@ -412,12 +413,12 @@ class AsyncRegistryClient:
                 self.req_socket = self.context.socket(zmq.REQ)
                 self.req_socket.connect(self.registry_req_endpoint)
                 return {'success': False, 'error': 'Request timed out'}
-        except zmq.ZMQError as e:
-            self.logger.error(f"ZMQ error: {e}")
-            return {'success': False, 'error': str(e)}
-        except Exception as e:
-            self.logger.error(f"Error sending request: {e}")
-            return {'success': False, 'error': str(e)}
+        except zmq.ZMQError as exc:
+            self.logger.error(f"ZMQ error: {exc}")
+            return {'success': False, 'error': str(exc)}
+        except Exception as exc:
+            self.logger.error(f"Error sending request: {exc}")
+            return {'success': False, 'error': str(exc)}
 
     async def register(
             self,
@@ -470,6 +471,8 @@ class AsyncRegistryClient:
             'ttl': ttl
         }
 
+        self.logger.info(f"Sending request: {request}")
+
         response = await self._send_request(request)
 
         if response.get('success'):
@@ -484,26 +487,36 @@ class AsyncRegistryClient:
             self.logger.error(f"Failed to register service: {response.get('error')}")
             return None
 
-    async def deregister(self) -> bool:
+    async def deregister(self, service_id: str = None) -> bool:
         """
-        Deregister this service from the registry.
+        Deregister this service or the service with service_id from the registry.
+
+        When you register and deregister with the same client instance, you don't have to provide
+        the service_id.
+
+        Args:
+            service_id: the service identifier that was previously handed out by the ServiceRegistry after
+                registration. If not provided, the service_id that was saved when registering is used.
 
         Returns:
             True if successful, False otherwise
         """
-        if not self._service_id:
+
+        service_id = service_id or self._service_id
+
+        if not service_id:
             self.logger.warning("Cannot deregister: no service is registered")
             return False
 
         request = {
             'action': 'deregister',
-            'service_id': self._service_id
+            'service_id': service_id
         }
 
         response = await self._send_request(request)
 
         if response.get('success'):
-            self.logger.info(f"Service deregistered: {self._service_id}")
+            self.logger.info(f"Service deregistered: {service_id}")
             self._service_id = None
             self._service_info = None
             self._ttl = None
@@ -617,7 +630,7 @@ class AsyncRegistryClient:
         self._tasks.clear()
         self.logger.info("Stopped all background tasks")
 
-    def on_event(self, event_type: str, handler: Callable[[dict[str, Any]], Union[None, asyncio.coroutine]]) -> None:
+    def on_event(self, event_type: str, handler: Callable[[dict[str, Any]], Union[None, Coroutine]]) -> None:
         """
         Register a handler for a specific event type.
 
