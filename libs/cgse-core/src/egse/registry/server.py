@@ -543,7 +543,7 @@ async def stop():
 if __name__ == "__main__":
 
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.WARNING,
         format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-12s %(lineno)5d:%(module)-20s %(message)s",
     )
 
