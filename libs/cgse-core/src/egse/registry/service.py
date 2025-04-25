@@ -95,6 +95,7 @@ class ZMQMicroservice:
             registry_req_endpoint=self.registry_req_endpoint,
             registry_sub_endpoint=self.registry_sub_endpoint
         )
+        self.registry_client.connect()
 
         self.command_handlers = {}
 

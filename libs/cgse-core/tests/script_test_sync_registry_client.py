@@ -36,6 +36,7 @@ def run_client():
         Sends a command to a microservice.
         """
         registry_client = RegistryClient()
+        registry_client.connect()
 
         try:
             service = registry_client.discover_service(service_type)
@@ -69,6 +70,7 @@ def run_client():
                 socket.close()
         finally:
             registry_client.close()
+            registry_client.disconnect()
 
     def subscribe_to_events(service_type, event_types):
         # Create a registry client

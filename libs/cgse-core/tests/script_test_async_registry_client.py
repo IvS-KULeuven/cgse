@@ -42,6 +42,7 @@ async def run_async_client():
         Sends a command to a microservice.
         """
         registry_client = AsyncRegistryClient()
+        registry_client.connect()
 
         try:
             service = await registry_client.discover_service(service_type)
@@ -75,6 +76,7 @@ async def run_async_client():
                 socket.close()
         finally:
             await registry_client.close()
+            registry_client.disconnect()
 
     # Function to subscribe to service events
     async def subscribe_to_events(service_type, event_types):
