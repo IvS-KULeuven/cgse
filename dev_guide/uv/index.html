@@ -871,6 +871,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#syncing-your-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Syncing your environment
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#building-and-publishing-all-packages" class="md-nav__link">
     <span class="md-ellipsis">
       Building and publishing all packages
@@ -2394,6 +2403,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#syncing-your-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Syncing your environment
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#building-and-publishing-all-packages" class="md-nav__link">
     <span class="md-ellipsis">
       Building and publishing all packages
@@ -2545,6 +2563,22 @@ that will also remove the packages on which flask depended.</p>
 the package you are currently working in. For example, if you're working in 
 <code>cgse/libs/cgse-common</code>, that <code>pyproject.toml</code> file will get the extra 'flask' dependency.</p>
 </div>
+<h2 id="syncing-your-environment">Syncing your environment<a class="headerlink" href="#syncing-your-environment" title="Permanent link">&para;</a></h2>
+<p>You can synchronise your environment explicitly with the <code>uv sync</code> command. 
+This is usually not needed since <code>uv</code> automatically synchronises your 
+environment when executing <code>uv run</code>. Using the command below will remove 
+any packages that are installed in your environment but are not specified in 
+your <code>pyproject.toml</code> or the <code>uv.lock</code> file. Use this command to clean your 
+environment.</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>sync
+</code></pre></div>
+<p>When syncing, <code>uv</code> prefers to keep the versions from the <code>uv.lock</code> file. You 
+can upgrade packages by name or upgrade all packages with the following 
+commands:</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>lock<span class="w"> </span>--upgrade-package<span class="w"> </span>&lt;package<span class="w"> </span>name&gt;
+
+$<span class="w"> </span>uv<span class="w"> </span>lock<span class="w"> </span>--upgrade
+</code></pre></div>
 <h2 id="building-and-publishing-all-packages">Building and publishing all packages<a class="headerlink" href="#building-and-publishing-all-packages" title="Permanent link">&para;</a></h2>
 <p>We have chosen for one and the same version number for all packages in the <code>cgse</code> monorepo. That
 means that whenever we make a change to one of the packages and want to release that change, all

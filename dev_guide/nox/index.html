@@ -2301,10 +2301,18 @@ versions.</p>
 </code></pre></div>
 <p>After this you can run <code>nox</code> from the package root. We have provided a <code>noxfile.py</code> for the 
 <code>cgse-common</code>package. The <code>cgse-common</code> package currently runs all unit tests without errors for 
-Python 3.9, 3.10, and 3.11.</p>
-<p>The following command will run the unit tests and save the stdout and stderr in the file <code>nox.
-out.txt</code>.</p>
+Python 3.9, 3.10, 3.11, 3.12, and 3.13.</p>
+<p>The following command will run the default sessions (<code>uv_tests</code>). You can 
+optionally save the output of stdout and stderr (whiich can be substantial) </p>
+<p><div class="highlight"><pre><span></span><code>$ nox
+</code></pre></div>
+or
 <div class="highlight"><pre><span></span><code>$ nox &gt; nox.out.txt 2&gt;&amp;1
+</code></pre></div>
+You can restrict your tests with commandline parameters. The following 
+example will only execute the default sessions in a Pytho 3.11 environment 
+and will only run the test that matches <code>test_async_control</code>.</p>
+<div class="highlight"><pre><span></span><code>$ nox --python 3.11 -- -k test_async_control
 </code></pre></div>
 
 
