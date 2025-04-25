@@ -14,6 +14,8 @@ import zmq.asyncio
 from egse.registry import DEFAULT_RS_PUB_PORT
 from egse.registry import DEFAULT_RS_REQ_PORT
 
+REQUEST_TIMEOUT = 5000
+
 
 class RegistryClient:
     """
@@ -23,7 +25,7 @@ class RegistryClient:
         self,
         registry_req_endpoint: str = None,
         registry_sub_endpoint: str = None,
-        request_timeout: int = 5000
+        request_timeout: int = REQUEST_TIMEOUT
     ):
         """
         Initialize the async registry client.
@@ -310,7 +312,7 @@ class AsyncRegistryClient:
             self,
             registry_req_endpoint: str = None,
             registry_sub_endpoint: str = None,
-            request_timeout: int = 5000
+            request_timeout: int = REQUEST_TIMEOUT
             ):
         """
         Initialize the async registry client.
@@ -331,17 +333,7 @@ class AsyncRegistryClient:
         self._ttl = None
 
         # ZeroMQ setup
-        self.context = zmq.asyncio.Context()
-
-        # REQ socket for request-reply pattern
-        self.req_socket = self.context.socket(zmq.REQ)
-        self.req_socket.connect(self.registry_req_endpoint)
-
-        # SUB socket for receiving events
-        self.sub_socket = self.context.socket(zmq.SUB)
-        self.sub_socket.connect(self.registry_sub_endpoint)
-        # Default to receiving all events
-        self.sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
+        self.context = zmq.asyncio.Context.instance()
 
         # Thread control
         self._running = False
@@ -356,12 +348,44 @@ class AsyncRegistryClient:
         self._service_cache = {}
         self._service_cache_lock = None
 
+        self.req_socket: zmq.asyncio.Socket | None = None
+        self.sub_socket: zmq.asyncio.Socket | None = None
+
+    def __enter__(self):
+        self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.disconnect()
+
+    def connect(self):
+        self.logger.debug("Connecting to service registry...")
+        # REQ socket for request-reply pattern
+        self.req_socket = self.context.socket(zmq.REQ)
+        self.req_socket.connect(self.registry_req_endpoint)
+
+        # SUB socket for receiving events
+        self.sub_socket = self.context.socket(zmq.SUB)
+        self.sub_socket.connect(self.registry_sub_endpoint)
+        # Default to receiving all events
+        self.sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
+
+    def disconnect(self):
+        self.logger.debug("Disconnecting from service registry...")
+        if self.req_socket:
+            self.req_socket.close(linger=0)
+        self.req_socket = None
+
+        if self.sub_socket:
+            self.sub_socket.close(linger=0)
+        self.sub_socket = None
+
     def _get_service_cache_lock(self):
         if self._service_cache_lock is None:
             self._service_cache_lock = asyncio.Lock()
         return self._service_cache_lock
 
-    async def _send_request(self, request: dict[str, Any]) -> dict[str, Any]:
+    async def _send_request(self, request: dict[str, Any], timeout: int = None) -> dict[str, Any]:
         """
         Send a request to the registry and get the response.
 
@@ -371,19 +395,18 @@ class AsyncRegistryClient:
         Returns:
             The response from the registry as a dictionary.
         """
+
+        timeout = (timeout or self.request_timeout) / 1000
         try:
             # Send the request
             await self.req_socket.send_string(json.dumps(request))
 
             # Wait for the response with timeout
             try:
-                response_json = await asyncio.wait_for(
-                    self.req_socket.recv_string(),
-                    timeout=self.request_timeout / 1000  # Convert ms to seconds
-                )
+                response_json = await asyncio.wait_for(self.req_socket.recv_string(), timeout=timeout)
                 return json.loads(response_json)
             except asyncio.TimeoutError:
-                self.logger.error(f"Request timed out after {self.request_timeout}ms")
+                self.logger.error(f"Request timed out after {timeout}ms")
                 # Reset the socket to avoid invalid state
                 self.req_socket.close()
                 self.req_socket = self.context.socket(zmq.REQ)
@@ -845,10 +868,13 @@ class AsyncRegistryClient:
         return response.get('success', False)
 
     async def server_status(self) -> dict[str, Any]:
+        """
+        Requests the status information from the service registry.
+        """
         request = {
             'action': 'info',
         }
-        response = await self._send_request(request)
+        response = await self._send_request(request, timeout=500)
         return response
 
     async def close(self) -> None:

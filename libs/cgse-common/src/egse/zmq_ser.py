@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import pickle
 import zlib
 from enum import IntEnum
@@ -56,6 +57,41 @@ def get_port_number(socket: zmq.Socket) -> int | None:
         return int(port)
     else:
         return None
+
+
+def zmq_string_request(request: str) -> list:
+    return [
+        b"MESSAGE_TYPE:STRING",
+        request.encode('utf-8'),
+    ]
+
+
+def zmq_string_response(message: str) -> list:
+    return [
+        b"MESSAGE_TYPE:STRING",
+        message.encode('utf-8'),
+    ]
+
+
+def zmq_json_request(request: dict) -> list:
+    return [
+        b"MESSAGE_TYPE:JSON",
+        json.dumps(request).encode(),
+    ]
+
+
+def zmq_json_response(message: dict) -> list:
+    return [
+        b"MESSAGE_TYPE:JSON",
+        json.dumps(message).encode(),
+    ]
+
+
+def zmq_error_response(message: dict) -> list:
+    return [
+        b"MESSAGE_TYPE:ERROR",
+        pickle.dumps(message),
+    ]
 
 
 class MessageIdentifier(IntEnum):
