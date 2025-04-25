@@ -48,6 +48,20 @@ class RegistryClient:
 
         self.context = zmq.Context()
 
+        self.req_socket: zmq.asyncio.Socket | None = None
+        self.sub_socket: zmq.asyncio.Socket | None = None
+
+        self.poller = zmq.Poller()
+
+    def __enter__(self):
+        self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.disconnect()
+
+    def connect(self):
+        self.logger.debug("Connecting to service registry...")
         # REQ socket for request-reply pattern
         self.req_socket = self.context.socket(zmq.REQ)
         self.req_socket.connect(self.registry_req_endpoint)
@@ -58,9 +72,20 @@ class RegistryClient:
         # Default to receiving all events
         self.sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
 
-        # Create a poller
-        self.poller = zmq.Poller()
         self.poller.register(self.req_socket, zmq.POLLIN)
+        self.poller.register(self.sub_socket, zmq.POLLIN)
+
+    def disconnect(self):
+        self.logger.debug("Disconnecting from service registry...")
+        if self.req_socket:
+            self.poller.unregister(self.req_socket)
+            self.req_socket.close(linger=0)
+        self.req_socket = None
+
+        if self.sub_socket:
+            self.poller.unregister(self.sub_socket)
+            self.sub_socket.close(linger=0)
+        self.sub_socket = None
 
     def _send_request(self, request: dict[str, Any]) -> dict[str, Any]:
         """
