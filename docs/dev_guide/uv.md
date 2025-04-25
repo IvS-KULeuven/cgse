@@ -164,6 +164,30 @@ $ uv remove flask
     the package you are currently working in. For example, if you're working in 
     `cgse/libs/cgse-common`, that `pyproject.toml` file will get the extra 'flask' dependency.
 
+## Syncing your environment
+
+You can synchronise your environment explicitly with the `uv sync` command. 
+This is usually not needed since `uv` automatically synchronises your 
+environment when executing `uv run`. Using the command below will remove 
+any packages that are installed in your environment but are not specified in 
+your `pyproject.toml` or the `uv.lock` file. Use this command to clean your 
+environment.
+
+```shell
+$ uv sync
+```
+
+When syncing, `uv` prefers to keep the versions from the `uv.lock` file. You 
+can upgrade packages by name or upgrade all packages with the following 
+commands:
+
+```shell
+$ uv lock --upgrade-package <package name>
+
+$ uv lock --upgrade
+```
+
+
 ## Building and publishing all packages
 
 We have chosen for one and the same version number for all packages in the `cgse` monorepo. That
