@@ -20,23 +20,18 @@ async def run_all_status(full: bool = False):
 
 
 async def status_rs_cs():
-    with AsyncRegistryClient() as client:
-        response = await client.server_status()
 
-    if response['success']:
-        status_report = textwrap.dedent(
-            f"""\
-            Registry Service:
-                Status: {response['status']}
-                Requests port: {response['req_port']}
-                Notifications port: {response['pub_port']}
-                Registrations: {", ".join([f"({x['name']}, {x['health']})" for x in response['services']])}\
-            """
-        )
-    else:
-        status_report = "Registry Service: not active"
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable, '-m', 'egse.registry.server', 'status',
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
 
-    rich.print(status_report)
+    stdout, stderr = await proc.communicate()
+
+    rich.print(stdout.decode().rstrip())
+    # if stderr:
+    #     rich.print(f"[red]{stderr.decode()}[/]")
 
 
 async def status_log_cs():
