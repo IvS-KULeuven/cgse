@@ -111,11 +111,9 @@ from __future__ import annotations
 
 import logging
 import operator
-import os
 import subprocess
 import textwrap
 import threading
-import time
 from pathlib import Path
 from typing import NamedTuple
 from typing import Optional
@@ -123,7 +121,9 @@ from typing import Union
 
 import git
 import rich
+import time
 from git import GitCommandError
+from influxdb_client_3 import Point
 
 from egse.command import ClientServerCommand
 from egse.command import stringify_function_call
@@ -1063,8 +1063,16 @@ class ConfigurationManagerProtocol(CommandProtocol):
 
         # Update the metrics
 
-        CM_SETUP_ID.set(float(setup_id))
-        CM_TEST_ID.set(float(test_id))
+        origin = self.control_server.get_storage_mnemonic()
+
+        metrics_dictionary = {
+            "measurement": origin.lower(),  # Table name
+            "tags": {"site_id": site_id, "origin": origin},  # Site ID, Origin
+            "fields": dict((hk_name.lower(), hk[hk_name]) for hk_name in hk if hk_name != "timestamp"),
+            "time": hk["timestamp"]
+        }
+        point = Point.from_dict(metrics_dictionary, write_precision=self.metrics_time_precision)
+        self.client.write(point)
 
         return hk
 
