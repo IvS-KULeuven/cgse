@@ -124,7 +124,6 @@ from typing import Union
 import git
 import rich
 from git import GitCommandError
-from prometheus_client import Gauge
 
 from egse.command import ClientServerCommand
 from egse.command import stringify_function_call
@@ -169,8 +168,8 @@ CTRL_SETTINGS = Settings.load("Configuration Manager Control Server")
 SITE_ID = get_site_id()
 COMMAND_SETTINGS = Settings.load(location=HERE, filename="confman.yaml")
 
-CM_SETUP_ID = Gauge("CM_SETUP_ID", 'Setup ID')
-CM_TEST_ID = Gauge("CM_TEST_ID", 'Test ID')
+# CM_SETUP_ID = Gauge("CM_SETUP_ID", 'Setup ID')
+# CM_TEST_ID = Gauge("CM_TEST_ID", 'Test ID')
 
 PROXY_TIMEOUT = 10_000  # don't wait longer than 10s by default
 
