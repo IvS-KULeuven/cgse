@@ -274,6 +274,7 @@ class DummyProtocol(CommandProtocol):
 
     def quit(self):
         _LOGGER.info("Executing 'quit()' on DummyProtocol.")
+        self.client.close()
 
 
 class DummyControlServer(ControlServer):
