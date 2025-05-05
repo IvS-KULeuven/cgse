@@ -9,6 +9,11 @@ command definitions.
 """
 from __future__ import annotations
 
+import os
+
+from influxdb_client_3 import InfluxDBClient3
+from influxdb_client_3.write_client.domain.write_precision import WritePrecision
+
 __all__ = [
     "get_method",
     "get_function",
@@ -362,6 +367,11 @@ class CommandProtocol(BaseCommandProtocol, metaclass=abc.ABCMeta):
         super().__init__(control_server)
         self._commands = {}  # variable is used by subclasses
         self._method_lookup = {}  # lookup table for device methods
+
+        token = os.environ["INFLUXDB3_AUTH_TOKEN"]
+        project = os.environ["PROJECT"]
+        self.client = InfluxDBClient3(database=project, host="http://localhost:8181", token=token)
+        self.metrics_time_precision = WritePrecision.MS
 
     def send_commands(self):
         """
