@@ -159,6 +159,7 @@ from egse.system import humanize_seconds
 from egse.version import VERSION
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
+from urllib3.exceptions import NewConnectionError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -1063,16 +1064,20 @@ class ConfigurationManagerProtocol(CommandProtocol):
 
         # Update the metrics
 
-        origin = self.control_server.get_storage_mnemonic()
+        # Update the metrics
 
-        metrics_dictionary = {
-            "measurement": origin.lower(),  # Table name
-            "tags": {"site_id": site_id, "origin": origin},  # Site ID, Origin
-            "fields": dict((hk_name.lower(), hk[hk_name]) for hk_name in hk if hk_name != "timestamp"),
-            "time": hk["timestamp"]
-        }
-        point = Point.from_dict(metrics_dictionary, write_precision=self.metrics_time_precision)
-        self.client.write(point)
+        try:
+            origin = self.control_server.get_storage_mnemonic()
+            metrics_dictionary = {
+                "measurement": origin.lower(),  # Table name
+                "tags": {"site_id": site_id, "origin": origin},  # Site ID, Origin
+                "fields": dict((hk_name.lower(), hk[hk_name]) for hk_name in hk if hk_name != "timestamp"),
+                "time": hk["timestamp"]
+            }
+            point = Point.from_dict(metrics_dictionary, write_precision=self.metrics_time_precision)
+            self.client.write(point)
+        except NewConnectionError:
+            pass
 
         return hk
 
