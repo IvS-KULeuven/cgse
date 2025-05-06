@@ -140,6 +140,7 @@ from egse.env import get_site_id
 from egse.exceptions import InternalError
 from egse.listener import EVENT_ID
 from egse.obsid import ObservationIdentifier
+from egse.plugin import entry_points
 from egse.protocol import CommandProtocol
 from egse.proxy import Proxy
 from egse.response import Failure
@@ -151,12 +152,12 @@ from egse.setup import Setup
 from egse.setup import disentangle_filename
 from egse.setup import load_last_setup_id
 from egse.setup import save_last_setup_id
-from egse.system import Timer
+from egse.system import Timer, get_package_description
 from egse.system import duration
 from egse.system import filter_by_attr
 from egse.system import format_datetime
 from egse.system import humanize_seconds
-from egse.version import VERSION
+from egse.version import VERSION, get_version_installed
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
 from urllib3.exceptions import NewConnectionError
@@ -1017,20 +1018,10 @@ class ConfigurationManagerProtocol(CommandProtocol):
 
         self.build_device_method_lookup_table(self.controller)
 
-        self.cgse_version = VERSION
-
-        proc = subprocess.run(
-            ["git", "describe", "--tags", "--long", "--always"], stderr=subprocess.PIPE, stdout=subprocess.PIPE
-        )
-        if proc.stderr:
-            LOGGER.warning(f"git describe returned: {proc.stderr.decode()}")
-            self.git_version = "no git-version determined"
-        elif proc.stdout:
-            self.git_version = proc.stdout.strip().decode("ascii")
-            LOGGER.info(f"git version: {self.git_version}")
-        else:
-            LOGGER.warning("No git version could be determined, no error message provided.")
-            self.git_version = "no git-version determined"
+        self.version_dict = {}
+        for ep in sorted(entry_points("cgse.version"), key=lambda x: x.name):
+            if installed_version := get_version_installed(ep.name):
+                self.version_dict[f"CM_{ep.name.upper().replace('-', '_')}"] = installed_version
 
     def get_bind_address(self):
         return bind_address(
@@ -1057,10 +1048,10 @@ class ConfigurationManagerProtocol(CommandProtocol):
             "CM_SITE_ID": site_id,
             "CM_SETUP_ID": setup_id,
             "CM_TEST_ID": test_id,
-            "CM_OBSID": obsid,
-            "CM_CGSE_VERSION": self.cgse_version,
-            "CM_GIT_VERSION": self.git_version,
+            "CM_OBSID": obsid
         }
+
+        hk.update(self.version_dict)
 
         return hk
 
