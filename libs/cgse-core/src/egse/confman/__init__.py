@@ -111,7 +111,6 @@ from __future__ import annotations
 
 import logging
 import operator
-import subprocess
 import textwrap
 import threading
 from pathlib import Path
@@ -123,7 +122,6 @@ import git
 import rich
 import time
 from git import GitCommandError
-from influxdb_client_3 import Point
 
 from egse.command import ClientServerCommand
 from egse.command import stringify_function_call
@@ -152,15 +150,14 @@ from egse.setup import Setup
 from egse.setup import disentangle_filename
 from egse.setup import load_last_setup_id
 from egse.setup import save_last_setup_id
-from egse.system import Timer, get_package_description
+from egse.system import Timer
 from egse.system import duration
 from egse.system import filter_by_attr
 from egse.system import format_datetime
 from egse.system import humanize_seconds
-from egse.version import VERSION, get_version_installed
+from egse.version import get_version_installed
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
-from urllib3.exceptions import NewConnectionError
 
 LOGGER = logging.getLogger(__name__)
 
