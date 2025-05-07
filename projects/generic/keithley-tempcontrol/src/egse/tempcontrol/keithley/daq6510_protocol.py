@@ -100,4 +100,6 @@ class DAQ6510Protocol(CommandProtocol):
 
         # TODO
         # self.synoptics.disconnect_cs()
-        pass
+
+        if self.client:
+            self.client.close()
