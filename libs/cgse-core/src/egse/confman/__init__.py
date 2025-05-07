@@ -1066,8 +1066,9 @@ class ConfigurationManagerProtocol(CommandProtocol):
 
         # Update the metrics
 
+        origin = self.control_server.get_storage_mnemonic()
+
         try:
-            origin = self.control_server.get_storage_mnemonic()
             metrics_dictionary = {
                 "measurement": origin.lower(),  # Table name
                 "tags": {"site_id": site_id, "origin": origin},  # Site ID, Origin
@@ -1077,7 +1078,9 @@ class ConfigurationManagerProtocol(CommandProtocol):
             point = Point.from_dict(metrics_dictionary, write_precision=self.metrics_time_precision)
             self.client.write(point)
         except NewConnectionError:
-            pass
+            LOGGER.warning(f"No connection to InfluxDB could be established to propagate {origin} metrics")
+        except AttributeError as exc:
+            LOGGER.warning(f"Could not write {origin} metrics to InfluxDB ({exc})")
 
         return hk
 
