@@ -1086,7 +1086,9 @@ class ConfigurationManagerProtocol(CommandProtocol):
 
     def quit(self):
         self.controller.quit()
-        self.client.close()
+
+        if self.client:
+            self.client.close()
 
 
 # The following functions are defined here to allow them to be used in the list_setups() method
