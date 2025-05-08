@@ -368,10 +368,17 @@ class CommandProtocol(BaseCommandProtocol, metaclass=abc.ABCMeta):
         self._commands = {}  # variable is used by subclasses
         self._method_lookup = {}  # lookup table for device methods
 
-        token = os.environ["INFLUXDB3_AUTH_TOKEN"]
-        project = os.environ["PROJECT"]
-        self.client = InfluxDBClient3(database=project, host="http://localhost:8181", token=token)
+        token = os.getenv("INFLUXDB3_AUTH_TOKEN")
+        project = os.getenv("PROJECT")
         self.metrics_time_precision = WritePrecision.MS
+
+        if project and token:
+            self.client = InfluxDBClient3(database=project, host="http://localhost:8181", token=token)
+        else:
+            self.client = None
+            logger.warning("INFLUXDB3_AUTH_TOKEN and/or PROJECT environment variable is not set.  Metrics cannot not be "
+                           "propagated to InfluxDB.")
+
 
     def send_commands(self):
         """

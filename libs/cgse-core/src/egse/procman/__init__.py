@@ -190,7 +190,9 @@ class ProcessManagerProtocol(CommandProtocol):
 
     def quit(self):
         self.controller.quit()
-        self.client.close()
+
+        if self.client:
+            self.client.close()
 
 
 class ProcessManagerCommand(ClientServerCommand):
