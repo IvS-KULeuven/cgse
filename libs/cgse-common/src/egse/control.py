@@ -5,6 +5,7 @@ This module defines the abstract class for any Control Server and some convenien
 import abc
 import datetime
 import logging
+import os
 import pickle
 import textwrap
 import threading
@@ -14,6 +15,7 @@ from typing import Type
 from typing import Union
 
 import zmq
+from urllib3.exceptions import NewConnectionError
 
 from egse.decorators import retry
 from egse.decorators import retry_with_exponential_backoff
@@ -30,17 +32,21 @@ except ImportError:
 
 
 from egse.process import ProcessStatus
-from egse.settings import Settings
+from egse.settings import Settings, get_site_id
 from egse.system import do_every
 from egse.system import get_average_execution_time
 from egse.system import get_average_execution_times
 from egse.system import get_full_classname
 from egse.system import get_host_ip
 from egse.system import save_average_execution_time
+from influxdb_client_3 import InfluxDBClient3
+from influxdb_client_3.write_client.domain.write_precision import WritePrecision
+from influxdb_client_3 import Point
 
 _LOGGER = logging.getLogger(__name__)
 
 PROCESS_SETTINGS = Settings.load("PROCESS")
+SITE_ID = get_site_id()
 
 
 def is_control_server_active(endpoint: str = None, timeout: float = 0.5) -> bool:
@@ -150,6 +156,17 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         self.poller.register(self.dev_ctrl_service_sock, zmq.POLLIN)
         self.poller.register(self.dev_ctrl_mon_sock, zmq.POLLIN)
+
+        token = os.getenv("INFLUXDB3_AUTH_TOKEN")
+        project = os.getenv("PROJECT")
+        self.metrics_time_precision = WritePrecision.MS
+
+        if project and token:
+            self.client = InfluxDBClient3(database=project, host="http://localhost:8181", token=token)
+        else:
+            self.client = None
+            _LOGGER.warning("INFLUXDB3_AUTH_TOKEN and/or PROJECT environment variable is not set.  Metrics cannot not be "
+                            "propagated to InfluxDB.")
 
     @abc.abstractmethod
     def get_communication_protocol(self) -> str:
@@ -496,9 +513,10 @@ class ControlServer(metaclass=abc.ABCMeta):
                 if storage_manager:
                     # self.logger.debug("Sending housekeeping information to Storage.")
                     try:
-                        self.store_housekeeping_information(
-                            save_average_execution_time(self.device_protocol.get_housekeeping)
-                        )
+                        hk_dict = save_average_execution_time(self.device_protocol.get_housekeeping)
+
+                        self.store_housekeeping_information(hk_dict)
+                        self.propagate_metrics(hk_dict)
                     except Exception as exc:
                         _LOGGER.error(
                             textwrap.dedent(
@@ -548,6 +566,9 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         self.zcontext.term()
 
+        if self.client:
+            self.client.close()
+
     def store_housekeeping_information(self, data: dict) -> None:
         """Sends housekeeping information to the Storage Manager.
 
@@ -559,6 +580,33 @@ class ControlServer(metaclass=abc.ABCMeta):
                 a timestamp that represents the date/time when the HK was received from the device.
         """
         pass
+
+    def propagate_metrics(self, hk: dict) -> None:
+        """ Propagates the given housekeeping information to the metrics database.
+
+        Args:
+            hk (dict): Dictionary containing parameter name and value of all device housekeeping. There is also
+                       a timestamp that represents the date/time when the HK was received from the device.
+        """
+
+        origin = self.get_storage_mnemonic()
+
+        try:
+            if self.client:
+                metrics_dictionary = {
+                    "measurement": origin.lower(),                      # Table name
+                    "tags": {"site_id": SITE_ID, "origin": origin},     # Site ID, Origin
+                    "fields": dict((hk_name.lower(), hk[hk_name]) for hk_name in hk if hk_name != "timestamp"),
+                    "time": hk["timestamp"]
+                }
+                point = Point.from_dict(metrics_dictionary, write_precision=self.metrics_time_precision)
+                self.client.write(point)
+            else:
+                _LOGGER.warning(f"Could not write {origin} metrics to InfluxDB (self.client is None).")
+        except NewConnectionError:
+            _LOGGER.warning(f"No connection to InfluxDB could be established to propagate {origin} metrics.  Check "
+                           f"whether this service is (still) running.")
+
 
     def register_to_storage_manager(self) -> None:
         """Registers this Control Server to the Storage Manager.
