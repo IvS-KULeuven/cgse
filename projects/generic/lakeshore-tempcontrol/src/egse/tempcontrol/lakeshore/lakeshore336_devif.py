@@ -19,3 +19,9 @@ class LakeShore336Command(ClientServerCommand):
 
         out = super().get_cmd_string(*args, **kwargs)
         return out + "\n"
+
+class LakeShore336Error(Exception):
+
+    """ Base exception for all LakeShore336 errors."""
+
+    pass
