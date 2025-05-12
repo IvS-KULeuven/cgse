@@ -1,0 +1,111 @@
+import logging
+import multiprocessing
+from typing import Annotated
+
+import rich
+import sys
+import typer
+import zmq
+
+from egse.control import is_control_server_active, ControlServer
+from egse.services import ServiceProxy
+from egse.settings import Settings
+from egse.tempcontrol.lakeshore.lakeshore336 import LakeShore336Proxy
+from egse.tempcontrol.lakeshore.lakeshore336_protocol import LakeShore336Protocol
+from egse.zmq_ser import connect_address
+
+multiprocessing.current_process().name = "lakeshore336_cs"
+CTRL_SETTINGS = Settings.load("LakeShore336 Control Server")
+
+_LOGGER = logging.getLogger(__name__)
+
+
+def is_lakeshore336_cs_active(device_id: str, timeout: float = 0.5) -> bool:
+    """ Checks if the LakeShore336 Control Server with the given device ID is active.
+
+    Args
+        device_id (str): Device identifier
+
+    Returns: True if the LakeShore336 Control Server with the given device ID is active; False otherwise.
+    """
+
+    protocol = CTRL_SETTINGS.PROTOCOL
+    hostname = CTRL_SETTINGS.HOSTNAME
+    port = CTRL_SETTINGS[device_id]["COMMANDING_PORT"]
+
+    endpoint = connect_address(protocol, hostname, port)
+
+    return is_control_server_active(endpoint, timeout)
+
+class LakeShore336ControlServer(ControlServer):
+
+    def __init__(self, device_id: str, simulator: bool = False):
+        """ Initialisation of a LakeShore336 Control Server.
+
+        Args:
+            device_id (str): Device identifier
+            simulator (bool): Indicates whether the LakeShore336 Control Server should be started in simulator mode
+        """
+
+        super().__init__()
+
+        self.device_id = device_id  # TODO Shouldn't every CS have a device ID?
+
+        self.device_protocol = LakeShore336Protocol(self, device_id, simulator=simulator)
+
+        self.logger.info(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()}")
+
+        self.device_protocol.bind(self.dev_ctrl_cmd_sock)
+
+        self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
+
+    def get_communication_protocol(self) -> str:
+        """ Returns the communication protocol used by the Control Server.
+
+        Returns Communication protocol used by the Control Server, as specified in the settings.
+        """
+
+        return CTRL_SETTINGS.PROTOCOL
+
+    def get_commanding_port(self) -> str:
+        """ Returns the commanding port used by the Control Server.
+
+        Returns: Commanding port used by the Control Server, as specified in the settings.
+        """
+
+        return CTRL_SETTINGS[self.device_id]["COMMANDING_PORT"]
+
+    def get_service_port(self) -> int:
+        """ Returns the service port used by the Control Server.
+
+        Returns: Service port used by the Control Server, as specified in the settings.
+        """
+
+        return CTRL_SETTINGS[self.device_id]["SERVICE_PORT"]
+
+    def get_monitoring_port(self) -> int:
+        """ Returns the monitoring port used by the Control Server.
+
+        Returns: Monitoring port used by the Control Server, as specified in the settings.
+        """
+
+        return CTRL_SETTINGS[self.device_id]["MONITORING_PORT"]
+
+    def get_storage_mnemonic(self) -> str:
+        """ Returns the storage mnemonic used by the Control Server.
+
+        This is a string that will appear in the filename with the housekeeping information of the device, as a way of
+        identifying the device.  If this is not included in the settings, the device identifier is used.
+
+
+        Returns: Storage mnemonic used by the Control Server, as specified in the settings.  If not specified in the
+                 settings, the device identifier will be used.
+        """
+
+        try:
+            return CTRL_SETTINGS[self.device_id]["STORAGE_MNEMONIC"]
+        except AttributeError:
+            return self.device_id
+
+    # def after_serve(self) -> None:
+    #     self.device_protocol.synoptics.disconnect_cs()
