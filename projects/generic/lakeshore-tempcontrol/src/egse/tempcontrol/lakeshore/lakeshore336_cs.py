@@ -17,7 +17,7 @@ from egse.zmq_ser import connect_address
 multiprocessing.current_process().name = "lakeshore336_cs"
 CTRL_SETTINGS = Settings.load("LakeShore336 Control Server")
 
-_LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def is_lakeshore336_cs_active(device_id: str, timeout: float = 0.5) -> bool:
@@ -109,3 +109,79 @@ class LakeShore336ControlServer(ControlServer):
 
     # def after_serve(self) -> None:
     #     self.device_protocol.synoptics.disconnect_cs()
+
+
+app = typer.Typer()
+
+@app.command()
+def start(device_id: str,
+          simulator: Annotated[bool, typer.Option("--simulator", "--sim", help="start the LakeShore 336 simulator in the background")]=False):
+    """ Start the LakeShore336 Control Server for the given device ID.
+
+    Args:
+        device_id (str): Device identifier
+        simulator (bool): Indicates whether the LakeShore336 Control Server should be started in simulator mode
+    """
+
+    try:
+        controller = LakeShore336ControlServer(device_id, simulator)
+        controller.serve()
+
+    except KeyboardInterrupt:
+        print("Shutdown requested...exiting")
+
+    except SystemExit as exit_code:
+        print("System Exit with code {}.".format(exit_code))
+        sys.exit(exit_code.code)
+
+    except Exception:
+        logger.exception(f"Cannot start the LakeShore336 Control Server {device_id}")
+
+    return 0
+
+
+@app.command()
+def stop(device_id: str):
+    """ Stops the LakeShore336 Control Server for the given device ID.
+
+    Args:
+        device_id (str): Device identifier
+    """
+
+    try:
+        with LakeShore336Proxy(device_id) as proxy:
+            sp: ServiceProxy = proxy.get_service_proxy()
+            sp.quit_server()
+    except ConnectionError:
+        msg = f"Cannot stop the LakeShore336 Control Server {device_id}"
+        logger.error(msg, exc_info=True)
+        rich.print(f"[red]{msg}, could not send the Quit command. [black]Check log messages.")
+
+@app.command()
+def status(device_id: str):
+    """ Returns the status of the LakeShore336 Control Server for the given device ID.
+
+    Args:
+        device_id (str): Device identifier
+    """
+
+    multiprocessing.current_process().name = "lakeshore336_cs (status)"
+
+    protocol = CTRL_SETTINGS.PROTOCOL
+    hostname = CTRL_SETTINGS.HOSTNAME
+    port = CTRL_SETTINGS[device_id]["COMMANDING_PORT"]
+
+    endpoint = connect_address(protocol, hostname, port)
+
+    if is_control_server_active(endpoint):
+        rich.print(f"{device_id} CS: [green]active")
+
+        with LakeShore336Proxy(device_id) as proxy:
+            sim = proxy.is_simulator()
+            connected = proxy.is_connected()
+            ip = proxy.get_ip_address()
+            rich.print(f"mode: {'simulator' if sim else 'device'}{' not' if not connected else ''} connected")
+            rich.print(f"hostname: {ip}")
+    else:
+        print("Control Server is inactive")
+
