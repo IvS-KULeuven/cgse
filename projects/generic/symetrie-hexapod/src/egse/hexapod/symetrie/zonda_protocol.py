@@ -1,21 +1,23 @@
-import logging
+from pathlib import Path
 
 from egse.command import ClientServerCommand
 from egse.control import ControlServer
-from egse.hexapod.symetrie.zonda import ZondaController
+from egse.hexapod.symetrie import ControllerFactory
+from egse.hexapod.symetrie import get_hexapod_controller_pars
+from egse.hexapod.symetrie import logger
 from egse.hexapod.symetrie.zonda import ZondaInterface
 from egse.hexapod.symetrie.zonda import ZondaSimulator
-from egse.hk import read_conversion_dict, convert_hk_names
+from egse.hk import convert_hk_names
 from egse.metrics import define_metrics
 from egse.protocol import CommandProtocol
 from egse.settings import Settings
 from egse.system import format_datetime
 from egse.zmq_ser import bind_address
 
-logger = logging.getLogger(__name__)
+_HERE = Path(__file__).parent
 
 ctrl_settings = Settings.load("Hexapod ZONDA Control Server")
-zonda_settings = Settings.load(filename="zonda.yaml")
+zonda_settings = Settings.load(filename="zonda.yaml", location=_HERE)
 
 
 class ZondaCommand(ClientServerCommand):
@@ -23,23 +25,32 @@ class ZondaCommand(ClientServerCommand):
 
 
 class ZondaProtocol(CommandProtocol):
-    def __init__(self, control_server: ControlServer):
+    def __init__(self, control_server: ControlServer, device_id: str, simulator: bool = False):
         super().__init__(control_server)
+        self.simulator = simulator
+        self.device_id = device_id
 
-        self.hk_conversion_table = read_conversion_dict(self.control_server.get_storage_mnemonic(), use_site=True)
+        # FIXME: HK needs to be working
+        # self.hk_conversion_table = read_conversion_dict(self.control_server.get_storage_mnemonic(), use_site=True)
 
-        if Settings.simulation_mode():
+        if self.simulator:
             self.hexapod = ZondaSimulator()
         else:
-            self.hexapod = ZondaController()
+            *_, device_type, controller_type = get_hexapod_controller_pars(device_id)
 
-        self.hexapod.connect()
+            factory = ControllerFactory()
+            self.hexapod = factory.create(device_type, device_id=device_id)
+            self.hexapod.add_observer(self)
+
+        try:
+            self.hexapod.connect()
+        except ConnectionError:
+            logger.warning("Couldn't establish a connection to the ZONDA Hexapod, check the log messages.")
 
         self.load_commands(zonda_settings.Commands, ZondaCommand, ZondaInterface)
-
         self.build_device_method_lookup_table(self.hexapod)
 
-        self.metrics = define_metrics("ZONDA")
+        # self.metrics = define_metrics("ZONDA")
 
     def get_bind_address(self):
         return bind_address(
