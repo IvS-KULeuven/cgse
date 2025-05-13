@@ -77,6 +77,26 @@ def test_load_local_settings():
             _ = Settings.load("SITE_ID", add_local_settings=True)
 
 
+def test_load_new_local_settings():
+    with env_var(CGSE_LOCAL_SETTINGS=str(HERE / "data" / "data" / "new_local_settings.yaml")):
+        settings = Settings.load(add_local_settings=False)
+        rich.print(settings)
+
+        with pytest.raises(AttributeError):
+            assert settings.NEW_GROUP["ID"] == "the ID of the new group"
+
+        settings = Settings.load(add_local_settings=True)
+        rich.print(settings)
+
+        # This should have been added, we can add new main groups
+
+        assert settings.NEW_GROUP["ID"] == "the ID of the new group"
+
+        # We also can add new fields in a group
+
+        assert settings.SITE["NEW_INFO"] == "a new entry in group SITE"
+
+
 def test_get_site_id():
     from egse.settings import get_site_id
 
