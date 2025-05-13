@@ -14,34 +14,24 @@ Please note that software simulators are intended for simple test purposes and w
 all device behavior correctly, e.g. timing, error conditions, etc.
 
 """
-import logging
+import multiprocessing
+import sys
 from typing import Annotated
 
-import typer
-
-from egse.hexapod.symetrie import ProxyFactory
-from egse.hexapod.symetrie import get_hexapod_controller_pars
-
-if __name__ != "__main__":
-    import multiprocessing
-
-    multiprocessing.current_process().name = "puna_cs"
-
-import sys
-
 import rich
+import typer
 import zmq
-
-from egse.control import is_control_server_active
-from egse.zmq_ser import connect_address
-
 from prometheus_client import start_http_server
 
 from egse.control import ControlServer
+from egse.control import is_control_server_active
+from egse.hexapod.symetrie import ProxyFactory
+from egse.hexapod.symetrie import get_hexapod_controller_pars
+from egse.hexapod.symetrie import logger
 from egse.hexapod.symetrie.puna_protocol import PunaProtocol
 from egse.settings import Settings
-
-_LOGGER = logging.getLogger(__name__)
+from egse.storage import store_housekeeping_information
+from egse.zmq_ser import connect_address
 
 CTRL_SETTINGS = Settings.load("Hexapod PUNA Control Server")
 
@@ -65,12 +55,13 @@ class PunaControlServer(ControlServer):
 
     """
 
-    def __init__(self, simulator: bool = False):
+    def __init__(self, device_id: str, simulator: bool = False):
         super().__init__()
 
-        self.device_protocol = PunaProtocol(self, simulator=simulator)
+        self.logger = logger
 
-        self.logger.info(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()}")
+        self.device_id = device_id
+        self.device_protocol = PunaProtocol(self, device_id=device_id, simulator=simulator)
 
         self.device_protocol.bind(self.dev_ctrl_cmd_sock)
 
@@ -94,7 +85,37 @@ class PunaControlServer(ControlServer):
         except AttributeError:
             return "PUNA"
 
+    def is_storage_manager_active(self):
+        from egse.storage import is_storage_manager_active
+        return is_storage_manager_active()
+
+    def store_housekeeping_information(self, data):
+        """Send housekeeping information to the Storage manager."""
+
+        origin = self.get_storage_mnemonic()
+        store_housekeeping_information(origin, data)
+
+    def register_to_storage_manager(self):
+        from egse.storage import register_to_storage_manager
+        from egse.storage.persistence import TYPES
+
+        register_to_storage_manager(
+            origin=self.get_storage_mnemonic(),
+            persistence_class=TYPES["CSV"],
+            prep={
+                "column_names": list(self.device_protocol.get_housekeeping().keys()),
+                "mode": "a",
+            }
+        )
+
+    def unregister_from_storage_manager(self):
+        from egse.storage import unregister_from_storage_manager
+
+        unregister_from_storage_manager(origin=self.get_storage_mnemonic())
+
     def before_serve(self):
+        multiprocessing.current_process().name = "puna_cs"
+
         start_http_server(CTRL_SETTINGS.METRICS_PORT)
 
 
@@ -103,37 +124,39 @@ app = typer.Typer()
 
 @app.command()
 def start(
+        device_id: Annotated[
+            str,
+            typer.Argument(help="the device identifier, identifies the hardware controller")
+        ],
         simulator: Annotated[
             bool,
-            typer.Option("--simulator", "--sim", help="start the hexapod PUNA simulator in the background")
+            typer.Option("--simulator", "--sim", help="start the hexapod PUNA Control Server in simulator mode")
         ] = False
 ):
     """
     Start the Hexapod PUNA Control Server.
-
-    Args:
-        simulator: start the hexapod PUNA simulator in the background.
     """
 
     try:
 
-        controller = PunaControlServer(simulator)
+        controller = PunaControlServer(device_id, simulator)
         controller.serve()
 
     except KeyboardInterrupt:
 
         print("Shutdown requested...exiting")
 
-    except SystemExit as exit_code:
+    except SystemExit as exc:
 
-        print("System Exit with code {}.".format(exit_code))
+        exit_code = exc.code if hasattr(exc, 'code') else 0
+        print(f"System Exit with code {exc.code}")
         sys.exit(exit_code)
 
     except Exception:
 
-        _LOGGER.exception("Cannot start the Hexapod Puna Control Server")
+        logger.exception("Cannot start the Hexapod Puna Control Server")
 
-        # The above line does exactly the same as the traceback, but on the _LOGGER
+        # The above line does exactly the same as the traceback, but on the logger
         # import traceback
         # traceback.print_exc(file=sys.stdout)
 
@@ -141,15 +164,15 @@ def start(
 
 
 @app.command()
-def stop():
+def stop(device_id: str):
     """Send a 'quit_server' command to the Hexapod Puna Control Server."""
 
-    *_, device_id, device_name, controller_type = get_hexapod_controller_pars()
+    *_, device_type, controller_type = get_hexapod_controller_pars(device_id)
 
     factory = ProxyFactory()
 
     try:
-        with factory.create(device_name, device_id=device_id) as proxy:
+        with factory.create(device_type, device_id=device_id) as proxy:
             sp = proxy.get_service_proxy()
             sp.quit_server()
     except ConnectionError:
@@ -157,8 +180,10 @@ def stop():
 
 
 @app.command()
-def status():
+def status(device_id: str):
     """Request status information from the Control Server."""
+
+    # This information should come from the Service Registry
 
     protocol = CTRL_SETTINGS.PROTOCOL
     hostname_cs = CTRL_SETTINGS.HOSTNAME
@@ -166,13 +191,13 @@ def status():
 
     endpoint = connect_address(protocol, hostname_cs, port_cs)
 
-    *_, device_id, device_name, controller_type = get_hexapod_controller_pars()
+    *_, device_type, controller_type = get_hexapod_controller_pars(device_id)
 
     factory = ProxyFactory()
 
     if is_control_server_active(endpoint):
         rich.print("PUNA Hexapod: [green]active")
-        with factory.create(device_name, device_id=device_id) as puna:
+        with factory.create(device_type, device_id=device_id) as puna:
             sim = puna.is_simulator()
             connected = puna.is_connected()
             ip = puna.get_ip_address()
@@ -186,6 +211,9 @@ def status():
 
 if __name__ == "__main__":
 
-    logging.basicConfig(level=logging.DEBUG, format=Settings.LOG_FORMAT_FULL)
+    import logging
+
+    from egse.logger import set_all_logger_levels
+    set_all_logger_levels(logging.DEBUG)
 
     sys.exit(app())

@@ -8,7 +8,6 @@ source code, please go to http://controls.diamond.ac.uk/downloads/python/index.p
 Author: Rik Huygen
 """
 
-import logging
 import socket
 import struct
 import threading
@@ -16,11 +15,10 @@ from datetime import datetime
 from datetime import timedelta
 from typing import List
 
+from egse.hexapod.symetrie import logger
 from egse.hexapod.symetrie.pmac_regex import match_float_response
 from egse.hexapod.symetrie.pmac_regex import match_int_response
 from egse.hexapod.symetrie.pmac_regex import match_string_response
-
-logger = logging.getLogger(__name__)
 
 # Command set Request
 
@@ -527,7 +525,7 @@ class EthernetCommand:
         )
         wrappedCommand = headerStr + command.encode()
 
-        logger.flash_flood(f"Command Packet generated: {wrappedCommand}")
+        logger.debug(f"Command Packet generated: {wrappedCommand}")
 
         return wrappedCommand
 
@@ -744,13 +742,13 @@ class PmacEthernetInterface(object):
 
             # Attempt to send the complete command to PMAC
 
-            logger.flash_flood(f"Sending out to PMAC: {command}")
+            logger.debug(f"Sending out to PMAC: {command}")
             self.sock.sendall(self.getResponseCommand.getCommandPacket(command))
 
             # wait for, read and return the response from PMAC (will be at most 1400 chars)
 
             returnStr = self.sock.recv(2048)
-            logger.flash_flood( f"Received from PMAC: {returnStr}")
+            logger.debug( f"Received from PMAC: {returnStr}")
 
             return returnStr
 
@@ -815,7 +813,7 @@ class PmacEthernetInterface(object):
         for qVar in qVars:
             cmd += f"Q{qVar:02} "
         retStr = self.getResponse(cmd)
-        logger.flash_flood(f"retStr={retStr} of type {type(retStr)}")
+        logger.debug(f"retStr={retStr} of type {type(retStr)}")
 
         if retStr == b"\x00":
             raise PMACError(f"No response received for {cmd}, return value is {retStr}")
@@ -968,11 +966,11 @@ class PmacEthernetInterface(object):
         else:
             fullCommand = cmd["cmd"]
 
-        logger.flash_flood(f'Sending the {cmd["name"]} command.')
+        logger.debug(f'Sending the {cmd["name"]} command.')
 
         retStr = self.getResponse(fullCommand)
 
-        logger.flash_flood(f'Command \'{cmd["name"]}\' returned "{retStr}"')
+        logger.debug(f'Command \'{cmd["name"]}\' returned "{retStr}"')
 
         # Check the return code (usually Q20)
 

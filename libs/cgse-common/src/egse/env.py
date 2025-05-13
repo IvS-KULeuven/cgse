@@ -567,7 +567,7 @@ def print_env():
 
 
 @contextlib.contextmanager
-def env_var(**kwargs: dict):
+def env_var(**kwargs: str | int | float | bool | None):
     """
     Context manager to run some code that need alternate settings for environment variables.
     This will automatically initialize the CGSE environment upon entry and re-initialize upon exit.

@@ -1,20 +1,18 @@
-import logging
 from pathlib import Path
 
 from egse.command import ClientServerCommand
 from egse.control import ControlServer
 from egse.device import DeviceConnectionState
 from egse.hexapod.symetrie import ControllerFactory
+from egse.hexapod.symetrie import get_hexapod_controller_pars
+from egse.hexapod.symetrie import logger
 from egse.hexapod.symetrie.puna import PunaInterface
 from egse.hexapod.symetrie.puna import PunaSimulator
-from egse.hexapod.symetrie import get_hexapod_controller_pars
 # from egse.hk import read_conversion_dict, convert_hk_names
 from egse.protocol import CommandProtocol
 from egse.settings import Settings
 from egse.system import format_datetime
 from egse.zmq_ser import bind_address
-
-_LOGGER = logging.getLogger(__name__)
 
 _HERE = Path(__file__).parent
 
@@ -28,29 +26,32 @@ class PunaCommand(ClientServerCommand):
 
 
 class PunaProtocol(CommandProtocol):
-    def __init__(self, control_server: ControlServer, simulator: bool = False):
+    def __init__(self, control_server: ControlServer, device_id: str, simulator: bool = False):
         super().__init__(control_server)
         self.simulator = simulator
+        self.device_id = device_id
 
+        # FIXME: HK needs to be working
         # self.hk_conversion_table = read_conversion_dict(self.control_server.get_storage_mnemonic(), use_site=True)
 
         if self.simulator:
             self.hexapod = PunaSimulator()
         else:
-            hostname, port, device_id, device_name, controller_type = get_hexapod_controller_pars()
+            *_, device_type, controller_type = get_hexapod_controller_pars(device_id)
 
             factory = ControllerFactory()
-            self.hexapod = factory.create(device_name, device_id=device_id)
-            # self.hexapod = PunaController(hostname=hostname, port=port)
+            self.hexapod = factory.create(device_type, device_id=device_id)
             self.hexapod.add_observer(self)
 
         try:
             self.hexapod.connect()
         except ConnectionError:
-            _LOGGER.warning("Couldn't establish a connection to the PUNA Hexapod, check the log messages.")
+            logger.warning("Couldn't establish a connection to the PUNA Hexapod, check the log messages.")
 
         self.load_commands(DEVICE_SETTINGS.Commands, PunaCommand, PunaInterface)
         self.build_device_method_lookup_table(self.hexapod)
+
+        # self.metrics = define_metrics("PUNA")
 
     def get_bind_address(self):
         return bind_address(
@@ -93,7 +94,7 @@ class PunaProtocol(CommandProtocol):
 
         if mach_positions is None or user_positions is None or actuator_length is None:
             if not self.hexapod.is_connected():
-                _LOGGER.warning("Hexapod PUNA disconnected.")
+                logger.warning("Hexapod PUNA disconnected.")
                 self.update_connection_state(DeviceConnectionState.DEVICE_NOT_CONNECTED)
             return result
 

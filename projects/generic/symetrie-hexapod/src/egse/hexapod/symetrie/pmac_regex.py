@@ -1,7 +1,6 @@
-import logging
 import re
 
-logger = logging.getLogger(__name__)
+from egse.hexapod.symetrie import logger
 
 regex_response = {
     # Error message as ERRXXX
@@ -25,7 +24,7 @@ def match_regex_response(regex_prog, res):
 
     Return None if no match and the match object otherwise.
     """
-    logger.flash_flood(f"res = {res} with type {type(res)}")
+    logger.debug(f"res = {res} with type {type(res)}")
     if isinstance(res, bytes):
         res = res.decode()
     match_obj = regex_prog.match(res)
