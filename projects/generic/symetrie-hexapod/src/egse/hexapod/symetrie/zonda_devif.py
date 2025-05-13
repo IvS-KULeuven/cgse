@@ -1,4 +1,3 @@
-import logging
 import socket
 import threading
 import time
@@ -8,13 +7,10 @@ from typing import List
 
 import paramiko
 
-from egse.decorators import timer
 from egse.device import DeviceTransport
-from egse.settings import Settings
+from egse.hexapod.symetrie import logger
 from egse.system import wait_until
 
-logger = logging.getLogger(__name__)
-ctrl_settings = Settings.load("ZONDA Controller")
 
 RETURN_CODES = {
     0: "Success.",
@@ -116,15 +112,15 @@ class ZondaError(Exception):
     pass
 
 
-class ZondaSSHInterface(object):
-    def __init__(self):
+class ZondaSSHInterface:
+    def __init__(self, hostname: str):
         self.client = None
         self.gpascii_client = None
         self.connected = False
         self.ssh_output = None
         self.ssh_error = None
         self.verbose = False
-        self.ip = ctrl_settings.IP
+        self.hostname = hostname
 
         self.semaphore = threading.Semaphore()
 
@@ -284,13 +280,13 @@ class ZondaSSHInterface(object):
 
     def disconnect(self):
         try:
-            logger.info("Closing ssh connection with {}...")
+            logger.info(f"Closing ssh connection with {self.hostname}...")
             self.client.close()
             self.gpascii_client.close()
             self.connected = False
-            logger.warning("...disconnected from ssh".format(self.ip))
+            logger.warning("...disconnected from ssh")
         except Exception as e_exc:
-            raise ZondaError(f"Could not close socket to ") from e_exc
+            raise ZondaError(f"Could not close socket to {self.hostname}") from e_exc
 
 
 class ZondaTelnetInterface(DeviceTransport):
@@ -300,12 +296,14 @@ class ZondaTelnetInterface(DeviceTransport):
 
     TELNET_TIMEOUT = 0.5
 
-    def __init__(self):
+    def __init__(self, hostname: str, port: int):
         self.telnet = Telnet()
+        self.hostname = hostname
+        self.port = port
         self._is_connected = False
 
-    def connect(self, hostname: str):
-        self.telnet.open(hostname, 23)
+    def connect(self):
+        self.telnet.open(self.hostname, self.port)
         self.telnet.read_until(b"login: ", timeout=self.TELNET_TIMEOUT)
         self.telnet.write(b"root\r\n")
         self.telnet.read_until(b"Password: ", timeout=self.TELNET_TIMEOUT)
@@ -403,8 +401,8 @@ def decode_command(cmd_name: str, *args):
 if __name__ == "__main__":
     import rich
 
-    zonda = ZondaTelnetInterface()
-    zonda.connect("192.168.56.10")
+    zonda = ZondaTelnetInterface("192.168.56.10", 23)
+    zonda.connect()
     rich.print(zonda.trans("s_hexa,50,1"))
     rich.print(zonda.trans("s_ax_1,6,1"))
     rich.print(zonda.trans("s_pos_ax_1,6,1"))
