@@ -1062,35 +1062,10 @@ class ConfigurationManagerProtocol(CommandProtocol):
             "CM_GIT_VERSION": self.git_version,
         }
 
-        # Update the metrics
-
-        # Update the metrics
-
-        origin = self.control_server.get_storage_mnemonic()
-
-        try:
-            if self.client:
-                metrics_dictionary = {
-                    "measurement": origin.lower(),  # Table name
-                    "tags": {"site_id": site_id, "origin": origin},  # Site ID, Origin
-                    "fields": dict((hk_name.lower(), hk[hk_name]) for hk_name in hk if hk_name != "timestamp"),
-                    "time": hk["timestamp"]
-                }
-                point = Point.from_dict(metrics_dictionary, write_precision=self.metrics_time_precision)
-                self.client.write(point)
-            else:
-                LOGGER.warning(f"Could not write {origin} metrics to InfluxDB (self.client is None).")
-        except NewConnectionError:
-            LOGGER.warning(f"No connection to InfluxDB could be established to propagate {origin} metrics.  Check "
-                           f"whether this service is (still) running.")
-
         return hk
 
     def quit(self):
         self.controller.quit()
-
-        if self.client:
-            self.client.close()
 
 
 # The following functions are defined here to allow them to be used in the list_setups() method
