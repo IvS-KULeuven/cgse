@@ -40,6 +40,7 @@ symetrie-hexapod = 'egse.version:get_version_installed'
 
 [project.entry-points."cgse.service"]
 puna = 'symetrie_hexapod.cgse_services:puna'
+zonda = 'symetrie_hexapod.cgse_services:zonda'
 
 [project.entry-points."cgse.settings"]
 symetrie-hexapod = "symetrie_hexapod:settings.yaml"

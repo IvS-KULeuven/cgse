@@ -20,7 +20,7 @@ from egse.zmq_ser import connect_address
 CTRL_SETTINGS = Settings.load("Logging Control Server")
 
 LOG_FORMAT_FULL = (
-    "%(asctime)23s:%(processName)20s:%(levelname)8s:%(lineno)5d:%(name)-20s:%(message)s"
+    "%(asctime)23s:%(processName)20s:%(levelname)8s:%(name)-25s:%(lineno)5d:%(filename)-20s:%(message)s"
 )
 
 # Configure the root logger
@@ -231,31 +231,3 @@ def send_request(command_request: str):
     socket.close(linger=0)
 
     return response
-
-
-if __name__ == "__main__":
-
-    import egse.logger
-
-    LOGGER = logging.getLogger("egse.0mq-log-test")
-    LOGGER.debug("Hello, ZeroMQ logging: This is a DEBUG message.")
-    LOGGER.info("Hello, ZeroMQ logging: This is an INFO message.")
-    LOGGER.warning("Hello, ZeroMQ logging: This is a WARNING message.")
-    LOGGER.error("Hello, ZeroMQ logging: This is an ERROR message.")
-    LOGGER.critical("Hello, ZeroMQ logging: This is a CRITICAL message.")
-    try:
-        raise ValueError("A fake ValueError, raised for testing.")
-    except ValueError:
-        LOGGER.exception("Hello, ZeroMQ logging: This is an EXCEPTION message.")
-
-    LOGGER = logging.getLogger("plain-log-test")
-
-    LOGGER.debug("Vanilla logging: This is a DEBUG message.")
-    LOGGER.info("Vanilla logging: This is an INFO message.")
-    LOGGER.warning("Vanilla logging: This is a WARNING message.")
-    LOGGER.error("Vanilla logging: This is an ERROR message.")
-    LOGGER.critical("Vanilla logging: This is a CRITICAL message.")
-    try:
-        raise ValueError("A fake ValueError, raised for testing.")
-    except ValueError:
-        LOGGER.exception("Vanilla logging: This is an EXCEPTION message.")

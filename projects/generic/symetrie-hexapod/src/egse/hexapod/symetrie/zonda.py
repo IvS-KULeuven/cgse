@@ -1,15 +1,13 @@
 """
-This module defines the device classes to be used to connect to and control the Hexapod ZONDA from
-Symétrie.
-
+This module defines the device classes to be used to connect to and control the Hexapod ZONDA from Symétrie.
 """
-import logging
 import math
 import time
 from typing import Dict
 
 from egse.device import DeviceInterface
 from egse.hexapod import HexapodError
+from egse.hexapod.symetrie import logger
 from egse.hexapod.symetrie.alpha import AlphaPlusControllerInterface
 from egse.hexapod.symetrie.zonda_devif import RETURN_CODES
 from egse.hexapod.symetrie.zonda_devif import ZondaError
@@ -23,9 +21,6 @@ from egse.zmq_ser import connect_address
 from numpy import loadtxt
 from time import sleep
 
-logger = logging.getLogger(__name__)
-
-ZONDA_SETTINGS = Settings.load("ZONDA Controller")
 CTRL_SETTINGS = Settings.load("Hexapod ZONDA Control Server")
 DEVICE_SETTINGS = Settings.load(filename="zonda.yaml")
 
@@ -86,11 +81,11 @@ class ZondaInterface(AlphaPlusControllerInterface, DeviceInterface):
 
 
 class ZondaController(ZondaInterface):
-    def __init__(self):
+    def __init__(self, hostname: str, port: int):
 
         super().__init__()
 
-        logger.info(f"Initializing ZondaController with hostname={ZONDA_SETTINGS.IP} on port={ZONDA_SETTINGS.PORT}")
+        logger.info(f"Initializing ZondaController with {hostname=} on {port=}")
 
         self.v_pos = None
 
@@ -104,7 +99,7 @@ class ZondaController(ZondaInterface):
                       "vrmax": 0}
 
         try:
-            self.hexapod = ZondaTelnetInterface()
+            self.hexapod = ZondaTelnetInterface(hostname=hostname, port=port)
 
         except ZondaError as exc:
             logger.warning(
@@ -120,7 +115,7 @@ class ZondaController(ZondaInterface):
 
     def connect(self):
         try:
-            self.hexapod.connect(ZONDA_SETTINGS.IP)
+            self.hexapod.connect()
         except ZondaError as exc:
             logger.warning(f"ZondaError caught: Couldn't establish connection ({exc})")
             raise HexapodError("Couldn't establish a connection with the Hexapod.") from exc
@@ -698,6 +693,8 @@ class ZondaSimulator(ZondaInterface):
     """
     def __init__(self):
         # Keep a record if the homing() command has been executed.
+
+        super().__init__()
 
         self.homing_done = False
         self.control_loop = False

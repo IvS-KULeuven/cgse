@@ -3,7 +3,6 @@ This module defines the device classes to be used to connect to and control the 
 Symétrie.
 
 """
-import logging
 import math
 import time
 from datetime import datetime
@@ -16,6 +15,7 @@ from egse.coordinates.referenceFrame import ReferenceFrame
 from egse.device import DeviceConnectionState
 from egse.device import DeviceInterface
 from egse.hexapod import HexapodError
+from egse.hexapod.symetrie import logger
 from egse.hexapod.symetrie import pmac
 from egse.hexapod.symetrie.alpha import AlphaControllerInterface
 from egse.hexapod.symetrie.pmac import PMACError
@@ -25,8 +25,6 @@ from egse.hexapod.symetrie.pmac import decode_Q36
 from egse.proxy import Proxy
 from egse.settings import Settings
 from egse.zmq_ser import connect_address
-
-logger = logging.getLogger(__name__)
 
 PUNA_SETTINGS = Settings.load("PMAC Controller")
 CTRL_SETTINGS = Settings.load("Hexapod PUNA Control Server")
