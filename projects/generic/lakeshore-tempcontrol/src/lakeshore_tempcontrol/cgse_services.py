@@ -18,10 +18,10 @@ lakeshore336 = typer.Typer(
 
 @lakeshore336.command(name="start")
 def start_lakeshore336(
-        device_id: str,
+        device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")],
         simulator: Annotated[bool, typer.Option("--simulator", "--sim",
                                                 help="Start the LakeShore336 simulator as the backend")]=False,
-        background: Annotated[bool, typer.Option(help="Start the LakeShore336 in the background")] = True
+        background: Annotated[bool, typer.Option(help="Start the LakeShore336 in the background")] = False
 ):
     """ Starts the LakeShore336 Control Server.
 
@@ -33,7 +33,7 @@ def start_lakeshore336(
         background (bool): Indicates whether the LakeShore336 Control Server should be started in the background
     """
 
-    rich.print("Starting service LakeShore336")
+    rich.print(f"Starting service LakeShore336 {device_id}")
 
     if background:
         location = get_log_file_location()
@@ -57,20 +57,20 @@ def start_lakeshore336(
 
 
 @lakeshore336.command(name="stop")
-def stop_lakeshore336(device_id: str):
+def stop_lakeshore336(device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")]):
     """ Stops the LakeShore336 service.
 
     Args:
         device_id (str): Device identifier
     """
 
-    rich.print("Terminating service LakeShore336")
+    rich.print(f"Terminating service LakeShore336 {device_id}")
 
     from egse.tempcontrol.lakeshore import lakeshore336_cs
     lakeshore336_cs.stop(device_id)
 
 @lakeshore336.command(name="status")
-def status_lakeshore336(device_id: str):
+def status_lakeshore336(device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")],):
     """ Prints status information on the LakeShore336 service.
 
     Args:
@@ -81,7 +81,7 @@ def status_lakeshore336(device_id: str):
 
 
 @lakeshore336.command(name="start-simulator")
-def start_lakeshore336_sim(device_id: str):
+def start_lakeshore336_sim(device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")]):
     """ Starts the LakeShore336 Simulator.
 
     Args:
