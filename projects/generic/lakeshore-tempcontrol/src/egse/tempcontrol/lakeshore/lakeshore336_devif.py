@@ -8,7 +8,7 @@ from egse.command import ClientServerCommand
 from egse.device import DeviceConnectionInterface, DeviceTransport
 from egse.settings import Settings
 
-DEVICE_SETTINGS = Settings.load("LakeShore336")
+DEVICE_SETTINGS = Settings.load("LakeShore336 Control Server")
 
 logger = logging.getLogger(__name__)
 
