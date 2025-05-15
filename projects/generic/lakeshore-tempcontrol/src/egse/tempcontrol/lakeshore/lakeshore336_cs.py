@@ -107,8 +107,46 @@ class LakeShore336ControlServer(ControlServer):
         except AttributeError:
             return self.device_id
 
-    # def after_serve(self) -> None:
-    #     self.device_protocol.synoptics.disconnect_cs()
+    def is_storage_manager_active(self):
+        """ Checks whether the Storage Manager is active.
+
+        Returns: True if the Storage Manager is active; False otherwise.
+        """
+
+        from egse.storage import is_storage_manager_active
+        return is_storage_manager_active()
+
+    def store_housekeeping_information(self, data):
+        """ Stores the given housekeeping information in a dedicated file.
+
+        Args:
+            data (dict): Dictionary containing parameter name and value of all device housekeeping.
+        """
+
+        origin = self.get_storage_mnemonic()
+        store_housekeeping_information(origin, data)
+
+    def register_to_storage_manager(self):
+        """ Registers the Control Server to the Storage Manager."""
+
+        from egse.storage import register_to_storage_manager
+        from egse.storage.persistence import TYPES
+
+        register_to_storage_manager(
+            origin=self.get_storage_mnemonic(),
+            persistence_class=TYPES["CSV"],
+            prep={
+                "column_names": list(self.device_protocol.get_housekeeping().keys()),
+                "mode": "a",
+            }
+        )
+
+    def unregister_from_storage_manager(self):
+        """ Unregisters the Control Server from the Storage Manager."""
+
+        from egse.storage import unregister_from_storage_manager
+
+        unregister_from_storage_manager(origin=self.get_storage_mnemonic())
 
 
 app = typer.Typer()
