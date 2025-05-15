@@ -77,7 +77,10 @@ def status_lakeshore336(device_id: Annotated[str, typer.Argument(help="the devic
         device_id (str): Device identifier
     """
 
-    rich.print("Printing the status of LakeShore336")
+    rich.print(f"Status of LakeShore336 {device_id}")
+
+    from egse.tempcontrol.lakeshore import lakeshore336_cs
+    lakeshore336_cs.status(device_id)
 
 
 @lakeshore336.command(name="start-simulator")
