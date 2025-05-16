@@ -1,0 +1,8 @@
+PACKAGES:
+    LAKESHORE_TEMPCONTROL: LakeShore temperature control
+
+
+LakeShore336 Control Server:
+
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost
