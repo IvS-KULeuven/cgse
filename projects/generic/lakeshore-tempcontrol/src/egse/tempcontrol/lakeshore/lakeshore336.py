@@ -556,10 +556,10 @@ class LakeShore336Simulator(LakeShore336Interface):
         for i in range(ord("A"), ord("D") + 1):
             self.input[chr(i)] = InputSimulator(chr(i))
 
-        # self.output = [
-        #     None,
-        #     OutputSimulator(1), OutputSimulator(2)
-        # ]
+        self.output = [
+            None,
+            OutputSimulator(1), OutputSimulator(2)
+        ]
 
     def is_simulator(self) -> bool:
 
@@ -597,7 +597,7 @@ class LakeShore336Simulator(LakeShore336Interface):
 
         # No errors found
 
-        return 0
+        return SelfTestResult.NO_ERRORS_FOUND.value
 
     def autotune(self, output_channel: int, mode: AutotuneMode):
 
@@ -642,6 +642,10 @@ class LakeShore336Simulator(LakeShore336Interface):
     #
     #     self.output[output].set_pid_parameters(proportional, integral, derivative)
 
+    def set_pid_parameters(self, output: int, p: float, i: float, d: float):
+
+        self.output[output].set_pid_parameters(p, i, d)
+
     def get_pid_parameters(self, output: int):
 
         return self.output[output].get_pid_parameters()
@@ -650,7 +654,7 @@ class LakeShore336Simulator(LakeShore336Interface):
     #
     #     self.output[output].temperature_setpoint = temperature
 
-    def get_temperature_setpoint(self, output_channel: str):
+    def get_temperature_setpoint(self, output_channel: int):
 
         return self.output[output_channel].temperature_setpoint
     #
@@ -662,9 +666,13 @@ class LakeShore336Simulator(LakeShore336Interface):
     #
     #     return self.output[output].heater_range
 
+    def set_heater_output(self, output_channel: int, heater_output: float):
+
+        self.output[output_channel].output = heater_output
+
     def get_heater_output(self, output_channel: int):
 
-        return self.output[output_channel].heater_quantity
+        return self.output[output_channel].output
 
     def get_temperature(self, input_channel: str):
 
