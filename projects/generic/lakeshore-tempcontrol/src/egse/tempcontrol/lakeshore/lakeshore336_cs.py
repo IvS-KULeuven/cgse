@@ -47,9 +47,7 @@ class LakeShore336ControlServer(ControlServer):
             simulator (bool): Indicates whether the LakeShore336 Control Server should be started in simulator mode
         """
 
-        super().__init__()
-
-        self.device_id = device_id  # TODO Shouldn't every CS have a device ID?
+        super().__init__(device_id=device_id)
 
         self.device_protocol = LakeShore336Protocol(self, device_id, simulator=simulator)
 

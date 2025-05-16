@@ -103,12 +103,13 @@ class ControlServer(metaclass=abc.ABCMeta):
 
     """
 
-    def __init__(self):
+    def __init__(self, device_id: str = None):
         """Initialisation of a new Control Server."""
 
         from egse.monitoring import MonitoringProtocol
         from egse.services import ServiceProtocol
 
+        self.device_id = device_id
         self._process_status = ProcessStatus()
 
         self._timer_thread = threading.Thread(
