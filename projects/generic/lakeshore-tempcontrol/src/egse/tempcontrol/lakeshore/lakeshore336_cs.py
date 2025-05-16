@@ -10,6 +10,7 @@ import zmq
 from egse.control import is_control_server_active, ControlServer
 from egse.services import ServiceProxy
 from egse.settings import Settings
+from egse.storage import store_housekeeping_information
 from egse.tempcontrol.lakeshore.lakeshore336 import LakeShore336Proxy
 from egse.tempcontrol.lakeshore.lakeshore336_protocol import LakeShore336Protocol
 from egse.zmq_ser import connect_address
@@ -219,5 +220,5 @@ def status(device_id: str):
             rich.print(f"mode: {'simulator' if sim else 'device'}{' not' if not connected else ''} connected")
             rich.print(f"hostname: {ip}")
     else:
-        print("Control Server is inactive")
+        rich.print(f"{device_id} CS: [red]inactive")
 
