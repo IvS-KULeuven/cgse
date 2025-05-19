@@ -4,18 +4,20 @@ import logging
 import rich
 import typer
 
+from egse.registry.client import AsyncRegistryClient
+from egse.system import TyperAsyncCommand
 from ._start import start_rs_cs, start_log_cs, start_sm_cs, start_cm_cs
 from ._stop import stop_rs_cs, stop_log_cs, stop_sm_cs, stop_cm_cs
 from ._status import run_all_status
 
-app = typer.Typer(
+core = typer.Typer(
     name="core",
     help="handle core services: start, stop, status",
     no_args_is_help=True
 )
 
 
-@app.command(name="start")
+@core.command(name="start")
 def start_core_services():
     """Start the core services in the background."""
 
@@ -27,7 +29,7 @@ def start_core_services():
     start_cm_cs()
 
 
-@app.command(name="stop")
+@core.command(name="stop")
 def stop_core_services():
     """Stop the core services."""
 
@@ -39,7 +41,7 @@ def stop_core_services():
     stop_rs_cs()
 
 
-@app.command(name="status")
+@core.command(name="status")
 def status_core_services(full: bool = False):
     """Print the status of the core services."""
     # from scripts._status import status_log_cs, status_sm_cs, status_cm_cs
@@ -52,3 +54,19 @@ def status_core_services(full: bool = False):
     rich.print("[green]Status of the core services...[/]")
 
     asyncio.run(run_all_status(full))
+
+
+reg = typer.Typer(
+    name="registry",
+    help="handle registry services: start, stop, status",
+    no_args_is_help=True
+)
+
+
+@reg.command(cls=TyperAsyncCommand, name="show-services")
+async def reg_show_services():
+    """Print the active services that are registered."""
+    with AsyncRegistryClient() as client:
+        services = await client.list_services()
+
+        rich.print(services)
