@@ -796,7 +796,7 @@ class Setup(NavigableDict):
     #     return devices
 
     @staticmethod
-    def find_devices(node: NavigableDict, devices: dict = None) -> dict[str, tuple[str, tuple]]:
+    def find_devices(node: NavigableDict, devices: dict = None) -> dict[str, tuple[str, str, tuple]]:
         """
         Returns a dictionary with the devices that are included in the setup.  The keys
         in the dictionary are taken from the "device_name" entries in the setup file. The
@@ -818,15 +818,20 @@ class Setup(NavigableDict):
                 if ("device" in sub_node) and ("device_name" in sub_node):
                     device = sub_node.get_raw_value("device")
 
+                    if "device_id" in sub_node:
+                        device_id = sub_node.get_raw_value("device_id")
+                    else:
+                        device_id = None
+
                     if "device_args" in sub_node:
                         device_args = sub_node.get_raw_value("device_args")
                     else:
                         device_args = ()
 
-                    devices[sub_node["device_name"]] = (device, device_args)
+                    devices[sub_node["device_name"]] = (device, device_id, device_args)
 
                 else:
-                    Setup.find_devices(sub_node, devices=devices)
+                    devices = Setup.find_devices(sub_node, devices=devices)
 
         return devices
 
