@@ -29,11 +29,13 @@ from egse.hexapod.symetrie import ProxyFactory
 from egse.hexapod.symetrie import get_hexapod_controller_pars
 from egse.hexapod.symetrie import logger
 from egse.hexapod.symetrie.puna_protocol import PunaProtocol
+from egse.registry.client import RegistryClient
+from egse.services import ServiceProxy
 from egse.settings import Settings
 from egse.storage import store_housekeeping_information
 from egse.zmq_ser import connect_address
 
-CTRL_SETTINGS = Settings.load("Hexapod PUNA Control Server")
+CTRL_SETTINGS = Settings.load("Hexapod Control Server")
 
 
 class PunaControlServer(ControlServer):
@@ -58,6 +60,8 @@ class PunaControlServer(ControlServer):
     def __init__(self, device_id: str, simulator: bool = False):
         super().__init__()
 
+        multiprocessing.current_process().name = "puna_cs"
+
         self.logger = logger
 
         self.device_id = device_id
@@ -66,6 +70,8 @@ class PunaControlServer(ControlServer):
         self.device_protocol.bind(self.dev_ctrl_cmd_sock)
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
+
+        self.register_service(service_type=f"{device_id}")
 
     def get_communication_protocol(self):
         return CTRL_SETTINGS.PROTOCOL
@@ -114,9 +120,10 @@ class PunaControlServer(ControlServer):
         unregister_from_storage_manager(origin=self.get_storage_mnemonic())
 
     def before_serve(self):
-        multiprocessing.current_process().name = "puna_cs"
-
         start_http_server(CTRL_SETTINGS.METRICS_PORT)
+
+    def after_serve(self) -> None:
+        self.deregister_service()
 
 
 app = typer.Typer()
@@ -167,44 +174,62 @@ def start(
 def stop(device_id: str):
     """Send a 'quit_server' command to the Hexapod Puna Control Server."""
 
-    *_, device_type, controller_type = get_hexapod_controller_pars(device_id)
+    with RegistryClient() as reg:
+        service = reg.discover_service(device_id)
+        rich.print("service = ", service)
 
-    factory = ProxyFactory()
+        if service:
+            proxy = ServiceProxy(protocol="tcp", hostname=service["host"], port=service['metadata']['service_port'])
+            proxy.quit_server()
+        else:
+            *_, device_type, controller_type = get_hexapod_controller_pars(device_id)
 
-    try:
-        with factory.create(device_type, device_id=device_id) as proxy:
-            sp = proxy.get_service_proxy()
-            sp.quit_server()
-    except ConnectionError:
-        rich.print("[red]Couldn't connect to 'puna_cs', process probably not running. ")
+            factory = ProxyFactory()
+            try:
+                with factory.create(device_type, device_id=device_id) as proxy:
+                    sp = proxy.get_service_proxy()
+                    sp.quit_server()
+            except ConnectionError:
+                rich.print("[red]Couldn't connect to 'puna_cs', process probably not running. ")
 
 
 @app.command()
 def status(device_id: str):
     """Request status information from the Control Server."""
 
-    # This information should come from the Service Registry
-
-    protocol = CTRL_SETTINGS.PROTOCOL
-    hostname_cs = CTRL_SETTINGS.HOSTNAME
-    port_cs = CTRL_SETTINGS.COMMANDING_PORT
-
-    endpoint = connect_address(protocol, hostname_cs, port_cs)
-
     *_, device_type, controller_type = get_hexapod_controller_pars(device_id)
+
+    with RegistryClient() as reg:
+        service = reg.discover_service(device_id)
+        # rich.print("service = ", service)
+
+        if service:
+            protocol = service.get('protocol', 'tcp')
+            hostname = service['host']
+            port = service['port']
+            service_port = service['metadata']['service_port']
+            monitoring_port = service['metadata']['monitoring_port']
+            endpoint = connect_address(protocol, hostname, port)
+            # rich.print(f"{endpoint = }")
+        else:
+            rich.print(f"[red]The PUNA CS '{device_id}' isn't registered as a service. I cannot contact the control "
+                       f"server without the required info from the service registry.[/]")
+            return
 
     factory = ProxyFactory()
 
     if is_control_server_active(endpoint):
         rich.print("PUNA Hexapod: [green]active")
-        with factory.create(device_type, device_id=device_id) as puna:
+        with factory.create(device_type, device_id=device_id, protocol=protocol, hostname=hostname, port=port) as puna:
             sim = puna.is_simulator()
             connected = puna.is_connected()
             ip = puna.get_ip_address()
             rich.print(f"type: {controller_type}")
             rich.print(f"mode: {'simulator' if sim else 'device'}{'' if connected else ' not'} connected")
             rich.print(f"hostname: {ip}")
-            rich.print(f"commanding port: {port_cs}")
+            rich.print(f"commanding port: {port}")
+            rich.print(f"service port: {service_port}")
+            rich.print(f"monitoring port: {monitoring_port}")
     else:
         rich.print("PUNA Hexapod: [red]not active")
 
