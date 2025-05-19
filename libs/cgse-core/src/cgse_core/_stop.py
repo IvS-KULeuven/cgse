@@ -51,3 +51,15 @@ def stop_cm_cs():
         stdout=out, stderr=out, stdin=subprocess.DEVNULL,
         close_fds=True
     )
+
+
+def stop_pm_cs():
+    rich.print("Terminating the process manager core service...")
+
+    out = open(Path('~/.pm_cs.stop.out').expanduser(), 'w')
+
+    subprocess.Popen(
+        [sys.executable, '-m', 'egse.procman.procman_cs', 'stop'],
+        stdout=out, stderr=out, stdin=subprocess.DEVNULL,
+        close_fds=True
+    )
