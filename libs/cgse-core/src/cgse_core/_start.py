@@ -51,3 +51,15 @@ def start_cm_cs():
         stdout=out, stderr=out, stdin=subprocess.DEVNULL,
         close_fds=True
     )
+
+
+def start_pm_cs():
+    rich.print("Starting the process manager core service...")
+
+    out = open(Path('~/.pm_cs.start.out').expanduser(), 'w')
+
+    subprocess.Popen(
+        [sys.executable, '-m', 'egse.procman.procman_cs', 'start'],
+        stdout=out, stderr=out, stdin=subprocess.DEVNULL,
+        close_fds=True
+    )
