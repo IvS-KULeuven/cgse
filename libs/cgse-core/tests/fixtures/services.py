@@ -62,7 +62,7 @@ def setup_core_services():
     """This fixture starts the CGSE core services."""
 
     from egse.confman import is_configuration_manager_active
-    from egse.procman import is_process_manager_cs_active
+    from egse.procman import is_process_manager_active
 
     if is_process_running(items=["log_cs"]):
         pytest.xfail("The logging manager is already running")
@@ -127,7 +127,7 @@ def setup_core_services():
         raise RuntimeError("Couldn't start the process manager within the given time of 5s.") from exc
 
     try:
-        waiting_for(is_process_manager_cs_active, timeout=30.0)
+        waiting_for(is_process_manager_active, timeout=30.0)
     except TimeoutError as exc:
         raise RuntimeError("Couldn't connect to process manager even after a timeout of 30s.") from exc
 

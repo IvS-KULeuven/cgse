@@ -37,10 +37,7 @@ HERE = Path(__file__).parent
 CTRL_SETTINGS = Settings.load("Process Manager Control Server")
 COMMAND_SETTINGS = Settings.load(location=HERE, filename="procman.yaml")
 
-LOGGER = logging.getLogger(__name__)
-
-
-def is_process_manager_cs_active(timeout: float = 0.5):
+def is_process_manager_active(timeout: float = 0.5):
     """Checks if the Process Manager Control Server is active.
 
     To check whether the Control Server is active, a "Ping" command is sent.
