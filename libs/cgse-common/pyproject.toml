@@ -1,6 +1,6 @@
 [project]
 name = "cgse-common"
-version = "0.7.3"
+version = "0.8.0"
 description = "Software framework to support hardware testing"
 authors = [
     {name = "IvS KU Leuven"}
