@@ -16,7 +16,6 @@ from egse.zmq_ser import bind_address
 
 _HERE = Path(__file__).parent
 
-ctrl_settings = Settings.load("Hexapod ZONDA Control Server")
 zonda_settings = Settings.load(filename="zonda.yaml", location=_HERE)
 
 
@@ -111,13 +110,13 @@ class ZondaProtocol(CommandProtocol):
         result["Homing done"] = self.hexapod.is_homing_done()
         result["In position"] = self.hexapod.is_in_position()
 
-        hk_dict = convert_hk_names(result, self.hk_conversion_table)
+        # hk_dict = convert_hk_names(result, self.hk_conversion_table)
 
-        for key, value in hk_dict.items():
-            if key != "timestamp":
-                self.metrics[key].set(value)
+        # for key, value in hk_dict.items():
+        #     if key != "timestamp":
+        #         self.metrics[key].set(value)
 
-        return hk_dict
+        return result  # hk_dict
 
     def is_connected(self):
         # FIXME(rik): There must be another way to check if the socket is still alive...

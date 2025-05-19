@@ -2,6 +2,7 @@
 This module defines the device classes to be used to connect to and control the Hexapod ZONDA from Symétrie.
 """
 import math
+import random
 import time
 from typing import Dict
 
@@ -9,11 +10,13 @@ from egse.device import DeviceInterface
 from egse.hexapod import HexapodError
 from egse.hexapod.symetrie import logger
 from egse.hexapod.symetrie.alpha import AlphaPlusControllerInterface
+from egse.hexapod.symetrie.hexapod import HexapodSimulator
 from egse.hexapod.symetrie.zonda_devif import RETURN_CODES
 from egse.hexapod.symetrie.zonda_devif import ZondaError
 from egse.hexapod.symetrie.zonda_devif import ZondaTelnetInterface
 from egse.hexapod.symetrie.zonda_devif import decode_command
 from egse.proxy import Proxy
+from egse.registry.client import RegistryClient
 from egse.settings import Settings
 from egse.system import Timer
 from egse.system import wait_until
@@ -21,7 +24,6 @@ from egse.zmq_ser import connect_address
 from numpy import loadtxt
 from time import sleep
 
-CTRL_SETTINGS = Settings.load("Hexapod ZONDA Control Server")
 DEVICE_SETTINGS = Settings.load(filename="zonda.yaml")
 
 HOME_COMPLETE = 6
@@ -678,7 +680,7 @@ class ZondaController(ZondaInterface):
         print('Sequence "' + file_path + '" done with success!')
 
 
-class ZondaSimulator(ZondaInterface):
+class ZondaSimulator(HexapodSimulator, DeviceInterface):
     """
     HexapodSimulator simulates the Symétrie Hexapod ZONDA. The class is heavily based on the
     ReferenceFrames in the `egse.coordinates` package.
@@ -691,80 +693,45 @@ class ZondaSimulator(ZondaInterface):
 
     This class simulates all the movements and status of the Hexapod.
     """
-    def __init__(self):
-        # Keep a record if the homing() command has been executed.
 
+    def __init__(self):
         super().__init__()
 
-        self.homing_done = False
-        self.control_loop = False
-        self._virtual_homing = False
-        self._virtual_homing_position = None
-
-    def is_simulator(self):
-        return True
-
-    def connect(self):
-        pass
-
-    def reconnect(self):
-        pass
-
-    def disconnect(self):
-        # TODO:
-        #   Should I keep state in this class to check if it has been disconnected?
-        #
-        # TODO:
-        #   What happens when I re-connect to this Simulator? Shall it be in Homing position or
-        #   do I have to keep state via a persistency mechanism?
-        pass
-
-    def is_connected(self):
-        return True
-
-    def clear_error(self):
-        return 0
-
-    def homing(self):
-        self.goto_zero_position()
-        self.homing_done = True
-        self._virtual_homing = False
-        self._virtual_homing_position = None
-        return 0
-
-    def is_homing_done(self):
-        return self.homing_done
-
-    def activate_control_loop(self):
-        self.control_loop = True
-        return self.control_loop
-
-    def deactivate_control_loop(self):
-        self.control_loop = False
-        return self.control_loop
-
-    pass
+    def get_temperature(self) -> list[float]:
+        return [random.random() for _ in range(6)]
 
 
 class ZondaProxy(Proxy, ZondaInterface):
     """The ZondaProxy class is used to connect to the control server and send commands to the
-    Hexapod ZONDA remotely."""
+    Hexapod ZONDA remotely.
 
-    def __init__(
-            self,
-            protocol=CTRL_SETTINGS.PROTOCOL,
-            hostname=CTRL_SETTINGS.HOSTNAME,
-            port=CTRL_SETTINGS.COMMANDING_PORT,
-    ):
-        """
-        Args:
-            protocol: the transport protocol [default is taken from settings file]
-            hostname: location of the control server (IP address) [default is taken from settings
-            file]
-            port: TCP port on which the control server is listening for commands [default is
-            taken from settings file]
-        """
+    Args:
+        protocol: the transport protocol
+        hostname: location of the control server (IP address)
+        port: TCP port on which the control server is listening for commands
+
+    """
+
+    def __init__(self, protocol: str, hostname: str, port: int):
         super().__init__(connect_address(protocol, hostname, port))
+
+    @classmethod
+    def from_identifier(cls, device_id: str):
+
+        with RegistryClient() as reg:
+            service = reg.discover_service(device_id)
+
+            if service:
+                protocol = service.get('protocol', 'tcp')
+                hostname = service['host']
+                port = service['port']
+
+            else:
+                raise RuntimeError(f"No service registered as {device_id}")
+
+        logger.info(f"{protocol=}:{hostname=}:{port=}")
+
+        return cls(protocol, hostname, port)
 
 
 def decode_validation_error(value) -> Dict:
