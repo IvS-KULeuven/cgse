@@ -787,22 +787,19 @@ class ProcessManagerProxy(Proxy, ProcessManagerInterface):
 
     def __init__(
         self,
-        protocol=CTRL_SETTINGS.PROTOCOL,
-        hostname=CTRL_SETTINGS.HOSTNAME,
-        port=CTRL_SETTINGS.COMMANDING_PORT,
+        protocol: str = CTRL_SETTINGS.PROTOCOL,
+        hostname: str = CTRL_SETTINGS.HOSTNAME,
+        port: int = CTRL_SETTINGS.COMMANDING_PORT,
     ):
-        """Initialisation of a new Proxy for Process Management.
+        """ Initialisation of a new Proxy for Process Management.
 
-        If no connection details (transport protocol, hostname, and port) are
-        not provided, these are taken from the settings file.
+        If no connection details (transport protocol, hostname, and port) are not provided, these are taken from the
+        settings file.
 
         Args:
-            - protocol: Transport protocol [default is taken from settings
-                        file].
-            - hostname: Location of the control server (IP address) [default
-                        is taken from settings file].
-            - port: TCP port on which the Control Server is listening for
-                    commands [default is taken from settings file].
+            protocol (str): Transport protocol.
+            hostname (str): Location of the control server (IP address).
+            port (int): TCP port on which the Control Server is listening for commands.
         """
 
         super().__init__(connect_address(protocol, hostname, port))
