@@ -27,9 +27,11 @@ dependencies = [
 
 [project.scripts]
 log_cs = 'egse.logger.log_cs:app'
+reg_cs = 'egse.registry.server:app'
 sm_cs = 'egse.storage.storage_cs:app'
 cm_cs = 'egse.confman.confman_cs:app'
 pm_cs = 'egse.procman.procman_cs:cli'
+
 
 [project.entry-points."cgse.version"]
 cgse-core = 'egse.version:get_version_installed'
@@ -38,7 +40,8 @@ cgse-core = 'egse.version:get_version_installed'
 cgse-core = "cgse_core:settings.yaml"
 
 [project.entry-points."cgse.service"]
-core = 'cgse_core.services:app'
+core = 'cgse_core.services:core'
+registry = 'cgse_core.services:reg'
 
 [project.entry-points."cgse.explore"]
 explore = "cgse_core.cgse_explore"
