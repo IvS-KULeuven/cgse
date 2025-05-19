@@ -30,7 +30,7 @@ log_cs = 'egse.logger.log_cs:app'
 reg_cs = 'egse.registry.server:app'
 sm_cs = 'egse.storage.storage_cs:app'
 cm_cs = 'egse.confman.confman_cs:app'
-pm_cs = 'egse.procman.procman_cs:cli'
+pm_cs = 'egse.procman.procman_cs:app'
 
 
 [project.entry-points."cgse.version"]
