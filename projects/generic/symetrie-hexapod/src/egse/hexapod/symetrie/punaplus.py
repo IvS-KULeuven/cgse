@@ -1,14 +1,14 @@
 from egse.hexapod.symetrie import ControllerFactory
 from egse.hexapod.symetrie import ProxyFactory
 from egse.hexapod.symetrie import get_hexapod_controller_pars
+from egse.hexapod.symetrie import logger
 from egse.hexapod.symetrie.dynalpha import AlphaPlusControllerInterface
 from egse.hexapod.symetrie.dynalpha import AlphaPlusTelnetInterface
 from egse.mixin import DynamicCommandMixin
 from egse.proxy import DynamicProxy
+from egse.registry.client import RegistryClient
 from egse.settings import Settings
 from egse.zmq_ser import connect_address
-
-CTRL_SETTINGS = Settings.load("Hexapod PUNA Control Server")
 
 
 class PunaPlusInterface(AlphaPlusControllerInterface):
@@ -49,24 +49,35 @@ class PunaPlusController(PunaPlusInterface, DynamicCommandMixin):
 class PunaPlusProxy(DynamicProxy, PunaPlusInterface):
     """
     The PunaPlusProxy class is used to connect to the control server and send commands to the
-    Hexapod PUNA remotely. The devce controller for that PUNA hexapod is an Alpha+ controller.
+    Hexapod PUNA remotely. The device controller for that PUNA hexapod is an Alpha+ controller.
+
+    Args:
+        protocol: the transport protocol
+        hostname: location of the control server (IP address)
+        port: TCP port on which the control server is listening for commands
+
     """
 
-    def __init__(
-        self,
-        protocol=CTRL_SETTINGS.PROTOCOL,
-        hostname=CTRL_SETTINGS.HOSTNAME,
-        port=CTRL_SETTINGS.COMMANDING_PORT,
-    ):
-        """
-        Args:
-            protocol: the transport protocol [default is taken from settings file]
-            hostname: location of the control server (IP address) [default is taken from settings
-            file]
-            port: TCP port on which the control server is listening for commands [default is
-            taken from settings file]
-        """
+    def __init__(self, protocol: str, hostname: str, port: int):
         super().__init__(connect_address(protocol, hostname, port))
+
+    @classmethod
+    def from_identifier(cls, device_id: str):
+
+        with RegistryClient() as reg:
+            service = reg.discover_service(device_id)
+
+            if service:
+                protocol = service.get('protocol', 'tcp')
+                hostname = service['host']
+                port = service['port']
+
+            else:
+                raise RuntimeError(f"No service registered as {device_id}")
+
+        logger.info(f"{protocol=}:{hostname=}:{port=}")
+
+        return cls(protocol, hostname, port)
 
 
 if __name__ == "__main__":

@@ -16,8 +16,6 @@ from egse.zmq_ser import bind_address
 
 _HERE = Path(__file__).parent
 
-ctrl_settings = Settings.load("Hexapod PUNA Control Server")
-PUNA_SETTINGS = Settings.load("PMAC Controller")
 DEVICE_SETTINGS = Settings.load(filename="puna.yaml", location=_HERE)
 
 
