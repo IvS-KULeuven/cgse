@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import threading
 from contextlib import asynccontextmanager
 from typing import Any
 from typing import Callable
@@ -14,6 +15,7 @@ import zmq.asyncio
 
 from egse.registry import DEFAULT_RS_PUB_PORT
 from egse.registry import DEFAULT_RS_REQ_PORT
+from egse.system import do_every
 
 REQUEST_TIMEOUT = 5000
 
@@ -39,7 +41,7 @@ class RegistryClient:
         self.registry_req_endpoint = registry_req_endpoint or f"tcp://localhost:{DEFAULT_RS_REQ_PORT}"
         self.registry_sub_endpoint = registry_sub_endpoint or f"tcp://localhost:{DEFAULT_RS_PUB_PORT}"
         self.request_timeout = request_timeout
-        self.logger = logging.getLogger("registry_client")
+        self.logger = logging.getLogger("egse.registry")
 
         # Service state
         self._service_id = None
@@ -183,26 +185,29 @@ class RegistryClient:
             self.logger.error(f"Failed to register service: {response.get('error')}")
             return None
 
-    def deregister(self) -> bool:
+    def deregister(self, service_id: str = None) -> bool:
         """
         Deregister this service from the registry.
 
         Returns:
             True if successful, False otherwise.
         """
-        if not self._service_id:
+
+        service_id = service_id or self._service_id
+
+        if not service_id:
             self.logger.warning("Cannot deregister: no service is registered")
             return False
 
         request = {
             'action': 'deregister',
-            'service_id': self._service_id
+            'service_id': service_id
         }
 
         response = self._send_request(request)
 
         if response.get('success'):
-            self.logger.info(f"Service deregistered: {self._service_id}")
+            self.logger.info(f"Service deregistered: {service_id}")
             self._service_id = None
             self._service_info = None
             self._ttl = None
@@ -311,6 +316,60 @@ class RegistryClient:
 
         response = self._send_request(request)
         return response.get('success', False)
+
+    def start_heartbeat(self, interval: int | None = None) -> None:
+
+        # If interval not specified, use 1/3 of TTL
+        if interval is None:
+            interval = max(1, self._ttl // 3)
+
+        def send_heartbeat():
+            try:
+                request = {
+                    'action': 'renew',
+                    'service_id': self._service_id
+                }
+
+                response = self._send_request(request)
+
+                if not response.get('success'):
+                    self.logger.warning(f"Heartbeat failed: {response.get('error')}")
+
+                    # Do a health check
+                    if not self.health_check():
+                        self.logger.warning("ServiceRegistry not responding.")
+                        return
+
+                    # Try to re-register if heartbeat fails..
+                    if not self.get_service(self._service_id) and self._service_info:
+                        self.logger.info("Attempting to re-register service")
+                        new_request = {
+                            'action': 'register',
+                            'service_info': self._service_info,
+                            'ttl': self._ttl
+                        }
+                        self._send_request(new_request)
+
+                        if response.get('success'):
+                            # Store service information for later use
+                            self._service_id = response.get('service_id')
+
+                            self.logger.info(f"Service registered with ID: {self._service_id}")
+                        else:
+                            self.logger.error(f"Failed to register service: {response.get('error')}")
+
+
+                else:
+                    self.logger.info(response.get("message"))
+            except Exception as exc:
+                self.logger.error(f"Error sending heartbeat: {exc}")
+
+        timer_thread = threading.Thread(target=do_every, args=(interval, send_heartbeat))
+        timer_thread.daemon = True
+        timer_thread.start()
+
+    def stop_heartbeat(self) -> None:
+        ...
 
     def close(self) -> None:
         """Clean up resources."""
@@ -590,6 +649,7 @@ class AsyncRegistryClient:
                             # Try to re-register if heartbeat fails
                             if self._service_info:
                                 self.logger.info("Attempting to re-register service")
+                                self.logger.info(f'service_info: {self._service_info}')
                                 new_request = {
                                     'action': 'register',
                                     'service_info': self._service_info,
