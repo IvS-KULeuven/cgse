@@ -20,8 +20,10 @@ from urllib3.exceptions import NewConnectionError
 from egse.decorators import retry
 from egse.decorators import retry_with_exponential_backoff
 from egse.listener import Listeners
+from egse.registry.client import RegistryClient
 from egse.system import SignalCatcher
 from egse.system import time_in_ms
+from egse.zmq_ser import get_port_number
 
 try:
     # This function is only available when the cgse-core package is installed
@@ -125,6 +127,11 @@ class ControlServer(metaclass=abc.ABCMeta):
         self.listeners = Listeners()
         self.scheduled_tasks = []
 
+        self.registry = RegistryClient()
+        self.registry.connect()
+
+        self.service_id = None
+
         self.interrupted = False
         self.mon_delay = 1000  # Delay between publish status information [ms]
         self.hk_delay = 1000  # Delay between saving housekeeping information [ms]
@@ -155,7 +162,7 @@ class ControlServer(metaclass=abc.ABCMeta):
         # Initialise the poll set
 
         self.poller.register(self.dev_ctrl_service_sock, zmq.POLLIN)
-        self.poller.register(self.dev_ctrl_mon_sock, zmq.POLLIN)
+        self.poller.register(self.dev_ctrl_mon_sock, zmq.POLLIN)  # FIXME: I think this should not be registered
 
         token = os.getenv("INFLUXDB3_AUTH_TOKEN")
         project = os.getenv("PROJECT")
@@ -553,6 +560,8 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         self.after_serve()
 
+        self.registry.disconnect()
+
         self.device_protocol.quit()
 
         self.dev_ctrl_mon_sock.close(linger=0)
@@ -566,8 +575,23 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         self.zcontext.term()
 
-        if self.client:
-            self.client.close()
+    def register_service(self, service_type: str):
+        self.logger.info(f"Registering service ControlServer as type {service_type}")
+        self.service_id = self.registry.register(
+            name=type(self).__name__,
+            host=get_host_ip() or "127.0.0.1",
+            port=get_port_number(self.dev_ctrl_cmd_sock),
+            service_type=service_type,
+            metadata={
+                'service_port': get_port_number(self.dev_ctrl_service_sock),
+                'monitoring_port': get_port_number(self.dev_ctrl_mon_sock),
+            }
+        )
+        self.registry.start_heartbeat()
+
+    def deregister_service(self):
+        if self.registry:
+            self.registry.deregister(self.service_id)
 
     def store_housekeeping_information(self, data: dict) -> None:
         """Sends housekeeping information to the Storage Manager.
