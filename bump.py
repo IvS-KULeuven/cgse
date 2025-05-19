@@ -1,18 +1,17 @@
+#!/usr/bin/env -S uv run --script
 """
-This script bumps the version of all libs and projects in this monorepo to the version that
-is currently in the `pyproject.toml` file in the root folder of the monorepo.
+This script bumps the version of all libs and projects in this monorepo. The version that
+is currently in the `pyproject.toml` file in the root folder of the monorepo is used as the
+current version to be updated based on the argument, i.e. patch, minor, or major.
 
 Usage:
-    $ python bump.py <part>
+    $ ./bump.py <part>
 
 where `<part>` should be 'patch', 'minor', or 'major'.
 
 Note:
-    You are expected to be in the minimal virtual environment associated with this monorepo,
-    being a `pyenv` or Poetry environment, or your global environment shall include the tomlkit
-    and the rich package.
-
-    Alternatively (and preferably) you can use `uv run build.py <part>` to run this script.
+    The script should be executable and can be run directly as shown above.
+    Alternatively, you can use `uv run build.py <part>` to run this script.
 
 """
 
@@ -86,13 +85,13 @@ def update_all_projects_in_monorepo(root_dir: pathlib.Path, part: str, dry_run: 
     Updates all pyproject.toml files with the master version number.
 
     Parameters:
-        root_dir:
-        part:
-        dry_run:
-        verbose:
+        root_dir: the root folder of the monorepo
+        part: which part of the version to bump, 'patch', 'minor', or 'major'
+        dry_run: don't do anything, only report what will be done [default=False]
+        verbose: print more information during updates [default=True]
     """
 
-    excluded_subdirs = ["__pycache__", ".venv", ".git", ".idea", "cgse/build", "cgse/dist"]
+    excluded_subdirs = ["__pycache__", ".venv", ".git", ".idea", ".nox", "cgse/build", "cgse/dist"]
 
     master_version = get_master_version(os.path.join(root_dir, "pyproject.toml"))
 
