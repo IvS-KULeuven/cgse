@@ -1,38 +1,22 @@
-"""
-This module provides Process Management functionality for the Common-EGSE.
-"""
-import importlib
 import logging
 import pickle
-import time
-
-import sys
+import textwrap
 from pathlib import Path
 
 import zmq
 
 from egse.command import ClientServerCommand
 from egse.confman import ConfigurationManagerProxy
-from egse.control import ControlServer
-from egse.response import Success, Failure
+from egse.control import is_control_server_active
 from egse.decorators import dynamic_interface
-from egse.dpu import fitsgen
-from egse.dpu.dpu_cs import is_dpu_cs_active
-from egse.fee import n_fee_hk
-from egse.fov import fov_hk
-from egse.process import SubProcess
-from egse.protocol import CommandProtocol
 from egse.proxy import Proxy
 from egse.settings import Settings
-from egse.setup import Setup
-from egse.state import GlobalState
+from egse.setup import Setup, load_setup
 from egse.storage import is_storage_manager_active
-from egse.system import find_class
-from egse.system import format_datetime
-from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
 
 HERE = Path(__file__).parent
+LOGGER = logging.getLogger(__name__)
 
 CTRL_SETTINGS = Settings.load("Process Manager Control Server")
 COMMAND_SETTINGS = Settings.load(location=HERE, filename="procman.yaml")
