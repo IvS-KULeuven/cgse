@@ -45,6 +45,7 @@ import logging
 from typing import NamedTuple
 
 from egse.device import DeviceFactoryInterface
+from egse.registry.client import RegistryClient
 from egse.settings import Settings
 from egse.settings import SettingsError
 
@@ -70,7 +71,7 @@ def get_hexapod_controller_pars(device_id: str) -> HexapodInfo:
     All values are derived from the Settings.
     """
 
-    logger.info(f"Getting parameters for {device_id} controller...")
+    logger.debug(f"Getting parameters for {device_id} controller...")
 
     try:
         hostname: str = HEXAPOD_SETTINGS[device_id]["HOSTNAME"]
@@ -81,7 +82,7 @@ def get_hexapod_controller_pars(device_id: str) -> HexapodInfo:
     except (KeyError, AttributeError) as exc:
         raise SettingsError("The Settings do not contain proper controller parameters for the Hexapod.") from exc
 
-    logger.info(f"{hostname=}, {port=}, {device_id=}, {device_name=}, {device_type=}, {controller_type=}")
+    logger.debug(f"{hostname=}, {port=}, {device_id=}, {device_name=}, {device_type=}, {controller_type=}")
     return HexapodInfo(hostname, port, device_id, device_name, device_type, controller_type)
 
 
@@ -95,25 +96,36 @@ class ProxyFactory(DeviceFactoryInterface):
 
     def create(self, device_type: str, *, device_id: str = None, **_ignored):
 
+        with RegistryClient() as reg:
+            service = reg.discover_service(device_id)
+
+            if service:
+                protocol = service.get('protocol', 'tcp')
+                hostname = service['host']
+                port = service['port']
+
+            else:
+                raise RuntimeError(f"No service registered as {device_id}")
+
         if "puna" in device_type.lower():
 
             controller_type = HEXAPOD_SETTINGS[device_id]["CONTROLLER_TYPE"]
             if controller_type.lower() == "alpha":
                 from egse.hexapod.symetrie.puna import PunaProxy
-                return PunaProxy()
+                return PunaProxy(protocol, hostname, port)
             elif controller_type == "alpha_plus":
                 from egse.hexapod.symetrie.punaplus import PunaPlusProxy
-                return PunaPlusProxy()
+                return PunaPlusProxy(protocol, hostname, port)
             else:
                 raise ValueError(f"Unknown controller_type ({controller_type}) for {device_type} – {device_id}")
 
         elif "zonda" in device_type.lower():
             from egse.hexapod.symetrie.zonda import ZondaProxy
-            return ZondaProxy()
+            return ZondaProxy(protocol, hostname, port)
 
         elif "joran" in device_type.lower():
             from egse.hexapod.symetrie.joran import JoranProxy
-            return JoranProxy()
+            return JoranProxy(protocol, hostname, port)
 
         else:
             raise ValueError(f"Unknown device type: {device_type}")
