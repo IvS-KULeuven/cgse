@@ -253,7 +253,7 @@ class BaseProxy(ControlServerConnectionInterface):
 
         transport, address, _ = split_address(self._endpoint)
 
-        port = self.send("get_service_port")
+        port = self.send("get_service_port")  # FIXME: Check if this is still returning the proper port
 
         return ServiceProxy(AttributeDict({"PROTOCOL": transport, "HOSTNAME": address, "SERVICE_PORT": port}))
 
