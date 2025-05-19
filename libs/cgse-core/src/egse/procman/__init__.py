@@ -22,161 +22,49 @@ CTRL_SETTINGS = Settings.load("Process Manager Control Server")
 COMMAND_SETTINGS = Settings.load(location=HERE, filename="procman.yaml")
 
 def is_process_manager_active(timeout: float = 0.5):
-    """Checks if the Process Manager Control Server is active.
+    """ Checks if the Process Manager Control Server is active.
 
-    To check whether the Control Server is active, a "Ping" command is sent.
-    If a "Pong" reply is received before timeout, the Control Server is said
-    to be active (and True will be returned).  If no reply is received before
-    timeout or if the reply is not "Pong", the Control Server is said to be
-    inactive (and False will be returned).
+    To check whether the Process Manager is active, a "Ping" command is sent.  If a "Pong" reply is received before
+    timeout, that means that the Control Server is active (and True will be returned).  If no reply is received before
+    timeout or if the reply is not "Pong", the Control Server is inactive (and False will be returned).
 
     Args:
-        - timeout (float): Timeout when waiting for a reply [s].
+        - timeout (float): Timeout when waiting for a reply [s] from the Control Server
 
-    Returns:
-        True if the Process Manager Control Server is active; False otherwise.
+    Returns: True if the Process Manager Control Server is active; False otherwise.
     """
 
-    # Create a socket and connect it to the commanding port of the CS
+    endpoint = connect_address(CTRL_SETTINGS.PROTOCOL, CTRL_SETTINGS.HOSTNAME, CTRL_SETTINGS.COMMANDING_PORT)
 
-    socket = zmq.Context.instance().socket(zmq.REQ)
-    endpoint = connect_address(
-        CTRL_SETTINGS.PROTOCOL, CTRL_SETTINGS.HOSTNAME, CTRL_SETTINGS.COMMANDING_PORT
-    )
-    socket.connect(endpoint)
-
-    # Send a "Ping" command and wait for a reply
-    # (but not beyond timeout)
-
-    data = pickle.dumps("Ping")
-    socket.send(data)
-    rlist, _, _ = zmq.select([socket], [], [], timeout=timeout)
-
-    # Reply received before timeout
-    # (should be "Pong")
-
-    status = False
-
-    if socket in rlist:
-
-        # Only if the reply is "Pong", the CS is active
-
-        data = socket.recv()
-        response = pickle.loads(data)
-
-        status = response == "Pong"
-
-    # No reply received -> inactive
-
-    socket.close(linger=0)
-
-    return status
+    return is_control_server_active(endpoint, timeout)
 
 
-class ProcessManagerProtocol(CommandProtocol):
+def get_status():
+    """ Returns a string representing the status of the Process Manager.
 
-    """
-    Command Protocol for Process Management.
+    Returns: String representation of the status of the Process Manager.
     """
 
-    def __init__(self, control_server: ControlServer):
-        """Initialisation of a new Protocol for Process Management.
+    if is_process_manager_active():
+        with ProcessManagerProxy() as sm:
+            text =  textwrap.dedent(
+                f"""\
+                Process Manager:
+                    Status: [green]active[/]
+                    Hostname: {sm.get_ip_address()}
+                    Monitoring port: {sm.get_monitoring_port()}
+                    Commanding port: {sm.get_commanding_port()}
+                    Service port: {sm.get_service_port()}
+                """
+            )
+        return text
 
-        The initialisation of this Protocol consists of the following steps:
+    else:
+        return "Process Manager Status: [red]not active"
 
-            - create a Controller to which the given Control Server should send commands;
-            - load the commands;
-            - build a look-up table for the commands.
-
-        Args:
-            - control_server: Control Server via which commands should be sent
-                              to the Controller.
-        """
-
-        super().__init__(control_server)
-
-        # Create a new Controller for Process Management
-
-        self.controller = ProcessManagerController()
-
-        # Load the commands (for commanding of the PM Controller) from the
-        # YAML file into a dictionary, stored in the PM Protocol
-
-        self.load_commands(
-            COMMAND_SETTINGS.Commands, ProcessManagerCommand, ProcessManagerController
-        )
-
-        # Build a look-up table for the methods
-
-        self.build_device_method_lookup_table(self.controller)
-
-    def get_bind_address(self):
-        """Returns the address to bind a socket to.
-
-        This bind address is a properly formatted URL, based on the
-        communication protocol and the commanding port.
-
-        Returns:
-            - Properly formatted URL to bind a socket to.
-        """
-
-        return bind_address(
-            self.control_server.get_communication_protocol(),
-            self.control_server.get_commanding_port(),
-        )
-
-    def get_status(self) -> dict:
-        """Returns the status information for the Control Server.
-
-        This status information is returned in the form of a dictionary that
-        contains the following information about the Control Server for
-        Process Management:
-
-            - timestamp (str): string representation of the current datetime;
-            - PID (int): process ID for the Control Server;
-            - Up (float): uptime of the Control Server [s];
-            - UUID (uuid1): Universally Unique Identifier for the Control
-                            Server;
-            - RSS (int): 'Resident Set Size', this is the non-swapped physical
-                         memory a process has used [byte];
-            - USS (int): 'Unique Set Size', this is the memory which is unique
-                         to a process [byte];
-            - CPU User (float): time spent in user mode [s];
-            - CPU System (float): time spent in kernel mode [s];
-            - CPU count: number of CPU cores in use by the process;
-            - CPU% (float): process CPU utilization as a percentage [%].
-
-        Returns:
-            - Dictionary with status information for the Control Server for
-              Process Management.
-        """
-
-        return super().get_status()
-
-    def get_housekeeping(self) -> dict:
-        """Returns the housekeeping data for the Control Server.
-
-        This housekeeping data is returns in the form of a dictionary that
-        contains the following information about the Control Server for
-        Process Management:
-
-            - timestamp (str): string representation of the current datetime.
-
-        Returns:
-            - Dictionary with housekeeping data for the Control Server for
-              Process Management.
-        """
-
-        return {"timestamp": format_datetime()}
-
-    def quit(self):
-        self.controller.quit()
 
 class ProcessManagerCommand(ClientServerCommand):
-
-    """
-    Command (client-server) for Process Management.
-    """
+    """ Client-server command for the Process Manager."""
 
     pass
 
