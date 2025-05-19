@@ -27,26 +27,8 @@ from rich.traceback import Traceback
 
 from egse.plugin import entry_points
 from egse.system import get_package_description
-# from scripts import services
 
-app = typer.Typer(add_completion=True)
-# app.add_typer(services.app, name="core")
-
-
-@app.command()
-def version():
-    """Prints the version of the cgse-core and other registered packages."""
-    from egse.version import get_version_installed
-
-    # if installed_version := get_version_installed("cgse-core"):
-    #     rich.print(f"CGSE-CORE installed version = [bold default]{installed_version}[/]")
-
-    for ep in sorted(entry_points("cgse.version"), key=lambda x: x.name):
-        if installed_version := get_version_installed(ep.name):
-            rich.print(
-                f"{ep.name.upper()} installed version = [bold default]{installed_version}[/] — "
-                f"{get_package_description(ep.name)}"
-            )
+from typer.core import TyperGroup
 
 
 def broken_command(name: str, module: str, exc: Exception):
@@ -71,6 +53,50 @@ def broken_command(name: str, module: str, exc: Exception):
 
 
 # Load the known plugins for the `cgse` command. Plugins are added as commands to the `cgse`.
+
+class SortedCommandGroup(TyperGroup):
+    """This class sorts the commands based on the following criteria:
+
+    - a few priority commands come first
+    - the rest of the commands are sorted alphabetically
+
+    """
+    def list_commands(self, ctx):
+        # Get list of all commands
+        commands = super().list_commands(ctx)
+
+        # Define priority commands in specific order
+        priority_commands = ["init", "version", "show", "top"]
+
+        # Custom sort:
+        # First the priority commands in the given order (their index)
+        # Then the rest of the commands, alphabetically
+        def get_command_priority(command_name):
+            if command_name in priority_commands:
+                return 0, priority_commands.index(command_name)
+            return 1, command_name  # Using tuple for consistent sorting
+
+        return sorted(commands, key=get_command_priority)
+
+
+app = typer.Typer(add_completion=True, cls=SortedCommandGroup)
+
+
+@app.command()
+def version():
+    """Prints the version of the cgse-core and other registered packages."""
+    from egse.version import get_version_installed
+
+    # if installed_version := get_version_installed("cgse-core"):
+    #     rich.print(f"CGSE-CORE installed version = [bold default]{installed_version}[/]")
+
+    for ep in sorted(entry_points("cgse.version"), key=lambda x: x.name):
+        if installed_version := get_version_installed(ep.name):
+            rich.print(
+                f"{ep.name.upper()} installed version = [bold default]{installed_version}[/] — "
+                f"{get_package_description(ep.name)}"
+            )
+
 
 for ep in entry_points("cgse.command"):
     try:
