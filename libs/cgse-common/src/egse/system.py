@@ -20,6 +20,7 @@ import datetime
 import functools
 import importlib
 import importlib.metadata
+import importlib.util
 import inspect
 import itertools
 import logging
@@ -2133,6 +2134,11 @@ def log_rich_output(logger_: logging.Logger, level: int, obj: Any):
     captured_output = capture.get()
 
     logger_.log(level, captured_output)
+
+
+def is_package_installed(package_name):
+    """Check if a package is installed."""
+    return importlib.util.find_spec(package_name) is not None
 
 
 ignore_m_warning("egse.system")
