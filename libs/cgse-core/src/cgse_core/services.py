@@ -7,8 +7,8 @@ import typer
 
 from egse.registry.client import AsyncRegistryClient
 from egse.system import TyperAsyncCommand
-from ._start import start_rs_cs, start_log_cs, start_sm_cs, start_cm_cs
-from ._stop import stop_rs_cs, stop_log_cs, stop_sm_cs, stop_cm_cs
+from ._start import start_rs_cs, start_log_cs, start_sm_cs, start_cm_cs, start_pm_cs
+from ._stop import stop_rs_cs, stop_log_cs, stop_sm_cs, stop_cm_cs, stop_pm_cs
 from ._status import run_all_status
 
 core = typer.Typer(
@@ -28,6 +28,7 @@ def start_core_services():
     start_log_cs()
     start_sm_cs()
     start_cm_cs()
+    start_pm_cs()
 
 
 @core.command(name="stop")
@@ -36,6 +37,7 @@ def stop_core_services():
 
     rich.print("[green]Terminating the core services...[/]")
 
+    stop_pm_cs()
     stop_cm_cs()
     stop_sm_cs()
     stop_log_cs()
