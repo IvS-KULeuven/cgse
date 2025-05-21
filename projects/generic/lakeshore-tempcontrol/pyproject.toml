@@ -1,6 +1,6 @@
 [project]
 name = "lakeshore-tempcontrol"
-version = "2025.0.1"
+version = "0.9.0"
 description = "Lakeshore Temperature Control for CGSE"
 authors = [
     {name = "IVS KU Leuven"}
@@ -22,9 +22,9 @@ keywords = [
 dependencies = [
     "cgse-common",
     "cgse-core",
+    "cgse-tools",
     "cgse-gui",
     "PyQt5>=5.15.11",
-    "rich",
 ]
 
 [project.optional-dependencies]
