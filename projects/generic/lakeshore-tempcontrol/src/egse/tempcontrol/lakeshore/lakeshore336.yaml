@@ -1,0 +1,94 @@
+BaseClass:
+    egse.tempcontrol.lakeshore.lakeshore336.LakeShoreInterface
+
+ProxyClass:
+    egse.tempcontrol.lakeshore.lakeshore336.LakeShoreProxy
+
+ControlServerClass:
+    egse.tempcontrol.lakeshore.lakeshore336_cs.LakeShoreControlServer
+
+ControlServer:
+    egse.tempcontrol.lakeshore.lakeshore336_cs
+
+Commands:
+
+    # Each of these groups is parsed and used on both the server and the client side.
+    # The group name (e.g. is_simulator) will be monkey-patched in the Proxy class for the device or service.
+    # The other fields are:
+    #   description:   Used by the doc_string method to generate a help string
+    #   cmd:           Command string that will eventually be sent to the hardware controller for the
+    #                  device after the arguments have been filled.
+    #   device_method: The name of the method to be called on the device class.
+    #                  These should all be defined by the base class for the device, i.e. KeithleyBase.
+    #   response:      The name of the method to be called from the device protocol.
+    #                  This method should exist in the sub-class of the CommandProtocol base class, i.e.
+    #                  in this case it will be the KeithleyProtocol class.
+
+    # Definition of the DeviceInterface
+
+    disconnect:
+        description  : Disconnects from the LakeShore336 controller. This command will be sent to the
+                       LakeShore336 Control Server which will then disconnect from the hardware controller.
+                       This command doesn't affect the ZeroMQ connection of this Proxy to the
+                       Control Server. Use the service command `disconnect_cs()` to disconnect
+                       from the Control Server.
+
+    connect:
+        description:    Connects the LakeShore336 hardware controller
+
+    reconnect:
+        description:    Reconnects the LakeShore336 hardware controller.
+                        This command will force a disconnect and then try to re-connect to the controller.
+
+    is_simulator:
+        description:   Asks if the Control Server is a simulator instead of the real LakeShore336Controller class.
+
+    is_connected:
+        description:   Checks if the LakeShore336 hardware controller is connected.
+
+    # Definition of the device commands
+
+    info:
+        description:    Identification query
+                        Returns basic information about the device (manufacturer, model, serial number, firmware version).
+
+    clear_interface:
+        description:    Clear interface command
+                        Clears the bits in the status byte register, standard event status register, and operation 
+                        event register, and terminates all pending operations.  Clears the interface but not the 
+                        controller.  The related controller command is `reset_instrument`.
+
+    reset_instrument:
+        description:    Reset instrument command
+                        Sets the controller parameters to power-up settings.
+
+    get_selftest_result:
+        description:    Selftest query
+                        Reports status based on test done at power-up.
+
+    autotune:
+        description:    Autotune command
+                        Configures autotune parameters.
+        cmd:            '{output_channel}, {mode}'
+
+    get_tuning_status:
+        description:    Returns Tuning Status
+
+    get_temperature:
+        description:    Celsius Temperature Query
+        cmd:            '{input_channel}'
+
+    get_heater_output:
+        description:    Heater Output Query
+        cmd:            '{output_channel}'
+
+    get_pid_parameters:
+        description:    Control Loop PID Values Query
+        cmd:           '{output_channel}'
+
+    get_temperature_setpoint:
+        description:    Control Setpoint Query
+        cmd:            '{output_channel}'
+
+    quit:
+        description:    Cleans up and stops threads that were started by the process
