@@ -21,9 +21,6 @@ from egse.procman.procman_protocol import ProcessManagerProtocol
 from egse.settings import Settings
 from egse.storage import store_housekeeping_information
 
-# Use explicit name here otherwise the logger will probably be called __main__
-
-logger = logging.getLogger("egse.procman.procman_cs")
 
 CTRL_SETTINGS = Settings.load("Process Manager Control Server")
 
@@ -36,8 +33,7 @@ class ProcessManagerControlServer(ControlServer):
 
         self.device_protocol = ProcessManagerProtocol(self)
 
-        self.logger = logger
-        self.logger.debug(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()}")
+        LOGGER.debug(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()}")
 
         self.device_protocol.bind(self.dev_ctrl_cmd_sock)
 
@@ -45,7 +41,7 @@ class ProcessManagerControlServer(ControlServer):
 
         self.set_hk_delay(10.0)
 
-        self.logger.info(f"PM housekeeping saved every {self.hk_delay / 1000:.1f} seconds.")
+        LOGGER.info(f"PM housekeeping saved every {self.hk_delay / 1000:.1f} seconds.")
 
     def get_communication_protocol(self):
 
