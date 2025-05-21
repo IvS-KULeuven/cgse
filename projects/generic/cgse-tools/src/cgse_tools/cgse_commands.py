@@ -75,15 +75,16 @@ def init(project: str = ""):
     Path(conf_data_location).expanduser().mkdir(exist_ok=True, parents=True)
     Path(log_file_location).expanduser().mkdir(exist_ok=True, parents=True)
 
-    with open(Path(local_settings_path).expanduser(), 'w') as fd:
-        fd.write(
-            textwrap.dedent(
-                f"""\
-                SITE:
-                    ID:  {site_id}
-                """
+    if not Path(local_settings_path).expanduser().exists():
+        with open(Path(local_settings_path).expanduser(), 'w') as fd:
+            fd.write(
+                textwrap.dedent(
+                    f"""\
+                    SITE:
+                        ID:  {site_id}
+                    """
+                )
             )
-        )
 
     answer = Confirm.ask("Shall I add the environment to your ~/bash_profile ?")
     if answer:
