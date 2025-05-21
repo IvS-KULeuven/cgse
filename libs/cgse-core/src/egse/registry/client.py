@@ -476,6 +476,7 @@ class AsyncRegistryClient:
 
         Args:
             request: The request to send to the service registry server.
+            timeout: The number of milliseconds to wait
 
         Returns:
             The response from the registry as a dictionary.
@@ -491,7 +492,7 @@ class AsyncRegistryClient:
                 response_json = await asyncio.wait_for(self.req_socket.recv_string(), timeout=timeout)
                 return json.loads(response_json)
             except asyncio.TimeoutError:
-                self.logger.error(f"Request timed out after {timeout}ms")
+                self.logger.error(f"Request timed out after {timeout:.2f}s")
                 # Reset the socket to avoid invalid state
                 self.req_socket.close()
                 self.req_socket = self.context.socket(zmq.REQ)
