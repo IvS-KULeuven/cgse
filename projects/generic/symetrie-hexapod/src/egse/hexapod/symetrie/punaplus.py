@@ -7,7 +7,6 @@ from egse.hexapod.symetrie.dynalpha import AlphaPlusTelnetInterface
 from egse.mixin import DynamicCommandMixin
 from egse.proxy import DynamicProxy
 from egse.registry.client import RegistryClient
-from egse.settings import Settings
 from egse.zmq_ser import connect_address
 
 
