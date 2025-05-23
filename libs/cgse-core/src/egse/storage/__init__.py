@@ -125,6 +125,7 @@ from egse.control import ControlServer
 from egse.env import get_site_id
 from egse.listener import Event
 from egse.listener import EventInterface
+from egse.registry.client import RegistryClient
 from egse.response import Failure
 from egse.response import Response
 from egse.response import Success
@@ -162,9 +163,11 @@ def is_storage_manager_active(timeout: float = 0.5):
         True if the Storage Manager is running and replied with the expected answer.
     """
 
-    endpoint = connect_address(
-        CTRL_SETTINGS.PROTOCOL, CTRL_SETTINGS.HOSTNAME, CTRL_SETTINGS.COMMANDING_PORT
-    )
+    with RegistryClient() as client:
+        endpoint = client.get_endpoint(CTRL_SETTINGS.SERVICE_TYPE)
+
+    if endpoint is None:
+        return False
 
     return is_control_server_active(endpoint, timeout)
 
@@ -1074,13 +1077,7 @@ class StorageProxy(Proxy, StorageInterface, EventInterface):
     """The StorageProxy class is used to connect to the Storage Manager (control server) and
     send commands remotely."""
 
-    def __init__(
-        self,
-        protocol=CTRL_SETTINGS.PROTOCOL,
-        hostname=CTRL_SETTINGS.HOSTNAME,
-        port=CTRL_SETTINGS.COMMANDING_PORT,
-        timeout=REQUEST_TIMEOUT,
-    ):
+    def __init__(self, protocol: str = None, hostname: str = None, port: int = -1, timeout=REQUEST_TIMEOUT):
         """
         Args:
             protocol: the transport protocol [default is taken from settings file]
@@ -1089,6 +1086,17 @@ class StorageProxy(Proxy, StorageInterface, EventInterface):
             port: TCP port on which the control server is listening for commands
                 [default is taken from settings file]
         """
+        if hostname is None:
+            with RegistryClient() as reg:
+                service = reg.discover_service(CTRL_SETTINGS.SERVICE_TYPE)
+
+                if service:
+                    protocol = service.get('protocol', 'tcp')
+                    hostname = service['host']
+                    port = service['port']
+                else:
+                    raise RuntimeError(f"No service registered as {CTRL_SETTINGS.SERVICE_TYPE}")
+
         super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
 
 
