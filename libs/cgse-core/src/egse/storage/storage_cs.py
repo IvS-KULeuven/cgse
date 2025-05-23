@@ -15,21 +15,23 @@ import rich
 import typer
 import zmq
 from apscheduler.schedulers.background import BackgroundScheduler
-from prometheus_client import start_http_server
 from pytz import utc
 
 from egse.control import ControlServer
 from egse.env import get_data_storage_location
 from egse.env import get_site_id
 from egse.process import SubProcess
+from egse.registry.client import RegistryClient
+from egse.services import ServiceProxy
 from egse.settings import Settings
 from egse.storage import StorageProtocol
 from egse.storage import StorageProxy
 from egse.storage import cycle_daily_files
+from egse.zmq_ser import get_port_number
 
 # Use explicit name here otherwise the logger will probably be called __main__
 
-logger = logging.getLogger("egse.storage.storage_cs")
+logger = logging.getLogger("egse.storage")
 
 CTRL_SETTINGS = Settings.load("Storage Control Server")
 SITE_ID = get_site_id()
@@ -43,14 +45,18 @@ class StorageControlServer(ControlServer):
     def __init__(self):
         super().__init__()
 
-        self.device_protocol = StorageProtocol(self)
+        multiprocessing.current_process().name = "sm_cs"
 
         self.logger = logger
+        self.device_protocol = StorageProtocol(self)
+
         self.logger.debug(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()}")
 
         self.device_protocol.bind(self.dev_ctrl_cmd_sock)
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
+
+        self.register_service(service_type=CTRL_SETTINGS.SERVICE_TYPE)
 
         from egse.confman import ConfigurationManagerProxy, is_configuration_manager_active
         from egse.listener import EVENT_ID
@@ -72,25 +78,25 @@ class StorageControlServer(ControlServer):
         self.scheduler.start()
         self.scheduler.add_job(cycle_daily_files, "cron", day="*")
 
-        start_http_server(CTRL_SETTINGS.METRICS_PORT)
-
     def after_serve(self):
         from egse.confman import ConfigurationManagerProxy
 
         self.scheduler.shutdown()
         self.unregister_as_listener(proxy=ConfigurationManagerProxy, listener={'name': 'Storage CS'})
 
+        self.deregister_service()
+
     def get_communication_protocol(self):
-        return CTRL_SETTINGS.PROTOCOL
+        return 'tcp'
 
     def get_commanding_port(self):
-        return CTRL_SETTINGS.COMMANDING_PORT
+        return get_port_number(self.dev_ctrl_cmd_sock) or 0
 
     def get_service_port(self):
-        return CTRL_SETTINGS.SERVICE_PORT
+        return get_port_number(self.dev_ctrl_service_sock) or 0
 
     def get_monitoring_port(self):
-        return CTRL_SETTINGS.MONITORING_PORT
+        return get_port_number(self.dev_ctrl_mon_sock) or 0
 
 
 app = typer.Typer(name="sm_cs", no_args_is_help=True)
@@ -142,12 +148,16 @@ def start_bg():
 @app.command()
 def stop():
     """Send a 'quit_server' command to the Storage Manager."""
-    try:
-        with StorageProxy() as sm:
-            sp = sm.get_service_proxy()
-            sp.quit_server()
-    except ConnectionError:
-        rich.print("[red]ERROR: Couldn't connect to the storage manager.[/]")
+
+    with RegistryClient() as reg:
+        service = reg.discover_service(CTRL_SETTINGS.SERVICE_TYPE)
+        # rich.print("service = ", service)
+
+        if service:
+            proxy = ServiceProxy(protocol="tcp", hostname=service["host"], port=service['metadata']['service_port'])
+            proxy.quit_server()
+        else:
+            rich.print("[red]ERROR: Couldn't connect to 'sm_cs', process probably not running.")
 
 
 @app.command()
