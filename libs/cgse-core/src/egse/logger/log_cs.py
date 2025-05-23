@@ -3,10 +3,13 @@ The Log Server receives all log messages and events from control servers and cli
 and saves those messages in a log file at a given location. The log messages are retrieved over
 a ZeroMQ message channel.
 """
+__all__ = []
+
 import datetime
 import logging
 import multiprocessing
 import pickle
+import sys
 from logging import StreamHandler
 from logging.handlers import SocketHandler
 from logging.handlers import TimedRotatingFileHandler
@@ -16,17 +19,18 @@ from typing import Optional
 import rich
 import typer
 import zmq
-from prometheus_client import Counter
-from prometheus_client import start_http_server
 
 from egse.env import get_log_file_location
-
-from egse.logger import get_log_file_name
+from egse.logger import LOGGER_ID
 from egse.logger import send_request
 from egse.process import SubProcess
+from egse.registry.client import RegistryClient
 from egse.settings import Settings
 from egse.system import format_datetime
+from egse.system import get_caller_info
+from egse.system import get_host_ip
 from egse.zmq_ser import bind_address
+from egse.zmq_ser import get_port_number
 
 CTRL_SETTINGS = Settings.load("Logging Control Server")
 
@@ -50,7 +54,7 @@ LOG_FORMAT_FILE = (
 
 LOG_FORMAT_KEY_VALUE = (
     "level=%(levelname)s ts=%(asctime)s process=%(processName)s process_id=%(process)s "
-    "caller=%(name)s:%(lineno)s msg=\"%(message)s\""
+    "name=%(name)s caller=%(filename)s:%(lineno)s function=%(funcName)s msg=\"%(message)s\""
 )
 
 LOG_FORMAT_DATE = "%Y-%m-%dT%H:%M:%S,%f"
@@ -58,17 +62,17 @@ LOG_FORMAT_DATE = "%Y-%m-%dT%H:%M:%S,%f"
 # The format for the console output.
 # The line that is printed on the console shall be concise.
 
-LOG_FORMAT_STREAM = "%(asctime)s:%(levelname)s:%(name)s:%(message)s"
-
-LOG_RECORDS = Counter(
-    "log_records_count", "Count the number of log records processed", ["source", "name"]
-)
+LOG_FORMAT_STREAM = "%(asctime)s:%(levelname)s:%(name)s:%(filename)s:%(funcName)s:%(message)s"
 
 LOG_LEVEL_FILE = logging.DEBUG
 LOG_LEVEL_STREAM = logging.ERROR
 LOG_LEVEL_SOCKET = 1  # ALL records shall go to the socket handler
 
-LOGGER_NAME = "egse.logger.log_cs"
+LOGGER_NAME = "egse.logger"
+
+PROTOCOL = 'tcp'
+RECEIVER_PORT = 0  # dynamically assigned by the system
+COMMANDER_PORT = 0  # dynamically assigned by the system
 
 file_handler: Optional[TimedRotatingFileHandler] = None
 stream_handler: Optional[StreamHandler] = None
@@ -91,6 +95,13 @@ file_formatter = DateTimeFormatter(fmt=LOG_FORMAT_KEY_VALUE, datefmt=LOG_FORMAT_
 app = typer.Typer(name="log_cs", no_args_is_help=True)
 
 
+def get_log_file_name():
+    """
+    Returns the filename of the log file as defined in the Settings or return the default name 'general.log'.
+    """
+    return CTRL_SETTINGS.get("FILENAME", "general.log")
+
+
 @app.command()
 def start():
     """Start the Logger Control Server."""
@@ -98,8 +109,6 @@ def start():
     global file_handler, stream_handler, socket_handler
 
     multiprocessing.current_process().name = "log_cs"
-
-    start_http_server(CTRL_SETTINGS.METRICS_PORT)
 
     log_file_location = Path(get_log_file_location())
     log_file_name = get_log_file_name()
@@ -121,19 +130,37 @@ def start():
     socket_handler = SocketHandler(CTRL_SETTINGS.TEXTUALOG_IP_ADDRESS, CTRL_SETTINGS.TEXTUALOG_LISTENING_PORT)
     socket_handler.setFormatter(file_formatter)
 
-    context = zmq.Context()
+    context = zmq.Context.instance()
 
-    endpoint = bind_address(CTRL_SETTINGS.PROTOCOL, CTRL_SETTINGS.LOGGING_PORT)
+    endpoint = bind_address(PROTOCOL, RECEIVER_PORT)
     receiver = context.socket(zmq.PULL)
     receiver.bind(endpoint)
 
-    endpoint = bind_address(CTRL_SETTINGS.PROTOCOL, CTRL_SETTINGS.COMMANDING_PORT)
+    endpoint = bind_address(PROTOCOL, COMMANDER_PORT)
     commander = context.socket(zmq.REP)
     commander.bind(endpoint)
 
     poller = zmq.Poller()
     poller.register(receiver, zmq.POLLIN)
     poller.register(commander, zmq.POLLIN)
+
+    client = RegistryClient()
+    client.connect()
+    service_id = client.register(
+        name=LOGGER_ID,
+        host=get_host_ip() or "127.0.0.1",
+        port=get_port_number(commander),
+        service_type="LOGGER",
+        metadata={
+            'receiver_port': get_port_number(receiver),
+        }
+    )
+    if service_id is None:
+        record = _create_log_record(logging.ERROR, "Registration of LOGGER service failed.")
+        handle_log_record(record)
+        return
+
+    client.start_heartbeat()
 
     while True:
         try:
@@ -154,30 +181,42 @@ def start():
                 pickle_string = receiver.recv()
                 record = pickle.loads(pickle_string)
                 record = logging.makeLogRecord(record)
-
                 handle_log_record(record)
 
         except KeyboardInterrupt:
             rich.print("KeyboardInterrupt caught!")
             break
 
-    record = logging.LogRecord(
-        name=LOGGER_NAME,
-        level=logging.WARNING,
-        pathname=__file__,
-        lineno=137,
-        msg="Logger terminated.",
-        args=(),
-        exc_info=None,
-        func="start",
-        sinfo=None
-    )
+    record = _create_log_record(level=logging.WARNING, msg="Logger terminated.")
     handle_log_record(record)
 
     file_handler.close()
     stream_handler.close()
     commander.close(linger=0)
     receiver.close(linger=0)
+
+    client.stop_heartbeat()
+    client.deregister(service_id)
+    client.disconnect()
+
+
+def _create_log_record(level: int, msg: str) -> logging.LogRecord:
+    """Create a LogRecord that can be handled by a Handler."""
+    caller_info = get_caller_info(level=2)
+
+    record = logging.LogRecord(
+        name=LOGGER_NAME,
+        level=level,
+        pathname=caller_info.filename,
+        lineno=caller_info.lineno,
+        msg=msg,
+        args=(),
+        exc_info=None,
+        func=caller_info.function,
+        sinfo=None
+    )
+
+    return record
 
 
 @app.command()
@@ -199,10 +238,6 @@ def handle_log_record(record):
 
     if record.levelno >= LOG_LEVEL_SOCKET:
         socket_handler.handle(record)
-
-    LOG_RECORDS.labels(source="all", name="all").inc()
-    LOG_RECORDS.labels(source="logger", name=record.name).inc()
-    LOG_RECORDS.labels(source="process", name=record.processName).inc()
 
 
 def handle_command(command) -> dict:
@@ -230,14 +265,21 @@ def handle_command(command) -> dict:
         handle_log_record(record)
 
     elif command.lower() == 'status':
-        response.update(dict(
-            status="ACK",
-            logging_port=CTRL_SETTINGS.LOGGING_PORT,
-            commanding_port=CTRL_SETTINGS.COMMANDING_PORT,
-            file_logger_level=logging.getLevelName(LOG_LEVEL_FILE),
-            stream_logger_level=logging.getLevelName(LOG_LEVEL_STREAM),
-            file_logger_location=file_handler.baseFilename,
-        ))
+        with RegistryClient() as client:
+            service = client.discover_service("LOGGER")
+        if service:
+            response.update(dict(
+                status="ACK",
+                logging_port=service['metadata']['receiver_port'],
+                commanding_port=service['port'],
+                file_logger_level=logging.getLevelName(LOG_LEVEL_FILE),
+                stream_logger_level=logging.getLevelName(LOG_LEVEL_STREAM),
+                file_logger_location=file_handler.baseFilename,
+            ))
+        else:
+            response.update(
+                dict(status="NACK")
+            )
     elif command.lower().startswith("set_level"):
         new_level = command.split()[-1]
         LOG_LEVEL_FILE = LOG_NAME_TO_LEVEL[new_level]
@@ -289,6 +331,22 @@ def status():
 
 
 @app.command()
+def test():
+    # setup_logging() and teardown_logging() is automatic
+    # setup_logging()
+
+    logger = logging.getLogger('egse')
+    logger.debug("A DEBUG message")
+    logger.info("An INFO message")
+    logger.warning("A WARNING message")
+
+    # from egse.logger import print_all_handlers
+    # print_all_handlers()
+
+    # teardown_logging()
+
+
+@app.command()
 def set_level(level: str):
     """Set the logging level for """
     try:
@@ -307,4 +365,7 @@ def set_level(level: str):
 
 
 if __name__ == "__main__":
-    app()
+
+    logging.basicConfig(level=logging.INFO)
+
+    sys.exit(app())
