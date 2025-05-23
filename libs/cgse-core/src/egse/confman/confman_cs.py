@@ -17,21 +17,23 @@ from typing import Annotated
 import rich
 import typer
 import zmq
-from prometheus_client import start_http_server
 
 from egse.confman import ConfigurationManagerProtocol
 from egse.confman import ConfigurationManagerProxy
 from egse.control import ControlServer
 from egse.env import get_conf_data_location
 from egse.process import SubProcess
+from egse.registry.client import RegistryClient
 from egse.response import Failure
 from egse.response import Response
+from egse.services import ServiceProxy
 from egse.settings import Settings
 from egse.storage import store_housekeeping_information
+from egse.zmq_ser import get_port_number
 
 # Use explicit name here otherwise the logger will probably be called __main__
 
-logger = logging.getLogger("egse.confman.confman_cs")
+logger = logging.getLogger("egse.confman")
 
 CTRL_SETTINGS = Settings.load("Configuration Manager Control Server")
 
@@ -40,30 +42,34 @@ class ConfigurationManagerControlServer(ControlServer):
     def __init__(self):
         super().__init__()
 
-        self.device_protocol = ConfigurationManagerProtocol(self)
+        multiprocessing.current_process().name = "cm_cs"
 
         self.logger = logger
+        self.device_protocol = ConfigurationManagerProtocol(self)
+
         self.logger.debug(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()}")
 
         self.device_protocol.bind(self.dev_ctrl_cmd_sock)
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
+        self.register_service(service_type=CTRL_SETTINGS.SERVICE_TYPE)
+
         self.set_hk_delay(10.0)
 
         self.logger.info(f"CM housekeeping saved every {self.hk_delay / 1000:.1f} seconds.")
 
     def get_communication_protocol(self):
-        return CTRL_SETTINGS.PROTOCOL
+        return 'tcp'
 
     def get_commanding_port(self):
-        return CTRL_SETTINGS.COMMANDING_PORT
+        return get_port_number(self.dev_ctrl_cmd_sock) or 0
 
     def get_service_port(self):
-        return CTRL_SETTINGS.SERVICE_PORT
+        return get_port_number(self.dev_ctrl_service_sock) or 0
 
     def get_monitoring_port(self):
-        return CTRL_SETTINGS.MONITORING_PORT
+        return get_port_number(self.dev_ctrl_mon_sock) or 0
 
     def get_storage_mnemonic(self):
         try:
@@ -100,7 +106,10 @@ class ConfigurationManagerControlServer(ControlServer):
         unregister_from_storage_manager(origin=self.get_storage_mnemonic())
 
     def before_serve(self):
-        start_http_server(CTRL_SETTINGS.METRICS_PORT)
+        ...
+
+    def after_serve(self) -> None:
+        self.deregister_service()
 
 
 app = typer.Typer(name="cm_cs", no_args_is_help=True)
@@ -149,12 +158,16 @@ def start_bg():
 @app.command()
 def stop():
     """Send a 'quit_server' command to the Configuration Manager."""
-    try:
-        with ConfigurationManagerProxy() as cm:
-            sp = cm.get_service_proxy()
-            sp.quit_server()
-    except ConnectionError:
-        rich.print("[red]ERROR: Couldn't connect to the configuration manager.[/]")
+
+    with RegistryClient() as reg:
+        service = reg.discover_service(CTRL_SETTINGS.SERVICE_TYPE)
+        # rich.print("service = ", service)
+
+        if service:
+            proxy = ServiceProxy(protocol="tcp", hostname=service["host"], port=service['metadata']['service_port'])
+            proxy.quit_server()
+        else:
+            rich.print("[red]ERROR: Couldn't connect to 'cm_cs', process probably not running.")
 
 
 @app.command()

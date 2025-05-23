@@ -117,7 +117,7 @@ class BaseCommandProtocol(DeviceConnectionObserver):
         self.__socket = socket
 
         endpoint = self.get_bind_address()
-        logger.info(f"Binding {self.__class__.__name__} to {endpoint}")
+        logger.info(f"Binding {type(self).__name__} to {endpoint}")
 
         self.__socket.bind(endpoint)
 
@@ -132,7 +132,7 @@ class BaseCommandProtocol(DeviceConnectionObserver):
         Returns:
             a string with the protocol and port to bind a socket to.
         """
-        raise NotImplementedError(f"The get_bind_address() method shall be implemented for {self.__class__.__name__}.")
+        raise NotImplementedError(f"The get_bind_address() method shall be implemented for {type(self).__name__}.")
 
     def is_alive(self) -> bool:
         """

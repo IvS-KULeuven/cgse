@@ -577,7 +577,7 @@ class ControlServer(metaclass=abc.ABCMeta):
         self.zcontext.term()
 
     def register_service(self, service_type: str):
-        self.logger.info(f"Registering service ControlServer as type {service_type}")
+        self.logger.info(f"Registering service {type(self).__name__} as type {service_type}")
         self.service_id = self.registry.register(
             name=type(self).__name__,
             host=get_host_ip() or "127.0.0.1",

@@ -141,6 +141,7 @@ from egse.obsid import ObservationIdentifier
 from egse.plugin import entry_points
 from egse.protocol import CommandProtocol
 from egse.proxy import Proxy
+from egse.registry.client import RegistryClient
 from egse.response import Failure
 from egse.response import Response
 from egse.response import Success
@@ -159,7 +160,7 @@ from egse.version import get_version_installed
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = logging.getLogger("egse.confman")
 
 HERE = Path(__file__).parent
 
@@ -378,9 +379,11 @@ def is_configuration_manager_active(timeout: float = 0.5):
         True if the Configuration Manager is running and replied with the expected answer.
     """
 
-    endpoint = connect_address(
-        CTRL_SETTINGS.PROTOCOL, CTRL_SETTINGS.HOSTNAME, CTRL_SETTINGS.COMMANDING_PORT
-    )
+    with RegistryClient() as client:
+        endpoint = client.get_endpoint(CTRL_SETTINGS.SERVICE_TYPE)
+
+    if endpoint is None:
+        return False
 
     return is_control_server_active(endpoint, timeout)
 
@@ -983,13 +986,7 @@ class ConfigurationManagerProxy(Proxy, ConfigurationManagerInterface):
     Control Server and send commands and requests for the configuration manager.
     """
 
-    def __init__(
-        self,
-        protocol=CTRL_SETTINGS.PROTOCOL,
-        hostname=CTRL_SETTINGS.HOSTNAME,
-        port=CTRL_SETTINGS.COMMANDING_PORT,
-        timeout=PROXY_TIMEOUT,
-    ):
+    def __init__(self, protocol: str = None, hostname: str = None, port: int = -1, timeout=PROXY_TIMEOUT):
         """
         Args:
             protocol: the transport protocol [default is taken from settings file]
@@ -998,6 +995,17 @@ class ConfigurationManagerProxy(Proxy, ConfigurationManagerInterface):
             port: TCP port on which the control server is listening for commands
                 [default is taken from settings file]
         """
+        if hostname is None:
+            with RegistryClient() as reg:
+                service = reg.discover_service(CTRL_SETTINGS.SERVICE_TYPE)
+
+                if service:
+                    protocol = service.get('protocol', 'tcp')
+                    hostname = service['host']
+                    port = service['port']
+                else:
+                    raise RuntimeError(f"No service registered as {CTRL_SETTINGS.SERVICE_TYPE}")
+
         super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
 
 
