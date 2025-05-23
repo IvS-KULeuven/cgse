@@ -3,11 +3,7 @@ PACKAGES:
 
 Logging Control Server:                          # LOG_CS
 
-    PROTOCOL:                       tcp
-    HOSTNAME:                 localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
-    LOGGING_PORT:                  7000
-    COMMANDING_PORT:               7001
-    METRICS_PORT:                  7003          # The HTTP port where Prometheus will connect to for retrieving metrics
+    SERVICE_TYPE:                LOGGER
     MAX_NR_LOG_FILES:                20          # The maximum number of log files that will be maintained in a roll-over
     MAX_SIZE_LOG_FILES:              20          # The maximum size one log file can become
     TEXTUALOG_IP_ADDRESS:     127.0.0.1          # The IP address of the textualog listening server

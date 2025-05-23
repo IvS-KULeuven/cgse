@@ -48,7 +48,7 @@ class RegistryClient:
         self._service_info = None
         self._ttl = None
 
-        self.context = zmq.Context()
+        self.context: zmq.Context = zmq.Context.instance()
 
         self.req_socket: zmq.asyncio.Socket | None = None
         self.sub_socket: zmq.asyncio.Socket | None = None
@@ -63,9 +63,11 @@ class RegistryClient:
         self.disconnect()
 
     def connect(self):
-        self.logger.debug("Connecting to service registry...")
+        # self.logger.debug("Connecting to service registry...")
+
         # REQ socket for request-reply pattern
         self.req_socket = self.context.socket(zmq.REQ)
+        self.req_socket.setsockopt(zmq.LINGER, 0)  # Don't wait for unsent messages on close()
         self.req_socket.connect(self.registry_req_endpoint)
 
         # SUB socket for receiving events
@@ -78,7 +80,8 @@ class RegistryClient:
         self.poller.register(self.sub_socket, zmq.POLLIN)
 
     def disconnect(self):
-        self.logger.debug("Disconnecting from service registry...")
+        # self.logger.debug("Disconnecting from service registry...")
+
         if self.req_socket:
             self.poller.unregister(self.req_socket)
             self.req_socket.close(linger=0)
@@ -107,11 +110,13 @@ class RegistryClient:
                 response_json = self.req_socket.recv_string()
                 return json.loads(response_json)
             else:
-                self.logger.error(f"Request timed out after {self.request_timeout}ms")
+                self.logger.error(f"Request timed out after {self.request_timeout / 1000:.2f}s")
                 # Reset the socket to avoid invalid state
+                self.poller.unregister(self.req_socket)
                 self.req_socket.close()
                 self.req_socket = self.context.socket(zmq.REQ)
                 self.req_socket.connect(self.registry_req_endpoint)
+                self.poller.register(self.req_socket, zmq.POLLIN)
                 return {'success': False, 'error': 'Request timed out'}
         except zmq.ZMQError as exc:
             self.logger.error(f"ZMQ error: {exc}")
@@ -244,7 +249,7 @@ class RegistryClient:
 
         response = self._send_request(request)
 
-        self.logger.debug(f"{response = }")
+        # self.logger.debug(f"{response = }")
 
         if response.get('success'):
             service = response.get('service')
@@ -303,6 +308,19 @@ class RegistryClient:
             self.logger.warning(f"List services failed: {response.get('error')}")
             return []
 
+    def get_endpoint(self, service_type) -> str | None:
+        """Returns the endpoint for the given service type."""
+        service = self.discover_service(service_type)
+
+        if service:
+            protocol = service.get('protocol', 'tcp')
+            hostname = service['host']
+            port = service['port']
+
+            return f"{protocol}://{hostname}:{port}"
+        else:
+            return None
+
     def health_check(self) -> bool:
         """
         Check if the registry server is healthy.
@@ -358,9 +376,9 @@ class RegistryClient:
                         else:
                             self.logger.error(f"Failed to register service: {response.get('error')}")
 
-
                 else:
-                    self.logger.info(response.get("message"))
+                    self.logger.debug(response.get("message"))
+
             except Exception as exc:
                 self.logger.error(f"Error sending heartbeat: {exc}")
 
@@ -447,6 +465,7 @@ class AsyncRegistryClient:
         self.logger.debug("Connecting to service registry...")
         # REQ socket for request-reply pattern
         self.req_socket = self.context.socket(zmq.REQ)
+        self.req_socket.setsockopt(zmq.LINGER, 0)  # Don't wait for unsent messages on close()
         self.req_socket.connect(self.registry_req_endpoint)
 
         # SUB socket for receiving events
@@ -941,6 +960,19 @@ class AsyncRegistryClient:
         else:
             self.logger.warning(f"List services failed: {response.get('error')}")
             return []
+
+    async def get_endpoint(self, service_type) -> str | None:
+        """Returns the endpoint for the given service type."""
+        service = await self.discover_service(service_type)
+
+        if service:
+            protocol = service.get('protocol', 'tcp')
+            hostname = service['host']
+            port = service['port']
+
+            return f"{protocol}://{hostname}:{port}"
+        else:
+            return None
 
     async def health_check(self) -> bool:
         """

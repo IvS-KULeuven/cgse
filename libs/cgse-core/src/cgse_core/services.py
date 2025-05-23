@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 
 import rich
 import typer
@@ -38,6 +39,8 @@ def stop_core_services():
     stop_cm_cs()
     stop_sm_cs()
     stop_log_cs()
+    # We need the registry server to stop other core services, so leave it running for one second
+    time.sleep(1.0)
     stop_rs_cs()
 
 
