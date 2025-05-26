@@ -4,18 +4,18 @@ import sys
 import rich
 
 
-async def run_all_status(full: bool = False):
+async def run_all_status(full: bool = False, suppress_errors: bool = True):
     tasks = [
-        asyncio.create_task(status_rs_cs()),
-        asyncio.create_task(status_log_cs()),
-        asyncio.create_task(status_sm_cs(full)),
-        asyncio.create_task(status_cm_cs()),
+        asyncio.create_task(status_rs_cs(suppress_errors)),
+        asyncio.create_task(status_log_cs(suppress_errors)),
+        asyncio.create_task(status_sm_cs(full, suppress_errors)),
+        asyncio.create_task(status_cm_cs(suppress_errors)),
     ]
 
     await asyncio.gather(*tasks)
 
 
-async def status_rs_cs():
+async def status_rs_cs(suppress_errors):
 
     proc = await asyncio.create_subprocess_exec(
         sys.executable, '-m', 'egse.registry.server', 'status',
@@ -26,11 +26,11 @@ async def status_rs_cs():
     stdout, stderr = await proc.communicate()
 
     rich.print(stdout.decode().rstrip())
-    if stderr:
+    if stderr and not suppress_errors:
         rich.print(f"[red]{stderr.decode()}[/]")
 
 
-async def status_log_cs():
+async def status_log_cs(suppress_errors):
 
     proc = await asyncio.create_subprocess_exec(
         sys.executable, '-m', 'egse.logger.log_cs', 'status',
@@ -41,11 +41,11 @@ async def status_log_cs():
     stdout, stderr = await proc.communicate()
 
     rich.print(stdout.decode().rstrip())
-    if stderr:
+    if stderr and not suppress_errors:
         rich.print(f"[red]{stderr.decode()}[/]")
 
 
-async def status_sm_cs(full: bool = False):
+async def status_sm_cs(full: bool = False, suppress_errors: bool = True):
 
     cmd = [sys.executable, '-m', 'egse.storage.storage_cs', 'status']
     if full:
@@ -60,11 +60,11 @@ async def status_sm_cs(full: bool = False):
     stdout, stderr = await proc.communicate()
 
     rich.print(stdout.decode().rstrip())
-    if stderr:
+    if stderr and not suppress_errors:
         rich.print(f"[red]{stderr.decode()}[/]")
 
 
-async def status_cm_cs():
+async def status_cm_cs(suppress_errors):
 
     proc = await asyncio.create_subprocess_exec(
         sys.executable, '-m', 'egse.confman.confman_cs', 'status',
@@ -75,5 +75,5 @@ async def status_cm_cs():
     stdout, stderr = await proc.communicate()
 
     rich.print(stdout.decode().rstrip())
-    if stderr:
+    if stderr and not suppress_errors:
         rich.print(f"[red]{stderr.decode()}[/]")
