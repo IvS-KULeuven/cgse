@@ -45,7 +45,7 @@ def stop_core_services():
 
 
 @core.command(name="status")
-def status_core_services(full: bool = False):
+def status_core_services(full: bool = False, suppress_errors: bool = True):
     """Print the status of the core services."""
     # from scripts._status import status_log_cs, status_sm_cs, status_cm_cs
 
@@ -56,7 +56,7 @@ def status_core_services(full: bool = False):
 
     rich.print("[green]Status of the core services...[/]")
 
-    asyncio.run(run_all_status(full))
+    asyncio.run(run_all_status(full, suppress_errors))
 
 
 reg = typer.Typer(
