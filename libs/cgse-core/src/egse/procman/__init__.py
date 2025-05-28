@@ -1,14 +1,12 @@
 import logging
-import pickle
 import textwrap
 from pathlib import Path
 
-import zmq
-
 from egse.command import ClientServerCommand
-from egse.confman import ConfigurationManagerProxy
 from egse.control import is_control_server_active
 from egse.decorators import dynamic_interface
+from egse.listener import EventInterface, Event
+from egse.plugin import entry_points
 from egse.proxy import Proxy
 from egse.settings import Settings
 from egse.setup import Setup, load_setup
@@ -21,7 +19,7 @@ LOGGER = logging.getLogger(__name__)
 CTRL_SETTINGS = Settings.load("Process Manager Control Server")
 COMMAND_SETTINGS = Settings.load(location=HERE, filename="procman.yaml")
 
-def is_process_manager_active(timeout: float = 0.5):
+def is_process_manager_active(timeout: float = 0.5) -> bool:
     """ Checks if the Process Manager Control Server is active.
 
     To check whether the Process Manager is active, a "Ping" command is sent.  If a "Pong" reply is received before
@@ -38,8 +36,7 @@ def is_process_manager_active(timeout: float = 0.5):
 
     return is_control_server_active(endpoint, timeout)
 
-
-def get_status():
+def get_status() -> str:
     """ Returns a string representing the status of the Process Manager.
 
     Returns: String representation of the status of the Process Manager.
@@ -69,184 +66,96 @@ class ProcessManagerCommand(ClientServerCommand):
     pass
 
 
-class ProcessManagerInterface:
-
-    """
-    Interface for dynamic loading of the commands for Process Management.
-    """
-
-    @dynamic_interface
-    def get_cm_proxy(self):
-        """
-        Returns the Proxy for Configuration Management.
-
-        Returns:
-            - Proxy for Configuration Management.
-        """
-
-        raise NotImplementedError
+class ProcessManagerInterface(EventInterface):
+    
+    def __init__(self):
+        
+        super().__init__()
+        self.setup = load_setup()
 
     @dynamic_interface
-    def start_cs(self, process_name, sim_mode):
-        """Start the device Control Server with the given process name.
+    def get_core_processes(self) -> dict:
+        """ Returns a dictionary with the core CGSE processes.
 
-        This method can only be used to start the Control Server of a device
-        that is included in the current setup.  Core processes (Storage,
-        Configuration Manager, and Process Manager) cannot be started with
-        this method.
+        These processes should be running at all times, and can neither be started nor shut down from the Process
+        Manager.  On an operational machine, these processes should be added to systemd to make sure they are
+        re-started automatically if they are stopped.
 
-        The Control Server can either be started in simulator mode (without
-        H/W controller available) or in operational mode (with H/W controller
-        available).
+        The keys in the dictionary are the names of the core processes (as they will be displayed in the PM UI).  The
+        values are the names of the scripts as defined in the pyproject.toml file(s) under `[project.scripts]`.  Those
+        can be used to start and stop the core processes, and to request their status.
 
-        The given process name is the one that is used as device name in the
-        setup file and can also be found in the dictionary returned by the
-        get_devices() method.
-
-        Args:
-            - process_name: Device name for which the Control Server should be
-                            started.
-            - sim_mode: Whether or not to start the Control Server in
-                        simulator mode.
+        Returns: Dictionary with the core CGSE processes.
         """
 
         raise NotImplementedError
 
-    @dynamic_interface
-    def start_egse(self):
-        """Start all device Control Servers in the current setup in operational mode.
+    # @dynamic_interface
+    # def get_processing_processes(self):
+    #
+    #     raise NotImplementedError
+    #
+    # @dynamic_interface
+    # def get_sut_processes(self):
+    #
+    #     raise NotImplementedError
 
-        This method can only be used to start the Control Servers of the
-        devices that are included in the current setup.  Core processes
-        (Storage, Configuration Manager, and Process Manager) cannot be
-        started with this method.
+    @dynamic_interface
+    def get_devices(self) -> dict:
+        """ Returns a dictionary with the devices that are included in the setup.
+
+        The device processes that are listed in the returned dictionary are the ones that are included in the setup
+        that is currently loaded in the Configuration Manager.  The keys in the dictionary are taken from the
+        "device_name" entries in the setup file.  The corresponding values consist of a tuple with the following
+        entries:
+            - `device` raw value (should be `Proxy` classes);
+            - device identifier;
+            - device arguments (optional);
+
+        Returns: Dictionary with the devices that are included in the setup. The keys are the device name,
+                 the values are tuples with the 'device' raw value, device identifier, and the (optional) device
+                 arguments as a tuple.
         """
 
         raise NotImplementedError
 
     @dynamic_interface
-    def shut_down_egse(self, process_name):
-        """Shut down the device Control Server with the given process name.
+    def get_device_ids(self) -> dict:
+        """ Returns a list with the identifiers of the devices that are included in the setup.
 
-        This method can only be used to shut down the Control Server of a
-        device that is included in the current setup.  Core processes (Storage,
-        Configuration Manager, and Process Manager) cannot be shut down with
-        this method.
+        The devices for which the identifiers are returned are the ones that are included in the setup that is currently
+        loaded in the Configuration Manager.
 
-        The given process name is the one that is used as device name in the
-        setup file and can also be found in the dictionary returned by the
-        get_devices() method.
-
-        Args:
-            - process_name: Device name for which the Control Server should be
-                            shut down.
+        Returns: List with the identifiers of the devices that are included in the setup.
         """
-
-    @dynamic_interface
-    def shut_down_egse(self):
-        """Shut down all device Control Servers in the current setup.
-
-        This method can only be used to shut down the Control Servers of the
-        devices that are included in the current setup.  Core processes
-        (Storage, Configuration Manager, and Process Manager) cannot be shut
-        down with this method.
-        """
-
-        raise NotImplementedError
-
-    @dynamic_interface
-    def start_fitsgen(self):
-        """ Start the FITS generation."""
-
-        raise NotImplementedError
-
-    @dynamic_interface
-    def stop_fitsgen(self):
-        """ Stop the FITS generation."""
-
-        raise NotImplementedError
-
-    @dynamic_interface
-    def start_fov_hk(self):
-        """ Start the generation of FOV HK."""
-
-        raise NotImplementedError
-
-    @dynamic_interface
-    def stop_fov_hk(self):
-        """ Stop the generation of FOV HK."""
-
-        raise NotImplementedError
-
-    @dynamic_interface
-    def start_n_fee_hk(self):
-        """ Start the generation of N-FEE HK."""
-
-        raise NotImplementedError
-
-    @dynamic_interface
-    def stop_n_fee_hk(self):
-        """ Stop the generation of N-FEE HK."""
 
         raise NotImplementedError
 
 
 class ProcessManagerController(ProcessManagerInterface):
 
-    """
-    Controller for Process Management.
-    """
-
     def __init__(self):
-        """Initialisation for the Process Manager Controller.
 
-        Bother the Configuration Manager and the Storage manager should be running.
-        """
+        super().__init__()
 
-        # Keep track of the Configuration Manager
-
-        self._configuration = ConfigurationManagerProxy()
-
-        # Storage Manager must be active
-
+        # self._configuration = ConfigurationManagerProxy()
+        
         if not is_storage_manager_active():
-
             LOGGER.error("No Storage Manager available!!!!")
 
-    def quit(self):
+    def get_core_processes(self) -> dict:
 
-        self._configuration.disconnect_cs()
+        core_processes = {}
+        for ep in sorted(entry_points("cgse.process_management.core_services"), key=lambda x: x.name):
+            core_processes[ep.name] = ep.value
 
-    def get_cm_proxy(self):
-        """
-        Returns the Proxy for Configuration Management.
+        return core_processes
 
-        Returns:
-            - Proxy for Configuration Management.
-        """
-
-        if not self._configuration.has_commands():
-            self._configuration.load_commands()
-
-        return self._configuration
-
-    def get_devices(self):
-        """Returns a dictionary with the device processes.
-
-        The devices processes that are listed in this dictionary are the ones
-        that are included in the current setup.
-
-        The keys in the dictionary are taken from the "device_name" entries in
-        the setup file. The corresponding values in the dictionary are taken
-        from the "device" entries in the setup file (and should be Proxy classes).
-
-        Returns:
-            - Dictionary with the devices that are included in the setup.
-        """
+    def get_devices(self) -> dict:
 
         try:
 
-            setup = GlobalState.setup
+            setup = load_setup()
 
             devices = {}
             devices = Setup.find_devices(setup, devices=devices)
@@ -257,421 +166,44 @@ class ProcessManagerController(ProcessManagerInterface):
 
             return {}
 
-    def get_core(self):
-        """Returns a dictionary with the core EGSE processes.
-
-        The core EGSE processes are:
-
-            - the Storage Manager,
-            - the Configuration Manager,
-            - the Process Manager,
-            - and the Synoptics Manager.
-
-        These processes should be running at all times, and can neither be
-        started nor shut down from within the Process Manager.
-
-        The keys in the dictionary are the names of the core processes.  The
-        values are the Proxy classes.
-
-        Returns:
-            - Dictionary with the core EGSE processes.
-
-        """
-
-        storage_proxy_class = "class//egse.storage.StorageProxy"
-        confman_proxy_class = "class//egse.confman.ConfigurationManagerProxy"
-        procman_proxy_class = "class//egse.procman.ProcessManagerProxy"
-        syn_proxy_class = "class//egse.synoptics.SynopticsManagerProxy"
-
-        return {
-            "Storage": (storage_proxy_class, ()),
-            "Configuration Manager": (confman_proxy_class, ()),
-            "Process Manager": (procman_proxy_class, ()),
-            "Synoptics Manager": (syn_proxy_class, ()),
-        }
-
-    def start_egse(self):
-        """Start all device Control Servers in the current setup in operational mode.
-
-        This method can only be used to start the Control Servers of the
-        devices that are included in the current setup.  Core processes
-        (Storage, Configuration Manager, and Process Manager) cannot be
-        started with this method.
-        """
-
-        LOGGER.debug("Starting EGSE")
-
-        devices = self.get_devices()
-
-        for process_name, process_info in devices.items():
-
-            proxy_type = process_info[0]
-            device_args = process_info[1]
-
-            try:
-
-                with find_class(proxy_type)(*device_args):
-
-                    # The CS is already running
-
-                    LOGGER.info(f"{process_name} was already running")
-
-            except ConnectionError:
-
-                try:
-
-                    module_name = proxy_type[7:].rsplit(".", 1)[0]
-                    module = importlib.import_module(module_name)
-
-                    cs_type = module.DEVICE_SETTINGS.ControlServer
-
-                    # Operational mode
-
-                    if str.startswith(proxy_type, "class//egse.aeu.aeu.CRIO"):
-
-                        cs = SubProcess("MyApp", [sys.executable, "-m", cs_type, "start-crio-cs"])
-
-                    elif str.startswith(proxy_type, "class//egse.aeu.aeu.PSU"):
-
-                        cs = SubProcess("MyApp", [sys.executable, "-m", cs_type, "start-psu-cs", str(device_args[0])])
-
-                    elif str.startswith(proxy_type, "class//egse.aeu.aeu.AWG"):
-
-                        cs = SubProcess("MyApp", [sys.executable, "-m", cs_type, "start-awg-cs", str(device_args[0])])
-
-                    else:
-                        if len(device_args) == 0:
-                            cs = SubProcess("MyApp", [sys.executable, "-m", cs_type, "start"])
-                        else:
-                            cs = SubProcess("MyApp", [sys.executable, "-m", cs_type, "start", str(device_args[0])])
-
-                    LOGGER.info(f"Starting Control Server for {process_name} in operational mode")
-                    cs.execute(detach_from_parent=True)
-
-                    if process_name == "DAQ6510":
-                        setup = GlobalState.setup
-                        das_delay = setup.gse.DAQ6510.route.mon_delay
-                        das_count = setup.gse.DAQ6510.route.scan.COUNT.SCAN
-                        das_interval = setup.gse.DAQ6510.route.scan.INTERVAL
-
-                        das = SubProcess("MyApp", [sys.executable, "-m", "egse.das", "daq6510", "--count",
-                                                   str(das_count), "--interval", str(das_interval), "--delay",
-                                                   str(das_delay)])
-                        das.execute(detach_from_parent="True")
-
-                    # Check to see the CS actually started
-
-                    time.sleep(5)
-                    try:
-                        with find_class(proxy_type)(*device_args):
-                            pass
-                    except ConnectionError:
-                        LOGGER.warning(f"Could not start Control Server for {process_name}")
-
-                except AttributeError:
-
-                    LOGGER.debug(f"Cannot start Control Server for {process_name}")
-
-        LOGGER.debug("EGSE started")
-
-    def start_cs(self, process_name, sim_mode):
-        """Start the device Control Server with the given process name.
-
-        This method can only be used to start the Control Server of a device
-        that is included in the current setup.  Core processes (Storage,
-        Configuration Manager, and Process Manager) cannot be started with
-        this method.
-
-        The Control Server can either be started in simulator mode (without
-        H/W controller available) or in operational mode (with H/W controller
-        available).
-
-        The given process name is the one that is used as device name in the
-        setup file and can also be found in the dictionary returned by the
-        get_devices() method.
-
-        Args:
-            - process_name: Device name for which the Control Server should be
-                            started.
-            - sim_mode: Whether or not to start the Control Server in
-                        simulator mode.
-        """
-
-        LOGGER.debug(f"Starting {process_name}")
-
-        process_info = self.get_devices()[process_name]
-        proxy_type = process_info[0]
-        device_args = process_info[1]
+    def get_device_ids(self) -> dict:
 
         try:
 
-            with find_class(proxy_type)(*device_args):
+            setup = load_setup()
 
-                # The CS is already running
+            device_ids = {}
+            device_ids = Setup.find_device_ids(setup, device_ids=device_ids)
 
-                message = f"{process_name} was already running"
-                LOGGER.info(message)
-                return Success(message)
+            return device_ids
 
-        except ConnectionError:
+        except AttributeError:
 
-            try:
+            return {}
 
-                module_name = proxy_type[7:].rsplit(".", 1)[0]
-                module = importlib.import_module(module_name)
+    def handle_event(self, event: Event):
 
-                if hasattr(module, "DEVICE_SETTINGS") and hasattr(module.DEVICE_SETTINGS, "ControlServer"):
-                    cs_type = module.DEVICE_SETTINGS.ControlServer
-                else:
-                    raise AttributeError(f"DEVICE_SETTINGS (or ControlServer therein) not defined in {module_name}")
+        LOGGER.info(f"An event is received, {event=}")
+        LOGGER.info(f"Setup ID: {event.context['setup_id']}")
 
-                # Simulator mode
-
-                if sim_mode:
-
-                    mode = "simulator mode"
-
-                    if str.startswith(proxy_type, "class//egse.aeu.aeu.CRIO"):
-
-                        cs = SubProcess("MyApp", [sys.executable, "-m", cs_type, "start-crio-cs", "--sim"])
-
-                    elif str.startswith(proxy_type, "class//egse.aeu.aeu.PSU"):
-
-                        cs = SubProcess("MyApp", [sys.executable, "-m", cs_type, "start-psu-cs", str(device_args[0]), "--sim"])
-
-                    elif str.startswith(proxy_type, "class//egse.aeu.aeu.AWG"):
-
-                        cs = SubProcess("MyApp", [sys.executable, "-m", cs_type, "start-awg-cs", str(device_args[0]), "--sim"])
-
-                    else:
-
-                        cs = SubProcess("MyApp", [sys.executable, "-m", cs_type, "start", "--sim"])
-
-                # Operational mode
-
-                else:
-
-                    mode = "operational mode"
-
-                    if str.startswith(proxy_type, "class//egse.aeu.aeu.CRIO"):
-
-                        cs = SubProcess("MyApp", [sys.executable, "-m", cs_type, "start-crio-cs"])
-
-                    elif str.startswith(proxy_type, "class//egse.aeu.aeu.PSU"):
-
-                        cs = SubProcess("MyApp", [sys.executable, "-m", cs_type, "start-psu-cs", str(device_args[0])])
-
-                    elif str.startswith(proxy_type, "class//egse.aeu.aeu.AWG"):
-
-                        cs = SubProcess("MyApp", [sys.executable, "-m", cs_type, "start-awg-cs", str(device_args[0])])
-
-                    else:
-                        if len(device_args) == 0:
-                            cs = SubProcess("MyApp", [sys.executable, "-m", cs_type, "start"])
-                        else:
-                            cs = SubProcess("MyApp", [sys.executable, "-m", cs_type, "start", str(device_args[0])])
-                    # os.system(sys.executable + " -m " + cs_type + " start")
-
-                LOGGER.info(f"Starting Control Server for {process_name} in {mode}")
-                cs.execute(detach_from_parent=True)
-
-                if process_name == "DAQ6510":
-                    das = SubProcess("MyApp", [sys.executable, "-m", "egse.das", "daq6510"])
-                    das.execute(detach_from_parent="True")
-
-                # Check to see the CS actually started
-
-                time.sleep(5)
-                try:
-                    with find_class(proxy_type)(*device_args):
-                        return Success(f"{process_name} successfully started")
-                except ConnectionError as exc:
-                    message = f"Could not start Control Server for {process_name}"
-                    LOGGER.warning(message, exc_info=True)
-                    return Failure(message, cause=exc)
-
-            except AttributeError as exc:
-                message = f"Cannot start Control Server for {process_name}"
-                LOGGER.error(message, exc_info=True)
-                return Failure(message, cause=exc)
-
-        # with find_class(proxy_type)(*device_args):
-        #         pass
-
-    def shut_down_egse(self):
-        """Shut down all device Control Servers in the current setup.
-
-        This method can only be used to shut down the Control Servers of the
-        devices that are included in the current setup.  Core processes
-        (Storage, Configuration Manager, and Process Manager) cannot be shut
-        down with this method.
-        """
-
-        LOGGER.debug("Shutting down EGSE")
-
-        devices = self.get_devices()
-
-        for key, process_info in reversed(devices.items()):
-
-            LOGGER.debug(f"Shutting down {key}")
-
-            proxy_type = process_info[0]
-            device_args = process_info[1]
-
-            try:
-
-                with find_class(proxy_type)(*device_args) as process_proxy:
-
-                    with process_proxy.get_service_proxy() as service_proxy:
-
-                        service_proxy.quit_server()
-
-            except ConnectionError:
-
-                pass
-
-        LOGGER.debug("EGSE shut down")
-
-    def shut_down_cs(self, process_name):
-        """Shut down the device Control Server with the given process name.
-
-        This method can only be used to shut down the Control Server of a
-        device that is included in the current setup.  Core processes (Storage,
-        Configuration Manager, and Process Manager) cannot be shut down with
-        this method.
-
-        The given process name is the one that is used as device name in the
-        setup file and can also be found in the dictionary returned by the
-        get_devices() method.
-
-        Args:
-            - process_name: Device name for which the Control Server should be
-                            shut down.
-        """
-
-        LOGGER.debug(f"Shutting down {process_name}")
-
-        try:
-
-            process_info = self.get_devices()[process_name]
-            proxy_type = process_info[0]
-            device_args = process_info[1]
-
-            with find_class(proxy_type)(*device_args) as process_proxy:
-
-                with process_proxy.get_service_proxy() as service_proxy:
-
-                    LOGGER.debug("Shutting down CS")
-
-                    service_proxy.quit_server()
-
-        except ConnectionError:
-
-            # The CS is already down
-
-            LOGGER.info(f"{process_name} was already down")
-
-    def start_fitsgen(self):
-        """ Start the FITS generation."""
-
-        # TODO Think about potential conditions for the FITS generator to be started:
-        #   - FITS generator should not be running yet
-        #   - FEE simulator must be running?
-        #   - DPU CS must be running?
-
-        # Check whether the DPU CS is running
-
-        if not is_dpu_cs_active():
-            message = "The DPU Control Server must be running to be able to start the FITS generation."
-            LOGGER.critical(message)
-            return Failure(message)
-
-        LOGGER.info("Starting the FITS generation")
-
-        fg = SubProcess("MyApp", [sys.executable, "-m", "egse.dpu.fitsgen", "start"])
-        fg.execute(detach_from_parent=True)
-
-        time.sleep(5)
-        if fitsgen.send_request("status").get("status") != "ACK":
-            return Failure("FITS generation could not be started for some unknown reason.")
-
-        return Success("FITS generation successfully started.")
-
-    def stop_fitsgen(self):
-        """ Stop the FITS generation."""
-
-        LOGGER.info("Stopping the FITS generation")
-
-        fg = SubProcess("MyApp", [sys.executable, "-m", "egse.dpu.fitsgen", "stop"])
-        fg.execute(detach_from_parent=True)
-
-    def start_fov_hk(self):
-        """ Start the generation of FOV HK."""
-
-        LOGGER.info("Starting the generation of FOV HK")
-
-        fg = SubProcess("MyApp", [sys.executable, "-m", "egse.fov.fov_hk", "start"])
-        fg.execute(detach_from_parent=True)
-
-        time.sleep(5)
-        if fov_hk.send_request("status").get("status") != "ACK":
-            return Failure("FOV HK generation could not be started for some unknown reason.")
-
-        return Success("FOV HK generation successfully started.")
-
-    def stop_fov_hk(self):
-        """ Stop the generation of FOV HK."""
-
-        LOGGER.info("Stopping the generation of FOV HK")
-
-        fg = SubProcess("MyApp", [sys.executable, "-m", "egse.fov.fov_hk", "stop"])
-        fg.execute(detach_from_parent=True)
-
-    def start_n_fee_hk(self):
-        """ Start the generation of N-FEE HK."""
-
-        LOGGER.info("Starting the generation of N-FEE HK")
-
-        fg = SubProcess("MyApp", [sys.executable, "-m", "egse.fee.n_fee_hk", "start"])
-        fg.execute(detach_from_parent=True)
-
-        time.sleep(5)
-        if n_fee_hk.send_request("status").get("status") != "ACK":
-            return Failure("N-FEE HK generation could not be started for some unknown reason.")
-
-        return Success("N-FEE HK generation successfully started.")
-
-    def stop_n_fee_hk(self):
-        """ Stop the generation of N-FEE HK."""
-
-        LOGGER.info("Stopping the generation of N-FEE HK")
-
-        fg = SubProcess("MyApp", [sys.executable, "-m", "egse.fee.n_fee_hk", "stop"])
-        fg.execute(detach_from_parent=True)
+        self.setup = load_setup(setup_id=event.context["setup_id"])
 
 
 class ProcessManagerProxy(Proxy, ProcessManagerInterface):
-
-    """
-    Proxy for Process Managements, used to connect to the Process Manager
-    Control Server and send commands remotely.
+    """ Proxy for process management, used to connect to the Process Manager Control Server and send commands remotely.
     """
 
-    def __init__(
-        self,
-        protocol: str = CTRL_SETTINGS.PROTOCOL,
-        hostname: str = CTRL_SETTINGS.HOSTNAME,
-        port: int = CTRL_SETTINGS.COMMANDING_PORT,
-    ):
+    def __init__(self, protocol: str = CTRL_SETTINGS.PROTOCOL, hostname: str = CTRL_SETTINGS.HOSTNAME,
+                 port: int = CTRL_SETTINGS.COMMANDING_PORT):
         """ Initialisation of a new Proxy for Process Management.
 
         If no connection details (transport protocol, hostname, and port) are not provided, these are taken from the
         settings file.
 
         Args:
-            protocol (str): Transport protocol.
-            hostname (str): Location of the control server (IP address).
-            port (int): TCP port on which the Control Server is listening for commands.
+            protocol (str): Transport protocol
+            hostname (str): Location of the control server (IP address)
+            port (int): TCP port on which the Control Server is listening for commands
         """
 
         super().__init__(connect_address(protocol, hostname, port))
