@@ -1,6 +1,6 @@
 [project]
 name = "cgse"
-version = "0.9.0"
+version = "0.9.2"
 description = "Generic Common-EGSE: Commanding and monitoring lab equipment"
 authors = [
     {name = "IvS KU Leuven"}
@@ -13,6 +13,9 @@ readme = {"file" = "README.md", "content-type" = "text/markdown"}
 license = {text = "MIT"}
 requires-python = ">=3.9"
 dependencies = [
+    "cgse-common",
+    "cgse-core",
+    "cgse-tools",
     "rich>=13.9.4",
     "tomlkit>=0.13.2",
 ]
