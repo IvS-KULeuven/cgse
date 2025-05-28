@@ -26,3 +26,20 @@ We have the following project specific packages:
 - `plato-spw`: The PLATO SpaceWire drivers.
 - `plato-fits`: The PLATO FITS plugins.
 - `plato-hdf5`: The PLATO HDF5 plugins.
+
+# Installation
+
+The `cgse` package itself doesn't contain any source code, but you can still 
+install the `cgse` package. It will `pip` install the `cgse-common`, 
+`cgse-core` and `cgse-tools` packages and give you a head start.
+
+```shell
+$ pip install cgse
+```
+
+Always install in a virtual environment or use `uv`:
+
+```shell
+$ uv venv
+$ uv pip install cgse
+```
