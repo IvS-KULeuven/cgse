@@ -161,8 +161,6 @@ ACTUATOR_STATE_LABELS = {
     DCT.ALPHA_PLUS: ACTUATOR_STATE_LABELS_ALPHA_PLUS
 }
 
-GUI_SETTINGS = Settings.load("PUNA GUI")
-
 
 class PunaUIView(HexapodUIView):
     def __init__(self, device_controller_type: DCT, device_id: str):
@@ -384,8 +382,6 @@ def main():
         timer_thread = threading.Thread(target=do_every, args=(10, process_status.update))
         timer_thread.daemon = True
         timer_thread.start()
-
-        start_http_server(GUI_SETTINGS.METRICS_PORT)
 
         args = parse_arguments()
 

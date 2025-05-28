@@ -101,7 +101,6 @@ ACTUATOR_STATE_LABELS = [
 
 SPECIFIC_POSITIONS = ["Position ZERO", "Position RETRACTED"]
 
-GUI_SETTINGS = Settings.load("ZONDA GUI")
 
 class TemperatureLog(QWidget):
     """This Widget allows to view the temperature value of all six actuators."""
@@ -402,8 +401,6 @@ def main():
         timer_thread = threading.Thread(target=do_every, args=(10, process_status.update))
         timer_thread.daemon = True
         timer_thread.start()
-
-        start_http_server(GUI_SETTINGS.METRICS_PORT)
 
         args = parse_arguments()
 
