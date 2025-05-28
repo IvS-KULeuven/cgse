@@ -6,7 +6,6 @@ Manager (from the setup).
 The Process Manager Control Server is implemented as a standard control server.
 """
 
-import logging
 import multiprocessing
 
 import rich
@@ -20,9 +19,11 @@ from egse.listener import EVENT_ID
 from egse.process import SubProcess
 from egse.procman import ProcessManagerProxy, LOGGER
 from egse.procman.procman_protocol import ProcessManagerProtocol
+from egse.registry.client import RegistryClient
+from egse.services import ServiceProxy
 from egse.settings import Settings
 from egse.storage import store_housekeeping_information
-
+from egse.zmq_ser import get_port_number
 
 CTRL_SETTINGS = Settings.load("Process Manager Control Server")
 
@@ -34,6 +35,7 @@ class ProcessManagerControlServer(ControlServer):
         super().__init__()
 
         self.device_protocol = ProcessManagerProtocol(self)
+        multiprocessing.current_process().name = "pm_cs"
 
         LOGGER.debug(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()}")
 
@@ -45,25 +47,27 @@ class ProcessManagerControlServer(ControlServer):
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
+        self.register_service(service_type=CTRL_SETTINGS.SERVICE_TYPE)
+
         self.set_hk_delay(10.0)
 
         LOGGER.info(f"PM housekeeping saved every {self.hk_delay / 1000:.1f} seconds.")
 
     def get_communication_protocol(self):
 
-        return CTRL_SETTINGS.PROTOCOL
+        return "tcp"
 
     def get_commanding_port(self):
 
-        return CTRL_SETTINGS.COMMANDING_PORT
+        return get_port_number(self.dev_ctrl_cmd_sock) or 0
 
     def get_service_port(self):
 
-        return CTRL_SETTINGS.SERVICE_PORT
+        return get_port_number(self.dev_ctrl_service_sock) or 0
 
     def get_monitoring_port(self):
 
-        return CTRL_SETTINGS.MONITORING_PORT
+        return get_port_number(self.dev_ctrl_mon_sock) or 0
 
     def get_storage_mnemonic(self):
 
@@ -106,6 +110,8 @@ class ProcessManagerControlServer(ControlServer):
         from egse.confman import ConfigurationManagerProxy
         self.unregister_as_listener(proxy=ConfigurationManagerProxy, listener={'name': 'Process Manager CS'})
 
+        self.deregister_service()
+
 
 app = typer.Typer(name="pm_cs", no_args_is_help=True)
 
@@ -139,8 +145,15 @@ def start():
 def start_bg():
     """ Starts the Process Manager Control Server in the background."""
 
-    proc = SubProcess("pm_cs", ["pm_cs", "start"])
-    proc.execute()
+    with RegistryClient() as reg:
+        service = reg.discover_service(CTRL_SETTINGS.SERVICE_TYPE)
+        # rich.print("service = ", service)
+
+        if service:
+            proxy = ServiceProxy(protocol="tcp", hostname=service["host"], port=service['metadata']['service_port'])
+            proxy.quit_server()
+        else:
+            rich.print("[red]ERROR: Couldn't connect to 'pm_cs', process probably not running.")
 
 
 @app.command()
