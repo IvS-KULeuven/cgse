@@ -273,14 +273,14 @@ class ConfigurationManagerMonitoringWorker(QObject):
     setup_changed_signal = Signal(Setup)
     obsid_changed_signal = Signal(int)
 
-    def __init__(self):
+    def __init__(self, parent=None):
         """ Initialisation of a monitoring worker for the Configuration Manager.
 
         This monitoring worker will listen on the monitoring port of the Configuration Manager and send out a signal
         whenever the setup or obsid is changed.
         """
 
-        super(ConfigurationManagerMonitoringWorker, self).__init__()
+        super(ConfigurationManagerMonitoringWorker, self).__init__(parent)
 
         self.setup = None       # Previous setup
         self.obsid = None       # Previous obsid
@@ -372,7 +372,7 @@ class CoreServiceMonitoringWorker(QObject):
 
     core_service_status_signal = Signal(dict)
 
-    def __init__(self, core_service_name: str, core_service: str):
+    def __init__(self, core_service_name: str, core_service: str, parent=None):
         """  Initialisation of a monitoring worker for a core service.
 
         Args:
@@ -381,7 +381,7 @@ class CoreServiceMonitoringWorker(QObject):
                                 `cgse <core_service> start|stop|status`
         """
 
-        super().__init__()
+        super().__init__(parent)
 
         self.core_service_name = core_service_name
         self.cs = core_service
@@ -432,7 +432,7 @@ class DeviceMonitoringWorker(QObject):
 
     process_status_signal = Signal(dict)
 
-    def __init__(self, device_id: str, device_proxy: str):
+    def __init__(self, device_id: str, device_proxy: str, parent=None):
         """  Initialisation of a monitoring worker for a device.
 
         Args:
@@ -440,7 +440,7 @@ class DeviceMonitoringWorker(QObject):
             device_proxy (str): Device proxy
         """
 
-        super().__init__()
+        super().__init__(parent)
 
         self.device_id = device_id
         self.device_proxy = device_proxy
@@ -850,6 +850,7 @@ class ProcessManagerUIController(Observer):
         # analysers can easily detect.
         # noinspection PyUnresolvedReferences
         self.configuration_manager_monitoring_worker.setup_changed_signal.connect(self.on_setup_changed_signal)
+        # noinspection PyUnresolvedReferences
         self.configuration_manager_monitoring_thread.started.connect(self.configuration_manager_monitoring_worker.start_listening)
         self.configuration_manager_monitoring_thread.start()
 
@@ -965,6 +966,7 @@ class ProcessManagerUIController(Observer):
             # analysers can easily detect.
             # noinspection PyUnresolvedReferences
             core_service_monitoring_worker.core_service_status_signal.connect(self.on_core_service_status_signal)
+            # noinspection PyUnresolvedReferences
             core_service_monitoring_thread.started.connect(core_service_monitoring_worker.start_listening)
             core_service_monitoring_thread.start()
 
@@ -1004,6 +1006,7 @@ class ProcessManagerUIController(Observer):
             # analysers can easily detect.
             # noinspection PyUnresolvedReferences
             device_monitoring_worker.process_status_signal.connect(self.on_device_status_signal)
+            # noinspection PyUnresolvedReferences
             device_monitoring_thread.started.connect(device_monitoring_worker.start_listening)
             device_monitoring_thread.start()
 
