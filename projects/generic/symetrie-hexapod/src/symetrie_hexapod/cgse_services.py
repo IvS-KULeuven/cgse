@@ -23,6 +23,12 @@ zonda = typer.Typer(
     no_args_is_help=True
 )
 
+joran = typer.Typer(
+    name="joran",
+    help="JORAN Positioning Hexapod, Symétrie",
+    no_args_is_help=True
+)
+
 
 def redirect_output_to(output_fn: str) -> TextIO:
     """Open file in the log folder where process output will be redirected."""
