@@ -211,6 +211,7 @@ def status(device_id: str):
         else:
             rich.print(f"[red]The ZONDA CS '{device_id}' isn't registered as a service. I cannot contact the control "
                        f"server without the required info from the service registry.[/]")
+            rich.print("ZONDA Hexapod: [red]inactive")
             return
 
     factory = ProxyFactory()
@@ -229,7 +230,7 @@ def status(device_id: str):
             rich.print(f"monitoring port: {monitoring_port}")
 
     else:
-        rich.print("[red]not active")
+        rich.print("ZONDA Hexapod: [red]inactive")
 
 
 if __name__ == "__main__":
