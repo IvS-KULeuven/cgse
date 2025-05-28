@@ -8,16 +8,18 @@ from egse.decorators import dynamic_interface
 from egse.listener import EventInterface, Event
 from egse.plugin import entry_points
 from egse.proxy import Proxy
+from egse.registry.client import RegistryClient
 from egse.settings import Settings
 from egse.setup import Setup, load_setup
 from egse.storage import is_storage_manager_active
 from egse.zmq_ser import connect_address
 
 HERE = Path(__file__).parent
-LOGGER = logging.getLogger(__name__)
+LOGGER = logging.getLogger("egse.procman")
 
 CTRL_SETTINGS = Settings.load("Process Manager Control Server")
 COMMAND_SETTINGS = Settings.load(location=HERE, filename="procman.yaml")
+PROXY_TIMEOUT = 10_000
 
 def is_process_manager_active(timeout: float = 0.5) -> bool:
     """ Checks if the Process Manager Control Server is active.
@@ -32,7 +34,11 @@ def is_process_manager_active(timeout: float = 0.5) -> bool:
     Returns: True if the Process Manager Control Server is active; False otherwise.
     """
 
-    endpoint = connect_address(CTRL_SETTINGS.PROTOCOL, CTRL_SETTINGS.HOSTNAME, CTRL_SETTINGS.COMMANDING_PORT)
+    with RegistryClient() as client:
+        endpoint = client.get_endpoint(CTRL_SETTINGS.SERVICE_TYPE)
+
+    if endpoint is None:
+        return False
 
     return is_control_server_active(endpoint, timeout)
 
@@ -193,8 +199,7 @@ class ProcessManagerProxy(Proxy, ProcessManagerInterface):
     """ Proxy for process management, used to connect to the Process Manager Control Server and send commands remotely.
     """
 
-    def __init__(self, protocol: str = CTRL_SETTINGS.PROTOCOL, hostname: str = CTRL_SETTINGS.HOSTNAME,
-                 port: int = CTRL_SETTINGS.COMMANDING_PORT):
+    def __init__(self, protocol: str = None, hostname: str = None, port: int = -1, timeout=PROXY_TIMEOUT):
         """ Initialisation of a new Proxy for Process Management.
 
         If no connection details (transport protocol, hostname, and port) are not provided, these are taken from the
@@ -206,4 +211,15 @@ class ProcessManagerProxy(Proxy, ProcessManagerInterface):
             port (int): TCP port on which the Control Server is listening for commands
         """
 
-        super().__init__(connect_address(protocol, hostname, port))
+        if hostname is None:
+            with RegistryClient() as reg:
+                service = reg.discover_service(CTRL_SETTINGS.SERVICE_TYPE)
+
+                if service:
+                    protocol = service.get('protocol', 'tcp')
+                    hostname = service['host']
+                    port = service['port']
+                else:
+                    raise RuntimeError(f"No service registered as {CTRL_SETTINGS.SERVICE_TYPE}")
+
+        super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
