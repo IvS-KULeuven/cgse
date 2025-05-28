@@ -391,13 +391,13 @@ class CoreServiceMonitoringWorker(QObject):
         self.core_service_is_active = False
 
     def start_listening(self):
-        """ Establish a connection to the registry client."""
+        """ Start checking the status of the core service as long as the monitoring worker is active."""
 
         self.active = True
         self.run()
 
     def stop_listening(self):
-        """ Close the connection to the registry client."""
+        """ Stop checking the status of the core service."""
 
         self.active = False
 
@@ -451,26 +451,23 @@ class DeviceMonitoringWorker(QObject):
         self.cgse_cmd = get_cgse_cmd(self.device_proxy)
 
     def start_listening(self) -> None:
-        """ Establish a connection to the registry client."""
+        """ Start listening to the output of the CGSE status command."""
 
         self.active = True
 
         self.run()
 
     def stop_listening(self) -> None:
-        """ Close the connection to the registry client."""
+        """ Stop listening to the output of the CGSE status command."""
 
         self.active = False
 
     def run(self) -> None:
         """ Keep on checking the status of the device Control Server as long as the monitoring worker is active.
 
-        Check the registry client for a registration of the device Control Server.  When a registration is present, the
-        Control Server is assumed to be active.  Note, however, that a process is not immediately removed from the
-        registry client when it becomes inactive, but only after a while (time-to-live).
-
-        Whenever the status of the device Control Server has changed, a signal is emitted.  This signal comprises a
-        dictionary with the following information:
+        Execute the CGSE status command to query the status of the device Control Server.  Whenever the status of the
+        device Control Server has changed, a signal is emitted.  This signal comprises a dictionary with the following
+        information:
             - Device identifier;
             - Boolean indicating whether the Control Server is active;
             - In case the Control Server is active:
