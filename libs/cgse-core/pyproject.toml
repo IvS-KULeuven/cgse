@@ -53,6 +53,7 @@ explore = "cgse_core.cgse_explore"
 icons = 'egse.icons'
 
 [project.entry-points."cgse.process_management.core_services"]
+"Service Registry" = "reg_cs"
 "Storage Manager" = "sm_cs"
 "Configuration Manager" = "cm_cs"
 "Process Manager" = "pm_cs"
