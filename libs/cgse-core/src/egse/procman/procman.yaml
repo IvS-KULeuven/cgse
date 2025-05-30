@@ -15,3 +15,11 @@ Commands:
     handle_event:
         description:    Notification of an event
         cmd:            '{event}'
+
+    start_process:
+        description:    Starts a process
+        cmd:            '{start_cmd}'
+
+    stop_process:
+        description:    Stops a process
+        cmd:            '{stop_cmd}'
