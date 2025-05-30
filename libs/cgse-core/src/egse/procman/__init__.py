@@ -286,7 +286,20 @@ class ProcessManagerInterface(EventInterface):
 
         raise NotImplementedError
 
-    def get_process_status(self, status_cmd: StatusCommand) -> dict:
+    @dynamic_interface
+    def get_core_service_status(self, status_cmd: StatusCommand) -> dict:
+        """ Returns the status of a core service.
+
+        Args:
+            status_cmd (StatusCommand): Command to query the status of a core service
+
+        Returns: Status of a core service
+        """
+
+        raise NotImplementedError
+
+    @dynamic_interface
+    def get_device_process_status(self, status_cmd: StatusCommand) -> dict:
         """ Returns the status of a process.
 
         Args:
@@ -361,6 +374,29 @@ class ProcessManagerController(ProcessManagerInterface):
     def stop_process(self, stop_cmd: StopCommand):
 
         subprocess.call(stop_cmd.cmd, shell=True)
+
+    def get_core_service_status(self, status_cmd: StatusCommand) -> dict:
+
+        output = subprocess.check_output(status_cmd.cmd, shell=True).decode("utf-8")
+        cs_is_active = not ("inactive" in output or "not active" in output)
+
+        return {"core_service_name": status_cmd.device_id, "core_service_is_active": cs_is_active}
+
+    def get_device_process_status(self, status_cmd: StatusCommand) -> dict:
+
+        output = subprocess.check_output(status_cmd.cmd, shell=True).decode("utf-8")
+        # return output
+        cs_is_active = not ("inactive" in output or "not active" in output)
+
+        if cs_is_active:
+            device_is_connected = not "not connected" in output
+            is_simulator_mode = "simulator" in output
+
+            return {"device_id": status_cmd.device_id, "cs_is_active": True,
+                    "device_is_connected": device_is_connected, "is_simulator_mode": is_simulator_mode}
+        else:
+            return {"device_id": status_cmd.device_id, "cs_is_active": False}
+
 
 class ProcessManagerProxy(Proxy, ProcessManagerInterface):
     """ Proxy for process management, used to connect to the Process Manager Control Server and send commands remotely.

@@ -23,3 +23,11 @@ Commands:
     stop_process:
         description:    Stops a process
         cmd:            '{stop_cmd}'
+
+    get_core_service_status:
+        description:    Returns the status of a core service
+        cmd:            '{status_cmd}'
+
+    get_device_process_status:
+        description:    Returns the status of a process
+        cmd:            '{status_cmd}'
