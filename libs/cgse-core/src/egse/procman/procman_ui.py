@@ -33,7 +33,7 @@ from egse.gui.led import LED, Indic
 from egse.observer import Observer, Observable
 from egse.plugin import entry_points
 from egse.process import ProcessStatus
-from egse.procman import LOGGER
+from egse.procman import LOGGER, StartCommand, StopCommand
 from egse.procman import ProcessManagerProxy
 from egse.resource import get_resource
 from egse.setup import Setup
@@ -107,133 +107,6 @@ def get_cgse_ui(device_proxy: str) -> Union[str, None]:
         return best_match
     else:
         return None
-
-
-class StartCommand:
-    """ Command to start the Control Server for a device."""
-
-    def __init__(self, device_id: str, cgse_cmd: str, device_args: Union[list, None], simulator_mode: bool = False):
-        """ Initialisation of a start command for a device Control Server.
-
-        Args:
-            device_id (str): Device identifier
-            cgse_cmd (str): CGSE command to start/stop the Control Server or to query its status
-            device_args (Union[list, None]): Device arguments
-            simulator_mode (bool): Whether to start the Control Server in simulator mode rather than operational mode
-        """
-
-        self._device_id = device_id
-        self._cgse_cmd = cgse_cmd
-        self._device_args = device_args
-        self._simulator_mode = simulator_mode
-
-    @property
-    def device_id(self) -> str:
-        """ Returns the device identifier.
-
-        Returns: Device identifier
-        """
-
-        return self._device_id
-
-    @property
-    def device_args(self) -> Union[list, None]:
-        """ Returns the device arguments.
-
-        Returns: Device arguments
-        """
-
-        return self._device_args
-
-    @property
-    def cmd(self) -> str:
-        """ Returns the full CGSE command to start the Control Server.
-
-        Returns: Full CGSE command to start the Control Server.
-        """
-
-        cmd = f"{self._cgse_cmd} start {self.device_id}"
-
-        if self.device_args:
-            cmd = f"{cmd} {self.device_args}"
-        if self.simulator_mode:
-            cmd = f"{cmd} --sim"
-
-        return cmd
-
-    @property
-    def simulator_mode(self) -> bool:
-        """ Checks whether the Control Server should be started in simulator mode rather than operational mode.
-
-        Returns: True if the Control Server should be started in simulator mode; False otherwise.
-        """
-
-        return self._simulator_mode
-
-
-class StopCommand:
-    """ Command to stop the Control Server for a device."""
-
-    def __init__(self, device_id: str, cgse_cmd: str):
-        """ Initialisation of a stop command for a device Control Server.
-
-        Args:
-            device_id (str): Device identifier
-            cgse_cmd (str): CGSE command to start/stop the Control Server or to query its status
-        """
-
-        self._device_id = device_id
-        self._cgse_cmd = cgse_cmd
-
-    @property
-    def device_id(self) -> str:
-        """ Returns the device identifier.
-
-        Returns: Device identifier
-        """
-
-        return self._device_id
-
-    @property
-    def cmd(self) -> str:
-        """ Returns the full CGSE command to stop the Control Server.
-
-        Returns: Full CGSE command to stop the Control Server.
-        """
-
-        return f"{self._cgse_cmd} stop {self.device_id}"
-
-
-class StatusCommand:
-    """ Command to query the status of a Control Server for a device."""
-
-    def __init__(self, device_id: str, cgse_cmd: str):
-        """ Initialisation of a status command for a device Control Server.
-
-        Args:
-            device_id (str): Device identifier
-            cgse_cmd (str): CGSE command to start/stop the Control Server or to query its status
-        """
-
-        self._device_id = device_id
-        self._cgse_cmd = cgse_cmd
-
-    @property
-    def device_id(self) -> str:
-        """ Returns the device identifier.
-
-        Returns: Device identifier
-        """
-
-        return self._device_id
-
-    @property
-    def cmd(self) -> str:
-        """ Returns the full CGSE command to query the status of the Control Server.
-
-        Returns: Full CGSE command to query the status of the Control Server.
-        """
-        return f"{self._cgse_cmd} status {self.device_id}"
 
 
 class UiCommand:
@@ -665,6 +538,7 @@ class DeviceWidget(QGroupBox, Observable):
         return self.ui_cmd is not None
 
     def open_ui(self) -> None:
+        """ Open the UI."""
 
         self.notifyObservers(UiCommand(device_id=self.device_id, cmd=self.ui_cmd))
 
@@ -735,6 +609,27 @@ class ProcessManagerUIModel:
         """
 
         return self.process_manager.get_core_processes()
+
+    def start_process(self, start_cmd: StartCommand):
+        """ Start a process with the given start command.
+
+        The process is started on the same machine as the Process Manager.
+
+        Args:
+            start_cmd (StartCommand): Command to start the process
+        """
+        self.process_manager.start_process(start_cmd)
+
+    def stop_process(self, stop_cmd: StopCommand):
+        """ Stop a process with the given stop command.
+
+        The process was running on the same machine as the Process Manager.
+
+        Args:
+            stop_cmd (StopCommand): Command to stop the process
+        """
+
+        self.process_manager.stop_process(stop_cmd)
 
 
 class ProcessManagerUIView(QMainWindow, Observable):
@@ -1048,10 +943,20 @@ class ProcessManagerUIController(Observer):
             # Stop monitoring the devices
             self.stop_device_monitoring()
 
-        # Start/stop button in one of the widgets has been clicked
+        # Start button in one of the widgets has been clicked
 
-        elif isinstance(changed_object, StartCommand) or isinstance(changed_object, StopCommand):
-            subprocess.call(changed_object.cmd, shell=True)
+        elif isinstance(changed_object, StartCommand):
+            self.model.start_process(changed_object)
+
+        # Stop button in one of the widgets has been clicked
+
+        elif isinstance(changed_object, StopCommand):
+            self.model.stop_process(changed_object)
+
+        # # Start/stop button in one of the widgets has been clicked
+        #
+        # elif isinstance(changed_object, StartCommand) or isinstance(changed_object, StopCommand):
+        #     subprocess.call(changed_object.cmd, shell=True)
 
         # UI button in one of the widgets has been clicked
 
