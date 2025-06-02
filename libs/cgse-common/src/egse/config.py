@@ -123,7 +123,7 @@ def find_dirs(pattern: str, root: Path | str) -> Generator[Path, None, None]:
 
     """
     root_arg = root
-    root = Path(root).resolve() if root else get_common_egse_root()
+    root = Path(root).resolve()
     if not root.is_dir():
         raise ValueError(f"The root argument is not a valid directory: {root_arg}.")
 
@@ -250,63 +250,6 @@ def find_root(
         prev, test = test, test.parent
 
     return Path(default) if default is not None else None
-
-
-@lru_cache(maxsize=16)
-@deprecate(reason="the concept of CGSE root doesn't exist in a monorepo.", alternative="a case-by-case alternative.")
-def get_common_egse_root(path: Union[str, PurePath] = None) -> Optional[PurePath]:
-    """
-    Returns the absolute path to the installation directory for the Common-EGSE.
-
-    The algorithm first tries to determine the path from the environment variable
-    ``PLATO_COMMON_EGSE_PATH``. If this environment variable doesn't exist, the algorithm
-    tries to determine the path automatically from (1) the git root if it is a git repository,
-    or (2) from the location of this module assuming the installation is done from the
-    GitHub distribution.
-
-    When the optional argument ``path`` is given, that directory will be used to start the
-    search for the root folder.
-
-    At this moment the algorithm does not cache the ``egse_path`` in order to speed up
-    the successive calls to this function.
-
-    Args:
-        path (str or Path): a directory as a Path or str [optional]
-
-    Returns:
-        Path: the absolute path to the Common-EGSE installation directory or None
-    """
-    _TEST_NAMES = ("pyproject.toml", "setup.py")
-    if path is not None:
-        return find_root(path, tests=_TEST_NAMES)
-
-    egse_path: Union[str, PurePath, None] = os.getenv("COMMON_EGSE_PATH")
-
-    if egse_path is None:
-        # The root of the plato-common-egse installation shall be determined from the location
-        # of this config module using git commands to find the git root folder.
-        # This assumes the user has installed from git/GitHub (which is not always true)!
-        #
-        # Alternatively, the root directory can be determined from the location of this module
-        # by going back in the directory structure until the ``setup.py`` module is found.
-
-        _THIS_FILE_PATH = Path(__file__).resolve()
-        _THIS_FILE_LOCATION = _THIS_FILE_PATH.parent
-
-        try:
-            git_repo = git.Repo(_THIS_FILE_PATH, search_parent_directories=True)
-            git_root = git_repo.git.rev_parse("--show-toplevel")
-            egse_path = git_root
-        except (git.exc.InvalidGitRepositoryError, git.exc.NoSuchPathError):
-            _logger.info("no git repository found, assuming installation from distribution.")
-            egse_path = find_root(_THIS_FILE_LOCATION, tests=_TEST_NAMES)
-
-        _logger.debug(f"Common-EGSE location is automatically determined: {egse_path}.")
-
-    else:
-        _logger.debug(f"Common-EGSE location determined from environment variable PLATO_COMMON_EGSE_PATH: {egse_path}")
-
-    return Path(egse_path)
 
 
 def set_logger_levels(logger_levels: List[Tuple] = None):

@@ -109,7 +109,7 @@ from egse.exceptions import InternalError
 from egse.plugin import entry_points
 from egse.system import get_package_location
 
-_LOGGER = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class ResourceError(Exception):
@@ -211,7 +211,7 @@ def get_resource_dirs(root_dir: Path | str) -> List[Path]:
     """
 
     if root_dir is None:
-        _LOGGER.warning("The argument root_dir can not be None, an empty list is returned.")
+        _logger.warning("The argument root_dir can not be None, an empty list is returned.")
         return []
 
     root_dir = Path(root_dir).resolve()
@@ -230,14 +230,9 @@ def get_resource_path(name: str, resource_root_dir: Path | str) -> PurePath:
     """
     Searches for a data file (resource) with the given name.
 
-    When `resource_root_dir` is not given, the search for resources will start at the root
-    folder of the project (using the function `get_common_egse_root()`). Any other root
-    directory can be given, e.g. if you want to start the search from the location of your
-    source code file, use `Path(__file__).parent` as the `resource_root_dir` argument.
-
     Args:
         name (str): the name of the resource that is requested
-        resource_root_dir (str): the root directory w_HERE the search for resources should be started
+        resource_root_dir (str): the root directory where the search for resources should be started
 
     Returns:
         the absolute path of the data file with the given name. The first name that matches
@@ -286,7 +281,7 @@ def initialise_resources(root: Path | str = Path(__file__).parent):
             if location not in x:
                 x.append(location)
 
-    _LOGGER.debug(f"Resources have been initialised: {resources = }")
+    _logger.debug(f"Resources have been initialised: {resources = }")
 
 
 def print_resources():
