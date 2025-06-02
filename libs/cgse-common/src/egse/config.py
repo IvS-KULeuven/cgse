@@ -309,62 +309,6 @@ def get_common_egse_root(path: Union[str, PurePath] = None) -> Optional[PurePath
     return Path(egse_path)
 
 
-def get_resource_dirs(root_dir: Union[str, PurePath] = None) -> List[Path]:
-    """
-    Define directories that contain resources like images, icons, and data files.
-
-    Resource directories can have the following names: `resources`, `data`, `icons`, or `images`.
-    This function checks if any of the resource directories exist in the project root directory,
-    in the `root_dir` that is given as an argument or in the `src/egse` sub-folder.
-
-    So, the directories that are searched for the resource folders are:
-
-    * `root_dir` or the project's root directory
-    * the `src/egse` sub-folder of one of the above
-
-    For all existing directories the function returns the absolute path.
-
-    Args:
-        root_dir (str): the directory to search for resource folders
-
-    Returns:
-        a list of absolute Paths.
-    """
-    project_dir = Path(root_dir).resolve() if root_dir else get_common_egse_root()
-    result = []
-    for dir_ in ["resources", "data", "icons", "images"]:
-        if (project_dir / dir_).is_dir():
-            result.append(Path(project_dir, dir_).resolve())
-        if (project_dir / "src" / "egse" / dir_).is_dir():
-            result.append(Path(project_dir, "src", "egse", dir_).resolve())
-    return result
-
-
-def get_resource_path(name: str, resource_root_dir: Union[str, PurePath] = None) -> PurePath:
-    """
-    Searches for a data file (resource) with the given name.
-
-    When `resource_root_dir` is not given, the search for resources will start at the root
-    folder of the project (using the function `get_common_egse_root()`). Any other root
-    directory can be given, e.g. if you want to start the search from the location of your
-    source code file, use `Path(__file__).parent` as the `resource_root_dir` argument.
-
-    Args:
-        name (str): the name of the resource that is requested
-        resource_root_dir (str): the root directory where the search for resources should be started
-
-    Returns:
-        the absolute path of the data file with the given name. The first name that matches
-            is returned. If no file with the given name or path exists, a FileNotFoundError is raised.
-
-    """
-    for resource_dir in get_resource_dirs(resource_root_dir):
-        resource_path = join(resource_dir, name)
-        if exists(resource_path):
-            return Path(resource_path).absolute()
-    raise FileNotFoundError(errno.ENOENT, f"Could not locate resource '{name}'")
-
-
 def set_logger_levels(logger_levels: List[Tuple] = None):
     """
     Set the logging level for the given loggers.
