@@ -12,7 +12,6 @@ from PyQt5.QtGui import QPainter
 from PyQt5.QtSvg import QSvgRenderer
 from PyQt5.QtWidgets import QWidget
 
-from egse.config import find_dir
 from egse.resource import get_resource
 
 logger = logging.getLogger(__name__)

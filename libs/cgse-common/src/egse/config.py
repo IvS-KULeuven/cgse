@@ -74,7 +74,7 @@ def find_first_occurrence_of_dir(pattern: str, root: Path | str) -> Path | None:
     return None
 
 
-def find_dir(pattern: str, root: str = None) -> Path | None:
+def find_dir(pattern: str, root: Path | str) -> Path | None:
     """
     Find the first folder that matches the given pattern.
 
@@ -84,8 +84,8 @@ def find_dir(pattern: str, root: str = None) -> Path | None:
     `find_dirs()` function and check if there is just one item returned in the list.
 
     Args:
-        pattern (str): pattern to match (use * for wildcard)
-        root (str): the top level folder to search [default=common-egse-root]
+        pattern: pattern to match (use * for wildcard)
+        root: the top level folder to search
 
     Returns:
         the first occurrence of the directory pattern or None when not found.
@@ -96,7 +96,7 @@ def find_dir(pattern: str, root: str = None) -> Path | None:
     return None
 
 
-def find_dirs(pattern: str, root: str = None) -> Generator[Path, None, None]:
+def find_dirs(pattern: str, root: Path | str) -> Generator[Path, None, None]:
     """
     Generator for returning directory paths from a walk started at `root` and matching pattern.
 
@@ -107,7 +107,7 @@ def find_dirs(pattern: str, root: str = None) -> Generator[Path, None, None]:
 
     Args:
         pattern (str): pattern to match (use * for wildcard)
-        root (str): the top level folder to search [default=common-egse-root]
+        root (str): the top level folder to search
 
     Returns:
          Generator: Paths of folders matching pattern, from root.
@@ -122,9 +122,10 @@ def find_dirs(pattern: str, root: str = None) -> Generator[Path, None, None]:
         ```
 
     """
+    root_arg = root
     root = Path(root).resolve() if root else get_common_egse_root()
     if not root.is_dir():
-        root = root.parent
+        raise ValueError(f"The root argument is not a valid directory: {root_arg}.")
 
     parts = pattern.rsplit("/", maxsplit=1)
     if len(parts) == 2:
