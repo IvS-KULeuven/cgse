@@ -8,7 +8,7 @@ from egse.command import ClientServerCommand
 from egse.device import DeviceConnectionInterface, DeviceTransport
 from egse.settings import Settings
 
-DEVICE_SETTINGS = Settings.load("LakeShore336 Control Server")
+DEVICE_SETTINGS = Settings.load("LakeShore336 Controller")
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ class LakeShore336EthernetInterface(DeviceConnectionInterface, DeviceTransport):
         self.device_id = device_id
 
         self.hostname = DEVICE_SETTINGS[device_id]["HOSTNAME"] if hostname is None else hostname
-        self.port = DEVICE_SETTINGS[device_id]["COMMANDING_PORT"] if port is None else port
+        self.port = DEVICE_SETTINGS[device_id]["PORT"] if port is None else port
 
         self._socket = None
         self._is_connection_open = False
