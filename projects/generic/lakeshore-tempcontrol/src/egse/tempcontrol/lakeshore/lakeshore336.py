@@ -4,6 +4,7 @@ from egse.device import DeviceInterface
 from egse.mixin import dynamic_command, CommandType, add_lf
 from egse.proxy import Proxy
 from egse.randomwalk import RandomWalk
+from egse.registry.client import RegistryClient
 from egse.settings import Settings
 from egse.tempcontrol.lakeshore.lakeshore336_devif import LakeShore336EthernetInterface
 from egse.zmq_ser import connect_address
@@ -689,8 +690,14 @@ class LakeShore336Proxy(Proxy, LakeShore336Interface):
             device_id (str): Device identifier
         """
 
-        protocol = CTRL_SETTINGS.PROTOCOL
-        hostname = CTRL_SETTINGS.HOSTNAME
-        port = CTRL_SETTINGS[device_id]["COMMANDING_PORT"]      # TODO: Use port number from registry service
+        with RegistryClient() as reg:
+            service = reg.discover_service(device_id)
 
-        super().__init__(endpoint=connect_address(protocol, hostname, port))
+            if service:
+                protocol = service.get('protocol', 'tcp')
+                hostname = service['host']
+                port = service['port']
+            else:
+                raise RuntimeError(f"No service registered as {CTRL_SETTINGS.SERVICE_TYPE}")
+
+        super().__init__(connect_address(protocol, hostname, port))
