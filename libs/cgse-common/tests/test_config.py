@@ -9,7 +9,6 @@ from egse.config import find_file
 from egse.config import find_files
 from egse.config import find_first_occurrence_of_dir
 from egse.config import find_root
-from egse.config import get_common_egse_root
 
 _HERE = Path(__file__).parent.resolve()
 
@@ -64,40 +63,9 @@ def test_find_root():
     assert find_root("/", tests=("non-existing-tmp",)) is None
 
 
-def test_get_common_egse_root():
-    print()
-
-    # for the following test I assume that we are in the repository, but we can not test
-    # the value as it will be different for each installation
-    assert get_common_egse_root() is not None
-
-    print(f"{get_common_egse_root() = }")
-
-    # for the following test I assume that we are on a unix system (Linux or macOS)
-    assert get_common_egse_root(Path("/tmp")) is None
-
-
 def test_find_root_exceptions():
     assert find_root("/non-existing-path") is None
     assert find_root(None) is None
-
-
-def test_get_common_egse_root_with_env():
-    import os
-
-    os.environ["COMMON_EGSE_PATH"] = "/Users/rik/git"
-
-    # I added lru_cache to speed up the get_common_egse_root() function, but this
-    # is of course fatal for test harnesses. T_HEREfore, clear the cache before and
-    # after this test.
-
-    get_common_egse_root.cache_clear()
-
-    assert get_common_egse_root() == Path("/Users/rik/git")
-
-    get_common_egse_root.cache_clear()
-
-    del os.environ["COMMON_EGSE_PATH"]
 
 
 def test_find_files():
