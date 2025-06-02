@@ -1,6 +1,6 @@
 import logging
 import multiprocessing
-from typing import Annotated
+from typing import Annotated, Optional
 
 import rich
 import sys
@@ -8,12 +8,13 @@ import typer
 import zmq
 
 from egse.control import is_control_server_active, ControlServer
+from egse.registry.client import RegistryClient
 from egse.services import ServiceProxy
 from egse.settings import Settings
 from egse.storage import store_housekeeping_information
 from egse.tempcontrol.lakeshore.lakeshore336 import LakeShore336Proxy
 from egse.tempcontrol.lakeshore.lakeshore336_protocol import LakeShore336Protocol
-from egse.zmq_ser import connect_address
+from egse.zmq_ser import connect_address, get_port_number
 
 multiprocessing.current_process().name = "lakeshore336_cs"
 CTRL_SETTINGS = Settings.load("LakeShore336 Control Server")
@@ -58,29 +59,31 @@ class LakeShore336ControlServer(ControlServer):
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
+        self.register_service(service_type=f"{device_id}")
+
     def get_communication_protocol(self) -> str:
         """ Returns the communication protocol used by the Control Server.
 
         Returns Communication protocol used by the Control Server, as specified in the settings.
         """
 
-        return CTRL_SETTINGS.PROTOCOL
+        return "tcp"
 
-    def get_commanding_port(self) -> str:
+    def get_commanding_port(self):
         """ Returns the commanding port used by the Control Server.
 
         Returns: Commanding port used by the Control Server, as specified in the settings.
         """
 
-        return CTRL_SETTINGS[self.device_id]["COMMANDING_PORT"]
+        return get_port_number(self.dev_ctrl_cmd_sock) or 0
 
-    def get_service_port(self) -> int:
+    def get_service_port(self):
         """ Returns the service port used by the Control Server.
 
         Returns: Service port used by the Control Server, as specified in the settings.
         """
 
-        return CTRL_SETTINGS[self.device_id]["SERVICE_PORT"]
+        return get_port_number(self.dev_ctrl_service_sock) or 0
 
     def get_monitoring_port(self) -> int:
         """ Returns the monitoring port used by the Control Server.
@@ -88,7 +91,7 @@ class LakeShore336ControlServer(ControlServer):
         Returns: Monitoring port used by the Control Server, as specified in the settings.
         """
 
-        return CTRL_SETTINGS[self.device_id]["MONITORING_PORT"]
+        return get_port_number(self.dev_ctrl_mon_sock) or 0
 
     def get_storage_mnemonic(self) -> str:
         """ Returns the storage mnemonic used by the Control Server.
@@ -140,6 +143,9 @@ class LakeShore336ControlServer(ControlServer):
             }
         )
 
+    def after_serve(self) -> None:
+        self.deregister_service()
+
     def unregister_from_storage_manager(self):
         """ Unregisters the Control Server from the Storage Manager."""
 
@@ -151,8 +157,14 @@ class LakeShore336ControlServer(ControlServer):
 app = typer.Typer()
 
 @app.command()
-def start(device_id: str,
-          simulator: Annotated[bool, typer.Option("--simulator", "--sim", help="start the LakeShore 336 simulator in the background")]=False):
+def start(device_id: Annotated[
+            str,
+            typer.Argument(help="Device identifier, identifies the hardware controller")
+        ],
+        simulator: Annotated[
+            bool,
+            typer.Option("--simulator", "--sim", help="Start the LakeShore336 Control Server in simulator mode")
+        ] = False):
     """ Start the LakeShore336 Control Server for the given device ID.
 
     Args:
@@ -185,14 +197,14 @@ def stop(device_id: str):
         device_id (str): Device identifier
     """
 
-    try:
-        with LakeShore336Proxy(device_id) as proxy:
-            sp: ServiceProxy = proxy.get_service_proxy()
-            sp.quit_server()
-    except ConnectionError:
-        msg = f"Cannot stop the LakeShore336 Control Server {device_id}"
-        logger.error(msg, exc_info=True)
-        rich.print(f"[red]{msg}, could not send the Quit command. [black]Check log messages.")
+    with RegistryClient() as reg:
+        service = reg.discover_service(device_id)
+        rich.print("service = ", service)
+
+        if service:
+            proxy = ServiceProxy(protocol="tcp", hostname=service["host"], port=service['metadata']['service_port'])
+            proxy.quit_server()
+
 
 @app.command()
 def status(device_id: str):
@@ -202,23 +214,32 @@ def status(device_id: str):
         device_id (str): Device identifier
     """
 
-    multiprocessing.current_process().name = "lakeshore336_cs (status)"
+    with RegistryClient() as reg:
+        service = reg.discover_service(device_id)
+        
+        if service:
+            protocol = service.get('protocol', 'tcp')
+            hostname = service['host']
+            port = service['port']
+            service_port = service['metadata']['service_port']
+            monitoring_port = service['metadata']['monitoring_port']
+            endpoint = connect_address(protocol, hostname, port)
 
-    protocol = CTRL_SETTINGS.PROTOCOL
-    hostname = CTRL_SETTINGS.HOSTNAME
-    port = CTRL_SETTINGS[device_id]["COMMANDING_PORT"]
-
-    endpoint = connect_address(protocol, hostname, port)
-
-    if is_control_server_active(endpoint):
-        rich.print(f"{device_id} CS: [green]active")
-
-        with LakeShore336Proxy(device_id) as proxy:
-            sim = proxy.is_simulator()
-            connected = proxy.is_connected()
-            ip = proxy.get_ip_address()
-            rich.print(f"mode: {'simulator' if sim else 'device'}{' not' if not connected else ''} connected")
-            rich.print(f"hostname: {ip}")
-    else:
-        rich.print(f"{device_id} CS: [red]inactive")
+            if is_control_server_active(endpoint):
+                rich.print(f"{device_id} CS: [green]active")
+                with LakeShore336Proxy(device_id) as proxy:
+                    sim = proxy.is_simulator()
+                    connected = proxy.is_connected()
+                    ip = proxy.get_ip_address()
+                    rich.print(f"mode: {'simulator' if sim else 'device'}{'' if connected else ' not'} connected")
+                    rich.print(f"hostname: {ip}")
+                    rich.print(f"commanding port: {port}")
+                    rich.print(f"service port: {service_port}")
+                    rich.print(f"monitoring port: {monitoring_port}")
+            else:
+                rich.print(f"LakeShore336 {device_id} CS: [red]inactive")
+        else:
+            rich.print(f"[red]The LakeShore336 CS '{device_id}' isn't registered as a service. I cannot contact the control "
+                       f"server without the required info from the service registry.[/]")
+            rich.print(f"LakeShore336 {device_id}: [red]inactive")
 
