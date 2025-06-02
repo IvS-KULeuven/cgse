@@ -627,7 +627,7 @@ class DeviceWidget(QGroupBox, Observable):
     def open_ui(self) -> None:
         """ Open the UI."""
 
-        self.notifyObservers(UiCommand(device_id=self.device_id, cmd=self.ui_cmd))
+        self.notify_observers(UiCommand(device_id=self.device_id, cmd=self.ui_cmd))
 
     def start_stop_cs(self) -> None:
         """ Take action when the start/stop button is clicked."""
@@ -635,9 +635,9 @@ class DeviceWidget(QGroupBox, Observable):
         self.start_stop_button.disable()
 
         if self.start_stop_button.is_selected():
-            self.notifyObservers(StopCommand(device_id=self.device_id, cgse_cmd=self.cgse_cmd))
+            self.notify_observers(StopCommand(device_id=self.device_id, cgse_cmd=self.cgse_cmd))
         else:
-            self.notifyObservers(StartCommand(device_id=self.device_id, cgse_cmd=self.cgse_cmd,
+            self.notify_observers(StartCommand(device_id=self.device_id, cgse_cmd=self.cgse_cmd,
                                               device_args=self.device_args, simulator_mode=self.is_simulator_mode))
 
     def change_cs_start_mode(self) -> None:
@@ -805,7 +805,7 @@ class ProcessManagerUIView(QMainWindow, Observable):
     def closeEvent(self, close_event: QCloseEvent) -> None:
         """ Takes action when the UI is closed."""
 
-        self.notifyObservers(close_event)
+        self.notify_observers(close_event)
 
 
 class ProcessManagerUIController(Observer):
@@ -1004,7 +1004,7 @@ class ProcessManagerUIController(Observer):
             # Add the new device widgets
 
             device_widget = DeviceWidget(device_id, device_name, device_proxy, device_args, self.view)
-            device_widget.addObserver(self)
+            device_widget.add_observer(self)
             self.view.device_widgets[device_id] = device_widget
             self.view.overview_devices_widget_layout.addWidget(device_widget)
 
@@ -1124,7 +1124,7 @@ def main():
         core_services = model.get_core_services()
         view = ProcessManagerUIView(core_services)
         controller = ProcessManagerUIController(model, view)
-        view.addObserver(controller)
+        view.add_observer(controller)
 
         view.show()
 
