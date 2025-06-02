@@ -59,7 +59,7 @@ def test_zombie():
 def test_is_process_running():
     # The empty_process.py should be located in the src/tests/scripts directory of the project
 
-    stub = SubProcess("Stub Process", [sys.executable, str(find_file("empty_process.py").resolve())])
+    stub = SubProcess("Stub Process", [sys.executable, str(find_file("empty_process.py", root=HERE).resolve())])
     stub.execute()
 
     time.sleep(0.1)  # allow process time to start/terminate
@@ -82,7 +82,7 @@ def test_is_process_running():
 def test_get_process_info():
     # The empty_process.py should be located in the src/tests/scripts directory of the project
 
-    stub = SubProcess("Stub Process", [sys.executable, str(find_file("empty_process.py").resolve())])
+    stub = SubProcess("Stub Process", [sys.executable, str(find_file("empty_process.py", root=HERE).resolve())])
     stub.execute()
 
     time.sleep(0.1)  # allow process time to start/terminate
@@ -131,7 +131,7 @@ def test_error_during_execute():
 def test_terminated_process():
     # Process void-0 exits with an exit code of 0
 
-    process = SubProcess("Stub Process", [sys.executable, str(find_file("void-0.py").resolve())])
+    process = SubProcess("Stub Process", [sys.executable, str(find_file("void-0.py", root=HERE).resolve())])
 
     assert process.execute()
     time.sleep(0.5)  # allow process time to terminate
@@ -140,7 +140,7 @@ def test_terminated_process():
 
     # Process void-1 exits with an exit code of 1
 
-    process = SubProcess("Stub Process", [sys.executable, str(find_file("void-1.py").resolve())])
+    process = SubProcess("Stub Process", [sys.executable, str(find_file("void-1.py", root=HERE).resolve())])
 
     assert process.execute()
     time.sleep(0.5)  # allow process time to terminate
@@ -152,7 +152,7 @@ def test_quit_process():
     # when --ignore-sigterm is given, the process will be killed and return code will be -9.
 
     process = SubProcess(
-        "Handle SIGTERM", [sys.executable, str(find_file("handle_sigterm.py").resolve()), "--ignore-sigterm"]
+        "Handle SIGTERM", [sys.executable, str(find_file("handle_sigterm.py", root=HERE).resolve()), "--ignore-sigterm"]
     )
 
     assert process.execute()
@@ -170,7 +170,7 @@ def test_quit_process():
 
     # when --ignore-sigterm is not given, the process will handle the SIGTERM and exit with 42.
 
-    process = SubProcess("Handle SIGTERM", [sys.executable, str(find_file("handle_sigterm.py").resolve())])
+    process = SubProcess("Handle SIGTERM", [sys.executable, str(find_file("handle_sigterm.py", root=HERE).resolve())])
 
     assert process.execute()
     time.sleep(1.0)  # allow process to start
