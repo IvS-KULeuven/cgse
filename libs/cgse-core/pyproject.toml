@@ -53,11 +53,10 @@ explore = "cgse_core.cgse_explore"
 icons = 'egse.icons'
 
 [project.entry-points."cgse.process_management.core_services"]
-"Service Registry" = "reg_cs"
-"Storage Manager" = "sm_cs"
-"Configuration Manager" = "cm_cs"
-"Process Manager" = "pm_cs"
-"Logger" = "log_cs"
+"Storage Manager" = "SM_CS"
+"Configuration Manager" = "CM_CS"
+"Process Manager" = "PM_CS"
+"Logger" = "LOGGER"
 
 [tool.pytest.ini_options]
 pythonpath = "src"
