@@ -6,3 +6,10 @@ LakeShore336 Control Server:
 
     PROTOCOL:                     tcp
     HOSTNAME:               localhost
+    LS_1:
+
+LakeShore336 Controller:
+    LS_1:
+        TYPE:               LSCI_336
+        HOSTNAME:          localhost
+        PORT:                   7777
