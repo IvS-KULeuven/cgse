@@ -75,6 +75,8 @@ their functionality is fully replaced by this `egse.resource` module.
 
 """
 
+from __future__ import annotations
+
 __all__ = [
     "AmbiguityError",
     "NoSuchFileError",
@@ -190,7 +192,7 @@ def get_resource_locations() -> Dict[str, List[Path]]:
     return resources.copy()
 
 
-def get_resource_dirs(root_dir: Union[str, PurePath]) -> List[Path]:
+def get_resource_dirs(root_dir: Path | str) -> List[Path]:
     """
     Define directories that contain resources like images, icons, and data files.
 
@@ -224,7 +226,7 @@ def get_resource_dirs(root_dir: Union[str, PurePath]) -> List[Path]:
     return result
 
 
-def get_resource_path(name: str, resource_root_dir: Union[str, PurePath] = None) -> PurePath:
+def get_resource_path(name: str, resource_root_dir: Path | str) -> PurePath:
     """
     Searches for a data file (resource) with the given name.
 
@@ -249,7 +251,7 @@ def get_resource_path(name: str, resource_root_dir: Union[str, PurePath] = None)
     raise FileNotFoundError(errno.ENOENT, f"Could not locate resource '{name}'")
 
 
-def initialise_resources(root: Union[Path, str] = Path(__file__).parent):
+def initialise_resources(root: Path | str = Path(__file__).parent):
     """
     Initialise the default resources and any resource published by a package entry point.
 
@@ -302,7 +304,7 @@ def print_resources():
             print(f"    {location}")
 
 
-def add_resource_id(resource_id: str, location: Union[Path, str]):
+def add_resource_id(resource_id: str, location: Path | str):
     """
     Adds a resource identifier with the given location. Resources can then be specified
     using this resource id.
