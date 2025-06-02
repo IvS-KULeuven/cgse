@@ -286,18 +286,27 @@ class CoreServiceMonitoringWorker(QObject):
 
         while self.active:
 
-            output = subprocess.check_output(f"{self.cs} status", shell=True).decode("utf-8")
+            services = self.registry_client.list_services(service_type=self.service_type)
 
-            core_service_is_active_new = not "inactive" in output
-            if core_service_is_active_new != self.core_service_is_active:
-                self.core_service_is_active = core_service_is_active_new
+            # Due to static type checking the IDE doesn't recognise the `emit` method on a `Signal` object.
+            # This happens because `Signal` is a special descriptor in `PyQt` and doesn't expose `emit` in a
+            # way that static analysers can easily detect.
+            # noinspection PyUnresolvedReferences
+            self.core_service_status_signal.emit({"core_service_name": self.core_service_name,
+                                                  "core_service_is_active": len(services) > 0})
 
-                # Due to static type checking the IDE doesn't recognise the `emit` method on a `Signal` object.
-                # This happens because `Signal` is a special descriptor in `PyQt` and doesn't expose `emit` in a
-                # way that static analysers can easily detect.
-                # noinspection PyUnresolvedReferences
-                self.core_service_status_signal.emit({"core_service_name": self.core_service_name,
-                                                      "core_service_is_active": self.core_service_is_active})
+            # output = subprocess.check_output(f"{self.cs} status", shell=True).decode("utf-8")
+            #
+            # core_service_is_active_new = not "inactive" in output
+            # if core_service_is_active_new != self.core_service_is_active:
+            #     self.core_service_is_active = core_service_is_active_new
+            #
+            #     # Due to static type checking the IDE doesn't recognise the `emit` method on a `Signal` object.
+            #     # This happens because `Signal` is a special descriptor in `PyQt` and doesn't expose `emit` in a
+            #     # way that static analysers can easily detect.
+            #     # noinspection PyUnresolvedReferences
+            #     self.core_service_status_signal.emit({"core_service_name": self.core_service_name,
+            #                                           "core_service_is_active": self.core_service_is_active})
 
 
 class DeviceMonitoringWorker(QObject):
@@ -327,13 +336,14 @@ class DeviceMonitoringWorker(QObject):
         """ Start listening to the output of the CGSE status command."""
 
         self.active = True
-
+        self.registry_client.connect()
         self.run()
 
     def stop_listening(self) -> None:
         """ Stop listening to the output of the CGSE status command."""
 
         self.active = False
+        self.registry_client.disconnect()
 
     def run(self) -> None:
         """ Keep on checking the status of the device Control Server as long as the monitoring worker is active.
@@ -372,6 +382,51 @@ class DeviceMonitoringWorker(QObject):
                     # way that static analysers can easily detect.
                     # noinspection PyUnresolvedReferences
                     self.process_status_signal.emit({"device_id": self.device_id, "cs_is_active": False})
+
+                self.total_sleep = 0
+
+
+            # try:
+            #     # print(self.process_manager.get_device_process_status(self.status_cmd))
+            #     status_output = self.process_manager.get_device_process_status(self.status_cmd)
+            #
+            #     # print(f"Output for {self.device_id}: {status_output}")
+            #     cs_is_active_new = status_output["cs_is_active"]
+            #     if cs_is_active_new != self.cs_is_active:
+            #         self.cs_is_active = cs_is_active_new
+            #         # Due to static type checking the IDE doesn't recognise the `emit` method on a `Signal` object.
+            #         # This happens because `Signal` is a special descriptor in `PyQt` and doesn't expose `emit` in a
+            #         # way that static analysers can easily detect.
+            #         # noinspection PyUnresolvedReferences
+            #         self.process_status_signal.emit(status_output)
+            # except Exception as e:
+            #     pass
+            #     # print(f"Exception for {self.device_id}: {e}")
+
+
+
+            # output = subprocess.check_output(f"{self.cgse_cmd} status {self.device_id}", shell=True).decode("utf-8")
+            # cs_is_active_new = not ("inactive" in output or "not active" in output)
+            #
+            # if cs_is_active_new != self.cs_is_active:
+            #     self.cs_is_active = cs_is_active_new
+            #
+            #     if self.cs_is_active:
+            #         device_is_connected = not "not connected" in output
+            #         is_simulator_mode = "simulator" in output
+            #         # Due to static type checking the IDE doesn't recognise the `emit` method on a `Signal` object.
+            #         # This happens because `Signal` is a special descriptor in `PyQt` and doesn't expose `emit` in a
+            #         # way that static analysers can easily detect.
+            #         # noinspection PyUnresolvedReferences
+            #         self.process_status_signal.emit({"device_id": self.device_id, "cs_is_active": True,
+            #                                          "device_is_connected": device_is_connected,
+            #                                          "is_simulator_mode": is_simulator_mode})
+            #     else:
+            #         # Due to static type checking the IDE doesn't recognise the `emit` method on a `Signal` object.
+            #         # This happens because `Signal` is a special descriptor in `PyQt` and doesn't expose `emit` in a
+            #         # way that static analysers can easily detect.
+            #         # noinspection PyUnresolvedReferences
+            #         self.process_status_signal.emit({"device_id": self.device_id, "cs_is_active": False})
 
 
 class LedColor(Enum):
