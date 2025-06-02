@@ -2,6 +2,7 @@ import multiprocessing
 import pickle
 import subprocess
 import threading
+import time
 from difflib import SequenceMatcher
 from enum import Enum
 from pathlib import Path
@@ -33,12 +34,23 @@ from egse.gui.led import LED, Indic
 from egse.observer import Observer, Observable
 from egse.plugin import entry_points
 from egse.process import ProcessStatus
-from egse.procman import LOGGER, StartCommand, StopCommand
+from egse.procman import LOGGER, StartCommand, StopCommand, StatusCommand
 from egse.procman import ProcessManagerProxy
+from egse.registry.client import RegistryClient
 from egse.resource import get_resource
 from egse.setup import Setup
 from egse.system import do_every
 from egse.zmq_ser import set_address_port
+
+MAX_SLEEP = 10
+
+
+class ControlServerStatus(Enum):
+    """ Status of the Control Server of a device."""
+
+    ACTIVE = True       # Control Server active -> LED green
+    INACTIVE = False    # Control Server inactive -> LED red
+    UNKNOWN = None      # Control Server starting/stopping -> Hourglass
 
 
 def get_cgse_cmd(device_proxy: str) -> str:
@@ -257,9 +269,10 @@ class CoreServiceMonitoringWorker(QObject):
         super().__init__(parent)
 
         self.core_service_name = core_service_name
-        self.cs = core_service
+        self.cs = self.service_type = core_service
 
         self.active = False
+        self.registry_client = RegistryClient()
 
         self.core_service_is_active = False
 
@@ -267,12 +280,14 @@ class CoreServiceMonitoringWorker(QObject):
         """ Start checking the status of the core service as long as the monitoring worker is active."""
 
         self.active = True
+        self.registry_client.connect()
         self.run()
 
     def stop_listening(self):
         """ Stop checking the status of the core service."""
 
         self.active = False
+        self.registry_client.disconnect()
 
     def run(self):
         """ Keep on checking the status of the core service as long as the monitoring worker is active.
@@ -326,11 +341,18 @@ class DeviceMonitoringWorker(QObject):
 
         self.device_id = device_id
         self.device_proxy = device_proxy
+        self.process_manager: ProcessManagerProxy = ProcessManagerProxy()
         self.active = False
+        self.registry_client = RegistryClient()
+
+        self.total_sleep = 0
 
         self.cs_is_active = False
+        self.cs_status = ControlServerStatus.INACTIVE
 
         self.cgse_cmd = get_cgse_cmd(self.device_proxy)
+        self.status_cmd = StatusCommand(device_id=self.device_id, cgse_cmd=self.cgse_cmd)
+
 
     def start_listening(self) -> None:
         """ Start listening to the output of the CGSE status command."""
@@ -360,23 +382,33 @@ class DeviceMonitoringWorker(QObject):
 
         while self.active:
 
-            output = subprocess.check_output(f"{self.cgse_cmd} status {self.device_id}", shell=True).decode("utf-8")
-            cs_is_active_new = not ("inactive" in output or "not active" in output)
+            if self.cs_status == ControlServerStatus.UNKNOWN:
+                time.sleep(0.5)
+                self.total_sleep += 0.5
 
-            if cs_is_active_new != self.cs_is_active:
+            services = self.registry_client.discover_service(self.device_id)
+
+            cs_is_active_new = not services is None
+
+
+            if cs_is_active_new != self.cs_is_active or self.total_sleep > MAX_SLEEP:
+
                 self.cs_is_active = cs_is_active_new
 
                 if self.cs_is_active:
-                    device_is_connected = not "not connected" in output
-                    is_simulator_mode = "simulator" in output
+
+                    self.cs_status = ControlServerStatus.ACTIVE
+                    status_output = self.process_manager.get_device_process_status(self.status_cmd)
+
                     # Due to static type checking the IDE doesn't recognise the `emit` method on a `Signal` object.
                     # This happens because `Signal` is a special descriptor in `PyQt` and doesn't expose `emit` in a
                     # way that static analysers can easily detect.
                     # noinspection PyUnresolvedReferences
-                    self.process_status_signal.emit({"device_id": self.device_id, "cs_is_active": True,
-                                                     "device_is_connected": device_is_connected,
-                                                     "is_simulator_mode": is_simulator_mode})
+                    self.process_status_signal.emit(status_output)
+
                 else:
+
+                    self.cs_status = ControlServerStatus.INACTIVE
                     # Due to static type checking the IDE doesn't recognise the `emit` method on a `Signal` object.
                     # This happens because `Signal` is a special descriptor in `PyQt` and doesn't expose `emit` in a
                     # way that static analysers can easily detect.
@@ -599,6 +631,8 @@ class DeviceWidget(QGroupBox, Observable):
 
     def start_stop_cs(self) -> None:
         """ Take action when the start/stop button is clicked."""
+
+        self.start_stop_button.disable()
 
         if self.start_stop_button.is_selected():
             self.notifyObservers(StopCommand(device_id=self.device_id, cgse_cmd=self.cgse_cmd))
@@ -871,11 +905,15 @@ class ProcessManagerUIController(Observer):
                 self.view.device_widgets[device_id].simulator_option_button.set_selected(is_simulator_mode)
                 self.view.device_widgets[device_id].simulator_option_button.disable()
                 self.view.device_widgets[device_id].start_stop_button.set_selected(False)
+                self.view.device_widgets[device_id].start_stop_button.enable()
 
             else:
                 self.view.device_widgets[device_id].set_status_led(LedColor.INACTIVE)
                 self.view.device_widgets[device_id].simulator_option_button.enable()
                 self.view.device_widgets[device_id].start_stop_button.set_selected(True)
+                self.view.device_widgets[device_id].start_stop_button.enable()
+
+            self.view.device_widgets[device_id].start_stop_button.enable()
         except KeyError:
             pass
 
@@ -1002,16 +1040,18 @@ class ProcessManagerUIController(Observer):
 
         elif isinstance(changed_object, StartCommand):
             self.model.start_process(changed_object)
+            # TODO After a while, check whether the process actually started
+            self.device_monitoring_workers[changed_object.device_id].cs_status = ControlServerStatus.UNKNOWN
+            # self.view.device_widgets[changed_object.device_id].start_stop_button.enable()
+
 
         # Stop button in one of the widgets has been clicked
 
         elif isinstance(changed_object, StopCommand):
             self.model.stop_process(changed_object)
-
-        # # Start/stop button in one of the widgets has been clicked
-        #
-        # elif isinstance(changed_object, StartCommand) or isinstance(changed_object, StopCommand):
-        #     subprocess.call(changed_object.cmd, shell=True)
+            # TODO After a while, check whether the process actually stopped
+            self.device_monitoring_workers[changed_object.device_id].cs_status = ControlServerStatus.UNKNOWN
+            # self.view.device_widgets[changed_object.device_id].start_stop_button.enable()
 
         # UI button in one of the widgets has been clicked
 
