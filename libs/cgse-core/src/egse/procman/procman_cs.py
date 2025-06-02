@@ -16,7 +16,6 @@ import zmq
 from egse.confman import ConfigurationManagerProxy
 from egse.control import ControlServer
 from egse.listener import EVENT_ID
-from egse.process import SubProcess
 from egse.procman import ProcessManagerProxy, LOGGER
 from egse.procman.procman_protocol import ProcessManagerProtocol
 from egse.registry.client import RegistryClient
