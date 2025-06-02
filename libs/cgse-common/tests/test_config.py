@@ -126,16 +126,19 @@ def test_find_files():
 
 
 def test_find_dirs():
+    print()
     dir_name = "dev[12]"
-    dirs = list(find_dirs(dir_name))
+    dirs = list(find_dirs(dir_name, _HERE))
+    print(dirs)
     assert dirs
 
     dir_name = "dev1"
-    dirs = list(find_dirs(dir_name))
+    dirs = list(find_dirs(dir_name, _HERE))
+    print(dirs)
     assert dirs
 
     dir_name = "lib/dev*"
-    dirs = list(find_dirs(dir_name))
+    dirs = list(find_dirs(dir_name, _HERE))
     print(dirs)
     # The third file could be in the build folder which doesn't always exists.
     # A fourth file could be in the virtual environment venv or venv38
@@ -144,7 +147,7 @@ def test_find_dirs():
     # use the leading '/' to prevent that another 'lib/dev' is matched.
 
     dir_name = "/lib/dev*"
-    dirs = list(find_dirs(dir_name))
+    dirs = list(find_dirs(dir_name, _HERE))
     print(dirs)
     # The second file could be in the build folder which doesn't always exists.
     assert len(dirs) in (1, 2)
