@@ -141,7 +141,7 @@ def find_dirs(pattern: str, root: Path | str) -> Generator[Path, None, None]:
                 yield Path(path) / name
 
 
-def find_files(pattern: str, root: PurePath | str = None, in_dir: str = None) -> Generator[Path, None, None]:
+def find_files(pattern: str, root: Path | str, in_dir: str = None) -> Generator[Path, None, None]:
     """
     Generator for returning file paths from a top folder, matching the pattern.
 
@@ -155,22 +155,24 @@ def find_files(pattern: str, root: PurePath | str = None, in_dir: str = None) ->
 
         >>> file_pattern = 'EtherSpaceLink*.dylib'
         >>> in_dir = 'lib/CentOS-7'
-        >>> for file in find_files(file_pattern, in_dir=in_dir):
+        >>> for file in find_files(file_pattern, root='.', in_dir=in_dir):
         ...     assert file.match("*lib/CentOS-7/EtherSpaceLink*")
 
     Args:
         pattern (str) : sorting pattern (use * for wildcard)
-        root (str): the top level folder to search [default=common-egse-root]
+        root (Path | str): the top level folder to search
         in_dir (str): the 'leaf' directory in which the file shall be
 
     Returns:
         Paths of files matching pattern, from root.
     """
-    root = Path(root).resolve() if root else get_common_egse_root()
+    root = Path(root).resolve()
     if not root.is_dir():
         root = root.parent
+    if not root.exists():
+        raise ValueError(f"The root argument didn't resolve into a valid directory: {root}.")
 
-    exclude_dirs = ("venv", "venv38", ".git", ".idea", ".DS_Store")
+    exclude_dirs = ("venv", "venv38", ".venv", ".nox", ".git", ".idea", ".DS_Store")
 
     for path, folders, files in os.walk(root):
         folders[:] = list(filter(lambda x: x not in exclude_dirs, folders))
@@ -180,7 +182,7 @@ def find_files(pattern: str, root: PurePath | str = None, in_dir: str = None) ->
             yield Path(path) / name
 
 
-def find_file(name: str, root: PurePath | str = None, in_dir: str = None) -> Path | None:
+def find_file(name: str, root: Path | str, in_dir: str = None) -> Path | None:
     """
     Find the path to the given file starting from the root directory of the
     distribution.
@@ -195,12 +197,12 @@ def find_file(name: str, root: PurePath | str = None, in_dir: str = None) -> Pat
 
         >>> file_pattern = 'EtherSpaceLink*.dylib'
         >>> in_dir = 'lib/CentOS-7'
-        >>> file = find_file(file_pattern, in_dir=in_dir)
+        >>> file = find_file(file_pattern, root='.', in_dir=in_dir)
         >>> assert file.match("*/lib/CentOS-7/EtherSpace*")
 
     Args:
         name (str): the name of the file
-        root (Path | str): the top level folder to search [default=common-egse-root]
+        root (Path | str): the top level folder to search
         in_dir (str): the 'leaf' directory in which the file shall be
 
     Returns:

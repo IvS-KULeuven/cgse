@@ -101,7 +101,10 @@ def test_get_common_egse_root_with_env():
 
 
 def test_find_files():
-    files = list(find_files("COPY*", root=get_common_egse_root()))
+    print()
+
+    files = list(find_files("COPY*", root=_HERE))
+    print(files)
     assert files
 
     for f in files:
@@ -109,14 +112,14 @@ def test_find_files():
 
     # no files named 'data', only folders that are named 'data', use find_dirs for this.
 
-    files = list(find_files("data", root=get_common_egse_root() / "src"))
+    files = list(find_files("data", root=_HERE / "src"))
+    print(files)
     assert not files
 
     # When I want to find a file in a specific directory, use the in_dir keyword
 
     filename_pattern = "shared-lib.so"
-    files = list(find_files(filename_pattern, in_dir="lib/dev1"))
-    print()
+    files = list(find_files(filename_pattern, root=_HERE, in_dir="lib/dev1"))
     print(files)
 
     # The expected file is in the src/egse/lib/CentOS-7 folder, but
@@ -154,11 +157,13 @@ def test_find_dirs():
 
 
 def test_find_file():
-    assert find_file("pyproject.toml")
-    assert find_file("data-file.txt")
-    assert not find_file("non-existing-file.txt")
+    project_root = _HERE.parent
 
-    assert find_file("config.py", in_dir="egse")
+    assert find_file("pyproject.toml", project_root)
+    assert find_file("data-file.txt", project_root)
+    assert not find_file("non-existing-file.txt", project_root)
+
+    assert find_file("config.py", root=project_root, in_dir="egse")
 
 
 def test_working_directory():
