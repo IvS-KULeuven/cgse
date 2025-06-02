@@ -23,11 +23,10 @@ from typing import Generator
 import git
 from egse.decorators import deprecate
 
-_HERE = Path(__file__).parent.resolve()
-_LOGGER = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
-def find_first_occurrence_of_dir(pattern: str, root: Path | str = None) -> Path | None:
+def find_first_occurrence_of_dir(pattern: str, root: Path | str) -> Path | None:
     """
     Returns the full path of the directory that first matches the pattern. The directory hierarchy is
     traversed in alphabetical order. The pattern is matched first against all directories in the root
@@ -36,6 +35,9 @@ def find_first_occurrence_of_dir(pattern: str, root: Path | str = None) -> Path 
 
     Note that the pattern may contain parent directories, like `/egse/data/icons` or `egse/*/icons`,
     in which case the full pattern is matched.
+
+    In the case that you pass an empty string for the root argument, it will resolve into
+    the current working directory.
 
     Args:
         pattern: a filename pattern
@@ -46,9 +48,11 @@ def find_first_occurrence_of_dir(pattern: str, root: Path | str = None) -> Path 
     """
     import fnmatch
 
-    root = Path(root).resolve() if root else _HERE
+    root_arg = root
+
+    root = Path(root).resolve()
     if not root.is_dir():
-        root = root.parent
+        raise ValueError(f"The root argument is not a valid directory: {root_arg}.")
 
     parts = pattern.rsplit("/", maxsplit=1)
     if len(parts) == 2:
@@ -291,13 +295,13 @@ def get_common_egse_root(path: Union[str, PurePath] = None) -> Optional[PurePath
             git_root = git_repo.git.rev_parse("--show-toplevel")
             egse_path = git_root
         except (git.exc.InvalidGitRepositoryError, git.exc.NoSuchPathError):
-            _LOGGER.info("no git repository found, assuming installation from distribution.")
+            _logger.info("no git repository found, assuming installation from distribution.")
             egse_path = find_root(_THIS_FILE_LOCATION, tests=_TEST_NAMES)
 
-        _LOGGER.debug(f"Common-EGSE location is automatically determined: {egse_path}.")
+        _logger.debug(f"Common-EGSE location is automatically determined: {egse_path}.")
 
     else:
-        _LOGGER.debug(f"Common-EGSE location determined from environment variable PLATO_COMMON_EGSE_PATH: {egse_path}")
+        _logger.debug(f"Common-EGSE location determined from environment variable PLATO_COMMON_EGSE_PATH: {egse_path}")
 
     return Path(egse_path)
 
@@ -407,7 +411,7 @@ class WorkingDirectory:
         try:
             os.chdir(self._current_dir)
         except OSError as exc:
-            _LOGGER.warning(f"Change back to previous directory failed: {exc}")
+            _logger.warning(f"Change back to previous directory failed: {exc}")
 
     @property
     def path(self):

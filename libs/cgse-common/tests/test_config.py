@@ -48,6 +48,14 @@ def test_find_first_occurrence_of_dir():
 
     shutil.rmtree(_HERE / "x_data")
 
+    # Pass incorrect arguments
+
+    with pytest.raises(ValueError, match="The root argument is not a valid directory"):
+        assert find_first_occurrence_of_dir("data", "non-existing-folder")
+
+    with pytest.raises(TypeError, match="missing 1 required positional argument"):
+        find_first_occurrence_of_dir("data")
+
 
 def test_find_root():
     assert find_root(None) is None
