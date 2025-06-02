@@ -344,11 +344,14 @@ class Positioning(QWidget):
         if "ZERO" in selected_text:
             action = "goto_zero_position"
             value = 1
-        if "RETRACTED" in selected_text:
+        elif "RETRACTED" in selected_text:
             action = "goto_retracted_position"
             value = 2
+        else:
+            MODULE_LOGGER.error(f"Unknown action requested: {selected_text}, no observer action performed.")
+            return
 
-        self.observable.actionObservers({action: value})
+        self.observable.action_observers({action: value})
 
     def handle_movement(self):
         # Read out the values in manual mode into an array of floats
@@ -367,8 +370,11 @@ class Positioning(QWidget):
             movement = "move_relative_object"
         elif selected_text == "Relative user":
             movement = "move_relative_user"
+        else:
+            MODULE_LOGGER.error(f"Unknown action requested: {selected_text}, no observer action performed.")
+            return
 
-        self.observable.actionObservers({movement: pos})
+        self.observable.action_observers({movement: pos})
 
     def handle_validate(self):
         pos = self.get_manual_inputs()
@@ -384,8 +390,11 @@ class Positioning(QWidget):
             validation = "check_relative_object_movement"
         elif selected_text == "Relative user":
             validation = "check_relative_user_movement"
+        else:
+            MODULE_LOGGER.error(f"Unknown action requested: {selected_text}, no observer action performed.")
+            return
 
-        self.observable.actionObservers({validation: pos})
+        self.observable.action_observers({validation: pos})
 
     def handle_copy_positions(self):
         for pos, mm_pos in zip(self.view.user_positions, self.manual_mode_positions):
@@ -484,11 +493,11 @@ class SpeedSettings(QWidget):
 
         translation_speed, rotation_speed = self.get_speed_settings_input()
 
-        self.observable.actionObservers({"set_speed": (translation_speed, rotation_speed)})
+        self.observable.action_observers({"set_speed": (translation_speed, rotation_speed)})
 
     def handle_fetch_speed_settings(self):
 
-        self.observable.actionObservers({"fetch_speed": True})
+        self.observable.action_observers({"fetch_speed": True})
 
 
 class CoordinateSystems(QWidget):
@@ -697,11 +706,11 @@ class CoordinateSystems(QWidget):
         if user_cs is None:
             return
 
-        self.observable.actionObservers({"configure_coordinates_systems": (user_cs, object_cs)})
+        self.observable.action_observers({"configure_coordinates_systems": (user_cs, object_cs)})
 
     def handle_fetch_coordinates_systems(self):
 
-        self.observable.actionObservers({"fetch_coordinates_systems": True})
+        self.observable.action_observers({"fetch_coordinates_systems": True})
 
 
 class ActuatorStates(QWidget):
@@ -926,7 +935,7 @@ class HexapodUIController(Observer):
     def __init__(self, model: HexapodUIModel, view):
         self._model = model
         self._view = view
-        self._view.addObserver(self)
+        self._view.add_observer(self)
 
         self.states_capture_timer = None
         self.timer_interval = 200
@@ -1184,7 +1193,7 @@ class HexapodUIView(QMainWindow, Observable):
 
         # This will trigger the update() method on all the observers
 
-        self.notifyObservers(sender)
+        self.notify_observers(sender)
 
     def create_status_bar(self):
 
