@@ -1,8 +1,5 @@
 """
 This module implements a standard Observer <-> Observable pattern.
-
-!!! Bug
-    The methods in the Observable are not PEP8 compliant and need to be deprecated and changed.
 """
 
 import abc

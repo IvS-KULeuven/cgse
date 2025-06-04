@@ -120,17 +120,24 @@ class DeviceConnectionObservable:
     """
 
     def __init__(self):
-        self._observers: List[DeviceConnectionObserver] = []
+        self._observers: list[DeviceConnectionObserver] = []
 
     def add_observer(self, observer: DeviceConnectionObserver):
         """Add an observer."""
         if observer not in self._observers:
             self._observers.append(observer)
 
+    def delete_observer(self, observer: DeviceConnectionObserver):
+        self._observers.remove(observer)
+
     def notify_observers(self, state: DeviceConnectionState):
         """Notify the observers of a possible state change."""
         for observer in self._observers:
             observer.update_connection_state(state)
+
+    def get_observers(self) -> list[DeviceConnectionObserver]:
+        """Returns a copy of the registered observers."""
+        return self._observers.copy()
 
 
 class DeviceConnectionInterface(DeviceConnectionObservable):
