@@ -310,19 +310,6 @@ class CoreServiceMonitoringWorker(QObject):
             self.core_service_status_signal.emit({"core_service_name": self.core_service_name,
                                                   "core_service_is_active": len(services) > 0})
 
-            # output = subprocess.check_output(f"{self.cs} status", shell=True).decode("utf-8")
-            #
-            # core_service_is_active_new = not "inactive" in output
-            # if core_service_is_active_new != self.core_service_is_active:
-            #     self.core_service_is_active = core_service_is_active_new
-            #
-            #     # Due to static type checking the IDE doesn't recognise the `emit` method on a `Signal` object.
-            #     # This happens because `Signal` is a special descriptor in `PyQt` and doesn't expose `emit` in a
-            #     # way that static analysers can easily detect.
-            #     # noinspection PyUnresolvedReferences
-            #     self.core_service_status_signal.emit({"core_service_name": self.core_service_name,
-            #                                           "core_service_is_active": self.core_service_is_active})
-
 
 class DeviceMonitoringWorker(QObject):
     """ Monitoring worker for the devices."""
@@ -997,18 +984,13 @@ class ProcessManagerUIController(Observer):
 
         elif isinstance(changed_object, StartCommand):
             self.model.start_process(changed_object)
-            # TODO After a while, check whether the process actually started
             self.device_monitoring_workers[changed_object.device_id].cs_status = ControlServerStatus.UNKNOWN
-            # self.view.device_widgets[changed_object.device_id].start_stop_button.enable()
-
 
         # Stop button in one of the widgets has been clicked
 
         elif isinstance(changed_object, StopCommand):
             self.model.stop_process(changed_object)
-            # TODO After a while, check whether the process actually stopped
             self.device_monitoring_workers[changed_object.device_id].cs_status = ControlServerStatus.UNKNOWN
-            # self.view.device_widgets[changed_object.device_id].start_stop_button.enable()
 
         # UI button in one of the widgets has been clicked
 

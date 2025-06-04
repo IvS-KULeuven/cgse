@@ -91,8 +91,3 @@ class ProcessManagerProtocol(CommandProtocol):
         """
 
         return {"timestamp": format_datetime()}
-
-    def quit(self):
-        """ Clean up and stop threads that were started."""
-
-        self.controller.quit()
