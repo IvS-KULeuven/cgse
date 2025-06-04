@@ -854,6 +854,8 @@ class ProcessManagerUIController(Observer):
             else:
                 self.view.device_widgets[device_id].set_status_led(LedColor.INACTIVE)
                 self.view.device_widgets[device_id].simulator_option_button.enable()
+                self.view.device_widgets[device_id].simulator_option_button.set_selected(True)
+                self.view.device_widgets[device_id].is_simulator_mode = False
                 self.view.device_widgets[device_id].start_stop_button.set_selected(True)
                 self.view.device_widgets[device_id].start_stop_button.enable()
 
