@@ -21,9 +21,7 @@ from typing import runtime_checkable
 import aiosqlite
 
 from egse.decorators import implements_protocol
-
-module_logger_name = "async_registry_backend"
-module_logger = logging.getLogger(module_logger_name)
+from egse.registry import logger
 
 
 @runtime_checkable
@@ -128,16 +126,15 @@ class AsyncRegistryBackend(Protocol):
 class AsyncSQLiteBackend:
     """Asynchronous persistent storage backend using SQLite."""
 
-    def __init__(self, db_path: str = "service_registry.db", logger: logging.Logger = None):
+    def __init__(self, db_path: str = "service_registry.db"):
         """
         Initialize the SQLite backend.
 
         Args:
             db_path: Path to the SQLite database file
-            logger: Optional logger to use (defaults to component logger)
         """
         self.db_path = db_path
-        self.logger = logger or logging.getLogger(f"{module_logger_name}.sqlite")
+        self.logger = logger
         self._lock = asyncio.Lock()
         self._db = None
 
@@ -412,9 +409,9 @@ class AsyncInMemoryBackend:
     between restarts.
     """
 
-    def __init__(self, logger: logging.Logger = None):
+    def __init__(self):
         """Initialize the in-memory backend."""
-        self.logger = logger or logging.getLogger(f"{module_logger_name}.memory")
+        self.logger = logger
         self._services = {}  # Dictionary to store services
         self._lock = asyncio.Lock()  # Async lock for thread safety
 

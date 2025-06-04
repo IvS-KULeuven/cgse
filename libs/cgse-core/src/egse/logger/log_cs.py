@@ -22,6 +22,7 @@ import zmq
 
 from egse.env import get_log_file_location
 from egse.logger import LOGGER_ID
+from egse.logger import get_log_file_name
 from egse.logger import send_request
 from egse.process import SubProcess
 from egse.registry.client import RegistryClient
@@ -93,13 +94,6 @@ file_formatter = DateTimeFormatter(fmt=LOG_FORMAT_KEY_VALUE, datefmt=LOG_FORMAT_
 
 
 app = typer.Typer(name="log_cs", no_args_is_help=True)
-
-
-def get_log_file_name():
-    """
-    Returns the filename of the log file as defined in the Settings or return the default name 'general.log'.
-    """
-    return CTRL_SETTINGS.get("FILENAME", "general.log")
 
 
 @app.command()

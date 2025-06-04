@@ -82,6 +82,8 @@ async def send_request(socket, request, timeout=5.0):
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON response: {e}")
 
+    except KeyboardInterrupt as exc:
+        logger.info("Caught Keyboard Interrupt", exc_info=True)
     except Exception as e:
         # Add diagnostics to the error
         elapsed = time.time() - start_time
@@ -221,21 +223,21 @@ async def client(server, zmq_context):
     """
     Function-scoped fixture for AsyncRegistryClient with proper setup and teardown.
     """
-    client = AsyncRegistryClient(
+    with AsyncRegistryClient(
         registry_req_endpoint=f"tcp://localhost:{TEST_REQ_PORT}",
         registry_sub_endpoint=f"tcp://localhost:{TEST_PUB_PORT}",
         request_timeout=5000  # 5 second timeout
-    )
+    ) as client:
 
-    # Verify client can connect to server
-    health = await client.health_check()
-    if not health:
-        raise RuntimeError("Client failed to connect to server")
+        # Verify client can connect to server
+        health = await client.health_check()
+        if not health:
+            raise RuntimeError("Client failed to connect to server")
 
-    yield client
+        yield client
 
-    # Proper cleanup
-    await client.close()
+        # Proper cleanup
+        # await client.close()
 
 
 @pytest_asyncio.fixture

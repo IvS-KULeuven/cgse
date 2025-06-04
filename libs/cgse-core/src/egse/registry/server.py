@@ -20,16 +20,15 @@ import typer
 import zmq
 import zmq.asyncio
 
-from egse.registry import DEFAULT_RS_REQ_PORT
+from egse.registry import DEFAULT_RS_HB_PORT
 from egse.registry import DEFAULT_RS_PUB_PORT
+from egse.registry import DEFAULT_RS_REQ_PORT
+from egse.registry import logger
 from egse.registry.backend import AsyncRegistryBackend
 from egse.registry.backend import AsyncSQLiteBackend
 from egse.registry.client import AsyncRegistryClient
 from egse.system import TyperAsyncCommand
-
-module_logger_name = "async_registry_server"
-module_logger = logging.getLogger(module_logger_name)
-
+from egse.system import get_logging_level
 
 app = typer.Typer(name="rs_cs", no_args_is_help=True)
 
@@ -43,6 +42,7 @@ class AsyncRegistryServer:
     Args:
         req_port: Port for REQ-REP socket (service requests) [default=4242]
         pub_port: Port for PUB socket (service notifications) [default=4243]
+        hb_port: Port for receiving heartbeats [default=4244]
         backend: a registry backend, [default=AsyncSQLiteBackend]
         db_path: Path to the SQLite database file [default='service_registry.db']
         cleanup_interval: How often to clean up expired services (seconds) [default=10]
@@ -52,26 +52,38 @@ class AsyncRegistryServer:
             self,
             req_port: int = DEFAULT_RS_REQ_PORT,
             pub_port: int = DEFAULT_RS_PUB_PORT,
+            hb_port: int = DEFAULT_RS_HB_PORT,
             backend: AsyncRegistryBackend | None = None,
             db_path: str = 'service_registry.db',
             cleanup_interval: int = 10
     ):
         self.req_port = req_port
         self.pub_port = pub_port
+        self.hb_port = hb_port
         self.db_path = db_path
         self.cleanup_interval = cleanup_interval
-        self.logger = logging.getLogger("async_registry_server.zmq")
+        self.logger = logger
 
         # Set ZeroMQ to use asyncio
         self.context = zmq.asyncio.Context()
 
         # Socket to handle REQ-REP pattern
+        req_rep_endpoint = f"tcp://*:{req_port}"
         self.req_rep_socket = self.context.socket(zmq.REP)
-        self.req_rep_socket.bind(f"tcp://*:{req_port}")
+        self.req_rep_socket.bind(req_rep_endpoint)
+        self.logger.info(f"Binding request socket to {req_rep_endpoint}")
 
         # Socket to publish service events
+        pub_endpoint = f"tcp://*:{pub_port}"
         self.pub_socket = self.context.socket(zmq.PUB)
-        self.pub_socket.bind(f"tcp://*:{pub_port}")
+        self.pub_socket.bind(pub_endpoint)
+        self.logger.info(f"Binding publish socket to {pub_endpoint}")
+
+        # Socket to handle heartbeats
+        hb_endpoint = f"tcp://*:{hb_port}"
+        self.hb_socket = self.context.socket(zmq.REP)
+        self.hb_socket.bind(hb_endpoint)
+        self.logger.info(f"Binding heartbeat socket to {hb_endpoint}")
 
         # Initialize the storage backend
         self.backend = backend or AsyncSQLiteBackend(db_path)
@@ -97,8 +109,9 @@ class AsyncRegistryServer:
 
         self._running = True
         self.logger.info(
-            f"Async registry server started on ports {self.req_port} (REQ-REP) and {self.pub_port} (PUB)"
-            )
+            f"Async registry server started on ports {self.req_port} (REQ-REP), {self.pub_port} (PUB), "
+            f"and {self.hb_port} (Heartbeat)"
+        )
 
         # Start the cleanup task
         cleanup_task = asyncio.create_task(self._cleanup_loop())
@@ -109,6 +122,11 @@ class AsyncRegistryServer:
         request_task = asyncio.create_task(self._handle_requests())
         self._tasks.add(request_task)
         request_task.add_done_callback(self._tasks.discard)
+
+        # Start the heartbeat handler task
+        heartbeats_task = asyncio.create_task(self._handle_heartbeats())
+        self._tasks.add(heartbeats_task)
+        heartbeats_task.add_done_callback(self._tasks.discard)
 
         # Wait for shutdown
         await self._shutdown_event.wait()
@@ -138,6 +156,7 @@ class AsyncRegistryServer:
         # Close ZeroMQ sockets
         self.req_rep_socket.close()
         self.pub_socket.close()
+        self.hb_socket.close()
 
         # Close context
         self.context.term()
@@ -283,6 +302,8 @@ class AsyncRegistryServer:
 
     async def _handle_register(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle a service registration request."""
+        self.logger.info(f"Handle registration request: {request}")
+
         if 'service_info' not in request:
             return {'success': False, 'error': 'Missing required field: service_info'}
 
@@ -293,8 +314,6 @@ class AsyncRegistryServer:
         for field in required_fields:
             if field not in service_info:
                 return {'success': False, 'error': f'Missing required field in service_info: {field}'}
-
-        self.logger.info(f"Registration request for {service_info['name']}")
 
         # Generate ID if not provided
         service_id = service_info.get('id')
@@ -329,7 +348,7 @@ class AsyncRegistryServer:
         """Handle a service de-registration request."""
         service_id = request.get('service_id')
 
-        self.logger.info(f"De-registration request for {service_id}")
+        self.logger.info(f"Handle de-registration request: {request}")
 
         if not service_id:
             return {'success': False, 'error': 'Missing required field: service_id'}
@@ -360,7 +379,7 @@ class AsyncRegistryServer:
         """Handle a service heartbeat request."""
         service_id = request.get('service_id')
 
-        self.logger.info(f"Renew request for {service_id}")
+        self.logger.info(f"Handle renew request: {request}")
 
         if not service_id:
             return {'success': False, 'error': 'Missing required field: service_id'}
@@ -376,12 +395,55 @@ class AsyncRegistryServer:
 
         return {'success': False, 'error': 'Service not found or could not be renewed'}
 
+    async def _handle_heartbeats(self):
+        """Task that handles heartbeat messages."""
+        self.logger.info("Started heartbeats handler task")
+
+        try:
+            while self._running:
+                try:
+                    # Receive heartbeat (non-blocking with timeout)
+                    message_json = await asyncio.wait_for(
+                        self.hb_socket.recv_string(),
+                        timeout=1.0
+                    )
+
+                    # Parse the request
+                    request = json.loads(message_json)
+                    self.logger.info(f"Received heartbeat request: {request}")
+
+                    response = await self._handle_renew(request)
+
+                    # Send the response
+                    await self.hb_socket.send_string(json.dumps(response))
+
+                except asyncio.TimeoutError:
+                    self.logger.debug("waiting for heartbeat...")
+                    continue
+
+                except Exception as exc:
+                    self.logger.error(f"Error handling heartbeat request: {exc}")
+                    try:
+                        await self.hb_socket.send_string(
+                            json.dumps(
+                                {
+                                    'success': False,
+                                    'error': str(exc)
+                                }
+                            )
+                        )
+                    except Exception:
+                        pass
+
+        except asyncio.CancelledError:
+            self.logger.info("Heartbeats handler task cancelled")
+
     async def _handle_get(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle a request to get a specific service."""
 
         service_id = request.get('service_id')
 
-        self.logger.info(f"Get request for {service_id}")
+        self.logger.info(f"Handle get request: {request}")
 
         if not service_id:
             return {'success': False, 'error': 'Missing required field: service_id'}
@@ -401,7 +463,7 @@ class AsyncRegistryServer:
         """Handle a request to list services."""
         service_type = request.get('service_type')
 
-        self.logger.info(f"List request for {service_type}")
+        self.logger.info(f"Handle list request: {request}")
 
         # List the services
         services = await self.backend.list_services(service_type)
@@ -415,7 +477,7 @@ class AsyncRegistryServer:
         """Handle a service discovery request."""
         service_type = request.get('service_type')
 
-        self.logger.info(f"Discover request for service type: {service_type}")
+        self.logger.info(f"Handle discover request for service type: {service_type}")
 
         if not service_type:
             return {'success': False, 'error': 'Missing required field: service_type'}
@@ -434,7 +496,7 @@ class AsyncRegistryServer:
     async def _handle_info(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle the info request and send information about the registry server."""
 
-        self.logger.info(f"Health request for {request}")
+        self.logger.info(f"Handle info request: {request}")
 
         # List the services
         services = await self.backend.list_services()
@@ -450,7 +512,7 @@ class AsyncRegistryServer:
     async def _handle_health(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle a health check request."""
 
-        self.logger.info(f"Health request for {request}")
+        self.logger.info(f"Handle health request: {request}")
 
         return {
             'success': True,
@@ -461,7 +523,7 @@ class AsyncRegistryServer:
     async def _handle_terminate(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle a termination request."""
 
-        self.logger.info(f"Termination request for {request}")
+        self.logger.info(f"Handle termination request: {request}")
 
         self.stop()
 
@@ -476,17 +538,25 @@ class AsyncRegistryServer:
 async def start(
         req_port: int = 4242,
         pub_port: int = 4243,
+        hb_port: int = 4244,
         db_path: str = 'service_registry.db',
         cleanup_interval: int = 10,
+        log_level: str = "WARNING",
 ):
     """Run the registry server with signal handling."""
 
-    # Create server
+    logging.basicConfig(
+        level=get_logging_level(log_level),
+        format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-12s %(lineno)5d:%(module)-20s %(message)s",
+    )
+    logging.getLogger('aiosqlite').setLevel(logging.INFO)
+
     server = AsyncRegistryServer(
         req_port=req_port,
         pub_port=pub_port,
+        hb_port=hb_port,
         db_path=db_path,
-        cleanup_interval=cleanup_interval
+        cleanup_interval=cleanup_interval,
     )
 
     # Set up signal handlers
@@ -504,14 +574,24 @@ async def start(
 
 async def handle_signal(server):
     """Handle termination signals."""
-    module_logger.info("Received termination signal")
+    logger.info("Received termination signal")
     server.stop()
 
 
 @app.command(cls=TyperAsyncCommand)
-async def status():
+async def status(
+        req_port: int = DEFAULT_RS_REQ_PORT,
+        pub_port: int = DEFAULT_RS_PUB_PORT,
+        hb_port: int = DEFAULT_RS_HB_PORT,
+        host: str = "localhost"
+):
 
-    with AsyncRegistryClient() as client:
+    with AsyncRegistryClient(
+            registry_req_endpoint=f"tcp://{host}:{req_port}",
+            registry_sub_endpoint=f"tcp://{host}:{pub_port}",
+            registry_hb_endpoint=f"tcp://{host}:{hb_port}",
+            request_timeout=5000  # 5 second timeout
+    ) as client:
         response = await client.server_status()
 
     if response['success']:
@@ -531,20 +611,25 @@ async def status():
 
 
 @app.command(cls=TyperAsyncCommand)
-async def stop():
+async def stop(
+        req_port: int = DEFAULT_RS_REQ_PORT,
+        pub_port: int = DEFAULT_RS_PUB_PORT,
+        hb_port: int = DEFAULT_RS_HB_PORT,
+        host: str = "localhost"
+):
 
-    with AsyncRegistryClient() as client:
+    with AsyncRegistryClient(
+            registry_req_endpoint=f"tcp://{host}:{req_port}",
+            registry_sub_endpoint=f"tcp://{host}:{pub_port}",
+            registry_hb_endpoint=f"tcp://{host}:{hb_port}",
+            request_timeout=5000  # 5 second timeout
+    ) as client:
         response = await client.terminate_registry_server()
 
     if response:
-        module_logger.info("Service registry server terminated.")
+        logger.info("Service registry server terminated.")
 
 
 if __name__ == "__main__":
-
-    logging.basicConfig(
-        level=logging.WARNING,
-        format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-12s %(lineno)5d:%(module)-20s %(message)s",
-    )
 
     sys.exit(app())
