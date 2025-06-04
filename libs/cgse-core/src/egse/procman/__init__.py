@@ -9,6 +9,7 @@ from egse.control import is_control_server_active
 from egse.decorators import dynamic_interface
 from egse.listener import EventInterface, Event
 from egse.plugin import entry_points
+from egse.process import SubProcess
 from egse.proxy import Proxy
 from egse.registry.client import RegistryClient
 from egse.settings import Settings
@@ -369,7 +370,9 @@ class ProcessManagerController(ProcessManagerInterface):
 
     def start_process(self, start_cmd: StartCommand):
 
-        subprocess.call(start_cmd.cmd, shell=True)
+        # subprocess.call(start_cmd.cmd, shell=True) -> PM hangs
+        process = SubProcess("MyApp", [start_cmd.cmd], shell=True)
+        process.execute()
 
     def stop_process(self, stop_cmd: StopCommand):
 
