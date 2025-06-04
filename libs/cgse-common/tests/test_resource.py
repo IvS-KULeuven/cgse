@@ -314,7 +314,7 @@ def test_get_resource_dirs(caplog):
 
 def test_get_resource_path():
     with pytest.raises(FileNotFoundError):
-        get_resource_path("non-existing-file")
+        get_resource_path("non-existing-file", HERE)
 
     # The following resources should all exist in this project
     # We don't need the return value as the function raises a FileNotFoundError

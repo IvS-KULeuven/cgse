@@ -23,11 +23,10 @@ from typing import Generator
 import git
 from egse.decorators import deprecate
 
-_HERE = Path(__file__).parent.resolve()
-_LOGGER = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
-def find_first_occurrence_of_dir(pattern: str, root: Path | str = None) -> Path | None:
+def find_first_occurrence_of_dir(pattern: str, root: Path | str) -> Path | None:
     """
     Returns the full path of the directory that first matches the pattern. The directory hierarchy is
     traversed in alphabetical order. The pattern is matched first against all directories in the root
@@ -36,6 +35,9 @@ def find_first_occurrence_of_dir(pattern: str, root: Path | str = None) -> Path 
 
     Note that the pattern may contain parent directories, like `/egse/data/icons` or `egse/*/icons`,
     in which case the full pattern is matched.
+
+    In the case that you pass an empty string for the root argument, it will resolve into
+    the current working directory.
 
     Args:
         pattern: a filename pattern
@@ -46,9 +48,11 @@ def find_first_occurrence_of_dir(pattern: str, root: Path | str = None) -> Path 
     """
     import fnmatch
 
-    root = Path(root).resolve() if root else _HERE
+    root_arg = root
+
+    root = Path(root).resolve()
     if not root.is_dir():
-        root = root.parent
+        raise ValueError(f"The root argument is not a valid directory: {root_arg}.")
 
     parts = pattern.rsplit("/", maxsplit=1)
     if len(parts) == 2:
@@ -70,7 +74,7 @@ def find_first_occurrence_of_dir(pattern: str, root: Path | str = None) -> Path 
     return None
 
 
-def find_dir(pattern: str, root: str = None) -> Path | None:
+def find_dir(pattern: str, root: Path | str) -> Path | None:
     """
     Find the first folder that matches the given pattern.
 
@@ -80,8 +84,8 @@ def find_dir(pattern: str, root: str = None) -> Path | None:
     `find_dirs()` function and check if there is just one item returned in the list.
 
     Args:
-        pattern (str): pattern to match (use * for wildcard)
-        root (str): the top level folder to search [default=common-egse-root]
+        pattern: pattern to match (use * for wildcard)
+        root: the top level folder to search
 
     Returns:
         the first occurrence of the directory pattern or None when not found.
@@ -92,7 +96,7 @@ def find_dir(pattern: str, root: str = None) -> Path | None:
     return None
 
 
-def find_dirs(pattern: str, root: str = None) -> Generator[Path, None, None]:
+def find_dirs(pattern: str, root: Path | str) -> Generator[Path, None, None]:
     """
     Generator for returning directory paths from a walk started at `root` and matching pattern.
 
@@ -103,7 +107,7 @@ def find_dirs(pattern: str, root: str = None) -> Generator[Path, None, None]:
 
     Args:
         pattern (str): pattern to match (use * for wildcard)
-        root (str): the top level folder to search [default=common-egse-root]
+        root (str): the top level folder to search
 
     Returns:
          Generator: Paths of folders matching pattern, from root.
@@ -118,9 +122,10 @@ def find_dirs(pattern: str, root: str = None) -> Generator[Path, None, None]:
         ```
 
     """
-    root = Path(root).resolve() if root else get_common_egse_root()
+    root_arg = root
+    root = Path(root).resolve()
     if not root.is_dir():
-        root = root.parent
+        raise ValueError(f"The root argument is not a valid directory: {root_arg}.")
 
     parts = pattern.rsplit("/", maxsplit=1)
     if len(parts) == 2:
@@ -136,7 +141,7 @@ def find_dirs(pattern: str, root: str = None) -> Generator[Path, None, None]:
                 yield Path(path) / name
 
 
-def find_files(pattern: str, root: PurePath | str = None, in_dir: str = None) -> Generator[Path, None, None]:
+def find_files(pattern: str, root: Path | str, in_dir: str = None) -> Generator[Path, None, None]:
     """
     Generator for returning file paths from a top folder, matching the pattern.
 
@@ -150,22 +155,24 @@ def find_files(pattern: str, root: PurePath | str = None, in_dir: str = None) ->
 
         >>> file_pattern = 'EtherSpaceLink*.dylib'
         >>> in_dir = 'lib/CentOS-7'
-        >>> for file in find_files(file_pattern, in_dir=in_dir):
+        >>> for file in find_files(file_pattern, root='.', in_dir=in_dir):
         ...     assert file.match("*lib/CentOS-7/EtherSpaceLink*")
 
     Args:
         pattern (str) : sorting pattern (use * for wildcard)
-        root (str): the top level folder to search [default=common-egse-root]
+        root (Path | str): the top level folder to search
         in_dir (str): the 'leaf' directory in which the file shall be
 
     Returns:
         Paths of files matching pattern, from root.
     """
-    root = Path(root).resolve() if root else get_common_egse_root()
+    root = Path(root).resolve()
     if not root.is_dir():
         root = root.parent
+    if not root.exists():
+        raise ValueError(f"The root argument didn't resolve into a valid directory: {root}.")
 
-    exclude_dirs = ("venv", "venv38", ".git", ".idea", ".DS_Store")
+    exclude_dirs = ("venv", "venv38", ".venv", ".nox", ".git", ".idea", ".DS_Store")
 
     for path, folders, files in os.walk(root):
         folders[:] = list(filter(lambda x: x not in exclude_dirs, folders))
@@ -175,7 +182,7 @@ def find_files(pattern: str, root: PurePath | str = None, in_dir: str = None) ->
             yield Path(path) / name
 
 
-def find_file(name: str, root: PurePath | str = None, in_dir: str = None) -> Path | None:
+def find_file(name: str, root: Path | str, in_dir: str = None) -> Path | None:
     """
     Find the path to the given file starting from the root directory of the
     distribution.
@@ -190,12 +197,12 @@ def find_file(name: str, root: PurePath | str = None, in_dir: str = None) -> Pat
 
         >>> file_pattern = 'EtherSpaceLink*.dylib'
         >>> in_dir = 'lib/CentOS-7'
-        >>> file = find_file(file_pattern, in_dir=in_dir)
+        >>> file = find_file(file_pattern, root='.', in_dir=in_dir)
         >>> assert file.match("*/lib/CentOS-7/EtherSpace*")
 
     Args:
         name (str): the name of the file
-        root (Path | str): the top level folder to search [default=common-egse-root]
+        root (Path | str): the top level folder to search
         in_dir (str): the 'leaf' directory in which the file shall be
 
     Returns:
@@ -243,119 +250,6 @@ def find_root(
         prev, test = test, test.parent
 
     return Path(default) if default is not None else None
-
-
-@lru_cache(maxsize=16)
-@deprecate(reason="the concept of CGSE root doesn't exist in a monorepo.", alternative="a case-by-case alternative.")
-def get_common_egse_root(path: Union[str, PurePath] = None) -> Optional[PurePath]:
-    """
-    Returns the absolute path to the installation directory for the Common-EGSE.
-
-    The algorithm first tries to determine the path from the environment variable
-    ``PLATO_COMMON_EGSE_PATH``. If this environment variable doesn't exist, the algorithm
-    tries to determine the path automatically from (1) the git root if it is a git repository,
-    or (2) from the location of this module assuming the installation is done from the
-    GitHub distribution.
-
-    When the optional argument ``path`` is given, that directory will be used to start the
-    search for the root folder.
-
-    At this moment the algorithm does not cache the ``egse_path`` in order to speed up
-    the successive calls to this function.
-
-    Args:
-        path (str or Path): a directory as a Path or str [optional]
-
-    Returns:
-        Path: the absolute path to the Common-EGSE installation directory or None
-    """
-    _TEST_NAMES = ("pyproject.toml", "setup.py")
-    if path is not None:
-        return find_root(path, tests=_TEST_NAMES)
-
-    egse_path: Union[str, PurePath, None] = os.getenv("COMMON_EGSE_PATH")
-
-    if egse_path is None:
-        # The root of the plato-common-egse installation shall be determined from the location
-        # of this config module using git commands to find the git root folder.
-        # This assumes the user has installed from git/GitHub (which is not always true)!
-        #
-        # Alternatively, the root directory can be determined from the location of this module
-        # by going back in the directory structure until the ``setup.py`` module is found.
-
-        _THIS_FILE_PATH = Path(__file__).resolve()
-        _THIS_FILE_LOCATION = _THIS_FILE_PATH.parent
-
-        try:
-            git_repo = git.Repo(_THIS_FILE_PATH, search_parent_directories=True)
-            git_root = git_repo.git.rev_parse("--show-toplevel")
-            egse_path = git_root
-        except (git.exc.InvalidGitRepositoryError, git.exc.NoSuchPathError):
-            _LOGGER.info("no git repository found, assuming installation from distribution.")
-            egse_path = find_root(_THIS_FILE_LOCATION, tests=_TEST_NAMES)
-
-        _LOGGER.debug(f"Common-EGSE location is automatically determined: {egse_path}.")
-
-    else:
-        _LOGGER.debug(f"Common-EGSE location determined from environment variable PLATO_COMMON_EGSE_PATH: {egse_path}")
-
-    return Path(egse_path)
-
-
-def get_resource_dirs(root_dir: Union[str, PurePath] = None) -> List[Path]:
-    """
-    Define directories that contain resources like images, icons, and data files.
-
-    Resource directories can have the following names: `resources`, `data`, `icons`, or `images`.
-    This function checks if any of the resource directories exist in the project root directory,
-    in the `root_dir` that is given as an argument or in the `src/egse` sub-folder.
-
-    So, the directories that are searched for the resource folders are:
-
-    * `root_dir` or the project's root directory
-    * the `src/egse` sub-folder of one of the above
-
-    For all existing directories the function returns the absolute path.
-
-    Args:
-        root_dir (str): the directory to search for resource folders
-
-    Returns:
-        a list of absolute Paths.
-    """
-    project_dir = Path(root_dir).resolve() if root_dir else get_common_egse_root()
-    result = []
-    for dir_ in ["resources", "data", "icons", "images"]:
-        if (project_dir / dir_).is_dir():
-            result.append(Path(project_dir, dir_).resolve())
-        if (project_dir / "src" / "egse" / dir_).is_dir():
-            result.append(Path(project_dir, "src", "egse", dir_).resolve())
-    return result
-
-
-def get_resource_path(name: str, resource_root_dir: Union[str, PurePath] = None) -> PurePath:
-    """
-    Searches for a data file (resource) with the given name.
-
-    When `resource_root_dir` is not given, the search for resources will start at the root
-    folder of the project (using the function `get_common_egse_root()`). Any other root
-    directory can be given, e.g. if you want to start the search from the location of your
-    source code file, use `Path(__file__).parent` as the `resource_root_dir` argument.
-
-    Args:
-        name (str): the name of the resource that is requested
-        resource_root_dir (str): the root directory where the search for resources should be started
-
-    Returns:
-        the absolute path of the data file with the given name. The first name that matches
-            is returned. If no file with the given name or path exists, a FileNotFoundError is raised.
-
-    """
-    for resource_dir in get_resource_dirs(resource_root_dir):
-        resource_path = join(resource_dir, name)
-        if exists(resource_path):
-            return Path(resource_path).absolute()
-    raise FileNotFoundError(errno.ENOENT, f"Could not locate resource '{name}'")
 
 
 def set_logger_levels(logger_levels: List[Tuple] = None):
@@ -407,7 +301,7 @@ class WorkingDirectory:
         try:
             os.chdir(self._current_dir)
         except OSError as exc:
-            _LOGGER.warning(f"Change back to previous directory failed: {exc}")
+            _logger.warning(f"Change back to previous directory failed: {exc}")
 
     @property
     def path(self):

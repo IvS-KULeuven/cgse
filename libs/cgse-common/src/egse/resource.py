@@ -75,6 +75,8 @@ their functionality is fully replaced by this `egse.resource` module.
 
 """
 
+from __future__ import annotations
+
 __all__ = [
     "AmbiguityError",
     "NoSuchFileError",
@@ -107,7 +109,7 @@ from egse.exceptions import InternalError
 from egse.plugin import entry_points
 from egse.system import get_package_location
 
-_LOGGER = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class ResourceError(Exception):
@@ -190,7 +192,7 @@ def get_resource_locations() -> Dict[str, List[Path]]:
     return resources.copy()
 
 
-def get_resource_dirs(root_dir: Union[str, PurePath]) -> List[Path]:
+def get_resource_dirs(root_dir: Path | str) -> List[Path]:
     """
     Define directories that contain resources like images, icons, and data files.
 
@@ -209,7 +211,7 @@ def get_resource_dirs(root_dir: Union[str, PurePath]) -> List[Path]:
     """
 
     if root_dir is None:
-        _LOGGER.warning("The argument root_dir can not be None, an empty list is returned.")
+        _logger.warning("The argument root_dir can not be None, an empty list is returned.")
         return []
 
     root_dir = Path(root_dir).resolve()
@@ -224,18 +226,13 @@ def get_resource_dirs(root_dir: Union[str, PurePath]) -> List[Path]:
     return result
 
 
-def get_resource_path(name: str, resource_root_dir: Union[str, PurePath] = None) -> PurePath:
+def get_resource_path(name: str, resource_root_dir: Path | str) -> PurePath:
     """
     Searches for a data file (resource) with the given name.
 
-    When `resource_root_dir` is not given, the search for resources will start at the root
-    folder of the project (using the function `get_common_egse_root()`). Any other root
-    directory can be given, e.g. if you want to start the search from the location of your
-    source code file, use `Path(__file__).parent` as the `resource_root_dir` argument.
-
     Args:
         name (str): the name of the resource that is requested
-        resource_root_dir (str): the root directory w_HERE the search for resources should be started
+        resource_root_dir (str): the root directory where the search for resources should be started
 
     Returns:
         the absolute path of the data file with the given name. The first name that matches
@@ -249,7 +246,7 @@ def get_resource_path(name: str, resource_root_dir: Union[str, PurePath] = None)
     raise FileNotFoundError(errno.ENOENT, f"Could not locate resource '{name}'")
 
 
-def initialise_resources(root: Union[Path, str] = Path(__file__).parent):
+def initialise_resources(root: Path | str = Path(__file__).parent):
     """
     Initialise the default resources and any resource published by a package entry point.
 
@@ -284,7 +281,7 @@ def initialise_resources(root: Union[Path, str] = Path(__file__).parent):
             if location not in x:
                 x.append(location)
 
-    _LOGGER.debug(f"Resources have been initialised: {resources = }")
+    _logger.debug(f"Resources have been initialised: {resources = }")
 
 
 def print_resources():
@@ -302,7 +299,7 @@ def print_resources():
             print(f"    {location}")
 
 
-def add_resource_id(resource_id: str, location: Union[Path, str]):
+def add_resource_id(resource_id: str, location: Path | str):
     """
     Adds a resource identifier with the given location. Resources can then be specified
     using this resource id.
