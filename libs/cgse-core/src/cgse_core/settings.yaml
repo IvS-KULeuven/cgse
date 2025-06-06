@@ -19,3 +19,9 @@ Storage Control Server:                          # SM_CS
 
     SERVICE_TYPE:                 SM_CS
     DELAY:                            1          # The delay time between publishing status information [seconds]
+
+Process Manager Control Server:                # PM_CS
+
+    SERVICE_TYPE:                PM_CS
+    DELAY:                          1          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:              PM          # The mnemonic to be used in the filename storing the housekeeping data

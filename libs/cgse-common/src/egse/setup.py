@@ -782,35 +782,21 @@ class Setup(NavigableDict):
 
         return DeepDiff(setup_1, setup_2, exclude_types=[DeviceInterface])
 
-    # def get_devices(self):
-    #     """Returns a list of devices for the current setup.
-
-    #     Returns:
-    #         - List of devices for the current setup.
-    #     """
-
-    #     devices = []
-
-    #     Setup.walk(self, "device", devices)
-
-    #     return devices
-
     @staticmethod
-    def find_devices(node: NavigableDict, devices: dict = None) -> dict[str, tuple[str, tuple]]:
-        """
-        Returns a dictionary with the devices that are included in the setup.  The keys
-        in the dictionary are taken from the "device_name" entries in the setup file. The
-        corresponding values in the dictionary are taken from the "device" entries in the
-        setup file.
+    def find_devices(node: NavigableDict, devices: dict = None) -> dict[str, tuple[str, str, tuple]]:
+        """ Returns a dictionary with the devices that are included in the setup.
+
+        The keys in the dictionary are taken from the "device_name" entries in the setup file. The corresponding values
+        in the dictionary are taken from the "device" entries in the setup file.
 
         Args:
             node: Dictionary in which to look for the devices (and their names).
             devices: Dictionary in which to include the devices in the setup.
 
-        Returns:
-            Dictionary with the devices that are included in the setup. The keys are the device name,
-                the values are tuples with the 'device' raw value and the device arguments as a tuple.
+        Returns: Dictionary with the devices that are included in the setup. The keys are the device name, the values
+                 are tuples with the 'device' raw value and the device arguments as a tuple.
         """
+
         devices = devices or {}
 
         for sub_node in node.values():
@@ -818,17 +804,55 @@ class Setup(NavigableDict):
                 if ("device" in sub_node) and ("device_name" in sub_node):
                     device = sub_node.get_raw_value("device")
 
+                    if "device_id" in sub_node:
+                        device_id = sub_node.get_raw_value("device_id")
+                    else:
+                        device_id = None
+
                     if "device_args" in sub_node:
                         device_args = sub_node.get_raw_value("device_args")
                     else:
                         device_args = ()
 
-                    devices[sub_node["device_name"]] = (device, device_args)
+                    devices[sub_node["device_name"]] = (device, device_id, device_args)
 
                 else:
-                    Setup.find_devices(sub_node, devices=devices)
+                    devices = Setup.find_devices(sub_node, devices=devices)
 
         return devices
+
+    @staticmethod
+    def find_device_ids(node: NavigableDict, device_ids: dict = None) -> dict:
+        """ Returns a list of identifiers of the devices that are included in the setup.
+
+        Args:
+            node: Dictionary in which to look for the device identifiers.
+            device_ids: List in which to include the devices in the setup.
+
+        Returns: List with the identifiers of the devices that are included in the given dictionary.
+        """
+
+        device_ids = device_ids or {}
+
+        for sub_node in node.values():
+            if isinstance(sub_node, NavigableDict):
+                if ("device" in sub_node) and ("device_id" in sub_node) and ("device_name" in sub_node):
+                    # device_ids[sub_node.get_raw_value("device_id")] = sub_node.get_raw_value("device_name")
+
+                    device_proxy = sub_node.get_raw_value("device")
+                    if "device_args" in sub_node:
+                        device_args = sub_node.get_raw_value("device_args")
+                    else:
+                        device_args = ()
+
+                    device_ids[sub_node.get_raw_value("device_id")] = (sub_node.get_raw_value("device_name"),
+                                                                       device_proxy,
+                                                                       device_args)
+                    # device_ids.append((sub_node.get_raw_value("device_id"), sub_node.get_raw_value("device_name")))
+                else:
+                    device_ids = Setup.find_device_ids(sub_node, device_ids=device_ids)
+
+        return device_ids
 
     @staticmethod
     def walk(node: dict, key_of_interest: str, leaf_list: list) -> list:

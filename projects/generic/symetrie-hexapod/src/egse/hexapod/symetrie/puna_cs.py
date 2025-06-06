@@ -214,6 +214,7 @@ def status(device_id: str):
         else:
             rich.print(f"[red]The PUNA CS '{device_id}' isn't registered as a service. I cannot contact the control "
                        f"server without the required info from the service registry.[/]")
+            rich.print("PUNA Hexapod: [red]not active")
             return
 
     factory = ProxyFactory()

@@ -23,6 +23,7 @@ dependencies = [
     "apscheduler>=3.11.0",
     "aiosqlite>=0.21.0",
     "aiohttp>=3.11.16",
+    "qtpy",
 ]
 
 [project.scripts]
@@ -30,8 +31,10 @@ log_cs = 'egse.logger.log_cs:app'
 reg_cs = 'egse.registry.server:app'
 sm_cs = 'egse.storage.storage_cs:app'
 cm_cs = 'egse.confman.confman_cs:app'
-pm_cs = 'egse.procman.procman_cs:cli'
+pm_cs = 'egse.procman.procman_cs:app'
 
+[project.gui-scripts]
+pm_ui = "egse.procman.procman_ui:main"
 
 [project.entry-points."cgse.version"]
 cgse-core = 'egse.version:get_version_installed'
@@ -45,6 +48,15 @@ registry = 'cgse_core.services:reg'
 
 [project.entry-points."cgse.explore"]
 explore = "cgse_core.cgse_explore"
+
+[project.entry-points."cgse.resource"]
+icons = 'egse.icons'
+
+[project.entry-points."cgse.process_management.core_services"]
+"Storage Manager" = "SM_CS"
+"Configuration Manager" = "CM_CS"
+"Process Manager" = "PM_CS"
+"Logger" = "LOGGER"
 
 [tool.pytest.ini_options]
 pythonpath = "src"

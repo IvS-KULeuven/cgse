@@ -1,49 +1,33 @@
+UserInterface:
+    egse.procman.procman_ui
+
 Commands:
 
-    get_cm_proxy:
-        description:    Returns the Proxy for Configuration Management.
+    get_core_processes:
+        description:    Returns a dictionary of the core EGSE processes (i.e. storage, CM, and PM).
 
     get_devices:
         description:    Returns a dictionary of the devices in the current setup.
 
-    get_core:
-        description:    Returns a dictionary of the core EGSE processes (i.e. storage, CM, and PM).
+    get_device_ids:
+        description:    Returns a list of the identifiers of the devices in the current setup.
 
-    start_egse:
-        description:    Start all Common-EGSE Control Servers.
-        args         :
-            sim_mode  : boolean | Whether or not to start the processeses in simulator mode.
+    handle_event:
+        description:    Notification of an event
+        cmd:            '{event}'
 
-    start_cs:
-        description:    Starts the Control Server.
-        args         :
-            process_name  : str | Name of the process you want to start (as in the process list).
-            sim_mode  : boolean | Whether or not to start the processes in simulator mode.
-        cmd:            "{process_name} {sim_mode}"
+    start_process:
+        description:    Starts a process
+        cmd:            '{start_cmd}'
 
-    shut_down_egse:
-        description:    Shut down all Common-EGSE Control Servers.
+    stop_process:
+        description:    Stops a process
+        cmd:            '{stop_cmd}'
 
-    shut_down_cs:
-        description:    Shut down Control Server.
-        args         :
-            process_name  : str | Name of the process you want to shut down (as in the process list).
-        cmd:            "{process_name}"
+    get_core_service_status:
+        description:    Returns the status of a core service
+        cmd:            '{status_cmd}'
 
-    start_fitsgen:
-        description:    Start the FITS generation.
-
-    stop_fitsgen:
-        description:    Stop the FITS generation.
-
-    start_fov_hk:
-        description:    Start the generation of FOV HK.
-
-    stop_fov_hk:
-        description:    Stop the generation of FOV HK.
-
-    start_n_fee_hk:
-        description:    Start the generation of N-FEE HK.
-
-    stop_n_fee_hk:
-        description:    Stop the generation of N-FEE HK.
+    get_device_process_status:
+        description:    Returns the status of a process
+        cmd:            '{status_cmd}'
