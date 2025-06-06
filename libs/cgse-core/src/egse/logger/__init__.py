@@ -12,6 +12,7 @@ __all__ = [
     "LOG_FORMAT_FULL",
     "close_all_zmq_handlers",
     "create_new_zmq_logger",
+    "get_log_file_name",
     "print_all_handlers",
     "replace_zmq_handler",
     "send_request",
@@ -46,6 +47,13 @@ root_logger = logging.getLogger()
 egse_logger = logging.getLogger("egse")
 
 _initialised = False  # will be set to True in the setup_logging() function
+
+
+def get_log_file_name():
+    """
+    Returns the filename of the log file as defined in the Settings or return the default name 'general.log'.
+    """
+    return CTRL_SETTINGS.get("FILENAME", "general.log")
 
 
 class ZeroMQHandler(logging.Handler):

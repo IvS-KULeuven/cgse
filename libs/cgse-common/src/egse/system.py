@@ -33,6 +33,7 @@ import signal
 import socket
 import subprocess  # For executing a shell command
 import sys
+import threading
 import time
 import warnings
 from collections import namedtuple
@@ -1229,7 +1230,14 @@ def has_internet(host: str = "8.8.8.8", port: int = 53, timeout: float = 3.0):
             s.close()
 
 
-def do_every(period: float, func: callable, *args: tuple[int, ...], count: int = None) -> None:
+def do_every(
+        period: float,
+        func: Callable, *args: tuple[int, ...],
+        count: int = None,
+        setup_func: Callable = None,
+        teardown_func: Callable = None,
+        stop_event: threading.Event = None,
+) -> None:
     """
     This method executes a function periodically, taking into account
     that the function that is executed will take time also and using a
@@ -1245,12 +1253,42 @@ def do_every(period: float, func: callable, *args: tuple[int, ...], count: int =
     timer_thread.start()
     ```
 
+    The `setup_func` and `teardown` functions will be called before and after
+    the loop that repeats the `func` function. This can be used e.g. for setting
+    up and closing sockets.
+
+    Apart from the `count`, the loop can also be stopped by passing a threading
+    event and setting the `stop_event` when you want to terminate the thread.
+
+    ```
+    self._stop_event = threading.Event()
+
+    timer_thread = threading.Thread(
+        target=do_every,
+        args=(interval, send_heartbeat),
+        kwargs={
+            'stop_event': self._stop_event,
+            'setup_func': self._connect_hb_socket,
+            'teardown_func': self._disconnect_hb_socket
+        }
+    )
+    timer_thread.daemon = True
+    timer_thread.start()
+
+    ...
+
+    self._stop_event.set()
+    ```
+
     Args:
         period: a time interval between successive executions [seconds]
         func: the function to be executed
         *args: optional arguments to be passed to the function
         count: if you do not need an endless loop, provide the number of
             iterations, if count=0 the function will not be executed.
+        setup_func: a function that will be called before going into the loop
+        teardown_func: a function that will be called when the loop ended
+        stop_event: use a threading event to stop the loop
     """
 
     # Code from SO:https://stackoverflow.com/a/28034554/4609203
@@ -1267,12 +1305,21 @@ def do_every(period: float, func: callable, *args: tuple[int, ...], count: int =
     g = g_tick()
     iteration = 0
 
-    while True:
+    if stop_event is None:
+        stop_event = threading.Event()
+
+    if setup_func:
+        setup_func()
+
+    while not stop_event.is_set():
         if count is not None and iteration >= count:
             break
         time.sleep(next(g))
         func(*args)
         iteration += 1
+
+    if teardown_func:
+        teardown_func()
 
 
 @contextlib.contextmanager
@@ -2139,6 +2186,40 @@ def log_rich_output(logger_: logging.Logger, level: int, obj: Any):
 def is_package_installed(package_name):
     """Check if a package is installed."""
     return importlib.util.find_spec(package_name) is not None
+
+
+def get_logging_level(level: str | int):
+    """
+    Convert a logging level to its integer representation.
+
+    This function normalizes various logging level inputs (string names,
+    integer values, or custom level strings) into their corresponding
+    integer logging levels.
+
+    Args:
+        level (str | int): The logging level to convert. Can be:
+            - Standard logging level name (e.g., 'DEBUG', 'INFO', 'WARNING')
+            - Integer logging level (e.g., 10, 20, 30)
+            - Custom level string (e.g., 'Level 25')
+
+    Returns:
+        int: The integer representation of the logging level.
+            - Standard levels: DEBUG=10, INFO=20, WARNING=30, ERROR=40, CRITICAL=50
+            - Custom levels: Extracted integer value or dynamically resolved value
+    """
+
+    log_level = logging.getLevelName(level)
+
+    if isinstance(log_level, str):
+        match = re.search(r'\d+', log_level)
+        if match:
+            int_level = level = int(match.group())
+        else:
+            int_level = getattr(logging, log_level)
+    else:
+        int_level = log_level
+
+    return int_level
 
 
 ignore_m_warning("egse.system")
