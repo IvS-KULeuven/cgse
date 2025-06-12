@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import multiprocessing
 import signal
 import sys
 import textwrap
@@ -20,6 +21,7 @@ import typer
 import zmq
 import zmq.asyncio
 
+from egse.registry import DEFAULT_RS_DB_PATH
 from egse.registry import DEFAULT_RS_HB_PORT
 from egse.registry import DEFAULT_RS_PUB_PORT
 from egse.registry import DEFAULT_RS_REQ_PORT
@@ -54,7 +56,7 @@ class AsyncRegistryServer:
             pub_port: int = DEFAULT_RS_PUB_PORT,
             hb_port: int = DEFAULT_RS_HB_PORT,
             backend: AsyncRegistryBackend | None = None,
-            db_path: str = 'service_registry.db',
+            db_path: str = DEFAULT_RS_DB_PATH,
             cleanup_interval: int = 10
     ):
         self.req_port = req_port
@@ -101,6 +103,9 @@ class AsyncRegistryServer:
 
     async def start(self):
         """Start the registry server."""
+
+        multiprocessing.current_process().name = "rs_cs"
+
         if self._running:
             return
 
@@ -203,6 +208,7 @@ class AsyncRegistryServer:
                             timeout=1.0
                         )
                     except asyncio.TimeoutError:
+                        self.logger.debug("waiting for command request...")
                         continue
 
                     # Parse the request
@@ -227,7 +233,7 @@ class AsyncRegistryServer:
                         )
                     )
                 except Exception as exc:
-                    self.logger.error(f"Error handling request: {exc}")
+                    self.logger.error(f"Error handling request: {exc}", exc_info=True)
                     try:
                         await self.req_rep_socket.send_string(
                             json.dumps(
@@ -237,10 +243,11 @@ class AsyncRegistryServer:
                                 }
                             )
                         )
-                    except Exception:
+                    except Exception as exc:
+                        self.logger.error("Second Exception when handling error...", exc_info=True)
                         pass
         except asyncio.CancelledError:
-            self.logger.info("Request handler task cancelled")
+            self.logger.warning("Request handler task cancelled")
 
     async def _publish_event(self, event_type: str, data: dict[str, Any]):
         """
@@ -536,10 +543,10 @@ class AsyncRegistryServer:
 
 @app.command(cls=TyperAsyncCommand)
 async def start(
-        req_port: int = 4242,
-        pub_port: int = 4243,
-        hb_port: int = 4244,
-        db_path: str = 'service_registry.db',
+        req_port: int = DEFAULT_RS_REQ_PORT,
+        pub_port: int = DEFAULT_RS_PUB_PORT,
+        hb_port: int = DEFAULT_RS_HB_PORT,
+        db_path: str = DEFAULT_RS_DB_PATH,
         cleanup_interval: int = 10,
         log_level: str = "WARNING",
 ):
@@ -632,4 +639,13 @@ async def stop(
 
 if __name__ == "__main__":
 
-    sys.exit(app())
+    try:
+        rc = app()
+    except zmq.ZMQError as exc:
+        if "Address already in use" in str(exc):
+            logger.error(f"The Service Registry server is already running: {exc}")
+        else:
+            logger.error("Couldn't start service registry server", exc_info=True)
+        rc = -1
+
+    sys.exit(rc)
