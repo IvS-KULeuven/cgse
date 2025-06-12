@@ -19,12 +19,12 @@ core = typer.Typer(
 
 
 @core.command(name="start")
-def start_core_services():
+def start_core_services(log_level: str = "WARNING"):
     """Start the core services in the background."""
 
     rich.print("[green]Starting the core services...[/]")
 
-    start_rs_cs()
+    start_rs_cs(log_level)
     start_log_cs()
     start_sm_cs()
     start_cm_cs()
