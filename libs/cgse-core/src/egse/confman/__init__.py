@@ -508,6 +508,18 @@ class ConfigurationManagerInterface:
         raise NotImplementedError
 
     @dynamic_interface
+    def register_to_storage(self):
+        """Register the configuration manager to the Storage manager.
+
+        Registration is done for `obsid` and `CM` which handle different purposes:
+
+        - `obsid` for accessing the OBSID table
+        - 'CM' for storing housekeeping information from the configuration manager
+
+        """
+        raise NotImplementedError
+
+    @dynamic_interface
     def load_setup(self, setup_id: int = None) -> Union[Setup, Failure]:
         raise NotImplementedError
 
@@ -703,6 +715,28 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         else:
             msg = "No observation running. Use start_observation() to start an observation."
         return Success(msg, self._obsid)
+
+    def register_to_storage(self):
+
+        from egse.storage import StorageProxy
+        from egse.storage import is_storage_manager_active
+        from egse.storage.persistence import TYPES
+
+        if is_storage_manager_active():
+            self._storage = StorageProxy()
+            response = self._storage.register(
+                {
+                    "origin": "obsid",
+                    "persistence_class": TYPES['TXT'],
+                    "prep": {"mode": "a", "ending": "\n"},
+                    "persistence_count": True,
+                    "filename": "obsid-table.txt",
+                }
+            )
+            LOGGER.info(response)
+        else:
+            self._storage = None
+            LOGGER.error("No Storage Manager available !!!!")
 
     def load_setup(self, setup_id: int = None) -> Union[Setup, Failure]:
         """Load the Setup with the given setup_id.
