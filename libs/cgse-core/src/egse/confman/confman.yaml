@@ -37,6 +37,9 @@ Commands:
                         When no test is running, i.e. we have not started an observation,
                         then a Message is returned.
 
+    register_to_storage:
+        description:    Register the configuration manager to the storage.
+    
     # Commands for handling Setups
 
     load_setup:
