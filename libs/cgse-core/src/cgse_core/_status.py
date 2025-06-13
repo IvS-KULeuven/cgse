@@ -6,7 +6,7 @@ import rich
 
 async def run_all_status(full: bool = False, suppress_errors: bool = True):
     tasks = [
-        asyncio.create_task(status_rs_cs(suppress_errors)),
+        asyncio.create_task(status_rm_cs(suppress_errors)),
         asyncio.create_task(status_log_cs(suppress_errors)),
         asyncio.create_task(status_sm_cs(full, suppress_errors)),
         asyncio.create_task(status_cm_cs(suppress_errors)),
@@ -16,7 +16,7 @@ async def run_all_status(full: bool = False, suppress_errors: bool = True):
     await asyncio.gather(*tasks)
 
 
-async def status_rs_cs(suppress_errors):
+async def status_rm_cs(suppress_errors):
 
     proc = await asyncio.create_subprocess_exec(
         sys.executable, '-m', 'egse.registry.server', 'status',
