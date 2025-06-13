@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import multiprocessing
 import signal
 import sys
 import textwrap
@@ -20,9 +21,11 @@ import typer
 import zmq
 import zmq.asyncio
 
+from egse.registry import DEFAULT_RS_DB_PATH
 from egse.registry import DEFAULT_RS_HB_PORT
 from egse.registry import DEFAULT_RS_PUB_PORT
 from egse.registry import DEFAULT_RS_REQ_PORT
+from egse.registry import MessageType
 from egse.registry import logger
 from egse.registry.backend import AsyncRegistryBackend
 from egse.registry.backend import AsyncSQLiteBackend
@@ -54,7 +57,7 @@ class AsyncRegistryServer:
             pub_port: int = DEFAULT_RS_PUB_PORT,
             hb_port: int = DEFAULT_RS_HB_PORT,
             backend: AsyncRegistryBackend | None = None,
-            db_path: str = 'service_registry.db',
+            db_path: str = DEFAULT_RS_DB_PATH,
             cleanup_interval: int = 10
     ):
         self.req_port = req_port
@@ -64,26 +67,10 @@ class AsyncRegistryServer:
         self.cleanup_interval = cleanup_interval
         self.logger = logger
 
-        # Set ZeroMQ to use asyncio
-        self.context = zmq.asyncio.Context()
-
-        # Socket to handle REQ-REP pattern
-        req_rep_endpoint = f"tcp://*:{req_port}"
-        self.req_rep_socket = self.context.socket(zmq.REP)
-        self.req_rep_socket.bind(req_rep_endpoint)
-        self.logger.info(f"Binding request socket to {req_rep_endpoint}")
-
-        # Socket to publish service events
-        pub_endpoint = f"tcp://*:{pub_port}"
-        self.pub_socket = self.context.socket(zmq.PUB)
-        self.pub_socket.bind(pub_endpoint)
-        self.logger.info(f"Binding publish socket to {pub_endpoint}")
-
-        # Socket to handle heartbeats
-        hb_endpoint = f"tcp://*:{hb_port}"
-        self.hb_socket = self.context.socket(zmq.REP)
-        self.hb_socket.bind(hb_endpoint)
-        self.logger.info(f"Binding heartbeat socket to {hb_endpoint}")
+        self.context = None
+        self.req_socket = None
+        self.pub_socket = None
+        self.hb_socket = None
 
         # Initialize the storage backend
         self.backend = backend or AsyncSQLiteBackend(db_path)
@@ -95,17 +82,45 @@ class AsyncRegistryServer:
         # Tasks
         self._tasks = set()
 
-    async def initialize(self):
-        """Initialize the server."""
+    async def setup_sockets(self):
+        """Set up the communication sockets."""
+
+        # Set ZeroMQ to use asyncio
+        self.context = zmq.asyncio.Context()
+
+        # Socket to handle requests and commands
+        req_rep_endpoint = f"tcp://*:{self.req_port}"
+        self.req_socket = self.context.socket(zmq.ROUTER)
+        self.req_socket.bind(req_rep_endpoint)
+        self.logger.info(f"Binding request socket to {req_rep_endpoint}")
+
+        # Socket to publish service events
+        pub_endpoint = f"tcp://*:{self.pub_port}"
+        self.pub_socket = self.context.socket(zmq.PUB)
+        self.pub_socket.bind(pub_endpoint)
+        self.logger.info(f"Binding publish socket to {pub_endpoint}")
+
+        # Socket to handle heartbeats
+        hb_endpoint = f"tcp://*:{self.hb_port}"
+        self.hb_socket = self.context.socket(zmq.REP)
+        self.hb_socket.bind(hb_endpoint)
+        self.logger.info(f"Binding heartbeat socket to {hb_endpoint}")
+
+    async def initialize_backend(self):
+        """Initialize the storage backend."""
         await self.backend.initialize()
 
     async def start(self):
         """Start the registry server."""
+
+        multiprocessing.current_process().name = "rs_cs"
+
         if self._running:
             return
 
-        # Initialize the backend
-        await self.initialize()
+        await self.setup_sockets()
+
+        await self.initialize_backend()
 
         self._running = True
         self.logger.info(
@@ -154,7 +169,7 @@ class AsyncRegistryServer:
         await self.backend.close()
 
         # Close ZeroMQ sockets
-        self.req_rep_socket.close()
+        self.req_socket.close()
         self.pub_socket.close()
         self.hb_socket.close()
 
@@ -198,49 +213,30 @@ class AsyncRegistryServer:
                     # Wait for a request with timeout to allow checking if still running
                     try:
                         # self.logger.info("Waiting for a request with 1s timeout...")
-                        message_json = await asyncio.wait_for(
-                            self.req_rep_socket.recv_string(),
+                        message_parts = await asyncio.wait_for(
+                            self.req_socket.recv_multipart(),
                             timeout=1.0
                         )
                     except asyncio.TimeoutError:
+                        self.logger.debug("waiting for command request...")
                         continue
 
-                    # Parse the request
-                    request = json.loads(message_json)
-                    self.logger.info(f"Received request: {request}")
+                    if len(message_parts) >= 3:
+                        client_id = message_parts[0]
+                        message_type = MessageType(message_parts[1])
+                        message_data = message_parts[2]
 
-                    # Process the request
-                    response = await self._process_request(request)
+                        self.logger.info(f"{client_id = }, {message_type = }, {message_data = }")
+                        response = await self._process_request(message_data)
 
-                    # Send the response
-                    await self.req_rep_socket.send_string(json.dumps(response))
+                        await self._send_response(client_id, message_type, response)
+
                 except zmq.ZMQError as exc:
-                    self.logger.error(f"ZMQ error: {exc}")
-                except json.JSONDecodeError as exc:
-                    self.logger.error(f"Invalid JSON received: {exc}")
-                    await self.req_rep_socket.send_string(
-                        json.dumps(
-                            {
-                                'success': False,
-                                'error': 'Invalid JSON format'
-                            }
-                        )
-                    )
+                    self.logger.error(f"ZMQ error: {exc}", exc_info=True)
                 except Exception as exc:
-                    self.logger.error(f"Error handling request: {exc}")
-                    try:
-                        await self.req_rep_socket.send_string(
-                            json.dumps(
-                                {
-                                    'success': False,
-                                    'error': str(exc)
-                                }
-                            )
-                        )
-                    except Exception:
-                        pass
+                    self.logger.error(f"Error handling request: {exc}", exc_info=True)
         except asyncio.CancelledError:
-            self.logger.info("Request handler task cancelled")
+            self.logger.warning("Request handler task cancelled")
 
     async def _publish_event(self, event_type: str, data: dict[str, Any]):
         """
@@ -268,16 +264,22 @@ class AsyncRegistryServer:
         except Exception as exc:
             self.logger.error(f"Failed to publish event: {exc}")
 
-    async def _process_request(self, request: dict[str, Any]) -> dict[str, Any]:
+    async def _process_request(self, msg_data: bytes):
         """
         Process a client request and generate a response.
 
         Args:
-            request: The request message
+            msg_data: the actual JSON with the request
 
-        Returns:
-            The response message
         """
+        try:
+            request = json.loads(msg_data.decode())
+            self.logger.info(f"Received request: {request}")
+
+        except json.JSONDecodeError as exc:
+            self.logger.error(f"Invalid JSON received: {exc}")
+            return {'success': False, 'error': 'Invalid JSON format'}
+
         action = request.get('action')
         if not action:
             return {'success': False, 'error': 'Missing required field: action'}
@@ -299,6 +301,19 @@ class AsyncRegistryServer:
             return {'success': False, 'error': f'Unknown action: {action}'}
 
         return await handler(request)
+
+    async def _send_response(self, client_id: bytes, msg_type: MessageType, response: dict[str, Any]):
+        """
+        If the client expects a reply, send the response.
+
+        Args:
+            client_id: the client identification, part 1 of the multipart message
+            msg_type: the type of the message, e.g. if reply is required
+            response: a dictionary with the status and response
+
+        """
+        if msg_type == MessageType.REQUEST_WITH_REPLY:
+            await self.req_socket.send_multipart([client_id, MessageType.RESPONSE.value, json.dumps(response).encode()])
 
     async def _handle_register(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle a service registration request."""
@@ -536,10 +551,10 @@ class AsyncRegistryServer:
 
 @app.command(cls=TyperAsyncCommand)
 async def start(
-        req_port: int = 4242,
-        pub_port: int = 4243,
-        hb_port: int = 4244,
-        db_path: str = 'service_registry.db',
+        req_port: int = DEFAULT_RS_REQ_PORT,
+        pub_port: int = DEFAULT_RS_PUB_PORT,
+        hb_port: int = DEFAULT_RS_HB_PORT,
+        db_path: str = DEFAULT_RS_DB_PATH,
         cleanup_interval: int = 10,
         log_level: str = "WARNING",
 ):
@@ -632,4 +647,13 @@ async def stop(
 
 if __name__ == "__main__":
 
-    sys.exit(app())
+    try:
+        rc = app()
+    except zmq.ZMQError as exc:
+        if "Address already in use" in str(exc):
+            logger.error(f"The Service Registry server is already running: {exc}")
+        else:
+            logger.error("Couldn't start service registry server", exc_info=True)
+        rc = -1
+
+    sys.exit(rc)

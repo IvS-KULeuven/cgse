@@ -218,6 +218,31 @@ def timer(*, name: str = "timer", level: int = logging.INFO, precision: int = 4)
     return actual_decorator
 
 
+def async_timer(*, name: str = "timer", level: int = logging.INFO, precision: int = 4):
+    """
+    Print the runtime of the decorated async function.
+
+    Args:
+        name: a name for the Timer, will be printed in the logging message
+        level: the logging level for the time message [default=INFO]
+        precision: the number of decimals for the time [default=3 (ms)]
+    """
+
+    def actual_decorator(func):
+        @functools.wraps(func)
+        async def wrapper_timer(*args, **kwargs):
+            start_time = time.perf_counter()
+            value = await func(*args, **kwargs)
+            end_time = time.perf_counter()
+            run_time = end_time - start_time
+            _LOGGER.log(level, f"{name}: Finished {func.__name__!r} in {run_time:.{precision}f} secs")
+            return value
+
+        return wrapper_timer
+
+    return actual_decorator
+
+
 def time_it(count: int = 1000, precision: int = 4) -> Callable:
     """Print the runtime of the decorated function.
 
