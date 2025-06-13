@@ -463,24 +463,6 @@ class RegistryClient:
                         self.logger.warning("ServiceRegistry not responding.")
                         return
 
-                    # Try to re-register if heartbeat fails..
-                    if not self.get_service(self._service_id) and self._service_info:
-                        self.logger.info("Attempting to re-register service")
-                        new_request = {
-                            'action': 'register',
-                            'service_info': self._service_info,
-                            'ttl': self._ttl
-                        }
-                        self._send_request(new_request)
-
-                        if response.get('success'):
-                            # Store service information for later use
-                            self._service_id = response.get('service_id')
-
-                            self.logger.info(f"Service registered with ID: {self._service_id}")
-                        else:
-                            self.logger.error(f"Failed to register service: {response.get('error')}")
-
                 else:
                     self.logger.debug(response.get("message"))
 
@@ -522,7 +504,7 @@ class AsyncRegistryClient:
     """
     Asynchronous client for interacting with the ZeroMQ-based service registry.
 
-    This class uses asyncio and ZeroMQ's async API for non-blocking operations.
+    This class uses asyncio and the ZeroMQ asyncio API for non-blocking operations.
     """
 
     def __init__(
