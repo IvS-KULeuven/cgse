@@ -1,6 +1,6 @@
 [project]
 name = "cgse-core"
-version = "0.9.2"
+version = "0.10.0"
 description = "Core services for the CGSE framework"
 authors = [
     {name = "IvS KU Leuven"}
