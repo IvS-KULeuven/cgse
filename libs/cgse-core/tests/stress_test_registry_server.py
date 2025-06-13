@@ -68,14 +68,14 @@ if __name__ == '__main__':
         service_id = reg.register("stress-test-heartbeat", "localhost", 5678)
         reg.start_heartbeat(3)
 
-        main()
+        main(100)
 
         time.sleep(10)
         response = reg.server_status()
         rich.print(response)
         time.sleep(10)
 
-        asyncio.run(amain())
+        asyncio.run(amain(100))
 
         reg.stop_heartbeat()
         reg.deregister(service_id)
