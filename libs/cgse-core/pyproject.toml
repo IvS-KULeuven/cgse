@@ -44,7 +44,7 @@ cgse-core = "cgse_core:settings.yaml"
 
 [project.entry-points."cgse.service"]
 core = 'cgse_core.services:core'
-registry = 'cgse_core.services:reg'
+rm_cs = 'cgse_core.services:rm_cs'
 
 [project.entry-points."cgse.explore"]
 explore = "cgse_core.cgse_explore"
