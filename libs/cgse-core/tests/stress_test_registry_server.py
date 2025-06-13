@@ -1,8 +1,11 @@
 import asyncio
 import logging
+import sys
 import time
+from typing import Annotated
 
 import rich
+import typer
 
 from egse.decorators import async_timer
 from egse.decorators import timer
@@ -62,28 +65,51 @@ async def amain(count: int = 1):
                 rich.print("[red]error: Couldn't de-register stress-test[/]")
 
 
-if __name__ == '__main__':
+app = typer.Typer()
+
+
+@app.command()
+def run_stress_test(
+        count: Annotated[int, typer.Option(help="Number of times to execute the tests")] = 1,
+        sleep_time: Annotated[float, typer.Option(help="sleep time between tests")] = 10.0,
+        terminate_server: Annotated[
+            bool, typer.Option(help="Terminate the registry server at the end of the test")
+        ] = False,
+):
 
     with RegistryClient() as reg:
         service_id = reg.register("stress-test-heartbeat", "localhost", 5678)
         reg.start_heartbeat(3)
 
-        main(100)
+        main(count)  # executes the synchronous registry client
 
-        time.sleep(10)
+        # Allow time for the heartbeats to be sent by this test script
+
+        time.sleep(sleep_time)
+
+        # This should show the stress-test-heartbeat in the registered services
         response = reg.server_status()
         rich.print(response)
-        time.sleep(10)
 
-        asyncio.run(amain(100))
+        time.sleep(sleep_time)
+
+        asyncio.run(amain(count))  # executes the asynchronous registry client
 
         reg.stop_heartbeat()
         reg.deregister(service_id)
 
+        # We should not see the stress-test-heartbeat anymore in the registered services
         response = reg.server_status()
         rich.print(response)
 
-        if reg.terminate_registry_server():
-            rich.print("[green]Registry Server terminated successfully[/]")
-        else:
-            rich.print("[red]error: Couldn't terminate registry server..[/]")
+        if terminate_server:
+
+            if reg.terminate_registry_server():
+                rich.print("[green]Registry Server terminated successfully[/]")
+            else:
+                rich.print("[red]error: Couldn't terminate registry server..[/]")
+
+
+if __name__ == '__main__':
+
+    sys.exit(app())
