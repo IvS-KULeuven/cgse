@@ -1932,7 +1932,7 @@ SIGNAL_NAME = {
     30: "SIGUSR1",
     31: "SIGUSR2",
 }
-"""The signals that can be catch with the SignalCatcher."""
+"""The signals that can be caught with the SignalCatcher."""
 
 
 class SignalCatcher:
