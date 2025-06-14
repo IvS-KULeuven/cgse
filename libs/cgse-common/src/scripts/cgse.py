@@ -25,10 +25,13 @@ import typer
 from rich.console import Console
 from rich.traceback import Traceback
 
+from egse.plugin import HierarchicalEntryPoints
 from egse.plugin import entry_points
 from egse.system import get_package_description
 
 from typer.core import TyperGroup
+
+from egse.system import snake_to_title
 
 
 def broken_command(name: str, module: str, exc: Exception):
@@ -109,12 +112,20 @@ for ep in entry_points("cgse.command"):
     except Exception as exc:
         app.command()(broken_command(ep.name, ep.module, exc))
 
+cgse_eps = HierarchicalEntryPoints("cgse.service")
 
-for ep in entry_points("cgse.service"):
-    try:
-        app.add_typer(ep.load(), name=ep.name)
-    except Exception as exc:
-        app.command()(broken_command(ep.name, ep.module, exc))
+# rich.print("Available groups:", cgse_eps.get_all_groups())
+
+for group in cgse_eps.get_all_groups():
+    for ep in entry_points(group):
+        try:
+            if group == "cgse.service":
+                app.add_typer(ep.load(), name=ep.name)
+            else:
+                command_group = snake_to_title(group.split('.')[-1])
+                app.add_typer(ep.load(), name=ep.name, rich_help_panel=command_group)
+        except Exception as exc:
+            app.command()(broken_command(ep.name, ep.module, exc))
 
 
 @app.callback(no_args_is_help=True, invoke_without_command=True)
