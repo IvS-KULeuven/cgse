@@ -1,6 +1,6 @@
 [project]
 name = "lakeshore-tempcontrol"
-version = "0.10.0"
+version = "0.11.0"
 description = "Lakeshore Temperature Control for CGSE"
 authors = [
     {name = "IVS KU Leuven"}
@@ -43,7 +43,7 @@ lakeshore-tempcontrol = 'egse.version:get_version_installed'
 lakeshore-tempcontrol = "lakeshore_tempcontrol:settings.yaml"
 
 [project.entry-points."cgse.service"]
-lakeshore336 = 'lakeshore_tempcontrol.cgse_services:lakeshore336'
+lakeshore336 = 'lakeshore_tempcontrol.cgse_services:lakeshore336[device_command]'
 
 [project.entry-points."cgse.explore"]
 explore = "lakeshore_tempcontrol.cgse_explore"

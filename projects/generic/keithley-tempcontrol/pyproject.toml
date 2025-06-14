@@ -1,6 +1,6 @@
 [project]
 name = "keithley-tempcontrol"
-version = "0.10.0"
+version = "0.11.0"
 description = "Keithley Temperature Control for CGSE"
 authors = [
     {name = "IvS KU Leuven"}
@@ -43,7 +43,7 @@ keithley-tempcontrol = 'egse.version:get_version_installed'
 keithley-tempcontrol = "keithley_tempcontrol:settings.yaml"
 
 [project.entry-points."cgse.service"]
-daq6510 = 'keithley_tempcontrol.cgse_services:daq6510'
+daq6510 = 'keithley_tempcontrol.cgse_services:daq6510[device_command]'
 
 [project.entry-points."cgse.explore"]
 explore = "keithley_tempcontrol.cgse_explore"
