@@ -105,6 +105,44 @@ def get_file_infos(entry_point: str) -> dict[str, tuple[Path, str]]:
     return eps
 
 
+class HierarchicalEntryPoints:
+    def __init__(self, base_group: str):
+        self.base_group = base_group
+        self._discover_groups()
+
+    def _discover_groups(self):
+        """Discover all groups that match the base group pattern."""
+        all_eps = lib_entry_points()
+
+        self.groups = {}
+        self.flat_entries = []
+
+        for ep in all_eps:
+            if ep.group == self.base_group or ep.group.startswith(f"{self.base_group}."):
+                self.groups[ep.group] = ep
+                self.flat_entries.append(ep)
+
+    def get_all_entry_points(self):
+        """Get all entry points as a flat list."""
+        return self.flat_entries
+
+    def get_by_subgroup(self, subgroup=None):
+        """Get entry points from a specific subgroup."""
+        if subgroup is None:
+            return self.groups.get(self.base_group, [])
+
+        full_group = f"{self.base_group}.{subgroup}"
+        return self.groups.get(full_group, [])
+
+    def get_all_groups(self):
+        """Get all discovered group names."""
+        return list(self.groups.keys())
+
+    def get_by_type(self, entry_type):
+        """Get entry points by type (assuming type is the subgroup name)."""
+        return self.get_by_subgroup(entry_type)
+
+
 # The following code was adapted from the inspiring package click-plugins
 # at https://github.com/click-contrib/click-plugins/
 
