@@ -38,7 +38,7 @@ clock = 'cgse_tools.cgse_clock:clock'
 show = 'cgse_tools.cgse_commands:show[group]'
 check = 'cgse_tools.cgse_commands:check[group]'
 
-[project.entry-points."cgse.service"]
+[project.entry-points."cgse.service.example"]
 dev-x = 'cgse_tools.cgse_services:dev_x'
 
 [tool.hatch.build.targets.sdist]

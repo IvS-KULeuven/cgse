@@ -43,10 +43,10 @@ joran_ui = "egse.hexapod.symetrie.joran_ui:main"
 [project.entry-points."cgse.version"]
 symetrie-hexapod = 'egse.version:get_version_installed'
 
-[project.entry-points."cgse.service"]
-puna = 'symetrie_hexapod.cgse_services:puna[device_command]'
-zonda = 'symetrie_hexapod.cgse_services:zonda[device_command]'
-joran = 'symetrie_hexapod.cgse_services:joran[device_command]'
+[project.entry-points."cgse.service.device_command"]
+puna = 'symetrie_hexapod.cgse_services:puna'
+zonda = 'symetrie_hexapod.cgse_services:zonda'
+joran = 'symetrie_hexapod.cgse_services:joran'
 
 [project.entry-points."cgse.settings"]
 symetrie-hexapod = "symetrie_hexapod:settings.yaml"
