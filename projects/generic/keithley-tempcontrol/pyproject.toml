@@ -42,8 +42,8 @@ keithley-tempcontrol = 'egse.version:get_version_installed'
 [project.entry-points."cgse.settings"]
 keithley-tempcontrol = "keithley_tempcontrol:settings.yaml"
 
-[project.entry-points."cgse.service"]
-daq6510 = 'keithley_tempcontrol.cgse_services:daq6510[device_command]'
+[project.entry-points."cgse.service.device_command"]
+daq6510 = 'keithley_tempcontrol.cgse_services:daq6510'
 
 [project.entry-points."cgse.explore"]
 explore = "keithley_tempcontrol.cgse_explore"
