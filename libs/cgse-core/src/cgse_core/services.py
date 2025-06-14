@@ -16,6 +16,7 @@ from ._start import start_pm_cs
 from ._start import start_rm_cs
 from ._start import start_sm_cs
 from ._status import run_all_status
+from ._status import status_cm_cs
 from ._status import status_log_cs
 from ._status import status_rm_cs
 from ._stop import stop_cm_cs
@@ -28,7 +29,6 @@ core = typer.Typer(
     name="core",
     help="handle core services: start, stop, status",
     no_args_is_help=True,
-    rich_help_panel="Core Services"
 )
 
 
@@ -79,7 +79,6 @@ rm_cs = typer.Typer(
     name="rm_cs",
     help="handle registry services: start, stop, status, list-services",
     no_args_is_help=True,
-    rich_help_panel="Core Services"
 )
 
 
@@ -91,13 +90,13 @@ def rm_cs_start(log_level: str = "WARNING"):
 
 @rm_cs.command(name="stop")
 def rm_cs_stop():
-    """Start the Service Registry Manager."""
+    """Stop the Service Registry Manager."""
     stop_rm_cs()
 
 
 @rm_cs.command(cls=TyperAsyncCommand, name="status")
 async def rm_cs_status(suppress_errors: bool = True):
-    """Start the Service Registry Manager."""
+    """Print the status of the Service Registry Manager."""
     await status_rm_cs(suppress_errors)
 
 
@@ -112,9 +111,8 @@ async def reg_list_services():
 
 log_cs = typer.Typer(
     name="log_cs",
-    help="handle log services: start, stop, status",
+    help="handle log services: start, stop, status, re-register",
     no_args_is_help=True,
-    rich_help_panel="Core Services"
 )
 
 
@@ -141,6 +139,44 @@ def log_cs_reregister(force: bool = False):
     """Command the Logger to re-register as a service."""
 
     from egse.logger.log_cs import app_name
+
+    create_signal_command_file(
+        Path(DEFAULT_SIGNAL_DIR),
+        app_name,
+        {'action': 'reregister', 'params': {'force': force}},
+    )
+
+
+cm_cs = typer.Typer(
+    name="cm_cs",
+    help="handle configuration manager: start, stop, status",
+    no_args_is_help=True,
+)
+
+
+@cm_cs.command(name="start")
+def cm_cs_start():
+    """Start the Configuration Manager."""
+    start_cm_cs()
+
+
+@cm_cs.command(name="stop")
+def cm_cs_stop():
+    """Stop the Configuration Manager."""
+    stop_cm_cs()
+
+
+@cm_cs.command(cls=TyperAsyncCommand, name="status")
+async def cm_cs_status(suppress_errors: bool = True):
+    """Print the status of the Configuration Manager."""
+    await status_cm_cs(suppress_errors)
+
+
+@cm_cs.command(name="re-register")
+def cm_cs_reregister(force: bool = False):
+    """Command the Configuration Manager to re-register as a service."""
+
+    from egse.confman.confman_cs import app_name
 
     create_signal_command_file(
         Path(DEFAULT_SIGNAL_DIR),
