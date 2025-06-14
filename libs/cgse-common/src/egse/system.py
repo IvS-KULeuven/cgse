@@ -2222,6 +2222,28 @@ def get_logging_level(level: str | int):
     return int_level
 
 
+def camel_to_kebab(camel_str: str) -> str:
+    """Convert a string in CamelCase to kebab-case."""
+
+    # Handle sequences of uppercase letters followed by lowercase
+    s1 = re.sub('([A-Z]+)([A-Z][a-z])', r'\1-\2', camel_str)
+
+    # Handle lowercase/digit followed by uppercase
+    s2 = re.sub('([a-z0-9])([A-Z])', r'\1-\2', s1)
+    return s2.lower()
+
+
+def camel_to_snake(camel_str: str) -> str:
+    """Convert a string in CamelCase to snake_case."""
+
+    # Handle sequences of uppercase letters followed by lowercase
+    s1 = re.sub('([A-Z]+)([A-Z][a-z])', r'\1_\2', camel_str)
+
+    # Handle lowercase/digit followed by uppercase
+    s2 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1)
+    return s2.lower()
+
+
 ignore_m_warning("egse.system")
 
 if __name__ == "__main__":

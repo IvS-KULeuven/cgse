@@ -1,6 +1,7 @@
 """
 This module defines the abstract class for any Control Server and some convenience functions.
 """
+from __future__ import annotations
 
 import abc
 import datetime
@@ -21,7 +22,10 @@ from egse.decorators import retry
 from egse.decorators import retry_with_exponential_backoff
 from egse.listener import Listeners
 from egse.registry.client import RegistryClient
+from egse.signal import FileBasedSignaling
 from egse.system import SignalCatcher
+from egse.system import camel_to_kebab
+from egse.system import camel_to_snake
 from egse.system import time_in_ms
 from egse.zmq_ser import get_port_number
 
@@ -132,6 +136,12 @@ class ControlServer(metaclass=abc.ABCMeta):
         self.registry.connect()
 
         self.service_id = None
+
+        # These instance variables will probably be overwritten by the subclass __init__
+        self.service_type = camel_to_kebab(type(self).__name__)
+        self.service_name = camel_to_snake(type(self).__name__)
+
+        self.signaling: FileBasedSignaling | None= None
 
         self.interrupted = False
         self.mon_delay = 1000  # Delay between publish status information [ms]
@@ -460,6 +470,8 @@ class ControlServer(metaclass=abc.ABCMeta):
             - Clean up all threads.
         """
 
+        self.setup_signaling()
+
         self.before_serve()
 
         # check if Storage Manager is available
@@ -480,6 +492,7 @@ class ControlServer(metaclass=abc.ABCMeta):
         killer = SignalCatcher()
 
         while True:
+            self.signaling.process_pending_commands()
             try:
                 socks = dict(self.poller.poll(50))  # timeout in milliseconds, do not block
             except KeyboardInterrupt:
@@ -576,13 +589,32 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         self.zcontext.term()
 
+    def setup_signaling(self):
+
+        self.signaling = FileBasedSignaling(self.service_name)
+        self.signaling.start_monitoring()
+        self.signaling.register_handler("reregister", self._reregister_service)
+
+    def _reregister_service(self, force: bool = False):
+
+        self.logger.info(f"Re-registration of service: {self.service_name} ({force=})")
+
+        if self.registry.get_service(self.service_id):
+            if force is True:
+                self.deregister_service()
+            else:
+                return
+
+        self.register_service(self.service_type)
+
     def register_service(self, service_type: str):
-        self.logger.info(f"Registering service {type(self).__name__} as type {service_type}")
+        self.logger.info(f"Registering service {self.service_name} as type {service_type}")
+        self.service_type = service_type
         self.service_id = self.registry.register(
-            name=type(self).__name__,
+            name=self.service_name,
             host=get_host_ip() or "127.0.0.1",
             port=get_port_number(self.dev_ctrl_cmd_sock),
-            service_type=service_type,
+            service_type=self.service_type,
             metadata={
                 'service_port': get_port_number(self.dev_ctrl_service_sock),
                 'monitoring_port': get_port_number(self.dev_ctrl_mon_sock),
