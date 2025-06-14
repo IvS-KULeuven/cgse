@@ -18,7 +18,9 @@ from ._start import start_sm_cs
 from ._status import run_all_status
 from ._status import status_cm_cs
 from ._status import status_log_cs
+from ._status import status_pm_cs
 from ._status import status_rm_cs
+from ._status import status_sm_cs
 from ._stop import stop_cm_cs
 from ._stop import stop_log_cs
 from ._stop import stop_pm_cs
@@ -73,6 +75,16 @@ def status_core_services(full: bool = False, suppress_errors: bool = True):
     rich.print("[green]Status of the core services...[/]")
 
     asyncio.run(run_all_status(full, suppress_errors))
+
+
+@core.command(name="re-register")
+def core_reregister(force: bool = False):
+    """Command all core services to re-register as a service."""
+
+    log_cs_reregister(force)
+    cm_cs_reregister(force)
+    sm_cs_reregister(force)
+    pm_cs_reregister(force)
 
 
 rm_cs = typer.Typer(
@@ -149,7 +161,7 @@ def log_cs_reregister(force: bool = False):
 
 cm_cs = typer.Typer(
     name="cm_cs",
-    help="handle configuration manager: start, stop, status",
+    help="handle configuration manager: start, stop, status, re-register",
     no_args_is_help=True,
 )
 
@@ -177,6 +189,82 @@ def cm_cs_reregister(force: bool = False):
     """Command the Configuration Manager to re-register as a service."""
 
     from egse.confman.confman_cs import app_name
+
+    create_signal_command_file(
+        Path(DEFAULT_SIGNAL_DIR),
+        app_name,
+        {'action': 'reregister', 'params': {'force': force}},
+    )
+
+
+sm_cs = typer.Typer(
+    name="sm_cs",
+    help="handle storage manager: start, stop, status, re-register",
+    no_args_is_help=True,
+)
+
+
+@sm_cs.command(name="start")
+def sm_cs_start():
+    """Start the Storage Manager."""
+    start_sm_cs()
+
+
+@sm_cs.command(name="stop")
+def sm_cs_stop():
+    """Stop the Storage Manager."""
+    stop_sm_cs()
+
+
+@sm_cs.command(cls=TyperAsyncCommand, name="status")
+async def sm_cs_status(suppress_errors: bool = True):
+    """Print the status of the Storage Manager."""
+    await status_sm_cs(suppress_errors)
+
+
+@sm_cs.command(name="re-register")
+def sm_cs_reregister(force: bool = False):
+    """Command the Storage Manager to re-register as a service."""
+
+    from egse.storage.storage_cs import app_name
+
+    create_signal_command_file(
+        Path(DEFAULT_SIGNAL_DIR),
+        app_name,
+        {'action': 'reregister', 'params': {'force': force}},
+    )
+
+
+pm_cs = typer.Typer(
+    name="pm_cs",
+    help="handle process manager: start, stop, status, re-register",
+    no_args_is_help=True,
+)
+
+
+@pm_cs.command(name="start")
+def pm_cs_start():
+    """Start the Process Manager."""
+    start_pm_cs()
+
+
+@pm_cs.command(name="stop")
+def pm_cs_stop():
+    """Stop the Process Manager."""
+    stop_pm_cs()
+
+
+@pm_cs.command(cls=TyperAsyncCommand, name="status")
+async def pm_cs_status(suppress_errors: bool = True):
+    """Print the status of the Process Manager."""
+    await status_pm_cs(suppress_errors)
+
+
+@pm_cs.command(name="re-register")
+def pm_cs_reregister(force: bool = False):
+    """Command the Storage Manager to re-register as a service."""
+
+    from egse.procman.procman_cs import app_name
 
     create_signal_command_file(
         Path(DEFAULT_SIGNAL_DIR),
