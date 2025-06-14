@@ -27,6 +27,7 @@ from egse.logger import send_request
 from egse.process import SubProcess
 from egse.registry.client import RegistryClient
 from egse.settings import Settings
+from egse.signal import FileBasedSignaling
 from egse.system import format_datetime
 from egse.system import get_caller_info
 from egse.system import get_host_ip
@@ -92,8 +93,8 @@ class DateTimeFormatter(logging.Formatter):
 
 file_formatter = DateTimeFormatter(fmt=LOG_FORMAT_KEY_VALUE, datefmt=LOG_FORMAT_DATE)
 
-
-app = typer.Typer(name="log_cs", no_args_is_help=True)
+app_name = "log_cs"
+app = typer.Typer(name=app_name, no_args_is_help=True)
 
 
 @app.command()
@@ -102,7 +103,7 @@ def start():
 
     global file_handler, stream_handler, socket_handler
 
-    multiprocessing.current_process().name = "log_cs"
+    multiprocessing.current_process().name = app_name
 
     log_file_location = Path(get_log_file_location())
     log_file_name = get_log_file_name()
@@ -156,9 +157,40 @@ def start():
 
     client.start_heartbeat()
 
+    def reregister_service(force: bool = False):
+        nonlocal service_id
+
+        record = _create_log_record(logging.WARNING, f"Re-registration of Logger {force = }.")
+        handle_log_record(record)
+
+        if client.get_service(service_id):
+            if force is True:
+                client.deregister(service_id)
+            else:
+                return
+
+        service_id = client.register(
+            name=LOGGER_ID,
+            host=get_host_ip() or "127.0.0.1",
+            port=get_port_number(commander),
+            service_type="LOGGER",
+            metadata={
+                'receiver_port': get_port_number(receiver),
+            }
+        )
+        if service_id is None:
+            record = _create_log_record(logging.ERROR, "Registration of LOGGER service failed.")
+            handle_log_record(record)
+
+    signaling = FileBasedSignaling(app_name)
+    signaling.start_monitoring()
+    signaling.register_handler("reregister", reregister_service)
+
     while True:
         try:
-            socks = dict(poller.poll())
+            signaling.process_pending_commands()
+
+            socks = dict(poller.poll(timeout=1000))  # timeout in milliseconds
 
             if commander in socks:
                 pickle_string = commander.recv()
