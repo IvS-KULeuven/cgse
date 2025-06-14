@@ -839,17 +839,6 @@ class AsyncRegistryClient:
 
                         if not response.get('success'):
                             self.logger.warning(f"Heartbeat failed: {response.get('error')}")
-
-                            # Try to re-register if heartbeat fails
-                            if self._service_info:
-                                self.logger.info("Attempting to re-register service")
-                                self.logger.info(f'service_info: {self._service_info}')
-                                new_request = {
-                                    'action': 'register',
-                                    'service_info': self._service_info,
-                                    'ttl': self._ttl
-                                }
-                                await self._send_request(new_request)
                         else:
                             self.logger.info(response.get("message"))
                     except Exception as exc:
