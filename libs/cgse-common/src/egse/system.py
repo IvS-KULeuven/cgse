@@ -2244,6 +2244,16 @@ def camel_to_snake(camel_str: str) -> str:
     return s2.lower()
 
 
+def kebab_to_title(kebab_str: str) -> str:
+    """Convert kebab-case to Title Case (each word capitalized)"""
+    return kebab_str.replace('-', ' ').title()
+
+
+def snake_to_title(snake_str: str) -> str:
+    """Convert snake_case to Title Case (each word capitalized)"""
+    return snake_str.replace('_', ' ').title()
+
+
 ignore_m_warning("egse.system")
 
 if __name__ == "__main__":
