@@ -6,6 +6,7 @@ __all__ = [
     "load_plugins",
     "get_file_infos",
     "entry_points",
+    "HierarchicalEntryPoints",
 ]
 import logging
 import os
