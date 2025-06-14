@@ -30,6 +30,8 @@ from egse.system import get_package_description
 
 from typer.core import TyperGroup
 
+from egse.system import snake_to_title
+
 
 def broken_command(name: str, module: str, exc: Exception):
     """
@@ -112,7 +114,12 @@ for ep in entry_points("cgse.command"):
 
 for ep in entry_points("cgse.service"):
     try:
-        app.add_typer(ep.load(), name=ep.name)
+        if ep.extras:
+            # rich.print(f"{ep.extras = }")
+            command_group = snake_to_title(ep.extras[0])
+            app.add_typer(ep.load(), name=ep.name, rich_help_panel=command_group)
+        else:
+            app.add_typer(ep.load(), name=ep.name)
     except Exception as exc:
         app.command()(broken_command(ep.name, ep.module, exc))
 
