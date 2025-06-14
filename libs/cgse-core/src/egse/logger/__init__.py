@@ -10,6 +10,7 @@ forwarded to the log control server.
 __all__ = [
     "LOGGER_ID",
     "LOG_FORMAT_FULL",
+    "logger",
     "close_all_zmq_handlers",
     "create_new_zmq_logger",
     "get_log_file_name",
@@ -46,6 +47,8 @@ logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT_FULL)
 root_logger = logging.getLogger()
 egse_logger = logging.getLogger("egse")
 
+logger = logging.getLogger("egse.logger")
+
 _initialised = False  # will be set to True in the setup_logging() function
 
 
@@ -65,12 +68,13 @@ class ZeroMQHandler(logging.Handler):
         if uri is None:
             try:
                 with RegistryClient(request_timeout=500) as reg:
+                    # We cannot use `get_endpoint` here, because we need a different port
                     service = reg.discover_service(LOGGER_ID)
                     endpoint = (f"{service.get('protocol', 'tcp')}://"
                                 f"{service['host']}:"
                                 f"{service['metadata']['receiver_port']}")
             except Exception:  # noqa
-                logging.warning(f"Couldn't retrieve endpoint for {LOGGER_ID}. Is the log_cs process running?")
+                logger.warning(f"Couldn't retrieve endpoint for {LOGGER_ID}. Is the log_cs process running?")
             else:
                 uri = endpoint
 
@@ -88,12 +92,12 @@ class ZeroMQHandler(logging.Handler):
             self.socket.setsockopt(zmq.IMMEDIATE, 1)  # set immediate mode
             self.socket.connect(uri)
 
-            logging.debug(f"All logging messages will be forwarded to the LOGGER at {endpoint}.")
+            logger.debug(f"All logging messages will be forwarded to the LOGGER at {endpoint}.")
         else:
             self.ctx = None
             self.socket = None
 
-            logging.warning("No logging messages will be forwarded to the LOGGER")
+            logger.warning("No logging messages will be forwarded to the LOGGER")
 
     def __del__(self):
         self.close()
@@ -126,7 +130,7 @@ class ZeroMQHandler(logging.Handler):
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as exc:
-            logging.error(f"ZeroMQHandler: Exception - {exc}", exc_info=True)
+            logger.error(f"ZeroMQHandler: Exception - {exc}", exc_info=True)
             self.handleError(record)
 
 
