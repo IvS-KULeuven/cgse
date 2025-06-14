@@ -1,21 +1,34 @@
 import asyncio
 import logging
 import time
+from pathlib import Path
 
 import rich
 import typer
 
 from egse.registry.client import AsyncRegistryClient
+from egse.signal import DEFAULT_SIGNAL_DIR
+from egse.signal import create_signal_command_file
 from egse.system import TyperAsyncCommand
-from ._start import start_rm_cs, start_log_cs, start_sm_cs, start_cm_cs, start_pm_cs
-from ._status import status_rm_cs
-from ._stop import stop_rm_cs, stop_log_cs, stop_sm_cs, stop_cm_cs, stop_pm_cs
+from ._start import start_cm_cs
+from ._start import start_log_cs
+from ._start import start_pm_cs
+from ._start import start_rm_cs
+from ._start import start_sm_cs
 from ._status import run_all_status
+from ._status import status_log_cs
+from ._status import status_rm_cs
+from ._stop import stop_cm_cs
+from ._stop import stop_log_cs
+from ._stop import stop_pm_cs
+from ._stop import stop_rm_cs
+from ._stop import stop_sm_cs
 
 core = typer.Typer(
     name="core",
     help="handle core services: start, stop, status",
-    no_args_is_help=True
+    no_args_is_help=True,
+    rich_help_panel="Core Services"
 )
 
 
@@ -65,7 +78,8 @@ def status_core_services(full: bool = False, suppress_errors: bool = True):
 rm_cs = typer.Typer(
     name="rm_cs",
     help="handle registry services: start, stop, status, list-services",
-    no_args_is_help=True
+    no_args_is_help=True,
+    rich_help_panel="Core Services"
 )
 
 
@@ -94,3 +108,42 @@ async def reg_list_services():
         services = await client.list_services()
 
         rich.print(services)
+
+
+log_cs = typer.Typer(
+    name="log_cs",
+    help="handle log services: start, stop, status",
+    no_args_is_help=True,
+    rich_help_panel="Core Services"
+)
+
+
+@log_cs.command(name="start")
+def log_cs_start():
+    """Start the Logger."""
+    start_log_cs()
+
+
+@log_cs.command(name="stop")
+def log_cs_stop():
+    """Stop the Logger."""
+    stop_log_cs()
+
+
+@log_cs.command(cls=TyperAsyncCommand, name="status")
+async def log_cs_status(suppress_errors: bool = True):
+    """Return the status of the Logger."""
+    await status_log_cs(suppress_errors)
+
+
+@log_cs.command(name="re-register")
+def log_cs_reregister(force: bool = False):
+    """Command the Logger to re-register as a service."""
+
+    from egse.logger.log_cs import app_name
+
+    create_signal_command_file(
+        Path(DEFAULT_SIGNAL_DIR),
+        app_name,
+        {'action': 'reregister', 'params': {'force': force}},
+    )
