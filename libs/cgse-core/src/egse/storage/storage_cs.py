@@ -45,9 +45,12 @@ class StorageControlServer(ControlServer):
     def __init__(self):
         super().__init__()
 
-        multiprocessing.current_process().name = "sm_cs"
+        multiprocessing.current_process().name = app_name
 
         self.logger = logger
+        self.service_name = app_name
+        self.service_type = CTRL_SETTINGS.SERVICE_TYPE
+
         self.device_protocol = StorageProtocol(self)
 
         self.logger.debug(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()}")
@@ -99,7 +102,8 @@ class StorageControlServer(ControlServer):
         return get_port_number(self.dev_ctrl_mon_sock) or 0
 
 
-app = typer.Typer(name="sm_cs", no_args_is_help=True)
+app_name = "sm_cs"
+app = typer.Typer(name=app_name, no_args_is_help=True)
 
 
 @app.command()
