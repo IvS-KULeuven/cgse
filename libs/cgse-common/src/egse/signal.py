@@ -55,6 +55,9 @@ class FileBasedSignaling:
 
     """
     def __init__(self, service_id: str, signal_dir=DEFAULT_SIGNAL_DIR):
+
+        logger.info(f"Set up file-based signaling for {service_id} in {signal_dir!s}")
+
         self.signal_dir: Path = Path(signal_dir)
         self.signal_dir.mkdir(exist_ok=True)
         self.service_id = service_id
