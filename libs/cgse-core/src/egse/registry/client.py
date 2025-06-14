@@ -1235,3 +1235,11 @@ class AsyncRegistryClient:
             await self.stop_heartbeat()
             await self.deregister()
             await self.close()
+
+
+def is_service_registered(service_type: str):
+    """Convenience function to check if a service is registered."""
+    with RegistryClient() as reg:
+        response = reg.discover_service(service_type)
+
+    return False if response is None else True
