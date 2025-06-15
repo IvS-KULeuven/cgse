@@ -114,13 +114,13 @@ class HierarchicalEntryPoints:
     def _discover_groups(self):
         """Discover all groups that match the base group pattern."""
         all_eps = lib_entry_points()
-        rich.print(f"{type(all_eps) = }")
+        # rich.print(f"{type(all_eps) = }")
 
         self.groups = {}
         self.flat_entries = []
 
         for ep in all_eps:
-            rich.print(f"{type(ep) = }, {dir(ep) = }")
+            # rich.print(f"{type(ep) = }, {dir(ep) = }")
             if ep.group == self.base_group or ep.group.startswith(f"{self.base_group}."):
                 self.groups[ep.group] = ep
                 self.flat_entries.append(ep)
