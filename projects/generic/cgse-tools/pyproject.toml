@@ -1,6 +1,6 @@
 [project]
 name = "cgse-tools"
-version = "0.11.2"
+version = "0.11.3"
 description = "Tools for CGSE"
 authors = [
     {name = "IvS KU Leuven"}

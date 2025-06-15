@@ -1,6 +1,6 @@
 [project]
 name = "symetrie-hexapod"
-version = "0.11.2"
+version = "0.11.3"
 description = "Symetrie Hexapod implementation for CGSE"
 authors = [
     {name = "IvS KU Leuven"}
