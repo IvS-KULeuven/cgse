@@ -69,7 +69,7 @@ class SortedCommandGroup(TyperGroup):
         commands = super().list_commands(ctx)
 
         # Define priority commands in specific order
-        priority_commands = ["init", "version", "show", "top", "core", "log_cs", "rm_cs"]
+        priority_commands = ["init", "version", "show", "top", "core", "registry", "log", "cm", "sm", "pm"]
 
         # Custom sort:
         # First the priority commands in the given order (their index)

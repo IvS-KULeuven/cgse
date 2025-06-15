@@ -29,7 +29,7 @@ from ._stop import stop_sm_cs
 
 core = typer.Typer(
     name="core",
-    help="handle core services: start, stop, status",
+    help="handle core services: start, stop, status, re-register",
     no_args_is_help=True,
 )
 
