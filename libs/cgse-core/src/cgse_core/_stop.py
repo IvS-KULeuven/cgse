@@ -5,10 +5,10 @@ from pathlib import Path
 import rich
 
 
-def stop_rs_cs():
-    rich.print("Terminating the registry service core service...")
+def stop_rm_cs():
+    rich.print("Terminating the service registry manager core service...")
 
-    out = open(Path('~/.rs_cs.stop.out').expanduser(), 'w')
+    out = open(Path('~/.rm_cs.stop.out').expanduser(), 'w')
 
     subprocess.Popen(
         [sys.executable, '-m', 'egse.registry.server', 'stop'],

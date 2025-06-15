@@ -6,6 +6,7 @@ __all__ = [
     "load_plugins",
     "get_file_infos",
     "entry_points",
+    "HierarchicalEntryPoints",
 ]
 import logging
 import os
@@ -14,7 +15,7 @@ import textwrap
 import traceback
 from pathlib import Path
 
-if sys.version_info >= (3, 10):    # Use the standard library version (Python 3.10+)
+if sys.version_info >= (3, 12):    # Use the standard library version (Python 3.10+)
     from importlib.metadata import entry_points as lib_entry_points
     from importlib.metadata import EntryPoint
 else:
@@ -103,6 +104,46 @@ def get_file_infos(entry_point: str) -> dict[str, tuple[Path, str]]:
             _LOGGER.error(f"The entry point '{ep.name}' is ill defined: {exc}")
 
     return eps
+
+
+class HierarchicalEntryPoints:
+    def __init__(self, base_group: str):
+        self.base_group = base_group
+        self._discover_groups()
+
+    def _discover_groups(self):
+        """Discover all groups that match the base group pattern."""
+        all_eps = lib_entry_points()
+        # rich.print(f"{type(all_eps) = }")
+
+        self.groups = {}
+        self.flat_entries = []
+
+        for ep in all_eps:
+            # rich.print(f"{type(ep) = }, {dir(ep) = }")
+            if ep.group == self.base_group or ep.group.startswith(f"{self.base_group}."):
+                self.groups[ep.group] = ep
+                self.flat_entries.append(ep)
+
+    def get_all_entry_points(self):
+        """Get all entry points as a flat list."""
+        return self.flat_entries
+
+    def get_by_subgroup(self, subgroup=None):
+        """Get entry points from a specific subgroup."""
+        if subgroup is None:
+            return self.groups.get(self.base_group, [])
+
+        full_group = f"{self.base_group}.{subgroup}"
+        return self.groups.get(full_group, [])
+
+    def get_all_groups(self):
+        """Get all discovered group names."""
+        return list(self.groups.keys())
+
+    def get_by_type(self, entry_type):
+        """Get entry points by type (assuming type is the subgroup name)."""
+        return self.get_by_subgroup(entry_type)
 
 
 # The following code was adapted from the inspiring package click-plugins
