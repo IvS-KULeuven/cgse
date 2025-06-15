@@ -45,7 +45,7 @@ dependencies = [
 ]
 
 [project.scripts]
-cgse = 'scripts.cgse:app'
+cgse = 'cgse_common.cgse:app'
 monitor = "egse.monitoring:app"
 
 [project.entry-points."cgse.version"]
