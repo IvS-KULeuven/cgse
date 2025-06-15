@@ -19,18 +19,18 @@ the group name 'cgse.command.plugins'.
 Commands can be added as single commands or as a group containing further sub-commands. To add a group,
 the entry point shall contain 'group' in its extras.
 """
+import textwrap
 
 import rich
 import typer
 from rich.console import Console
 from rich.traceback import Traceback
+from typer.core import TyperGroup
 
+from cgse_common import AppState
 from egse.plugin import HierarchicalEntryPoints
 from egse.plugin import entry_points
 from egse.system import get_package_description
-
-from typer.core import TyperGroup
-
 from egse.system import snake_to_title
 
 
@@ -69,7 +69,7 @@ class SortedCommandGroup(TyperGroup):
         commands = super().list_commands(ctx)
 
         # Define priority commands in specific order
-        priority_commands = ["init", "version", "show", "top"]
+        priority_commands = ["init", "version", "show", "top", "core", "log_cs", "rm_cs"]
 
         # Custom sort:
         # First the priority commands in the given order (their index)
@@ -82,13 +82,30 @@ class SortedCommandGroup(TyperGroup):
         return sorted(commands, key=get_command_priority)
 
 
-app = typer.Typer(add_completion=True, cls=SortedCommandGroup)
+app = typer.Typer(add_completion=True, cls=SortedCommandGroup, rich_markup_mode="markdown")
 
 
 @app.command()
-def version():
+def version(ctx: typer.Context):
     """Prints the version of the cgse-core and other registered packages."""
     from egse.version import get_version_installed
+
+    # This is more of a show-case for using application wide optional arguments and how to pass
+    # them into (sub-)commands.
+
+    state: AppState = ctx.obj
+
+    if state.verbose:
+        rich.print(
+            textwrap.dedent(
+                """
+                All version of the packages that are part of the monorepo `cgse` will have the same version.
+
+                (Third-party package versions are shown only when the package properly declares its version in its
+                packaging metadata.)
+                """
+            )
+        )
 
     # if installed_version := get_version_installed("cgse-core"):
     #     rich.print(f"CGSE-CORE installed version = [bold default]{installed_version}[/]")
@@ -101,39 +118,57 @@ def version():
             )
 
 
-for ep in entry_points("cgse.command"):
-    try:
-        if not ep.extras or "command" in ep.extras:
-            app.command()(ep.load())
-        elif "group" in ep.extras:
-            app.add_typer(ep.load(), name=ep.name)
-        else:
-            rich.print(f"\n[red]ERROR: don't know what to do with {ep.extras} for {ep.name}, command not added.[/]\n")
-    except Exception as exc:
-        app.command()(broken_command(ep.name, ep.module, exc))
+def build_app():
+    global app
 
-cgse_eps = HierarchicalEntryPoints("cgse.service")
-
-# rich.print("Available groups:", cgse_eps.get_all_groups())
-
-for group in cgse_eps.get_all_groups():
-    for ep in entry_points(group):
+    for ep in entry_points("cgse.command"):
         try:
-            if group == "cgse.service":
+            obj = ep.load()
+            if isinstance(obj, typer.Typer):
                 app.add_typer(ep.load(), name=ep.name)
             else:
-                command_group = snake_to_title(group.split('.')[-1])
-                app.add_typer(ep.load(), name=ep.name, rich_help_panel=command_group)
+                app.command()(ep.load())
         except Exception as exc:
             app.command()(broken_command(ep.name, ep.module, exc))
 
+    cgse_eps = HierarchicalEntryPoints("cgse.service")
+
+    # rich.print("Available groups:", cgse_eps.get_all_groups())
+
+    for group in cgse_eps.get_all_groups():
+        for ep in entry_points(group):
+            try:
+                if group == "cgse.service":
+                    app.add_typer(ep.load(), name=ep.name)
+                else:
+                    command_group = snake_to_title(group.split('.')[-1])
+                    app.add_typer(ep.load(), name=ep.name, rich_help_panel=command_group)
+            except Exception as exc:
+                app.command()(broken_command(ep.name, ep.module, exc))
+
 
 @app.callback(no_args_is_help=True, invoke_without_command=True)
-def main():
+def main(
+        ctx: typer.Context,
+        verbose: bool = False
+):
     """
-    The main cgse command to inspect, configure, monitor the core services
-    and device control servers.
+    The `cgse` command is used to:
+
+    - initialise your project environment
+
+    - visualise and check project and environment settings
+
+    - inspect, configure, monitor the core services and device control servers.
     """
+
+    # This is more of a show-case for using application wide optional arguments and how to pass
+    # them into (sub-)commands.
+
+    ctx.obj = AppState(verbose=verbose)
+
+
+build_app()
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ from typing import Annotated
 import rich
 import typer
 
+from cgse_common import AppState
 from egse.plugin import entry_points
 from egse.setup import Setup
 from egse.system import format_datetime
@@ -18,12 +19,15 @@ app = typer.Typer()
 
 
 @app.command()
-def top():
+def top(ctx: typer.Context):
     """
     A top-like interface for core services and device control servers.
 
     Not yet implemented.
     """
+    state: AppState = ctx.obj
+
+    print(f"The `verbose` flag is {state.verbose}")
     print("This fancy top is not yet implemented.")
 
 
