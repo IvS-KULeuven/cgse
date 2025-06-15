@@ -15,7 +15,7 @@ import textwrap
 import traceback
 from pathlib import Path
 
-if sys.version_info >= (3, 10):    # Use the standard library version (Python 3.10+)
+if sys.version_info >= (3, 12):    # Use the standard library version (Python 3.10+)
     from importlib.metadata import entry_points as lib_entry_points
     from importlib.metadata import EntryPoint
 else:
@@ -114,11 +114,13 @@ class HierarchicalEntryPoints:
     def _discover_groups(self):
         """Discover all groups that match the base group pattern."""
         all_eps = lib_entry_points()
+        rich.print(f"{type(all_eps) = }")
 
         self.groups = {}
         self.flat_entries = []
 
         for ep in all_eps:
+            rich.print(f"{type(ep) = }, {dir(ep) = }")
             if ep.group == self.base_group or ep.group.startswith(f"{self.base_group}."):
                 self.groups[ep.group] = ep
                 self.flat_entries.append(ep)
