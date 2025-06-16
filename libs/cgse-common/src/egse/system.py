@@ -1932,7 +1932,7 @@ SIGNAL_NAME = {
     30: "SIGUSR1",
     31: "SIGUSR2",
 }
-"""The signals that can be catch with the SignalCatcher."""
+"""The signals that can be caught with the SignalCatcher."""
 
 
 class SignalCatcher:
@@ -2220,6 +2220,38 @@ def get_logging_level(level: str | int):
         int_level = log_level
 
     return int_level
+
+
+def camel_to_kebab(camel_str: str) -> str:
+    """Convert a string in CamelCase to kebab-case."""
+
+    # Handle sequences of uppercase letters followed by lowercase
+    s1 = re.sub('([A-Z]+)([A-Z][a-z])', r'\1-\2', camel_str)
+
+    # Handle lowercase/digit followed by uppercase
+    s2 = re.sub('([a-z0-9])([A-Z])', r'\1-\2', s1)
+    return s2.lower()
+
+
+def camel_to_snake(camel_str: str) -> str:
+    """Convert a string in CamelCase to snake_case."""
+
+    # Handle sequences of uppercase letters followed by lowercase
+    s1 = re.sub('([A-Z]+)([A-Z][a-z])', r'\1_\2', camel_str)
+
+    # Handle lowercase/digit followed by uppercase
+    s2 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1)
+    return s2.lower()
+
+
+def kebab_to_title(kebab_str: str) -> str:
+    """Convert kebab-case to Title Case (each word capitalized)"""
+    return kebab_str.replace('-', ' ').title()
+
+
+def snake_to_title(snake_str: str) -> str:
+    """Convert snake_case to Title Case (each word capitalized)"""
+    return snake_str.replace('_', ' ').title()
 
 
 ignore_m_warning("egse.system")

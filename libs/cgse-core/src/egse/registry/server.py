@@ -43,8 +43,8 @@ class AsyncRegistryServer:
     This server uses the ZeroMQ async API and asyncio for non-blocking operations.
 
     Args:
-        req_port: Port for REQ-REP socket (service requests) [default=4242]
-        pub_port: Port for PUB socket (service notifications) [default=4243]
+        req_port: Port for the service requests socket [default=4242]
+        pub_port: Port for the service notifications socket [default=4243]
         hb_port: Port for receiving heartbeats [default=4244]
         backend: a registry backend, [default=AsyncSQLiteBackend]
         db_path: Path to the SQLite database file [default='service_registry.db']
@@ -124,7 +124,7 @@ class AsyncRegistryServer:
 
         self._running = True
         self.logger.info(
-            f"Async registry server started on ports {self.req_port} (REQ-REP), {self.pub_port} (PUB), "
+            f"Async registry server started on ports {self.req_port} (ROUTER-DEALER), {self.pub_port} (PUB), "
             f"and {self.hb_port} (Heartbeat)"
         )
 

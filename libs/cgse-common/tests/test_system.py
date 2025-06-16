@@ -19,6 +19,8 @@ from egse.system import AttributeDict
 from egse.system import Periodic
 from egse.system import SignalCatcher
 from egse.system import Timer
+from egse.system import camel_to_kebab
+from egse.system import camel_to_snake
 from egse.system import check_argument_type
 from egse.system import clear_average_execution_times
 from egse.system import do_every
@@ -1079,3 +1081,20 @@ async def test_periodic_exception(caplog):
 
     assert "ValueError caught: This is not good!" in caplog.text
     assert not_good.counts() == 2
+
+
+def test_camel_to_kebab():
+
+    assert camel_to_kebab("ConfigurationControlServer") == "configuration-control-server"
+    assert camel_to_kebab("XMLHttpService") == "xml-http-service"
+    assert camel_to_kebab("My123BestProject") == "my123-best-project"
+
+    assert camel_to_kebab("is-already-kebab") == "is-already-kebab"
+
+def test_camel_to_snake():
+
+    assert camel_to_snake("ConfigurationControlServer") == "configuration_control_server"
+    assert camel_to_snake("XMLHttpService") == "xml_http_service"
+    assert camel_to_snake("My123BestProject") == "my123_best_project"
+
+    assert camel_to_snake("is_already_snake") == "is_already_snake"

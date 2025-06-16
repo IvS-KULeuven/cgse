@@ -1,6 +1,6 @@
 [project]
 name = "cgse-core"
-version = "0.10.0"
+version = "0.11.5"
 description = "Core services for the CGSE framework"
 authors = [
     {name = "IvS KU Leuven"}
@@ -42,9 +42,13 @@ cgse-core = 'egse.version:get_version_installed'
 [project.entry-points."cgse.settings"]
 cgse-core = "cgse_core:settings.yaml"
 
-[project.entry-points."cgse.service"]
+[project.entry-points."cgse.service.core_command"]
 core = 'cgse_core.services:core'
-registry = 'cgse_core.services:reg'
+registry = 'cgse_core.services:rm_cs'
+log = 'cgse_core.services:log_cs'
+cm = 'cgse_core.services:cm_cs'
+sm = 'cgse_core.services:sm_cs'
+pm = 'cgse_core.services:pm_cs'
 
 [project.entry-points."cgse.explore"]
 explore = "cgse_core.cgse_explore"

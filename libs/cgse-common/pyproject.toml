@@ -1,6 +1,6 @@
 [project]
 name = "cgse-common"
-version = "0.10.0"
+version = "0.11.5"
 description = "Software framework to support hardware testing"
 authors = [
     {name = "IvS KU Leuven"}
@@ -40,12 +40,12 @@ dependencies = [
     "pyzmq>=25.1.0; python_version >= '3.10'",
 
     # Python 3.10+ entrypoints interface changed
-    "importlib_metadata>=4.6.0; python_version == '3.9'",
+    "importlib_metadata>=4.6.0; python_version <= '3.11'",
     "influxdb3-python",
 ]
 
 [project.scripts]
-cgse = 'scripts.cgse:app'
+cgse = 'cgse_common.cgse:app'
 monitor = "egse.monitoring:app"
 
 [project.entry-points."cgse.version"]

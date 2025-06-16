@@ -5,7 +5,7 @@ Manager (from the setup).
 
 The Process Manager Control Server is implemented as a standard control server.
 """
-
+import logging
 import multiprocessing
 
 import rich
@@ -16,13 +16,17 @@ import zmq
 from egse.confman import ConfigurationManagerProxy
 from egse.control import ControlServer
 from egse.listener import EVENT_ID
-from egse.procman import ProcessManagerProxy, LOGGER
+from egse.procman import ProcessManagerProxy
 from egse.procman.procman_protocol import ProcessManagerProtocol
 from egse.registry.client import RegistryClient
 from egse.services import ServiceProxy
 from egse.settings import Settings
 from egse.storage import store_housekeeping_information
 from egse.zmq_ser import get_port_number
+
+# Use explicit name here otherwise the logger will probably be called __main__
+
+logger = logging.getLogger("egse.procman")
 
 CTRL_SETTINGS = Settings.load("Process Manager Control Server")
 
@@ -33,10 +37,15 @@ class ProcessManagerControlServer(ControlServer):
 
         super().__init__()
 
-        self.device_protocol = ProcessManagerProtocol(self)
-        multiprocessing.current_process().name = "pm_cs"
+        multiprocessing.current_process().name = app_name
 
-        LOGGER.debug(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()}")
+        self.logger = logger
+        self.service_name = app_name
+        self.service_type = CTRL_SETTINGS.SERVICE_TYPE
+
+        self.device_protocol = ProcessManagerProtocol(self)
+
+        self.logger.debug(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()}")
 
         self.register_as_listener(
             proxy=ConfigurationManagerProxy,
@@ -50,7 +59,7 @@ class ProcessManagerControlServer(ControlServer):
 
         self.set_hk_delay(10.0)
 
-        LOGGER.info(f"PM housekeeping saved every {self.hk_delay / 1000:.1f} seconds.")
+        self.logger.info(f"PM housekeeping saved every {self.hk_delay / 1000:.1f} seconds.")
 
     def get_communication_protocol(self):
 
@@ -112,7 +121,8 @@ class ProcessManagerControlServer(ControlServer):
         self.deregister_service()
 
 
-app = typer.Typer(name="pm_cs", no_args_is_help=True)
+app_name = "pm_cs"
+app = typer.Typer(name=app_name, no_args_is_help=True)
 
 
 @app.command()
