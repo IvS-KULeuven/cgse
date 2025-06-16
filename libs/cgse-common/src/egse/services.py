@@ -10,6 +10,7 @@ logging levels, or to quit the control server in a controlled way.
 
 import inspect
 import logging
+import textwrap
 from pathlib import Path
 
 from egse.command import ClientServerCommand
@@ -17,6 +18,8 @@ from egse.control import ControlServer
 from egse.decorators import dynamic_interface
 from egse.protocol import CommandProtocol
 from egse.proxy import Proxy
+from egse.proxy import REQUEST_TIMEOUT
+from egse.registry.client import RegistryClient
 from egse.settings import Settings
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
@@ -209,42 +212,44 @@ class ServiceProxy(Proxy, ServiceInterface):
     A ServiceProxy is a simple class that forwards service commands to a control server.
     """
 
-    def __init__(self, ctrl_settings=None, *, protocol=None, hostname=None, port=None):
+    def __init__(
+            self,
+            service_type: str = None,
+            protocol: str = "tcp", hostname: str = None, port: int = None,
+            timeout: int = REQUEST_TIMEOUT
+    ):
         """
-        A ServiceProxy can be configured from the specific control server settings, or additional
-        arguments `protocol`, `hostname` and `port` can be passed.
-
-        The additional arguments always overwrite the values loaded from ctrl_settings. Either ctrl_settings or
-        hostname and port must be provided, protocol is optional and defaults to 'tcp'.
+        The Service Proxy class is used to send service commands to the control server.
 
         Args:
-            ctrl_settings: an AttributeDict with HOSTNAME, PORT and PROTOCOL attributes
+            service_type: the target service type
             protocol: the transport protocol [default: tcp]
-            hostname: the IP addrress of the control server
+            hostname: the IP address of the control server
             port: the port on which the control server is listening for service commands
+            timeout: number of milliseconds before a timeout is triggered
         """
-        _protocol = _hostname = _port = None
-        if ctrl_settings:
-            _protocol = ctrl_settings.PROTOCOL
-            _hostname = ctrl_settings.HOSTNAME
-            _port = ctrl_settings.SERVICE_PORT
 
-        # the protocol argument is overwriting the standard crtl_settings
+        if hostname is None or port is None:
+            if service_type is None:
+                raise ValueError(
+                    textwrap.dedent(
+                        """\
+                        No service_type or hostname/port information provided.
+                        I need either the service_type or the endpoint information to create a ServiceProxy.
+                        """
+                    )
+                )
 
-        if protocol:
-            _protocol = protocol
+            with RegistryClient() as reg:
+                service = reg.discover_service(service_type)
 
-        # if still _protocol is not set, neither by ctrl_settings, nor by the protocol argument, use a default
+                if service:
+                    protocol = service.get('protocol', 'tcp')
+                    hostname = service['host']
+                    port = service['metadata']['service_port']
 
-        if _protocol is None:
-            _protocol = "tcp"
+                else:
+                    raise RuntimeError(f"No service registered as {service_type}")
 
-        if hostname:
-            _hostname = hostname
-        if port:
-            _port = port
-
-        if _hostname is None or _port is None:
-            raise ValueError("Expected ctrl-settings or hostname and port as arguments")
-
-        super().__init__(connect_address(_protocol, _hostname, _port))
+        endpoint = connect_address(protocol, hostname, port)
+        super().__init__(endpoint, timeout)

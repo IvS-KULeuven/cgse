@@ -16,6 +16,7 @@ import zmq
 from egse.confman import ConfigurationManagerProxy
 from egse.control import ControlServer
 from egse.listener import EVENT_ID
+from egse.process import SubProcess
 from egse.procman import ProcessManagerProxy
 from egse.procman.procman_protocol import ProcessManagerProtocol
 from egse.registry.client import RegistryClient
@@ -154,27 +155,23 @@ def start():
 def start_bg():
     """ Starts the Process Manager Control Server in the background."""
 
-    with RegistryClient() as reg:
-        service = reg.discover_service(CTRL_SETTINGS.SERVICE_TYPE)
-        # rich.print("service = ", service)
-
-        if service:
-            proxy = ServiceProxy(protocol="tcp", hostname=service["host"], port=service['metadata']['service_port'])
-            proxy.quit_server()
-        else:
-            rich.print("[red]ERROR: Couldn't connect to 'pm_cs', process probably not running.")
+    proc = SubProcess("pm_cs", ["pm_cs", "start"])
+    proc.execute()
 
 
 @app.command()
 def stop():
     """ Sends a 'quit_server' command to the Process Manager."""
 
-    try:
-        with ProcessManagerProxy() as pm:
-            sp = pm.get_service_proxy()
-            sp.quit_server()
-    except ConnectionError:
-        rich.print("[red]ERROR: Couldn't connect to the process manager.[/]")
+    with RegistryClient() as reg:
+        service = reg.discover_service(CTRL_SETTINGS.SERVICE_TYPE)
+        # rich.print("service = ", service)
+
+        if service:
+            with ServiceProxy(hostname=service["host"], port=service['metadata']['service_port']) as proxy:
+                proxy.quit_server()
+        else:
+            rich.print("[red]ERROR: Couldn't connect to 'pm_cs', process probably not running.")
 
 
 @app.command()

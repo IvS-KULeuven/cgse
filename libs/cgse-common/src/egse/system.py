@@ -1314,7 +1314,10 @@ def do_every(
     while not stop_event.is_set():
         if count is not None and iteration >= count:
             break
-        time.sleep(next(g))
+        # Wait for the timeout or until the stop_event is set
+        # The wait functions returns True only when the event is set and returns False on a timeout
+        if stop_event.wait(timeout=next(g)):
+            break
         func(*args)
         iteration += 1
 

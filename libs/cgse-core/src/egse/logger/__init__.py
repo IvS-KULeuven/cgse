@@ -130,7 +130,7 @@ class ZeroMQHandler(logging.Handler):
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as exc:
-            logger.error(f"ZeroMQHandler: Exception - {exc}", exc_info=True)
+            logging.error(f"ZeroMQHandler: Exception - {exc}", exc_info=True)
             self.handleError(record)
 
 

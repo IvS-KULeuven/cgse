@@ -1088,16 +1088,14 @@ class StorageProxy(Proxy, StorageInterface, EventInterface):
         """
         if hostname is None:
             with RegistryClient() as reg:
-                service = reg.discover_service(CTRL_SETTINGS.SERVICE_TYPE)
+                endpoint = reg.get_endpoint(CTRL_SETTINGS.SERVICE_TYPE)
 
-                if service:
-                    protocol = service.get('protocol', 'tcp')
-                    hostname = service['host']
-                    port = service['port']
-                else:
-                    raise RuntimeError(f"No service registered as {CTRL_SETTINGS.SERVICE_TYPE}")
+            if not endpoint:
+                raise RuntimeError(f"No service registered as {CTRL_SETTINGS.SERVICE_TYPE}")
+        else:
+            endpoint = connect_address(protocol, hostname, port)
 
-        super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
+        super().__init__(endpoint, timeout=timeout)
 
 
 class StorageProtocol(CommandProtocol):
