@@ -255,7 +255,7 @@ class BaseProxy(ControlServerConnectionInterface):
 
         port = self.send("get_service_port")  # FIXME: Check if this is still returning the proper port
 
-        return ServiceProxy(AttributeDict({"PROTOCOL": transport, "HOSTNAME": address, "SERVICE_PORT": port}))
+        return ServiceProxy(protocol=transport, hostname=address, port=port)
 
 
 class DynamicProxy(BaseProxy, DynamicClientCommandMixin):

@@ -59,6 +59,7 @@ class RegistryClient:
         self._ttl = None
 
         self._hb_stop_event = None
+        self._hb_thread: threading.Thread | None = None
 
         self._client_id = f"{client_id}-{uuid.uuid4()}".encode()
 
@@ -390,7 +391,7 @@ class RegistryClient:
             return []
 
     def get_endpoint(self, service_type) -> str | None:
-        """Returns the endpoint for the given service type."""
+        """Returns the endpoint for the given service type or None if the service_type is not registered."""
         service = self.discover_service(service_type)
 
         if service:
@@ -470,7 +471,7 @@ class RegistryClient:
                 self.logger.error(f"Error sending heartbeat: {exc}")
 
         self._hb_stop_event = threading.Event()
-        timer_thread = threading.Thread(
+        self._hb_thread = threading.Thread(
             target=do_every,
             args=(interval, send_heartbeat),
             kwargs={
@@ -479,11 +480,13 @@ class RegistryClient:
                 'teardown_func': self._disconnect_hb_socket
             }
         )
-        timer_thread.daemon = True
-        timer_thread.start()
+        self._hb_thread.daemon = True
+        self._hb_thread.start()
 
     def stop_heartbeat(self) -> None:
         self._hb_stop_event.set()
+        if self._hb_thread.is_alive():
+            self._hb_thread.join(timeout=1)
 
     def close(self) -> None:
         """Clean up resources."""
