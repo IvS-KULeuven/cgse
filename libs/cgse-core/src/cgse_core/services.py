@@ -57,7 +57,7 @@ def stop_core_services():
     stop_cm_cs()
     stop_sm_cs()
     # We need the logger for logging the termination process for other services, so leave it running for half a second
-    time.sleep(0.5)
+    time.sleep(1.0)
     stop_log_cs()
     # We need the registry server to stop other core services, so leave it running for half a second
     time.sleep(0.5)
@@ -197,6 +197,14 @@ def cm_cs_reregister(force: bool = False):
         app_name,
         {'action': 'reregister', 'params': {'force': force}},
     )
+
+
+@cm_cs.command(name="register-to-storage")
+def cm_cs_register_to_storage():
+
+    from egse.confman.confman_cs import register_to_storage
+
+    register_to_storage()
 
 
 sm_cs = typer.Typer(

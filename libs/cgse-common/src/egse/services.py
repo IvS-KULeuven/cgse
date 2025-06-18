@@ -181,6 +181,14 @@ class ServiceProtocol(CommandProtocol):
         except ValueError as exc:
             self.send(("", exc))  # Why not sent back a Failure object?
 
+    def handle_register_to_storage(self):
+        LOGGER.debug("(re-)registering to the storage manager")
+        try:
+            self.control_server.register_to_storage_manager()
+            self.send(("ACK",))
+        except Exception as exc:
+            self.send(("NACK", exc))  # Why not send back a failure object?
+
 
 class ServiceInterface:
     @dynamic_interface
@@ -205,6 +213,8 @@ class ServiceInterface:
     def remove_listener(self, listener: dict): ...
     @dynamic_interface
     def get_listener_names(self, listener: dict): ...
+    @dynamic_interface
+    def register_to_storage(self): ...
 
 
 class ServiceProxy(Proxy, ServiceInterface):
