@@ -90,6 +90,7 @@ Do we need additional hooks into this commanding?
 * provide an execute method for the CommandExecution that executes the command
   with the saved parameters
 """
+
 from __future__ import annotations
 
 import functools
@@ -618,8 +619,7 @@ def get_function(parent_class: type, method_name: str) -> Callable:
 
 
 def load_commands(
-        protocol_class: type[CommandProtocol], command_settings: dict, command_class: type[Command],
-        device_class: type
+    protocol_class: type[CommandProtocol], command_settings: dict, command_class: type[Command], device_class: type
 ) -> dict[str, Command]:
     """
     Loads the command definitions from the given ``command_settings`` and builds an internal

@@ -21,12 +21,12 @@ logger = logging.getLogger(__name__)
 
 
 def test_extract_bits():
-
     bf = 0b0010_1110
 
     assert extract_bits(bf, 0, 3) == 0b0110
     assert extract_bits(0b1001_0101, 0, 1) == 0b0001
     assert extract_bits(0b1111_0000, 3, 2) == 0b0010
+
 
 def test_clear_bit():
     bf = 0b11111111

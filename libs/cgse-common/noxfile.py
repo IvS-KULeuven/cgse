@@ -1,6 +1,6 @@
 import nox
 
-python_versions = ['3.9', '3.10', '3.11', '3.12', '3.13']
+python_versions = ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
 
 @nox.session(python=python_versions)
@@ -20,7 +20,7 @@ def uv_tests(session: nox.Session):
     session.run_install("uv", "venv", *py_version)
 
     session.run_install(
-        *uv_sync_cmd, # "--all-packages",
+        *uv_sync_cmd,  # "--all-packages",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
     )
 

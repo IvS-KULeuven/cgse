@@ -348,6 +348,7 @@ def test_spy_on_attr_change(caplog):
 
 # ---------- Test the implements protocol decorator ----------------------------
 
+
 # Define test protocols
 @runtime_checkable
 class SimpleProtocol(Protocol):
@@ -367,6 +368,7 @@ class AdvancedProtocol(Protocol):
 
 # The TestImplementsProtocolDecorator class is not strictly necessary for the tests
 # to function, but it helps to group related tests together.
+
 
 class TestImplementsProtocolDecorator:
     def test_documentation_addition(self):

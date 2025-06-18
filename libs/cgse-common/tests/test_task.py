@@ -17,13 +17,11 @@ def plain_func(msg: str, sleep: float = 1.0):
 
 @execution_count
 async def async_func(msg: str, sleep: float = 1.0):
-
     await asyncio.sleep(sleep)
     return f"async_func: I got this message: {msg}, waited {sleep}s before executing"
 
 
 def test_synchronous():
-
     plain_func.reset()
 
     t = task(plain_func, "Hello, plain old Python function", 0.0)
@@ -43,7 +41,6 @@ def test_synchronous():
 
 @pytest.mark.asyncio
 async def test_asynchronous():
-
     plain_func.reset()
 
     t = task(plain_func, "Hello, plain old Python function", 0.0)

@@ -784,7 +784,7 @@ class Setup(NavigableDict):
 
     @staticmethod
     def find_devices(node: NavigableDict, devices: dict = None) -> dict[str, tuple[str, str, tuple]]:
-        """ Returns a dictionary with the devices that are included in the setup.
+        """Returns a dictionary with the devices that are included in the setup.
 
         The keys in the dictionary are taken from the "device_name" entries in the setup file. The corresponding values
         in the dictionary are taken from the "device" entries in the setup file.
@@ -823,7 +823,7 @@ class Setup(NavigableDict):
 
     @staticmethod
     def find_device_ids(node: NavigableDict, device_ids: dict = None) -> dict:
-        """ Returns a list of identifiers of the devices that are included in the setup.
+        """Returns a list of identifiers of the devices that are included in the setup.
 
         Args:
             node: Dictionary in which to look for the device identifiers.
@@ -845,9 +845,11 @@ class Setup(NavigableDict):
                     else:
                         device_args = ()
 
-                    device_ids[sub_node.get_raw_value("device_id")] = (sub_node.get_raw_value("device_name"),
-                                                                       device_proxy,
-                                                                       device_args)
+                    device_ids[sub_node.get_raw_value("device_id")] = (
+                        sub_node.get_raw_value("device_name"),
+                        device_proxy,
+                        device_args,
+                    )
                     # device_ids.append((sub_node.get_raw_value("device_id"), sub_node.get_raw_value("device_name")))
                 else:
                     device_ids = Setup.find_device_ids(sub_node, device_ids=device_ids)

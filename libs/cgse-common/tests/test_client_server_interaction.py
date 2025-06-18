@@ -15,7 +15,6 @@ from egse.system import Timer
 
 @contextlib.contextmanager
 def dummy_service():
-
     dummy_dev = SubProcess("Dummy Device", [sys.executable, "-m", "egse.dummy"], ["start-dev"])
     dummy_dev.execute()
 
@@ -43,7 +42,6 @@ def is_valid_ip_address_format(string):
 
 
 def test_proxy_without_cs():
-
     proxy = DummyProxy()
 
     assert proxy.is_cs_connected() is False
@@ -55,9 +53,7 @@ def test_proxy_without_cs():
 
 
 def test_protocol_commands():
-
     with dummy_service(), DummyProxy() as dummy:
-
         with Timer("ping", log_level=logging.WARNING, precision=6):
             assert dummy.ping() is True
 
@@ -79,9 +75,7 @@ def test_protocol_commands():
 
 
 def test_device_commands():
-
     with dummy_service(), DummyProxy() as dummy:
-
         with Timer("info", log_level=logging.WARNING, precision=6):
             assert dummy.info().startswith("Dummy Device")
 

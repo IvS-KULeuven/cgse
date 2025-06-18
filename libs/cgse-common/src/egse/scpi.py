@@ -38,14 +38,14 @@ class AsyncSCPIInterface(AsyncDeviceTransport):
     """Generic asynchronous interface for devices that use SCPI commands over Ethernet."""
 
     def __init__(
-            self,
-            device_name: str,
-            hostname: str,
-            port: int,
-            settings: Optional[Dict[str, Any]] = None,
-            connect_timeout: float = DEFAULT_CONNECT_TIMEOUT,
-            read_timeout: float = DEFAULT_READ_TIMEOUT,
-            id_validation: Optional[str] = None
+        self,
+        device_name: str,
+        hostname: str,
+        port: int,
+        settings: Optional[Dict[str, Any]] = None,
+        connect_timeout: float = DEFAULT_CONNECT_TIMEOUT,
+        read_timeout: float = DEFAULT_READ_TIMEOUT,
+        id_validation: Optional[str] = None,
     ):
         """Initialize an asynchronous Ethernet interface for SCPI communication.
 
@@ -126,10 +126,7 @@ class AsyncSCPIInterface(AsyncDeviceTransport):
                 logger.debug("Validating connection..")
                 if not await self.is_connected():
                     await self.disconnect()
-                    raise DeviceConnectionError(
-                        self.device_name,
-                        "Device connected but failed identity verification"
-                    )
+                    raise DeviceConnectionError(self.device_name, "Device connected but failed identity verification")
 
     async def disconnect(self) -> None:
         """Disconnect from the device asynchronously.
@@ -173,7 +170,7 @@ class AsyncSCPIInterface(AsyncDeviceTransport):
             # Validate the response if validation string is provided
             if self.id_validation and self.id_validation not in id_response:
                 logger.error(
-                    f'{self.device_name}: Device did not respond correctly to identification query. '
+                    f"{self.device_name}: Device did not respond correctly to identification query. "
                     f'Expected "{self.id_validation}" in response, got: {id_response}'
                 )
                 await self.disconnect()
@@ -236,16 +233,13 @@ class AsyncSCPIInterface(AsyncDeviceTransport):
                 # Try to read until newline (common SCPI terminator)
                 try:
                     response = await asyncio.wait_for(
-                        self._reader.readuntil(separator=b'\n'),
-                        timeout=self.read_timeout
+                        self._reader.readuntil(separator=b"\n"), timeout=self.read_timeout
                     )
                     return response
 
                 except asyncio.IncompleteReadError as exc:
                     # Connection closed before receiving full response
-                    logger.warning(
-                        f"{self.device_name}: Incomplete read, got {len(exc.partial)} bytes"
-                    )
+                    logger.warning(f"{self.device_name}: Incomplete read, got {len(exc.partial)} bytes")
                     return exc.partial if exc.partial else b"\r\n"
 
                 except asyncio.LimitOverrunError:
@@ -254,7 +248,7 @@ class AsyncSCPIInterface(AsyncDeviceTransport):
                     # Fall back to reading a large chunk
                     return await asyncio.wait_for(
                         self._reader.read(8192),  # Larger buffer for exceptional cases
-                        timeout=self.read_timeout
+                        timeout=self.read_timeout,
                     )
 
             except asyncio.TimeoutError as exc:
@@ -296,16 +290,13 @@ class AsyncSCPIInterface(AsyncDeviceTransport):
                 # Try to read until newline (common SCPI terminator)
                 try:
                     response = await asyncio.wait_for(
-                        self._reader.readuntil(separator=b'\n'),
-                        timeout=self.read_timeout
+                        self._reader.readuntil(separator=b"\n"), timeout=self.read_timeout
                     )
                     return response
 
                 except asyncio.IncompleteReadError as exc:
                     # Connection closed before receiving full response
-                    logger.warning(
-                        f"{self.device_name}: Incomplete read, got {len(exc.partial)} bytes"
-                    )
+                    logger.warning(f"{self.device_name}: Incomplete read, got {len(exc.partial)} bytes")
                     return exc.partial if exc.partial else b"\r\n"
 
                 except asyncio.LimitOverrunError:
@@ -314,7 +305,7 @@ class AsyncSCPIInterface(AsyncDeviceTransport):
                     # Fall back to reading a large chunk
                     return await asyncio.wait_for(
                         self._reader.read(8192),  # Larger buffer for exceptional cases
-                        timeout=self.read_timeout
+                        timeout=self.read_timeout,
                     )
 
             except asyncio.TimeoutError as exc:

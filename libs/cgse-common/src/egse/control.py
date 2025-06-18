@@ -1,6 +1,7 @@
 """
 This module defines the abstract class for any Control Server and some convenience functions.
 """
+
 from __future__ import annotations
 
 import abc
@@ -33,6 +34,7 @@ try:
     # This function is only available when the cgse-core package is installed
     from egse.logger import close_all_zmq_handlers
 except ImportError:
+
     def close_all_zmq_handlers():  # noqa
         pass
 
@@ -591,13 +593,11 @@ class ControlServer(metaclass=abc.ABCMeta):
         self.zcontext.term()
 
     def setup_signaling(self):
-
         self.signaling = FileBasedSignaling(self.service_name)
         self.signaling.start_monitoring()
         self.signaling.register_handler("reregister", self._reregister_service)
 
     def _reregister_service(self, force: bool = False):
-
         self.logger.info(f"Re-registration of service: {self.service_name} ({force=})")
 
         if self.registry.get_service(self.service_id):
@@ -617,9 +617,9 @@ class ControlServer(metaclass=abc.ABCMeta):
             port=get_port_number(self.dev_ctrl_cmd_sock),
             service_type=self.service_type,
             metadata={
-                'service_port': get_port_number(self.dev_ctrl_service_sock),
-                'monitoring_port': get_port_number(self.dev_ctrl_mon_sock),
-            }
+                "service_port": get_port_number(self.dev_ctrl_service_sock),
+                "monitoring_port": get_port_number(self.dev_ctrl_mon_sock),
+            },
         )
         self.registry.start_heartbeat()
 
@@ -661,18 +661,20 @@ class ControlServer(metaclass=abc.ABCMeta):
         try:
             if self.client:
                 metrics_dictionary = {
-                    "measurement": origin.lower(),                      # Table name
-                    "tags": {"site_id": SITE_ID, "origin": origin},     # Site ID, Origin
+                    "measurement": origin.lower(),  # Table name
+                    "tags": {"site_id": SITE_ID, "origin": origin},  # Site ID, Origin
                     "fields": dict((hk_name.lower(), hk[hk_name]) for hk_name in hk if hk_name != "timestamp"),
-                    "time": hk["timestamp"]
+                    "time": hk["timestamp"],
                 }
                 point = Point.from_dict(metrics_dictionary, write_precision=self.metrics_time_precision)
                 self.client.write(point)
             else:
                 _LOGGER.warning(f"Could not write {origin} metrics to InfluxDB (self.client is None).")
         except NewConnectionError:
-            _LOGGER.warning(f"No connection to InfluxDB could be established to propagate {origin} metrics.  Check "
-                           f"whether this service is (still) running.")
+            _LOGGER.warning(
+                f"No connection to InfluxDB could be established to propagate {origin} metrics.  Check "
+                f"whether this service is (still) running."
+            )
 
     def register_to_storage_manager(self) -> None:
         """Registers this Control Server to the Storage Manager.

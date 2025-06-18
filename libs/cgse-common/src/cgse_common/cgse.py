@@ -19,6 +19,7 @@ the group name 'cgse.command.plugins'.
 Commands can be added as single commands or as a group containing further sub-commands. To add a group,
 the entry point shall contain 'group' in its extras.
 """
+
 import textwrap
 
 import rich
@@ -57,6 +58,7 @@ def broken_command(name: str, module: str, exc: Exception):
 
 # Load the known plugins for the `cgse` command. Plugins are added as commands to the `cgse`.
 
+
 class SortedCommandGroup(TyperGroup):
     """This class sorts the commands based on the following criteria:
 
@@ -64,6 +66,7 @@ class SortedCommandGroup(TyperGroup):
     - the rest of the commands are sorted alphabetically
 
     """
+
     def list_commands(self, ctx):
         # Get list of all commands
         commands = super().list_commands(ctx)
@@ -141,17 +144,14 @@ def build_app():
                 if group == "cgse.service":
                     app.add_typer(ep.load(), name=ep.name)
                 else:
-                    command_group = snake_to_title(group.split('.')[-1])
+                    command_group = snake_to_title(group.split(".")[-1])
                     app.add_typer(ep.load(), name=ep.name, rich_help_panel=command_group)
             except Exception as exc:
                 app.command()(broken_command(ep.name, ep.module, exc))
 
 
 @app.callback(no_args_is_help=True, invoke_without_command=True)
-def main(
-        ctx: typer.Context,
-        verbose: bool = False
-):
+def main(ctx: typer.Context, verbose: bool = False):
     """
     The `cgse` command is used to:
 

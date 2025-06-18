@@ -316,7 +316,6 @@ def test_raise_value_error():
 
 
 def test_process_status():
-
     # Need to provide a prefix here otherwise we will get a duplicate metrics error when a control server is created.
 
     status = ProcessStatus(metrics_prefix="X372")

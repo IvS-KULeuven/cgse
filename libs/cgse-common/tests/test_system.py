@@ -129,20 +129,32 @@ def test_attr_dict_rich():
     rich.print(ad)
     assert str(ad) == "AttributeDict({'a':1, 'b':2, 'c':3})"
 
-    ad = AttributeDict({"a": 1, "b": {'B': 2, 'BB': 22}, "c": 3}, label="nested dict")
+    ad = AttributeDict({"a": 1, "b": {"B": 2, "BB": 22}, "c": 3}, label="nested dict")
     rich.print(ad)
     assert str(ad) == "AttributeDict({'a':1, 'b':{'B': 2, 'BB': 22}, 'c':3}, label='nested dict')"
 
     ad = AttributeDict(
         {
-            "a": 1, "b": {'B': 2, 'BB': 22}, "c": 3, "d": 4, "e": 5, "f": 6, "g": 7, "h": 8, "i": 9, "j": 10,
-            "k": 11, "l": 12
+            "a": 1,
+            "b": {"B": 2, "BB": 22},
+            "c": 3,
+            "d": 4,
+            "e": 5,
+            "f": 6,
+            "g": 7,
+            "h": 8,
+            "i": 9,
+            "j": 10,
+            "k": 11,
+            "l": 12,
         },
-        label="Long nested label"
+        label="Long nested label",
     )
     rich.print(ad)
-    assert str(ad) == ("AttributeDict({'a':1, 'b':{'B': 2, 'BB': 22}, 'c':3, 'd':4, 'e':5, 'f':6, 'g':7, 'h':8, 'i':9, "
-                       "'j':10, ...}, label='Long nested label')")
+    assert str(ad) == (
+        "AttributeDict({'a':1, 'b':{'B': 2, 'BB': 22}, 'c':3, 'd':4, 'e':5, 'f':6, 'g':7, 'h':8, 'i':9, "
+        "'j':10, ...}, label='Long nested label')"
+    )
 
 
 def test_get_call_sequence():
@@ -527,21 +539,20 @@ def test_read_last_line():
     filename = prefix / "data/tmp/data_file.txt"
 
     with create_text_file(
-            filename,
-            textwrap.dedent(
-                """\
+        filename,
+        textwrap.dedent(
+            """\
                 001 002 003
                 002 003 001
                 003 002 001
                 """
-            ),
+        ),
     ):
         line = read_last_line(filename)
     assert line == "003 002 001"
 
 
 def test_read_last_lines():
-
     with pytest.raises(AssertionError, match="a positive number or zero"):
         _ = read_last_lines("/xxx", -1)
 
@@ -558,14 +569,14 @@ def test_read_last_lines():
     filename = prefix / "data/tmp/data_file.txt"
 
     with create_text_file(
-            filename,
-            textwrap.dedent(
-                """\
+        filename,
+        textwrap.dedent(
+            """\
                 001 002 003
                 002 003 001
                 003 002 001
                 """
-            ),
+        ),
     ):
         lines = read_last_lines(filename, 0)
         assert lines == [""]
@@ -933,20 +944,19 @@ def test_get_host_ip():
 
 
 def test_do_every(capsys):
-
     with Timer():
         do_every(0.5, lambda: print(f"{format_datetime()} Hello, World!"), count=0)
     captured = capsys.readouterr()
-    assert captured.out == ''
+    assert captured.out == ""
 
     do_every(0.5, lambda: print(f"{format_datetime()} Hello, World!"), count=1)
     captured = capsys.readouterr()
-    assert len(captured.out.rstrip().split('\n')) == 1
+    assert len(captured.out.rstrip().split("\n")) == 1
 
     do_every(0.5, lambda: print(f"{format_datetime()} Hello, World!"), count=3)
     captured = capsys.readouterr()
-    print('\n'.join(captured.out.rstrip().split('\n')))
-    assert len(captured.out.rstrip().split('\n')) == 3
+    print("\n".join(captured.out.rstrip().split("\n")))
+    assert len(captured.out.rstrip().split("\n")) == 3
 
 
 def generate_big_data_file(filename: Path, total_n_rows: int = 500_000) -> list[str]:
@@ -975,7 +985,7 @@ def generate_big_data_file(filename: Path, total_n_rows: int = 500_000) -> list[
         [20.6, 22.1, 22.6, 20.4, 23.7, 23.1, 22.4, 21.1, 20.3, 22.9],
         [20.7, 22.2, 22.7, 20.5, 23.8, 23.2, 22.5, 21.2, 20.4, 23.0],
         [20.8, 22.3, 22.8, 20.6, 23.9, 23.3, 22.6, 21.3, 20.5, 23.1],
-        [20.9, 22.4, 22.9, 20.7, 24.0, 23.4, 22.7, 21.4, 20.6, 23.2]
+        [20.9, 22.4, 22.9, 20.7, 24.0, 23.4, 22.7, 21.4, 20.6, 23.2],
     ]
 
     def generate_random_temperature_data():
@@ -984,13 +994,13 @@ def generate_big_data_file(filename: Path, total_n_rows: int = 500_000) -> list[
 
     def format_timestamp(dt):
         """Format datetime to ISO format."""
-        return dt.strftime('%Y-%m-%dT%H:%M:%S')
+        return dt.strftime("%Y-%m-%dT%H:%M:%S")
 
     print(f"Generating {total_rows} rows of data to {filename}...")
 
-    with open(filename, 'w', newline='') as csvfile:
+    with open(filename, "w", newline="") as csvfile:
         # Create header: timestamp, temp1, temp2, ..., temp10
-        header = ['timestamp'] + [f'temp{i + 1}' for i in range(columns)]
+        header = ["timestamp"] + [f"temp{i + 1}" for i in range(columns)]
 
         writer = csv.writer(csvfile)
         writer.writerow(header)
@@ -1009,15 +1019,16 @@ def generate_big_data_file(filename: Path, total_n_rows: int = 500_000) -> list[
             current_date += time_increment
 
     return [
-        (f"{format_timestamp(start_date + time_increment * (total_rows - 10 + i))},"
-         f"{','.join([f'{x:3.1f}' for x in row])}")
+        (
+            f"{format_timestamp(start_date + time_increment * (total_rows - 10 + i))},"
+            f"{','.join([f'{x:3.1f}' for x in row])}"
+        )
         for i, row in enumerate(deterministic_data)
     ]
 
 
 @pytest.mark.asyncio
 async def test_periodic():
-
     count = 0
 
     def plain_old_function():
@@ -1067,7 +1078,6 @@ async def test_periodic():
 
 @pytest.mark.asyncio
 async def test_periodic_exception(caplog):
-
     # So, what happens when a callback throws an exception? Aa error message is logged.
 
     @execution_count
@@ -1084,15 +1094,14 @@ async def test_periodic_exception(caplog):
 
 
 def test_camel_to_kebab():
-
     assert camel_to_kebab("ConfigurationControlServer") == "configuration-control-server"
     assert camel_to_kebab("XMLHttpService") == "xml-http-service"
     assert camel_to_kebab("My123BestProject") == "my123-best-project"
 
     assert camel_to_kebab("is-already-kebab") == "is-already-kebab"
 
-def test_camel_to_snake():
 
+def test_camel_to_snake():
     assert camel_to_snake("ConfigurationControlServer") == "configuration_control_server"
     assert camel_to_snake("XMLHttpService") == "xml_http_service"
     assert camel_to_snake("My123BestProject") == "my123_best_project"

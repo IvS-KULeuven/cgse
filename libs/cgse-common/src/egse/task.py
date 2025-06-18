@@ -1,4 +1,3 @@
-
 # ACKNOWLEDGEMENT: These functions are based on work done by Will McGugan on Textual.
 #                  check out: https://textual.textualize.io/blog/2023/03/15/no-async-async-with-python/
 
@@ -48,6 +47,7 @@ class Task:
     environment where the event loop is running. Then a coroutine will be returned that
     needs to be awaited.
     """
+
     def __init__(self, task: Callable, *args, **kwargs):
         self._task = task
         self._args = args
@@ -83,7 +83,6 @@ class AwaitTask:
         return self.task()
 
     def __await__(self) -> Generator[None, None, Any]:
-
         async def await_task():
             await asyncio.sleep(0.01)
             result = self.task()

@@ -105,10 +105,7 @@ commands = attrdict(
         "get_value": {
             "description": "Read a value from the device.",
         },
-        "division": {
-            "description": "Return a / b",
-            "cmd": "{a} {b}"
-        },
+        "division": {"description": "Return a / b", "cmd": "{a} {b}"},
         "handle_event": {
             "description": "Notification of an event",
             "device_method": "handle_event",
@@ -170,11 +167,11 @@ class DummyProxy(Proxy, DummyInterface, EventInterface):
     """
 
     def __init__(
-            self,
-            protocol: str = ctrl_settings.PROTOCOL,
-            hostname: str = ctrl_settings.HOSTNAME,
-            port: int = ctrl_settings.COMMANDING_PORT,
-            timeout: int = ctrl_settings.TIMEOUT,
+        self,
+        protocol: str = ctrl_settings.PROTOCOL,
+        hostname: str = ctrl_settings.HOSTNAME,
+        port: int = ctrl_settings.COMMANDING_PORT,
+        timeout: int = ctrl_settings.TIMEOUT,
     ):
         super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
 
@@ -356,6 +353,7 @@ class DummyControlServer(ControlServer):
 
         with contextlib.suppress(ModuleNotFoundError):
             from egse.confman import ConfigurationManagerProxy
+
             self.unregister_as_listener(proxy=ConfigurationManagerProxy, listener={"name": "Dummy CS"})
 
 

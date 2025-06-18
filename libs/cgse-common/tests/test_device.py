@@ -24,12 +24,9 @@ def test_device_error_with_args():
 
 
 def test_device_connection_observable():
+    class MyDevice(DeviceConnectionObservable): ...
 
-    class MyDevice(DeviceConnectionObservable):
-        ...
-
-    class MyDeviceViewer(DeviceConnectionObserver):
-        ...
+    class MyDeviceViewer(DeviceConnectionObserver): ...
 
     my_device = MyDevice()
 
