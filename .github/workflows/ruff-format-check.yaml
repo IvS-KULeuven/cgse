@@ -1,0 +1,19 @@
+name: Ruff Formatting Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  ruff-format:
+    name: Run ruff format for the whole project
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Ruff Format Check
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: format --check --diff .
