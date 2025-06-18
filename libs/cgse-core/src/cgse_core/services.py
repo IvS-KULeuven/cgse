@@ -157,7 +157,7 @@ def log_cs_reregister(force: bool = False):
     create_signal_command_file(
         Path(DEFAULT_SIGNAL_DIR),
         app_name,
-        {'action': 'reregister', 'params': {'force': force}},
+        {"action": "reregister", "params": {"force": force}},
     )
 
 
@@ -195,13 +195,12 @@ def cm_cs_reregister(force: bool = False):
     create_signal_command_file(
         Path(DEFAULT_SIGNAL_DIR),
         app_name,
-        {'action': 'reregister', 'params': {'force': force}},
+        {"action": "reregister", "params": {"force": force}},
     )
 
 
 @cm_cs.command(name="register-to-storage")
 def cm_cs_register_to_storage():
-
     from egse.confman.confman_cs import register_to_storage
 
     register_to_storage()
@@ -241,7 +240,7 @@ def sm_cs_reregister(force: bool = False):
     create_signal_command_file(
         Path(DEFAULT_SIGNAL_DIR),
         app_name,
-        {'action': 'reregister', 'params': {'force': force}},
+        {"action": "reregister", "params": {"force": force}},
     )
 
 
@@ -279,5 +278,5 @@ def pm_cs_reregister(force: bool = False):
     create_signal_command_file(
         Path(DEFAULT_SIGNAL_DIR),
         app_name,
-        {'action': 'reregister', 'params': {'force': force}},
+        {"action": "reregister", "params": {"force": force}},
     )

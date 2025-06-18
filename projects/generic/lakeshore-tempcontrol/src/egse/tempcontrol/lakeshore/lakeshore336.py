@@ -8,55 +8,57 @@ from egse.registry.client import RegistryClient
 from egse.settings import Settings
 from egse.tempcontrol.lakeshore.lakeshore336_devif import LakeShore336EthernetInterface
 from egse.zmq_ser import connect_address
+
 CTRL_SETTINGS = Settings.load("LakeShore336 Control Server")
 
-def split_response (response) -> list[float]:
+
+def split_response(response) -> list[float]:
     return response.split(",")
 
 
 class SelfTestResult(IntEnum):
-    """ Possible results of the selftest."""
+    """Possible results of the selftest."""
 
     NO_ERRORS_FOUND = 0
     ERRORS_FOUND = 1
 
 
 class AutotuneMode(IntEnum):
-    """ Possible autotune modes."""
+    """Possible autotune modes."""
 
-    PROPORTIONAL = P = 0                            # P only
-    PROPORTIONAL_INTEGRAL = PI = 1                  # P and I
-    PROPORTIONAL_INTEGRAL_DERIVATIVE = PID = 2      # P, I, and D
+    PROPORTIONAL = P = 0  # P only
+    PROPORTIONAL_INTEGRAL = PI = 1  # P and I
+    PROPORTIONAL_INTEGRAL_DERIVATIVE = PID = 2  # P, I, and D
 
 
 class HeaterQuantity(IntEnum):
-    """ Possible heater quantities."""
+    """Possible heater quantities."""
 
     CURRENT = 1
     POWER = 2
 
 
 class HeaterRange(IntEnum):
-    """ Possible heater ranges."""
+    """Possible heater ranges."""
 
-    OFF = 0         # Output 1 - 4
-    LOW = 1         # Output 1 & 2
-    MEDIUM = 2      # Output 1 & 2
-    HIGH = 3        # Output 1 & 2
+    OFF = 0  # Output 1 - 4
+    LOW = 1  # Output 1 & 2
+    MEDIUM = 2  # Output 1 & 2
+    HIGH = 3  # Output 1 & 2
 
-    ON = 1          # Output 3 & 4
+    ON = 1  # Output 3 & 4
 
 
 class Mode(IntEnum):
-    """ Possible operating modes."""
+    """Possible operating modes."""
 
     LOCAL = 0
     REMOTE = 1
-    REMOTE_WITH_LOCAL_LOCKOUT =2
+    REMOTE_WITH_LOCAL_LOCKOUT = 2
 
 
 class DisplayMode(IntEnum):
-    """ Possible display modes."""
+    """Possible display modes."""
 
     INPUT_A = 0
     INPUT_B = 1
@@ -68,20 +70,18 @@ class DisplayMode(IntEnum):
 
 
 class SensorType(IntEnum):
-    """ Possible sensor types."""
+    """Possible sensor types."""
 
     DISABLED = 0
-    DIODE = 1           # 3062 option only
+    DIODE = 1  # 3062 option only
     PTC_RTD = 2
     NTC_RTD = 3
-    THERMOCOUPLE = 4    # 3060 option only
-    CAPACITANCE = 5     # 3060 option only
+    THERMOCOUPLE = 4  # 3060 option only
+    CAPACITANCE = 5  # 3060 option only
 
 
 class InputSimulator:
-
     def __init__(self, input: str) -> None:
-
         self.input = input
         self.name = None
         self.type = None
@@ -92,14 +92,11 @@ class InputSimulator:
         self.randomwalk = RandomWalk(start=15, boundary=(-100, 25), scale=0.01, count=0)
 
     def get_temperature(self):
-
         return next(self.randomwalk)
 
 
 class OutputSimulator:
-
     def __init__(self, output: int) -> None:
-
         self.output = output
         self.resistance_setting = None
         self.max_current_setting = None
@@ -114,21 +111,19 @@ class OutputSimulator:
         self.heater_range = None
 
     def set_pid_parameters(self, p, i, d):
-
         self.p = p
         self.i = i
         self.d = d
 
     def get_pid_parameters(self):
-
         return self.p, self.i, self.d
 
 
 class LakeShore336Interface(DeviceInterface):
-    """ Interface for the LakeShore336 Controller, Simulator, and Proxy."""
+    """Interface for the LakeShore336 Controller, Simulator, and Proxy."""
 
     def __init__(self, device_id: str):
-        """ Initialisation of a LakeShore336 interface.
+        """Initialisation of a LakeShore336 interface.
 
         Args:
             device_id (str): Device identifier
@@ -140,7 +135,7 @@ class LakeShore336Interface(DeviceInterface):
 
     @dynamic_command(cmd_type=CommandType.READ, cmd_string="*IDN?", process_cmd_string=add_lf)
     def info(self) -> (str, str, str, float):
-        """ Identification query.
+        """Identification query.
 
         Returns basic information about the device.
 
@@ -155,7 +150,7 @@ class LakeShore336Interface(DeviceInterface):
 
     @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="*CLS", process_cmd_string=add_lf)
     def clear_interface(self):
-        """ Clear interface command.
+        """Clear interface command.
 
         Clears the bits in the status byte register, standard event status register, and operation event register, and
         terminates all pending operations.  Clears the interface but not the controller.  The related controller
@@ -163,17 +158,14 @@ class LakeShore336Interface(DeviceInterface):
 
         raise NotImplementedError
 
-
     @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="*RST", process_cmd_string=add_lf)
     def reset_instrument(self):
-        """ Reset instrument command.
+        """Reset instrument command.
 
         Sets the controller parameters to power-up settings.
         """
 
         raise NotImplementedError
-
-
 
     # # @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="*ESE", process_cmd_string=add_lf)
     #
@@ -181,20 +173,18 @@ class LakeShore336Interface(DeviceInterface):
     #
     # # @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string="*ESR?", process_cmd_string=add_lf)
 
-
     @dynamic_command(cmd_type=CommandType.READ, cmd_string="TST?", process_cmd_string=add_lf)
     def get_selftest_result(self) -> int:
-        """ Selftest query.
+        """Selftest query.
 
         Reports status based on test done at power-up.
         """
 
         raise NotImplementedError
 
-
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string="ATUNE ${output_channel}, ${mode}")
     def autotune(self, output_channel: int, mode: AutotuneMode):
-        """ Autotune command.
+        """Autotune command.
 
         Configures autotune parameters.
 
@@ -209,10 +199,9 @@ class LakeShore336Interface(DeviceInterface):
 
         raise NotImplementedError
 
-
     @dynamic_command(cmd_type=CommandType.READ, cmd_string="TUNEST?", process_cmd_string=add_lf)
     def get_tuning_status(self):
-        """ Control tuning status query.
+        """Control tuning status query.
 
         Returns:
             Tuning status (int):
@@ -232,7 +221,7 @@ class LakeShore336Interface(DeviceInterface):
 
     @dynamic_command(cmd_type=CommandType.READ, cmd_string="CRDG? {input_channel}", process_cmd_string=add_lf)
     def get_temperature(self, input_channel: str):
-        """ Celsius reading query.
+        """Celsius reading query.
 
         Args:
             input_channel (str): Input channel for which to return the current temperature
@@ -242,10 +231,9 @@ class LakeShore336Interface(DeviceInterface):
 
         raise NotImplementedError
 
-
     @dynamic_command(cmd_type=CommandType.READ, cmd_string="HTR? ${output_channel}", process_cmd_string=add_lf)
     def get_heater_output(self, output_channel: int):
-        """ Heater output query.
+        """Heater output query.
 
         Returns the heater output.
 
@@ -463,9 +451,14 @@ class LakeShore336Interface(DeviceInterface):
     #
     #     raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.READ, cmd_string="PID? ${output_channel}", process_cmd_string=add_lf, post_cmd=split_response)
+    @dynamic_command(
+        cmd_type=CommandType.READ,
+        cmd_string="PID? ${output_channel}",
+        process_cmd_string=add_lf,
+        post_cmd=split_response,
+    )
     def get_pid_parameters(self, output_channel: int):
-        """ Control loop PID values query.
+        """Control loop PID values query.
 
         Args:
             output_channel (int): Output channel for which to return the control loop PID parameters
@@ -475,9 +468,14 @@ class LakeShore336Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.READ, cmd_string="SETP? {output_channel}", process_cmd_string=add_lf, post_cmd=split_response)
+    @dynamic_command(
+        cmd_type=CommandType.READ,
+        cmd_string="SETP? {output_channel}",
+        process_cmd_string=add_lf,
+        post_cmd=split_response,
+    )
     def get_temperature_setpoint(self, output_channel: int):
-        """ Control setpoint query.
+        """Control setpoint query.
 
         Args:
             output_channel (int): Output channel for which to return the control setpoint (1 - 4)
@@ -486,7 +484,7 @@ class LakeShore336Interface(DeviceInterface):
         """
 
     def quit(self):
-        """ Cleans up and stops threads that were started by the process."""
+        """Cleans up and stops threads that were started by the process."""
 
         pass
 
@@ -505,44 +503,36 @@ class LakeShore336Interface(DeviceInterface):
     #
     #     raise NotImplementedError
 
-class LakeShore336Controller(LakeShore336Interface):
 
+class LakeShore336Controller(LakeShore336Interface):
     def __init__(self, device_id: str):
         super().__init__(device_id)
 
         self.lakeshore = self.transport = LakeShore336EthernetInterface(device_id)
 
     def is_simulator(self) -> bool:
-
         return False
 
     def is_connected(self) -> bool:
-
         return self.lakeshore.is_connected()
 
     def connect(self):
-
         self.lakeshore.connect()
 
     def disconnect(self):
-
         self.lakeshore.disconnect()
 
     def reconnect(self):
-
         self.lakeshore.reconnect()
 
     def quit(self):
-
         # self.synoptics.disconnect_cs()
 
         pass
 
 
 class LakeShore336Simulator(LakeShore336Interface):
-
     def __init__(self, device_id: str):
-
         super().__init__(device_id)
 
         self._is_connected = True
@@ -557,59 +547,48 @@ class LakeShore336Simulator(LakeShore336Interface):
         for i in range(ord("A"), ord("D") + 1):
             self.input[chr(i)] = InputSimulator(chr(i))
 
-        self.output = [
-            None,
-            OutputSimulator(1), OutputSimulator(2)
-        ]
+        self.output = [None, OutputSimulator(1), OutputSimulator(2)]
 
     def is_simulator(self) -> bool:
-
         return True
 
     def is_connected(self) -> bool:
-
         return self._is_connected
 
     def connect(self):
-
         self._is_connected = True
 
     def disconnect(self):
-
         self._is_connected = False
 
     def reconnect(self):
-
         self._is_connected = True
 
     def info(self) -> (str, str, str, float):
-
-        return self.manufacturer, self.model, f"{self.instrument_serial_number}/{self.option_card_serial_number}", self.firmware_version
+        return (
+            self.manufacturer,
+            self.model,
+            f"{self.instrument_serial_number}/{self.option_card_serial_number}",
+            self.firmware_version,
+        )
 
     def clear_interface(self):
-
         pass
 
     def reset_instrument(self):
-
         pass
 
     def get_selftest_result(self):
-
         # No errors found
 
         return SelfTestResult.NO_ERRORS_FOUND.value
 
     def autotune(self, output_channel: int, mode: AutotuneMode):
-
         pass
 
     def get_tuning_status(self):
-
         # TODO
         pass
-
-
 
     # def get_selftest_result(self):
     #
@@ -644,11 +623,9 @@ class LakeShore336Simulator(LakeShore336Interface):
     #     self.output[output].set_pid_parameters(proportional, integral, derivative)
 
     def set_pid_parameters(self, output: int, p: float, i: float, d: float):
-
         self.output[output].set_pid_parameters(p, i, d)
 
     def get_pid_parameters(self, output: int):
-
         return self.output[output].get_pid_parameters()
 
     # def set_temperature_setpoint(self, output: int, temperature: float):
@@ -656,8 +633,8 @@ class LakeShore336Simulator(LakeShore336Interface):
     #     self.output[output].temperature_setpoint = temperature
 
     def get_temperature_setpoint(self, output_channel: int):
-
         return self.output[output_channel].temperature_setpoint
+
     #
     # def set_heater_range(self, output: int, range: int):
     #
@@ -668,23 +645,20 @@ class LakeShore336Simulator(LakeShore336Interface):
     #     return self.output[output].heater_range
 
     def set_heater_output(self, output_channel: int, heater_output: float):
-
         self.output[output_channel].output = heater_output
 
     def get_heater_output(self, output_channel: int):
-
         return self.output[output_channel].output
 
     def get_temperature(self, input_channel: str):
-
         return self.input[input_channel].get_temperature()
 
 
 class LakeShore336Proxy(Proxy, LakeShore336Interface):
-    """ Proxy to connect to a LakeShore 336 Control Server """
+    """Proxy to connect to a LakeShore 336 Control Server"""
 
     def __init__(self, device_id: str):
-        """ Proxy to connect to the LakeShore 336 with the given device identifier
+        """Proxy to connect to the LakeShore 336 with the given device identifier
 
         Args:
             device_id (str): Device identifier
@@ -694,9 +668,9 @@ class LakeShore336Proxy(Proxy, LakeShore336Interface):
             service = reg.discover_service(device_id)
 
             if service:
-                protocol = service.get('protocol', 'tcp')
-                hostname = service['host']
-                port = service['port']
+                protocol = service.get("protocol", "tcp")
+                hostname = service["host"]
+                port = service["port"]
             else:
                 raise RuntimeError(f"No service registered as {CTRL_SETTINGS.SERVICE_TYPE}")
 

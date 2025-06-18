@@ -14,6 +14,7 @@ Please note that software simulators are intended for simple test purposes and w
 all device behavior correctly, e.g. timing, error conditions, etc.
 
 """
+
 import multiprocessing
 import sys
 from typing import Annotated
@@ -93,6 +94,7 @@ class PunaControlServer(ControlServer):
 
     def is_storage_manager_active(self):
         from egse.storage import is_storage_manager_active
+
         return is_storage_manager_active()
 
     def store_housekeeping_information(self, data):
@@ -111,7 +113,7 @@ class PunaControlServer(ControlServer):
             prep={
                 "column_names": list(self.device_protocol.get_housekeeping().keys()),
                 "mode": "a",
-            }
+            },
         )
 
     def unregister_from_storage_manager(self):
@@ -131,36 +133,28 @@ app = typer.Typer()
 
 @app.command()
 def start(
-        device_id: Annotated[
-            str,
-            typer.Argument(help="the device identifier, identifies the hardware controller")
-        ],
-        simulator: Annotated[
-            bool,
-            typer.Option("--simulator", "--sim", help="start the hexapod PUNA Control Server in simulator mode")
-        ] = False
+    device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")],
+    simulator: Annotated[
+        bool, typer.Option("--simulator", "--sim", help="start the hexapod PUNA Control Server in simulator mode")
+    ] = False,
 ):
     """
     Start the Hexapod PUNA Control Server.
     """
 
     try:
-
         controller = PunaControlServer(device_id, simulator)
         controller.serve()
 
     except KeyboardInterrupt:
-
         print("Shutdown requested...exiting")
 
     except SystemExit as exc:
-
-        exit_code = exc.code if hasattr(exc, 'code') else 0
+        exit_code = exc.code if hasattr(exc, "code") else 0
         print(f"System Exit with code {exc.code}")
         sys.exit(exit_code)
 
     except Exception:
-
         logger.exception("Cannot start the Hexapod Puna Control Server")
 
         # The above line does exactly the same as the traceback, but on the logger
@@ -179,7 +173,7 @@ def stop(device_id: str):
         rich.print("service = ", service)
 
         if service:
-            proxy = ServiceProxy(protocol="tcp", hostname=service["host"], port=service['metadata']['service_port'])
+            proxy = ServiceProxy(protocol="tcp", hostname=service["host"], port=service["metadata"]["service_port"])
             proxy.quit_server()
         else:
             *_, device_type, controller_type = get_hexapod_controller_pars(device_id)
@@ -204,16 +198,18 @@ def status(device_id: str):
         # rich.print("service = ", service)
 
         if service:
-            protocol = service.get('protocol', 'tcp')
-            hostname = service['host']
-            port = service['port']
-            service_port = service['metadata']['service_port']
-            monitoring_port = service['metadata']['monitoring_port']
+            protocol = service.get("protocol", "tcp")
+            hostname = service["host"]
+            port = service["port"]
+            service_port = service["metadata"]["service_port"]
+            monitoring_port = service["metadata"]["monitoring_port"]
             endpoint = connect_address(protocol, hostname, port)
             # rich.print(f"{endpoint = }")
         else:
-            rich.print(f"[red]The PUNA CS '{device_id}' isn't registered as a service. I cannot contact the control "
-                       f"server without the required info from the service registry.[/]")
+            rich.print(
+                f"[red]The PUNA CS '{device_id}' isn't registered as a service. I cannot contact the control "
+                f"server without the required info from the service registry.[/]"
+            )
             rich.print("PUNA Hexapod: [red]not active")
             return
 
@@ -236,10 +232,10 @@ def status(device_id: str):
 
 
 if __name__ == "__main__":
-
     import logging
 
     from egse.logger import set_all_logger_levels
+
     set_all_logger_levels(logging.DEBUG)
 
     sys.exit(app())

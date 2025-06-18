@@ -35,7 +35,7 @@ def test_equal():
     assert p3 is not p2
     assert p3 != p2
 
-    r1 = ReferenceFrame.fromTranslation(0., 1., 2., ref=master)
+    r1 = ReferenceFrame.fromTranslation(0.0, 1.0, 2.0, ref=master)
     p4 = Point([1, 3, 5], ref=r1)
 
     assert p4 is not p3
@@ -50,7 +50,7 @@ def test_isSame():
 
     assert p1.isSame(p2)
 
-    r1 = ReferenceFrame.fromTranslation(1., 2., 3., ref=master)
+    r1 = ReferenceFrame.fromTranslation(1.0, 2.0, 3.0, ref=master)
     p3 = Point([1, 3, 5], ref=master)
     p4 = Point([0, 0, 0], ref=r1)
 

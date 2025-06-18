@@ -12,7 +12,6 @@ _HERE = Path(__file__).parent
 
 
 def test_memoized():
-
     print()
     Settings.load()
 
@@ -23,7 +22,7 @@ def test_memoized():
     assert len(locations) >= 2
 
     for location in locations:
-        if 'cgse-common' in location:
+        if "cgse-common" in location:
             x = Settings.get_memoized(location)
             assert x["SITE"]["SSH_PORT"] == 22
             break
@@ -35,7 +34,7 @@ def test_memoized():
     assert Settings.is_memoized(locations[0]) is True
     assert Settings.is_memoized(locations[1]) is True
 
-    Settings.add_memoized("xxx", {'A': 1, "B": 2})
+    Settings.add_memoized("xxx", {"A": 1, "B": 2})
     assert Settings.is_memoized("xxx") is True
 
     Settings.clear_memoized()
@@ -68,7 +67,6 @@ def test_settings_files():
 
 
 def test_load_local_settings():
-
     settings = load_local_settings()
     rich.print(settings)
 
@@ -82,11 +80,10 @@ def test_load_local_settings():
 
 
 def test_main(capsys):
-
     from egse.settings import main as settings_main
 
     settings_main()
 
     captured = capsys.readouterr()
 
-    assert 'Memoized locations' in captured.out  # noqa
+    assert "Memoized locations" in captured.out  # noqa

@@ -9,7 +9,6 @@ from egse.logger import get_log_file_name
 
 
 def test_logging_messages_of_different_levels(setup_log_service, caplog):
-
     egse_logger.debug("This is a DEBUG message.")
     egse_logger.info("This is a INFO message.")
     egse_logger.warning("This is a WARNING message.")
@@ -30,7 +29,6 @@ def test_logging_messages_of_different_levels(setup_log_service, caplog):
 
 
 def test_logging_exception(caplog):
-
     try:
         raise ValueError("incorrect value entered.")
     except ValueError as exc:
@@ -41,7 +39,6 @@ def test_logging_exception(caplog):
 
 
 def test_logging_error(caplog):
-
     try:
         raise ValueError("incorrect value entered.")
     except ValueError as exc:
@@ -53,7 +50,6 @@ def test_logging_error(caplog):
 
 
 def test_create_new_zmq_logger(caplog):
-
     print()
 
     camtest_logger = create_new_zmq_logger("camtest")
@@ -85,7 +81,7 @@ def test_create_new_zmq_logger(caplog):
 
     camtest_logger.info("Created the zmq handler twice?")
 
-    lines = caplog.text.split('\n')
+    lines = caplog.text.split("\n")
     lines = [line for line in lines if line.strip()]  # filter out empty lines
 
     assert len(lines) == 1

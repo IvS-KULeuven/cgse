@@ -7,6 +7,7 @@ for bringing one reference frame to another.
 
 @author: Pierre Royer
 """
+
 import logging
 import random
 import string
@@ -146,7 +147,7 @@ class ReferenceFrame(object):
         return _instance
 
     def __init__(self, transformation, ref, name=None, rot_config=_ROT_CONFIG_DEFAULT):
-        """Initialize the ReferenceFrame object """
+        """Initialize the ReferenceFrame object"""
 
         self.debug = False
 
@@ -212,22 +213,19 @@ class ReferenceFrame(object):
         ref_master.referenceFor = []
 
         DEBUG and LOGGER.debug(
-            f"NEW MASTER CREATED: {id(ref_master)}, ref = {id(ref_master.ref)}, "
-            f"name = {ref_master.name}"
+            f"NEW MASTER CREATED: {id(ref_master)}, ref = {id(ref_master.ref)}, name = {ref_master.name}"
         )
 
         return ref_master
 
     @classmethod
     def __createName(cls, name: str = None):
-
         if name is None:
             while name in cls._names_used:
                 name = "F" + "".join(random.choices(string.ascii_uppercase, k=3))
             return name
 
         if cls._strict_naming:
-
             # generate a unique name
 
             old_name = name
@@ -241,7 +239,6 @@ class ReferenceFrame(object):
             )
 
         else:
-
             if name in cls._names_used:
                 DEBUG and LOGGER.warning(
                     f"name ('{name}') is already defined, now you have more than one "
@@ -279,9 +276,7 @@ class ReferenceFrame(object):
         adef[:3, 3] = [transx, transy, transz]
 
         if ref is None:
-            raise ValueError(
-                "The ref argument can not be None, provide a master or another reference frame."
-            )
+            raise ValueError("The ref argument can not be None, provide a master or another reference frame.")
 
         return cls(transformation=adef, ref=ref, name=name)
 
@@ -343,9 +338,7 @@ class ReferenceFrame(object):
         TT = t3.affines.compose(T=translation, R=rotation.R, Z=zdef, S=sdef)
 
         if ref is None:
-            raise ValueError(
-                "The ref argument can not be None, provide a master or another reference frame."
-            )
+            raise ValueError("The ref argument can not be None, provide a master or another reference frame.")
 
         return cls(transformation=TT, ref=ref, name=name, rot_config=rot_config)
 
@@ -399,9 +392,7 @@ class ReferenceFrame(object):
         # transformation = t3.affines.compose(translation,rmat.R,Z=zdef,S=sdef)
 
         if ref is None:
-            raise ValueError(
-                "The ref argument can not be None, provide a master or another reference frame."
-            )
+            raise ValueError("The ref argument can not be None, provide a master or another reference frame.")
 
         return cls(
             transformation=t3.affines.compose(translation, rmat.R, Z=zdef, S=sdef),
@@ -465,8 +456,8 @@ class ReferenceFrame(object):
                    {np.round(self.transformation[1], 3)}
                    {np.round(self.transformation[2], 3)}
                    {np.round(self.transformation[3], 3)}]
-                translation   : {np.round(self.getTranslationVector(),3)}
-                rotation      : {np.round(self.getRotationVector(),3)}"""
+                translation   : {np.round(self.getTranslationVector(), 3)}
+                rotation      : {np.round(self.getRotationVector(), 3)}"""
         )
         return msg
 
@@ -512,8 +503,10 @@ class ReferenceFrame(object):
             transformation = self.getActiveTransformationTo(ref)
         else:
             if DEBUG:
-                LOGGER.info("Deprecation warning: transformation will be automatically set to "
-                            "the current relation between {self.name} and {ref.name}")
+                LOGGER.info(
+                    "Deprecation warning: transformation will be automatically set to "
+                    "the current relation between {self.name} and {ref.name}"
+                )
                 LOGGER.debug("Requested:")
                 LOGGER.debug(np.round(transformation, decimals=3))
                 LOGGER.debug("Auto (enforced):")
@@ -635,9 +628,7 @@ class ReferenceFrame(object):
 
         return result
 
-    def getPassiveTranslationRotationVectorsTo(
-        self, targetFrame, degrees=True
-    ):  # , active=_ACTIVE_DEFAULT):
+    def getPassiveTranslationRotationVectorsTo(self, targetFrame, degrees=True):  # , active=_ACTIVE_DEFAULT):
         """
         getPassiveTranslationRotationVectorsTo(self,ref,degrees=True)
 
@@ -681,9 +672,7 @@ class ReferenceFrame(object):
         DEBUG and LOGGER.debug("PASSIVE FROM self {self.name} source {source.name}")
         return source.getPassiveTransformationTo(self)
 
-    def getPassiveTranslationRotationVectorsFrom(
-        self, source, degrees=True
-    ):  # , active=_ACTIVE_DEFAULT):
+    def getPassiveTranslationRotationVectorsFrom(self, source, degrees=True):  # , active=_ACTIVE_DEFAULT):
         """
         getPassiveTranslationRotationVectorsFrom(self,source, degrees=True)
 
@@ -733,9 +722,7 @@ class ReferenceFrame(object):
         DEBUG and LOGGER.debug("ACTIVE TO self {self.name} target {target.name}")
         return target.getPassiveTransformationTo(self)
 
-    def getActiveTranslationRotationVectorsTo(
-        self, targetFrame, degrees=True
-    ):  # ,active=_ACTIVE_DEFAULT):
+    def getActiveTranslationRotationVectorsTo(self, targetFrame, degrees=True):  # ,active=_ACTIVE_DEFAULT):
         """
         getActiveTranslationRotationVectorsTo(self,ref,degrees=True)
 
@@ -781,9 +768,7 @@ class ReferenceFrame(object):
         DEBUG and LOGGER.debug("ACTIVE FROM self {self.name} source {source.name}")
         return self.getPassiveTransformationTo(source)
 
-    def getActiveTranslationRotationVectorsFrom(
-        self, source, degrees=True
-    ):  # ,active=_ACTIVE_DEFAULT):
+    def getActiveTranslationRotationVectorsFrom(self, source, degrees=True):  # ,active=_ACTIVE_DEFAULT):
         """
         getActiveTranslationRotationVectorsFrom(self,source, degrees=True)
 
@@ -822,7 +807,7 @@ class ReferenceFrame(object):
             --> returned as 'finalEnds'
         """
         DEBUG and LOGGER.debug(
-            f"{level:-2d}{2*level*' '} Current: {frame.name} --  ends: {[f.name for f in ends]} -- visited {[f.name for f in visited]}"
+            f"{level:-2d}{2 * level * ' '} Current: {frame.name} --  ends: {[f.name for f in ends]} -- visited {[f.name for f in visited]}"
         )
         # if verbose: print (f"{level:-2d}{2*level*' '} Current: {frame.name} --  ends: {[f.name for f in ends]} -- visited {[f.name for f in visited]}")
 
@@ -836,12 +821,10 @@ class ReferenceFrame(object):
                 level += 1
             if frame.ref not in frame.linkedTo:
                 ends.append(frame)
-                DEBUG and LOGGER.debug(f"{(10+2*level)*' '}{frame.name}: new end")
+                DEBUG and LOGGER.debug(f"{(10 + 2 * level) * ' '}{frame.name}: new end")
                 # if verbose: LOGGER.info(f"{(10+2*level)*' '}{frame.name}: new end")
             for linkedFrame in frame.linkedTo:
-                ends, visited = self._findEnds(
-                    linkedFrame, visited=visited, ends=ends, verbose=verbose, level=level
-                )
+                ends, visited = self._findEnds(linkedFrame, visited=visited, ends=ends, verbose=verbose, level=level)
 
         # If frame.ref was linked to frame via an indirect route, reject it
         finalEnds = []
@@ -850,9 +833,7 @@ class ReferenceFrame(object):
                 finalEnds.append(aframe)
         return finalEnds, visited
 
-    def setTransformation(
-        self, transformation, updated=None, preserveLinks=True, _relative=False, verbose=True
-    ):
+    def setTransformation(self, transformation, updated=None, preserveLinks=True, _relative=False, verbose=True):
         """
         setTransformation(self,transformation, updated=None, preserveLinks=True,_relative=False, verbose=True)
 
@@ -904,9 +885,7 @@ class ReferenceFrame(object):
         #             in order to properly represent the requested movement
         endFrames, visitedFrames = self._findEnds(frame=self, visited=[], ends=[], verbose=verbose)
         if verbose:
-            LOGGER.info(
-                f"Visited sub-system                      {[f.name for f in visitedFrames]}"
-            )
+            LOGGER.info(f"Visited sub-system                      {[f.name for f in visitedFrames]}")
             LOGGER.info(f"End-frames (movement necessary)         {[f.name for f in endFrames]}")
 
         # All updates are done by relative movements
@@ -914,9 +893,7 @@ class ReferenceFrame(object):
         if _relative == False:
             ## virtual = what self should become after the (absolute) movement
             ## it allows to compute the relative transformation to be applied and work in relative further down
-            virtual = ReferenceFrame(
-                transformation, ref=self.ref, name="virtual", rot_config=self.rot_config
-            )
+            virtual = ReferenceFrame(transformation, ref=self.ref, name="virtual", rot_config=self.rot_config)
             request = self.getActiveTransformationTo(virtual)
             del virtual
         else:
@@ -937,11 +914,11 @@ class ReferenceFrame(object):
         for frame in visitedFrames:
             for child in frame.referenceFor:
                 # Version 1 : too simple (restores too many frames)
-                #if child not in frame.linkedTo:
+                # if child not in frame.linkedTo:
 
                 # Version 2 : overkill
-                #child_ends, child_visited = child._findEnds(frame=child,visited=[],ends=[],verbose=verbose)
-                #if frame not in child_visited:
+                # child_ends, child_visited = child._findEnds(frame=child,visited=[],ends=[],verbose=verbose)
+                # if frame not in child_visited:
 
                 # Version 3 : just check if the child belongs to the rigid structure...
                 if child not in visitedFrames:
@@ -982,21 +959,18 @@ class ReferenceFrame(object):
         )
 
         for bottom in endFrames:
-
             up = bottom.getActiveTransformationTo(selfUntouched)
             down = selfUntouched.getActiveTransformationTo(bottom)
 
             relativeTransformation = up @ request @ down
 
             if DEBUG:
+                LOGGER.debug(f"\nAdjusting {bottom.name} to {self.name}\nUpdated {[i.name for i in updated]}")
+                LOGGER.debug(f"\ninput transformation \n{np.round(transformation, 3)}")
                 LOGGER.debug(
-                    f"\nAdjusting {bottom.name} to {self.name}\nUpdated {[i.name for i in updated]}"
+                    f"\nup \n{np.round(up, 3)}\ntransformation\n{np.round(request, 3)}\ndown\n{np.round(down, 3)}"
                 )
-                LOGGER.debug(f"\ninput transformation \n{np.round(transformation,3)}")
-                LOGGER.debug(
-                    f"\nup \n{np.round(up,3)}\ntransformation\n{np.round(request,3)}\ndown\n{np.round(down,3)}"
-                )
-                LOGGER.debug(f"\nrelativeTransformation \n{np.round(relativeTransformation,3)}")
+                LOGGER.debug(f"\nrelativeTransformation \n{np.round(relativeTransformation, 3)}")
 
             bottom.transformation = bottom.transformation @ relativeTransformation
 
@@ -1161,11 +1135,7 @@ class ReferenceFrame(object):
         """
         tr = self.transformation
 
-        if (
-            (self.name == self.ref.name)
-            and (tr.shape[0] == tr.shape[1])
-            and np.allclose(tr, np.eye(tr.shape[0]))
-        ):
+        if (self.name == self.ref.name) and (tr.shape[0] == tr.shape[1]) and np.allclose(tr, np.eye(tr.shape[0])):
             return True
         return False
 
@@ -1270,7 +1240,6 @@ class ReferenceFrame(object):
         return hash_number
 
     def __copy__(self):
-
         DEBUG and LOGGER.debug(
             f'Copying {self!r} unless {self.name} is "Master" in which case the Master itself is returned.'
         )

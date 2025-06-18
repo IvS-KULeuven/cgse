@@ -253,9 +253,7 @@ class AlphaControllerInterface:
         raise NotImplementedError
 
     @dynamic_interface
-    def configure_coordinates_systems(
-        self, tx_u, ty_u, tz_u, rx_u, ry_u, rz_u, tx_o, ty_o, tz_o, rx_o, ry_o, rz_o
-    ):
+    def configure_coordinates_systems(self, tx_u, ty_u, tz_u, rx_u, ry_u, rz_u, tx_o, ty_o, tz_o, rx_o, ry_o, rz_o):
         """
         Change the definition of the User Coordinate System and the Object Coordinate System.
 
@@ -729,7 +727,6 @@ class AlphaControllerInterface:
 
 
 class AlphaPlusControllerInterface(AlphaControllerInterface):
-
     @dynamic_interface
     def get_limits_value(self, lim):
         """Three different and independent operational workspace limits are defined on the controller:
@@ -754,16 +751,12 @@ class AlphaPlusControllerInterface(AlphaControllerInterface):
 
     @dynamic_interface
     def get_limits_state(self):
-        """ Return workspace limits enable state
-
-        """
+        """Return workspace limits enable state"""
         raise NotImplementedError
 
     @dynamic_interface
     def get_temperature(self):
-        """ Return the 6xPT100 temperature sensor's value in C
-
-        """
+        """Return the 6xPT100 temperature sensor's value in C"""
         raise NotImplementedError
 
     @dynamic_interface

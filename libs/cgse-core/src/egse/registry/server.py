@@ -3,6 +3,7 @@ Registry Service – core service
 
 
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -52,13 +53,13 @@ class AsyncRegistryServer:
     """
 
     def __init__(
-            self,
-            req_port: int = DEFAULT_RS_REQ_PORT,
-            pub_port: int = DEFAULT_RS_PUB_PORT,
-            hb_port: int = DEFAULT_RS_HB_PORT,
-            backend: AsyncRegistryBackend | None = None,
-            db_path: str = DEFAULT_RS_DB_PATH,
-            cleanup_interval: int = 10
+        self,
+        req_port: int = DEFAULT_RS_REQ_PORT,
+        pub_port: int = DEFAULT_RS_PUB_PORT,
+        hb_port: int = DEFAULT_RS_HB_PORT,
+        backend: AsyncRegistryBackend | None = None,
+        db_path: str = DEFAULT_RS_DB_PATH,
+        cleanup_interval: int = 10,
     ):
         self.req_port = req_port
         self.pub_port = pub_port
@@ -194,7 +195,7 @@ class AsyncRegistryServer:
 
                     # Publish de-registration events for expired services
                     for service_id in expired_ids:
-                        await self._publish_event('expire', {'service_id': service_id})
+                        await self._publish_event("expire", {"service_id": service_id})
                 except Exception as exc:
                     self.logger.error(f"Error in cleanup task: {exc}")
 
@@ -213,10 +214,7 @@ class AsyncRegistryServer:
                     # Wait for a request with timeout to allow checking if still running
                     try:
                         # self.logger.info("Waiting for a request with 1s timeout...")
-                        message_parts = await asyncio.wait_for(
-                            self.req_socket.recv_multipart(),
-                            timeout=1.0
-                        )
+                        message_parts = await asyncio.wait_for(self.req_socket.recv_multipart(), timeout=1.0)
                     except asyncio.TimeoutError:
                         self.logger.debug("waiting for command request...")
                         continue
@@ -246,20 +244,11 @@ class AsyncRegistryServer:
             event_type: Type of event (register, deregister, expire, etc.)
             data: Event payload
         """
-        event = {
-            'type': event_type,
-            'timestamp': int(time.time()),
-            'data': data
-        }
+        event = {"type": event_type, "timestamp": int(time.time()), "data": data}
 
         try:
             # Prefix with event type for subscribers that filter by type
-            await self.pub_socket.send_multipart(
-                [
-                    event_type.encode('utf-8'),
-                    json.dumps(event).encode('utf-8')
-                ]
-            )
+            await self.pub_socket.send_multipart([event_type.encode("utf-8"), json.dumps(event).encode("utf-8")])
             self.logger.debug(f"Published {event_type} event: {data}")
         except Exception as exc:
             self.logger.error(f"Failed to publish event: {exc}")
@@ -278,27 +267,27 @@ class AsyncRegistryServer:
 
         except json.JSONDecodeError as exc:
             self.logger.error(f"Invalid JSON received: {exc}")
-            return {'success': False, 'error': 'Invalid JSON format'}
+            return {"success": False, "error": "Invalid JSON format"}
 
-        action = request.get('action')
+        action = request.get("action")
         if not action:
-            return {'success': False, 'error': 'Missing required field: action'}
+            return {"success": False, "error": "Missing required field: action"}
 
         handlers: dict[str, Callable] = {
-            'register': self._handle_register,
-            'deregister': self._handle_deregister,
-            'renew': self._handle_renew,
-            'info': self._handle_info,
-            'get': self._handle_get,
-            'list': self._handle_list,
-            'discover': self._handle_discover,
-            'health': self._handle_health,
-            'terminate': self._handle_terminate,
+            "register": self._handle_register,
+            "deregister": self._handle_deregister,
+            "renew": self._handle_renew,
+            "info": self._handle_info,
+            "get": self._handle_get,
+            "list": self._handle_list,
+            "discover": self._handle_discover,
+            "health": self._handle_health,
+            "terminate": self._handle_terminate,
         }
 
         handler = handlers.get(action)
         if not handler:
-            return {'success': False, 'error': f'Unknown action: {action}'}
+            return {"success": False, "error": f"Unknown action: {action}"}
 
         return await handler(request)
 
@@ -319,54 +308,45 @@ class AsyncRegistryServer:
         """Handle a service registration request."""
         self.logger.info(f"Handle registration request: {request}")
 
-        if 'service_info' not in request:
-            return {'success': False, 'error': 'Missing required field: service_info'}
+        if "service_info" not in request:
+            return {"success": False, "error": "Missing required field: service_info"}
 
-        service_info = request['service_info']
+        service_info = request["service_info"]
 
         # Validate required fields
-        required_fields = ['name', 'host', 'port']
+        required_fields = ["name", "host", "port"]
         for field in required_fields:
             if field not in service_info:
-                return {'success': False, 'error': f'Missing required field in service_info: {field}'}
+                return {"success": False, "error": f"Missing required field in service_info: {field}"}
 
         # Generate ID if not provided
-        service_id = service_info.get('id')
+        service_id = service_info.get("id")
         if not service_id:
             service_id = f"{service_info['name']}-{uuid.uuid4()}"
-            service_info['id'] = service_id
+            service_info["id"] = service_id
 
         # Get TTL
-        ttl = request.get('ttl', 30)
+        ttl = request.get("ttl", 30)
 
         # Register the service
         success = await self.backend.register(service_id, service_info, ttl)
 
         if success:
             # Publish registration event
-            await self._publish_event(
-                'register', {
-                    'service_id': service_id,
-                    'service_info': service_info
-                }
-            )
+            await self._publish_event("register", {"service_id": service_id, "service_info": service_info})
 
-            return {
-                'success': True,
-                'service_id': service_id,
-                'message': 'Service registered successfully'
-            }
+            return {"success": True, "service_id": service_id, "message": "Service registered successfully"}
 
-        return {'success': False, 'error': 'Failed to register service'}
+        return {"success": False, "error": "Failed to register service"}
 
     async def _handle_deregister(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle a service de-registration request."""
-        service_id = request.get('service_id')
+        service_id = request.get("service_id")
 
         self.logger.info(f"Handle de-registration request: {request}")
 
         if not service_id:
-            return {'success': False, 'error': 'Missing required field: service_id'}
+            return {"success": False, "error": "Missing required field: service_id"}
 
         # Get service details before de-registering (for event)
         service_info = await self.backend.get_service(service_id)
@@ -376,39 +356,28 @@ class AsyncRegistryServer:
 
         if success:
             # Publish de-registration event
-            await self._publish_event(
-                'deregister', {
-                    'service_id': service_id,
-                    'service_info': service_info
-                }
-            )
+            await self._publish_event("deregister", {"service_id": service_id, "service_info": service_info})
 
-            return {
-                'success': True,
-                'message': 'Service deregistered successfully'
-            }
+            return {"success": True, "message": "Service deregistered successfully"}
 
-        return {'success': False, 'error': 'Service not found or could not be deregistered'}
+        return {"success": False, "error": "Service not found or could not be deregistered"}
 
     async def _handle_renew(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle a service heartbeat request."""
-        service_id = request.get('service_id')
+        service_id = request.get("service_id")
 
         self.logger.info(f"Handle renew request: {request}")
 
         if not service_id:
-            return {'success': False, 'error': 'Missing required field: service_id'}
+            return {"success": False, "error": "Missing required field: service_id"}
 
         # Renew the service
         success = await self.backend.renew(service_id)
 
         if success:
-            return {
-                'success': True,
-                'message': 'Service renewed successfully'
-            }
+            return {"success": True, "message": "Service renewed successfully"}
 
-        return {'success': False, 'error': 'Service not found or could not be renewed'}
+        return {"success": False, "error": "Service not found or could not be renewed"}
 
     async def _handle_heartbeats(self):
         """Task that handles heartbeat messages."""
@@ -418,10 +387,7 @@ class AsyncRegistryServer:
             while self._running:
                 try:
                     # Receive heartbeat (non-blocking with timeout)
-                    message_json = await asyncio.wait_for(
-                        self.hb_socket.recv_string(),
-                        timeout=1.0
-                    )
+                    message_json = await asyncio.wait_for(self.hb_socket.recv_string(), timeout=1.0)
 
                     # Parse the request
                     request = json.loads(message_json)
@@ -439,14 +405,7 @@ class AsyncRegistryServer:
                 except Exception as exc:
                     self.logger.error(f"Error handling heartbeat request: {exc}")
                     try:
-                        await self.hb_socket.send_string(
-                            json.dumps(
-                                {
-                                    'success': False,
-                                    'error': str(exc)
-                                }
-                            )
-                        )
+                        await self.hb_socket.send_string(json.dumps({"success": False, "error": str(exc)}))
                     except Exception:
                         pass
 
@@ -456,27 +415,24 @@ class AsyncRegistryServer:
     async def _handle_get(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle a request to get a specific service."""
 
-        service_id = request.get('service_id')
+        service_id = request.get("service_id")
 
         self.logger.info(f"Handle get request: {request}")
 
         if not service_id:
-            return {'success': False, 'error': 'Missing required field: service_id'}
+            return {"success": False, "error": "Missing required field: service_id"}
 
         # Get the service
         service = await self.backend.get_service(service_id)
 
         if service:
-            return {
-                'success': True,
-                'service': service
-            }
+            return {"success": True, "service": service}
 
-        return {'success': False, 'error': 'Service not found'}
+        return {"success": False, "error": "Service not found"}
 
     async def _handle_list(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle a request to list services."""
-        service_type = request.get('service_type')
+        service_type = request.get("service_type")
 
         self.logger.info(f"Handle list request: {request}")
 
@@ -484,29 +440,26 @@ class AsyncRegistryServer:
         services = await self.backend.list_services(service_type)
 
         return {
-            'success': True,
-            'services': services,
+            "success": True,
+            "services": services,
         }
 
     async def _handle_discover(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle a service discovery request."""
-        service_type = request.get('service_type')
+        service_type = request.get("service_type")
 
         self.logger.info(f"Handle discover request for service type: {service_type}")
 
         if not service_type:
-            return {'success': False, 'error': 'Missing required field: service_type'}
+            return {"success": False, "error": "Missing required field: service_type"}
 
         # Discover a service
         service = await self.backend.discover_service(service_type)
 
         if service:
-            return {
-                'success': True,
-                'service': service
-            }
+            return {"success": True, "service": service}
 
-        return {'success': False, 'error': f'No healthy service of type {service_type} found'}
+        return {"success": False, "error": f"No healthy service of type {service_type} found"}
 
     async def _handle_info(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle the info request and send information about the registry server."""
@@ -517,11 +470,11 @@ class AsyncRegistryServer:
         services = await self.backend.list_services()
 
         return {
-            'success': True,
-            'status': 'ok',
-            'req_port': self.req_port,
-            'pub_port': self.pub_port,
-            'services': services,
+            "success": True,
+            "status": "ok",
+            "req_port": self.req_port,
+            "pub_port": self.pub_port,
+            "services": services,
         }
 
     async def _handle_health(self, request: dict[str, Any]) -> dict[str, Any]:
@@ -529,11 +482,7 @@ class AsyncRegistryServer:
 
         self.logger.info(f"Handle health request: {request}")
 
-        return {
-            'success': True,
-            'status': 'ok',
-            'timestamp': int(time.time())
-        }
+        return {"success": True, "status": "ok", "timestamp": int(time.time())}
 
     async def _handle_terminate(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle a termination request."""
@@ -543,20 +492,20 @@ class AsyncRegistryServer:
         self.stop()
 
         return {
-            'success': True,
-            'status': 'terminating',
-            'timestamp': time.time(),
+            "success": True,
+            "status": "terminating",
+            "timestamp": time.time(),
         }
 
 
 @app.command(cls=TyperAsyncCommand)
 async def start(
-        req_port: int = DEFAULT_RS_REQ_PORT,
-        pub_port: int = DEFAULT_RS_PUB_PORT,
-        hb_port: int = DEFAULT_RS_HB_PORT,
-        db_path: str = DEFAULT_RS_DB_PATH,
-        cleanup_interval: int = 10,
-        log_level: str = "WARNING",
+    req_port: int = DEFAULT_RS_REQ_PORT,
+    pub_port: int = DEFAULT_RS_PUB_PORT,
+    hb_port: int = DEFAULT_RS_HB_PORT,
+    db_path: str = DEFAULT_RS_DB_PATH,
+    cleanup_interval: int = 10,
+    log_level: str = "WARNING",
 ):
     """Run the registry server with signal handling."""
 
@@ -564,7 +513,7 @@ async def start(
         level=get_logging_level(log_level),
         format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-12s %(lineno)5d:%(module)-20s %(message)s",
     )
-    logging.getLogger('aiosqlite').setLevel(logging.INFO)
+    logging.getLogger("aiosqlite").setLevel(logging.INFO)
 
     server = AsyncRegistryServer(
         req_port=req_port,
@@ -578,10 +527,7 @@ async def start(
     loop = asyncio.get_running_loop()
 
     for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(
-            sig,
-            lambda: asyncio.create_task(handle_signal(server))
-        )
+        loop.add_signal_handler(sig, lambda: asyncio.create_task(handle_signal(server)))
 
     # Start server
     await server.start()
@@ -595,28 +541,27 @@ async def handle_signal(server):
 
 @app.command(cls=TyperAsyncCommand)
 async def status(
-        req_port: int = DEFAULT_RS_REQ_PORT,
-        pub_port: int = DEFAULT_RS_PUB_PORT,
-        hb_port: int = DEFAULT_RS_HB_PORT,
-        host: str = "localhost"
+    req_port: int = DEFAULT_RS_REQ_PORT,
+    pub_port: int = DEFAULT_RS_PUB_PORT,
+    hb_port: int = DEFAULT_RS_HB_PORT,
+    host: str = "localhost",
 ):
-
     with AsyncRegistryClient(
-            registry_req_endpoint=f"tcp://{host}:{req_port}",
-            registry_sub_endpoint=f"tcp://{host}:{pub_port}",
-            registry_hb_endpoint=f"tcp://{host}:{hb_port}",
-            request_timeout=5000  # 5 second timeout
+        registry_req_endpoint=f"tcp://{host}:{req_port}",
+        registry_sub_endpoint=f"tcp://{host}:{pub_port}",
+        registry_hb_endpoint=f"tcp://{host}:{hb_port}",
+        request_timeout=5000,  # 5 second timeout
     ) as client:
         response = await client.server_status()
 
-    if response['success']:
+    if response["success"]:
         status_report = textwrap.dedent(
             f"""\
             Registry Service:
-                Status: {response['status']}
-                Requests port: {response['req_port']}
-                Notifications port: {response['pub_port']}
-                Registrations: {", ".join([f"({x['name']}, {x['health']})" for x in response['services']])}\
+                Status: {response["status"]}
+                Requests port: {response["req_port"]}
+                Notifications port: {response["pub_port"]}
+                Registrations: {", ".join([f"({x['name']}, {x['health']})" for x in response["services"]])}\
             """
         )
     else:
@@ -627,17 +572,16 @@ async def status(
 
 @app.command(cls=TyperAsyncCommand)
 async def stop(
-        req_port: int = DEFAULT_RS_REQ_PORT,
-        pub_port: int = DEFAULT_RS_PUB_PORT,
-        hb_port: int = DEFAULT_RS_HB_PORT,
-        host: str = "localhost"
+    req_port: int = DEFAULT_RS_REQ_PORT,
+    pub_port: int = DEFAULT_RS_PUB_PORT,
+    hb_port: int = DEFAULT_RS_HB_PORT,
+    host: str = "localhost",
 ):
-
     with AsyncRegistryClient(
-            registry_req_endpoint=f"tcp://{host}:{req_port}",
-            registry_sub_endpoint=f"tcp://{host}:{pub_port}",
-            registry_hb_endpoint=f"tcp://{host}:{hb_port}",
-            request_timeout=5000  # 5 second timeout
+        registry_req_endpoint=f"tcp://{host}:{req_port}",
+        registry_sub_endpoint=f"tcp://{host}:{pub_port}",
+        registry_hb_endpoint=f"tcp://{host}:{hb_port}",
+        request_timeout=5000,  # 5 second timeout
     ) as client:
         response = await client.terminate_registry_server()
 
@@ -646,7 +590,6 @@ async def stop(
 
 
 if __name__ == "__main__":
-
     try:
         rc = app()
     except zmq.ZMQError as exc:

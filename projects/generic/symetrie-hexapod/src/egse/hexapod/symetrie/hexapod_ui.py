@@ -305,7 +305,6 @@ class Positioning(QWidget):
         self.validate_button.setEnabled(True)
 
     def set_position_validation_icon(self, error_codes, tooltip: str = None):
-
         if error_codes:
             self.validate_label.setFocus()
             self.validate_label.invalidate()
@@ -318,9 +317,7 @@ class Positioning(QWidget):
     def get_manual_inputs(self):
         """Returns the input positions as a list of floats."""
         try:
-            pos = [
-                float(mm_pos[1].text().replace(",", ".")) for mm_pos in self.manual_mode_positions
-            ]
+            pos = [float(mm_pos[1].text().replace(",", ".")) for mm_pos in self.manual_mode_positions]
         except ValueError as exc:
             MODULE_LOGGER.error(f"Incorrect manual position input given: {exc}")
 
@@ -337,7 +334,6 @@ class Positioning(QWidget):
         return pos
 
     def handle_move_to_specific_position(self):
-
         # Check which movement was requested
 
         selected_text = self.combo_specific_position.currentText()
@@ -412,7 +408,6 @@ class Positioning(QWidget):
 
 
 class SpeedSettings(QWidget):
-
     def __init__(self, view, observable):
         super().__init__()
         self.observable = observable
@@ -455,7 +450,8 @@ class SpeedSettings(QWidget):
 
         self.user_set_speed = [
             [QLabel("Translation Speed (vt): "), QLineEdit(), QLabel("mm/s")],
-            [QLabel("Rotation Speed (vr): "), QLineEdit(), QLabel("°/s")]]
+            [QLabel("Rotation Speed (vr): "), QLineEdit(), QLabel("°/s")],
+        ]
 
         for speed in self.user_set_speed:
             hbox = QHBoxLayout()
@@ -476,7 +472,6 @@ class SpeedSettings(QWidget):
         return gbox_set_speed
 
     def get_speed_settings_input(self):
-
         tr_speed = float(self.user_set_speed[0][1].text())
         rot_speed = float(self.user_set_speed[1][1].text())
 
@@ -488,7 +483,6 @@ class SpeedSettings(QWidget):
         self.set_speed_widget.repaint()
 
     def handle_apply_speed_settings(self):
-
         # Read out the values in the speed settings group
 
         translation_speed, rotation_speed = self.get_speed_settings_input()
@@ -496,7 +490,6 @@ class SpeedSettings(QWidget):
         self.observable.action_observers({"set_speed": (translation_speed, rotation_speed)})
 
     def handle_fetch_speed_settings(self):
-
         self.observable.action_observers({"fetch_speed": True})
 
 
@@ -674,16 +667,10 @@ class CoordinateSystems(QWidget):
             system, the second list for the object coordinates system.
         """
         try:
-            user_cs = [
-                float(pos[1].text().replace(",", ".")) for pos in self.user_coordinates_system
-            ]
-            object_cs = [
-                float(pos[1].text().replace(",", ".")) for pos in self.object_coordinates_system
-            ]
+            user_cs = [float(pos[1].text().replace(",", ".")) for pos in self.user_coordinates_system]
+            object_cs = [float(pos[1].text().replace(",", ".")) for pos in self.object_coordinates_system]
         except ValueError as exc:
-            MODULE_LOGGER.error(
-                f"Incorrect manual input given for user or object coordinates " f"system: {exc}"
-            )
+            MODULE_LOGGER.error(f"Incorrect manual input given for user or object coordinates system: {exc}")
 
             description = "Input errors for coordinates systems"
             info_text = (
@@ -698,7 +685,6 @@ class CoordinateSystems(QWidget):
         return user_cs, object_cs
 
     def handle_apply_coordinates_systems(self):
-
         # Read out the values in manual mode into an array of floats
         # Users may use comma or point as a decimal delimiter
 
@@ -709,12 +695,12 @@ class CoordinateSystems(QWidget):
         self.observable.action_observers({"configure_coordinates_systems": (user_cs, object_cs)})
 
     def handle_fetch_coordinates_systems(self):
-
         self.observable.action_observers({"fetch_coordinates_systems": True})
 
 
 class ActuatorStates(QWidget):
     """This Widget allows to view the state of all six actuators."""
+
     def __init__(self, labels: List[str] = None):
         super().__init__()
 
@@ -738,7 +724,6 @@ class ActuatorStates(QWidget):
         hbox.addWidget(QLabel(""))
 
         for actuator_index in range(1, 7):
-
             actuator_number = QLabel(str(actuator_index))
             actuator_number.setAlignment(Qt.AlignHCenter)
             actuator_number.setMinimumSize(20, 20)
@@ -751,10 +736,7 @@ class ActuatorStates(QWidget):
         for state in self.status_labels:
             hbox = QHBoxLayout()
             hbox.addWidget(QLabel(state))
-            actuator_leds = [
-                LED(self, size=QSize(20, 20), shape=ShapeEnum.SQUARE)
-                for _ in range(6)
-            ]
+            actuator_leds = [LED(self, size=QSize(20, 20), shape=ShapeEnum.SQUARE) for _ in range(6)]
             for led in actuator_leds:
                 hbox.addWidget(led)
                 hbox.setSpacing(2)
@@ -767,7 +749,6 @@ class ActuatorStates(QWidget):
         return create_states
 
     def set_states(self, states: List):
-
         # States is a List of Lists, each inside list contains a dict with the states and
         # another list with the states.
 
@@ -970,8 +951,7 @@ class HexapodUIController(Observer):
                 self.stop_timer()
         except NotImplementedError:
             MODULE_LOGGER.warning(
-                "There was no connection to the control server during startup, "
-                "GUI starts in disconnected mode."
+                "There was no connection to the control server during startup, GUI starts in disconnected mode."
             )
             self.view.uncheck_cs_action()
             self.view.uncheck_device_action()
@@ -1042,7 +1022,6 @@ class HexapodUIController(Observer):
         self.view.updatePositions(upos, mpos, alen)
 
     def update(self, changed_object):
-
         text = changed_object.text()
 
         if text == "STOP":
@@ -1112,7 +1091,6 @@ class HexapodUIController(Observer):
             self.model.reset()
 
     def do(self, actions):
-
         for action, value in actions.items():
             MODULE_LOGGER.debug(f"do {action} with {value}")
             if action == "move_absolute":
@@ -1182,7 +1160,6 @@ class HexapodUIView(QMainWindow, Observable):
         self.temperature_log = None
 
     def on_click(self, icon: Union[QIcon, bool]):
-
         sender = self.sender()
 
         MODULE_LOGGER.log(0, f"type(sender) = {type(sender)}")
@@ -1196,14 +1173,12 @@ class HexapodUIView(QMainWindow, Observable):
         self.notify_observers(sender)
 
     def create_status_bar(self):
-
         self.statusBar().setStyleSheet("border: 0; background-color: #FFF8DC;")
         self.statusBar().setStyleSheet("QStatusBar::item {border: none;}")
         self.statusBar().addPermanentWidget(VLine())
         self.statusBar().addPermanentWidget(self.mode_label)
 
     def create_toolbar(self):
-
         # The Switch On/OFF is in this case used for the Control ON/OFF action.
 
         self.control = ToggleButton(
@@ -1211,7 +1186,7 @@ class HexapodUIView(QMainWindow, Observable):
             status_tip="enable-disable the control loop on the servo motors",
             selected=get_resource(":/icons/switch-on.svg"),
             not_selected=get_resource(":/icons/switch-off.svg"),
-            disabled=get_resource(":/icons/switch-disabled.svg")
+            disabled=get_resource(":/icons/switch-disabled.svg"),
         )
         self.control.clicked.connect(self.on_click)
 
@@ -1242,7 +1217,7 @@ class HexapodUIView(QMainWindow, Observable):
             status_tip="connect-disconnect hexapod control server.",
             selected=get_resource(":/icons/cs-connected.svg"),
             not_selected=get_resource(":/icons/cs-not-connected.svg"),
-            disabled=get_resource(":/icons/cs-connected-disabled.svg")
+            disabled=get_resource(":/icons/cs-connected-disabled.svg"),
         )
         self.cs_connection.clicked.connect(self.on_click)
 
@@ -1253,10 +1228,9 @@ class HexapodUIView(QMainWindow, Observable):
             status_tip="connect-disconnect the hexapod controller",
             selected=get_resource(":/icons/plugged.svg"),
             not_selected=get_resource(":/icons/unplugged.svg"),
-            disabled=get_resource(":/icons/plugged-disabled.svg")
+            disabled=get_resource(":/icons/plugged-disabled.svg"),
         )
         self.device_connection.clicked.connect(self.on_click)
-
 
         # The STOP button is used to immediately stop the current motion
 
@@ -1292,7 +1266,6 @@ class HexapodUIView(QMainWindow, Observable):
         return self.toolbar
 
     def create_user_position_widget(self):
-
         vbox_labels = QVBoxLayout()
         vbox_values = QVBoxLayout()
         vbox_units = QVBoxLayout()
@@ -1329,14 +1302,11 @@ class HexapodUIView(QMainWindow, Observable):
 
         gbox_positions = QGroupBox("Object [in User]", self)
         gbox_positions.setLayout(hbox)
-        gbox_positions.setToolTip(
-            "The position of the Object Coordinate System in the User Coordinate System."
-        )
+        gbox_positions.setToolTip("The position of the Object Coordinate System in the User Coordinate System.")
 
         return gbox_positions
 
     def create_machine_position_widget(self):
-
         vbox_labels = QVBoxLayout()
         vbox_values = QVBoxLayout()
         vbox_units = QVBoxLayout()
@@ -1373,14 +1343,11 @@ class HexapodUIView(QMainWindow, Observable):
 
         gbox_positions = QGroupBox("Platform [in Machine]", self)
         gbox_positions.setLayout(hbox)
-        gbox_positions.setToolTip(
-            "The position of the Platform Coordinate System in the Machine Coordinate System."
-        )
+        gbox_positions.setToolTip("The position of the Platform Coordinate System in the Machine Coordinate System.")
 
         return gbox_positions
 
     def create_actuator_length_widget(self):
-
         vbox_labels = QVBoxLayout()
         vbox_values = QVBoxLayout()
         vbox_units = QVBoxLayout()
@@ -1421,7 +1388,6 @@ class HexapodUIView(QMainWindow, Observable):
         return gbox_lengths
 
     def create_tabbed_widget(self):
-
         self.tabs = QTabWidget()
         self.tabs.setTabsClosable(False)
         self.tabs.setMovable(False)
@@ -1509,9 +1475,7 @@ class HexapodUIView(QMainWindow, Observable):
             self.clear_errors.disable()
             self.positioning.disable_movement()
         else:
-            raise UnknownStateError(
-                f"Unknown State ({state}), expected 'connected' or 'disconnected'."
-            )
+            raise UnknownStateError(f"Unknown State ({state}), expected 'connected' or 'disconnected'.")
 
     def update_actuator_states(self, states):
         if states is None:

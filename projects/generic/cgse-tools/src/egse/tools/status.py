@@ -26,7 +26,6 @@ class StatusApp(App):
 
 
 def get_log_cs_status():
-
     from egse.logger import send_request
 
     response = send_request("status")
@@ -36,9 +35,9 @@ def get_log_cs_status():
             f"""\
             Log Manager:
                 Status: [green]active[/]
-                Level [grey50](file)[/]: {response.get('file_logger_level')}
-                Level [grey50](stdout)[/]: {response.get('stream_logger_level')}
-                Log file location: {response.get('file_logger_location')}
+                Level [grey50](file)[/]: {response.get("file_logger_level")}
+                Level [grey50](stdout)[/]: {response.get("stream_logger_level")}
+                Log file location: {response.get("file_logger_location")}
             """
         )
     else:
@@ -48,14 +47,14 @@ def get_log_cs_status():
 
 
 def get_cm_cs_status():
-
     from egse.confman import get_status
+
     return Text.from_markup(get_status())
 
 
 def get_sm_cs_status():
-
     from egse.storage import get_status
+
     return Text.from_markup(get_status())
 
 
@@ -75,12 +74,14 @@ def main():
                 installed in the Python environment you are running this tool from.
                 """
             ),
-        flush=True)
+            flush=True,
+        )
         print(exc)
         return
 
     app = StatusApp()
     app.run()
+
 
 if __name__ == "__main__":
     main()

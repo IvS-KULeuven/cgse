@@ -27,7 +27,7 @@ class UserService(ZMQMicroservice):
             service_type="user-service",
             rep_port=rep_port,
             pub_port=pub_port,
-            metadata={"version": "1.0.0"}
+            metadata={"version": "1.0.0"},
         )
 
         self.logger = logging.getLogger(f"{module_logger_name}.user")
@@ -36,7 +36,7 @@ class UserService(ZMQMicroservice):
         self.users = {
             "user1": {"id": "user1", "name": "John Doe", "email": "john@example.com"},
             "user2": {"id": "user2", "name": "Jane Smith", "email": "jane@example.com"},
-            "user3": {"id": "user3", "name": "Bob Johnson", "email": "bob@example.com"}
+            "user3": {"id": "user3", "name": "Bob Johnson", "email": "bob@example.com"},
         }
 
         self.register_handler("get_user", self._handle_get_user)
@@ -55,17 +55,11 @@ class UserService(ZMQMicroservice):
         if not user:
             return {"status": "error", "error": "User not found"}
 
-        return {
-            "status": "ok",
-            "user": user
-        }
+        return {"status": "ok", "user": user}
 
     async def _handle_list_users(self, data: dict[str, Any]) -> dict[str, Any]:
         """Handle list_users command."""
-        return {
-            "status": "ok",
-            "users": list(self.users.values())
-        }
+        return {"status": "ok", "users": list(self.users.values())}
 
     async def _handle_create_user(self, data: dict[str, Any]) -> dict[str, Any]:
         """Handle create_user command."""
@@ -83,11 +77,7 @@ class UserService(ZMQMicroservice):
         user_id = f"user{len(self.users) + 1}"
 
         # Create user
-        user = {
-            "id": user_id,
-            "name": user_data["name"],
-            "email": user_data["email"]
-        }
+        user = {"id": user_id, "name": user_data["name"], "email": user_data["email"]}
 
         # Add to database
         self.users[user_id] = user
@@ -95,10 +85,7 @@ class UserService(ZMQMicroservice):
         # Publish event
         await self.publish_event("user_created", {"user": user})
 
-        return {
-            "status": "ok",
-            "user": user
-        }
+        return {"status": "ok", "user": user}
 
 
 class ProductService(ZMQMicroservice):
@@ -117,7 +104,7 @@ class ProductService(ZMQMicroservice):
             service_type="product-service",
             rep_port=rep_port,
             pub_port=pub_port,
-            metadata={"version": "1.0.0"}
+            metadata={"version": "1.0.0"},
         )
 
         self.logger = logging.getLogger(f"{module_logger_name}.product")
@@ -126,7 +113,7 @@ class ProductService(ZMQMicroservice):
         self.products = {
             "prod1": {"id": "prod1", "name": "Laptop", "price": 999.99, "category": "electronics"},
             "prod2": {"id": "prod2", "name": "Smartphone", "price": 699.99, "category": "electronics"},
-            "prod3": {"id": "prod3", "name": "Headphones", "price": 199.99, "category": "accessories"}
+            "prod3": {"id": "prod3", "name": "Headphones", "price": 199.99, "category": "accessories"},
         }
 
         # Register handlers
@@ -146,10 +133,7 @@ class ProductService(ZMQMicroservice):
         if not product:
             return {"status": "error", "error": "Product not found"}
 
-        return {
-            "status": "ok",
-            "product": product
-        }
+        return {"status": "ok", "product": product}
 
     async def _handle_list_products(self, data: dict[str, Any]) -> dict[str, Any]:
         """Handle list_products command."""
@@ -162,10 +146,7 @@ class ProductService(ZMQMicroservice):
             # Return all products
             products = list(self.products.values())
 
-        return {
-            "status": "ok",
-            "products": products
-        }
+        return {"status": "ok", "products": products}
 
     async def _handle_search_products(self, data: dict[str, Any]) -> dict[str, Any]:
         """Handle search_products command."""
@@ -176,14 +157,10 @@ class ProductService(ZMQMicroservice):
 
         # Simple search implementation
         results = [
-            p for p in self.products.values()
-            if query in p["name"].lower() or query in p.get("category", "").lower()
+            p for p in self.products.values() if query in p["name"].lower() or query in p.get("category", "").lower()
         ]
 
-        return {
-            "status": "ok",
-            "results": results
-        }
+        return {"status": "ok", "results": results}
 
 
 class OrderService(ZMQMicroservice):
@@ -204,7 +181,7 @@ class OrderService(ZMQMicroservice):
             service_type="order-service",
             rep_port=rep_port,
             pub_port=pub_port,
-            metadata={"version": "1.0.0"}
+            metadata={"version": "1.0.0"},
         )
 
         self.logger = logging.getLogger(f"{module_logger_name}.order")
@@ -250,11 +227,12 @@ class OrderService(ZMQMicroservice):
                 try:
                     product_response = await self.call_service(
                         "product-service", "get_product", {"product_id": product_id}
-                        )
+                    )
 
                     if product_response.get("status") != "ok":
                         return {
-                            "status": "error", "error": f"Invalid product {product_id}: {product_response.get('error')}"
+                            "status": "error",
+                            "error": f"Invalid product {product_id}: {product_response.get('error')}",
                         }
 
                     product = product_response.get("product")
@@ -275,7 +253,7 @@ class OrderService(ZMQMicroservice):
                 "products": products,
                 "total_price": total_price,
                 "status": "created",
-                "created_at": time.time()
+                "created_at": time.time(),
             }
 
             # Save the order
@@ -284,10 +262,7 @@ class OrderService(ZMQMicroservice):
             # Publish event
             await self.publish_event("order_created", {"order": order})
 
-            return {
-                "status": "ok",
-                "order": order
-            }
+            return {"status": "ok", "order": order}
         except Exception as exc:
             self.logger.error(f"Error creating order: {exc}")
             return {"status": "error", "error": str(exc)}
@@ -304,10 +279,7 @@ class OrderService(ZMQMicroservice):
         if not order:
             return {"status": "error", "error": "Order not found"}
 
-        return {
-            "status": "ok",
-            "order": order
-        }
+        return {"status": "ok", "order": order}
 
     async def _handle_list_user_orders(self, data: dict[str, Any]) -> dict[str, Any]:
         """Handle list_user_orders command."""
@@ -317,15 +289,9 @@ class OrderService(ZMQMicroservice):
             return {"status": "error", "error": "Missing user_id"}
 
         # Find all orders for the user
-        user_orders = [
-            order for order in self.orders.values()
-            if order.get("user_id") == user_id
-        ]
+        user_orders = [order for order in self.orders.values() if order.get("user_id") == user_id]
 
-        return {
-            "status": "ok",
-            "orders": user_orders
-        }
+        return {"status": "ok", "orders": user_orders}
 
 
 async def run_service(service_class, **kwargs):
@@ -357,30 +323,29 @@ def main():
 
     logging.basicConfig(
         level=logging.DEBUG,
-        format="[%(asctime)s] %(threadName)-12s %(levelname)-8s "
-               "%(name)-21s %(lineno)5d:%(module)-20s %(message)s",
+        format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-21s %(lineno)5d:%(module)-20s %(message)s",
     )
 
-    parser = argparse.ArgumentParser(description='Run a ZeroMQ-based microservice')
-    parser.add_argument('service', choices=['user', 'product', 'order'], help='Service to run')
-    parser.add_argument('--rep-port', type=int, help='REP socket port')
-    parser.add_argument('--pub-port', type=int, help='PUB socket port')
+    parser = argparse.ArgumentParser(description="Run a ZeroMQ-based microservice")
+    parser.add_argument("service", choices=["user", "product", "order"], help="Service to run")
+    parser.add_argument("--rep-port", type=int, help="REP socket port")
+    parser.add_argument("--pub-port", type=int, help="PUB socket port")
 
     args = parser.parse_args()
 
     service_kwargs = {}
     if args.rep_port:
-        service_kwargs['rep_port'] = args.rep_port
+        service_kwargs["rep_port"] = args.rep_port
     if args.pub_port:
-        service_kwargs['pub_port'] = args.pub_port
+        service_kwargs["pub_port"] = args.pub_port
 
-    if args.service == 'user':
+    if args.service == "user":
         asyncio.run(run_service(UserService, **service_kwargs))
-    elif args.service == 'product':
+    elif args.service == "product":
         asyncio.run(run_service(ProductService, **service_kwargs))
-    elif args.service == 'order':
+    elif args.service == "order":
         asyncio.run(run_service(OrderService, **service_kwargs))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

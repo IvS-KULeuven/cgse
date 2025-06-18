@@ -53,16 +53,16 @@ SERVER_STARTUP_TIMEOUT = 5
 
 
 def test_proper_termination_of_tasks_sync(
-        req_port: int = DEFAULT_RS_REQ_PORT,
-        pub_port: int = DEFAULT_RS_PUB_PORT,
-        hb_port: int = DEFAULT_RS_HB_PORT,
-        host: str = "localhost"
+    req_port: int = DEFAULT_RS_REQ_PORT,
+    pub_port: int = DEFAULT_RS_PUB_PORT,
+    hb_port: int = DEFAULT_RS_HB_PORT,
+    host: str = "localhost",
 ):
     client = RegistryClient(
         registry_req_endpoint=f"tcp://{host}:{req_port}",
         registry_sub_endpoint=f"tcp://{host}:{pub_port}",
         registry_hb_endpoint=f"tcp://{host}:{hb_port}",
-        request_timeout=5000  # 5 second timeout
+        request_timeout=5000,  # 5 second timeout
     )
     client.connect()
 
@@ -74,7 +74,7 @@ def test_proper_termination_of_tasks_sync(
         host="localhost",
         port=8080,
         service_type="context-test",
-        metadata={'msg': "Hello, World!"},
+        metadata={"msg": "Hello, World!"},
         ttl=10,
     )
 
@@ -97,17 +97,16 @@ def test_proper_termination_of_tasks_sync(
 
 
 async def test_proper_termination_of_tasks_async(
-        req_port: int = DEFAULT_RS_REQ_PORT,
-        pub_port: int = DEFAULT_RS_PUB_PORT,
-        hb_port: int = DEFAULT_RS_HB_PORT,
-        host: str = "localhost"
+    req_port: int = DEFAULT_RS_REQ_PORT,
+    pub_port: int = DEFAULT_RS_PUB_PORT,
+    hb_port: int = DEFAULT_RS_HB_PORT,
+    host: str = "localhost",
 ):
-
     client = AsyncRegistryClient(
         registry_req_endpoint=f"tcp://{host}:{req_port}",
         registry_sub_endpoint=f"tcp://{host}:{pub_port}",
         registry_hb_endpoint=f"tcp://{host}:{hb_port}",
-        request_timeout=5000  # 5 second timeout
+        request_timeout=5000,  # 5 second timeout
     )
     client.connect()
 
@@ -121,7 +120,7 @@ async def test_proper_termination_of_tasks_async(
         host="localhost",
         port=8080,
         service_type="context-test",
-        metadata={'msg': "Hello, World!"},
+        metadata={"msg": "Hello, World!"},
         ttl=10,
     )
 
@@ -148,14 +147,13 @@ app = typer.Typer()
 
 @app.command()
 def main(
-        req_port: int = DEFAULT_RS_REQ_PORT,
-        pub_port: int = DEFAULT_RS_PUB_PORT,
-        hb_port: int = DEFAULT_RS_HB_PORT,
-        host: str = "localhost",
-        use_asyncio: bool = False,
-        use_test_ports: bool = False,
+    req_port: int = DEFAULT_RS_REQ_PORT,
+    pub_port: int = DEFAULT_RS_PUB_PORT,
+    hb_port: int = DEFAULT_RS_HB_PORT,
+    host: str = "localhost",
+    use_asyncio: bool = False,
+    use_test_ports: bool = False,
 ):
-
     if use_test_ports:
         req_port = TEST_REQ_PORT
         pub_port = TEST_PUB_PORT
@@ -167,12 +165,10 @@ def main(
         test_proper_termination_of_tasks_sync(req_port, pub_port, hb_port, host)
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     logging.basicConfig(
         level=logging.DEBUG,
-        format="[%(asctime)s] %(threadName)-12s %(levelname)-8s "
-               "%(name)-12s %(lineno)5d:%(module)-20s %(message)s",
+        format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-12s %(lineno)5d:%(module)-20s %(message)s",
     )
 
     sys.exit(app())

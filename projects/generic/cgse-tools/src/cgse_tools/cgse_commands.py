@@ -80,7 +80,7 @@ def init(project: str = ""):
     Path(log_file_location).expanduser().mkdir(exist_ok=True, parents=True)
 
     if not Path(local_settings_path).expanduser().exists():
-        with open(Path(local_settings_path).expanduser(), 'w') as fd:
+        with open(Path(local_settings_path).expanduser(), "w") as fd:
             fd.write(
                 textwrap.dedent(
                     f"""\
@@ -92,7 +92,7 @@ def init(project: str = ""):
 
     answer = Confirm.ask("Shall I add the environment to your ~/bash_profile ?")
     if answer:
-        with open(Path("~/.bash_profile").expanduser(), 'a') as fd:
+        with open(Path("~/.bash_profile").expanduser(), "a") as fd:
             fd.write(
                 textwrap.dedent(
                     f"""
@@ -120,7 +120,6 @@ def init(project: str = ""):
                 export {project}_LOCAL_SETTINGS={local_settings_path}
             """
             )
-
         )
 
 
@@ -130,22 +129,18 @@ show = typer.Typer(help="Show information about settings, environment, setup, ..
 @show.command(name="settings")
 def show_settings():
     """Show the settings that are defined by the installed packages."""
-    proc = subprocess.Popen(
-        [sys.executable, "-m", "egse.settings"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
-    )
+    proc = subprocess.Popen([sys.executable, "-m", "egse.settings"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
-    rich.print(stdout.decode(), end='')
+    rich.print(stdout.decode(), end="")
     if stderr:
         rich.print(f"[red]{stderr.decode()}[/]")
 
 
 @show.command(name="env")
 def show_env(
-        mkdir: Annotated[bool, typer.Option(help="Create the missing folder")] = None,
-        full: Annotated[bool, typer.Option(help="Provide additional info")] = None,
-        doc: Annotated[bool, typer.Option(help="Provide documentation on environment variables")] = None,
+    mkdir: Annotated[bool, typer.Option(help="Create the missing folder")] = None,
+    full: Annotated[bool, typer.Option(help="Provide additional info")] = None,
+    doc: Annotated[bool, typer.Option(help="Provide documentation on environment variables")] = None,
 ):
     """Show the environment variables that are defined for the project."""
     options = [opt for opt, flag in [("--mkdir", mkdir), ("--full", full), ("--doc", doc)] if flag]
@@ -153,13 +148,9 @@ def show_env(
     cmd = [sys.executable, "-m", "egse.env"]
     cmd += options if options else []
 
-    proc = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
-    )
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
-    rich.print(stdout.decode(), end='')
+    rich.print(stdout.decode(), end="")
     if stderr:
         rich.print(f"[red]{stderr.decode()}[/]")
 
@@ -229,9 +220,7 @@ def check_setups(verbose: bool = False):
         )
     elif not Path(conf_data_location).exists():
         any_errors += 1
-        error_messages.append(
-            f"[red]The location of the configuration data doesn't exist: {conf_data_location!s}[/]"
-        )
+        error_messages.append(f"[red]The location of the configuration data doesn't exist: {conf_data_location!s}[/]")
 
     if any_errors:
         print_error_messages(error_messages)
@@ -245,9 +234,7 @@ def check_setups(verbose: bool = False):
 
     if not files:
         any_errors += 1
-        error_messages.append(
-            f"[red]No SETUP files were found at {conf_data_location}[/]"
-        )
+        error_messages.append(f"[red]No SETUP files were found at {conf_data_location}[/]")
     else:
         verbose and rich.print(f":arrow_forward: Found {len(files)} Setup files.")
 
@@ -255,9 +242,7 @@ def check_setups(verbose: bool = False):
 
     if not any(True for file in files if regex.search(str(file))):
         any_errors += 1
-        error_messages.append(
-            f"[red]There is no 'Zero' SETUP for {site_id} in {conf_data_location}[/]"
-        )
+        error_messages.append(f"[red]There is no 'Zero' SETUP for {site_id} in {conf_data_location}[/]")
     else:
         verbose and rich.print(f":arrow_forward: Found the 'Zero' Setup file: SETUP_{site_id}_00000_*.yaml")
 
