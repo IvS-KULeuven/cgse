@@ -15,7 +15,7 @@ import textwrap
 import traceback
 from pathlib import Path
 
-if sys.version_info >= (3, 12):    # Use the standard library version (Python 3.10+)
+if sys.version_info >= (3, 12):  # Use the standard library version (Python 3.10+)
     from importlib.metadata import entry_points as lib_entry_points
     from importlib.metadata import EntryPoint
 else:

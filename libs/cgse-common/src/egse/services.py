@@ -223,10 +223,12 @@ class ServiceProxy(Proxy, ServiceInterface):
     """
 
     def __init__(
-            self,
-            service_type: str = None,
-            protocol: str = "tcp", hostname: str = None, port: int = None,
-            timeout: int = REQUEST_TIMEOUT
+        self,
+        service_type: str = None,
+        protocol: str = "tcp",
+        hostname: str = None,
+        port: int = None,
+        timeout: int = REQUEST_TIMEOUT,
     ):
         """
         The Service Proxy class is used to send service commands to the control server.
@@ -254,9 +256,9 @@ class ServiceProxy(Proxy, ServiceInterface):
                 service = reg.discover_service(service_type)
 
                 if service:
-                    protocol = service.get('protocol', 'tcp')
-                    hostname = service['host']
-                    port = service['metadata']['service_port']
+                    protocol = service.get("protocol", "tcp")
+                    hostname = service["host"]
+                    port = service["metadata"]["service_port"]
 
                 else:
                     raise RuntimeError(f"No service registered as {service_type}")

@@ -13,18 +13,16 @@ from egse.zmq_ser import bind_address
 
 class _T:
     """A test class for the get_method() and get_function() functions."""
+
     _a = None
 
-    def _m(self):
-        ...
+    def _m(self): ...
 
     @dynamic_interface
-    def _di(self):
-        ...
+    def _di(self): ...
 
 
 def test_get_method():
-
     assert get_method(_T, "_m") is None  # _m is a function for _T which is a class
     assert get_method(_T(), "") is None
     assert get_method(_T(), "None") is None
@@ -39,7 +37,6 @@ def test_get_method():
 
 
 def test_get_function():
-
     assert get_function(_T, "") is None
     assert get_function(_T, "None") is None
     assert get_function(_T, None) is None
@@ -94,6 +91,7 @@ class ControlServerMock(ControlServer):
 # -
 class _TestCommandProtocol(CommandProtocol):
     """A test class to unit test the CommandProtocol."""
+
     def __init__(self):
         super().__init__(ControlServerMock())
         self._comm = InternalCommunication()
@@ -105,7 +103,7 @@ class _TestCommandProtocol(CommandProtocol):
         return bind_address(self.control_server.get_communication_protocol(), self.control_server.get_commanding_port())
 
     def receive(self) -> Any:
-        """Overwrites the parent class method """
+        """Overwrites the parent class method"""
         response = self._comm.receive()
         return response
 
@@ -114,7 +112,6 @@ class _TestCommandProtocol(CommandProtocol):
 
 
 def test_command_protocol():
-
     tcp = _TestCommandProtocol()
 
     status = tcp.get_status()

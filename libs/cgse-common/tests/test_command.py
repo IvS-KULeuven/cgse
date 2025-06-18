@@ -303,9 +303,7 @@ def test_stringify_function_call():
 
 @pytest.mark.xfail(reason="Known issue on last assert - will fix later")
 def test_load_commands():
-
-    class _TestCommandProtocol(CommandProtocol):
-        ...
+    class _TestCommandProtocol(CommandProtocol): ...
 
     class _TestCommand(Command):
         def __init__(self, name, cmd, response=None, description=None, device_method=None):
@@ -335,7 +333,7 @@ def test_load_commands():
             "set_value": {
                 "description": "Sets the value for the device.",
                 "cmd": "{value}",
-            }
+            },
         }
     )
 
@@ -343,7 +341,7 @@ def test_load_commands():
         protocol_class=_TestCommandProtocol,
         command_settings=command_settings,
         command_class=_TestCommand,
-        device_class=_TestDevice
+        device_class=_TestDevice,
     )
 
     print(f"{commands = }")

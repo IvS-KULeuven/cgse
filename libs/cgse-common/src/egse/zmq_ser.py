@@ -53,7 +53,7 @@ def get_port_number(socket: zmq.Socket) -> int | None:
     """
     endpoint = socket.getsockopt(zmq.LAST_ENDPOINT)
     if endpoint:
-        port = endpoint.decode("utf-8").split(':')[-1]
+        port = endpoint.decode("utf-8").split(":")[-1]
         return int(port)
     else:
         return None
@@ -62,14 +62,14 @@ def get_port_number(socket: zmq.Socket) -> int | None:
 def zmq_string_request(request: str) -> list:
     return [
         b"MESSAGE_TYPE:STRING",
-        request.encode('utf-8'),
+        request.encode("utf-8"),
     ]
 
 
 def zmq_string_response(message: str) -> list:
     return [
         b"MESSAGE_TYPE:STRING",
-        message.encode('utf-8'),
+        message.encode("utf-8"),
     ]
 
 

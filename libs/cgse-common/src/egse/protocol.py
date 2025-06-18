@@ -7,6 +7,7 @@ The protocol also knows how to load the commands from the YAML file that contain
 command definitions.
 
 """
+
 from __future__ import annotations
 
 __all__ = [
@@ -65,8 +66,11 @@ def get_method(parent_obj: object, method_name: str) -> types.MethodType | types
 
     if hasattr(parent_obj, method_name):
         method = getattr(parent_obj, method_name)
-        if (inspect.ismethod(method) or
-                isinstance(method, types.MethodWrapperType) or hasattr(method, "__method_wrapper")):
+        if (
+            inspect.ismethod(method)
+            or isinstance(method, types.MethodWrapperType)
+            or hasattr(method, "__method_wrapper")
+        ):
             return method
         logger.warning(f"{method_name} is not a method, type={type(method)}")
     else:

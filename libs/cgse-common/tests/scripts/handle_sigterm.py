@@ -62,8 +62,8 @@ if __name__ == "__main__":
     try:
         from egse.logger import replace_zmq_handler
     except (ModuleNotFoundError, ImportError):
-        def replace_zmq_handler():
-            ...
+
+        def replace_zmq_handler(): ...
 
     try:
         app()
