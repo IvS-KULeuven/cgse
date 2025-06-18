@@ -11,6 +11,9 @@ import rich
 import typer
 
 from cgse_common import AppState
+from egse.config import find_files
+from egse.env import get_conf_data_location
+from egse.env import get_site_id
 from egse.plugin import entry_points
 from egse.setup import Setup
 from egse.system import format_datetime
@@ -39,7 +42,7 @@ def init(project: str = ""):
     project = project.upper()
     site_id = None
 
-    rich.print("[light_steel_blue]Please note default values are given between \[brackets].[/]")
+    rich.print(r"[light_steel_blue]Please note default values are given between \[brackets].[/]")
 
     answer = Prompt.ask(f"What is the name of the project [{project}] ?")
     if answer:
@@ -165,6 +168,50 @@ def show_processes():
             show_procs = getattr(explore, "show_processes")
             for line in show_procs():
                 rich.print(line)
+
+
+@show.command(name="setup")
+def show_setup(
+    use_cm: Annotated[bool, typer.Option(help="Get the current setup from the configuration manager")] = True,
+    list_all: Annotated[bool, typer.Option(help="Print a list of all available setups")] = False,
+    setup_id: Annotated[int, typer.Option(help="Show the setup with this id")] = -1,
+):
+    if use_cm:
+        try:
+            from egse.confman import ConfigurationManagerProxy
+        except ImportError:
+            rich.print("[dark_orange3]WARNING: package 'cgse-core' is not installed, service not available.[/]")
+            return
+
+        with ConfigurationManagerProxy() as cm:
+            if list_all:
+                rich.print(cm.list_setups())
+            else:
+                rich.print(cm.get_setup())
+        return
+
+    location = get_conf_data_location()
+    site_id = get_site_id()
+
+    if list_all:
+        files = find_files(f"SETUP_{site_id}_*_*.yaml", root=location)
+        files = list(files)
+        if files:
+            location = files[0].parent.resolve()
+        rich.print(sorted([f.name for f in files]))
+        rich.print(f"Loaded from [purple]{location}.")
+    else:
+        if setup_id == -1:
+            setup_files = find_files(f"SETUP_{site_id}_*_*.yaml", root=location)
+        else:
+            setup_files = find_files(f"SETUP_{site_id}_{setup_id:05d}_*.yaml", root=location)
+        setup_files = list(setup_files)
+        if len(setup_files) > 0:
+            setup_file = sorted(setup_files)[-1]
+            setup = Setup.from_yaml_file(setup_file)
+            rich.print(setup)
+        else:
+            rich.print("[red]No setup files were found.[/]")
 
 
 check = typer.Typer(help="Check installation, settings, required files, etc.", no_args_is_help=True)
