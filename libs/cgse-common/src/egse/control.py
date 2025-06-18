@@ -141,7 +141,7 @@ class ControlServer(metaclass=abc.ABCMeta):
         self.service_type = camel_to_kebab(type(self).__name__)
         self.service_name = camel_to_snake(type(self).__name__)
 
-        self.signaling: FileBasedSignaling | None= None
+        self.signaling: FileBasedSignaling | None = None
 
         self.interrupted = False
         self.mon_delay = 1000  # Delay between publish status information [ms]
@@ -183,8 +183,10 @@ class ControlServer(metaclass=abc.ABCMeta):
             self.client = InfluxDBClient3(database=project, host="http://localhost:8181", token=token)
         else:
             self.client = None
-            _LOGGER.warning("INFLUXDB3_AUTH_TOKEN and/or PROJECT environment variable is not set.  Metrics cannot not be "
-                            "propagated to InfluxDB.")
+            _LOGGER.warning(
+                "INFLUXDB3_AUTH_TOKEN and/or PROJECT environment variable is not set. "
+                "Metrics will not be propagated to InfluxDB."
+            )
 
     @abc.abstractmethod
     def get_communication_protocol(self) -> str:
@@ -484,7 +486,7 @@ class ControlServer(metaclass=abc.ABCMeta):
         # We probably want to use a Timer that executes the monitoring and saving actions at
         # dedicated times in the background.
 
-        # FIXME; we shall use the time.perf_counter() here!
+        # FIXME: we shall use the time.perf_counter() here!
 
         last_time = time_in_ms()
         last_time_hk = time_in_ms()
@@ -531,25 +533,24 @@ class ControlServer(metaclass=abc.ABCMeta):
 
             if time_in_ms() - last_time_hk >= self.hk_delay:
                 last_time_hk = time_in_ms()
-                if storage_manager:
-                    # self.logger.debug("Sending housekeeping information to Storage.")
-                    try:
-                        hk_dict = save_average_execution_time(self.device_protocol.get_housekeeping)
+                # if storage_manager:
+                # self.logger.debug("Sending housekeeping information to Storage.")
+                try:
+                    hk_dict = save_average_execution_time(self.device_protocol.get_housekeeping)
 
-                        self.store_housekeeping_information(hk_dict)
-                        self.propagate_metrics(hk_dict)
-                    except Exception as exc:
-                        _LOGGER.error(
-                            textwrap.dedent(
-                                f"""\
-                                An Exception occurred while collecting housekeeping from the device to be stored in \
-                                 {self.get_storage_mnemonic()}.
-                                This might be a temporary problem, still needs to be looked into:
-
-                                {exc}
-                                """
-                            )
+                    self.store_housekeeping_information(hk_dict)
+                    self.propagate_metrics(hk_dict)
+                except Exception as exc:
+                    _LOGGER.error(
+                        textwrap.dedent(
+                            f"""\
+                            An Exception occurred while collecting housekeeping from the device to be stored in {self.get_storage_mnemonic()}.
+                            This might be a temporary problem, still needs to be looked into:
+        
+                            {exc}
+                            """
                         )
+                    )
 
             # Handle scheduled tasks/callback functions
 
@@ -640,7 +641,11 @@ class ControlServer(metaclass=abc.ABCMeta):
         pass
 
     def propagate_metrics(self, hk: dict) -> None:
-        """ Propagates the given housekeeping information to the metrics database.
+        """
+        Propagates the given housekeeping information to the metrics database.
+
+        Nothing will be written to the metrics database if the `hk` dict doesn't
+        contain any metrics (except for the timestamp).
 
         Args:
             hk (dict): Dictionary containing parameter name and value of all device housekeeping. There is also
@@ -648,6 +653,10 @@ class ControlServer(metaclass=abc.ABCMeta):
         """
 
         origin = self.get_storage_mnemonic()
+
+        if not [x for x in hk if x != "timestamp"]:
+            _LOGGER.debug(f"no metrics defined for {origin}")
+            return
 
         try:
             if self.client:

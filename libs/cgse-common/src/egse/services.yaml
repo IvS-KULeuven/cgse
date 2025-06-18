@@ -66,3 +66,8 @@ Commands:
         description:    Get the names of the registered Listener processes.
         device_method:  None
         response:       handle_get_listener_names
+
+    register_to_storage:
+        description:    Register the control server to the storage manager.
+        device_method:  None
+        response:       handle_register_to_storage

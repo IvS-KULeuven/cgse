@@ -92,7 +92,12 @@ class ConfigurationManagerControlServer(ControlServer):
 
     def register_to_storage_manager(self):
         from egse.storage import register_to_storage_manager
+        from egse.storage import is_storage_manager_active
         from egse.storage.persistence import TYPES
+
+        if not is_storage_manager_active():
+            self.logger.warning(f"Storage manager not active, couldn't register as {self.get_storage_mnemonic()}.")
+            return
 
         register_to_storage_manager(
             origin=self.get_storage_mnemonic(),
@@ -232,6 +237,21 @@ def reload_setups():
 
     with ConfigurationManagerProxy() as pm:
         pm.reload_setups()
+
+
+@app.command()
+def register_to_storage():
+
+    with RegistryClient() as reg:
+        service = reg.discover_service(CTRL_SETTINGS.SERVICE_TYPE)
+        # rich.print("service = ", service)
+
+        if service:
+            rich.print("Registering CM to the storage manager")
+            with ServiceProxy(hostname=service["host"], port=service['metadata']['service_port']) as proxy:
+                proxy.register_to_storage()
+        else:
+            rich.print("[red]ERROR: Couldn't connect to 'cm_cs', process probably not running.")
 
 
 def check_prerequisites():
