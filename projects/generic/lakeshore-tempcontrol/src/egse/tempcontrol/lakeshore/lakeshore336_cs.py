@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 def is_lakeshore336_cs_active(device_id: str, timeout: float = 0.5) -> bool:
-    """ Checks if the LakeShore336 Control Server with the given device ID is active.
+    """Checks if the LakeShore336 Control Server with the given device ID is active.
 
     Args
         device_id (str): Device identifier
@@ -39,10 +39,10 @@ def is_lakeshore336_cs_active(device_id: str, timeout: float = 0.5) -> bool:
 
     return is_control_server_active(endpoint, timeout)
 
-class LakeShore336ControlServer(ControlServer):
 
+class LakeShore336ControlServer(ControlServer):
     def __init__(self, device_id: str, simulator: bool = False):
-        """ Initialisation of a LakeShore336 Control Server.
+        """Initialisation of a LakeShore336 Control Server.
 
         Args:
             device_id (str): Device identifier
@@ -62,7 +62,7 @@ class LakeShore336ControlServer(ControlServer):
         self.register_service(service_type=f"{device_id}")
 
     def get_communication_protocol(self) -> str:
-        """ Returns the communication protocol used by the Control Server.
+        """Returns the communication protocol used by the Control Server.
 
         Returns Communication protocol used by the Control Server, as specified in the settings.
         """
@@ -70,7 +70,7 @@ class LakeShore336ControlServer(ControlServer):
         return "tcp"
 
     def get_commanding_port(self):
-        """ Returns the commanding port used by the Control Server.
+        """Returns the commanding port used by the Control Server.
 
         Returns: Commanding port used by the Control Server, as specified in the settings.
         """
@@ -78,7 +78,7 @@ class LakeShore336ControlServer(ControlServer):
         return get_port_number(self.dev_ctrl_cmd_sock) or 0
 
     def get_service_port(self):
-        """ Returns the service port used by the Control Server.
+        """Returns the service port used by the Control Server.
 
         Returns: Service port used by the Control Server, as specified in the settings.
         """
@@ -86,7 +86,7 @@ class LakeShore336ControlServer(ControlServer):
         return get_port_number(self.dev_ctrl_service_sock) or 0
 
     def get_monitoring_port(self) -> int:
-        """ Returns the monitoring port used by the Control Server.
+        """Returns the monitoring port used by the Control Server.
 
         Returns: Monitoring port used by the Control Server, as specified in the settings.
         """
@@ -94,7 +94,7 @@ class LakeShore336ControlServer(ControlServer):
         return get_port_number(self.dev_ctrl_mon_sock) or 0
 
     def get_storage_mnemonic(self) -> str:
-        """ Returns the storage mnemonic used by the Control Server.
+        """Returns the storage mnemonic used by the Control Server.
 
         This is a string that will appear in the filename with the housekeeping information of the device, as a way of
         identifying the device.  If this is not included in the settings, the device identifier is used.
@@ -110,16 +110,17 @@ class LakeShore336ControlServer(ControlServer):
             return self.device_id
 
     def is_storage_manager_active(self):
-        """ Checks whether the Storage Manager is active.
+        """Checks whether the Storage Manager is active.
 
         Returns: True if the Storage Manager is active; False otherwise.
         """
 
         from egse.storage import is_storage_manager_active
+
         return is_storage_manager_active()
 
     def store_housekeeping_information(self, data):
-        """ Stores the given housekeeping information in a dedicated file.
+        """Stores the given housekeeping information in a dedicated file.
 
         Args:
             data (dict): Dictionary containing parameter name and value of all device housekeeping.
@@ -129,7 +130,7 @@ class LakeShore336ControlServer(ControlServer):
         store_housekeeping_information(origin, data)
 
     def register_to_storage_manager(self):
-        """ Registers the Control Server to the Storage Manager."""
+        """Registers the Control Server to the Storage Manager."""
 
         from egse.storage import register_to_storage_manager
         from egse.storage.persistence import TYPES
@@ -140,14 +141,14 @@ class LakeShore336ControlServer(ControlServer):
             prep={
                 "column_names": list(self.device_protocol.get_housekeeping().keys()),
                 "mode": "a",
-            }
+            },
         )
 
     def after_serve(self) -> None:
         self.deregister_service()
 
     def unregister_from_storage_manager(self):
-        """ Unregisters the Control Server from the Storage Manager."""
+        """Unregisters the Control Server from the Storage Manager."""
 
         from egse.storage import unregister_from_storage_manager
 
@@ -156,16 +157,15 @@ class LakeShore336ControlServer(ControlServer):
 
 app = typer.Typer()
 
+
 @app.command()
-def start(device_id: Annotated[
-            str,
-            typer.Argument(help="Device identifier, identifies the hardware controller")
-        ],
-        simulator: Annotated[
-            bool,
-            typer.Option("--simulator", "--sim", help="Start the LakeShore336 Control Server in simulator mode")
-        ] = False):
-    """ Start the LakeShore336 Control Server for the given device ID.
+def start(
+    device_id: Annotated[str, typer.Argument(help="Device identifier, identifies the hardware controller")],
+    simulator: Annotated[
+        bool, typer.Option("--simulator", "--sim", help="Start the LakeShore336 Control Server in simulator mode")
+    ] = False,
+):
+    """Start the LakeShore336 Control Server for the given device ID.
 
     Args:
         device_id (str): Device identifier
@@ -191,7 +191,7 @@ def start(device_id: Annotated[
 
 @app.command()
 def stop(device_id: str):
-    """ Stops the LakeShore336 Control Server for the given device ID.
+    """Stops the LakeShore336 Control Server for the given device ID.
 
     Args:
         device_id (str): Device identifier
@@ -202,13 +202,13 @@ def stop(device_id: str):
         rich.print("service = ", service)
 
         if service:
-            proxy = ServiceProxy(protocol="tcp", hostname=service["host"], port=service['metadata']['service_port'])
+            proxy = ServiceProxy(protocol="tcp", hostname=service["host"], port=service["metadata"]["service_port"])
             proxy.quit_server()
 
 
 @app.command()
 def status(device_id: str):
-    """ Returns the status of the LakeShore336 Control Server for the given device ID.
+    """Returns the status of the LakeShore336 Control Server for the given device ID.
 
     Args:
         device_id (str): Device identifier
@@ -216,13 +216,13 @@ def status(device_id: str):
 
     with RegistryClient() as reg:
         service = reg.discover_service(device_id)
-        
+
         if service:
-            protocol = service.get('protocol', 'tcp')
-            hostname = service['host']
-            port = service['port']
-            service_port = service['metadata']['service_port']
-            monitoring_port = service['metadata']['monitoring_port']
+            protocol = service.get("protocol", "tcp")
+            hostname = service["host"]
+            port = service["port"]
+            service_port = service["metadata"]["service_port"]
+            monitoring_port = service["metadata"]["monitoring_port"]
             endpoint = connect_address(protocol, hostname, port)
 
             if is_control_server_active(endpoint):
@@ -239,7 +239,8 @@ def status(device_id: str):
             else:
                 rich.print(f"LakeShore336 {device_id} CS: [red]inactive")
         else:
-            rich.print(f"[red]The LakeShore336 CS '{device_id}' isn't registered as a service. I cannot contact the control "
-                       f"server without the required info from the service registry.[/]")
+            rich.print(
+                f"[red]The LakeShore336 CS '{device_id}' isn't registered as a service. I cannot contact the control "
+                f"server without the required info from the service registry.[/]"
+            )
             rich.print(f"LakeShore336 {device_id}: [red]inactive")
-

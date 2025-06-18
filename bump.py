@@ -33,17 +33,17 @@ import tomlkit.exceptions
 import typer
 
 
-def bump_version(version, part='patch'):
-    major, minor, patch = map(int, version.split('.'))
+def bump_version(version, part="patch"):
+    major, minor, patch = map(int, version.split("."))
 
-    if part == 'major':
+    if part == "major":
         major += 1
         minor = 0
         patch = 0
-    elif part == 'minor':
+    elif part == "minor":
         minor += 1
         patch = 0
-    elif part == 'patch':
+    elif part == "patch":
         patch += 1
     else:
         raise ValueError("Part must be 'major', 'minor', or 'patch'")
@@ -117,7 +117,6 @@ app = typer.Typer()
 
 @app.command()
 def main(part: str, dry_run: bool = False, verbose: bool = True):
-
     monorepo_root = pathlib.Path(__file__).parent.resolve()
 
     cwd = os.getcwd()

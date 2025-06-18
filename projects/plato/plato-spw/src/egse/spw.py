@@ -1,6 +1,7 @@
 """
 This module defines classes and functions to work with SpaceWire packets.
 """
+
 import logging
 import os
 import struct
@@ -64,6 +65,7 @@ WINDOWING_AREA_END = 0x00FF_FFFC
 
 class RMAPError(Error):
     """An RMAP specific Error."""
+
     pass
 
 
@@ -159,7 +161,8 @@ def create_rmap_read_request_packet(address: int, length: int, tid: int, strict:
 
 
 def create_rmap_read_request_reply_packet(
-        instruction_field: int, tid: int, status: int, buffer: bytes, buffer_length: int) -> bytes:
+    instruction_field: int, tid: int, status: int, buffer: bytes, buffer_length: int
+) -> bytes:
     """
     Creates an RMAP Reply to a RMAP Read Request packet.
 
@@ -223,8 +226,7 @@ def create_rmap_verified_write_packet(address: int, data: bytes, tid: int) -> by
     """
 
     if len(data) < 4:
-        raise ValueError(
-            f"The data argument should be at least 4 bytes, but it is only {len(data)} bytes: {data=}.")
+        raise ValueError(f"The data argument should be at least 4 bytes, but it is only {len(data)} bytes: {data=}.")
 
     if address > CRITICAL_AREA_END:
         raise ValueError("The address range for critical configuration is [0x00 - 0xFC].")
@@ -282,8 +284,7 @@ def create_rmap_unverified_write_packet(address: int, data: bytes, length: int, 
 
     if len(data) < length:
         raise ValueError(
-            f"The length of the data argument ({len(data)}) is smaller than "
-            f"the given length argument ({length})."
+            f"The length of the data argument ({len(data)}) is smaller than the given length argument ({length})."
         )
 
     if len(data) > length:
@@ -371,13 +372,12 @@ def check_address_and_data_length(address: int, length: int, strict: bool = True
 
         MODULE_LOGGER.warning(
             "Address and data length checks have been disabled, because the N-FEE "
-            "does not enforce restrictions in the critical memory area.")
+            "does not enforce restrictions in the critical memory area."
+        )
         return
 
     if length % 4:
-        raise RMAPError(
-            "The requested data length shall be a multiple of 4 bytes.", address, length
-        )
+        raise RMAPError("The requested data length shall be a multiple of 4 bytes.", address, length)
 
     if address % 4:
         raise RMAPError("The address shall be a multiple of 4 bytes.", address, length)
@@ -387,46 +387,44 @@ def check_address_and_data_length(address: int, length: int, strict: bool = True
 
     if CRITICAL_AREA_START <= address <= CRITICAL_AREA_END:
         if length != 4:
-            raise RMAPError(
-                "Read requests to the critical area have a fixed data length of 4 bytes.",
-                address, length
-            )
+            raise RMAPError("Read requests to the critical area have a fixed data length of 4 bytes.", address, length)
     elif GENERAL_AREA_START <= address <= GENERAL_AREA_END:
         if length > 256:
             raise RMAPError(
-                "Read requests to the general area have a maximum data length of 256 bytes.",
-                address, length
+                "Read requests to the general area have a maximum data length of 256 bytes.", address, length
             )
         if address + length > GENERAL_AREA_END + 4:
             raise RMAPError(
                 "The requested data length for the general area is too large. "
                 "The address + length exceeds the general area boundaries.",
-                address, length
+                address,
+                length,
             )
 
     elif HK_AREA_START <= address <= HK_AREA_END:
         if length > 256:
             raise RMAPError(
-                "Read requests to the housekeeping area have a maximum data length of 256 bytes.",
-                address, length
+                "Read requests to the housekeeping area have a maximum data length of 256 bytes.", address, length
             )
         if address + length > HK_AREA_END + 4:
             raise RMAPError(
                 "The requested data length for the housekeeping area is too large. "
                 "The address + length exceeds the housekeeping area boundaries.",
-                address, length
+                address,
+                length,
             )
 
     elif WINDOWING_AREA_START <= address <= WINDOWING_AREA_END:
         if length > 4096:
             raise RMAPError(
-                "Read requests to the windowing area have a maximum data length of 4096 bytes.",
-                address, length
+                "Read requests to the windowing area have a maximum data length of 4096 bytes.", address, length
             )
         if address + length > WINDOWING_AREA_END + 4:
             raise RMAPError(
                 "The requested data length for the windowing area is too large. "
-                "The address + length exceeds the windowing area boundaries.", address, length
+                "The address + length exceeds the windowing area boundaries.",
+                address,
+                length,
             )
 
     else:
@@ -531,6 +529,7 @@ class DataPacketType:
 
     def __str__(self) -> str:
         from egse.fee import n_fee_mode
+
         n_fee_side = GlobalState.setup.camera.fee.ccd_sides.enum
 
         return (
@@ -555,6 +554,7 @@ def to_string(data: Union[DataPacketType]) -> str:
         data: a DataPacketType
     """
     from egse.fee import n_fee_mode
+
     n_fee_side = GlobalState.setup.camera.fee.ccd_sides.enum
 
     if isinstance(data, DataPacketType):
@@ -586,13 +586,14 @@ class DataPacketHeader:
       * frame_counter:
       * sequence_counter: a packet sequence counter per CCD
     """
+
     def __init__(self, header_data: bytes = None):
-        self.header_data = bytearray(
-            header_data or bytes([0x50, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
+        self.header_data = bytearray(header_data or bytes([0x50, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
 
         if len(self.header_data) != 10:
-            raise ValueError(f"The length of the header for a data packet shall be 10 bytes, "
-                             f"got {len(self.header_data)}.")
+            raise ValueError(
+                f"The length of the header for a data packet shall be 10 bytes, got {len(self.header_data)}."
+            )
 
         self.n_fee_side = GlobalState.setup.camera.fee.ccd_sides.enum
 
@@ -618,24 +619,24 @@ class DataPacketHeader:
 
     @property
     def length(self) -> int:
-        return int.from_bytes(self.header_data[2:4], byteorder='big')
+        return int.from_bytes(self.header_data[2:4], byteorder="big")
 
     @length.setter
     def length(self, value: int):
-        self.header_data[2:4] = value.to_bytes(2, 'big')
+        self.header_data[2:4] = value.to_bytes(2, "big")
 
     @property
     def type(self):
-        return int.from_bytes(self.header_data[4:6], byteorder='big')
+        return int.from_bytes(self.header_data[4:6], byteorder="big")
 
     @type.setter
     def type(self, value: Union[int, bytes, DataPacketType]):
         if isinstance(value, bytes):
             self.header_data[4:6] = value
         elif isinstance(value, DataPacketType):
-            self.header_data[4:6] = value.value.to_bytes(2, 'big')
+            self.header_data[4:6] = value.value.to_bytes(2, "big")
         else:
-            self.header_data[4:6] = value.to_bytes(2, 'big')
+            self.header_data[4:6] = value.to_bytes(2, "big")
 
     @property
     def type_as_object(self):
@@ -663,19 +664,19 @@ class DataPacketHeader:
 
     @property
     def frame_counter(self):
-        return int.from_bytes(self.header_data[6:8], byteorder='big')
+        return int.from_bytes(self.header_data[6:8], byteorder="big")
 
     @frame_counter.setter
     def frame_counter(self, value):
-        self.header_data[6:8] = value.to_bytes(2, 'big')
+        self.header_data[6:8] = value.to_bytes(2, "big")
 
     @property
     def sequence_counter(self):
-        return int.from_bytes(self.header_data[8:10], byteorder='big')
+        return int.from_bytes(self.header_data[8:10], byteorder="big")
 
     @sequence_counter.setter
     def sequence_counter(self, value):
-        self.header_data[8:10] = value.to_bytes(2, 'big')
+        self.header_data[8:10] = value.to_bytes(2, "big")
 
     def as_dict(self):
         from egse.fee import n_fee_mode
@@ -790,16 +791,12 @@ class DataPacket(SpaceWirePacket):
             data: a bytes object or a numpy array
         """
         if not self.is_data_packet(data):
-            raise ValueError(
-                f"Can not create a DataPacket from the given data {[f'0x{x:02x}' for x in data]}"
-            )
+            raise ValueError(f"Can not create a DataPacket from the given data {[f'0x{x:02x}' for x in data]}")
 
         super().__init__(data)
 
         if (data[2] == 0x00 and data[3] == 0x00) or len(data) == self.DATA_HEADER_LENGTH:
-            MODULE_LOGGER.warning(
-                f"SpaceWire data packet without data found, packet={[f'0x{x:02x}' for x in data]}"
-            )
+            MODULE_LOGGER.warning(f"SpaceWire data packet without data found, packet={[f'0x{x:02x}' for x in data]}")
 
         self._length = (data[2] << 8) + data[3]
 
@@ -866,18 +863,18 @@ class DataPacket(SpaceWirePacket):
 
             # Needs further confirmation, but the following line should have the same effect as
             # the previous three lines.
-            data_2 = np.frombuffer(self._bytes, offset=10, dtype='>i2') + TWOS_COMPLEMENT_OFFSET
+            data_2 = np.frombuffer(self._bytes, offset=10, dtype=">i2") + TWOS_COMPLEMENT_OFFSET
 
             # Test if the results are identical, left the code in until we are fully confident
             # if diff := np.sum(np.cumsum(data_1 - data_2)):
             #     MODULE_LOGGER.info(f"cumsum={diff}")
 
-            self._data = data_2.astype('uint16')
+            self._data = data_2.astype("uint16")
         return self._data
 
     @property
     def data(self) -> bytes:
-        return self._bytes[10: 10 + self._length]
+        return self._bytes[10 : 10 + self._length]
 
     @property
     def type(self) -> DataPacketType:
@@ -1024,11 +1021,7 @@ class RMAPPacket(SpaceWirePacket):
         super().__init__(data)
 
     def __str__(self):
-        return (
-            f"{self.__class__.__name__}:\n"
-            f"  Logical Address = 0x{self.logical_address:02X}\n"
-            f"  Data = {self.data}\n"
-        )
+        return f"{self.__class__.__name__}:\n  Logical Address = 0x{self.logical_address:02X}\n  Data = {self.data}\n"
 
     @property
     def instruction(self):
@@ -1133,10 +1126,7 @@ class ReadRequest(RMAPPacket):
         return get_data_length(self._bytes)
 
     def __str__(self):
-        return (
-            f"Read Request: tid={self.transaction_id}, address=0x{self.address:04x}, "
-            f"data length={self.data_length}"
-        )
+        return f"Read Request: tid={self.transaction_id}, address=0x{self.address:04x}, data length={self.data_length}"
 
 
 class ReadRequestReply(RMAPPacket):
@@ -1164,8 +1154,10 @@ class ReadRequestReply(RMAPPacket):
 
     def __str__(self):
         data_length = self.data_length
-        return f"Read Request Reply: data length={data_length}, data={self.data[:20]} " \
-               f"{'(data is cut to max 20 bytes)' if data_length > 20 else ''}\n"
+        return (
+            f"Read Request Reply: data length={data_length}, data={self.data[:20]} "
+            f"{'(data is cut to max 20 bytes)' if data_length > 20 else ''}\n"
+        )
 
 
 class SpaceWireInterface:
@@ -1270,6 +1262,7 @@ class SpaceWireInterface:
 
 # General RMAP helper functions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+
 def rmap_crc_check(data, start, length) -> int:
     """Calculate the checksum for the given data."""
     return crc_calc(data, start, length)
@@ -1309,7 +1302,7 @@ def get_data(rxbuf) -> bytes:
 
     offset = 12 if is_read(instruction_field) else 16
 
-    return rxbuf[offset + address_length:offset + address_length + data_length]
+    return rxbuf[offset + address_length : offset + address_length + data_length]
 
 
 def check_data_crc(rxbuf):
@@ -1324,8 +1317,7 @@ def check_data_crc(rxbuf):
     c_crc = rmap_crc_check(rxbuf, idx, data_length) & 0xFF
     if d_crc != c_crc:
         raise CheckError(
-            f"Data CRC doesn't match calculated CRC, d_crc=0x{d_crc:02X} & c_crc=0x{c_crc:02X}",
-            RMAP_GENERAL_ERROR
+            f"Data CRC doesn't match calculated CRC, d_crc=0x{d_crc:02X} & c_crc=0x{c_crc:02X}", RMAP_GENERAL_ERROR
         )
 
 
@@ -1343,8 +1335,7 @@ def check_header_crc(rxbuf):
     c_crc = rmap_crc_check(rxbuf, 0, idx)
     if h_crc != c_crc:
         raise CheckError(
-            f"Header CRC doesn't match calculated CRC, h_crc=0x{h_crc:02X} & c_crc=0x{c_crc:02X}",
-            RMAP_GENERAL_ERROR
+            f"Header CRC doesn't match calculated CRC, h_crc=0x{h_crc:02X} & c_crc=0x{c_crc:02X}", RMAP_GENERAL_ERROR
         )
 
 
@@ -1359,8 +1350,10 @@ def get_data_length(rxbuf) -> int:
     instruction_field = get_instruction_field(rxbuf)
 
     if not is_command(instruction_field) and is_write(instruction_field):
-        raise TypeError("There is no data length field for Write Request Reply packets, "
-                        "asking for the data length is an invalid operation.")
+        raise TypeError(
+            "There is no data length field for Write Request Reply packets, "
+            "asking for the data length is an invalid operation."
+        )
 
     offset = 12 if is_command(instruction_field) else 8
     idx = offset + get_reply_address_field_length(rxbuf)
@@ -1368,7 +1361,7 @@ def get_data_length(rxbuf) -> int:
     # We could use two alternative decoding methods here:
     #   int.from_bytes(rxbuf[idx:idx+3], byteorder='big')    (timeit=1.166s)
     #   struct.unpack('>L', b'\x00' + rxbuf[idx:idx+3])[0]   (timeit=0.670s)
-    data_length = struct.unpack('>L', b'\x00' + rxbuf[idx:idx + 3])[0]
+    data_length = struct.unpack(">L", b"\x00" + rxbuf[idx : idx + 3])[0]
     return data_length
 
 
@@ -1382,13 +1375,12 @@ def get_address(rxbuf) -> int:
     instruction_field = get_instruction_field(rxbuf)
 
     if not is_command(instruction_field):
-        raise TypeError("There is no address field for Reply packets, asking for the address is "
-                        "an invalid operation.")
+        raise TypeError("There is no address field for Reply packets, asking for the address is an invalid operation.")
 
     idx = 7 + get_reply_address_field_length(rxbuf)
     extended_address = rxbuf[idx]
     idx += 1
-    address = struct.unpack('>L', rxbuf[idx:idx + 4])[0]
+    address = struct.unpack(">L", rxbuf[idx : idx + 4])[0]
     if extended_address:
         address = address + (extended_address << 32)
     return address
@@ -1401,11 +1393,12 @@ def get_instruction_field(rxbuf):
 
 def get_transaction_identifier(rxbuf):
     idx = 5 + get_reply_address_field_length(rxbuf)
-    tid = struct.unpack('>h', rxbuf[idx:idx + 2])[0]
+    tid = struct.unpack(">h", rxbuf[idx : idx + 2])[0]
     return tid
 
 
 # Functions to interpret the Instrument Field
+
 
 def is_reserved(instruction):
     """The reserved bit of the 2-bit packet type field from the instruction field.

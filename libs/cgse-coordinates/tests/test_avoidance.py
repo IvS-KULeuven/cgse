@@ -8,7 +8,6 @@ from egse.setup import Setup
 
 
 def test_is_avoidance_with_faulty_arguments():
-
     with pytest.raises(TypeError):
         is_avoidance_ok()
 
@@ -17,13 +16,13 @@ def test_is_avoidance_with_faulty_arguments():
 
 
 def test_is_avoidance_with_master_ref_frames():
-
     print()  # Print a blank line to start fresh with printed output
 
     master_ref_frame = ReferenceFrame.createMaster()
 
-    setup = Setup.from_yaml_string(textwrap.dedent(
-        """
+    setup = Setup.from_yaml_string(
+        textwrap.dedent(
+            """
         camera:
             fpa:
                 avoidance:
@@ -32,7 +31,8 @@ def test_is_avoidance_with_master_ref_frames():
                     vertices_nb: 60
                     vertices_radius: 1.000000E+02
         """
-    ))
+        )
+    )
 
     # So, why would the avoidance check fail here?
     #

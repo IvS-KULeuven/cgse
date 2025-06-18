@@ -26,13 +26,13 @@ class DAQ6510Monitor:
     """
 
     def __init__(
-            self,
-            daq_hostname: str,
-            daq_port: int = 5025,
-            zmq_port: int = 5556,
-            log_file: str = "temperature_readings.log",
-            channels: list[str] = None,
-            poll_interval: float = 60.0
+        self,
+        daq_hostname: str,
+        daq_port: int = 5025,
+        zmq_port: int = 5556,
+        log_file: str = "temperature_readings.log",
+        channels: list[str] = None,
+        poll_interval: float = 60.0,
     ):
         """Initialize the DAQ6510 monitoring service.
 
@@ -68,7 +68,7 @@ class DAQ6510Monitor:
             "GET_STATUS": self._handle_get_status,
             "GET_READING": self._handle_get_reading,
             "GET_LAST_READING": self._handle_get_last_reading,
-            "SHUTDOWN": self._handle_shutdown
+            "SHUTDOWN": self._handle_shutdown,
         }
 
         # Keep a record of the last measurement
@@ -90,11 +90,7 @@ class DAQ6510Monitor:
             asyncio.get_event_loop().add_signal_handler(sig, lambda: asyncio.create_task(self.shutdown()))
 
         # Start the main service tasks
-        await asyncio.gather(
-            self.command_listener(),
-            self.connect_daq(),
-            return_exceptions=True
-        )
+        await asyncio.gather(self.command_listener(), self.connect_daq(), return_exceptions=True)
 
     def done_polling(self, task: Task):
         if task.exception():
@@ -149,7 +145,6 @@ class DAQ6510Monitor:
         g_interval = interval()
 
         while self.running and self.polling_active:
-
             try:
                 if not await self.daq_interface.is_connected():
                     logger.warning("DAQ6510 not connected, skipping temperature reading")
@@ -207,7 +202,7 @@ class DAQ6510Monitor:
 
                 try:
                     # Parse the command and parameters
-                    command_data = json.loads(payload[0].decode('utf-8'))
+                    command_data = json.loads(payload[0].decode("utf-8"))
                     command = command_data.get("command")
                     params = command_data.get("params", {})
 
@@ -226,13 +221,7 @@ class DAQ6510Monitor:
                     response = {"status": "error", "message": str(exc)}
 
                 # Send response
-                await self.socket.send_multipart(
-                    [
-                        identity,
-                        b"",
-                        json.dumps(response).encode('utf-8')
-                    ]
-                )
+                await self.socket.send_multipart([identity, b"", json.dumps(response).encode("utf-8")])
 
             except Exception as exc:
                 logger.exception(f"Error in command listener: {exc}")
@@ -256,78 +245,50 @@ class DAQ6510Monitor:
 
             # But we can add error handling for the task
             polling_task.add_done_callback(
-                lambda t: logger.error(f"Polling loop ended unexpectedly: {t.exception()}")
-                if t.exception() else None
+                lambda t: logger.error(f"Polling loop ended unexpectedly: {t.exception()}") if t.exception() else None
             )
 
             return {
-                    "status": "ok",
-                    "message": f"Polling started with interval {self.poll_interval}s and channels {self.channels}"
-                }
-        else:
-            return {
                 "status": "ok",
-                "message": "Polling already active"
+                "message": f"Polling started with interval {self.poll_interval}s and channels {self.channels}",
             }
+        else:
+            return {"status": "ok", "message": "Polling already active"}
 
     async def _handle_stop_polling(self, params: dict[str, Any]) -> dict[str, Any]:
         """Stop temperature polling."""
         if self.polling_active:
             self.polling_active = False
-            return {
-                "status": "ok",
-                "message": "Polling stopped"
-            }
+            return {"status": "ok", "message": "Polling stopped"}
         else:
-            return {
-                "status": "ok",
-                "message": "Polling already stopped"
-            }
+            return {"status": "ok", "message": "Polling already stopped"}
 
     async def _handle_set_interval(self, params: dict[str, Any]) -> dict[str, Any]:
         """Set polling interval."""
         if "interval" not in params:
-            return {
-                "status": "error",
-                "message": "Missing required parameter: interval"
-            }
+            return {"status": "error", "message": "Missing required parameter: interval"}
 
         try:
             interval = float(params["interval"])
             if interval <= 0:
-                return {
-                    "status": "error",
-                    "message": "Interval must be positive"
-                }
+                return {"status": "error", "message": "Interval must be positive"}
 
             old_interval = self.poll_interval
             self.poll_interval = interval
 
-            return {
-                "status": "ok",
-                "message": f"Polling interval changed from {old_interval}s to {interval}s"
-            }
+            return {"status": "ok", "message": f"Polling interval changed from {old_interval}s to {interval}s"}
         except ValueError:
-            return {
-                "status": "error",
-                "message": "Invalid interval format"
-            }
+            return {"status": "error", "message": "Invalid interval format"}
 
     async def _handle_set_channels(self, params: dict[str, Any]) -> dict[str, Any]:
         """Set channels to monitor."""
         if "channels" not in params or not isinstance(params["channels"], list):
-            return {
-                "status": "error",
-                "message": "Missing or invalid parameter: channels (should be a list)"
-            }
+            return {"status": "error", "message": "Missing or invalid parameter: channels (should be a list)"}
 
         old_channels = self.channels.copy()
         self.channels = params["channels"]
 
-        return {
-            "status": "ok",
-            "message": f"Monitoring channels changed from {old_channels} to {self.channels}"
-        }
+        return {"status": "ok", "message": f"Monitoring channels changed from {old_channels} to {self.channels}"}
 
     async def _handle_get_last_reading(self, params: dict[str, Any]):
         return self._last_reading
@@ -336,19 +297,16 @@ class DAQ6510Monitor:
         """Get a reading for the given channel(s)."""
         logger.info(f"GET_READING – {params = }")
 
-        readings = {
-            'status': "ok",
-            'data': {}
-        }
+        readings = {"status": "ok", "data": {}}
 
-        for channel in params['channels']:
+        for channel in params["channels"]:
             try:
                 temp = await self.daq_interface.get_measurement(channel)
-                readings['data'][channel] = temp
+                readings["data"][channel] = temp
             except (DeviceConnectionError, DeviceTimeoutError, ValueError, RuntimeError) as exc:
                 logger.error(f"Error reading channel {channel}: {exc}")
-                readings['data'][channel] = None
-                readings.update({'status': "error", "message": f"Error reading channel {channel}"})
+                readings["data"][channel] = None
+                readings.update({"status": "error", "message": f"Error reading channel {channel}"})
 
         return readings
 
@@ -370,8 +328,8 @@ class DAQ6510Monitor:
                 "channels": self.channels,
                 "daq_connected": connected,
                 "daq_hostname": self.daq_hostname,
-                "daq_port": self.daq_port
-            }
+                "daq_port": self.daq_port,
+            },
         }
 
     async def _handle_shutdown(self, params: dict[str, Any]) -> dict[str, Any]:
@@ -379,10 +337,7 @@ class DAQ6510Monitor:
         # Schedule shutdown after sending response
         _ = asyncio.create_task(self.shutdown())
 
-        return {
-            "status": "ok",
-            "message": "Service shutting down"
-        }
+        return {"status": "ok", "message": "Service shutting down"}
 
     async def shutdown(self):
         """Gracefully shut down the service."""
@@ -463,9 +418,9 @@ class DAQMonitorClient:
         message = {"command": command, "params": params}
 
         try:
-            self.socket.send_multipart([b"", json.dumps(message).encode('utf-8')])
+            self.socket.send_multipart([b"", json.dumps(message).encode("utf-8")])
             _, response_data = self.socket.recv_multipart()
-            return json.loads(response_data.decode('utf-8'))
+            return json.loads(response_data.decode("utf-8"))
         except zmq.ZMQError as exc:
             return {"status": "error", "message": f"ZMQ error: {exc}"}
         except Exception as exc:
@@ -547,26 +502,23 @@ class DAQMonitorClient:
         return self._send_command("SHUTDOWN")
 
 
-
 async def main():
-
     monitor = DAQ6510Monitor(
         daq_hostname="192.168.68.77",
         daq_port=5025,
         zmq_port=5556,
         log_file="temperature_readings.log",
         channels=["101", "102"],
-        poll_interval=10.0
+        poll_interval=10.0,
     )
 
     await monitor.start()
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     logging.basicConfig(
         level=logging.DEBUG,
-        format="[%(asctime)s] %(threadName)-12s %(levelname)-8s "
-               "%(name)-12s %(lineno)5d:%(module)-20s %(message)s",
+        format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-12s %(lineno)5d:%(module)-20s %(message)s",
     )
 
     asyncio.run(main())

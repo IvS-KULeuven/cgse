@@ -3,6 +3,7 @@ This module defines the device classes to be used to connect to and control the 
 Symétrie.
 
 """
+
 import logging
 import math
 import time
@@ -30,9 +31,7 @@ class JoranInterface(AlphaPlusControllerInterface):
 
 
 class JoranController(JoranInterface, DynamicCommandMixin):
-
     def __init__(self):
-
         self.hostname = {JORAN_SETTINGS.IP}
         self.port = {JORAN_SETTINGS.PORT}
         self.transport = self.hexapod = AlphaPlusTelnetInterface(self.hostname, self.port)
@@ -100,8 +99,8 @@ class JoranSimulator(JoranInterface):
 
     This class simulates all the movements and status of the Hexapod.
     """
-    def __init__(self):
 
+    def __init__(self):
         super().__init__()
 
         # Keep a record if the homing() command has been executed.
@@ -161,10 +160,10 @@ class JoranProxy(DynamicProxy, JoranInterface):
     Hexapod JORAN remotely."""
 
     def __init__(
-            self,
-            protocol=CTRL_SETTINGS.PROTOCOL,
-            hostname=CTRL_SETTINGS.HOSTNAME,
-            port=CTRL_SETTINGS.COMMANDING_PORT,
+        self,
+        protocol=CTRL_SETTINGS.PROTOCOL,
+        hostname=CTRL_SETTINGS.HOSTNAME,
+        port=CTRL_SETTINGS.COMMANDING_PORT,
     ):
         """
         Args:
@@ -178,14 +177,12 @@ class JoranProxy(DynamicProxy, JoranInterface):
 
 
 if __name__ == "__main__":
-
     from rich import print as rp
 
     joran = JoranController()
     joran.connect()
 
     with Timer("JoranController"):
-
         rp(joran.info())
         rp(joran.is_homing_done())
         rp(joran.is_in_position())
@@ -205,9 +202,9 @@ if __name__ == "__main__":
         time.sleep(0.5)  # if we do not sleep, the get_speed() will get the old values
         speed = joran.get_speed()
 
-        if not math.isclose(speed['vt'], 2.0):
+        if not math.isclose(speed["vt"], 2.0):
             rp(f"[red]{speed['vt']} != 2.0[/red]")
-        if not math.isclose(speed['vr'], 1.0):
+        if not math.isclose(speed["vr"], 1.0):
             rp(f"[red]{speed['vr']} != 1.0[/red]")
 
         rp(joran.get_actuator_length())
@@ -216,15 +213,41 @@ if __name__ == "__main__":
         # rp(joran.machine_limit_enable(1))
         # rp(joran.get_limits_state())
         rp(joran.get_coordinates_systems())
-        rp(joran.configure_coordinates_systems(
-            0.033000, -0.238000, 230.205000, 0.003282, 0.005671, 0.013930,
-            0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000))
+        rp(
+            joran.configure_coordinates_systems(
+                0.033000,
+                -0.238000,
+                230.205000,
+                0.003282,
+                0.005671,
+                0.013930,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+            )
+        )
         rp(joran.get_coordinates_systems())
         rp(joran.get_machine_positions())
         rp(joran.get_user_positions())
-        rp(joran.configure_coordinates_systems(
-            0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-            0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000))
+        rp(
+            joran.configure_coordinates_systems(
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+            )
+        )
         rp(joran.validate_position(1, 0, 0, 0, 0, 0, 0, 0))
         rp(joran.validate_position(1, 0, 0, 0, 50, 0, 0, 0))
 

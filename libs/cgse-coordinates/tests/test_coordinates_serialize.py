@@ -8,13 +8,10 @@ from egse.coordinates.referenceFrame import ReferenceFrame
 
 
 def test_serialization_of_numpy_arrays():
-
     assert serialize_array([1, 2, 3]) == "[1, 2, 3]"
     assert serialize_array(np.array([1, 2, 3])) == "[1, 2, 3]"
     assert serialize_array([[1], [2], [3]]) == "[[1], [2], [3]]"
-    assert serialize_array([[1, 2.3, 4], [5, 6.2, 7]]) == (
-        "[[1.0000, 2.3000, 4.0000], [5.0000, 6.2000, 7.0000]]"
-    )
+    assert serialize_array([[1, 2.3, 4], [5, 6.2, 7]]) == ("[[1.0000, 2.3000, 4.0000], [5.0000, 6.2000, 7.0000]]")
 
 
 def test_deserialization_of_numpy_array():
@@ -27,14 +24,10 @@ def test_serialization_of_reference_model():
 
     master = ReferenceFrame.createMaster()
 
-    a_ref = ReferenceFrame(
-        transformation=np.identity(4), ref=master, name="a_ref", rot_config=rot_config
-    )
+    a_ref = ReferenceFrame(transformation=np.identity(4), ref=master, name="a_ref", rot_config=rot_config)
     a_ref.addLink(master)
 
-    b_ref = ReferenceFrame(
-        transformation=np.identity(4), ref=a_ref, name="b_ref", rot_config=rot_config
-    )
+    b_ref = ReferenceFrame(transformation=np.identity(4), ref=a_ref, name="b_ref", rot_config=rot_config)
 
     c_ref = ReferenceFrame.fromTranslationRotation(
         [-2, -2, -2], [-3, -4, -5], rot_config=rot_config, ref=b_ref, name="c_ref"

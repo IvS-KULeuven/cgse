@@ -35,9 +35,7 @@ from egse.system import is_in_ipython
 
 CTRL_SETTINGS = Settings.load("Logging Control Server")
 
-LOG_FORMAT_FULL = (
-    "%(asctime)23s:%(processName)20s:%(levelname)8s:%(name)-25s:%(lineno)5d:%(filename)-20s:%(message)s"
-)
+LOG_FORMAT_FULL = "%(asctime)23s:%(processName)20s:%(levelname)8s:%(name)-25s:%(lineno)5d:%(filename)-20s:%(message)s"
 
 LOGGER_ID = "LOGGER"
 """The logger id that is also used as service_tpe for service discovery."""
@@ -61,7 +59,6 @@ def get_log_file_name():
 
 class ZeroMQHandler(logging.Handler):
     def __init__(self, uri=None, socket_type=zmq.PUSH, ctx=None):
-
         super().__init__()
         # logging.Handler.__init__(self)
 
@@ -70,9 +67,9 @@ class ZeroMQHandler(logging.Handler):
                 with RegistryClient(request_timeout=500) as reg:
                     # We cannot use `get_endpoint` here, because we need a different port
                     service = reg.discover_service(LOGGER_ID)
-                    endpoint = (f"{service.get('protocol', 'tcp')}://"
-                                f"{service['host']}:"
-                                f"{service['metadata']['receiver_port']}")
+                    endpoint = (
+                        f"{service.get('protocol', 'tcp')}://{service['host']}:{service['metadata']['receiver_port']}"
+                    )
             except Exception:  # noqa
                 logger.warning(f"Couldn't retrieve endpoint for {LOGGER_ID}. Is the log_cs process running?")
             else:
@@ -144,7 +141,7 @@ def print_all_handlers():
 
     print("\nAll loggers with handlers:")
     for name, logger in logging.Logger.manager.loggerDict.items():
-        if hasattr(logger, 'handlers') and logger.handlers:
+        if hasattr(logger, "handlers") and logger.handlers:
             print(f"  {name}: {[type(h).__name__ for h in logger.handlers]}")
 
     print("\n" + "=" * 80)

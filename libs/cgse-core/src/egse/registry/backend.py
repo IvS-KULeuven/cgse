@@ -470,7 +470,7 @@ class AsyncInMemoryBackend:
                 service_data["tags"] = []
 
             # Always add service_type to tags (used for discovery) and to metadata
-            service_type = service_data.get('type')
+            service_type = service_data.get("type")
             if service_type:
                 if service_type not in service_data["tags"]:
                     service_data["tags"].append(service_type)
@@ -612,6 +612,7 @@ class AsyncInMemoryBackend:
             # In practice, there will be only one service of a given type, but if you
             # need to get your hands on all services of that type, use `list_services()`.
             import random
+
             return random.choice(healthy_services)
 
         return None

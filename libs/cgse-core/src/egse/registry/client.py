@@ -28,13 +28,14 @@ class RegistryClient:
     """
     Synchronous client for the service registry.
     """
+
     def __init__(
         self,
         registry_req_endpoint: str = None,
         registry_sub_endpoint: str = None,
         registry_hb_endpoint: str = None,
         request_timeout: int = REQUEST_TIMEOUT,
-        client_id: str = "registry-client"
+        client_id: str = "registry-client",
     ):
         """
         Initialize the async registry client.
@@ -136,10 +137,9 @@ class RegistryClient:
             self.req_socket.send_multipart([msg_type.value, json.dumps(request).encode()])
 
             if msg_type == MessageType.REQUEST_NO_REPLY:
-                return {'success': True}
+                return {"success": True}
 
             if self.poller.poll(timeout=self.request_timeout):
-
                 message_parts = self.req_socket.recv_multipart()
 
                 if len(message_parts) >= 2:
@@ -152,24 +152,24 @@ class RegistryClient:
                         return response
                     else:
                         return {
-                            'success': False,
-                            'error': f'unexpected MessageType received: {message_type.name}, {message_data = }'
+                            "success": False,
+                            "error": f"unexpected MessageType received: {message_type.name}, {message_data = }",
                         }
                 else:
                     return {
-                        'success': False,
-                        'error': f'not enough parts received: {len(message_parts)}',
-                        'data': message_parts,
+                        "success": False,
+                        "error": f"not enough parts received: {len(message_parts)}",
+                        "data": message_parts,
                     }
             else:
                 self.logger.error(f"Request timed out after {self.request_timeout / 1000:.2f}s")
-                return {'success': False, 'error': 'Request timed out'}
+                return {"success": False, "error": "Request timed out"}
         except zmq.ZMQError as exc:
             self.logger.error(f"ZMQ error: {exc}", exc_info=True)
-            return {'success': False, 'error': str(exc)}
+            return {"success": False, "error": str(exc)}
         except Exception as exc:
             self.logger.error(f"Error sending request: {exc}", exc_info=True)
-            return {'success': False, 'error': str(exc)}
+            return {"success": False, "error": str(exc)}
 
     def _send_heartbeat(self, request: dict[str, Any]) -> dict[str, Any]:
         """
@@ -198,25 +198,24 @@ class RegistryClient:
                 self._disconnect_hb_socket()
                 time.sleep(1.0)
                 self._connect_hb_socket()
-                return {'success': False, 'error': 'Request timed out'}
+                return {"success": False, "error": "Request timed out"}
 
         except zmq.ZMQError as exc:
             self.logger.error(f"ZMQ error: {exc}", exc_info=True)
-            return {'success': False, 'error': str(exc)}
+            return {"success": False, "error": str(exc)}
         except Exception as exc:
             self.logger.error(f"Error sending request: {exc}", exc_info=True)
-            return {'success': False, 'error': str(exc)}
+            return {"success": False, "error": str(exc)}
 
     def register(
-            self,
-            name: str,
-            host: str,
-            port: int,
-            service_type: str | None = None,
-            metadata: dict[str, Any] | None
-            = None,
-            ttl: int = 30
-            ) -> str | None:
+        self,
+        name: str,
+        host: str,
+        port: int,
+        service_type: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        ttl: int = 30,
+    ) -> str | None:
         """
         Register this service with the registry.
 
@@ -232,37 +231,29 @@ class RegistryClient:
             The service ID if successful, None otherwise
         """
         # Prepare service info
-        service_info = {
-            'name': name,
-            'host': host,
-            'port': port
-        }
+        service_info = {"name": name, "host": host, "port": port}
 
         # Add optional fields
         if service_type:
-            service_info['type'] = service_type
+            service_info["type"] = service_type
 
         if metadata:
-            service_info['metadata'] = metadata
+            service_info["metadata"] = metadata
 
         # Prepare tags for easier discovery
         tags = []
         if service_type:
             tags.append(service_type)
-        service_info['tags'] = tags
+        service_info["tags"] = tags
 
         # Send registration request
-        request = {
-            'action': 'register',
-            'service_info': service_info,
-            'ttl': ttl
-        }
+        request = {"action": "register", "service_info": service_info, "ttl": ttl}
 
         response = self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
-        if response.get('success'):
+        if response.get("success"):
             # Store service information for later use
-            self._service_id = response.get('service_id')
+            self._service_id = response.get("service_id")
             self._service_info = service_info
             self._ttl = ttl
 
@@ -286,14 +277,11 @@ class RegistryClient:
             self.logger.warning("Cannot deregister: no service is registered")
             return False
 
-        request = {
-            'action': 'deregister',
-            'service_id': service_id
-        }
+        request = {"action": "deregister", "service_id": service_id}
 
         response = self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
-        if response.get('success'):
+        if response.get("success"):
             self.logger.info(f"Service deregistered: {service_id}")
             self._service_id = None
             self._service_info = None
@@ -324,17 +312,14 @@ class RegistryClient:
         if use_cache:
             self.logger.info("Cache not yet implemented.")
 
-        request = {
-            'action': 'discover',
-            'service_type': service_type
-        }
+        request = {"action": "discover", "service_type": service_type}
 
         response = self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
         # self.logger.debug(f"{response = }")
 
-        if response.get('success'):
-            service = response.get('service')
+        if response.get("success"):
+            service = response.get("service")
             return service
         else:
             self.logger.warning(f"Service discovery failed: {response.get('error')}")
@@ -352,15 +337,12 @@ class RegistryClient:
             Service information if found, None otherwise.
         """
 
-        request = {
-            'action': 'get',
-            'service_id': service_id
-        }
+        request = {"action": "get", "service_id": service_id}
 
         response = self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
-        if response.get('success'):
-            service = response.get('service')
+        if response.get("success"):
+            service = response.get("service")
             return service
         else:
             self.logger.warning(f"Get service failed: {response.get('error')}")
@@ -376,15 +358,12 @@ class RegistryClient:
         Returns:
             List of service information.
         """
-        request = {
-            'action': 'list',
-            'service_type': service_type
-        }
+        request = {"action": "list", "service_type": service_type}
 
         response = self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
-        if response.get('success'):
-            services = response.get('services', [])
+        if response.get("success"):
+            services = response.get("services", [])
             return services
         else:
             self.logger.warning(f"List services failed: {response.get('error')}")
@@ -395,9 +374,9 @@ class RegistryClient:
         service = self.discover_service(service_type)
 
         if service:
-            protocol = service.get('protocol', 'tcp')
-            hostname = service['host']
-            port = service['port']
+            protocol = service.get("protocol", "tcp")
+            hostname = service["host"]
+            port = service["port"]
 
             return f"{protocol}://{hostname}:{port}"
         else:
@@ -410,35 +389,30 @@ class RegistryClient:
         Returns:
             True if healthy, False otherwise
         """
-        request = {
-            'action': 'health'
-        }
+        request = {"action": "health"}
 
         response = self._send_request(MessageType.REQUEST_WITH_REPLY, request)
-        return response.get('success', False)
+        return response.get("success", False)
 
     def terminate_registry_server(self) -> bool:
         """
         Send a terminate request to the service registry server. Returns True when successful.
         """
-        request = {
-            'action': 'terminate'
-        }
+        request = {"action": "terminate"}
         response = self._send_request(MessageType.REQUEST_WITH_REPLY, request)
-        return response.get('success', False)
+        return response.get("success", False)
 
     def server_status(self) -> dict[str, Any]:
         """
         Requests the status information from the service registry.
         """
         request = {
-            'action': 'info',
+            "action": "info",
         }
         response = self._send_request(MessageType.REQUEST_WITH_REPLY, request)
         return response
 
     def start_heartbeat(self, interval: int | None = None) -> None:
-
         if not self._service_id:
             self.logger.warning("Cannot start heartbeat: no service is registered")
             return None
@@ -449,14 +423,11 @@ class RegistryClient:
 
         def send_heartbeat():
             try:
-                request = {
-                    'action': 'renew',
-                    'service_id': self._service_id
-                }
+                request = {"action": "renew", "service_id": self._service_id}
 
                 response = self._send_heartbeat(request)
 
-                if not response.get('success'):
+                if not response.get("success"):
                     self.logger.warning(f"Heartbeat failed: {response.get('error')}")
 
                     # Do a health check
@@ -475,10 +446,10 @@ class RegistryClient:
             target=do_every,
             args=(interval, send_heartbeat),
             kwargs={
-                'stop_event': self._hb_stop_event,
-                'setup_func': self._connect_hb_socket,
-                'teardown_func': self._disconnect_hb_socket
-            }
+                "stop_event": self._hb_stop_event,
+                "setup_func": self._connect_hb_socket,
+                "teardown_func": self._disconnect_hb_socket,
+            },
         )
         self._hb_thread.daemon = True
         self._hb_thread.start()
@@ -491,13 +462,13 @@ class RegistryClient:
     def close(self) -> None:
         """Clean up resources."""
         try:
-            if hasattr(self, 'req_socket') and self.req_socket:
+            if hasattr(self, "req_socket") and self.req_socket:
                 self.req_socket.close()
 
-            if hasattr(self, 'sub_socket') and self.sub_socket:
+            if hasattr(self, "sub_socket") and self.sub_socket:
                 self.sub_socket.close()
 
-            if hasattr(self, 'context') and self.context:
+            if hasattr(self, "context") and self.context:
                 self.context.term()
         except Exception as exc:
             self.logger.error(f"Error during cleanup: {exc}")
@@ -511,12 +482,12 @@ class AsyncRegistryClient:
     """
 
     def __init__(
-            self,
-            registry_req_endpoint: str = None,
-            registry_sub_endpoint: str = None,
-            registry_hb_endpoint: str = None,
-            request_timeout: int = REQUEST_TIMEOUT,
-            client_id: str = "registry-client"
+        self,
+        registry_req_endpoint: str = None,
+        registry_sub_endpoint: str = None,
+        registry_hb_endpoint: str = None,
+        request_timeout: int = REQUEST_TIMEOUT,
+        client_id: str = "registry-client",
     ):
         """
         Initialize the async registry client.
@@ -612,7 +583,7 @@ class AsyncRegistryClient:
         return self._service_cache_lock
 
     async def _send_request(
-            self, msg_type: MessageType, request: dict[str, Any], timeout: int = None
+        self, msg_type: MessageType, request: dict[str, Any], timeout: int = None
     ) -> dict[str, Any]:
         """
         Send a request to the registry and get the response.
@@ -632,9 +603,7 @@ class AsyncRegistryClient:
             await self.req_socket.send_multipart([msg_type.value, json.dumps(request).encode()])
 
             try:
-                message_parts = await asyncio.wait_for(
-                    self.req_socket.recv_multipart(), timeout=timeout
-                )
+                message_parts = await asyncio.wait_for(self.req_socket.recv_multipart(), timeout=timeout)
 
                 if len(message_parts) >= 2:
                     message_type = MessageType(message_parts[0])
@@ -646,24 +615,24 @@ class AsyncRegistryClient:
                         return response
                     else:
                         return {
-                            'success': False,
-                            'error': f'unexpected MessageType received: {message_type.name}, {message_data = }'
+                            "success": False,
+                            "error": f"unexpected MessageType received: {message_type.name}, {message_data = }",
                         }
                 else:
                     return {
-                        'success': False,
-                        'error': f'not enough parts received: {len(message_parts)}',
-                        'data': message_parts,
+                        "success": False,
+                        "error": f"not enough parts received: {len(message_parts)}",
+                        "data": message_parts,
                     }
             except asyncio.TimeoutError:
                 self.logger.error(f"Request timed out after {timeout:.2f}s")
-                return {'success': False, 'error': 'Request timed out'}
+                return {"success": False, "error": "Request timed out"}
         except zmq.ZMQError as exc:
             self.logger.error(f"ZMQ error: {exc}", exc_info=True)
-            return {'success': False, 'error': str(exc)}
+            return {"success": False, "error": str(exc)}
         except Exception as exc:
             self.logger.error(f"Error sending request: {exc}", exc_info=True)
-            return {'success': False, 'error': str(exc)}
+            return {"success": False, "error": str(exc)}
 
     async def _send_heartbeat(self, request: dict[str, Any], timeout: int = None) -> dict[str, Any]:
         """
@@ -695,24 +664,23 @@ class AsyncRegistryClient:
                 self.hb_socket.close()
                 self.hb_socket = self.context.socket(zmq.REQ)
                 self.hb_socket.connect(self.registry_req_endpoint)
-                return {'success': False, 'error': 'Heartbeat request timed out'}
+                return {"success": False, "error": "Heartbeat request timed out"}
         except zmq.ZMQError as exc:
             self.logger.error(f"ZMQ error: {exc}", exc_info=True)
-            return {'success': False, 'error': str(exc)}
+            return {"success": False, "error": str(exc)}
         except Exception as exc:
             self.logger.error(f"Error sending heartbeat request: {exc}", exc_info=True)
-            return {'success': False, 'error': str(exc)}
+            return {"success": False, "error": str(exc)}
 
     async def register(
-            self,
-            name: str,
-            host: str,
-            port: int,
-            service_type: str | None = None,
-            metadata: dict[str, Any] | None
-            = None,
-            ttl: int = 30
-            ) -> str | None:
+        self,
+        name: str,
+        host: str,
+        port: int,
+        service_type: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        ttl: int = 30,
+    ) -> str | None:
         """
         Register this service with the registry.
 
@@ -728,37 +696,29 @@ class AsyncRegistryClient:
             The service ID if successful, None otherwise
         """
         # Prepare service info
-        service_info = {
-            'name': name,
-            'host': host,
-            'port': port
-        }
+        service_info = {"name": name, "host": host, "port": port}
 
         # Add optional fields
         if service_type:
-            service_info['type'] = service_type
+            service_info["type"] = service_type
 
         if metadata:
-            service_info['metadata'] = metadata
+            service_info["metadata"] = metadata
 
         # Prepare tags for easier discovery
         tags = []
         if service_type:
             tags.append(service_type)
-        service_info['tags'] = tags
+        service_info["tags"] = tags
 
         # Send registration request
-        request = {
-            'action': 'register',
-            'service_info': service_info,
-            'ttl': ttl
-        }
+        request = {"action": "register", "service_info": service_info, "ttl": ttl}
 
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
-        if response.get('success'):
+        if response.get("success"):
             # Store service information for later use
-            self._service_id = response.get('service_id')
+            self._service_id = response.get("service_id")
             self._service_info = service_info
             self._ttl = ttl
 
@@ -789,14 +749,11 @@ class AsyncRegistryClient:
             self.logger.warning("Cannot deregister: no service is registered")
             return False
 
-        request = {
-            'action': 'deregister',
-            'service_id': service_id
-        }
+        request = {"action": "deregister", "service_id": service_id}
 
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
-        if response.get('success'):
+        if response.get("success"):
             self.logger.info(f"Service deregistered: {service_id}")
             self._service_id = None
             self._service_info = None
@@ -833,14 +790,11 @@ class AsyncRegistryClient:
             try:
                 while self._running and self._service_id:
                     try:
-                        request = {
-                            'action': 'renew',
-                            'service_id': self._service_id
-                        }
+                        request = {"action": "renew", "service_id": self._service_id}
 
                         response = await self._send_heartbeat(request)
 
-                        if not response.get('success'):
+                        if not response.get("success"):
                             self.logger.warning(f"Heartbeat failed: {response.get('error')}")
                         else:
                             self.logger.info(response.get("message"))
@@ -940,17 +894,14 @@ class AsyncRegistryClient:
                     try:
                         # Use a timeout to allow for clean shutdown
                         try:
-                            message = await asyncio.wait_for(
-                                self.sub_socket.recv_multipart(),
-                                timeout=1.0
-                            )
+                            message = await asyncio.wait_for(self.sub_socket.recv_multipart(), timeout=1.0)
                         except asyncio.TimeoutError:
                             continue
 
                         # Parse the message
                         event_type_bytes, event_json_bytes = message
-                        event_type = event_type_bytes.decode('utf-8')
-                        event = json.loads(event_json_bytes.decode('utf-8'))
+                        event_type = event_type_bytes.decode("utf-8")
+                        event = json.loads(event_json_bytes.decode("utf-8"))
 
                         self.logger.debug(f"Received event: {event_type}")
 
@@ -963,9 +914,9 @@ class AsyncRegistryClient:
                             try:
                                 # Check if handler is a coroutine function
                                 if asyncio.iscoroutinefunction(handler):
-                                    await handler(event['data'])
+                                    await handler(event["data"])
                                 else:
-                                    handler(event['data'])
+                                    handler(event["data"])
                             except Exception as exc:
                                 self.logger.error(f"Error in event handler: {exc}")
                     except zmq.ZMQError as exc:
@@ -993,17 +944,17 @@ class AsyncRegistryClient:
             event: Event data
         """
         async with self._get_service_cache_lock():
-            data = event.get('data', {})
-            service_id = data.get('service_id')
+            data = event.get("data", {})
+            service_id = data.get("service_id")
 
             if not service_id:
                 return
 
-            if event_type == 'register':
-                service_info = data.get('service_info', {})
+            if event_type == "register":
+                service_info = data.get("service_info", {})
                 if service_info:
                     self._service_cache[service_id] = service_info
-            elif event_type in ('deregister', 'expire'):
+            elif event_type in ("deregister", "expire"):
                 if service_id in self._service_cache:
                     del self._service_cache[service_id]
 
@@ -1030,32 +981,29 @@ class AsyncRegistryClient:
                 # Find services of the specified type
                 matching_services = []
                 for service_id, service_info in self._service_cache.items():
-                    if (service_info.get('type') == service_type or
-                            service_type in service_info.get('tags', [])):
+                    if service_info.get("type") == service_type or service_type in service_info.get("tags", []):
                         matching_services.append(service_info)
 
                 if matching_services:
                     # Simple load balancing - random selection
                     import random
+
                     return random.choice(matching_services)
 
         # If not found in cache or cache disabled, ask the registry
-        request = {
-            'action': 'discover',
-            'service_type': service_type
-        }
+        request = {"action": "discover", "service_type": service_type}
 
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
         self.logger.debug(f"{response = }")
 
-        if response.get('success'):
-            service = response.get('service')
+        if response.get("success"):
+            service = response.get("service")
 
             # Update cache
-            if service and 'id' in service:
+            if service and "id" in service:
                 async with self._get_service_cache_lock():
-                    self._service_cache[service['id']] = service
+                    self._service_cache[service["id"]] = service
 
             return service
         else:
@@ -1080,15 +1028,12 @@ class AsyncRegistryClient:
                     return self._service_cache[service_id]
 
         # If not found in cache or cache disabled, ask the registry
-        request = {
-            'action': 'get',
-            'service_id': service_id
-        }
+        request = {"action": "get", "service_id": service_id}
 
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
-        if response.get('success'):
-            service = response.get('service')
+        if response.get("success"):
+            service = response.get("service")
 
             # Update cache
             if service:
@@ -1110,21 +1055,18 @@ class AsyncRegistryClient:
         Returns:
             List of service information
         """
-        request = {
-            'action': 'list',
-            'service_type': service_type
-        }
+        request = {"action": "list", "service_type": service_type}
 
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
-        if response.get('success'):
-            services = response.get('services', [])
+        if response.get("success"):
+            services = response.get("services", [])
 
             # Update cache
             async with self._get_service_cache_lock():
                 for service in services:
-                    if 'id' in service:
-                        self._service_cache[service['id']] = service
+                    if "id" in service:
+                        self._service_cache[service["id"]] = service
 
             return services
         else:
@@ -1136,9 +1078,9 @@ class AsyncRegistryClient:
         service = await self.discover_service(service_type)
 
         if service:
-            protocol = service.get('protocol', 'tcp')
-            hostname = service['host']
-            port = service['port']
+            protocol = service.get("protocol", "tcp")
+            hostname = service["host"]
+            port = service["port"]
 
             return f"{protocol}://{hostname}:{port}"
         else:
@@ -1151,29 +1093,25 @@ class AsyncRegistryClient:
         Returns:
             True if healthy, False otherwise
         """
-        request = {
-            'action': 'health'
-        }
+        request = {"action": "health"}
 
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
-        return response.get('success', False)
+        return response.get("success", False)
 
     async def terminate_registry_server(self) -> bool:
         """
         Send a terminate request to the service registry server. Returns True when successful.
         """
-        request = {
-            'action': 'terminate'
-        }
+        request = {"action": "terminate"}
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
-        return response.get('success', False)
+        return response.get("success", False)
 
     async def server_status(self) -> dict[str, Any]:
         """
         Requests the status information from the service registry.
         """
         request = {
-            'action': 'info',
+            "action": "info",
         }
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request, timeout=500)
         return response
@@ -1183,15 +1121,15 @@ class AsyncRegistryClient:
         await self.stop_heartbeat()  # This stops all tasks
 
         try:
-            if hasattr(self, 'req_socket') and self.req_socket:
+            if hasattr(self, "req_socket") and self.req_socket:
                 self.req_socket.close()
 
-            if hasattr(self, 'sub_socket') and self.sub_socket:
+            if hasattr(self, "sub_socket") and self.sub_socket:
                 self.sub_socket.close()
 
             # We can not terminate the context, because we use a global instance, i.e. a singleton context.
             # When we try to terminate it, even after checking if it was closed,
-            if hasattr(self, 'context') and self.context:
+            if hasattr(self, "context") and self.context:
                 self.logger.info(f"{self.context = !r}")
                 self.logger.info(f"{self.context._sockets = !r}")
                 if not self.context.closed:

@@ -13,6 +13,7 @@ The application is completely written in Python/Qt5 and can therefore run on any
 platform that supports Python and Qt5.
 
 """
+
 import argparse
 import logging
 import multiprocessing
@@ -110,17 +111,11 @@ STATUS_LEDS_ALPHA_PLUS = [
     ["Emergency Stop", Indic.RED],  # bit 14
 ]
 
-STATUS_LEDS = {
-    DCT.ALPHA: STATUS_LEDS_ALPHA,
-    DCT.ALPHA_PLUS: STATUS_LEDS_ALPHA_PLUS
-}
+STATUS_LEDS = {DCT.ALPHA: STATUS_LEDS_ALPHA, DCT.ALPHA_PLUS: STATUS_LEDS_ALPHA_PLUS}
 
 # The index of the Control LED
 
-CONTROL_ONOFF = {
-    DCT.ALPHA: 3,
-    DCT.ALPHA_PLUS: 2
-}
+CONTROL_ONOFF = {DCT.ALPHA: 3, DCT.ALPHA_PLUS: 2}
 
 ACTUATOR_STATE_LABELS_ALPHA = [
     "In position",
@@ -156,10 +151,7 @@ ACTUATOR_STATE_LABELS_ALPHA_PLUS = [
     "Encoder error: ",
 ]
 
-ACTUATOR_STATE_LABELS = {
-    DCT.ALPHA: ACTUATOR_STATE_LABELS_ALPHA,
-    DCT.ALPHA_PLUS: ACTUATOR_STATE_LABELS_ALPHA_PLUS
-}
+ACTUATOR_STATE_LABELS = {DCT.ALPHA: ACTUATOR_STATE_LABELS_ALPHA, DCT.ALPHA_PLUS: ACTUATOR_STATE_LABELS_ALPHA_PLUS}
 
 
 class PunaUIView(HexapodUIView):
@@ -179,7 +171,6 @@ class PunaUIView(HexapodUIView):
         self.init_gui()
 
     def init_gui(self):
-
         # The main frame in which all the other frames are located, the outer Application frame
 
         app_frame = QFrame()
@@ -251,14 +242,11 @@ class PunaUIView(HexapodUIView):
         if message:
             self.statusBar().showMessage(message, msecs=timeout)
         if mode:
-            self.mode_label.setStyleSheet(
-                f"border: 0; " f"color: {'red' if 'Simulator' in mode else 'black'};"
-            )
+            self.mode_label.setStyleSheet(f"border: 0; color: {'red' if 'Simulator' in mode else 'black'};")
             self.mode_label.setText(f"mode: {mode}")
         self.statusBar().repaint()
 
     def updatePositions(self, userPositions, machinePositions, actuatorLengths):
-
         if userPositions is None:
             MODULE_LOGGER.warning("no userPositions passed into updatePositions(), returning.")
             return
@@ -284,7 +272,6 @@ class PunaUIView(HexapodUIView):
             alen[1].setText(f"{actuatorLengths[idx]:10.4f}")
 
     def updateStates(self, states):
-
         if states is None:
             return
 
@@ -292,13 +279,11 @@ class PunaUIView(HexapodUIView):
         self.states.set_states(states)
 
     def updateControlButton(self, flag):
-
         self.control.set_selected(on=flag)
 
 
 class PunaUIModel(HexapodUIModel):
     def __init__(self, connection_type):
-
         hostname, port, dev_id, dev_name, _ = get_hexapod_controller_pars()
         if connection_type == "proxy":
             device = ProxyFactory().create(dev_name, device_id=dev_id)
@@ -308,9 +293,7 @@ class PunaUIModel(HexapodUIModel):
         elif connection_type == "simulator":
             device = PunaSimulator()
         else:
-            raise ValueError(
-                f"Unknown type of Hexapod implementation passed into the model: {connection_type}"
-            )
+            raise ValueError(f"Unknown type of Hexapod implementation passed into the model: {connection_type}")
 
         super().__init__(connection_type, device)
 
@@ -336,7 +319,6 @@ class PunaUIController(HexapodUIController):
         super().__init__(model, view)
 
     def update_values(self):
-
         super().update_values()
 
         # Add here any updates to PUNA specific widgets
@@ -376,7 +358,6 @@ def main():
     app.setWindowIcon(QIcon(str(app_logo)))
 
     if lock_file.tryLock(100):
-
         process_status = ProcessStatus()
 
         timer_thread = threading.Thread(target=do_every, args=(10, process_status.update))
@@ -422,7 +403,6 @@ def main():
 
 
 if __name__ == "__main__":
-
     logging.basicConfig(level=logging.DEBUG, format=Settings.LOG_FORMAT_FULL)
 
     sys.exit(main())

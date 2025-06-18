@@ -41,9 +41,9 @@ def plot_reference_frame(frame, master=None, figname=None, **kwargs):
         tmpmaster = master.__copy__()
 
     f0 = frame.getOrigin()
-    fx = frame.getAxis('x', name='fx')
-    fy = frame.getAxis('y', name='fy')
-    fz = frame.getAxis('z', name='fz')
+    fx = frame.getAxis("x", name="fx")
+    fy = frame.getAxis("y", name="fy")
+    fz = frame.getAxis("z", name="fz")
     f0m = f0.expressIn(tmpmaster)[:3]
     fxm = fx.expressIn(tmpmaster)[:3]
     fym = fy.expressIn(tmpmaster)[:3]
@@ -59,16 +59,16 @@ def plot_reference_frame(frame, master=None, figname=None, **kwargs):
     vecxy, vecyy, veczy = np.array([fxm[1] - f0m[1]]), np.array([fym[1] - f0m[1]]), np.array([fzm[1] - f0m[1]])
     vecxz, vecyz, veczz = np.array([fxm[2] - f0m[2]]), np.array([fym[2] - f0m[2]]), np.array([fzm[2] - f0m[2]])
 
-    kwargs.setdefault('length', 1)
-    kwargs.setdefault('normalize', True)
-    #kwargs.setdefault('figsize', (10,10))
+    kwargs.setdefault("length", 1)
+    kwargs.setdefault("normalize", True)
+    # kwargs.setdefault('figsize', (10,10))
 
     fig = plt.figure(figname, figsize=plt.figaspect(1.0))
-    ax = fig.add_subplot(projection='3d')
-    ax.quiver(x, y, z, vecxx, vecxy, vecxz, color='r', **kwargs)
-    ax.quiver(x, y, z, vecyx, vecyy, vecyz, color='g', **kwargs)
-    ax.quiver(x, y, z, veczx, veczy, veczz, color='b', **kwargs)
-    #ax.axis('equal')
+    ax = fig.add_subplot(projection="3d")
+    ax.quiver(x, y, z, vecxx, vecxy, vecxz, color="r", **kwargs)
+    ax.quiver(x, y, z, vecyx, vecyy, vecyz, color="g", **kwargs)
+    ax.quiver(x, y, z, veczx, veczy, veczz, color="b", **kwargs)
+    # ax.axis('equal')
 
     return ax
 
@@ -108,12 +108,12 @@ def plot_points(points, master=None, figname=None, **kwargs):
     ys = coordinates[1, :]
     zs = coordinates[2, :]
     #
-    kwargs.setdefault('s', 50)
-    kwargs.setdefault('marker', 'o')
-    kwargs.setdefault('color', 'k')
+    kwargs.setdefault("s", 50)
+    kwargs.setdefault("marker", "o")
+    kwargs.setdefault("color", "k")
     #
     fig = plt.figure(figname)
-    ax = fig.add_subplot(projection='3d')
+    ax = fig.add_subplot(projection="3d")
     ax.scatter(xs, ys, zs, **kwargs)
 
     return ax
@@ -155,7 +155,7 @@ def plot_vectors(points, master=None, figname=None, fromorigin=True, **kwargs):
     #
 
     # SET DEFAULTS
-    kwargs.setdefault('color', 'k')
+    kwargs.setdefault("color", "k")
     #
 
     # PREPARE VECTOR COORDINATES
@@ -175,19 +175,17 @@ def plot_vectors(points, master=None, figname=None, fromorigin=True, **kwargs):
     # PLOT
 
     fig = plt.figure(figname)
-    ax = fig.gca(projection='3d')
+    ax = fig.gca(projection="3d")
 
     if fromorigin:
-
-        ax.quiver(x, y, z, xs-x, ys-y, zs-z, **kwargs)
+        ax.quiver(x, y, z, xs - x, ys - y, zs - z, **kwargs)
 
     elif not fromorigin:
-
-        ax.quiver(xs, ys, zs, x-xs, y-ys, z-zs, **kwargs)
+        ax.quiver(xs, ys, zs, x - xs, y - ys, z - zs, **kwargs)
 
     else:
         print("Parameter 'fromorigin' must be True or False")
         print("Setting it to True by default")
-        ax.quiver(x, y, z, xs-x, ys-y, zs-z, **kwargs)
+        ax.quiver(x, y, z, xs - x, ys - y, zs - z, **kwargs)
 
     return ax

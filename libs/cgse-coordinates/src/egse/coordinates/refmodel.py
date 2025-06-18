@@ -30,6 +30,7 @@ Functionality:
         * ...
 
 """
+
 import logging
 from typing import Dict
 from typing import List
@@ -114,9 +115,7 @@ class ReferenceFrameModel:
         result = f"Nb of frames: {len(self)}\n"
 
         for ref in self:
-            result += (
-                f"{ref.name:>10}[{ref.ref.name}]" f"  ---  {[link.name for link in ref.linkedTo]}\n"
-            )
+            result += f"{ref.name:>10}[{ref.ref.name}]  ---  {[link.name for link in ref.linkedTo]}\n"
         return result
 
     @staticmethod
@@ -147,7 +146,6 @@ class ReferenceFrameModel:
         return ref_model_to_dict(self._model)
 
     def add_master_frame(self):
-
         # TODO: First check if there is not already a Master frame in the model
 
         self._model["Master"] = ReferenceFrame.createMaster()
@@ -185,7 +183,10 @@ class ReferenceFrameModel:
 
         if transformation is not None:
             self._model[name] = ReferenceFrame(
-                transformation, ref=ref, name=name, rot_config=self._rot_config,
+                transformation,
+                ref=ref,
+                name=name,
+                rot_config=self._rot_config,
             )
         else:
             self._model[name] = ReferenceFrame.fromTranslationRotation(
@@ -208,7 +209,6 @@ class ReferenceFrameModel:
         """
 
         if name in self._model:
-
             frame: ReferenceFrame = self._model[name]
 
             # We need to get the links out in a list because the frame.removeLink() method deletes
@@ -220,9 +220,7 @@ class ReferenceFrameModel:
 
             del self._model[name]
         else:
-            LOGGER.warning(
-                f"You tried to remove a non-existing reference frame '{name}' from the model."
-            )
+            LOGGER.warning(f"You tried to remove a non-existing reference frame '{name}' from the model.")
 
     def get_frame(self, name: str) -> ReferenceFrame:
         """
@@ -301,9 +299,7 @@ class ReferenceFrameModel:
             preserveLinks=True,
         )
 
-    def move_absolute_in_other(
-        self, frame: str, other: str, translation, rotation, degrees=_DEGREES_DEFAULT
-    ):
+    def move_absolute_in_other(self, frame: str, other: str, translation, rotation, degrees=_DEGREES_DEFAULT):
         """
         Apply an absolute movement to the ReferenceFrame "frame", such that it occupies
         a given absolute position with respect to "other" after the movement.
@@ -324,9 +320,7 @@ class ReferenceFrameModel:
 
         transformation = other.getActiveTransformationTo(frame)
 
-        moving_in_other = ReferenceFrame(
-            transformation, rot_config=self._rot_config, ref=other, name="moving_in_other"
-        )
+        moving_in_other = ReferenceFrame(transformation, rot_config=self._rot_config, ref=other, name="moving_in_other")
 
         moving_in_other.addLink(frame)
 
@@ -364,9 +358,7 @@ class ReferenceFrameModel:
             preserveLinks=True,
         )
 
-    def move_relative_other(
-        self, frame: str, other: str, translation, rotation, degrees=_DEGREES_DEFAULT
-    ):
+    def move_relative_other(self, frame: str, other: str, translation, rotation, degrees=_DEGREES_DEFAULT):
         """
         Apply a relative movement to the ReferenceFrame "frame". The movement is expressed wrt
         the axes of another frame, "other".
@@ -389,9 +381,7 @@ class ReferenceFrameModel:
 
         transformation = frame.getActiveTransformationTo(other)
 
-        moving_in_other = ReferenceFrame(
-            transformation, rot_config=self._rot_config, ref=other, name="moving_in_other"
-        )
+        moving_in_other = ReferenceFrame(transformation, rot_config=self._rot_config, ref=other, name="moving_in_other")
 
         moving_in_other.addLink(frame)
 
@@ -408,9 +398,7 @@ class ReferenceFrameModel:
 
         del moving_in_other  # not need as local scope
 
-    def move_relative_other_local(
-        self, frame: str, other: str, translation, rotation, degrees=_DEGREES_DEFAULT
-    ):
+    def move_relative_other_local(self, frame: str, other: str, translation, rotation, degrees=_DEGREES_DEFAULT):
         """
         Apply a relative movement to the ReferenceFrame "frame".
 
@@ -448,9 +436,7 @@ class ReferenceFrameModel:
         # Requested rotation matrix (already expressed wrt frame_ref)
 
         zeros = [0, 0, 0]
-        rotation_ = t3add.translationRotationToTransformation(
-            zeros, rotation, rot_config=self._rot_config
-        )
+        rotation_ = t3add.translationRotationToTransformation(zeros, rotation, rot_config=self._rot_config)
 
         # All translations and rotations are applied to frame_moving
         # ==> a. need for "derotation" before applying the translation
@@ -468,7 +454,6 @@ class ReferenceFrameModel:
 
 
 def plot_ref_model(model: ReferenceFrameModel):
-
     # figsize is in inch, 6 inch = 15.24 cm, 5 inch = 12.7 cm
 
     fig = plt.figure(figsize=(6, 5), dpi=100)
@@ -490,7 +475,6 @@ def plot_ref_model(model: ReferenceFrameModel):
 
 
 def plot_ref_model_3d(model: ReferenceFrameModel):
-
     fig = plt.figure(figsize=(8, 8), dpi=100)
     ax = Axes3D(fig)
     # ax.set_box_aspect([1, 1, 1])
@@ -558,7 +542,6 @@ def set_axes_equal(ax: plt.Axes):
 
 
 def draw_frame_3d(ax: Axes3D, frame: ReferenceFrame, DEFAULT_AXIS_LENGTH=100, **kwargs):
-
     master = frame.find_master()
 
     f0 = frame.getOrigin()
@@ -603,7 +586,6 @@ def draw_frame_3d(ax: Axes3D, frame: ReferenceFrame, DEFAULT_AXIS_LENGTH=100, **
 
 
 def draw_frame(ax, frame: ReferenceFrame, plane="xz", DEFAULT_AXIS_LENGTH=100):
-
     fig = ax.get_figure()
 
     # FC : Figure coordinates (pixels)
@@ -689,12 +671,13 @@ def print_vectors(rf1, rf2, model):
     Prints the translation and rotation vectors from rf1 to rf2
     """
     trans, rot = model.get_frame(rf1).getActiveTranslationRotationVectorsTo(model.get_frame(rf2))
-    print(f"{rf1:8s} -> {rf2:8s} : Trans [{trans[0]:11.4e}, {trans[1]:11.4e}, {trans[2]:11.4e}]    Rot [{rot[0]:11.4e}, {rot[1]:11.4e}, {rot[2]:11.4e}]")
+    print(
+        f"{rf1:8s} -> {rf2:8s} : Trans [{trans[0]:11.4e}, {trans[1]:11.4e}, {trans[2]:11.4e}]    Rot [{rot[0]:11.4e}, {rot[1]:11.4e}, {rot[2]:11.4e}]"
+    )
     return
 
 
 if __name__ == "__main__":
-
     logging.basicConfig(level=20)
 
     model = define_the_initial_setup()

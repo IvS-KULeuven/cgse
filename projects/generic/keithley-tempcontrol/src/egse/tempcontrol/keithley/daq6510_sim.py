@@ -73,7 +73,6 @@ COMMAND_PATTERNS_ACTIONS_RESPONSES = {
     r":?SYST(?:em)*:TIME (\d+), (\d+), (\d+), (\d+), (\d+), (\d+)": (set_time, None),
     r":?SYST(?:em)*:TIME\? 1": (nothing, get_time),
     r":?SYST(?:em)*:BEEP(?:er)* (\d+), (\d+(?:\.\d+)?)": (beep, None),
-
     # Command to test how the software reacts if the device is busy and blocked
     r"BLOCK:TIME (\d+(?:\.\d+)?)": (block, None),
 }
@@ -205,9 +204,9 @@ def send_request(cmd: str, type_: str = "query"):
     daq_dev = DAQ6510EthernetInterface(hostname="localhost", port=5025)
     daq_dev.connect()
 
-    if type_.lower().strip() == 'query':
+    if type_.lower().strip() == "query":
         response = daq_dev.query(cmd)
-    elif type_.lower().strip() == 'write':
+    elif type_.lower().strip() == "write":
         daq_dev.write(cmd)
     else:
         logger.info(f"Unknown type {type_} for send_request.")
@@ -241,7 +240,6 @@ def command(type_: str, cmd: str):
 
 
 if __name__ == "__main__":
-
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s  %(threadName)-12s %(levelname)-8s %(name)-12s %(module)-20s %(message)s",

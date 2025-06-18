@@ -18,8 +18,7 @@ import zmq.asyncio
 
 logging.basicConfig(
     level=logging.DEBUG,
-    format="[%(asctime)s] %(threadName)-12s %(levelname)-8s "
-           "%(name)-12s %(lineno)5d:%(module)-20s %(message)s",
+    format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-12s %(lineno)5d:%(module)-20s %(message)s",
 )
 
 logger = logging.getLogger("zmq_test")
@@ -32,10 +31,10 @@ logger.info(f"Using test ports - REQ: {TEST_REQ_PORT}, PUB: {TEST_PUB_PORT}")
 
 # Test-specific socket options
 SOCKET_OPTIONS = {
-    zmq.LINGER: 0,        # Don't wait when closing sockets
-    zmq.RCVTIMEO: 5000,   # 5 second receive timeout
-    zmq.SNDTIMEO: 5000,   # 5 second send timeout
-    zmq.IMMEDIATE: 1      # Don't queue messages if no connection
+    zmq.LINGER: 0,  # Don't wait when closing sockets
+    zmq.RCVTIMEO: 5000,  # 5 second receive timeout
+    zmq.SNDTIMEO: 5000,  # 5 second send timeout
+    zmq.IMMEDIATE: 1,  # Don't queue messages if no connection
 }
 
 # Use pytest-asyncio for async tests
@@ -43,9 +42,8 @@ pytestmark = pytest.mark.asyncio
 
 
 def test_uuid_response_with_regex(response, prefix: str = "test-service"):
-
     # Define the expected pattern: prefix followed by UUID format
-    pattern = rf'^{prefix}' + r'-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    pattern = rf"^{prefix}" + r"-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 
     # Assert the response matches the pattern
     assert re.match(pattern, response), f"Response '{response}' does not match expected pattern"
@@ -136,11 +134,7 @@ async def setup_registry_server():
     await backend.initialize()
 
     # Create server with test ports
-    server = AsyncRegistryServer(
-        req_port=TEST_REQ_PORT,
-        pub_port=TEST_PUB_PORT,
-        backend=backend
-    )
+    server = AsyncRegistryServer(req_port=TEST_REQ_PORT, pub_port=TEST_PUB_PORT, backend=backend)
 
     # Start server
     server_task = asyncio.create_task(server.start())
@@ -189,10 +183,7 @@ async def send_request(request, timeout=5.0):
     try:
         # Send the request
         logger.debug(f"Sending: {json.dumps(request)}")
-        await asyncio.wait_for(
-            socket.send_string(json.dumps(request)),
-            timeout=timeout
-        )
+        await asyncio.wait_for(socket.send_string(json.dumps(request)), timeout=timeout)
         logger.debug("Request sent, waiting for response")
 
         # Wait for response with poll and timeout
@@ -202,10 +193,7 @@ async def send_request(request, timeout=5.0):
 
         # Receive the response
         logger.debug("Poll successful, receiving response")
-        response_json = await asyncio.wait_for(
-            socket.recv_string(),
-            timeout=timeout
-        )
+        response_json = await asyncio.wait_for(socket.recv_string(), timeout=timeout)
         logger.debug(f"Response received: {response_json[:100]}...")
 
         # Parse and return
@@ -248,14 +236,11 @@ async def test_registry_server_registration():
         "port": 8080,
         "type": "test",
         "tags": ["test"],
-        "metadata": {"version": "1.0.0"}
+        "metadata": {"version": "1.0.0"},
     }
 
     # Register the service
-    response = await send_request({
-        "action": "register",
-        "service_info": service_info
-    })
+    response = await send_request({"action": "register", "service_info": service_info})
     logger.info(f"Registration response: {response}")
 
     # Verify response
@@ -266,10 +251,7 @@ async def test_registry_server_registration():
     service_id = response["service_id"]
 
     # Now try to get the service
-    response = await send_request({
-        "action": "get",
-        "service_id": service_id
-    })
+    response = await send_request({"action": "get", "service_id": service_id})
     logger.info(f"Get service response: {response}")
 
     # Verify response
@@ -336,6 +318,7 @@ async def run_all_tests():
     except Exception as e:
         logger.error(f"\n=== Test failed: {e} ===")
         import traceback
+
         traceback.print_exc()
         return 1
     finally:
@@ -347,4 +330,5 @@ async def run_all_tests():
 if __name__ == "__main__":
     # This allows running these tests directly without pytest
     import sys
+
     sys.exit(asyncio.run(run_all_tests()))

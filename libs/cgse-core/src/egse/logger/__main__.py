@@ -13,12 +13,10 @@ from egse.env import get_log_file_location
 
 
 def main():
-
     rich.print(f"Log file location: {get_log_file_location()}")
 
 
 def test():
-
     # Any logger name that starts with "egse." will also be logged by the log_cs.
 
     logger = logging.getLogger("egse.0mq-log-test")
@@ -48,7 +46,6 @@ def test():
 
 
 if __name__ == "__main__":
-
     # test()
 
     sys.exit(main())

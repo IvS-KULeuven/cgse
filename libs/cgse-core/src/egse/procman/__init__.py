@@ -24,8 +24,9 @@ CTRL_SETTINGS = Settings.load("Process Manager Control Server")
 COMMAND_SETTINGS = Settings.load(location=HERE, filename="procman.yaml")
 PROXY_TIMEOUT = 10_000
 
+
 def is_process_manager_active(timeout: float = 0.5) -> bool:
-    """ Checks if the Process Manager Control Server is active.
+    """Checks if the Process Manager Control Server is active.
 
     To check whether the Process Manager is active, a "Ping" command is sent.  If a "Pong" reply is received before
     timeout, that means that the Control Server is active (and True will be returned).  If no reply is received before
@@ -45,15 +46,16 @@ def is_process_manager_active(timeout: float = 0.5) -> bool:
 
     return is_control_server_active(endpoint, timeout)
 
+
 def get_status() -> str:
-    """ Returns a string representing the status of the Process Manager.
+    """Returns a string representing the status of the Process Manager.
 
     Returns: String representation of the status of the Process Manager.
     """
 
     if is_process_manager_active():
         with ProcessManagerProxy() as sm:
-            text =  textwrap.dedent(
+            text = textwrap.dedent(
                 f"""\
                 Process Manager:
                     Status: [green]active[/]
@@ -70,10 +72,10 @@ def get_status() -> str:
 
 
 class StartCommand:
-    """ Command to start the Control Server for a device."""
+    """Command to start the Control Server for a device."""
 
     def __init__(self, device_id: str, cgse_cmd: str, device_args: Union[list, None], simulator_mode: bool = False):
-        """ Initialisation of a start command for a device Control Server.
+        """Initialisation of a start command for a device Control Server.
 
         Args:
             device_id (str): Device identifier
@@ -89,7 +91,7 @@ class StartCommand:
 
     @property
     def device_id(self) -> str:
-        """ Returns the device identifier.
+        """Returns the device identifier.
 
         Returns: Device identifier
         """
@@ -98,7 +100,7 @@ class StartCommand:
 
     @property
     def device_args(self) -> Union[list, None]:
-        """ Returns the device arguments.
+        """Returns the device arguments.
 
         Returns: Device arguments
         """
@@ -107,7 +109,7 @@ class StartCommand:
 
     @property
     def cmd(self) -> str:
-        """ Returns the full CGSE command to start the Control Server.
+        """Returns the full CGSE command to start the Control Server.
 
         Returns: Full CGSE command to start the Control Server.
         """
@@ -123,7 +125,7 @@ class StartCommand:
 
     @property
     def simulator_mode(self) -> bool:
-        """ Checks whether the Control Server should be started in simulator mode rather than operational mode.
+        """Checks whether the Control Server should be started in simulator mode rather than operational mode.
 
         Returns: True if the Control Server should be started in simulator mode; False otherwise.
         """
@@ -132,10 +134,10 @@ class StartCommand:
 
 
 class StopCommand:
-    """ Command to stop the Control Server for a device."""
+    """Command to stop the Control Server for a device."""
 
     def __init__(self, device_id: str, cgse_cmd: str):
-        """ Initialisation of a stop command for a device Control Server.
+        """Initialisation of a stop command for a device Control Server.
 
         Args:
             device_id (str): Device identifier
@@ -147,7 +149,7 @@ class StopCommand:
 
     @property
     def device_id(self) -> str:
-        """ Returns the device identifier.
+        """Returns the device identifier.
 
         Returns: Device identifier
         """
@@ -156,7 +158,7 @@ class StopCommand:
 
     @property
     def cmd(self) -> str:
-        """ Returns the full CGSE command to stop the Control Server.
+        """Returns the full CGSE command to stop the Control Server.
 
         Returns: Full CGSE command to stop the Control Server.
         """
@@ -165,10 +167,10 @@ class StopCommand:
 
 
 class StatusCommand:
-    """ Command to query the status of a Control Server for a device."""
+    """Command to query the status of a Control Server for a device."""
 
     def __init__(self, device_id: str = None, cgse_cmd: str = None):
-        """ Initialisation of a status command for a device Control Server.
+        """Initialisation of a status command for a device Control Server.
 
         Args:
             device_id (str): Device identifier
@@ -180,7 +182,7 @@ class StatusCommand:
 
     @property
     def device_id(self) -> str:
-        """ Returns the device identifier.
+        """Returns the device identifier.
 
         Returns: Device identifier
         """
@@ -189,7 +191,7 @@ class StatusCommand:
 
     @property
     def cmd(self) -> str:
-        """ Returns the full CGSE command to query the status of the Control Server.
+        """Returns the full CGSE command to query the status of the Control Server.
 
         Returns: Full CGSE command to query the status of the Control Server.
         """
@@ -197,21 +199,19 @@ class StatusCommand:
 
 
 class ProcessManagerCommand(ClientServerCommand):
-    """ Client-server command for the Process Manager."""
+    """Client-server command for the Process Manager."""
 
     pass
 
 
 class ProcessManagerInterface(EventInterface):
-    
     def __init__(self):
-        
         super().__init__()
         self.setup = load_setup()
 
     @dynamic_interface
     def get_core_processes(self) -> dict:
-        """ Returns a dictionary with the core CGSE processes.
+        """Returns a dictionary with the core CGSE processes.
 
         These processes should be running at all times, and can neither be started nor shut down from the Process
         Manager.  On an operational machine, these processes should be added to systemd to make sure they are
@@ -238,7 +238,7 @@ class ProcessManagerInterface(EventInterface):
 
     @dynamic_interface
     def get_devices(self) -> dict:
-        """ Returns a dictionary with the devices that are included in the setup.
+        """Returns a dictionary with the devices that are included in the setup.
 
         The device processes that are listed in the returned dictionary are the ones that are included in the setup
         that is currently loaded in the Configuration Manager.  The keys in the dictionary are taken from the
@@ -257,7 +257,7 @@ class ProcessManagerInterface(EventInterface):
 
     @dynamic_interface
     def get_device_ids(self) -> dict:
-        """ Returns a list with the identifiers of the devices that are included in the setup.
+        """Returns a list with the identifiers of the devices that are included in the setup.
 
         The devices for which the identifiers are returned are the ones that are included in the setup that is currently
         loaded in the Configuration Manager.
@@ -269,7 +269,7 @@ class ProcessManagerInterface(EventInterface):
 
     @dynamic_interface
     def start_process(self, start_cmd: StartCommand) -> None:
-        """ Starts a process.
+        """Starts a process.
 
         Args:
             start_cmd (StartCommand): Command to start a process
@@ -279,7 +279,7 @@ class ProcessManagerInterface(EventInterface):
 
     @dynamic_interface
     def stop_process(self, stop_cmd: StopCommand) -> None:
-        """ Stops a process.
+        """Stops a process.
 
         Args:
             stop_cmd (StopCommand): Command to stop a process
@@ -289,7 +289,7 @@ class ProcessManagerInterface(EventInterface):
 
     @dynamic_interface
     def get_core_service_status(self, status_cmd: StatusCommand) -> dict:
-        """ Returns the status of a core service.
+        """Returns the status of a core service.
 
         Args:
             status_cmd (StatusCommand): Command to query the status of a core service
@@ -301,7 +301,7 @@ class ProcessManagerInterface(EventInterface):
 
     @dynamic_interface
     def get_device_process_status(self, status_cmd: StatusCommand) -> dict:
-        """ Returns the status of a process.
+        """Returns the status of a process.
 
         Args:
             status_cmd (StatusCommand): Command to query the status of a process
@@ -313,18 +313,15 @@ class ProcessManagerInterface(EventInterface):
 
 
 class ProcessManagerController(ProcessManagerInterface):
-
     def __init__(self):
-
         super().__init__()
 
         # self._configuration = ConfigurationManagerProxy()
-        
+
         if not is_storage_manager_active():
             LOGGER.error("No Storage Manager available!!!!")
 
     def get_core_processes(self) -> dict:
-
         core_processes = {}
         for ep in sorted(entry_points("cgse.process_management.core_services"), key=lambda x: x.name):
             core_processes[ep.name] = ep.value
@@ -332,9 +329,7 @@ class ProcessManagerController(ProcessManagerInterface):
         return core_processes
 
     def get_devices(self) -> dict:
-
         try:
-
             setup = load_setup()
 
             devices = {}
@@ -343,13 +338,10 @@ class ProcessManagerController(ProcessManagerInterface):
             return devices
 
         except AttributeError:
-
             return {}
 
     def get_device_ids(self) -> dict:
-
         try:
-
             setup = load_setup()
 
             device_ids = {}
@@ -358,35 +350,29 @@ class ProcessManagerController(ProcessManagerInterface):
             return device_ids
 
         except AttributeError:
-
             return {}
 
     def handle_event(self, event: Event):
-
         LOGGER.info(f"An event is received, {event=}")
         LOGGER.info(f"Setup ID: {event.context['setup_id']}")
 
         self.setup = load_setup(setup_id=event.context["setup_id"])
 
     def start_process(self, start_cmd: StartCommand):
-
         # subprocess.call(start_cmd.cmd, shell=True) -> PM hangs
         process = SubProcess("MyApp", [start_cmd.cmd], shell=True)
         process.execute()
 
     def stop_process(self, stop_cmd: StopCommand):
-
         subprocess.call(stop_cmd.cmd, shell=True)
 
     def get_core_service_status(self, status_cmd: StatusCommand) -> dict:
-
         output = subprocess.check_output(status_cmd.cmd, shell=True).decode("utf-8")
         cs_is_active = not ("inactive" in output or "not active" in output)
 
         return {"core_service_name": status_cmd.device_id, "core_service_is_active": cs_is_active}
 
     def get_device_process_status(self, status_cmd: StatusCommand) -> dict:
-
         output = subprocess.check_output(status_cmd.cmd, shell=True).decode("utf-8")
         # return output
         cs_is_active = not ("inactive" in output or "not active" in output)
@@ -395,18 +381,21 @@ class ProcessManagerController(ProcessManagerInterface):
             device_is_connected = not "not connected" in output
             is_simulator_mode = "simulator" in output
 
-            return {"device_id": status_cmd.device_id, "cs_is_active": True,
-                    "device_is_connected": device_is_connected, "is_simulator_mode": is_simulator_mode}
+            return {
+                "device_id": status_cmd.device_id,
+                "cs_is_active": True,
+                "device_is_connected": device_is_connected,
+                "is_simulator_mode": is_simulator_mode,
+            }
         else:
             return {"device_id": status_cmd.device_id, "cs_is_active": False}
 
 
 class ProcessManagerProxy(Proxy, ProcessManagerInterface):
-    """ Proxy for process management, used to connect to the Process Manager Control Server and send commands remotely.
-    """
+    """Proxy for process management, used to connect to the Process Manager Control Server and send commands remotely."""
 
     def __init__(self, protocol: str = None, hostname: str = None, port: int = -1, timeout=PROXY_TIMEOUT):
-        """ Initialisation of a new Proxy for Process Management.
+        """Initialisation of a new Proxy for Process Management.
 
         If no connection details (transport protocol, hostname, and port) are not provided, these are taken from the
         settings file.
@@ -422,9 +411,9 @@ class ProcessManagerProxy(Proxy, ProcessManagerInterface):
                 service = reg.discover_service(CTRL_SETTINGS.SERVICE_TYPE)
 
                 if service:
-                    protocol = service.get('protocol', 'tcp')
-                    hostname = service['host']
-                    port = service['port']
+                    protocol = service.get("protocol", "tcp")
+                    hostname = service["host"]
+                    port = service["port"]
                 else:
                     raise RuntimeError(f"No service registered as {CTRL_SETTINGS.SERVICE_TYPE}")
 

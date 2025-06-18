@@ -14,12 +14,14 @@ Please note that software simulators are intended for simple test purposes and w
 all device behavior correctly, e.g. timing, error conditions, etc.
 
 """
+
 import logging
 
 from egse.process import SubProcess
 
 if __name__ != "__main__":
     import multiprocessing
+
     multiprocessing.current_process().name = "joran_cs"
 
 import sys
@@ -103,25 +105,20 @@ def start(simulator):
     """Start the Hexapod Joran Control Server."""
 
     if simulator:
-
         Settings.set_simulation_mode(True)
 
     try:
-
         controller = JoranControlServer()
         controller.serve()
 
     except KeyboardInterrupt:
-
         print("Shutdown requested...exiting")
 
     except SystemExit as exit_code:
-
         print("System Exit with code {}.".format(exit_code))
         sys.exit(exit_code)
 
     except Exception:
-
         logger.exception("Cannot start the Hexapod Joran Control Server")
 
         # The above line does exactly the same as the traceback, but on the logger
@@ -132,8 +129,7 @@ def start(simulator):
 
 
 @cli.command()
-@click.option("--simulator", "--sim", is_flag=True,
-              help="Start the Hexapod Joran Simulator as the backend.")
+@click.option("--simulator", "--sim", is_flag=True, help="Start the Hexapod Joran Simulator as the backend.")
 def start_bg(simulator):
     """Start the JORAN Control Server in the background."""
     sim = "--simulator" if simulator else ""
@@ -178,7 +174,6 @@ def status():
 
 
 if __name__ == "__main__":
-
     logging.basicConfig(level=logging.DEBUG, format=Settings.LOG_FORMAT_FULL)
 
     sys.exit(cli())

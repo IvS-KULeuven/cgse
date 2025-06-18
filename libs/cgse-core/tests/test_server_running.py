@@ -24,8 +24,7 @@ from egse.registry.server import AsyncRegistryServer
 
 logging.basicConfig(
     level=logging.DEBUG,
-    format="[%(asctime)s] %(threadName)-12s %(levelname)-8s "
-           "%(name)-12s %(lineno)5d:%(module)-20s %(message)s",
+    format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-12s %(lineno)5d:%(module)-20s %(message)s",
 )
 
 logger = logging.getLogger("test_registry_service")
@@ -37,7 +36,6 @@ SERVER_STARTUP_TIMEOUT = 5
 
 
 async def server_health_check(zmq_context):
-
     # Verify server is ready by testing the health endpoint
     start_time = time.time()
     test_socket = zmq_context.socket(zmq.REQ)
@@ -93,7 +91,7 @@ async def start_server():
         req_port=TEST_REQ_PORT,
         pub_port=TEST_PUB_PORT,
         backend=backend,
-        cleanup_interval=1  # Fast cleanup for testing
+        cleanup_interval=1,  # Fast cleanup for testing
     )
 
     # Start the server in a task
@@ -131,12 +129,10 @@ async def stop_server(server, server_task):
 
 @pytest.mark.asyncio
 async def test_server_running():
-
     await main()
 
 
 async def main():
-
     server, server_task = await start_server()
 
     await asyncio.sleep(10.0)
@@ -146,5 +142,5 @@ async def main():
 
 # This allows you to run the test without using pytest
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

@@ -344,9 +344,7 @@ def extractOutput(sourceStr, nr, func=bytes.decode):
     try:
         out = [func(part) for part in parts]
     except (ValueError, TypeError) as exc:
-        raise PMACError(
-            f'extractOutput(): Could not parse individual parts of "{sourceStr}" with {func}.'
-        ) from exc
+        raise PMACError(f'extractOutput(): Could not parse individual parts of "{sourceStr}" with {func}.') from exc
 
     return out
 
@@ -445,11 +443,7 @@ def decode_Q30(value):
         "Phasing error (brushless engine only)",
     ]
 
-    error_msgs = {
-        bit: description[bit] if bit < 13 else "Reserved"
-        for bit in range(24)
-        if value >> bit & 0x01
-    }
+    error_msgs = {bit: description[bit] if bit < 13 else "Reserved" for bit in range(24) if value >> bit & 0x01}
 
     states = [int(x) for x in f"{value:024b}"[::-1]]
 
@@ -520,9 +514,7 @@ class EthernetCommand:
 
         assert type(command) == str
 
-        headerStr = struct.pack(
-            ">BBHHH", self.requestType, self.request, self.value, self.index, len(command)
-        )
+        headerStr = struct.pack(">BBHHH", self.requestType, self.request, self.value, self.index, len(command))
         wrappedCommand = headerStr + command.encode()
 
         logger.debug(f"Command Packet generated: {wrappedCommand}")
@@ -575,7 +567,6 @@ class PmacEthernetInterface(object):
     # Returns None on success, or an error message string on failure.
 
     def connect(self):
-
         # Sanity checks
 
         if self.isConnectionOpen:
@@ -647,16 +638,12 @@ class PmacEthernetInterface(object):
             response = self.getResponse(CMD_STRING_VER)
         except PMACError as e_pmac:
             if len(e_pmac.args) >= 2 and e_pmac.args[1] == ERR_CONNECTION:
-                logger.error(
-                    f"While trying to talk to the device the following exception occurred, exception={e_pmac}"
-                )
+                logger.error(f"While trying to talk to the device the following exception occurred, exception={e_pmac}")
                 logger.error("Most probably the client connection was closed. Disconnecting...")
                 self.disconnect()
                 return False
             else:
-                logger.error(
-                    f"While trying to talk to the device the following exception occured, exception={e_pmac}"
-                )
+                logger.error(f"While trying to talk to the device the following exception occured, exception={e_pmac}")
                 self.disconnect()
                 return False
         finally:
@@ -748,7 +735,7 @@ class PmacEthernetInterface(object):
             # wait for, read and return the response from PMAC (will be at most 1400 chars)
 
             returnStr = self.sock.recv(2048)
-            logger.debug( f"Received from PMAC: {returnStr}")
+            logger.debug(f"Received from PMAC: {returnStr}")
 
             return returnStr
 
@@ -770,7 +757,6 @@ class PmacEthernetInterface(object):
         assert isinstance(values, list), "Expected list argument"
 
         while datetime.now() - start < DEF_TPMAC_CMD_TIMEOUT:
-
             # Only read every DEF_TPMAC_READ_FREQ
 
             if datetime.now() - start > count * DEF_TPMAC_READ_FREQ:
@@ -789,7 +775,6 @@ class PmacEthernetInterface(object):
         assert isinstance(values, list), "Expected list argument"
 
         while datetime.now() - start < DEF_TPMAC_CMD_TIMEOUT:
-
             # Only read every DEF_TPMAC_READ_FREQ
 
             if datetime.now() - start > count * DEF_TPMAC_READ_FREQ:
@@ -960,22 +945,19 @@ class PmacEthernetInterface(object):
             if len(kwargs) == cmd["in"]:
                 fullCommand = cmd["cmd"].format(**kwargs)
             else:
-                raise PMACError(
-                    f"Expected {cmd['in']} keyword arguments to cmd['name'], got {len(kwargs)}"
-                )
+                raise PMACError(f"Expected {cmd['in']} keyword arguments to cmd['name'], got {len(kwargs)}")
         else:
             fullCommand = cmd["cmd"]
 
-        logger.debug(f'Sending the {cmd["name"]} command.')
+        logger.debug(f"Sending the {cmd['name']} command.")
 
         retStr = self.getResponse(fullCommand)
 
-        logger.debug(f'Command \'{cmd["name"]}\' returned "{retStr}"')
+        logger.debug(f"Command '{cmd['name']}' returned \"{retStr}\"")
 
         # Check the return code (usually Q20)
 
         if cmd["out"] == 0 and cmd["return"] is not None:
-
             # The following method can throw a PMACError on Timeout
 
             rc = self.waitFor(cmd["return"], cmd["check"])
@@ -986,7 +968,6 @@ class PmacEthernetInterface(object):
         # Get and return the output parameters
 
         if cmd["out"] > 0 and cmd["return"] is not None:
-
             # The following method can throw a PMACError on Timeout
 
             out = self.waitForOutput(cmd["return"], cmd["check"], cmd["out"], cmd["out_type"])

@@ -14,13 +14,12 @@ COMMAND_SETTINGS = Settings.load(location=HERE, filename="procman.yaml")
 
 
 class ProcessManagerProtocol(CommandProtocol):
-
     """
     Command Protocol for Process Management.
     """
 
     def __init__(self, control_server: ControlServer):
-        """ Initialisation of a new Protocol for Process Management.
+        """Initialisation of a new Protocol for Process Management.
 
         The initialisation of this Protocol consists of the following steps:
 
@@ -48,7 +47,7 @@ class ProcessManagerProtocol(CommandProtocol):
         self.build_device_method_lookup_table(self.controller)
 
     def get_bind_address(self):
-        """ Returns the address to bind a socket to.
+        """Returns the address to bind a socket to.
 
         This bind address is a properly formatted URL, based on the communication protocol and the commanding port.
 
@@ -58,7 +57,7 @@ class ProcessManagerProtocol(CommandProtocol):
         return bind_address(self.control_server.get_communication_protocol(), self.control_server.get_commanding_port())
 
     def get_status(self) -> dict:
-        """ Returns the status information for the Control Server.
+        """Returns the status information for the Control Server.
 
         This status information is returned in the form of a dictionary that contains the following information about
         the Control Server for Process Management:
@@ -80,7 +79,7 @@ class ProcessManagerProtocol(CommandProtocol):
         return super().get_status()
 
     def get_housekeeping(self) -> dict:
-        """ Returns the housekeeping data for the Control Server.
+        """Returns the housekeeping data for the Control Server.
 
         This housekeeping data is returns in the form of a dictionary that contains the following information about
         the Control Server for Process Management:

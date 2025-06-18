@@ -26,8 +26,7 @@ from egse.registry.backend import AsyncSQLiteBackend
 
 logging.basicConfig(
     level=logging.DEBUG,
-    format="[%(asctime)s] %(threadName)-12s %(levelname)-8s "
-           "%(name)-12s %(lineno)5d:%(module)-20s %(message)s",
+    format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-12s %(lineno)5d:%(module)-20s %(message)s",
 )
 
 logger = logging.getLogger("test_registry_backend")
@@ -44,7 +43,7 @@ TEST_SERVICE_INFO = {
     "port": 8080,
     "type": "test",
     "metadata": {"version": "1.0.0"},
-    "tags": ["test", "unit-test"]
+    "tags": ["test", "unit-test"],
 }
 
 
@@ -80,8 +79,8 @@ async def backend(request):
 
 # no need to specify @pytest.mark.asyncio because we have defined the `pytestmark` variable above.
 
-async def test_register_service_plain(backend):
 
+async def test_register_service_plain(backend):
     success = await backend.register("my-unique-service-id-1234", {})
     assert success, "Service registration should succeed"
 
@@ -92,8 +91,7 @@ async def test_register_service_plain(backend):
 
 
 async def test_register_service_with_type(backend):
-
-    success = await backend.register("my-unique-service-id-1234", {'type': 'plain'})
+    success = await backend.register("my-unique-service-id-1234", {"type": "plain"})
     assert success, "Service registration should succeed"
 
     service = await backend.get_service("my-unique-service-id-1234")
@@ -162,12 +160,7 @@ async def test_list_services(backend):
     await backend.register(TEST_SERVICE_ID, TEST_SERVICE_INFO)
     await backend.register(
         service_id="test-service-2",
-        service_info={
-            **TEST_SERVICE_INFO,
-            "name": "second-test-service",
-            "port": 8081,
-            "type": "api"
-        }
+        service_info={**TEST_SERVICE_INFO, "name": "second-test-service", "port": 8081, "type": "api"},
     )
 
     services = await backend.list_services()
@@ -185,13 +178,8 @@ async def test_list_services_by_type(backend):
     # Register services with different types
     await backend.register(TEST_SERVICE_ID, TEST_SERVICE_INFO)  # this service is of type 'test'
     await backend.register(
-        "test-service-2", {
-            **TEST_SERVICE_INFO,
-            "name": "second-test-service",
-            "port": 8081,
-            "type": "api",
-            "tags": ["api"]
-        }
+        "test-service-2",
+        {**TEST_SERVICE_INFO, "name": "second-test-service", "port": 8081, "type": "api", "tags": ["api"]},
     )
 
     # List services filtered by type
@@ -260,17 +248,14 @@ async def test_health_status(backend):
 
 # Edge cases and error handling
 
+
 async def test_register_existing_service(backend):
     """Test registering a service with an ID that already exists."""
     # Register a service
     await backend.register(TEST_SERVICE_ID, TEST_SERVICE_INFO)
 
     # Register a different service with the same ID
-    updated_info = {
-        **TEST_SERVICE_INFO,
-        "port": 9090,
-        "metadata": {"version": "2.0.0"}
-    }
+    updated_info = {**TEST_SERVICE_INFO, "port": 9090, "metadata": {"version": "2.0.0"}}
     success = await backend.register(TEST_SERVICE_ID, updated_info)
     assert success, "Registering an existing service should succeed (update)"
 
@@ -295,18 +280,8 @@ async def test_renew_nonexistent_service(backend):
 async def test_discover_with_multiple_services(backend):
     """Test discovery with multiple services of the same type."""
     # Register multiple services of the same type
-    await backend.register(
-        "test-service-1", {
-            **TEST_SERVICE_INFO,
-            "name": "test-service-1"
-        }
-    )
-    await backend.register(
-        "test-service-2", {
-            **TEST_SERVICE_INFO,
-            "name": "test-service-2"
-        }
-    )
+    await backend.register("test-service-1", {**TEST_SERVICE_INFO, "name": "test-service-1"})
+    await backend.register("test-service-2", {**TEST_SERVICE_INFO, "name": "test-service-2"})
 
     # Keep track of discovered services
     discovered_services = set()
@@ -337,7 +312,7 @@ async def test_concurrent_operations(backend):
             "host": "localhost",
             "port": 9000 + i,
             "type": "concurrent",
-            "tags": ["concurrent"]
+            "tags": ["concurrent"],
         }
         return await backend.register(service_id, service_info)
 
@@ -386,7 +361,7 @@ async def test_backend_performance(backend):
             "host": "localhost",
             "port": 8000 + i,
             "type": "performance",
-            "tags": ["performance", f"group-{i % 10}"]
+            "tags": ["performance", f"group-{i % 10}"],
         }
         await backend.register(service_id, service_info)
     register_time = time.time() - start_time
@@ -489,6 +464,5 @@ async def test_sqlite_backend_resilience(sqlite_only) -> None:
 
 
 async def test_protocol_implementation(backend):
-
     assert "implements the AsyncRegistryBackend protocol" in backend.__doc__
     assert backend.verify_protocol_compliance()

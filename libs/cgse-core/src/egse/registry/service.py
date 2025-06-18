@@ -40,7 +40,7 @@ class ZMQMicroservice:
         pub_port: int | None = None,
         registry_req_endpoint: str | None = None,
         registry_sub_endpoint: str | None = None,
-        metadata: dict[str, Any] | None = None
+        metadata: dict[str, Any] | None = None,
     ):
         """
         Initialize the microservice. When port numbers for rep_port and pub_port
@@ -92,8 +92,7 @@ class ZMQMicroservice:
             self.pub_port = get_port_number(self.pub_socket)
 
         self.registry_client = AsyncRegistryClient(
-            registry_req_endpoint=self.registry_req_endpoint,
-            registry_sub_endpoint=self.registry_sub_endpoint
+            registry_req_endpoint=self.registry_req_endpoint, registry_sub_endpoint=self.registry_sub_endpoint
         )
         self.registry_client.connect()
 
@@ -125,11 +124,7 @@ class ZMQMicroservice:
 
     async def _handle_ping(self, data: dict[str, Any]) -> dict[str, Any]:
         """Handle ping command."""
-        return {
-            "status": "ok",
-            "message": "pong",
-            "timestamp": time.time()
-        }
+        return {"status": "ok", "message": "pong", "timestamp": time.time()}
 
     async def _handle_info(self, data: dict[str, Any]) -> dict[str, Any]:
         """Handle info command."""
@@ -141,15 +136,12 @@ class ZMQMicroservice:
             "host": self.host_ip,
             "rep_port": self.rep_port,
             "pub_port": self.pub_port,
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
     async def _handle_health(self, data: dict[str, Any]) -> dict[str, Any]:
         """Handle health command."""
-        return {
-            "status": "ok",
-            "timestamp": time.time()
-        }
+        return {"status": "ok", "timestamp": time.time()}
 
     async def start(self):
         """Start the microservice. This will:
@@ -167,10 +159,7 @@ class ZMQMicroservice:
             self.host_ip,
             self.rep_port,
             service_type=self.service_type,
-            metadata={
-                **self.metadata,
-                "pub_port": self.pub_port
-            }
+            metadata={**self.metadata, "pub_port": self.pub_port},
         )
 
         if not self.service_id:
@@ -205,10 +194,7 @@ class ZMQMicroservice:
                 try:
                     # Wait for a request with timeout
                     try:
-                        request_json = await asyncio.wait_for(
-                            self.rep_socket.recv_string(),
-                            timeout=1.0
-                        )
+                        request_json = await asyncio.wait_for(self.rep_socket.recv_string(), timeout=1.0)
                     except asyncio.TimeoutError:
                         continue
 
@@ -217,15 +203,9 @@ class ZMQMicroservice:
                     command = request.get("command")
 
                     if not command:
-                        response = {
-                            "status": "error",
-                            "error": "Missing 'command' field"
-                        }
+                        response = {"status": "error", "error": "Missing 'command' field"}
                     elif command not in self.command_handlers:
-                        response = {
-                            "status": "error",
-                            "error": f"Unknown command: {command}"
-                        }
+                        response = {"status": "error", "error": f"Unknown command: {command}"}
                     else:
                         # Call the handler
                         try:
@@ -233,10 +213,7 @@ class ZMQMicroservice:
                             response = await handler(request)
                         except Exception as exc:
                             module_logger.error(f"Error handling command {command}: {exc}")
-                            response = {
-                                "status": "error",
-                                "error": f"Error handling command: {str(exc)}"
-                            }
+                            response = {"status": "error", "error": f"Error handling command: {str(exc)}"}
 
                     # Send the response
                     await self.rep_socket.send_string(json.dumps(response))
@@ -245,23 +222,15 @@ class ZMQMicroservice:
                 except json.JSONDecodeError:
                     module_logger.error("Invalid JSON received")
                     try:
-                        await self.rep_socket.send_string(json.dumps(
-                            {
-                                "status": "error",
-                                "error": "Invalid JSON format"
-                            }
-                        ))
+                        await self.rep_socket.send_string(
+                            json.dumps({"status": "error", "error": "Invalid JSON format"})
+                        )
                     except Exception as exc:
                         module_logger.warning(f"Caught {type(exc).__name__}: {exc}")
                 except Exception as exc:
                     module_logger.error(f"Error handling request: {exc}")
                     try:
-                        await self.rep_socket.send_string(json.dumps(
-                            {
-                                "status": "error",
-                                "error": str(exc)
-                            }
-                        ))
+                        await self.rep_socket.send_string(json.dumps({"status": "error", "error": str(exc)}))
                     except Exception as exc:
                         module_logger.warning(f"Caught {type(exc).__name__}: {exc}")
         except asyncio.CancelledError:
@@ -291,13 +260,13 @@ class ZMQMicroservice:
         await self.registry_client.close()
 
         # Close ZeroMQ sockets
-        if hasattr(self, 'rep_socket') and self.rep_socket:
+        if hasattr(self, "rep_socket") and self.rep_socket:
             self.rep_socket.close()
 
-        if hasattr(self, 'pub_socket') and self.pub_socket:
+        if hasattr(self, "pub_socket") and self.pub_socket:
             self.pub_socket.close()
 
-        if hasattr(self, 'context') and self.context:
+        if hasattr(self, "context") and self.context:
             self.context.term()
 
         module_logger.info("Cleanup complete")
@@ -314,19 +283,10 @@ class ZMQMicroservice:
             module_logger.warning("Cannot publish event: no PUB socket")
             return
 
-        event = {
-            "type": event_type,
-            "service_id": self.service_id,
-            "timestamp": time.time(),
-            "data": data
-        }
+        event = {"type": event_type, "service_id": self.service_id, "timestamp": time.time(), "data": data}
 
         try:
-            await self.pub_socket.send_multipart([
-                event_type.encode(
-                    'utf-8'),
-                    json.dumps(event).encode('utf-8')
-            ])
+            await self.pub_socket.send_multipart([event_type.encode("utf-8"), json.dumps(event).encode("utf-8")])
             module_logger.debug(f"Published event: {event_type}")
         except Exception as exc:
             module_logger.error(f"Failed to publish event: {exc}")
@@ -350,10 +310,7 @@ class ZMQMicroservice:
             raise ValueError(f"No service of type '{service_type}' found")
 
         # Prepare the request
-        request = {
-            "command": command,
-            **(data or {})
-        }
+        request = {"command": command, **(data or {})}
 
         # Create a REQ socket
         socket = self.context.socket(zmq.REQ)
@@ -373,7 +330,8 @@ class ZMQMicroservice:
             socket.close()
 
     async def subscribe_to_service_events(
-            self, service_type: str, event_types: list[str], callback: Callable[[dict[str, Any]], None]):
+        self, service_type: str, event_types: list[str], callback: Callable[[dict[str, Any]], None]
+    ):
         """
         Subscribe to events from another service.
 
@@ -392,7 +350,7 @@ class ZMQMicroservice:
             raise ValueError(f"No service of type '{service_type}' found")
 
         # Get PUB port from metadata
-        pub_port = service.get('metadata', {}).get('pub_port')
+        pub_port = service.get("metadata", {}).get("pub_port")
 
         if not pub_port:
             raise ValueError("Service does not expose a PUB socket")
@@ -419,8 +377,8 @@ class ZMQMicroservice:
 
                         # Receive the event
                         event_type_bytes, event_json_bytes = await socket.recv_multipart()
-                        event_type = event_type_bytes.decode('utf-8')
-                        event = json.loads(event_json_bytes.decode('utf-8'))
+                        event_type = event_type_bytes.decode("utf-8")
+                        event = json.loads(event_json_bytes.decode("utf-8"))
 
                         # Call the callback
                         try:

@@ -18,7 +18,6 @@ class DefaultEnvironment:
 
 @pytest.fixture(scope="session", autouse=True)
 def default_env(tmp_path_factory):
-
     project = "CGSE"
     site_id = "LAB23"
 
@@ -30,6 +29,7 @@ def default_env(tmp_path_factory):
     setup_conf_data(tmp_data_dir)
 
     from egse.env import print_env
+
     print_env()
 
     yield DefaultEnvironment(project=project, site_id=site_id, data_root=str(data_root))

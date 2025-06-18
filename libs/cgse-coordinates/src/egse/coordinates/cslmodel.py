@@ -7,6 +7,7 @@ assume these four reference frames exist in the model and behave like a proper h
 Those methods start with the name `hexapod_`, e.g. `hexapod_goto_zero_position()`.
 
 """
+
 from typing import List
 
 from egse.coordinates.refmodel import ReferenceFrameModel
@@ -27,7 +28,6 @@ class CSLReferenceFrameModel(ReferenceFrameModel):
     _DEGREES_DEFAULT = ReferenceFrameModel._DEGREES_DEFAULT
 
     def _create_obusr(self):
-
         if HEXOBUSR in self:
             return
 

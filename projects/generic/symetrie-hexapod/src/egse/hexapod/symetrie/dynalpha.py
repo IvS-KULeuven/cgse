@@ -14,6 +14,7 @@ that are specific for the alpha+ controllers. This class should be sub-classed f
 that use the alpha+ controller, like the ZONDA hexapod.
 
 """
+
 from __future__ import annotations
 
 import logging
@@ -242,12 +243,12 @@ def wait_until_cmd_is_zero(transport: DeviceTransport, timeout: float = 1.0, int
 
     def c_cmd():
         nonlocal rc
-        rc_s = transport.query('c_cmd\r\n').decode()
+        rc_s = transport.query("c_cmd\r\n").decode()
         LOGGER.debug(f"{rc_s = } <- c_cmd in get_pars")
-        if not rc_s.startswith('c_cmd'):
+        if not rc_s.startswith("c_cmd"):
             LOGGER.warning(f"{rc_s = }")
             return -1
-        rc = int(rc_s.split('\r\n')[1])
+        rc = int(rc_s.split("\r\n")[1])
         return rc
 
     if wait_until(lambda: c_cmd() == 0, interval=interval, timeout=timeout):
@@ -261,8 +262,13 @@ def wait_until_cmd_is_zero(transport: DeviceTransport, timeout: float = 1.0, int
 
 
 def get_pars(
-        transport: DeviceTransport = None, response: bytes = None,
-        index: int = 0, count: int = 1, increment: int = 1, timeout: float = 1.0, interval: float = 0.01
+    transport: DeviceTransport = None,
+    response: bytes = None,
+    index: int = 0,
+    count: int = 1,
+    increment: int = 1,
+    timeout: float = 1.0,
+    interval: float = 0.01,
 ) -> bytes | Failure:
     """
     Retrieve the response from a given command from the `c_par` array. The `c_par` array will
@@ -300,15 +306,16 @@ def get_pars(
     else:
         query = f"c_par({index}),{count},{increment}"
 
-    response = transport.query(f'{query}\r\n')
+    response = transport.query(f"{query}\r\n")
 
     LOGGER.debug(f"{response = } <- {query} in get_pars")
 
     return response
 
 
-def return_command_status(transport: DeviceTransport = None, response: bytes = None,
-                          timeout: float = 1.0, interval: float = 0.01) -> Tuple[int, str] | Failure:
+def return_command_status(
+    transport: DeviceTransport = None, response: bytes = None, timeout: float = 1.0, interval: float = 0.01
+) -> Tuple[int, str] | Failure:
     """
     Check the status of last sent command. When the status is zero (0) the command was successfully executed.
     When the status is not zero before timeout seconds, the status check will be aborted and the function
@@ -340,12 +347,12 @@ def return_command_status(transport: DeviceTransport = None, response: bytes = N
 
     def c_cmd():
         nonlocal rc
-        rc_s = transport.query('c_cmd\r\n').decode()
+        rc_s = transport.query("c_cmd\r\n").decode()
         LOGGER.debug(f"{rc_s = } <- c_cmd in check_command_status")
-        if not rc_s.startswith('c_cmd'):
+        if not rc_s.startswith("c_cmd"):
             LOGGER.warning(f"{rc_s = }")
             return -1
-        rc = int(rc_s.split('\r\n')[1])
+        rc = int(rc_s.split("\r\n")[1])
         return rc
 
     if wait_until(lambda: c_cmd() == 0, interval=interval, timeout=timeout):
@@ -357,8 +364,9 @@ def return_command_status(transport: DeviceTransport = None, response: bytes = N
     return rc, RETURN_CODES[rc]
 
 
-def check_command_status(transport: DeviceTransport = None, response: bytes = None,
-                         timeout: float = 1.0, interval: float = 0.01) -> Any:
+def check_command_status(
+    transport: DeviceTransport = None, response: bytes = None, timeout: float = 1.0, interval: float = 0.01
+) -> Any:
     """
     Check the state of last sent command. When the state is zero (0) the command was successfully executed. When the
     status is not zero before timeout seconds, the status check will be aborted and a warning message will be issued.
@@ -478,7 +486,7 @@ def issue_warning(*, response, msg: str):
 
 from typing import TypeVar
 
-T = TypeVar('T', float, int)      # Declare type variable
+T = TypeVar("T", float, int)  # Declare type variable
 
 
 def decode_pars(response: bytes = None, index: int = 0, count: int = 1, func: Callable = float) -> List[T] | Failure:
@@ -487,7 +495,7 @@ def decode_pars(response: bytes = None, index: int = 0, count: int = 1, func: Ca
     if isinstance(response, Failure):
         return response
 
-    return [func(x) for x in response[index:index+count]]
+    return [func(x) for x in response[index : index + count]]
 
 
 def decode_info(response: bytes) -> str | Failure:
@@ -543,7 +551,7 @@ def decode_general_state(response: bytes) -> Tuple[Dict, List] | Failure:
 
     LOGGER.debug(f"{response = } <- decode_general_state")
 
-    s_hexa = [int(x) for x in f'{response:015b}'[::-1]]
+    s_hexa = [int(x) for x in f"{response:015b}"[::-1]]
     state = dict(zip(GENERAL_STATE, s_hexa))
 
     return state, list(state.values())
@@ -556,7 +564,7 @@ def decode_actuator_state(response: bytes) -> Tuple[Tuple[Dict, List]] | Failure
         return response
 
     def decode_state(state: int) -> Tuple[Dict, List]:
-        state_bits = [int(x) for x in f'{state:015b}'[::-1]]
+        state_bits = [int(x) for x in f"{state:015b}"[::-1]]
         state_dict = dict(zip(ACTUATOR_STATE, state_bits))
         return state_dict, state_bits
 
@@ -586,7 +594,7 @@ class AlphaPlusTelnetInterface(DeviceTransport, DeviceConnectionInterface):
 
     TELNET_TIMEOUT = 1.0
 
-    def __init__(self, hostname: str = 'localhost', port: int = 23):
+    def __init__(self, hostname: str = "localhost", port: int = 23):
         """
         Args:
             hostname (str): the IP address or fully qualified hostname of the OGSE hardware
@@ -615,8 +623,7 @@ class AlphaPlusTelnetInterface(DeviceTransport, DeviceConnectionInterface):
             self.telnet.open(self.hostname, self.port)
         except ConnectionRefusedError as exc:
             raise DeviceConnectionError(
-                device_name="Alpha+ Controller",
-                message=f"Connection refused to {self.hostname} port {self.port}"
+                device_name="Alpha+ Controller", message=f"Connection refused to {self.hostname} port {self.port}"
             ) from exc
 
         try:
@@ -629,15 +636,15 @@ class AlphaPlusTelnetInterface(DeviceTransport, DeviceConnectionInterface):
             rc = self.telnet.read_until(b"ppmac# ", timeout=self.TELNET_TIMEOUT)
             # print(rc.decode(), flush=True, end="")
             self.telnet.write(b"gpascii -2\r\n")
-            rc = self.telnet.read_until(b'\x06\r\n', timeout=self.TELNET_TIMEOUT)
+            rc = self.telnet.read_until(b"\x06\r\n", timeout=self.TELNET_TIMEOUT)
             # print(rc.decode(), flush=True, end="")
             self.telnet.write(b"echo7\r\n")
-            rc = self.telnet.read_until(b'\x06\r\n', timeout=self.TELNET_TIMEOUT)
+            rc = self.telnet.read_until(b"\x06\r\n", timeout=self.TELNET_TIMEOUT)
             # print(rc.decode(), flush=True, end="")
         except EOFError as exc:
             raise DeviceConnectionError(
                 device_name="Alpha+ Controller",
-                message=f"Telnet connection closed for {self.hostname} port {self.port}"
+                message=f"Telnet connection closed for {self.hostname} port {self.port}",
             ) from exc
 
         self._is_connected = True
@@ -652,7 +659,6 @@ class AlphaPlusTelnetInterface(DeviceTransport, DeviceConnectionInterface):
         self._is_connected = False
 
     def reconnect(self):
-
         if self._is_connected:
             self.disconnect()
         self.connect()
@@ -686,11 +692,11 @@ class AlphaPlusTelnetInterface(DeviceTransport, DeviceConnectionInterface):
             The response from the controller on a previously sent command.
         """
 
-        response = self.telnet.read_until(b'\x06\r\n', timeout=self.TELNET_TIMEOUT)
+        response = self.telnet.read_until(b"\x06\r\n", timeout=self.TELNET_TIMEOUT)
 
         LOGGER.debug(f"read: {response = }")
 
-        if not response.endswith(b'\x06\r\n'):
+        if not response.endswith(b"\x06\r\n"):
             LOGGER.warning(f"Expected ACK at the end of the response, {response = }")
             return response
 
@@ -713,9 +719,9 @@ class AlphaPlusTelnetInterface(DeviceTransport, DeviceConnectionInterface):
 
 
 class AlphaControllerInterface(DeviceInterface):
-
     @dynamic_command(
-        cmd_type="transaction", cmd_string="c_cmd=C_STOP",
+        cmd_type="transaction",
+        cmd_string="c_cmd=C_STOP",
         process_cmd_string=process_cmd_string,
         process_response=partial(issue_warning, msg="STOP command has been executed."),
         post_cmd=return_command_status,
@@ -731,7 +737,8 @@ class AlphaControllerInterface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type="transaction", cmd_string="c_cmd=C_CONTROLON",
+        cmd_type="transaction",
+        cmd_string="c_cmd=C_CONTROLON",
         process_cmd_string=process_cmd_string,
         post_cmd=return_command_status,
     )
@@ -749,7 +756,8 @@ class AlphaControllerInterface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type="transaction", cmd_string="c_cmd=C_CONTROLOFF",
+        cmd_type="transaction",
+        cmd_string="c_cmd=C_CONTROLOFF",
         process_cmd_string=process_cmd_string,
         post_cmd=return_command_status,
     )
@@ -768,7 +776,8 @@ class AlphaControllerInterface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type="transaction", cmd_string="c_cmd=C_HOME",
+        cmd_type="transaction",
+        cmd_string="c_cmd=C_HOME",
         process_cmd_string=process_cmd_string,
         process_response=process_response,
     )
@@ -832,7 +841,8 @@ class AlphaControllerInterface(DeviceInterface):
         return bool(general_state[1][IN_POSITION]) and not bool(general_state[1][IN_MOTION])
 
     @dynamic_command(
-        cmd_type="transaction", cmd_string="c_cmd=C_CLEARERROR",
+        cmd_type="transaction",
+        cmd_string="c_cmd=C_CLEARERROR",
         process_cmd_string=process_cmd_string,
         post_cmd=return_command_status,
     )
@@ -851,17 +861,18 @@ class AlphaControllerInterface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type="transaction", cmd_string="c_cfg=1 "
-                                           "c_par(0)=${tx_u} c_par(1)=${ty_u} c_par(2)=${tz_u} "
-                                           "c_par(3)=${rx_u} c_par(4)=${ry_u} c_par(5)=${rz_u} "
-                                           "c_par(6)=${tx_o} c_par(7)=${ty_o} c_par(8)=${tz_o} "
-                                           "c_par(9)=${rx_o} c_par(10)=${ry_o} c_par(11)=${rz_o} "
-                                           "c_cmd=C_CFG_CS",
+        cmd_type="transaction",
+        cmd_string="c_cfg=1 "
+        "c_par(0)=${tx_u} c_par(1)=${ty_u} c_par(2)=${tz_u} "
+        "c_par(3)=${rx_u} c_par(4)=${ry_u} c_par(5)=${rz_u} "
+        "c_par(6)=${tx_o} c_par(7)=${ty_o} c_par(8)=${tz_o} "
+        "c_par(9)=${rx_o} c_par(10)=${ry_o} c_par(11)=${rz_o} "
+        "c_cmd=C_CFG_CS",
         process_cmd_string=process_cmd_string,
         post_cmd=return_command_status,
     )
     def configure_coordinates_systems(
-            self, tx_u, ty_u, tz_u, rx_u, ry_u, rz_u, tx_o, ty_o, tz_o, rx_o, ry_o, rz_o
+        self, tx_u, ty_u, tz_u, rx_u, ry_u, rz_u, tx_o, ty_o, tz_o, rx_o, ry_o, rz_o
     ) -> Tuple[int, str] | Failure:
         """
         Change the definition of the User Coordinate System and the Object Coordinate System.
@@ -906,7 +917,8 @@ class AlphaControllerInterface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type="query", cmd_string="c_cfg=0 c_cmd=C_CFG_CS",
+        cmd_type="query",
+        cmd_string="c_cfg=0 c_cmd=C_CFG_CS",
         process_cmd_string=process_cmd_string,
         process_response=partial(decode_pars, count=12),
         post_cmd=partial(get_pars, count=12),
@@ -922,15 +934,17 @@ class AlphaControllerInterface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type="transaction", cmd_string="c_par(0)=${cm} "
-                                           "c_par(1)=${tx} c_par(2)=${ty} c_par(3)=${tz} "
-                                           "c_par(4)=${rx} c_par(5)=${ry} c_par(6)=${rz} "
-                                           "c_cmd=C_MOVE_PTP",
+        cmd_type="transaction",
+        cmd_string="c_par(0)=${cm} "
+        "c_par(1)=${tx} c_par(2)=${ty} c_par(3)=${tz} "
+        "c_par(4)=${rx} c_par(5)=${ry} c_par(6)=${rz} "
+        "c_cmd=C_MOVE_PTP",
         process_cmd_string=process_cmd_string,
         post_cmd=return_command_status,
     )
-    def move_ptp(self, cm: int,
-                 tx: float, ty: float, tz: float, rx: float, ry: float, rz: float) -> Tuple[int, str] | Failure:
+    def move_ptp(
+        self, cm: int, tx: float, ty: float, tz: float, rx: float, ry: float, rz: float
+    ) -> Tuple[int, str] | Failure:
         """
         Start the movement as defined by the arguments.
 
@@ -958,7 +972,8 @@ class AlphaControllerInterface(DeviceInterface):
         return self.move_ptp(2, tx, ty, tz, rx, ry, rz)
 
     @dynamic_command(
-        cmd_type="transaction", cmd_string="c_par(0)=${pos} c_cmd=C_MOVE_SPECIFICPOS",
+        cmd_type="transaction",
+        cmd_string="c_par(0)=${pos} c_cmd=C_MOVE_SPECIFICPOS",
         process_cmd_string=process_cmd_string,
         # process_response=process_response,
         post_cmd=return_command_status,
@@ -978,7 +993,8 @@ class AlphaControllerInterface(DeviceInterface):
     goto_zero_position = goto_user_zero_position
 
     @dynamic_command(
-        cmd_type="transaction", cmd_string="s_uto_tx,6,1",
+        cmd_type="transaction",
+        cmd_string="s_uto_tx,6,1",
         process_cmd_string=process_cmd_string,
         process_response=decode_uto,
     )
@@ -986,7 +1002,8 @@ class AlphaControllerInterface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type="transaction", cmd_string="s_mtp_tx,6,1",
+        cmd_type="transaction",
+        cmd_string="s_mtp_tx,6,1",
         process_cmd_string=process_cmd_string,
         process_response=decode_mtp,
     )
@@ -994,7 +1011,8 @@ class AlphaControllerInterface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type="query", cmd_string="c_cmd=C_VERSION",
+        cmd_type="query",
+        cmd_string="c_cmd=C_VERSION",
         process_cmd_string=process_cmd_string,
         process_response=decode_info,
         post_cmd=partial(get_pars, count=12),
@@ -1008,7 +1026,8 @@ class AlphaControllerInterface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type="query", cmd_string="c_cmd=C_VERSION",
+        cmd_type="query",
+        cmd_string="c_cmd=C_VERSION",
         process_cmd_string=process_cmd_string,
         process_response=decode_version,
         post_cmd=partial(get_pars, count=12),
@@ -1022,9 +1041,10 @@ class AlphaControllerInterface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type="transaction", cmd_string="s_hexa",
+        cmd_type="transaction",
+        cmd_string="s_hexa",
         process_cmd_string=process_cmd_string,
-        process_response=decode_general_state
+        process_response=decode_general_state,
     )
     def get_general_state(self) -> Tuple[Dict, List] | Failure:
         """
@@ -1054,7 +1074,8 @@ class AlphaControllerInterface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type="transaction", cmd_string="s_ax_1,6,1",
+        cmd_type="transaction",
+        cmd_string="s_ax_1,6,1",
         process_cmd_string=process_cmd_string,
         process_response=decode_actuator_state,
     )
@@ -1062,7 +1083,8 @@ class AlphaControllerInterface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type="query", cmd_string="s_pos_ax_1,6,1",
+        cmd_type="query",
+        cmd_string="s_pos_ax_1,6,1",
         process_cmd_string=process_cmd_string,
         process_response=partial(decode_pars, count=6, func=float),
     )
@@ -1077,7 +1099,8 @@ class AlphaControllerInterface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type="query", cmd_string="c_cfg=0 c_cmd=C_CFG_SPEED",
+        cmd_type="query",
+        cmd_string="c_cfg=0 c_cmd=C_CFG_SPEED",
         process_cmd_string=process_cmd_string,
         process_response=partial(decode_pars, count=6),
         post_cmd=partial(get_pars, count=6),
@@ -1092,7 +1115,8 @@ class AlphaControllerInterface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type="transaction", cmd_string="c_cfg=1 c_par(0)=${vt} c_par(1)=${vr} c_cmd=C_CFG_SPEED",
+        cmd_type="transaction",
+        cmd_string="c_cfg=1 c_par(0)=${vt} c_par(1)=${vr} c_cmd=C_CFG_SPEED",
         process_cmd_string=process_cmd_string,
         post_cmd=return_command_status,
     )
@@ -1107,10 +1131,11 @@ class AlphaControllerInterface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type="transaction", cmd_string="c_par(0)=${vm} c_par(1)=${cm} "
-                                           "c_par(2)=${tx} c_par(3)=${ty} c_par(4)=${tz} "
-                                           "c_par(5)=${rx} c_par(6)=${ry} c_par(7)=${rz} "
-                                           "c_cmd=C_VALID_PTP",
+        cmd_type="transaction",
+        cmd_string="c_par(0)=${vm} c_par(1)=${cm} "
+        "c_par(2)=${tx} c_par(3)=${ty} c_par(4)=${tz} "
+        "c_par(5)=${rx} c_par(6)=${ry} c_par(7)=${rz} "
+        "c_cmd=C_VALID_PTP",
         process_cmd_string=process_cmd_string,
         process_response=process_validate_ptp,
         post_cmd=get_pars,
@@ -1212,7 +1237,8 @@ class AlphaControllerInterface(DeviceInterface):
 
 class AlphaPlusControllerInterface(AlphaControllerInterface):
     @dynamic_command(
-        cmd_type="query", cmd_string="${name}",
+        cmd_type="query",
+        cmd_string="${name}",
         process_cmd_string=process_cmd_string,
         process_response=process_response,
     )
@@ -1220,7 +1246,8 @@ class AlphaPlusControllerInterface(AlphaControllerInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type="query", cmd_string="${name},${count},${increment}",
+        cmd_type="query",
+        cmd_string="${name},${count},${increment}",
         process_cmd_string=process_cmd_string,
         process_response=process_response,
     )
@@ -1228,7 +1255,8 @@ class AlphaPlusControllerInterface(AlphaControllerInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type="query", cmd_string="${name}(${idx})",
+        cmd_type="query",
+        cmd_string="${name}(${idx})",
         process_cmd_string=process_cmd_string,
         process_response=process_response,
     )
@@ -1236,7 +1264,8 @@ class AlphaPlusControllerInterface(AlphaControllerInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type="query", cmd_string="${name}(${idx}),${count},${increment}",
+        cmd_type="query",
+        cmd_string="${name}(${idx}),${count},${increment}",
         process_cmd_string=process_cmd_string,
         process_response=process_response,
     )
@@ -1244,7 +1273,8 @@ class AlphaPlusControllerInterface(AlphaControllerInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type="transaction", cmd_string="c_cfg=0 c_par(0)=${lim} c_cmd=C_CFG_LIMIT",
+        cmd_type="transaction",
+        cmd_string="c_cfg=0 c_par(0)=${lim} c_cmd=C_CFG_LIMIT",
         process_cmd_string=process_cmd_string,
         process_response=partial(decode_pars, index=1, count=12),
         post_cmd=partial(get_pars, count=13),
@@ -1276,7 +1306,6 @@ class AlphaPlusControllerInterface(AlphaControllerInterface):
 
 
 if __name__ == "__main__":
-
     from rich import print as rp
 
     from egse.hexapod.symetrie.punaplus import PunaPlusController
@@ -1329,18 +1358,44 @@ if __name__ == "__main__":
         # rp(puna.machine_limit_enable(1))
         # rp(puna.get_limits_state())
         rp(puna.get_coordinates_systems())
-        rp(puna.configure_coordinates_systems(
-                0.033000, -0.238000, 230.205000, 0.003282, 0.005671, 0.013930,
-                0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000))
+        rp(
+            puna.configure_coordinates_systems(
+                0.033000,
+                -0.238000,
+                230.205000,
+                0.003282,
+                0.005671,
+                0.013930,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+            )
+        )
         rp(puna.get_coordinates_systems())
         rp(puna.get_machine_positions())
         rp(puna.get_user_positions())
 
         input("Check configuration in GUI")
 
-        rp(puna.configure_coordinates_systems(
-                0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-                0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000))
+        rp(
+            puna.configure_coordinates_systems(
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+            )
+        )
 
         rp(puna.validate_position(1, 0, 0, 0, 0, 0, 0, 0))
         rp(puna.validate_position(1, 0, 0, 0, 50, 0, 0, 0))

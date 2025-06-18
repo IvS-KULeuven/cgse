@@ -72,7 +72,7 @@ def laser_tracker_to_dict(filexls, setup: Setup):
 
     # Read input file
 
-    pan = pandas.read_excel(filexls, sheet_name="Data", usecols="A:D", names=["desc", 'x', 'y', 'z'])
+    pan = pandas.read_excel(filexls, sheet_name="Data", usecols="A:D", names=["desc", "x", "y", "z"])
 
     nrows = pan.shape[0]
 
@@ -82,9 +82,9 @@ def laser_tracker_to_dict(filexls, setup: Setup):
     colz = pan["z"].values
 
     refFrames = dict()
-    refFrames["Master"] = 'ReferenceFrame//([0.0000,0.0000,0.0000 | [0.0000,0.0000,0.0000 | Master | Master | [])'
+    refFrames["Master"] = "ReferenceFrame//([0.0000,0.0000,0.0000 | [0.0000,0.0000,0.0000 | Master | Master | [])"
 
-    links = '[]'
+    links = "[]"
 
     i, frame = -1, -1
     while i < nrows:
@@ -97,20 +97,19 @@ def laser_tracker_to_dict(filexls, setup: Setup):
             continue
 
         if frame >= 0:
-
             try:
-                name = desc[i][desc[i].find("::")+2:].lower().replace("_", "")
+                name = desc[i][desc[i].find("::") + 2 :].lower().replace("_", "")
 
-                if (desc[i+2].lower().find("translation")<0) or (desc[i+3].lower().find('rotation') < 0):
+                if (desc[i + 2].lower().find("translation") < 0) or (desc[i + 3].lower().find("rotation") < 0):
                     raise Exception(f"Unexpected File Structure after row {i} : {desc[i]}")
 
-                translation = f"[{float(colx[i+2]):.6f},{float(coly[i+2]):.6f},{float(colz[i+2]):.6f}"
-                rotation = f"[{float(colx[i+3]):.6f},{float(coly[i+3]):.6f},{float(colz[i+3]):.6f}"
+                translation = f"[{float(colx[i + 2]):.6f},{float(coly[i + 2]):.6f},{float(colz[i + 2]):.6f}"
+                rotation = f"[{float(colx[i + 3]):.6f},{float(coly[i + 3]):.6f},{float(colz[i + 3]):.6f}"
 
                 if name in predef_refs.keys():
                     ref = predef_refs[name]
                 else:
-                    ref = 'None'
+                    ref = "None"
 
                 refFrames[name] = f"ReferenceFrame//({translation} | {rotation} | {name} | {ref} | {links})"
 

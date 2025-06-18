@@ -93,6 +93,7 @@ We have two sets of files:
 The timestamp that is used is the time of file creation.
 
 """
+
 from __future__ import annotations
 
 __all__ = [
@@ -305,9 +306,7 @@ class Registry:
         if not isinstance(name, str):
             raise ValueError("The name of the item to register must be a string.")
         if name in self:
-            raise AlreadyRegisteredError(
-                f"An item with name '{name}' is already registered, please unregister first."
-            )
+            raise AlreadyRegisteredError(f"An item with name '{name}' is already registered, please unregister first.")
         self._register[name] = item
 
     def unregister(self, name: str):
@@ -490,7 +489,7 @@ class StorageInterface:
 
     @dynamic_interface
     def get_disk_usage(self):
-        """ Return the total, used, and free disk space [bytes].
+        """Return the total, used, and free disk space [bytes].
 
         Returns:
             - Total disk space [bytes].
@@ -533,19 +532,24 @@ def _disentangle_filename(filename: Union[str, Path]) -> Tuple:
     filename = Path(filename).resolve()
     parts = filename.parts
 
-    if parts[-2] != 'obs':
+    if parts[-2] != "obs":
         name = parts[-1]
-        if not (name.rsplit('_', 3)[0].endswith('_SPW') or name.rsplit('_', 2)[0].endswith('_SPW')):
+        if not (name.rsplit("_", 3)[0].endswith("_SPW") or name.rsplit("_", 2)[0].endswith("_SPW")):
             return None, None, None
 
     name = parts[-1]
-    test_id, site_id, setup_id = name.split('_')[:3]
+    test_id, site_id, setup_id = name.split("_")[:3]
     return int(test_id), site_id, int(setup_id)
 
 
 def _construct_filename(
-        identifier: str, ext: str, obsid: ObservationIdentifier = None, use_counter=False,
-        location: str = None, site_id: str = None, camera_name: str = None
+    identifier: str,
+    ext: str,
+    obsid: ObservationIdentifier = None,
+    use_counter=False,
+    location: str = None,
+    site_id: str = None,
+    camera_name: str = None,
 ) -> PurePath:
     """Construct a filename for the data source.
 
@@ -573,7 +577,6 @@ def _construct_filename(
     location = location or get_data_storage_location(site_id=site_id)
 
     if obsid:
-
         timestamp = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%d_%H%M%S")
 
         prefix = obsid.create_id(order=TEST_LAB, camera_name=camera_name)
@@ -594,7 +597,6 @@ def _construct_filename(
             name = f"{prefix}_{identifier}_{timestamp}.{ext}"
 
     else:
-
         timestamp = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%d")
 
         location = location / Path("daily") / timestamp
@@ -625,7 +627,7 @@ def _write_counter(counter: int, file_path: Path):
         counter: the counter to save
         file_path: the file to which the counter shall be saved
     """
-    with file_path.open('w') as fd:
+    with file_path.open("w") as fd:
         fd.write(f"{counter:d}")
 
 
@@ -641,7 +643,7 @@ def _read_counter(file_path: Path) -> int:
         The counter that is read from the file or 0 if file doesn't exist.
     """
     try:
-        with file_path.open('r') as fd:
+        with file_path.open("r") as fd:
             counter = fd.read().strip()
     except FileNotFoundError:
         counter = 0
@@ -692,7 +694,6 @@ def determine_counter_from_dir_list(location, pattern, index: int = -1):
     parts = last_file.name.split("_")
 
     try:
-
         # Observation files have the following pattern:
         #  <test ID>_<lab ID>_<setup ID>_<storage mnemonic>_<day YYYYmmdd>_<time HHMMSS>[_<counter>]
         # Daily files:
@@ -722,9 +723,7 @@ class StorageController(StorageInterface, EventInterface):
 
     def start_observation(self, obsid: ObservationIdentifier, camera_name: str = None) -> Response:
         if self._obsid is not None:
-            return Failure(
-                "Can not start a new observation before the previous observation is ended."
-            )
+            return Failure("Can not start a new observation before the previous observation is ended.")
 
         self._obsid = obsid
         self._camera_name = camera_name
@@ -759,7 +758,7 @@ class StorageController(StorageInterface, EventInterface):
                 registered_item["persistence_class"].extension,
                 obsid,
                 use_counter=issubclass(registered_item["persistence_class"], TYPES["HDF5"]),
-                camera_name=camera_name
+                camera_name=camera_name,
             )
 
             # logger.debug(f"{filename = }, {camera_name = }")
@@ -778,11 +777,9 @@ class StorageController(StorageInterface, EventInterface):
 
                 daily_file_object.close()
                 shutil.copy(daily_file_path, filename)
-                daily_file_object.open(mode='a')
+                daily_file_object.open(mode="a")
 
-            persistence_obj = registered_item["persistence_class"](
-                filename, prep=registered_item["prep"]
-            )
+            persistence_obj = registered_item["persistence_class"](filename, prep=registered_item["prep"])
 
             mode = "a" if persistence_obj.exists() else "w"
             persistence_obj.open(mode=mode)
@@ -837,9 +834,7 @@ class StorageController(StorageInterface, EventInterface):
         registered_item = self._registry.get(item["origin"])
 
         if not registered_item:
-            return Failure(
-                f"Storage could not find a registration for {item['origin']}, no data saved."
-            )
+            return Failure(f"Storage could not find a registration for {item['origin']}, no data saved.")
 
         for persistence_object in registered_item["persistence_objects"]:
             persistence_object.create(item["data"])
@@ -847,13 +842,10 @@ class StorageController(StorageInterface, EventInterface):
         return Success(f"Storage successfully saved the data for {item['origin']}.")
 
     def read(self, item: dict):
-
         registered_item = self._registry.get(item["origin"])
 
         if not registered_item:
-            return Failure(
-                f"Storage could not find a registration for {item['origin']}, no data saved."
-            )
+            return Failure(f"Storage could not find a registration for {item['origin']}, no data saved.")
 
         # FIXME:
         #   * wat als meerdere persistence_objects bestaan? alleen de eerste, alleen de laatste,
@@ -866,11 +858,8 @@ class StorageController(StorageInterface, EventInterface):
         return Success(f"Storage successfully read the data from {item['origin']}.", result)
 
     def register(self, item: dict, use_counter=False) -> Response:
-
         if not isinstance(item, dict):
-            return Failure(
-                f"Could not register item, item must be a dictionary (item={type(item)})."
-            )
+            return Failure(f"Could not register item, item must be a dictionary (item={type(item)}).")
 
         prep = item.get("prep", {})
 
@@ -890,8 +879,9 @@ class StorageController(StorageInterface, EventInterface):
                 location = Path(get_data_storage_location(site_id=SITE_ID))
                 filename = location / item["filename"]
             else:
-                filename = _construct_filename(item["origin"], item["persistence_class"].extension,
-                                               use_counter=use_counter)
+                filename = _construct_filename(
+                    item["origin"], item["persistence_class"].extension, use_counter=use_counter
+                )
 
             persistence_obj = item["persistence_class"](filename, prep=prep)
             mode = "a" if persistence_obj.exists() else "w"
@@ -911,8 +901,11 @@ class StorageController(StorageInterface, EventInterface):
                 and not issubclass(item["persistence_class"], TYPES["HDF5"])
             ):
                 filename = _construct_filename(
-                    item["origin"], item["persistence_class"].extension, self._obsid,
-                    use_counter=use_counter, camera_name=self._camera_name
+                    item["origin"],
+                    item["persistence_class"].extension,
+                    self._obsid,
+                    use_counter=use_counter,
+                    camera_name=self._camera_name,
                 )
 
                 persistence_obj = item["persistence_class"](filename, prep=prep)
@@ -960,7 +953,6 @@ class StorageController(StorageInterface, EventInterface):
         return list(self._registry)
 
     def cycle_daily_files(self):
-
         logger.info("Cycling daily files for Storage Manager")
 
         for reg_name in self._registry:
@@ -979,16 +971,13 @@ class StorageController(StorageInterface, EventInterface):
                     daily_persist_obj = item["persistence_objects"][0]
                     daily_persist_obj.close()
                 except IndexError:
-                    logger.info(f"I'm ignoring that there is no persistence_object "
-                                f"for {item['origin']} at this time.")
+                    logger.info(f"I'm ignoring that there is no persistence_object for {item['origin']} at this time.")
                     continue
 
                 # Create folder for the day
-                filename = _construct_filename(item['origin'], item['persistence_class'].extension)
+                filename = _construct_filename(item["origin"], item["persistence_class"].extension)
 
-                persistence_obj: PersistenceLayer = item["persistence_class"](
-                    filename, prep=item.get("prep")
-                )
+                persistence_obj: PersistenceLayer = item["persistence_class"](filename, prep=item.get("prep"))
                 mode = "a" if persistence_obj.exists() else "w"
                 persistence_obj.open(mode=mode)
 
@@ -1013,10 +1002,7 @@ class StorageController(StorageInterface, EventInterface):
         if not registered_item:
             return []
 
-        return [
-            persistence_object.get_filepath()
-            for persistence_object in registered_item["persistence_objects"]
-        ]
+        return [persistence_object.get_filepath() for persistence_object in registered_item["persistence_objects"]]
 
     def new_registration(self, item: dict, use_counter=False) -> Response:
         if item["origin"] in self.get_registry_names():
@@ -1027,7 +1013,6 @@ class StorageController(StorageInterface, EventInterface):
         return response
 
     def get_disk_usage(self):
-
         location = Path(get_data_storage_location(site_id=SITE_ID))
         total, used, free = shutil.disk_usage(location)
         return total, used, free
@@ -1062,8 +1047,8 @@ class StorageController(StorageInterface, EventInterface):
     def handle_event(self, event: Event) -> str:
         logger.info(f"An event is received, {event=}")
         try:
-            if event.type == 'new_setup':
-                self._cs.schedule_task(partial(self.load_setup, setup_id=event.context['setup_id']))
+            if event.type == "new_setup":
+                self._cs.schedule_task(partial(self.load_setup, setup_id=event.context["setup_id"]))
         except KeyError as exc:
             return f"Expected event context to contain the following key: {exc}"
         return "ACK"
@@ -1124,10 +1109,9 @@ class StorageProtocol(CommandProtocol):
 
 
 def get_status(full: bool = False):
-
     if is_storage_manager_active():
         with StorageProxy() as sm:
-            text =  textwrap.dedent(
+            text = textwrap.dedent(
                 f"""\
                 Storage Manager:
                     Status: [green]active[/]

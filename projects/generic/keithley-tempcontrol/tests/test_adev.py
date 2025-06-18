@@ -14,7 +14,6 @@ HOSTNAME = "192.168.68.77"  # hostname at home with DHCP
 
 @pytest.mark.sayncio
 async def is_daq6510_available():
-
     try:
         daq = DAQ6510(HOSTNAME, SCPI_PORT)
         await daq.connect()
@@ -26,7 +25,6 @@ async def is_daq6510_available():
 
 @pytest.mark.asyncio
 async def test_constructor():
-
     daq = DAQ6510(HOSTNAME, SCPI_PORT)
     await daq.connect()
 
@@ -39,7 +37,6 @@ async def test_constructor():
 
 @pytest.mark.asyncio
 async def test_connection(caplog):
-
     daq = DAQ6510(HOSTNAME, SCPI_PORT)
 
     assert not await daq.is_connected()
@@ -77,7 +74,6 @@ async def test_connection(caplog):
 
 @pytest.mark.asyncio
 async def test_context_manager():
-
     async with DAQ6510(HOSTNAME, SCPI_PORT) as daq:
         assert await daq.is_connected()
 
@@ -86,7 +82,6 @@ async def test_context_manager():
 
 @pytest.mark.asyncio
 async def test_incorrect_construction():
-
     daq = DAQ6510(HOSTNAME)
     daq.hostname = "unknown"  # set this explicitly because the local_settings might define the HOSTNAME
     with pytest.raises(DeviceConnectionError, match="DAQ6510: Address resolution error for unknown"):
@@ -111,10 +106,8 @@ async def test_incorrect_construction():
 
 @pytest.mark.asyncio
 async def test_write_read():
-
     async with DAQ6510(HOSTNAME, SCPI_PORT) as daq:
-
-        await daq.write(":SYST:COMM:LAN:CONF \"AUTO\"")
+        await daq.write(':SYST:COMM:LAN:CONF "AUTO"')
         await daq.write(":SYST:COMM:LAN:CONF?")
 
         response = (await daq.read()).decode()
@@ -124,24 +117,19 @@ async def test_write_read():
 
 @pytest.mark.asyncio
 async def test_a_scan():
-
     async with DAQ6510(HOSTNAME, SCPI_PORT) as daq:
-
         # Initialize
 
-        await daq.write('*RST')  # this also the user-defined buffer "test1"
+        await daq.write("*RST")  # this also the user-defined buffer "test1"
 
         for cmd, response in [
             ('TRAC:MAKE "test1", 1000', False),  # create a new buffer
             # settings for channel 1 and 2 of slot 1
             ('SENS:FUNC "TEMP", (@101:102)', False),  # set the function to temperature
-
             ("SENS:TEMP:TRAN FRTD, (@101)", False),  # set the transducer to 4-wire RTD
             ("SENS:TEMP:RTD:FOUR PT100, (@101)", False),  # set the type of the 4-wire RTD
-
             ("SENS:TEMP:TRAN RTD, (@102)", False),  # set the transducer to 2-wire RTD
             ("SENS:TEMP:RTD:TWO PT100, (@102)", False),  # set the type of the 2-wire RTD
-
             ('ROUT:SCAN:BUFF "test1"', False),
             ("ROUT:SCAN:CRE (@101:102)", False),
             ("ROUT:CHAN:OPEN (@101:102)", False),
@@ -188,32 +176,26 @@ async def test_a_scan():
 
 @pytest.mark.asyncio
 async def test_another_scan():
-
     async with DAQ6510(HOSTNAME, SCPI_PORT) as daq:
-
         # Initialize
 
         n_readings = 50
 
-        await daq.write('*RST')  # This also clears the default buffers
+        await daq.write("*RST")  # This also clears the default buffers
 
         for cmd, response in [
             ('SENS:FUNC "TEMP", (@101,102)', False),
-            ('SENS:TEMP:UNIT CELS, (@101,102)', False),
-
+            ("SENS:TEMP:UNIT CELS, (@101,102)", False),
             ("SENS:TEMP:TRAN FRTD, (@101)", False),  # set the transducer to 4-wire RTD
             ("SENS:TEMP:RTD:FOUR PT100, (@101)", False),  # set the type of the 4-wire RTD
-
             ("SENS:TEMP:TRAN RTD, (@102)", False),  # set the transducer to 2-wire RTD
             ("SENS:TEMP:RTD:TWO PT100, (@102)", False),  # set the type of the 2-wire RTD
-
             # Set the amount of time that the input signal is measured.
-            ('SENS:TEMP:NPLC 0.1, (@101,102)', False),
-
+            ("SENS:TEMP:NPLC 0.1, (@101,102)", False),
             ('TRIG:LOAD "Empty"', False),
             ('TRIG:BLOC:BUFF:CLEAR 1, "defbuffer1"', False),
             ('TRIG:BLOC:MDIG 2, "defbuffer1"', False),
-            (f'TRIG:BLOC:BRAN:COUN 3, {n_readings}, 2', False),
+            (f"TRIG:BLOC:BRAN:COUN 3, {n_readings}, 2", False),
         ]:
             if response:
                 print(f"Sending {cmd}... response=", end="")
@@ -243,7 +225,6 @@ async def test_another_scan():
 
 @pytest.mark.asyncio
 async def test_daq6510_mon():
-
     from egse.tempcontrol.keithley.daq6510_mon import DAQMonitorClient
 
     client = DAQMonitorClient(server_address="localhost", port=5556)

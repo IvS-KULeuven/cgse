@@ -70,13 +70,12 @@ app = typer.Typer()
 
 @app.command()
 def run_stress_test(
-        count: Annotated[int, typer.Option(help="Number of times to execute the tests")] = 1,
-        sleep_time: Annotated[float, typer.Option(help="sleep time between tests")] = 10.0,
-        terminate_server: Annotated[
-            bool, typer.Option(help="Terminate the registry server at the end of the test")
-        ] = False,
+    count: Annotated[int, typer.Option(help="Number of times to execute the tests")] = 1,
+    sleep_time: Annotated[float, typer.Option(help="sleep time between tests")] = 10.0,
+    terminate_server: Annotated[
+        bool, typer.Option(help="Terminate the registry server at the end of the test")
+    ] = False,
 ):
-
     with RegistryClient() as reg:
         service_id = reg.register("stress-test-heartbeat", "localhost", 5678)
         reg.start_heartbeat(3)
@@ -103,13 +102,11 @@ def run_stress_test(
         rich.print(response)
 
         if terminate_server:
-
             if reg.terminate_registry_server():
                 rich.print("[green]Registry Server terminated successfully[/]")
             else:
                 rich.print("[red]error: Couldn't terminate registry server..[/]")
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     sys.exit(app())

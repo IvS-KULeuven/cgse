@@ -1,6 +1,7 @@
 """
 The LED class provides an easy way to use LEDs in your GUIs.
 """
+
 import sys
 from enum import IntEnum
 from typing import List
@@ -31,6 +32,7 @@ CIRCLE_COLORS = [
 
 class Indic:
     """The color or kind of LED that you want to show."""
+
     BLACK = OFF = 0
     GREEN = ON = 1
     ORANGE = WARNING = 2
@@ -39,15 +41,17 @@ class Indic:
 
 class ShapeEnum(IntEnum):
     """Supported LED shapes."""
+
     CIRCLE = 0
     SQUARE = 1
 
 
 class LED(QLabel):
     """A LED Widget that can be used in your GUIs."""
-    def __init__(self, parent: Optional[QWidget] = None,
-                 size: QSize = QSize(20, 20),
-                 shape: ShapeEnum = ShapeEnum.CIRCLE):
+
+    def __init__(
+        self, parent: Optional[QWidget] = None, size: QSize = QSize(20, 20), shape: ShapeEnum = ShapeEnum.CIRCLE
+    ):
         """
         Args:
             parent (QWidget): the parent widget
@@ -88,7 +92,6 @@ Led = LED
 
 
 if __name__ == "__main__":
-
     from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QPushButton
 
     class Example(QWidget):
@@ -101,7 +104,6 @@ if __name__ == "__main__":
             self.initUI()
 
         def initUI(self):
-
             vbox = QVBoxLayout()
             hbox = QHBoxLayout()
 
@@ -142,7 +144,6 @@ if __name__ == "__main__":
             self.setLayout(vbox)
 
         def onClick(self):
-
             sender = self.sender()
             text = sender.text()
 

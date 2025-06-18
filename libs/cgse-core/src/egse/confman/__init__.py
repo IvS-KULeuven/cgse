@@ -107,6 +107,7 @@ a connection with the `cm_cs` and sends it a _Ping_ command. This is the recomme
 the availability of the configuration manager.
 
 """
+
 from __future__ import annotations
 
 import logging
@@ -202,8 +203,7 @@ def _push_setup_to_repo(filename: str, commit_msg: str) -> Failure | Success:
     repo = git.Repo(repo_workdir)
 
     if repo.is_dirty():
-        LOGGER.warning(
-            f"The cgse-conf repository is dirty. Check the git status at '{repo_workdir}'.")
+        LOGGER.warning(f"The cgse-conf repository is dirty. Check the git status at '{repo_workdir}'.")
 
     untracked = repo.untracked_files
 
@@ -237,9 +237,7 @@ def _push_setup_to_repo(filename: str, commit_msg: str) -> Failure | Success:
         # assert response[0].path == untracked
     except FileNotFoundError:
         # if for some reason the untracked file can not be found, should not happen..
-        LOGGER.warning(
-            f"Untracked file {untracked} not found. Check the git status at {repo_workdir}."
-        )
+        LOGGER.warning(f"Untracked file {untracked} not found. Check the git status at {repo_workdir}.")
 
     # The response is a Commit object containing e.g. the commit message, the hash, the author, ...
 
@@ -251,14 +249,14 @@ def _push_setup_to_repo(filename: str, commit_msg: str) -> Failure | Success:
     # should not abort the submit command, but needs to be logged.
 
     try:
-        response = repo.remote('upload').pull("main")
+        response = repo.remote("upload").pull("main")
     except Exception as exc:
         LOGGER.error(exc, exc_info=True)
 
     # The response is a PushInfo object
 
     try:
-        response = repo.remote('upload').push("main")
+        response = repo.remote("upload").push("main")
     except ValueError as exc:
         LOGGER.error(exc, exc_info=True)
         return Failure(f"Push of setup [{filename}] failed", exc)
@@ -267,6 +265,7 @@ def _push_setup_to_repo(filename: str, commit_msg: str) -> Failure | Success:
         return Failure(f"Push of setup [{filename}] failed", exc)
 
     return Success(f"Successfully pushed the setup to the repo {repo}")
+
 
 # We have seen that especially when listing the setups, we have a performance problem.
 # Therefore, we implement a cache for the Setup info that we use in different functions.
@@ -359,7 +358,6 @@ def _get_cached_setup_info(setup_id: int) -> Optional[SetupInfo]:
 
 
 def _reload_cached_setup_info():
-
     try:
         Setup.from_yaml_file.cache_clear()
     except AttributeError:
@@ -417,7 +415,6 @@ def _get_description_for_setup(setup: Setup, setup_id: int = None) -> str:
 
 
 def _get_sut_id_for_setup(setup: Setup) -> str:
-
     try:
         if "id" in setup.sut:
             sut_id = setup.sut.id
@@ -432,7 +429,6 @@ def _get_sut_id_for_setup(setup: Setup) -> str:
 
 
 def _get_site_id_for_setup(setup: Setup) -> str:
-
     try:
         site_id = setup.site_id if "site_id" in setup else None
     except AttributeError:
@@ -556,7 +552,6 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
     """
 
     def __init__(self, control_server: ControlServer | None = None):
-
         self._obsid: ObservationIdentifier | None = None
         self._obsid_start_dt: str | None = None
         self._setup: Setup | None = None
@@ -572,9 +567,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         if location:
             self._data_conf_location = Path(location)
         else:
-            raise ValueError(
-                "The location for the configuration data is not defined. Please check your environment."
-            )
+            raise ValueError("The location for the configuration data is not defined. Please check your environment.")
 
         # Populate the cache with information from the available Setups. This will also load each
         # Setup and cache them with the lru_cache decorator. Since this takes about 5s for 100
@@ -619,9 +612,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         if self._storage:
             response = self._storage.start_observation(self._obsid, self._sut_name)
         else:
-            return Failure(
-                "Couldn't send start observation to Storage Manager, no Storage Manager available."
-            )
+            return Failure("Couldn't send start observation to Storage Manager, no Storage Manager available.")
 
         if not response.successful:
             self._obsid = None
@@ -631,7 +622,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
             )
 
         description = function_info.pop("description", "")
-        cmd = stringify_function_call(function_info).replace('\n', ' ')
+        cmd = stringify_function_call(function_info).replace("\n", " ")
 
         if description:
             cmd += f" [{description}]"
@@ -648,9 +639,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         )
 
         if isinstance(response, Failure):
-            LOGGER.warning(
-                f"There was a Failure when saving to the obsid-table: "
-                f"{response}")
+            LOGGER.warning(f"There was a Failure when saving to the obsid-table: {response}")
         else:
             LOGGER.info(f"Successfully created an observation with obsid={self._obsid}.")
 
@@ -658,16 +647,12 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
 
     def end_observation(self) -> Response:
         if not self._obsid:
-            return Failure(
-                "Received end_observation command while not currently in an observation context."
-            )
+            return Failure("Received end_observation command while not currently in an observation context.")
 
         if self._storage:
             response = self._storage.end_observation(self._obsid)
         else:
-            return Failure(
-                "Couldn't send end observation to Storage Manager, no Storage Manager available."
-            )
+            return Failure("Couldn't send end observation to Storage Manager, no Storage Manager available.")
 
         if not response.successful:
             return Failure(
@@ -677,8 +662,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
 
         obsid_end_dt = format_datetime()
         obs_duration = humanize_seconds(
-            duration(self._obsid_start_dt, obsid_end_dt).total_seconds(),
-            include_micro_seconds=False
+            duration(self._obsid_start_dt, obsid_end_dt).total_seconds(), include_micro_seconds=False
         )
         LOGGER.info(f"Successfully ended observation with obsid={self._obsid}, duration={obs_duration}.")
 
@@ -695,7 +679,6 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         return Success(msg, self._obsid)
 
     def register_to_storage(self):
-
         # Import these modules here as to optimize the import of classes and functions in other parts of the CGSE.
         # The ConfigurationManagerController is only used by the CM CS and these Storage imports are only used in
         # this class and take too much loading time...
@@ -709,7 +692,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
             response = self._storage.register(
                 {
                     "origin": "obsid",
-                    "persistence_class": TYPES['TXT'],
+                    "persistence_class": TYPES["TXT"],
                     "prep": {"mode": "a", "ending": "\n"},
                     "persistence_count": True,
                     "filename": "obsid-table.txt",
@@ -750,16 +733,12 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
                 f"loading a new Setup."
             )
 
-        setup_files = list(
-            find_files(
-                pattern=f"SETUP_{SITE_ID}_{setup_id:05d}_*.yaml", root=self._data_conf_location
-            )
-        )
+        setup_files = list(find_files(pattern=f"SETUP_{SITE_ID}_{setup_id:05d}_*.yaml", root=self._data_conf_location))
 
         if len(setup_files) != 1:
             LOGGER.error(
                 msg := f"Expected to find just one Setup YAML file, found {len(setup_files)}. "
-                       f"[{SITE_ID = }, {setup_id = }, data_conf_location={self._data_conf_location}]"
+                f"[{SITE_ID = }, {setup_id = }, data_conf_location={self._data_conf_location}]"
             )
             return Failure("Loading Setup", InternalError(msg))
 
@@ -775,8 +754,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
                 LOGGER.info("Notifying listeners for a new Setup!")
                 with Timer(f"Notify Listeners for Setup change, Setup={self._setup_id}"):
                     self._control_server.notify_listeners(
-                        EVENT_ID.SETUP,
-                        {'event_type': 'new_setup', 'setup_id': self._setup_id}
+                        EVENT_ID.SETUP, {"event_type": "new_setup", "setup_id": self._setup_id}
                     )
 
             return self._setup
@@ -808,15 +786,11 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
             # The Setup is NOT added to the Configuration Manager as the current Setup.
 
             setup_files = list(
-                find_files(
-                    pattern=f"SETUP_{SITE_ID}_{setup_id:05d}_*.yaml", root=self._data_conf_location
-                )
+                find_files(pattern=f"SETUP_{SITE_ID}_{setup_id:05d}_*.yaml", root=self._data_conf_location)
             )
 
             if len(setup_files) != 1:
-                LOGGER.error(
-                    msg := f"Expected to find just one Setup YAML file, found {len(setup_files)}."
-                )
+                LOGGER.error(msg := f"Expected to find just one Setup YAML file, found {len(setup_files)}.")
                 return Failure("Expected only one Setup.", InternalError(msg))
 
             setup_file = setup_files[0]
@@ -903,9 +877,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
             #  because they do basically the same thing
             try:
                 setup_id = int(rc.return_code[-1].split(maxsplit=3)[2])
-                setup_file = find_file(
-                    name=f"SETUP_{SITE_ID}_{setup_id:05d}_*.yaml", root=self._data_conf_location
-                )
+                setup_file = find_file(name=f"SETUP_{SITE_ID}_{setup_id:05d}_*.yaml", root=self._data_conf_location)
                 setup = Setup.from_yaml_file(setup_file)
             except (IndexError, SettingsError):
                 setup = None
@@ -913,7 +885,6 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         return setup
 
     def submit_setup(self, setup: Setup, description: str, replace: bool = True):
-
         # 1. Determine the Site for this Setup, or should this be the Site that is known by the
         #    CM_CS?
         # 2. Find the correct (next) number for the Setup for the given Site
@@ -950,7 +921,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
                 if isinstance(rc, Failure):
                     return rc
                 _add_setup_info_to_cache(setup)
-            except (Exception, ) as exc:
+            except (Exception,) as exc:
                 msg = "Submit_setup could not complete it's task to send the new Setup to the repo."
                 LOGGER.error(msg, exc_info=True)
                 return Failure("Submit_setup could not complete it's task to send the new Setup to the repo.", exc)
@@ -967,8 +938,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
                 LOGGER.info("Notifying listeners for a new Setup!")
                 with Timer(f"Notify Listeners for Setup change, Setup={self._setup_id}"):
                     self._control_server.notify_listeners(
-                        EVENT_ID.SETUP,
-                        {'event_type': 'new_setup', 'setup_id': setup_id}
+                        EVENT_ID.SETUP, {"event_type": "new_setup", "setup_id": setup_id}
                     )
 
         return setup
@@ -1058,7 +1028,7 @@ class ConfigurationManagerProtocol(CommandProtocol):
 
     def get_housekeeping(self) -> dict:
         obsid = self.controller.get_obsid().return_code
-        test_id = obsid.test_id if obsid else float('nan')
+        test_id = obsid.test_id if obsid else float("nan")
         setup_id = self.controller.get_setup_id()
         site_id = self.controller.get_site_id()
 
@@ -1067,7 +1037,7 @@ class ConfigurationManagerProtocol(CommandProtocol):
             "CM_SITE_ID": site_id,
             "CM_SETUP_ID": setup_id,
             "CM_TEST_ID": test_id,
-            "CM_OBSID": obsid
+            "CM_OBSID": obsid,
         }
 
         hk.update(self.version_dict)
@@ -1093,7 +1063,6 @@ def is_not_in(a, b):
 
 
 def get_status():
-
     if is_configuration_manager_active():
         with ConfigurationManagerProxy() as cm:
             obsid = cm.get_obsid()
@@ -1102,7 +1071,7 @@ def get_status():
             try:
                 site_id = f"Site ID: {setup.site_id}"
             except AttributeError:
-                site_id = 'Site ID: [red]UNKNOWN[/]'
+                site_id = "Site ID: [red]UNKNOWN[/]"
 
             if obsid:
                 obsid = f"Running observation: {obsid}"
@@ -1114,7 +1083,7 @@ def get_status():
                     setup_id = setup.get_private_attribute("_setup_id")
                     setup_id = f"Setup loaded: {setup_id}"
                 else:
-                    setup_id = '[red]No Setup loaded[/]'
+                    setup_id = "[red]No Setup loaded[/]"
             except Exception as exc:
                 setup_id = "An Exception was caught: {exc}"
 
@@ -1129,8 +1098,8 @@ def get_status():
                     Monitoring port: {cm.get_monitoring_port()}
                     Commanding port: {cm.get_commanding_port()}
                     Service port: {cm.get_service_port()}
-                    Listeners: {', '.join(cm.get_listener_names())}
+                    Listeners: {", ".join(cm.get_listener_names())}
                 """
             )
     else:
-        return 'Configuration Manager Status: [red]not active'
+        return "Configuration Manager Status: [red]not active"

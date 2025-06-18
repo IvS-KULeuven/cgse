@@ -12,7 +12,6 @@ LOGGER = logging.getLogger()
 
 
 def test_construction():
-
     model = ReferenceFrameModel()
 
     assert len(model) == 0
@@ -29,8 +28,7 @@ def test_construction():
 
     assert "Master" in model_dict
     assert model_dict["Master"] == (
-        "ReferenceFrame//([0.000000, 0.000000, 0.000000] | "
-        "[0.000000, -0.000000, 0.000000] | Master | Master | [])"
+        "ReferenceFrame//([0.000000, 0.000000, 0.000000] | [0.000000, -0.000000, 0.000000] | Master | Master | [])"
     )
 
     model.add_frame("A", translation=[0.0, 0.0, 1.0], rotation=[0.0, 0.0, 0.0], ref="Master")
@@ -50,18 +48,13 @@ def test_construction():
 
 
 def test_construction_from_list():
-
     rot_config = "sxyz"
     master = ReferenceFrame.createMaster()
 
-    a_ref = ReferenceFrame(
-        transformation=np.identity(4), ref=master, name="a_ref", rot_config=rot_config
-    )
+    a_ref = ReferenceFrame(transformation=np.identity(4), ref=master, name="a_ref", rot_config=rot_config)
     a_ref.addLink(master)
 
-    b_ref = ReferenceFrame(
-        transformation=np.identity(4), ref=a_ref, name="b_ref", rot_config=rot_config
-    )
+    b_ref = ReferenceFrame(transformation=np.identity(4), ref=a_ref, name="b_ref", rot_config=rot_config)
 
     c_ref = ReferenceFrame.fromTranslationRotation(
         [-2, -2, -2], [-3, -4, -5], rot_config=rot_config, ref=b_ref, name="c_ref"
@@ -69,9 +62,7 @@ def test_construction_from_list():
     c_ref.addLink(b_ref)
     c_ref.addLink(a_ref)
 
-    d_ref = ReferenceFrame(
-        transformation=np.identity(4), ref=c_ref, name="d_ref", rot_config=rot_config
-    )
+    d_ref = ReferenceFrame(transformation=np.identity(4), ref=c_ref, name="d_ref", rot_config=rot_config)
 
     model_list = [a_ref, b_ref, c_ref, d_ref, master]
 
@@ -86,7 +77,6 @@ def test_construction_from_list():
 
 
 def test_add_frame_from_transformation():
-
     model = ReferenceFrameModel()
 
     model.add_master_frame()
@@ -97,7 +87,6 @@ def test_add_frame_from_transformation():
 
 
 def test_move_absolute():
-
     model = ReferenceFrameModel()
 
     model.add_master_frame()
@@ -128,12 +117,10 @@ def test_proper_ref_model():
     rot_config = "sxyz"
     master = ReferenceFrame.createMaster()
 
-    a_ref = ReferenceFrame(transformation=np.identity(4), ref=master, name="a_ref",
-                           rot_config=rot_config)
+    a_ref = ReferenceFrame(transformation=np.identity(4), ref=master, name="a_ref", rot_config=rot_config)
     a_ref.addLink(master)
 
-    b_ref = ReferenceFrame(transformation=np.identity(4), ref=a_ref, name="b_ref",
-                           rot_config=rot_config)
+    b_ref = ReferenceFrame(transformation=np.identity(4), ref=a_ref, name="b_ref", rot_config=rot_config)
 
     c_ref = ReferenceFrame.fromTranslationRotation(
         [-2, -2, -2], [-3, -4, -5], rot_config=rot_config, ref=b_ref, name="c_ref"
@@ -141,8 +128,7 @@ def test_proper_ref_model():
     c_ref.addLink(b_ref)
     c_ref.addLink(a_ref)
 
-    d_ref = ReferenceFrame(transformation=np.identity(4), ref=c_ref, name="d_ref",
-                           rot_config=rot_config)
+    d_ref = ReferenceFrame(transformation=np.identity(4), ref=c_ref, name="d_ref", rot_config=rot_config)
 
     model_list = [a_ref, b_ref, c_ref, d_ref, master]
 
