@@ -624,6 +624,7 @@ class ControlServer(metaclass=abc.ABCMeta):
 
     def deregister_service(self):
         if self.registry:
+            self.registry.stop_heartbeat()
             self.registry.deregister(self.service_id)
 
     def store_housekeeping_information(self, data: dict) -> None:
@@ -663,7 +664,6 @@ class ControlServer(metaclass=abc.ABCMeta):
         except NewConnectionError:
             _LOGGER.warning(f"No connection to InfluxDB could be established to propagate {origin} metrics.  Check "
                            f"whether this service is (still) running.")
-
 
     def register_to_storage_manager(self) -> None:
         """Registers this Control Server to the Storage Manager.

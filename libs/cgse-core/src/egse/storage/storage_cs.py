@@ -158,8 +158,8 @@ def stop():
         # rich.print("service = ", service)
 
         if service:
-            proxy = ServiceProxy(protocol="tcp", hostname=service["host"], port=service['metadata']['service_port'])
-            proxy.quit_server()
+            with ServiceProxy(hostname=service["host"], port=service['metadata']['service_port']) as proxy:
+                proxy.quit_server()
         else:
             rich.print("[red]ERROR: Couldn't connect to 'sm_cs', process probably not running.")
 

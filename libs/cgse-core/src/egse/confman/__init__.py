@@ -557,14 +557,6 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
 
     def __init__(self, control_server: ControlServer | None = None):
 
-        # Import these modules here as to optimize the import of classes and functions in other parts of the CGSE.
-        # The CongifurationManagerController is only used by the CM CS and these Storage imports are only used in
-        # this class and take too much loading time...
-
-        from egse.storage import StorageProxy
-        from egse.storage import is_storage_manager_active
-        from egse.storage.persistence import TYPES
-
         self._obsid: ObservationIdentifier | None = None
         self._obsid_start_dt: str | None = None
         self._setup: Setup | None = None
@@ -572,21 +564,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         self._sut_name: str | None = None
         self._control_server: ControlServer | None = control_server
 
-        if is_storage_manager_active():
-            self._storage = StorageProxy()
-            response = self._storage.register(
-                {
-                    "origin": "obsid",
-                    "persistence_class": TYPES['TXT'],
-                    "prep": {"mode": "a", "ending": "\n"},
-                    "persistence_count": True,
-                    "filename": "obsid-table.txt",
-                }
-            )
-            LOGGER.info(response)
-        else:
-            self._storage = None
-            LOGGER.error("No Storage Manager available !!!!")
+        self.register_to_storage()
 
         # Find the location for the configuration data
 
@@ -717,6 +695,10 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         return Success(msg, self._obsid)
 
     def register_to_storage(self):
+
+        # Import these modules here as to optimize the import of classes and functions in other parts of the CGSE.
+        # The ConfigurationManagerController is only used by the CM CS and these Storage imports are only used in
+        # this class and take too much loading time...
 
         from egse.storage import StorageProxy
         from egse.storage import is_storage_manager_active
@@ -1031,16 +1013,14 @@ class ConfigurationManagerProxy(Proxy, ConfigurationManagerInterface):
         """
         if hostname is None:
             with RegistryClient() as reg:
-                service = reg.discover_service(CTRL_SETTINGS.SERVICE_TYPE)
+                endpoint = reg.get_endpoint(CTRL_SETTINGS.SERVICE_TYPE)
 
-                if service:
-                    protocol = service.get('protocol', 'tcp')
-                    hostname = service['host']
-                    port = service['port']
-                else:
-                    raise RuntimeError(f"No service registered as {CTRL_SETTINGS.SERVICE_TYPE}")
+            if not endpoint:
+                raise RuntimeError(f"No service registered as {CTRL_SETTINGS.SERVICE_TYPE}")
+        else:
+            endpoint = connect_address(protocol, hostname, port)
 
-        super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
+        super().__init__(endpoint, timeout=timeout)
 
 
 class ConfigurationManagerProtocol(CommandProtocol):
