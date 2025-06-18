@@ -15,7 +15,7 @@ from pathlib import Path
 
 from egse.system import format_datetime
 
-logger = logging.getLogger('egse.signal')
+logger = logging.getLogger("egse.signal")
 
 DEFAULT_SIGNAL_DIR = "/tmp/cgse_signals"
 
@@ -54,8 +54,8 @@ class FileBasedSignaling:
       $ echo "{'action': 'reregister'}" > /tmp/cgse_signals/cm_cs_reregister.json
 
     """
-    def __init__(self, service_id: str, signal_dir=DEFAULT_SIGNAL_DIR):
 
+    def __init__(self, service_id: str, signal_dir=DEFAULT_SIGNAL_DIR):
         logger.info(f"Set up file-based signaling for {service_id} in {signal_dir!s}")
 
         self.signal_dir: Path = Path(signal_dir)
@@ -69,8 +69,8 @@ class FileBasedSignaling:
         self.command_handlers = {}
 
         # Register some default handlers
-        self.register_handler('reregister', self.handle_reregister)
-        self.register_handler('reload', self.handle_reload)
+        self.register_handler("reregister", self.handle_reregister)
+        self.register_handler("reload", self.handle_reload)
 
     def register_handler(self, action, handler_func):
         """Register a handler function for a specific action."""
@@ -94,17 +94,14 @@ class FileBasedSignaling:
             for filepath in self.signal_dir.glob(f"{self.service_id}*.json"):
                 if filepath.is_file():
                     try:
-                        with open(filepath, 'r') as fd:
+                        with open(filepath, "r") as fd:
                             command = json.load(fd)
                         # File will only be deleted when json could load it
                         filepath.unlink(missing_ok=True)
 
                         # Put command in queue for main thread to process
                         self.command_queue.put(
-                            {
-                                'command': command,
-                                'source': str(filepath),
-                                'timestamp': format_datetime()},
+                            {"command": command, "source": str(filepath), "timestamp": format_datetime()},
                         )
                     except Exception as exc:
                         logger.error(f"Error reading command file {filepath!s}: {exc}")
@@ -128,9 +125,9 @@ class FileBasedSignaling:
         while not self.command_queue.empty():
             try:
                 command_data = self.command_queue.get_nowait()
-                command = command_data['command']
-                action = command.get('action')
-                params: dict = command.get('params', {})
+                command = command_data["command"]
+                action = command.get("action")
+                params: dict = command.get("params", {})
 
                 if action in self.command_handlers:
                     logger.info(f"🎯 Processing command in main thread: {action} with {params}")
@@ -201,12 +198,12 @@ def create_signal_command_file(signal_dir, service_id, command):
         The final filename format is: {service_id}_{action}.json
         If no 'action' key exists in command, defaults to 'cmd'.
     """
-    temp_fd, temp_path = tempfile.mkstemp(dir=signal_dir, suffix='.tmp')
+    temp_fd, temp_path = tempfile.mkstemp(dir=signal_dir, suffix=".tmp")
 
     try:
         filepath = signal_dir / f"{service_id}_{command.get('action', 'cmd')}.json"
 
-        with os.fdopen(temp_fd, 'w') as fd:
+        with os.fdopen(temp_fd, "w") as fd:
             json.dump(command, fd, indent=2)
 
         Path(temp_path).rename(filepath)

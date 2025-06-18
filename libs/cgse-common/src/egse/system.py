@@ -88,14 +88,14 @@ class Periodic:
     """The number of Periodic instances that are created."""
 
     def __init__(
-            self,
-            interval: float,
-            *,
-            name: str | None = None,
-            callback: Callable = None,
-            repeat: int | None = None,
-            skip: bool = True,
-            pause: bool = False,
+        self,
+        interval: float,
+        *,
+        name: str | None = None,
+        callback: Callable = None,
+        repeat: int | None = None,
+        skip: bool = True,
+        pause: bool = False,
     ) -> None:
         self._interval = interval
         self.name = f"Periodic#{self._periodic_count}" if name is None else name
@@ -233,7 +233,7 @@ def round_up(n: float | int, decimals: int = 0):
         For negative numbers, "rounding up" means rounding toward zero,
         so -3.14159 rounded up to 3 decimals is -3.141.
     """
-    multiplier = 10 ** decimals
+    multiplier = 10**decimals
     return math.ceil(n * multiplier) / multiplier
 
 
@@ -266,6 +266,7 @@ class TyperAsyncCommand(TyperCommand):
             ...
 
     """
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
@@ -374,7 +375,7 @@ def now(utc: bool = True):
 
 
 def format_datetime(
-        dt: Union[str, datetime.datetime] = None, fmt: str = None, width: int = 6, precision: int = 3
+    dt: Union[str, datetime.datetime] = None, fmt: str = None, width: int = 6, precision: int = 3
 ) -> str:
     """Format a datetime as YYYY-mm-ddTHH:MM:SS.μs+0000.
 
@@ -1075,8 +1076,7 @@ def get_os_version() -> str:
 
 
 def wait_until(
-        condition: Callable, *args: list, interval: float = 0.1, timeout: float = 1.0, verbose: bool = False,
-        **kwargs: dict
+    condition: Callable, *args: list, interval: float = 0.1, timeout: float = 1.0, verbose: bool = False, **kwargs: dict
 ) -> bool:
     """
     Sleep until the given condition is fulfilled. The arguments are passed into the condition
@@ -1136,8 +1136,7 @@ def wait_until(
 
 
 def waiting_for(
-        condition: Callable, *args: list, interval: float = 0.1, timeout: float = 1.0, verbose: bool = False,
-        **kwargs: dict
+    condition: Callable, *args: list, interval: float = 0.1, timeout: float = 1.0, verbose: bool = False, **kwargs: dict
 ) -> float:
     """
     Sleep until the given condition is fulfilled. The arguments are passed into the condition
@@ -1231,12 +1230,13 @@ def has_internet(host: str = "8.8.8.8", port: int = 53, timeout: float = 3.0):
 
 
 def do_every(
-        period: float,
-        func: Callable, *args: tuple[int, ...],
-        count: int = None,
-        setup_func: Callable = None,
-        teardown_func: Callable = None,
-        stop_event: threading.Event = None,
+    period: float,
+    func: Callable,
+    *args: tuple[int, ...],
+    count: int = None,
+    setup_func: Callable = None,
+    teardown_func: Callable = None,
+    stop_event: threading.Event = None,
 ) -> None:
     """
     This method executes a function periodically, taking into account
@@ -2174,7 +2174,6 @@ def capture_rich_output(obj: Any, width: int = 120) -> str:
 
 
 def log_rich_output(logger_: logging.Logger, level: int, obj: Any):
-
     console = Console(width=None)
 
     with console.capture() as capture:
@@ -2214,7 +2213,7 @@ def get_logging_level(level: str | int):
     log_level = logging.getLevelName(level)
 
     if isinstance(log_level, str):
-        match = re.search(r'\d+', log_level)
+        match = re.search(r"\d+", log_level)
         if match:
             int_level = level = int(match.group())
         else:
@@ -2229,10 +2228,10 @@ def camel_to_kebab(camel_str: str) -> str:
     """Convert a string in CamelCase to kebab-case."""
 
     # Handle sequences of uppercase letters followed by lowercase
-    s1 = re.sub('([A-Z]+)([A-Z][a-z])', r'\1-\2', camel_str)
+    s1 = re.sub("([A-Z]+)([A-Z][a-z])", r"\1-\2", camel_str)
 
     # Handle lowercase/digit followed by uppercase
-    s2 = re.sub('([a-z0-9])([A-Z])', r'\1-\2', s1)
+    s2 = re.sub("([a-z0-9])([A-Z])", r"\1-\2", s1)
     return s2.lower()
 
 
@@ -2240,21 +2239,21 @@ def camel_to_snake(camel_str: str) -> str:
     """Convert a string in CamelCase to snake_case."""
 
     # Handle sequences of uppercase letters followed by lowercase
-    s1 = re.sub('([A-Z]+)([A-Z][a-z])', r'\1_\2', camel_str)
+    s1 = re.sub("([A-Z]+)([A-Z][a-z])", r"\1_\2", camel_str)
 
     # Handle lowercase/digit followed by uppercase
-    s2 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1)
+    s2 = re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1)
     return s2.lower()
 
 
 def kebab_to_title(kebab_str: str) -> str:
     """Convert kebab-case to Title Case (each word capitalized)"""
-    return kebab_str.replace('-', ' ').title()
+    return kebab_str.replace("-", " ").title()
 
 
 def snake_to_title(snake_str: str) -> str:
     """Convert snake_case to Title Case (each word capitalized)"""
-    return snake_str.replace('_', ' ').title()
+    return snake_str.replace("_", " ").title()
 
 
 ignore_m_warning("egse.system")
