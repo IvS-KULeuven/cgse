@@ -5,6 +5,7 @@ Manager (from the setup).
 
 The Process Manager Control Server is implemented as a standard control server.
 """
+
 import logging
 import multiprocessing
 
@@ -33,9 +34,7 @@ CTRL_SETTINGS = Settings.load("Process Manager Control Server")
 
 
 class ProcessManagerControlServer(ControlServer):
-
     def __init__(self):
-
         super().__init__()
 
         multiprocessing.current_process().name = app_name
@@ -50,7 +49,7 @@ class ProcessManagerControlServer(ControlServer):
 
         self.register_as_listener(
             proxy=ConfigurationManagerProxy,
-            listener={'name': 'Process Manager CS', 'proxy': ProcessManagerProxy, 'event_id': EVENT_ID.SETUP}
+            listener={"name": "Process Manager CS", "proxy": ProcessManagerProxy, "event_id": EVENT_ID.SETUP},
         )
         self.device_protocol.bind(self.dev_ctrl_cmd_sock)
 
@@ -63,40 +62,33 @@ class ProcessManagerControlServer(ControlServer):
         self.logger.info(f"PM housekeeping saved every {self.hk_delay / 1000:.1f} seconds.")
 
     def get_communication_protocol(self):
-
         return "tcp"
 
     def get_commanding_port(self):
-
         return get_port_number(self.dev_ctrl_cmd_sock) or 0
 
     def get_service_port(self):
-
         return get_port_number(self.dev_ctrl_service_sock) or 0
 
     def get_monitoring_port(self):
-
         return get_port_number(self.dev_ctrl_mon_sock) or 0
 
     def get_storage_mnemonic(self):
-
         try:
             return CTRL_SETTINGS.STORAGE_MNEMONIC
         except AttributeError:
             return "PM"
 
     def is_storage_manager_active(self):
-
         from egse.storage import is_storage_manager_active
+
         return is_storage_manager_active()
 
     def store_housekeeping_information(self, data):
-
         origin = self.get_storage_mnemonic()
         store_housekeeping_information(origin, data)
 
     def register_to_storage_manager(self):
-
         from egse.storage import register_to_storage_manager
         from egse.storage.persistence import TYPES
 
@@ -106,18 +98,18 @@ class ProcessManagerControlServer(ControlServer):
             prep={
                 "column_names": list(self.device_protocol.get_housekeeping().keys()),
                 "mode": "a",
-            }
+            },
         )
 
     def unregister_from_storage_manager(self):
-
         from egse.storage import unregister_from_storage_manager
+
         unregister_from_storage_manager(origin=self.get_storage_mnemonic())
 
     def after_serve(self):
-
         from egse.confman import ConfigurationManagerProxy
-        self.unregister_as_listener(proxy=ConfigurationManagerProxy, listener={'name': 'Process Manager CS'})
+
+        self.unregister_as_listener(proxy=ConfigurationManagerProxy, listener={"name": "Process Manager CS"})
 
         self.deregister_service()
 
@@ -128,7 +120,7 @@ app = typer.Typer(name=app_name, no_args_is_help=True)
 
 @app.command()
 def start():
-    """ Starts the Process Manager (pm_cs).
+    """Starts the Process Manager (pm_cs).
 
     The pm_cs is normally started automatically on egse-server boot.
     """
@@ -153,7 +145,7 @@ def start():
 
 @app.command()
 def start_bg():
-    """ Starts the Process Manager Control Server in the background."""
+    """Starts the Process Manager Control Server in the background."""
 
     proc = SubProcess("pm_cs", ["pm_cs", "start"])
     proc.execute()
@@ -161,14 +153,14 @@ def start_bg():
 
 @app.command()
 def stop():
-    """ Sends a 'quit_server' command to the Process Manager."""
+    """Sends a 'quit_server' command to the Process Manager."""
 
     with RegistryClient() as reg:
         service = reg.discover_service(CTRL_SETTINGS.SERVICE_TYPE)
         # rich.print("service = ", service)
 
         if service:
-            with ServiceProxy(hostname=service["host"], port=service['metadata']['service_port']) as proxy:
+            with ServiceProxy(hostname=service["host"], port=service["metadata"]["service_port"]) as proxy:
                 proxy.quit_server()
         else:
             rich.print("[red]ERROR: Couldn't connect to 'pm_cs', process probably not running.")
@@ -176,14 +168,13 @@ def stop():
 
 @app.command()
 def status():
-    """ Prints the status of the control server."""
+    """Prints the status of the control server."""
 
     import rich
     from egse.procman import get_status
 
-    rich.print(get_status(), end='')
+    rich.print(get_status(), end="")
 
 
 if __name__ == "__main__":
-
     sys.exit(app())

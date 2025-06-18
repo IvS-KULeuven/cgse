@@ -6,7 +6,6 @@ from egse.system import get_host_ip
 
 @pytest.mark.asyncio
 async def test_zmq_microservice_initialization():
-
     print()
 
     service = ZMQMicroservice("vanilla", "plain")
@@ -26,7 +25,6 @@ async def test_zmq_microservice_initialization():
 @pytest.mark.timeout(10)
 @pytest.mark.asyncio
 async def test_zmq_microservices_registration(caplog):
-
     print()
 
     service = ZMQMicroservice("vanilla", "plain")

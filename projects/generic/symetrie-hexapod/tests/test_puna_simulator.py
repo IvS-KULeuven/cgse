@@ -19,7 +19,6 @@ def wait_until(condition, interval=0.1, timeout=1, *args):
 
 
 def test_goto_zero_position():
-
     hexapod = Hexapod()
 
     try:
@@ -43,7 +42,7 @@ def test_position_after_homing():
     hexapod = Hexapod()
 
     try:
-        hexapod.move_absolute(5,0,0,0,0,0)
+        hexapod.move_absolute(5, 0, 0, 0, 0, 0)
 
         out = hexapod.get_user_positions()
         check_positions(out, (5.00000, 0.00000, 0.00000, 0.00000, 0.00000, 0.00000))
@@ -51,7 +50,7 @@ def test_position_after_homing():
         out = hexapod.get_machine_positions()
         check_positions(out, (5.00000, 0.00000, 0.00000, 0.00000, 0.00000, 0.00000))
 
-        hexapod.move_absolute(5,2,0,0,0,0)
+        hexapod.move_absolute(5, 2, 0, 0, 0, 0)
 
         out = hexapod.get_user_positions()
         check_positions(out, (5.00000, 2.00000, 0.00000, 0.00000, 0.00000, 0.00000))
@@ -75,7 +74,6 @@ def test_position_after_homing():
 
 
 def test_construction():
-
     hexapod = Hexapod()
     assert hexapod.is_simulator()
     assert not hexapod.is_homing_done()
@@ -88,10 +86,10 @@ def test_absolute_movement2():
     hexapod = Hexapod()
 
     try:
-        tx, ty, tz = [0,10,0]
-        rx, ry, rz = [0,0,0]
+        tx, ty, tz = [0, 10, 0]
+        rx, ry, rz = [0, 0, 0]
 
-        rc = hexapod.move_absolute(tx,ty,tz,rx,ry,rz)
+        rc = hexapod.move_absolute(tx, ty, tz, rx, ry, rz)
         assert rc == 0
 
         out = hexapod.get_user_positions()
@@ -107,14 +105,13 @@ def test_absolute_movement2():
 
 
 def test_absolute_movement1():
-
     hexapod = Hexapod()
 
     try:
-        tx, ty, tz = [1,3,4]
-        rx, ry, rz = [35,25,10]
+        tx, ty, tz = [1, 3, 4]
+        rx, ry, rz = [35, 25, 10]
 
-        rc = hexapod.move_absolute(tx,ty,tz,rx,ry,rz)
+        rc = hexapod.move_absolute(tx, ty, tz, rx, ry, rz)
         assert rc == 0
 
         out = hexapod.get_user_positions()
@@ -127,7 +124,6 @@ def test_absolute_movement1():
 
 
 def test_absolute_movement():
-
     hexapod = Hexapod()
 
     try:
@@ -135,7 +131,7 @@ def test_absolute_movement():
         rx_u, ry_u, rz_u = -3, -4, -5
 
         tx_o, ty_o, tz_o = 0, 0, 3
-        rx_o, ry_o, rz_o = np.rad2deg(np.pi/6.0), np.rad2deg(np.pi/6.0), 0
+        rx_o, ry_o, rz_o = np.rad2deg(np.pi / 6.0), np.rad2deg(np.pi / 6.0), 0
 
         hexapod.configure_coordinates_systems(tx_u, ty_u, tz_u, rx_u, ry_u, rz_u, tx_o, ty_o, tz_o, rx_o, ry_o, rz_o)
 
@@ -145,10 +141,10 @@ def test_absolute_movement():
         out = hexapod.get_machine_positions()
         check_positions(out, (0.00000, 0.00000, 0.00000, 0.00000, 0.00000, 0.00000))
 
-        tx, ty, tz = [1,3,4]
-        rx, ry, rz = [35,25,10]
+        tx, ty, tz = [1, 3, 4]
+        rx, ry, rz = [35, 25, 10]
 
-        rc = hexapod.move_absolute(tx,ty,tz,rx,ry,rz)
+        rc = hexapod.move_absolute(tx, ty, tz, rx, ry, rz)
         assert rc == 0
 
         wait_until(hexapod.is_in_position, 1, 300)
@@ -196,7 +192,6 @@ def test_absolute_movement():
 
 
 def test_coordinates_systems():
-
     hexapod = Hexapod()
 
     try:
@@ -216,7 +211,6 @@ def test_coordinates_systems():
 
 
 def check_positions(out, expected, precision=0.00001):
-
     assert len(out) == len(expected)
 
     for idx, element in enumerate(out):

@@ -25,28 +25,24 @@ class DAQ6510(AsyncSCPIInterface):
             hostname=hostname,
             port=port,
             settings=settings,
-            id_validation="DAQ6510"  # String that must appear in IDN? response
+            id_validation="DAQ6510",  # String that must appear in IDN? response
         )
 
         self._measurement_lock = asyncio.Lock()
 
     async def initialize(self):
-
         # Initialize
 
-        await self.write('*RST')  # this also the user-defined buffer "test1"
+        await self.write("*RST")  # this also the user-defined buffer "test1"
 
         for cmd, response in [
             ('TRAC:MAKE "test1", 1000', False),  # create a new buffer
             # settings for channel 1 and 2 of slot 1
             ('SENS:FUNC "TEMP", (@101:102)', False),  # set the function to temperature
-
             ("SENS:TEMP:TRAN FRTD, (@101)", False),  # set the transducer to 4-wire RTD
             ("SENS:TEMP:RTD:FOUR PT100, (@101)", False),  # set the type of the 4-wire RTD
-
             ("SENS:TEMP:TRAN RTD, (@102)", False),  # set the transducer to 2-wire RTD
             ("SENS:TEMP:RTD:TWO PT100, (@102)", False),  # set the type of the 2-wire RTD
-
             ('ROUT:SCAN:BUFF "test1"', False),
             ("ROUT:SCAN:CRE (@101:102)", False),
             ("ROUT:CHAN:OPEN (@101:102)", False),
@@ -89,8 +85,8 @@ class DAQ6510(AsyncSCPIInterface):
                 return float("nan")
 
             response = (
-                await self.trans(f'TRAC:DATA? {start_index}, {end_index}, "test1", CHAN, TST, READ')
-            ).decode().strip()
+                (await self.trans(f'TRAC:DATA? {start_index}, {end_index}, "test1", CHAN, TST, READ')).decode().strip()
+            )
 
             logger.info(f"{response = }")
 

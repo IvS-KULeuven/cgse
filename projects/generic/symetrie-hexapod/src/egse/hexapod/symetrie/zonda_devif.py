@@ -136,9 +136,15 @@ class ZondaSSHInterface:
             # Parsing an instance of the AutoAddPolicy to set_missing_host_key_policy() changes
             # it to allow any host.
             self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            self.client.connect(hostname=ip, port=22, username="root", password="deltatau",
-                                timeout=5,
-                                allow_agent=False, look_for_keys=False)
+            self.client.connect(
+                hostname=ip,
+                port=22,
+                username="root",
+                password="deltatau",
+                timeout=5,
+                allow_agent=False,
+                look_for_keys=False,
+            )
             logger.warning("Connected to the server: {}".format(ip))
             self.connected = True
         except paramiko.AuthenticationException:
@@ -238,7 +244,6 @@ class ZondaSSHInterface:
 
         # For a maximum of 5 sec
         while Timer < 5:
-
             # wait and count
             time.sleep(0.1)
             Timer += time.process_time() - last
@@ -311,7 +316,7 @@ class ZondaTelnetInterface(DeviceTransport):
         self.telnet.read_until(b"ppmac# ", timeout=self.TELNET_TIMEOUT)
         self.telnet.write(b"gpascii -2\r\n")
         self.telnet.write(b"echo7\r\n")
-        self.telnet.read_until(b'\x06', timeout=self.TELNET_TIMEOUT)
+        self.telnet.read_until(b"\x06", timeout=self.TELNET_TIMEOUT)
         self.telnet.read_very_eager()
         self._is_connected = True
 
@@ -324,9 +329,8 @@ class ZondaTelnetInterface(DeviceTransport):
         self._is_connected = False
 
     def check_command_status(self):
-
-        if wait_until(lambda: self.trans('c_cmd')[0] == '0', interval=0.01):
-            rc = int(self.trans('c_cmd')[0])
+        if wait_until(lambda: self.trans("c_cmd")[0] == "0", interval=0.01):
+            rc = int(self.trans("c_cmd")[0])
             logger.warning(f"Command check: {RETURN_CODES[rc]} [{rc}]")
         else:
             rc = 0
@@ -350,12 +354,12 @@ class ZondaTelnetInterface(DeviceTransport):
             return response
 
     def read(self) -> List:
-        response = self.telnet.read_until(b'\x06\r\n', timeout=self.TELNET_TIMEOUT)
+        response = self.telnet.read_until(b"\x06\r\n", timeout=self.TELNET_TIMEOUT)
         response = response.decode()
         parts = response.split("\r\n")
         if len(parts) == 1:
             return []
-        if parts[-2] == '\x06':
+        if parts[-2] == "\x06":
             return parts[:-2]
         logger.warning("Expected ACK at the end of the response")
         return parts
@@ -365,7 +369,6 @@ class ZondaTelnetInterface(DeviceTransport):
 
 
 def decode_command(cmd_name: str, *args):
-
     args = list(args)
     cmd_name = cmd_name.upper()
 

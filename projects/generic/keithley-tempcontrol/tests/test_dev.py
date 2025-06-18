@@ -11,7 +11,6 @@ HOSTNAME = "192.168.68.77"  # hostname at home with DHCP
 
 
 def is_daq6510_available():
-
     try:
         daq = DAQ6510EthernetInterface(HOSTNAME, SCPI_PORT)
         daq.connect()
@@ -22,7 +21,6 @@ def is_daq6510_available():
 
 
 def test_constructor():
-
     daq = DAQ6510EthernetInterface(HOSTNAME, SCPI_PORT)
     daq.connect()
 
@@ -34,7 +32,6 @@ def test_constructor():
 
 
 def test_connection(caplog):
-
     daq = DAQ6510EthernetInterface(HOSTNAME, SCPI_PORT)
 
     assert not daq.is_connected()
@@ -71,7 +68,6 @@ def test_connection(caplog):
 
 
 def test_context_manager():
-
     with DAQ6510EthernetInterface(HOSTNAME, SCPI_PORT) as daq:
         assert daq.is_connected()
 
@@ -79,7 +75,6 @@ def test_context_manager():
 
 
 def test_incorrect_construction():
-
     daq = DAQ6510EthernetInterface()
     daq.hostname = "unknown"  # set this explicitly because the local_settings might define he HOSTNAME
     with pytest.raises(DeviceConnectionError, match="DAQ6510: Socket address info error for unknown"):
@@ -103,10 +98,8 @@ def test_incorrect_construction():
 
 
 def test_write_read():
-
     with DAQ6510EthernetInterface(HOSTNAME, SCPI_PORT) as daq:
-
-        daq.write(":SYST:COMM:LAN:CONF \"AUTO\"")
+        daq.write(':SYST:COMM:LAN:CONF "AUTO"')
         daq.write(":SYST:COMM:LAN:CONF?")
 
         response = daq.read().decode()
@@ -115,24 +108,19 @@ def test_write_read():
 
 
 def test_a_scan():
-
     with DAQ6510EthernetInterface() as daq:
-
         # Initialize
 
-        daq.write('*RST')  # this also the user-defined buffer "test1"
+        daq.write("*RST")  # this also the user-defined buffer "test1"
 
         for cmd, response in [
             ('TRAC:MAKE "test1", 1000', False),  # create a new buffer
             # settings for channel 1 and 2 of slot 1
             ('SENS:FUNC "TEMP", (@101:102)', False),  # set the function to temperature
-
             ("SENS:TEMP:TRAN FRTD, (@101)", False),  # set the transducer to 4-wire RTD
             ("SENS:TEMP:RTD:FOUR PT100, (@101)", False),  # set the type of the 4-wire RTD
-
             ("SENS:TEMP:TRAN RTD, (@102)", False),  # set the transducer to 2-wire RTD
             ("SENS:TEMP:RTD:TWO PT100, (@102)", False),  # set the type of the 2-wire RTD
-
             ('ROUT:SCAN:BUFF "test1"', False),
             ("ROUT:SCAN:CRE (@101:102)", False),
             ("ROUT:CHAN:OPEN (@101:102)", False),
@@ -178,32 +166,26 @@ def test_a_scan():
 
 
 def test_another_scan():
-
     with DAQ6510EthernetInterface() as daq:
-
         # Initialize
 
         n_readings = 50
 
-        daq.write('*RST')  # This also clears the default buffers
+        daq.write("*RST")  # This also clears the default buffers
 
         for cmd, response in [
             ('SENS:FUNC "TEMP", (@101,102)', False),
-            ('SENS:TEMP:UNIT CELS, (@101,102)', False),
-
+            ("SENS:TEMP:UNIT CELS, (@101,102)", False),
             ("SENS:TEMP:TRAN FRTD, (@101)", False),  # set the transducer to 4-wire RTD
             ("SENS:TEMP:RTD:FOUR PT100, (@101)", False),  # set the type of the 4-wire RTD
-
             ("SENS:TEMP:TRAN RTD, (@102)", False),  # set the transducer to 2-wire RTD
             ("SENS:TEMP:RTD:TWO PT100, (@102)", False),  # set the type of the 2-wire RTD
-
             # Set the amount of time that the input signal is measured.
-            ('SENS:TEMP:NPLC 0.1, (@101,102)', False),
-
+            ("SENS:TEMP:NPLC 0.1, (@101,102)", False),
             ('TRIG:LOAD "Empty"', False),
             ('TRIG:BLOC:BUFF:CLEAR 1, "defbuffer1"', False),
             ('TRIG:BLOC:MDIG 2, "defbuffer1"', False),
-            (f'TRIG:BLOC:BRAN:COUN 3, {n_readings}, 2', False),
+            (f"TRIG:BLOC:BRAN:COUN 3, {n_readings}, 2", False),
         ]:
             if response:
                 print(f"Sending {cmd}... response=", end="")

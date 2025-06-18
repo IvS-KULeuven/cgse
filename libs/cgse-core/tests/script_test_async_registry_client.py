@@ -17,6 +17,7 @@ The microservices can be run with:
     $ uv run tests/services.py order
 
 """
+
 import asyncio
 import json
 import logging
@@ -62,9 +63,7 @@ async def run_async_client():
                 socket.connect(f"tcp://{service['host']}:{service['port']}")
 
                 # Prepare the request
-                request = {
-                    "command": command, **(data or {})
-                }
+                request = {"command": command, **(data or {})}
 
                 # Send the request
                 await socket.send_string(json.dumps(request))
@@ -92,7 +91,7 @@ async def run_async_client():
                 return
 
             # Get PUB port from metadata
-            pub_port = service.get('metadata', {}).get('pub_port')
+            pub_port = service.get("metadata", {}).get("pub_port")
 
             if not pub_port:
                 print(f"Service {service_type} does not expose a PUB socket")
@@ -114,8 +113,8 @@ async def run_async_client():
                 while True:
                     # Wait for an event
                     event_type_bytes, event_json_bytes = await socket.recv_multipart()
-                    event_type = event_type_bytes.decode('utf-8')
-                    event = json.loads(event_json_bytes.decode('utf-8'))
+                    event_type = event_type_bytes.decode("utf-8")
+                    event = json.loads(event_json_bytes.decode("utf-8"))
 
                     print(f"\nReceived event: {event_type}")
                     print(f"Data: {json.dumps(event, indent=2)}")
@@ -140,77 +139,71 @@ async def run_async_client():
 
         choice = input("\nEnter your choice: ")
 
-        if choice == '0':
+        if choice == "0":
             break
 
-        elif choice == '1':
+        elif choice == "1":
             response = await call_service("user-service", "list_users")
-            if response and response.get('status') == 'ok':
-                users = response.get('users', [])
+            if response and response.get("status") == "ok":
+                users = response.get("users", [])
                 print("\nUsers:")
                 for user in users:
                     print(f"  {user['id']}: {user['name']} ({user['email']})")
             else:
                 print(f"Error: {response.get('error') if response else 'No response'}")
 
-        elif choice == '2':
+        elif choice == "2":
             user_id = input("Enter user ID: ")
             response = await call_service("user-service", "get_user", {"user_id": user_id})
-            if response and response.get('status') == 'ok':
-                user = response.get('user', {})
+            if response and response.get("status") == "ok":
+                user = response.get("user", {})
                 print(f"\nUser: {user['name']}")
                 print(f"Email: {user['email']}")
             else:
                 print(f"Error: {response.get('error') if response else 'No response'}")
 
-        elif choice == '3':
+        elif choice == "3":
             name = input("Enter user name: ")
             email = input("Enter user email: ")
-            response = await call_service(
-                "user-service", "create_user", {
-                    "user": {"name": name, "email": email}
-                }
-            )
-            if response and response.get('status') == 'ok':
-                user = response.get('user', {})
+            response = await call_service("user-service", "create_user", {"user": {"name": name, "email": email}})
+            if response and response.get("status") == "ok":
+                user = response.get("user", {})
                 print(f"\nCreated user: {user['id']} - {user['name']}")
             else:
                 print(f"Error: {response.get('error') if response else 'No response'}")
 
-        elif choice == '4':
+        elif choice == "4":
             response = await call_service("product-service", "list_products")
-            if response and response.get('status') == 'ok':
-                products = response.get('products', [])
+            if response and response.get("status") == "ok":
+                products = response.get("products", [])
                 print("\nProducts:")
                 for product in products:
                     print(f"  {product['id']}: {product['name']} - ${product['price']} ({product['category']})")
             else:
                 print(f"Error: {response.get('error') if response else 'No response'}")
 
-        elif choice == '5':
+        elif choice == "5":
             query = input("Enter search query: ")
             response = await call_service("product-service", "search_products", {"query": query})
-            if response and response.get('status') == 'ok':
-                results = response.get('results', [])
+            if response and response.get("status") == "ok":
+                results = response.get("results", [])
                 print(f"\nSearch results for '{query}':")
                 for product in results:
                     print(f"  {product['id']}: {product['name']} - ${product['price']} ({product['category']})")
             else:
                 print(f"Error: {response.get('error') if response else 'No response'}")
 
-        elif choice == '6':
+        elif choice == "6":
             user_id = input("Enter user ID: ")
             product_ids_input = input("Enter product IDs (comma-separated): ")
             product_ids = [pid.strip() for pid in product_ids_input.split(",") if pid.strip()]
 
             response = await call_service(
-                "order-service", "create_order", {
-                    "user_id": user_id, "product_ids": product_ids
-                }
+                "order-service", "create_order", {"user_id": user_id, "product_ids": product_ids}
             )
 
-            if response and response.get('status') == 'ok':
-                order = response.get('order', {})
+            if response and response.get("status") == "ok":
+                order = response.get("order", {})
                 print(f"\nCreated order: {order['id']}")
                 print(f"User: {order['user_name']}")
                 print(f"Products: {len(order['products'])}")
@@ -218,7 +211,7 @@ async def run_async_client():
             else:
                 print(f"Error: {response.get('error') if response else 'No response'}")
 
-        elif choice == '7':
+        elif choice == "7":
             print("Subscribing to order events. Press Ctrl+C to stop.")
             try:
                 await subscribe_to_events("order-service", ["order_created"])
@@ -230,10 +223,9 @@ async def run_async_client():
 
 
 if __name__ == "__main__":
-
     logging.basicConfig(
         level=logging.INFO,
-        format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-12s %(lineno)5d:%(module)-20s %(message)s"
+        format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-12s %(lineno)5d:%(module)-20s %(message)s",
     )
 
     asyncio.run(run_async_client())

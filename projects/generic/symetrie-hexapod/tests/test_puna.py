@@ -30,7 +30,6 @@ def test_context_manager(hexapod):
 
 
 def test_connection(hexapod):
-
     with hexapod:
         hexapod.connect()
         hexapod.info()
@@ -56,7 +55,6 @@ def test_connection(hexapod):
 
 
 def test_goto_position(hexapod):
-
     with hexapod:
         hexapod.connect()
         rc = hexapod.goto_specific_position(1)
@@ -69,7 +67,6 @@ def test_goto_position(hexapod):
 
 
 def test_absolute_movement(hexapod):
-
     with hexapod:
         hexapod.connect()
 
@@ -149,7 +146,6 @@ def test_absolute_movement(hexapod):
 
 
 def test_coordinates_systems(hexapod):
-
     with hexapod:
         hexapod.connect()
 

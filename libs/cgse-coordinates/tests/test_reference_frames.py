@@ -13,7 +13,6 @@ LOGGER = logging.getLogger(__name__)
 
 
 def test_master_construction():
-
     # This frame "refers to", i.e. it "is defined in", itself
 
     master = ReferenceFrame.createMaster()
@@ -26,13 +25,10 @@ def test_master_construction():
 
 
 def test_link_to_master():
-
     master = ReferenceFrame.createMaster()
     rot_config = "sxyz"
 
-    glfix = ReferenceFrame(
-        transformation=np.identity(4), ref=master, name="glfix", rot_config=rot_config
-    )
+    glfix = ReferenceFrame(transformation=np.identity(4), ref=master, name="glfix", rot_config=rot_config)
     glfix.addLink(master, transformation=np.identity(4))
 
     assert not glfix.isMaster()
@@ -41,7 +37,6 @@ def test_link_to_master():
 
 
 def test_invalid_constructions():
-
     # We used to create a master frame when ref is None, but that is no longer supported.
 
     with pytest.raises(ValueError) as ve:
@@ -70,14 +65,12 @@ def test_invalid_constructions():
 
 
 def test_str():
-
     master = ReferenceFrame.createMaster()
 
     assert str(master)
 
 
 def test_repr():
-
     master = ReferenceFrame.createMaster()
 
     assert repr(master) != str(master)
@@ -88,7 +81,6 @@ def test_repr():
 
 
 def test_hash():
-
     # Any hash function MUST satisfy the following properties:
     #
     # - If two object are equal, then their hashes should be equal, i.e.
@@ -147,7 +139,6 @@ def test_add_link():
 
 
 def test_random_name():
-
     # The Master should have "Master" as its name
     master = ReferenceFrame.createMaster()
     assert not master.name.startswith("F")
@@ -158,7 +149,6 @@ def test_random_name():
 
 
 def test_set_name():
-
     master = ReferenceFrame.createMaster()
     with pytest.raises(InvalidOperationError):
         master.setName("MyMaster")
@@ -170,7 +160,6 @@ def test_set_name():
 
 
 def test_translation():
-
     master = ReferenceFrame.createMaster()
 
     # define a reference frame that is translated by 2 in Y
@@ -192,7 +181,6 @@ def test_translation():
 
 
 def test_rotation():
-
     master = ReferenceFrame.createMaster()
 
     # Convention (rotating axes, in order xyz)
@@ -217,9 +205,7 @@ def test_rotation():
 
     D = ReferenceFrame(transformation=TT, ref=master, name="D")
 
-    E = ReferenceFrame.fromRotation(
-        rotx, roty, rotz, master, rot_config=rot_config, name="E", degrees=False
-    )
+    E = ReferenceFrame.fromRotation(rotx, roty, rotz, master, rot_config=rot_config, name="E", degrees=False)
 
     assert np.array_equal(D.getRotationMatrix(), E.getRotationMatrix())
 
@@ -230,7 +216,6 @@ def test_rotation():
 
 
 def test_equals():
-
     master = ReferenceFrame.createMaster()
 
     assert master is master
@@ -316,7 +301,6 @@ def test_copy():
 
 
 def test_positionAfterHoming():
-
     # Rotation around static axis, and around x, y and z in that order
 
     rot_config = "sxyz"
@@ -332,9 +316,7 @@ def test_positionAfterHoming():
     master = ReferenceFrame.createMaster()
 
     # MEC = MASTER
-    mec = ReferenceFrame(
-        transformation=np.identity(4), ref=master, name="mec", rot_config=rot_config
-    )
+    mec = ReferenceFrame(transformation=np.identity(4), ref=master, name="mec", rot_config=rot_config)
 
     # USR, defined in MEC
     tr_u = np.array([0, 0, 0])
@@ -395,9 +377,7 @@ def test_positionAfterHoming():
     tr_abs = np.array([tx, ty, tz])
     rot_abs = np.array([rx, ry, rz])
 
-    obusr.setTranslationRotation(
-        tr_abs, rot_abs, rot_config=rot_config, active=True, degrees=True, preserveLinks=True
-    )
+    obusr.setTranslationRotation(tr_abs, rot_abs, rot_config=rot_config, active=True, degrees=True, preserveLinks=True)
 
     out = plt.getTranslationRotationVectors()
     check_positions(np.reshape(out, 6), [5, 2, 0, 0, 0, 0])
@@ -418,9 +398,7 @@ def test_positionAfterHoming():
     # plt.setTranslationRotation(tr_abs,rot_abs,rot_config=rot_config, active=True, degrees=True,preserveLinks=True)
 
     tr_abs, rot_abs = obj.getTranslationRotationVectors()
-    obusr.setTranslationRotation(
-        tr_abs, rot_abs, rot_config=rot_config, active=True, degrees=True, preserveLinks=True
-    )
+    obusr.setTranslationRotation(tr_abs, rot_abs, rot_config=rot_config, active=True, degrees=True, preserveLinks=True)
 
     out = plt.getTranslationRotationVectors()
     check_positions(np.reshape(out, 6), [0, 0, 0, 0, 0, 0])
@@ -431,7 +409,6 @@ def test_positionAfterHoming():
 
 
 def test_linked_to_reference():
-
     master = ReferenceFrame.createMaster()
 
     translation = [0, 2, 0]
@@ -473,7 +450,6 @@ def test_linked_to_reference():
 
 
 def check_positions(out, expected, precision=0.00001):
-
     assert len(out) == len(expected)
 
     for idx, element in enumerate(out):

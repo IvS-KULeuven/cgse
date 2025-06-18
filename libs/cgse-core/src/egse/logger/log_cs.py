@@ -3,6 +3,7 @@ The Log Server receives all log messages and events from control servers and cli
 and saves those messages in a log file at a given location. The log messages are retrieved over
 a ZeroMQ message channel.
 """
+
 __all__ = []
 
 import datetime
@@ -37,26 +38,24 @@ from egse.zmq_ser import get_port_number
 CTRL_SETTINGS = Settings.load("Logging Control Server")
 
 LOG_NAME_TO_LEVEL = {
-    'CRITICAL': 50,
-    'FATAL': 50,
-    'ERROR': 40,
-    'WARN': 30,
-    'WARNING': 30,
-    'INFO': 20,
-    'DEBUG': 10,
-    'NOTSET': 0,
+    "CRITICAL": 50,
+    "FATAL": 50,
+    "ERROR": 40,
+    "WARN": 30,
+    "WARNING": 30,
+    "INFO": 20,
+    "DEBUG": 10,
+    "NOTSET": 0,
 }
 
 # The format for the log file.
 # The line that is saved in the log file shall contain as much information as possible.
 
-LOG_FORMAT_FILE = (
-    "%(asctime)s:%(processName)s:%(process)s:%(levelname)s:%(lineno)d:%(name)s:%(message)s"
-)
+LOG_FORMAT_FILE = "%(asctime)s:%(processName)s:%(process)s:%(levelname)s:%(lineno)d:%(name)s:%(message)s"
 
 LOG_FORMAT_KEY_VALUE = (
     "level=%(levelname)s ts=%(asctime)s process=%(processName)s process_id=%(process)s "
-    "name=%(name)s caller=%(filename)s:%(lineno)s function=%(funcName)s msg=\"%(message)s\""
+    'name=%(name)s caller=%(filename)s:%(lineno)s function=%(funcName)s msg="%(message)s"'
 )
 
 LOG_FORMAT_DATE = "%Y-%m-%dT%H:%M:%S,%f"
@@ -72,7 +71,7 @@ LOG_LEVEL_SOCKET = 1  # ALL records shall go to the socket handler
 
 LOGGER_NAME = "egse.logger"
 
-PROTOCOL = 'tcp'
+PROTOCOL = "tcp"
 RECEIVER_PORT = 0  # dynamically assigned by the system
 COMMANDER_PORT = 0  # dynamically assigned by the system
 
@@ -82,7 +81,6 @@ socket_handler: Optional[SocketHandler] = None
 
 
 class DateTimeFormatter(logging.Formatter):
-
     def formatTime(self, record, datefmt=None):
         converted_time = datetime.datetime.fromtimestamp(record.created)
         if datefmt:
@@ -111,7 +109,7 @@ def start():
     if not log_file_location.exists():
         raise FileNotFoundError(f"The location for the log files doesn't exist: {log_file_location!s}.")
 
-    file_handler = TimedRotatingFileHandler(filename=log_file_location / log_file_name, when='midnight')
+    file_handler = TimedRotatingFileHandler(filename=log_file_location / log_file_name, when="midnight")
     file_handler.setFormatter(file_formatter)
 
     # There is no need to set the level for the handlers, because the level is checked by the
@@ -147,8 +145,8 @@ def start():
         port=get_port_number(commander),
         service_type="LOGGER",
         metadata={
-            'receiver_port': get_port_number(receiver),
-        }
+            "receiver_port": get_port_number(receiver),
+        },
     )
     if service_id is None:
         record = _create_log_record(logging.ERROR, "Registration of LOGGER service failed.")
@@ -175,8 +173,8 @@ def start():
             port=get_port_number(commander),
             service_type="LOGGER",
             metadata={
-                'receiver_port': get_port_number(receiver),
-            }
+                "receiver_port": get_port_number(receiver),
+            },
         )
         if service_id is None:
             record = _create_log_record(logging.ERROR, "Registration of LOGGER service failed.")
@@ -239,7 +237,7 @@ def _create_log_record(level: int, msg: str) -> logging.LogRecord:
         args=(),
         exc_info=None,
         func=caller_info.function,
-        sinfo=None
+        sinfo=None,
     )
 
     return record
@@ -274,7 +272,7 @@ def handle_command(command) -> dict:
     response = dict(
         timestamp=format_datetime(),
     )
-    if command.lower() == 'roll':
+    if command.lower() == "roll":
         file_handler.doRollover()
         response.update(dict(status="ACK"))
         record = logging.LogRecord(
@@ -286,33 +284,35 @@ def handle_command(command) -> dict:
             args=(),
             exc_info=None,
             func="roll",
-            sinfo=None
+            sinfo=None,
         )
         handle_log_record(record)
 
-    elif command.lower() == 'status':
+    elif command.lower() == "status":
         with RegistryClient() as client:
             service = client.discover_service("LOGGER")
         if service:
-            response.update(dict(
-                status="ACK",
-                logging_port=service['metadata']['receiver_port'],
-                commanding_port=service['port'],
-                file_logger_level=logging.getLevelName(LOG_LEVEL_FILE),
-                stream_logger_level=logging.getLevelName(LOG_LEVEL_STREAM),
-                file_logger_location=file_handler.baseFilename,
-            ))
-        else:
             response.update(
-                dict(status="NACK")
+                dict(
+                    status="ACK",
+                    logging_port=service["metadata"]["receiver_port"],
+                    commanding_port=service["port"],
+                    file_logger_level=logging.getLevelName(LOG_LEVEL_FILE),
+                    stream_logger_level=logging.getLevelName(LOG_LEVEL_STREAM),
+                    file_logger_location=file_handler.baseFilename,
+                )
             )
+        else:
+            response.update(dict(status="NACK"))
     elif command.lower().startswith("set_level"):
         new_level = command.split()[-1]
         LOG_LEVEL_FILE = LOG_NAME_TO_LEVEL[new_level]
-        response.update(dict(
-            status="ACK",
-            file_logger_level=logging.getLevelName(LOG_LEVEL_FILE),
-        ))
+        response.update(
+            dict(
+                status="ACK",
+                file_logger_level=logging.getLevelName(LOG_LEVEL_FILE),
+            )
+        )
 
     return response
 
@@ -361,7 +361,7 @@ def test():
     # setup_logging() and teardown_logging() is automatic
     # setup_logging()
 
-    logger = logging.getLogger('egse')
+    logger = logging.getLogger("egse")
     logger.debug("A DEBUG message")
     logger.info("An INFO message")
     logger.warning("A WARNING message")
@@ -374,7 +374,7 @@ def test():
 
 @app.command()
 def set_level(level: str):
-    """Set the logging level for """
+    """Set the logging level for"""
     try:
         level = logging.getLevelName(int(level))
     except ValueError:
@@ -391,7 +391,6 @@ def set_level(level: str):
 
 
 if __name__ == "__main__":
-
     logging.basicConfig(level=logging.INFO)
 
     sys.exit(app())

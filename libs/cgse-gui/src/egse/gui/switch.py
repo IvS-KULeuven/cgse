@@ -4,6 +4,7 @@
 """
 A Switch button widget.
 """
+
 import logging
 import sys
 
@@ -23,7 +24,6 @@ class Indic:
 
 
 class Switch(QWidget):
-
     def __init__(self, parent):
         super().__init__(parent)
 
@@ -51,7 +51,6 @@ class Switch(QWidget):
 
 
 if __name__ == "__main__":
-
     from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QPushButton
 
     class Example(QWidget):
@@ -64,7 +63,6 @@ if __name__ == "__main__":
             self.initUI()
 
         def initUI(self):
-
             vbox = QVBoxLayout()
             hbox = QHBoxLayout()
 
@@ -91,7 +89,6 @@ if __name__ == "__main__":
             self.setLayout(vbox)
 
         def onClick(self):
-
             sender = self.sender()
             text = sender.text()
 

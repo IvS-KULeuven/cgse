@@ -8,6 +8,7 @@ The following functionality is provided:
 * maintain proper Setups and distribute the latest Setup on demand
 
 """
+
 import logging
 import multiprocessing
 import sys
@@ -63,7 +64,7 @@ class ConfigurationManagerControlServer(ControlServer):
         self.logger.info(f"CM housekeeping saved every {self.hk_delay / 1000:.1f} seconds.")
 
     def get_communication_protocol(self):
-        return 'tcp'
+        return "tcp"
 
     def get_commanding_port(self):
         return get_port_number(self.dev_ctrl_cmd_sock) or 0
@@ -82,6 +83,7 @@ class ConfigurationManagerControlServer(ControlServer):
 
     def is_storage_manager_active(self):
         from egse.storage import is_storage_manager_active
+
         return is_storage_manager_active()
 
     def store_housekeeping_information(self, data):
@@ -105,7 +107,7 @@ class ConfigurationManagerControlServer(ControlServer):
             prep={
                 "column_names": list(self.device_protocol.get_housekeeping().keys()),
                 "mode": "a",
-            }
+            },
         )
 
     def unregister_from_storage_manager(self):
@@ -113,8 +115,7 @@ class ConfigurationManagerControlServer(ControlServer):
 
         unregister_from_storage_manager(origin=self.get_storage_mnemonic())
 
-    def before_serve(self):
-        ...
+    def before_serve(self): ...
 
     def after_serve(self) -> None:
         self.deregister_service()
@@ -173,7 +174,7 @@ def stop():
         # rich.print("service = ", service)
 
         if service:
-            with ServiceProxy(hostname=service["host"], port=service['metadata']['service_port']) as proxy:
+            with ServiceProxy(hostname=service["host"], port=service["metadata"]["service_port"]) as proxy:
                 proxy.quit_server()
         else:
             rich.print("[red]ERROR: Couldn't connect to 'cm_cs', process probably not running.")
@@ -186,12 +187,10 @@ def status():
     import rich
     from egse.confman import get_status
 
-    rich.print(get_status(), end='')
+    rich.print(get_status(), end="")
 
 
-@app.command(
-    context_settings={"allow_extra_args": True, "ignore_unknown_options": True}
-)
+@app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
 def list_setups(ctx: Annotated[typer.Context, typer.Option()] = None):
     """List available Setups."""
 
@@ -230,7 +229,7 @@ def load_setup(setup_id: int):
 
 @app.command()
 def reload_setups():
-    """ Clears the cache and re-loads the available setups.
+    """Clears the cache and re-loads the available setups.
 
     Note that this does not affect the currently loaded setup.
     """
@@ -241,14 +240,13 @@ def reload_setups():
 
 @app.command()
 def register_to_storage():
-
     with RegistryClient() as reg:
         service = reg.discover_service(CTRL_SETTINGS.SERVICE_TYPE)
         # rich.print("service = ", service)
 
         if service:
             rich.print("Registering CM to the storage manager")
-            with ServiceProxy(hostname=service["host"], port=service['metadata']['service_port']) as proxy:
+            with ServiceProxy(hostname=service["host"], port=service["metadata"]["service_port"]) as proxy:
                 proxy.register_to_storage()
         else:
             rich.print("[red]ERROR: Couldn't connect to 'cm_cs', process probably not running.")
@@ -268,16 +266,13 @@ def check_prerequisites():
     location = get_conf_data_location()
 
     if not location:
-        raise RuntimeError(
-            "The location for the configuration data is not defined. Please check your environment."
-        )
+        raise RuntimeError("The location for the configuration data is not defined. Please check your environment.")
 
     location = Path(location)
 
     if not location.exists():
         logger.error(
-            f"The directory {location} does not exist, provide a writable location for "
-            f"storing the configuration data."
+            f"The directory {location} does not exist, provide a writable location for storing the configuration data."
         )
         fails += 1
 
@@ -287,11 +282,9 @@ def check_prerequisites():
 
     if fails:
         raise RuntimeError(
-            "Some of the prerequisites for the Configuration Manager haven't met. "
-            "Please check the logs."
+            "Some of the prerequisites for the Configuration Manager haven't met. Please check the logs."
         )
 
 
 if __name__ == "__main__":
-
     sys.exit(app())

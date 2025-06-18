@@ -5,6 +5,7 @@ from any component in the Common-EGSE.
 The Storage manager is implemented as a standard control server.
 
 """
+
 import logging
 import multiprocessing
 import sys
@@ -66,7 +67,7 @@ class StorageControlServer(ControlServer):
 
         self.register_as_listener(
             proxy=ConfigurationManagerProxy,
-            listener={'name': 'Storage CS', 'proxy': StorageProxy, 'event_id': EVENT_ID.SETUP}
+            listener={"name": "Storage CS", "proxy": StorageProxy, "event_id": EVENT_ID.SETUP},
         )
 
         # NOTE:
@@ -76,7 +77,6 @@ class StorageControlServer(ControlServer):
         self.schedule_task(self.device_protocol.controller.load_setup, after=10.0, when=is_configuration_manager_active)
 
     def before_serve(self):
-
         self.scheduler = BackgroundScheduler(timezone=utc)
         self.scheduler.start()
         self.scheduler.add_job(cycle_daily_files, "cron", day="*")
@@ -85,12 +85,12 @@ class StorageControlServer(ControlServer):
         from egse.confman import ConfigurationManagerProxy
 
         self.scheduler.shutdown()
-        self.unregister_as_listener(proxy=ConfigurationManagerProxy, listener={'name': 'Storage CS'})
+        self.unregister_as_listener(proxy=ConfigurationManagerProxy, listener={"name": "Storage CS"})
 
         self.deregister_service()
 
     def get_communication_protocol(self):
-        return 'tcp'
+        return "tcp"
 
     def get_commanding_port(self):
         return get_port_number(self.dev_ctrl_cmd_sock) or 0
@@ -158,7 +158,7 @@ def stop():
         # rich.print("service = ", service)
 
         if service:
-            with ServiceProxy(hostname=service["host"], port=service['metadata']['service_port']) as proxy:
+            with ServiceProxy(hostname=service["host"], port=service["metadata"]["service_port"]) as proxy:
                 proxy.quit_server()
         else:
             rich.print("[red]ERROR: Couldn't connect to 'sm_cs', process probably not running.")
@@ -171,7 +171,7 @@ def status(full: Annotated[bool, typer.Option(help="Give a full status report")]
     import rich
     from egse.storage import get_status
 
-    rich.print(get_status(full=full), end='')
+    rich.print(get_status(full=full), end="")
 
 
 def check_prerequisites():
@@ -189,17 +189,12 @@ def check_prerequisites():
     location = get_data_storage_location(site_id=SITE_ID)
 
     if not location:
-        raise RuntimeError(
-            "The data storage location is not defined. Please check your environment."
-        )
+        raise RuntimeError("The data storage location is not defined. Please check your environment.")
 
     location = Path(location)
 
     if not location.exists():
-        logger.error(
-            f"The directory {location} does not exist, provide a writable location for "
-            f"storing the data."
-        )
+        logger.error(f"The directory {location} does not exist, provide a writable location for storing the data.")
         fails += 1
 
     logger.debug(f"location = {location}")
@@ -217,10 +212,7 @@ def check_prerequisites():
     # now raise the final verdict
 
     if fails:
-        raise RuntimeError(
-            "Some of the prerequisites for the Storage Manager haven't met. "
-            "Please check the logs."
-        )
+        raise RuntimeError("Some of the prerequisites for the Storage Manager haven't met. Please check the logs.")
 
 
 if __name__ == "__main__":

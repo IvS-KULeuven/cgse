@@ -32,11 +32,11 @@ def match_regex_response(regex_prog, res):
 
 
 def patter_n_int(nr):
-    return re.compile(fr"(-?\d+)\r((-?\d+)\r){{{nr}}}\x06")
+    return re.compile(rf"(-?\d+)\r((-?\d+)\r){{{nr}}}\x06")
 
 
 def patter_n_float(nr):
-    return re.compile(fr"(-?\d+)\r((-?(\d*\.)?\d+)\r){{{nr}}}\x06")
+    return re.compile(rf"(-?\d+)\r((-?(\d*\.)?\d+)\r){{{nr}}}\x06")
 
 
 def match_int_response(res):

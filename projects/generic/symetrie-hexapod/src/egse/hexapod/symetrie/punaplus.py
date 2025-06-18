@@ -62,14 +62,13 @@ class PunaPlusProxy(DynamicProxy, PunaPlusInterface):
 
     @classmethod
     def from_identifier(cls, device_id: str):
-
         with RegistryClient() as reg:
             service = reg.discover_service(device_id)
 
             if service:
-                protocol = service.get('protocol', 'tcp')
-                hostname = service['host']
-                port = service['port']
+                protocol = service.get("protocol", "tcp")
+                hostname = service["host"]
+                port = service["port"]
 
             else:
                 raise RuntimeError(f"No service registered as {device_id}")
@@ -80,7 +79,6 @@ class PunaPlusProxy(DynamicProxy, PunaPlusInterface):
 
 
 if __name__ == "__main__":
-
     from egse.hexapod.symetrie.puna import PunaProxy
 
     # The following imports are needed for the isinstance() to work

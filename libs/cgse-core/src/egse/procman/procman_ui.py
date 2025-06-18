@@ -46,15 +46,15 @@ MAX_SLEEP = 10
 
 
 class ControlServerStatus(Enum):
-    """ Status of the Control Server of a device."""
+    """Status of the Control Server of a device."""
 
-    ACTIVE = True       # Control Server active -> LED green
-    INACTIVE = False    # Control Server inactive -> LED red
-    UNKNOWN = None      # Control Server starting/stopping -> Hourglass
+    ACTIVE = True  # Control Server active -> LED green
+    INACTIVE = False  # Control Server inactive -> LED red
+    UNKNOWN = None  # Control Server starting/stopping -> Hourglass
 
 
 def get_cgse_cmd(device_proxy: str) -> str:
-    """ Determines the CGSE command for the Control Server of the given device proxy.
+    """Determines the CGSE command for the Control Server of the given device proxy.
 
     To start/stop any device Control Server or query its status, we need to know its commanding.  These commands
     would be:
@@ -81,8 +81,9 @@ def get_cgse_cmd(device_proxy: str) -> str:
     for ep in sorted(entry_points("cgse.service"), key=lambda x: x.name):
         entry_point_values.append(ep.value)
 
-    similarity_scores = [SequenceMatcher(None, entry_point_value, module_name).ratio()
-                         for entry_point_value in entry_point_values]
+    similarity_scores = [
+        SequenceMatcher(None, entry_point_value, module_name).ratio() for entry_point_value in entry_point_values
+    ]
     best_match_index = similarity_scores.index(max(similarity_scores))
     best_match = entry_point_values[best_match_index].split(":")[-1]
 
@@ -90,7 +91,7 @@ def get_cgse_cmd(device_proxy: str) -> str:
 
 
 def get_cgse_ui(device_proxy: str) -> Union[str, None]:
-    """ Determines the CGSE command for the UI of the given device proxy.
+    """Determines the CGSE command for the UI of the given device proxy.
 
     To open the UI of any device Control Server, we need to know its commanding. In this function, we determine - based
     on the given proxy - what the corresponding UI command is.
@@ -110,8 +111,9 @@ def get_cgse_ui(device_proxy: str) -> Union[str, None]:
     for ep in sorted(entry_points("gui_scripts"), key=lambda x: x.name):
         entry_point_values.append(ep.name)
 
-    similarity_scores = [SequenceMatcher(None, entry_point_value, module_name).ratio()
-                         for entry_point_value in entry_point_values]
+    similarity_scores = [
+        SequenceMatcher(None, entry_point_value, module_name).ratio() for entry_point_value in entry_point_values
+    ]
     best_match_index = similarity_scores.index(max(similarity_scores))
 
     if similarity_scores[best_match_index] > 1 / len(similarity_scores):
@@ -122,10 +124,10 @@ def get_cgse_ui(device_proxy: str) -> Union[str, None]:
 
 
 class UiCommand:
-    """ Command to start the UI for the Control Server for a device."""
+    """Command to start the UI for the Control Server for a device."""
 
     def __init__(self, device_id: str, cmd: str):
-        """ Initialisation of a UI command.
+        """Initialisation of a UI command.
 
         Args:
             device_id (str): Device identifier
@@ -137,7 +139,7 @@ class UiCommand:
 
     @property
     def device_id(self):
-        """ Returns the device identifier.
+        """Returns the device identifier.
 
         Returns: Device identifier
         """
@@ -145,7 +147,7 @@ class UiCommand:
 
     @property
     def cmd(self) -> str:
-        """ Returns the full command to open the UI for the Control Server.
+        """Returns the full command to open the UI for the Control Server.
 
         Returns: Full command to open the UI for the Control Server.
         """
@@ -153,13 +155,13 @@ class UiCommand:
 
 
 class ConfigurationManagerMonitoringWorker(QObject):
-    """ Monitoring worker for the Configuration Manager."""
+    """Monitoring worker for the Configuration Manager."""
 
     setup_changed_signal = Signal(Setup)
     obsid_changed_signal = Signal(int)
 
     def __init__(self, parent=None):
-        """ Initialisation of a monitoring worker for the Configuration Manager.
+        """Initialisation of a monitoring worker for the Configuration Manager.
 
         This monitoring worker will listen on the monitoring port of the Configuration Manager and send out a signal
         whenever the setup or obsid is changed.
@@ -167,8 +169,8 @@ class ConfigurationManagerMonitoringWorker(QObject):
 
         super(ConfigurationManagerMonitoringWorker, self).__init__(parent)
 
-        self.setup = None       # Previous setup
-        self.obsid = None       # Previous obsid
+        self.setup = None  # Previous setup
+        self.obsid = None  # Previous obsid
 
         self.active = False
 
@@ -178,7 +180,7 @@ class ConfigurationManagerMonitoringWorker(QObject):
         self.monitoring_info = None
 
     def connect_socket(self) -> None:
-        """ Connect the socket to the monitoring port of the Configuration Manager."""
+        """Connect the socket to the monitoring port of the Configuration Manager."""
 
         cm = ConfigurationManagerProxy()
 
@@ -190,25 +192,24 @@ class ConfigurationManagerMonitoringWorker(QObject):
         self.socket.setsockopt_string(zmq.SUBSCRIBE, "")
 
     def start_listening(self) -> None:
-        """ Start listening to the monitoring port of the Configuration Manager."""
+        """Start listening to the monitoring port of the Configuration Manager."""
 
         self.active = True
         self.run()
 
     def stop_listening(self) -> None:
-        """ Stop listening to the monitoring port of the Configuration Manager."""
+        """Stop listening to the monitoring port of the Configuration Manager."""
 
         self.active = False
 
     def run(self) -> None:
-        """ Keep on listening on the monitoring port as long as the monitoring worker is active.
+        """Keep on listening on the monitoring port as long as the monitoring worker is active.
 
         Compare the setup and obsid from the incoming monitoring information from the Configuration Manager with the
         last knows values.  Whenever the setup or obsid has changed, a signal is emitted.
         """
 
         while self.active:
-
             pickle_string = self.socket.recv()
             self.monitoring_info = pickle.loads(pickle_string)
 
@@ -216,7 +217,7 @@ class ConfigurationManagerMonitoringWorker(QObject):
             self.check_for_obsid_changes()
 
     def check_for_setup_changes(self) -> None:
-        """ Checks the incoming monitoring information from the Configuration Manager for changes in the setup.
+        """Checks the incoming monitoring information from the Configuration Manager for changes in the setup.
 
         If the setup has changed, a signal is emitted.  A change in setup is defined as a change in the setup identifier.
         """
@@ -224,7 +225,6 @@ class ConfigurationManagerMonitoringWorker(QObject):
         new_setup = self.monitoring_info["setup"]
 
         if new_setup != self.setup:
-
             self.setup = new_setup
 
             # Due to static type checking the IDE doesn't recognise the `emit` method on a `Signal` object.  This
@@ -234,7 +234,7 @@ class ConfigurationManagerMonitoringWorker(QObject):
             self.setup_changed_signal.emit(self.setup)
 
     def check_for_obsid_changes(self) -> None:
-        """ Checks the incoming monitoring information from the Configuration Manager for changes in the obsid.
+        """Checks the incoming monitoring information from the Configuration Manager for changes in the obsid.
 
         If the obsid has changes, a signal is emitted.
         """
@@ -242,7 +242,6 @@ class ConfigurationManagerMonitoringWorker(QObject):
         new_obsid = self.monitoring_info["obsid"]
 
         if new_obsid != self.obsid:
-
             self.obsid = new_obsid
 
             # Due to static type checking the IDE doesn't recognise the `emit` method on a `Signal` object.  This
@@ -253,12 +252,12 @@ class ConfigurationManagerMonitoringWorker(QObject):
 
 
 class CoreServiceMonitoringWorker(QObject):
-    """ Monitoring worker for the core services."""
+    """Monitoring worker for the core services."""
 
     core_service_status_signal = Signal(dict)
 
     def __init__(self, core_service_name: str, core_service: str, parent=None):
-        """  Initialisation of a monitoring worker for a core service.
+        """Initialisation of a monitoring worker for a core service.
 
         Args:
             core_service_name (str): Name of the core service
@@ -277,20 +276,20 @@ class CoreServiceMonitoringWorker(QObject):
         self.core_service_is_active = False
 
     def start_listening(self):
-        """ Start checking the status of the core service as long as the monitoring worker is active."""
+        """Start checking the status of the core service as long as the monitoring worker is active."""
 
         self.active = True
         self.registry_client.connect()
         self.run()
 
     def stop_listening(self):
-        """ Stop checking the status of the core service."""
+        """Stop checking the status of the core service."""
 
         self.active = False
         self.registry_client.disconnect()
 
     def run(self):
-        """ Keep on checking the status of the core service as long as the monitoring worker is active.
+        """Keep on checking the status of the core service as long as the monitoring worker is active.
 
         Whenever the status of the core service has changed, a signal is emitted.  This signal comprises a
         dictionary with the following information:
@@ -300,24 +299,24 @@ class CoreServiceMonitoringWorker(QObject):
         """
 
         while self.active:
-
             services = self.registry_client.list_services(service_type=self.service_type)
 
             # Due to static type checking the IDE doesn't recognise the `emit` method on a `Signal` object.
             # This happens because `Signal` is a special descriptor in `PyQt` and doesn't expose `emit` in a
             # way that static analysers can easily detect.
             # noinspection PyUnresolvedReferences
-            self.core_service_status_signal.emit({"core_service_name": self.core_service_name,
-                                                  "core_service_is_active": len(services) > 0})
+            self.core_service_status_signal.emit(
+                {"core_service_name": self.core_service_name, "core_service_is_active": len(services) > 0}
+            )
 
 
 class DeviceMonitoringWorker(QObject):
-    """ Monitoring worker for the devices."""
+    """Monitoring worker for the devices."""
 
     process_status_signal = Signal(dict)
 
     def __init__(self, device_id: str, device_proxy: str, parent=None):
-        """  Initialisation of a monitoring worker for a device.
+        """Initialisation of a monitoring worker for a device.
 
         Args:
             device_id (str): Identifier of the device to monitor
@@ -340,22 +339,21 @@ class DeviceMonitoringWorker(QObject):
         self.cgse_cmd = get_cgse_cmd(self.device_proxy)
         self.status_cmd = StatusCommand(device_id=self.device_id, cgse_cmd=self.cgse_cmd)
 
-
     def start_listening(self) -> None:
-        """ Start listening to the output of the CGSE status command."""
+        """Start listening to the output of the CGSE status command."""
 
         self.active = True
         self.registry_client.connect()
         self.run()
 
     def stop_listening(self) -> None:
-        """ Stop listening to the output of the CGSE status command."""
+        """Stop listening to the output of the CGSE status command."""
 
         self.active = False
         self.registry_client.disconnect()
 
     def run(self) -> None:
-        """ Keep on checking the status of the device Control Server as long as the monitoring worker is active.
+        """Keep on checking the status of the device Control Server as long as the monitoring worker is active.
 
         Execute the CGSE status command to query the status of the device Control Server.  Whenever the status of the
         device Control Server has changed, a signal is emitted.  This signal comprises a dictionary with the following
@@ -368,7 +366,6 @@ class DeviceMonitoringWorker(QObject):
         """
 
         while self.active:
-
             if self.cs_status == ControlServerStatus.UNKNOWN:
                 time.sleep(0.5)
                 self.total_sleep += 0.5
@@ -377,13 +374,10 @@ class DeviceMonitoringWorker(QObject):
 
             cs_is_active_new = not services is None
 
-
             if cs_is_active_new != self.cs_is_active or self.total_sleep > MAX_SLEEP:
-
                 self.cs_is_active = cs_is_active_new
 
                 if self.cs_is_active:
-
                     self.cs_status = ControlServerStatus.ACTIVE
                     status_output = self.process_manager.get_device_process_status(self.status_cmd)
 
@@ -394,7 +388,6 @@ class DeviceMonitoringWorker(QObject):
                     self.process_status_signal.emit(status_output)
 
                 else:
-
                     self.cs_status = ControlServerStatus.INACTIVE
                     # Due to static type checking the IDE doesn't recognise the `emit` method on a `Signal` object.
                     # This happens because `Signal` is a special descriptor in `PyQt` and doesn't expose `emit` in a
@@ -406,19 +399,19 @@ class DeviceMonitoringWorker(QObject):
 
 
 class LedColor(Enum):
-    """ Potential colours for the LEDs showing the status of the processes."""
+    """Potential colours for the LEDs showing the status of the processes."""
 
-    ACTIVE = Indic.GREEN                        # Not for device Control Servers
-    ACTIVE_DEVICE_CONNECTED = Indic.GREEN       # Device Control Servers only
-    ACTIVE_NO_DEVICE_CONNECTED = Indic.ORANGE   # Device Control Servers only
+    ACTIVE = Indic.GREEN  # Not for device Control Servers
+    ACTIVE_DEVICE_CONNECTED = Indic.GREEN  # Device Control Servers only
+    ACTIVE_NO_DEVICE_CONNECTED = Indic.ORANGE  # Device Control Servers only
     INACTIVE = Indic.RED
 
 
 class CoreServiceWidget(QGroupBox):
-    """ Widget to display the status of the core services."""
+    """Widget to display the status of the core services."""
 
     def __init__(self, core_service_name: str, parent: QMainWindow):
-        """ Initialisation of a widget to display the status of the core services.
+        """Initialisation of a widget to display the status of the core services.
 
         Args:
             core_service_name (str): Name of the core service
@@ -451,7 +444,7 @@ class CoreServiceWidget(QGroupBox):
         self.setLayout(layout)
 
     def set_status_led(self, color: LedColor) -> None:
-        """ Set the colour of the status LED.
+        """Set the colour of the status LED.
 
         Args:
             color (LedColor): LED colour
@@ -461,10 +454,12 @@ class CoreServiceWidget(QGroupBox):
 
 
 class DeviceWidget(QGroupBox, Observable):
-    """ Widget to display the status of a device Control Server, to start and stop it, and to open its UI."""
+    """Widget to display the status of a device Control Server, to start and stop it, and to open its UI."""
 
-    def __init__(self, device_id: str, device_name: str, device_proxy: str, device_args: Union[list, None], parent: QMainWindow):    # FIXME device_args
-        """ Initialisation of a device widget.
+    def __init__(
+        self, device_id: str, device_name: str, device_proxy: str, device_args: Union[list, None], parent: QMainWindow
+    ):  # FIXME device_args
+        """Initialisation of a device widget.
 
         Args:
             device_id (str): Device identifier
@@ -506,9 +501,11 @@ class DeviceWidget(QGroupBox, Observable):
 
         # Open UI
         if self.has_ui_option():
-            self.ui_button = TouchButton(name=f"Open the UI for the {self.device_id} Control Server.",
-                                         status_tip=f"Open the UI for the {self.device_id} Control Server.",
-                                         selected=get_resource(":/icons/user-interface.svg"),)
+            self.ui_button = TouchButton(
+                name=f"Open the UI for the {self.device_id} Control Server.",
+                status_tip=f"Open the UI for the {self.device_id} Control Server.",
+                selected=get_resource(":/icons/user-interface.svg"),
+            )
             self.ui_button.setFixedSize(30, 30)
             self.ui_button.clicked.connect(self.open_ui)
             layout.addWidget(self.ui_button, 0, index)
@@ -516,13 +513,13 @@ class DeviceWidget(QGroupBox, Observable):
 
         # Shut down / re-start
 
-        self.start_stop_button = ToggleButton(name=f"Start / shut down the {self.device_id} Control Server.",
-                                              status_tip=f"Start / shut down the {self.device_id} Control Server.",
-                                              selected=get_resource(":/icons/start-process-button.svg"),
-                                              not_selected=get_resource(":/icons/stop-process-button.svg"),
-                                              disabled=[get_resource(":/icons/busy.svg"),
-                                                        get_resource(":/icons/busy.svg")]
-                                              )
+        self.start_stop_button = ToggleButton(
+            name=f"Start / shut down the {self.device_id} Control Server.",
+            status_tip=f"Start / shut down the {self.device_id} Control Server.",
+            selected=get_resource(":/icons/start-process-button.svg"),
+            not_selected=get_resource(":/icons/stop-process-button.svg"),
+            disabled=[get_resource(":/icons/busy.svg"), get_resource(":/icons/busy.svg")],
+        )
         self.start_stop_button.clicked.connect(self.start_stop_cs)
         layout.addWidget(self.start_stop_button, 0, index)
         index += 1
@@ -530,21 +527,21 @@ class DeviceWidget(QGroupBox, Observable):
         # Operational / simulator mode
 
         if self.has_sim_option():
-            self.simulator_option_button = ToggleButton(name=f"Operational vs. simulator mode",
-                                                        status_tip=f"Indicate whether you want to start the Control Server "
-                                                                   f"in operational or simulator mode.",
-                                                        selected=get_resource(":/icons/operational-mode.svg"),
-                                                        not_selected=get_resource(":/icons/simulator-mode.svg"),
-                                                        disabled=[get_resource(":/icons/simulator-mode.svg"),
-                                                                  get_resource(":/icons/operational-mode.svg")]
-                                                        )
+            self.simulator_option_button = ToggleButton(
+                name=f"Operational vs. simulator mode",
+                status_tip=f"Indicate whether you want to start the Control Server in operational or simulator mode.",
+                selected=get_resource(":/icons/operational-mode.svg"),
+                not_selected=get_resource(":/icons/simulator-mode.svg"),
+                disabled=[get_resource(":/icons/simulator-mode.svg"), get_resource(":/icons/operational-mode.svg")],
+            )
         else:
-            self.simulator_option_button = ToggleButton(name=f"Operational mode only",
-                                                        status_tip=f"Operational mode only.",
-                                                        selected=get_resource(":/icons/operational-mode.svg"),
-                                                        not_selected=get_resource(":/icons/operational-mode.svg"),
-                                                        disabled=[get_resource(":/icons/operational-mode.svg")]
-                                                        )
+            self.simulator_option_button = ToggleButton(
+                name=f"Operational mode only",
+                status_tip=f"Operational mode only.",
+                selected=get_resource(":/icons/operational-mode.svg"),
+                not_selected=get_resource(":/icons/operational-mode.svg"),
+                disabled=[get_resource(":/icons/operational-mode.svg")],
+            )
         self.simulator_option_button.clicked.connect(self.change_cs_start_mode)
         layout.addWidget(self.simulator_option_button, 0, index)
         index += 1
@@ -552,7 +549,7 @@ class DeviceWidget(QGroupBox, Observable):
         self.setLayout(layout)
 
     def has_sim_option(self) -> bool:
-        """ Checks whether the Control Server can be started in simulator mode.
+        """Checks whether the Control Server can be started in simulator mode.
 
         Returns: True if the Control Server can be started in simulator mode; False otherwise.
         """
@@ -561,7 +558,7 @@ class DeviceWidget(QGroupBox, Observable):
         return "--sim" in output
 
     def has_ui_option(self) -> bool:
-        """ Checks whether the Control Server has a corresponding UI.
+        """Checks whether the Control Server has a corresponding UI.
 
         Returns: True if the Control Server has a corresponding UI.
         """
@@ -569,28 +566,34 @@ class DeviceWidget(QGroupBox, Observable):
         return self.ui_cmd is not None
 
     def open_ui(self) -> None:
-        """ Open the UI."""
+        """Open the UI."""
 
         self.notify_observers(UiCommand(device_id=self.device_id, cmd=self.ui_cmd))
 
     def start_stop_cs(self) -> None:
-        """ Take action when the start/stop button is clicked."""
+        """Take action when the start/stop button is clicked."""
 
         self.start_stop_button.disable()
 
         if self.start_stop_button.is_selected():
             self.notify_observers(StopCommand(device_id=self.device_id, cgse_cmd=self.cgse_cmd))
         else:
-            self.notify_observers(StartCommand(device_id=self.device_id, cgse_cmd=self.cgse_cmd,
-                                              device_args=self.device_args, simulator_mode=self.is_simulator_mode))
+            self.notify_observers(
+                StartCommand(
+                    device_id=self.device_id,
+                    cgse_cmd=self.cgse_cmd,
+                    device_args=self.device_args,
+                    simulator_mode=self.is_simulator_mode,
+                )
+            )
 
     def change_cs_start_mode(self) -> None:
-        """ Switch from simulator to operational mode, and vice versa."""
+        """Switch from simulator to operational mode, and vice versa."""
 
         self.is_simulator_mode = not self.is_simulator_mode
 
     def set_status_led(self, color: LedColor) -> None:
-        """ Set the colour of the status LED.
+        """Set the colour of the status LED.
 
         Args:
             color (LedColor): LED colour
@@ -600,10 +603,10 @@ class DeviceWidget(QGroupBox, Observable):
 
 
 class ProcessManagerUIModel:
-    """ Model in the MVC pattern that makes the PM UI application."""
+    """Model in the MVC pattern that makes the PM UI application."""
 
     def __init__(self):
-        """ Initialisation of the Process Manager UI model."""
+        """Initialisation of the Process Manager UI model."""
 
         super().__init__()
 
@@ -614,7 +617,7 @@ class ProcessManagerUIModel:
             self.process_manager: Union[ProcessManagerProxy, None] = None
 
     def is_connected(self) -> bool:
-        """ Checks whether the Process Manager Control Server is active.
+        """Checks whether the Process Manager Control Server is active.
 
         Checks whether a connection to the Process Manager Control Server has been established.
 
@@ -627,7 +630,7 @@ class ProcessManagerUIModel:
         return self.process_manager.ping() and self.process_manager.is_cs_connected()
 
     def get_device_ids(self) -> dict:
-        """ Returns the relevant device identifiers.
+        """Returns the relevant device identifiers.
 
         Returns: Dictionary in which the device identifiers are the keys, and the values are a tuple with the device
                  name, the device proxy and the device arguments.
@@ -636,7 +639,7 @@ class ProcessManagerUIModel:
         return self.process_manager.get_device_ids()
 
     def get_core_services(self) -> dict:
-        """ Returns the core services.
+        """Returns the core services.
 
         Returns: Dictionary with the core service names are the keys, and the values are the core service CGSE commands.
         """
@@ -644,7 +647,7 @@ class ProcessManagerUIModel:
         return self.process_manager.get_core_processes()
 
     def start_process(self, start_cmd: StartCommand):
-        """ Start a process with the given start command.
+        """Start a process with the given start command.
 
         The process is started on the same machine as the Process Manager.
 
@@ -654,7 +657,7 @@ class ProcessManagerUIModel:
         self.process_manager.start_process(start_cmd)
 
     def stop_process(self, stop_cmd: StopCommand):
-        """ Stop a process with the given stop command.
+        """Stop a process with the given stop command.
 
         The process was running on the same machine as the Process Manager.
 
@@ -666,10 +669,10 @@ class ProcessManagerUIModel:
 
 
 class ProcessManagerUIView(QMainWindow, Observable):
-    """ View in the MVC pattern that makes the PM UI application."""
+    """View in the MVC pattern that makes the PM UI application."""
 
     def __init__(self, core_services: dict):
-        """ Initialisation of the Process Manager UI model with the given core services.
+        """Initialisation of the Process Manager UI model with the given core services.
 
         Args:
             core_services (dict): Dictionary with the core services
@@ -685,15 +688,15 @@ class ProcessManagerUIView(QMainWindow, Observable):
         self.overview_core_services_widget_layout = QVBoxLayout()
         self.overview_core_services_widget = QGroupBox("Core Services", self)
 
-        self.core_service_widgets = {}      # Widgets for the core services
-        self.device_widgets = {}            # Widgets for the devices
+        self.core_service_widgets = {}  # Widgets for the core services
+        self.device_widgets = {}  # Widgets for the devices
 
         self.overview_devices_widget_layout = QVBoxLayout()
         self.overview_devices_widget = QGroupBox("Devices", self)
         self.init_ui()
 
     def init_ui(self) -> None:
-        """ Creating the content of the UI."""
+        """Creating the content of the UI."""
 
         app_frame = QFrame()
         app_frame.setObjectName("AppFrame")
@@ -735,7 +738,7 @@ class ProcessManagerUIView(QMainWindow, Observable):
         self.setCentralWidget(scroll)
 
     def clear_device_overview(self) -> None:
-        """ Clears the panel with the overview of the device Control Servers."""
+        """Clears the panel with the overview of the device Control Servers."""
 
         while self.overview_devices_widget_layout.count():
             widget = self.overview_devices_widget_layout.takeAt(0).widget()
@@ -747,16 +750,16 @@ class ProcessManagerUIView(QMainWindow, Observable):
                 self.device_widgets.clear()
 
     def closeEvent(self, close_event: QCloseEvent) -> None:
-        """ Takes action when the UI is closed."""
+        """Takes action when the UI is closed."""
 
         self.notify_observers(close_event)
 
 
 class ProcessManagerUIController(Observer):
-    """ Controller in the MVC pattern that makes the PM UI application."""
+    """Controller in the MVC pattern that makes the PM UI application."""
 
     def __init__(self, model: ProcessManagerUIModel, view: ProcessManagerUIView):
-        """ Initialisation of the Controller for the Process Manager GUI.
+        """Initialisation of the Controller for the Process Manager GUI.
 
         Args:
             model (ProcessManagerUIModel): Process Manager UI model
@@ -779,7 +782,9 @@ class ProcessManagerUIController(Observer):
         # noinspection PyUnresolvedReferences
         self.configuration_manager_monitoring_worker.setup_changed_signal.connect(self.on_setup_changed_signal)
         # noinspection PyUnresolvedReferences
-        self.configuration_manager_monitoring_thread.started.connect(self.configuration_manager_monitoring_worker.start_listening)
+        self.configuration_manager_monitoring_thread.started.connect(
+            self.configuration_manager_monitoring_worker.start_listening
+        )
         self.configuration_manager_monitoring_thread.start()
 
         # Monitoring the Core Services
@@ -799,7 +804,7 @@ class ProcessManagerUIController(Observer):
         self.device_monitoring_workers = {}
 
     def on_setup_changed_signal(self, setup: Setup) -> None:
-        """ Reaction to a change in the setup.
+        """Reaction to a change in the setup.
 
         This method is called when a new setup is loaded in the Configuration Manager and executes the following steps:
             - Based on the old list of devices (from the previous setup):
@@ -829,7 +834,7 @@ class ProcessManagerUIController(Observer):
         self.start_device_monitoring()
 
     def on_device_status_signal(self, device_info: dict) -> None:
-        """ Reaction to a change in the status of a device.
+        """Reaction to a change in the status of a device.
 
         Args:
             device_info (dict): Information about a device
@@ -864,7 +869,7 @@ class ProcessManagerUIController(Observer):
             pass
 
     def on_core_service_status_signal(self, core_service_info: dict) -> None:
-        """ Reaction to a change in the status of a core service.
+        """Reaction to a change in the status of a core service.
 
         Args:
             core_service_info (dict): Information about a core service
@@ -882,14 +887,14 @@ class ProcessManagerUIController(Observer):
             pass
 
     def stop_configuration_manager_monitoring(self) -> None:
-        """ Stop monitoring the Configuration Manager."""
+        """Stop monitoring the Configuration Manager."""
 
         self.configuration_manager_monitoring_worker.stop_listening()
         self.configuration_manager_monitoring_thread.quit()
         self.configuration_manager_monitoring_thread.wait()
 
     def start_core_service_monitoring(self):
-        """ Start monitoring the core services."""
+        """Start monitoring the core services."""
 
         for core_service_name, core_service_cmd in self.model.get_core_services().items():
             core_service_monitoring_thread = QThread(self.view)
@@ -908,7 +913,7 @@ class ProcessManagerUIController(Observer):
             self.core_service_monitoring_workers[core_service_name] = core_service_monitoring_worker
 
     def stop_core_service_monitoring(self):
-        """ Stop monitoring the core services."""
+        """Stop monitoring the core services."""
 
         for core_service in self.model.get_core_services():
             self.core_service_monitoring_workers[core_service].stop_listening()
@@ -919,7 +924,7 @@ class ProcessManagerUIController(Observer):
         self.core_service_monitoring_threads.clear()
 
     def start_device_monitoring(self):
-        """ Start monitoring the devices and add them to the UI.
+        """Start monitoring the devices and add them to the UI.
 
         This method is called when the setup changes.  We assume that the following steps have already been executed:
             - We stopped monitoring the devices that were listed in the previous setup:
@@ -955,7 +960,7 @@ class ProcessManagerUIController(Observer):
             self.view.overview_devices_widget_layout.addWidget(device_widget)
 
     def stop_device_monitoring(self):
-        """ Stop monitoring the devices and remove them from the UI."""
+        """Stop monitoring the devices and remove them from the UI."""
 
         if len(self.device_ids) > 0:
             for device_id in self.device_ids.keys():
@@ -967,12 +972,11 @@ class ProcessManagerUIController(Observer):
         self.device_monitoring_threads.clear()
 
     def update(self, changed_object) -> None:
-        """ Updates the state of the controller upon notification from an observable."""
+        """Updates the state of the controller upon notification from an observable."""
 
         # Closure of the UI
 
         if isinstance(changed_object, QCloseEvent):
-
             # Stop monitoring the Configuration Manager
             self.stop_configuration_manager_monitoring()
 
@@ -999,15 +1003,14 @@ class ProcessManagerUIController(Observer):
         elif isinstance(changed_object, UiCommand):
             subprocess.call(changed_object.cmd, shell=True)
 
-
     def do(self, actions):
-        """ Execute the given actions upon notification from an observable."""
+        """Execute the given actions upon notification from an observable."""
 
         pass
 
 
 def main():
-    """ Main method to launch the Process Manager GUI."""
+    """Main method to launch the Process Manager GUI."""
 
     lock_file = QLockFile(str(Path("~/pm_ui.app.lock").expanduser()))
 
@@ -1027,11 +1030,8 @@ def main():
         # (show a warning in a pop-up window if it's not)
 
         try:
-
             with ProcessManagerProxy():
-
                 if not is_configuration_manager_active():
-
                     description = "Could not connect to Configuration Manager"
                     into_text = (
                         "The GUI will start, but without listed processes. "
@@ -1045,7 +1045,6 @@ def main():
                     show_info_message(description, into_text)
 
         except ConnectionError:
-
             description = "Could not connect to Process Manager Control Server"
 
             into_text = (
@@ -1080,6 +1079,5 @@ def main():
         return error_message.exec()
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     sys.exit(main())

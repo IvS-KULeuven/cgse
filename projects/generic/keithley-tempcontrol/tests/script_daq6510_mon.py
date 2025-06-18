@@ -8,9 +8,7 @@ logger = logging.getLogger("daq6510-client")
 
 
 def daq6510_mon():
-
     with DAQMonitorClient(server_address="localhost", port=5556) as client:
-
         # Get current status
         status = client.get_status()
         logger.info(f"Service status: {json.dumps(status, indent=4)}")
@@ -62,12 +60,10 @@ def daq6510_mon():
         logger.info(f"Stop polling response: {response}")
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     logging.basicConfig(
         level=logging.DEBUG,
-        format="[%(asctime)s] %(threadName)-12s %(levelname)-8s "
-               "%(name)-12s %(lineno)5d:%(module)-20s %(message)s",
+        format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-12s %(lineno)5d:%(module)-20s %(message)s",
     )
 
     daq6510_mon()

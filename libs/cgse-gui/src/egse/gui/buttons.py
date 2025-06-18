@@ -26,16 +26,17 @@ BUTTON_ACTIONED = 4
 # but you have them in a QVBoxLayout or QHBoxLayout. The other TouchButton will not
 # properly work if not used in a QToolBar, i.e. the icons will not have the proper size.
 
+
 class ToolTouchButton(QToolButton):
     def __init__(
-            self,
-            width: int = 32,
-            height: int = 32,
-            name: str = None,
-            status_tip: str = None,
-            selected: Union[str, Path] = None,
-            disabled: Union[str, Path] = None,
-            parent: Optional[QWidget] = None
+        self,
+        width: int = 32,
+        height: int = 32,
+        name: str = None,
+        status_tip: str = None,
+        selected: Union[str, Path] = None,
+        disabled: Union[str, Path] = None,
+        parent: Optional[QWidget] = None,
     ):
         super().__init__(parent=parent)
 
@@ -88,7 +89,6 @@ class ToolTouchButton(QToolButton):
         return self.contentsRect().contains(pos)
 
     def paintEvent(self, *args, **kwargs):
-
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setPen(Qt.NoPen)
@@ -106,14 +106,14 @@ class ToolTouchButton(QToolButton):
 
 class TouchButton(QPushButton):
     def __init__(
-            self,
-            width: int = 32,
-            height: int = 32,
-            name: str = None,
-            status_tip: str = None,
-            selected: Union[str, Path] = None,
-            disabled: Union[str, Path] = None,
-            parent: Optional[QWidget] = None
+        self,
+        width: int = 32,
+        height: int = 32,
+        name: str = None,
+        status_tip: str = None,
+        selected: Union[str, Path] = None,
+        disabled: Union[str, Path] = None,
+        parent: Optional[QWidget] = None,
     ):
         super().__init__(parent=parent)
 
@@ -166,7 +166,6 @@ class TouchButton(QPushButton):
         return self.contentsRect().contains(pos)
 
     def paintEvent(self, *args, **kwargs):
-
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setPen(Qt.NoPen)
@@ -184,17 +183,17 @@ class TouchButton(QPushButton):
 
 class ToggleButton(QCheckBox):
     def __init__(
-            self,
-            width: int = 32,
-            height: int = 32,
-            name: str = None,
-            status_tip: str = None,
-            selected: Union[str, Path] = None,
-            not_selected: Union[str, Path] = None,
-            no_change: Union[str, Path] = None,
-            disabled: Union[str, Path, list] = None,
-            tristate: bool = False,
-            parent: Optional[QWidget] = None
+        self,
+        width: int = 32,
+        height: int = 32,
+        name: str = None,
+        status_tip: str = None,
+        selected: Union[str, Path] = None,
+        not_selected: Union[str, Path] = None,
+        no_change: Union[str, Path] = None,
+        disabled: Union[str, Path, list] = None,
+        tristate: bool = False,
+        parent: Optional[QWidget] = None,
     ):
         super().__init__(parent=parent)
 
@@ -258,7 +257,6 @@ class ToggleButton(QCheckBox):
         return self.contentsRect().contains(pos)
 
     def paintEvent(self, *args, **kwargs):
-
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setPen(Qt.NoPen)
@@ -277,11 +275,9 @@ class ToggleButton(QCheckBox):
 
 
 if __name__ == "__main__":
-
     from PyQt5.QtWidgets import QMainWindow
     from PyQt5.QtWidgets import QFrame
     from PyQt5.QtWidgets import QVBoxLayout
-
 
     class MainWindow(QMainWindow):
         def __init__(self):
@@ -368,8 +364,6 @@ if __name__ == "__main__":
 
         def print_released(self, *args, **kwargs):
             print(f"released: {args=}, {kwargs=}")
-
-
 
     app = QApplication(sys.argv)
     window = MainWindow()

@@ -5,6 +5,7 @@ Created on Wed Sep  9 17:19:47 2020
 
 @author: pierre
 """
+
 import numpy as np
 
 from egse.coordinates.point import Points
@@ -47,7 +48,7 @@ def is_avoidance_ok(hexusr, hexobj, setup: Setup = None, verbose=False):
 
     # !! This is a verification of the current situation --> need to replace by a simulation of the forthcoming
     # movement in the building block
-    horizontal_check = ((l6xy[0]**2.+l6xy[1]**2.) < clearance_xy*clearance_xy)
+    horizontal_check = (l6xy[0] ** 2.0 + l6xy[1] ** 2.0) < clearance_xy * clearance_xy
 
     """
     B. VERTICAL AVOIDANCE
@@ -79,10 +80,10 @@ def is_avoidance_ok(hexusr, hexobj, setup: Setup = None, verbose=False):
 
     # !! Same as above : this is verifying the current situation, not the one after a planned movement
     # Verify that all vertices ("protecting" FPA_SEN) are below the x-y plane of HEX_USR ("protecting" L6)
-    vertical_check = (np.all(vert_usr[2, :] < 0.))
+    vertical_check = np.all(vert_usr[2, :] < 0.0)
 
     if verbose:
-        printdict = {True:"OK", False:"NOT OK"}
+        printdict = {True: "OK", False: "NOT OK"}
         print(f"HORIZONTAL AVOIDANCE: {printdict[horizontal_check]}")
         print(f" VERTICAL  AVOIDANCE: {printdict[vertical_check]}")
 
@@ -90,10 +91,10 @@ def is_avoidance_ok(hexusr, hexobj, setup: Setup = None, verbose=False):
         print(f"Points Coordinates")
         coobj = vert_obj.coordinates
         for i in range(vertices_nb):
-            print(f"{i} OBJ {np.round(coobj[:3,i],6)} --> USR {np.round(vert_usr[:3,i],6)}")
+            print(f"{i} OBJ {np.round(coobj[:3, i], 6)} --> USR {np.round(vert_usr[:3, i], 6)}")
         vert_z = vert_usr[2, :]
         vert_zi = np.where(vert_z == np.max(vert_z))
         print(f"#vertices at max z : {len(vert_zi[0])}")
-        print(f"First one: vertex {vert_zi[0][0]} : {np.round(vert_usr[:3,vert_zi[0][0]],6)}")
+        print(f"First one: vertex {vert_zi[0][0]} : {np.round(vert_usr[:3, vert_zi[0][0]], 6)}")
 
     return horizontal_check and vertical_check

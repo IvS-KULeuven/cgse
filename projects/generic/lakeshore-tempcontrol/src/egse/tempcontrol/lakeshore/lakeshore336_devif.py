@@ -12,8 +12,9 @@ DEVICE_SETTINGS = Settings.load("LakeShore336 Controller")
 
 logger = logging.getLogger(__name__)
 
+
 class LakeShore336Command(ClientServerCommand):
-    """ Commands for the Lakeshore336 temperature controller.
+    """Commands for the Lakeshore336 temperature controller.
 
     A Command is basically a string that is sent to a device and for which the device returns a response.  The command
     string can contain placeholders that will be filled when the command is called.  The arguments that are given, will
@@ -21,7 +22,7 @@ class LakeShore336Command(ClientServerCommand):
     """
 
     def get_cmd_string(self, *args, **kwargs) -> str:
-        """ Returns the formatted command string with the given positional and/or keyword arguments filled out.
+        """Returns the formatted command string with the given positional and/or keyword arguments filled out.
 
         Args:
             *args: Positional arguments that are needed to construct the command string
@@ -31,17 +32,18 @@ class LakeShore336Command(ClientServerCommand):
         out = super().get_cmd_string(*args, **kwargs)
         return out + "\n"
 
-class LakeShore336Error(Exception):
 
-    """ Base exception for all LakeShore336 errors."""
+class LakeShore336Error(Exception):
+    """Base exception for all LakeShore336 errors."""
 
     pass
 
+
 class LakeShore336EthernetInterface(DeviceConnectionInterface, DeviceTransport):
-    """ Defines the low-level interface to the LakeShore336 temperature controller."""
+    """Defines the low-level interface to the LakeShore336 temperature controller."""
 
     def __init__(self, device_id: str, hostname: str = None, port: int = None):
-        """ Initialisation of an Ethernet interface for the Lakeshore336.
+        """Initialisation of an Ethernet interface for the Lakeshore336.
 
         Args:
             device_id (str): Device identifier
@@ -60,7 +62,7 @@ class LakeShore336EthernetInterface(DeviceConnectionInterface, DeviceTransport):
         self._is_connection_open = False
 
     def connect(self):
-        """ Connects to the Ethernet connection.
+        """Connects to the Ethernet connection.
 
         Raises:
             LakeShore336Error when no connection could be established
@@ -123,7 +125,7 @@ class LakeShore336EthernetInterface(DeviceConnectionInterface, DeviceTransport):
             raise LakeShore336Error(self.device_id, "Device is not connected, check logging messages for the cause.")
 
     def disconnect(self):
-        """ Disconnects from the Ethernet connection.
+        """Disconnects from the Ethernet connection.
 
         Raises:
             LakeShore336Error when the socket could not be closed
@@ -138,14 +140,14 @@ class LakeShore336EthernetInterface(DeviceConnectionInterface, DeviceTransport):
             raise LakeShore336Error(self.device_id, f"Could not close socket to {self.hostname}") from e_exc
 
     def reconnect(self):
-        """ Reconnects to the Ethernet connection."""
+        """Reconnects to the Ethernet connection."""
 
         if self._is_connection_open:
             self.disconnect()
         self.connect()
 
     def is_connected(self) -> bool:
-        """ Checks if the client is connected to the device.
+        """Checks if the client is connected to the device.
 
         Returns: True if the client is connected to the device; False otherwise.
         """
@@ -162,15 +164,13 @@ class LakeShore336EthernetInterface(DeviceConnectionInterface, DeviceTransport):
             return False
 
         if "LSCI" not in version:
-            logger.error(
-                f'Device did not respond correctly to a "*IDN?" command, response={version}. Disconnecting...'
-            )
+            logger.error(f'Device did not respond correctly to a "*IDN?" command, response={version}. Disconnecting...')
             return False
 
         return True
 
     def write(self, command: str):
-        """ Sends a single command to the device controller without waiting for a response.
+        """Sends a single command to the device controller without waiting for a response.
 
         Args
             command (str): Command to send to the controller
@@ -189,7 +189,7 @@ class LakeShore336EthernetInterface(DeviceConnectionInterface, DeviceTransport):
                 raise LakeShore336Error(msg)
 
     def trans(self, command: str) -> Optional[str]:
-        """ Sends a single command to the device and blocks until a response is received.
+        """Sends a single command to the device and blocks until a response is received.
 
         This operation is seen as a transaction or query.
 
@@ -204,14 +204,13 @@ class LakeShore336EthernetInterface(DeviceConnectionInterface, DeviceTransport):
         """
 
         try:
-
             self._socket.sendall(command.encode())
 
             # wait for, read and return the response from HUBER (will be at most TBD chars)
 
             return_string = self.read()
 
-            return return_string.decode().replace("\r\n", "").replace("+","")
+            return return_string.decode().replace("\r\n", "").replace("+", "")
 
         except socket.timeout as e_timeout:
             raise LakeShore336Error(self.device_id, "Socket timeout error") from e_timeout
@@ -225,7 +224,7 @@ class LakeShore336EthernetInterface(DeviceConnectionInterface, DeviceTransport):
                 raise LakeShore336Error(self.device_id, "Device not connected, use the connect() method.")
 
     def read(self) -> bytes:
-        """ Reads the device buffer.
+        """Reads the device buffer.
 
         Returns: Content of the device buffer.
         """

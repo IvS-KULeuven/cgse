@@ -173,14 +173,13 @@ def focal_plane_to_ccd_coordinates(x_fp, y_fp, setup: Setup = None):
         num_cols = CCD_SETTINGS.NUM_COLUMNS
 
     for ccd_code in range(1, 5):
-
         (row, column) = __focal_plane_to_ccd_coordinates__(x_fp, y_fp, ccd_code)
 
         if (row < 0) or (column < 0):
             continue
 
         if (row >= num_rows) or (column >= num_cols):
-                continue
+            continue
 
         return row, column, ccd_code
 
@@ -203,20 +202,20 @@ def __focal_plane_to_ccd_coordinates__(x_fp, y_fp, ccd_code):
 
     if setup is not None:
         ccd_orientation = setup.camera.ccd.orientation[int(ccd_code) - 1]
-        pixel_size      = setup.camera.ccd.pixel_size / 1000.0  # [mm]
-        ccd_origin_x    = GlobalState.setup.camera.ccd.origin_offset_x[int(ccd_code) - 1]
-        ccd_origin_y    = GlobalState.setup.camera.ccd.origin_offset_y[int(ccd_code) - 1]
+        pixel_size = setup.camera.ccd.pixel_size / 1000.0  # [mm]
+        ccd_origin_x = GlobalState.setup.camera.ccd.origin_offset_x[int(ccd_code) - 1]
+        ccd_origin_y = GlobalState.setup.camera.ccd.origin_offset_y[int(ccd_code) - 1]
     else:
         ccd_orientation = CCD_SETTINGS.ORIENTATION[int(ccd_code) - 1]
-        pixel_size      = CCD_SETTINGS.PIXEL_SIZE / 1000  # Pixel size [mm]
-        ccd_origin_x    = CCD_SETTINGS.ZEROPOINT[0]
-        ccd_origin_y    = CCD_SETTINGS.ZEROPOINT[1]
+        pixel_size = CCD_SETTINGS.PIXEL_SIZE / 1000  # Pixel size [mm]
+        ccd_origin_x = CCD_SETTINGS.ZEROPOINT[0]
+        ccd_origin_y = CCD_SETTINGS.ZEROPOINT[1]
 
     ccd_angle = radians(ccd_orientation)
 
     # CCD coordinates [mm]
 
-    row    = ccd_origin_y - x_fp * sin(ccd_angle) + y_fp * cos(ccd_angle)
+    row = ccd_origin_y - x_fp * sin(ccd_angle) + y_fp * cos(ccd_angle)
     column = ccd_origin_x + x_fp * cos(ccd_angle) + y_fp * sin(ccd_angle)
 
     row /= pixel_size
@@ -266,14 +265,14 @@ def ccd_to_focal_plane_coordinates(row, column, ccd_code):
 
     if setup is not None:
         ccd_orientation = setup.camera.ccd.orientation[int(ccd_code) - 1]
-        pixel_size_mm   = setup.camera.ccd.pixel_size / 1000.0  # [mm]
-        ccd_origin_x    = GlobalState.setup.camera.ccd.origin_offset_x[int(ccd_code) - 1]
-        ccd_origin_y    = GlobalState.setup.camera.ccd.origin_offset_y[int(ccd_code) - 1]
+        pixel_size_mm = setup.camera.ccd.pixel_size / 1000.0  # [mm]
+        ccd_origin_x = GlobalState.setup.camera.ccd.origin_offset_x[int(ccd_code) - 1]
+        ccd_origin_y = GlobalState.setup.camera.ccd.origin_offset_y[int(ccd_code) - 1]
     else:
         ccd_orientation = CCD_SETTINGS.ORIENTATION[int(ccd_code) - 1]
-        pixel_size_mm   = CCD_SETTINGS.PIXEL_SIZE / 1000  # Pixel size [mm]
-        ccd_origin_x    = CCD_SETTINGS.ZEROPOINT[0]
-        ccd_origin_y    = CCD_SETTINGS.ZEROPOINT[1]
+        pixel_size_mm = CCD_SETTINGS.PIXEL_SIZE / 1000  # Pixel size [mm]
+        ccd_origin_x = CCD_SETTINGS.ZEROPOINT[0]
+        ccd_origin_y = CCD_SETTINGS.ZEROPOINT[1]
 
     # Convert the pixel coordinates into [mm] coordinates
 
@@ -290,6 +289,7 @@ def ccd_to_focal_plane_coordinates(row, column, ccd_code):
     # That's it
 
     return x_fp, y_fp
+
 
 def angles_to_focal_plane_coordinates(theta, phi):
     """
@@ -352,7 +352,6 @@ def dict_to_ref_model(model_def: Union[Dict, List]) -> navdict:
     ref_links = {}
 
     def create_ref_frame(name, data) -> Union[ReferenceFrame, str]:
-
         # This is a recursive function that creates a reference frame based on the given data.
         # * When the data is already a ReferenceFrame, it just returns data
         # * When data starts with the special string `ReferenceFrame//`, the data string is parsed
@@ -508,7 +507,6 @@ def deserialize_array(arr_str: str) -> Optional[np.ndarray]:
 
 
 def _convert_from_string(data):
-
     # This function was copied from:
     #   https://github.com/numpy/numpy/blob/v1.19.0/numpy/matrixlib/defmatrix.py#L14
     # We include the function here because the np.matrix class is deprecated and will be removed.

@@ -8,6 +8,7 @@ from egse.hexapod.symetrie import get_hexapod_controller_pars
 from egse.hexapod.symetrie import logger
 from egse.hexapod.symetrie.puna import PunaInterface
 from egse.hexapod.symetrie.puna import PunaSimulator
+
 # from egse.hk import read_conversion_dict, convert_hk_names
 from egse.protocol import CommandProtocol
 from egse.settings import Settings
@@ -61,7 +62,6 @@ class PunaProtocol(CommandProtocol):
         return self.hexapod
 
     def get_status(self):
-
         status = super().get_status()
 
         if self.state == DeviceConnectionState.DEVICE_NOT_CONNECTED and not self.simulator:
@@ -76,7 +76,6 @@ class PunaProtocol(CommandProtocol):
         return status
 
     def get_housekeeping(self) -> dict:
-
         result = dict()
         result["timestamp"] = format_datetime()
 
@@ -96,19 +95,13 @@ class PunaProtocol(CommandProtocol):
                 self.update_connection_state(DeviceConnectionState.DEVICE_NOT_CONNECTED)
             return result
 
-        for idx, key in enumerate(
-            ["user_t_x", "user_t_y", "user_t_z", "user_r_x", "user_r_y", "user_r_z"]
-        ):
+        for idx, key in enumerate(["user_t_x", "user_t_y", "user_t_z", "user_r_x", "user_r_y", "user_r_z"]):
             result[key] = user_positions[idx]
 
-        for idx, key in enumerate(
-            ["mach_t_x", "mach_t_y", "mach_t_z", "mach_r_x", "mach_r_y", "mach_r_z"]
-        ):
+        for idx, key in enumerate(["mach_t_x", "mach_t_y", "mach_t_z", "mach_r_x", "mach_r_y", "mach_r_z"]):
             result[key] = mach_positions[idx]
 
-        for idx, key in enumerate(
-            ["alen_t_x", "alen_t_y", "alen_t_z", "alen_r_x", "alen_r_y", "alen_r_z"]
-        ):
+        for idx, key in enumerate(["alen_t_x", "alen_t_y", "alen_t_z", "alen_r_x", "alen_r_y", "alen_r_z"]):
             result[key] = actuator_length[idx]
 
         # TODO:

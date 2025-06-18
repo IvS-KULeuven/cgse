@@ -23,7 +23,6 @@ class HexapodSimulator:
     """
 
     def __init__(self):
-
         identity = np.identity(4)
 
         # Rotation around static axis, and around x, y and z in that order
@@ -105,14 +104,10 @@ class HexapodSimulator:
 
         # Print out some debugging information
 
-        logger.debug(
-            f"Linked to cs_object_in_user  {[i.name for i in self.cs_object_in_user.linkedTo]}"
-        )
+        logger.debug(f"Linked to cs_object_in_user  {[i.name for i in self.cs_object_in_user.linkedTo]}")
         logger.debug(f"Linked to cs_object          {[i.name for i in self.cs_object.linkedTo]}")
         logger.debug(f"Linked to cs_platform        {[i.name for i in self.cs_platform.linkedTo]}")
-        logger.debug(
-            f"Linked to cs_machine         {[i.name for i in self.cs_machine.linkedTo or {}]}"
-        )
+        logger.debug(f"Linked to cs_machine         {[i.name for i in self.cs_machine.linkedTo or {}]}")
 
     def is_simulator(self):
         return True
@@ -171,9 +166,7 @@ class HexapodSimulator:
         self.control_loop = False
         return self.control_loop
 
-    def configure_coordinates_systems(
-        self, tx_u, ty_u, tz_u, rx_u, ry_u, rz_u, tx_o, ty_o, tz_o, rx_o, ry_o, rz_o
-    ):
+    def configure_coordinates_systems(self, tx_u, ty_u, tz_u, rx_u, ry_u, rz_u, tx_o, ty_o, tz_o, rx_o, ry_o, rz_o):
         identity = np.identity(4)
 
         # Redefine the User Coordinate System
@@ -251,7 +244,6 @@ class HexapodSimulator:
         return 0
 
     def get_coordinates_systems(self):
-
         degrees = True
 
         t_user, r_user = self.cs_user.getTranslationRotationVectors(degrees=degrees)
@@ -284,7 +276,6 @@ class HexapodSimulator:
         return 0
 
     def move_relative_object(self, tx, ty, tz, rx, ry, rz):
-
         tr_rel = np.array([tx, ty, tz])
         rot_rel = np.array([rx, ry, rz])
 
@@ -298,7 +289,6 @@ class HexapodSimulator:
         )
 
     def move_relative_user(self, tx, ty, tz, rx, ry, rz):
-
         # The Symétrie Hexapod definition of moveRelativeUser
         #
         # - Translation and rotations are expressed in USER reference frame
@@ -332,9 +322,7 @@ class HexapodSimulator:
 
         import egse.coordinates.transform3d_addon as t3add
 
-        rotation = t3add.translationRotationToTransformation(
-            [0, 0, 0], [rx, ry, rz], rot_config=self.rot_config
-        )
+        rotation = t3add.translationRotationToTransformation([0, 0, 0], [rx, ry, rz], rot_config=self.rot_config)
 
         transformation = derotation @ translation @ rerotation @ rotation
 
@@ -475,36 +463,79 @@ class HexapodSimulator:
         return tuple(self._speed)
 
     def get_actuator_state(self):
-        return [({0: 'In position', 1: 'Control loop on servo motors active', 2: 'Homing done',
-                  4: 'Input "Positive limit switch"', 5: 'Input "Negative limit switch"',
-                  6: 'Brake control output'},
-                 [1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), (
-                {0: 'In position', 1: 'Control loop on servo motors active', 2: 'Homing done',
-                 4: 'Input "Positive limit switch"', 5: 'Input "Negative limit switch"',
-                 6: 'Brake control output'},
-                [1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), (
-                {0: 'In position', 1: 'Control loop on servo motors active', 2: 'Homing done',
-                 4: 'Input "Positive limit switch"', 5: 'Input "Negative limit switch"',
-                 6: 'Brake control output'},
-                [1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), (
-                {0: 'In position', 1: 'Control loop on servo motors active', 2: 'Homing done',
-                 4: 'Input "Positive limit switch"', 5: 'Input "Negative limit switch"',
-                 6: 'Brake control output'},
-                [1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), (
-                {0: 'In position', 1: 'Control loop on servo motors active', 2: 'Homing done',
-                 4: 'Input "Positive limit switch"', 5: 'Input "Negative limit switch"',
-                 6: 'Brake control output'},
-                [1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), (
-                {0: 'In position', 1: 'Control loop on servo motors active', 2: 'Homing done',
-                 4: 'Input "Positive limit switch"', 5: 'Input "Negative limit switch"',
-                 6: 'Brake control output'},
-                [1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])]
+        return [
+            (
+                {
+                    0: "In position",
+                    1: "Control loop on servo motors active",
+                    2: "Homing done",
+                    4: 'Input "Positive limit switch"',
+                    5: 'Input "Negative limit switch"',
+                    6: "Brake control output",
+                },
+                [1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ),
+            (
+                {
+                    0: "In position",
+                    1: "Control loop on servo motors active",
+                    2: "Homing done",
+                    4: 'Input "Positive limit switch"',
+                    5: 'Input "Negative limit switch"',
+                    6: "Brake control output",
+                },
+                [1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ),
+            (
+                {
+                    0: "In position",
+                    1: "Control loop on servo motors active",
+                    2: "Homing done",
+                    4: 'Input "Positive limit switch"',
+                    5: 'Input "Negative limit switch"',
+                    6: "Brake control output",
+                },
+                [1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ),
+            (
+                {
+                    0: "In position",
+                    1: "Control loop on servo motors active",
+                    2: "Homing done",
+                    4: 'Input "Positive limit switch"',
+                    5: 'Input "Negative limit switch"',
+                    6: "Brake control output",
+                },
+                [1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ),
+            (
+                {
+                    0: "In position",
+                    1: "Control loop on servo motors active",
+                    2: "Homing done",
+                    4: 'Input "Positive limit switch"',
+                    5: 'Input "Negative limit switch"',
+                    6: "Brake control output",
+                },
+                [1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ),
+            (
+                {
+                    0: "In position",
+                    1: "Control loop on servo motors active",
+                    2: "Homing done",
+                    4: 'Input "Positive limit switch"',
+                    5: 'Input "Negative limit switch"',
+                    6: "Brake control output",
+                },
+                [1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ),
+        ]
 
     def perform_maintenance(self, axis):
         pass
 
     def info(self):
-
         msg = "Info about the PunaSimulator:\n"
         msg += "\n"
         msg += "This Hexapod PUNA Simulator works with several reference frames:\n"
@@ -512,10 +543,7 @@ class HexapodSimulator:
         msg += "  * The platform reference frame\n"
         msg += "  * The object reference frame\n"
         msg += "  * The user reference frame\n\n"
-        msg += (
-            "Any movement commands result in a transformation of the appropriate coordinate "
-            "systems."
-        )
+        msg += "Any movement commands result in a transformation of the appropriate coordinate systems."
 
         logger.info(msg)
 

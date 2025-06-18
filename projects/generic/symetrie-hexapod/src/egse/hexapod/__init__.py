@@ -14,6 +14,7 @@ hexapod positions in different reference frames and apply simple movements.
 
 class HexapodError(Exception):
     """A Hexapod specific error."""
+
     pass
 
 
@@ -28,5 +29,5 @@ class HexapodError(Exception):
 #
 
 __all__ = [
-    'HexapodError',
+    "HexapodError",
 ]

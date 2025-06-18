@@ -54,7 +54,7 @@ class ClockApp(App):
 
 @app.command()
 def clock(utc: bool = False):
-    """Showcase for running an in-line Textual App. """
+    """Showcase for running an in-line Textual App."""
 
     ClockApp(utc).run(inline=True)
 

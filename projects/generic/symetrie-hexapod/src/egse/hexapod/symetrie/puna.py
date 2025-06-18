@@ -3,6 +3,7 @@ This module defines the device classes to be used to connect to and control the 
 Symétrie.
 
 """
+
 import time
 from datetime import datetime
 from datetime import timedelta
@@ -102,8 +103,7 @@ class PunaController(PunaInterface):
             self.pmac.setConnectionParameters(hostname, port)
         except PMACError as exc:
             logger.warning(
-                f"HexapodError: Couldn't establish connection with the Hexapod PUNA Hardware "
-                f"Controller: ({exc})"
+                f"HexapodError: Couldn't establish connection with the Hexapod PUNA Hardware Controller: ({exc})"
             )
 
     def is_simulator(self):
@@ -138,8 +138,7 @@ class PunaController(PunaInterface):
         try:
             out = self.pmac.getQVars(36, [0], int)
         except PMACError as exc:
-            raise HexapodError(
-                "Couldn't retrieve information from Hexapod PUNA Hardware Controller.") from exc
+            raise HexapodError("Couldn't retrieve information from Hexapod PUNA Hardware Controller.") from exc
         return bool(out[0] & 0x04)
 
     def info(self):
@@ -155,9 +154,7 @@ class PunaController(PunaInterface):
             msg += f"time    = {self.pmac.getTime()}\n"
             msg += f"today   = {self.pmac.getToday()}\n"
         except PMACError as exc:
-            raise HexapodError(
-                "Couldn't retrieve information from Hexapod PUNA Hardware Controller."
-            ) from exc
+            raise HexapodError("Couldn't retrieve information from Hexapod PUNA Hardware Controller.") from exc
 
         return msg
 
@@ -200,15 +197,12 @@ class PunaController(PunaInterface):
 
     def set_virtual_homing(self, tx, ty, tz, rx, ry, rz):
         try:
-            rc = self.pmac.sendCommand(
-                pmac.CMD_VIRTUAL_HOMING, tx=tx, ty=ty, tz=tz, rx=rx, ry=ry, rz=rz
-            )
+            rc = self.pmac.sendCommand(pmac.CMD_VIRTUAL_HOMING, tx=tx, ty=ty, tz=tz, rx=rx, ry=ry, rz=rz)
         except PMACError as exc:
             raise HexapodError("Couldn't execute the virtual homing command.") from exc
 
         logger.warning(
-            f"Virtual Homing successfully set to {tx:.6f}, {ty:.6f}, {tz:.6f}, {rx:.6f}, "
-            f"{ry:.6f}, {rz:.6f}."
+            f"Virtual Homing successfully set to {tx:.6f}, {ty:.6f}, {tz:.6f}, {rx:.6f}, {ry:.6f}, {rz:.6f}."
         )
 
         return rc
@@ -310,9 +304,7 @@ class PunaController(PunaInterface):
             rz (float): rotation around the Z-axis [deg]
 
         """
-        out = self.pmac.sendCommand(
-            pmac.CMD_POSVALID_GET, cm=cm, tx=tx, ty=ty, tz=tz, rx=rx, ry=ry, rz=rz
-        )
+        out = self.pmac.sendCommand(pmac.CMD_POSVALID_GET, cm=cm, tx=tx, ty=ty, tz=tz, rx=rx, ry=ry, rz=rz)
         Q29 = decode_Q29(out[0])
         return out[0], Q29
 
@@ -466,9 +458,7 @@ class PunaController(PunaInterface):
         try:
             rc = self.pmac.sendCommand(pmac.CMD_JOG, axis=axis, inc=inc)
         except PMACError as exc:
-            raise HexapodError(
-                f"Couldn't execute the jog command for axis={axis} with inc={inc} [mm]."
-            ) from exc
+            raise HexapodError(f"Couldn't execute the jog command for axis={axis} with inc={inc} [mm].") from exc
 
         msg = {0: "Command was successfully executed", -1: "Command was ignored"}
 
@@ -476,11 +466,8 @@ class PunaController(PunaInterface):
 
         return rc
 
-    def configure_coordinates_systems(
-        self, tx_u, ty_u, tz_u, rx_u, ry_u, rz_u, tx_o, ty_o, tz_o, rx_o, ry_o, rz_o
-    ):
+    def configure_coordinates_systems(self, tx_u, ty_u, tz_u, rx_u, ry_u, rz_u, tx_o, ty_o, tz_o, rx_o, ry_o, rz_o):
         try:
-
             rc = self.pmac.sendCommand(
                 pmac.CMD_CFG_CS,
                 tx_u=round(tx_u, NUM_OF_DECIMALS),
@@ -497,9 +484,7 @@ class PunaController(PunaInterface):
                 rz_o=round(rz_o, NUM_OF_DECIMALS),
             )
         except PMACError as exc:
-            raise HexapodError(
-                "Couldn't configure coordinate systems on the hexapod controller."
-            ) from exc
+            raise HexapodError("Couldn't configure coordinate systems on the hexapod controller.") from exc
 
         return rc
 
@@ -507,9 +492,7 @@ class PunaController(PunaInterface):
         try:
             out = self.pmac.sendCommand(pmac.CMD_CFG_CS_GET)
         except PMACError as exc:
-            raise HexapodError(
-                "Couldn't get the coordinate systems information from the hexapod controller."
-            ) from exc
+            raise HexapodError("Couldn't get the coordinate systems information from the hexapod controller.") from exc
 
         return out
 
@@ -517,9 +500,7 @@ class PunaController(PunaInterface):
         try:
             out = self.pmac.sendCommand(pmac.CMD_STATE_DEBUG_GET)
         except PMACError as exc:
-            raise HexapodError(
-                "Couldn't get the debugging information from the hexapod controller."
-            ) from exc
+            raise HexapodError("Couldn't get the debugging information from the hexapod controller.") from exc
 
         return out
 
@@ -527,9 +508,7 @@ class PunaController(PunaInterface):
         try:
             rc = self.pmac.sendCommand(pmac.CMD_CFG_SPEED, vt=vt, vr=vr)
         except PMACError as exc:
-            raise HexapodError(
-                "Couldn't set the speed for translation [{vt} mm/s] or rotation [{vr} deg/s]."
-            ) from exc
+            raise HexapodError("Couldn't set the speed for translation [{vt} mm/s] or rotation [{vr} deg/s].") from exc
 
         return rc
 
@@ -537,9 +516,7 @@ class PunaController(PunaInterface):
         try:
             out = self.pmac.sendCommand(pmac.CMD_CFG_SPEED_GET)
         except PMACError as exc:
-            raise HexapodError(
-                "Couldn't get the speed settings from the hexapod controller."
-            ) from exc
+            raise HexapodError("Couldn't get the speed settings from the hexapod controller.") from exc
 
         return out
 
@@ -614,7 +591,6 @@ class PunaController(PunaInterface):
         logger.info(f"Just waiting {duration} seconds ...")
 
         while datetime.now() - _start < _timeout:
-
             if verbose and (datetime.now() - _start > _count * _rate):
                 _count += 1
                 logger.info(f"waited for {_count * _rate} of {_timeout} seconds, ")
@@ -657,14 +633,13 @@ class PunaProxy(Proxy, PunaInterface):
 
     @classmethod
     def from_identifier(cls, device_id: str):
-
         with RegistryClient() as reg:
             service = reg.discover_service(device_id)
 
             if service:
-                protocol = service.get('protocol', 'tcp')
-                hostname = service['host']
-                port = service['port']
+                protocol = service.get("protocol", "tcp")
+                hostname = service["host"]
+                port = service["port"]
 
             else:
                 raise RuntimeError(f"No service registered as {device_id}")

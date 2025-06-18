@@ -9,7 +9,9 @@ from egse.spw import DataDataPacket
 from egse.spw import HousekeepingPacket
 from egse.spw import OverscanDataPacket
 from egse.spw import TimecodePacket
-from egse.persistence import PersistenceLayer  # -> circular dependency because this import loads this module as a plugin
+from egse.persistence import (
+    PersistenceLayer,
+)  # -> circular dependency because this import loads this module as a plugin
 
 LOGGER = logging.getLogger(__name__)
 
@@ -94,13 +96,12 @@ class HDF5(PersistenceLayer):
             if isinstance(value, OverscanDataPacket):
                 self._h5file[key] = value.packet_as_ndarray
             if isinstance(value, (str, bytearray, np.ndarray)):
-
                 # if we save a command, put it into a 'commands' group.
                 # This is a special case that is the result of issue #1461
 
-                if 'command' in key:
-                    idx = key.split('/')[1]
-                    if idx in self._h5file and 'commands' in self._h5file[idx]:
+                if "command" in key:
+                    idx = key.split("/")[1]
+                    if idx in self._h5file and "commands" in self._h5file[idx]:
                         last_idx = int(sorted(self._h5file[f"/{idx}/commands"].keys())[-1])
                         key = f"/{idx}/commands/{last_idx + 1}"
                     else:
@@ -144,7 +145,6 @@ class HDF5(PersistenceLayer):
             # return key
 
     def update(self, idx, data):
-
         pass
 
     def delete(self, idx):
