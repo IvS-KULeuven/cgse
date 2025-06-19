@@ -9,12 +9,15 @@ from typing import Annotated
 
 import rich
 import typer
+from rich.console import Console
+from rich.table import Table
 
 from cgse_common import AppState
 from egse.config import find_files
 from egse.env import get_conf_data_location
 from egse.env import get_site_id
 from egse.plugin import entry_points
+from egse.process import ProcessInfo
 from egse.setup import Setup
 from egse.system import format_datetime
 
@@ -161,13 +164,51 @@ def show_env(
 @show.command(name="procs")
 def show_processes():
     """Show the processes that are running for the installed packages."""
+    processes: list[ProcessInfo] = []
+
     for ep in entry_points("cgse.explore"):
         # print(f"{ep.name = }, {ep.module = }, {ep.load() = }, {ep.extras = }")
         explore = ep.load()
         with contextlib.suppress(AttributeError):
             show_procs = getattr(explore, "show_processes")
-            for line in show_procs():
-                rich.print(line)
+            processes.extend(show_procs())
+
+    console = Console()
+    console.print(create_rich_table(processes))
+
+
+def create_rich_table(processes: list[ProcessInfo]):
+    """Create a rich table with the processes from all registered packages."""
+
+    table = Table(title="Process Information")
+
+    table.add_column("PID", style="cyan", no_wrap=True)
+    table.add_column("Name", style="magenta")
+    table.add_column("User", style="green")
+    table.add_column("CPU%", justify="right", style="yellow")
+    # table.add_column("Memory%", justify="right", style="blue")
+    table.add_column("Memory MB", justify="right", style="blue")
+    table.add_column("Status", style="red")
+    table.add_column("Command", style="white")
+
+    # Sort by CPU usage
+    processes.sort(key=lambda x: x.cpu_percent, reverse=True)
+
+    for proc in processes:
+        proc = proc.as_dict()
+        cmd = re.sub(r"^.*/?python(?:\d+\.\d+)?\s+(?:-m)?\s*", "python -m ", proc["command"])
+        table.add_row(
+            str(proc["pid"]),
+            proc["name"],
+            proc.get("username", "N/A"),
+            f"{proc.get('cpu_percent', 0):.1f}",
+            # f"{proc.get('memory_percent', 0):.1f}",
+            f"{proc.get('memory_mb', 0):.1f}",
+            proc.get("status", "unknown"),
+            cmd[:100] + "..." if len(cmd) > 100 else cmd,
+        )
+
+    return table
 
 
 @show.command(name="setup")
