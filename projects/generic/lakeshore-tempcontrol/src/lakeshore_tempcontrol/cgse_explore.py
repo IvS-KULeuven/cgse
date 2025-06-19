@@ -2,9 +2,19 @@ __all__ = [
     "show_processes",
 ]
 
-from egse.process import ps_egrep
+
+import re
+
+from egse.process import ProcessInfo
+from egse.process import get_processes
 
 
 def show_processes():
-    """Show the lines from the `ps -ef` command that match processes from this package."""
-    return ps_egrep("(lakeshore336)_(ui|cs|sim)")
+    """Returns of list of ProcessInfo data classes for matching processes from this package."""
+
+    def filter_procs(pi: ProcessInfo):
+        pattern = r"(lakeshore336)_(ui|cs|sim)"
+
+        return re.search(pattern, pi.command)
+
+    return get_processes(filter_procs)
