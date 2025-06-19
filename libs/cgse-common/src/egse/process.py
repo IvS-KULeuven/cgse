@@ -733,3 +733,19 @@ def ps_egrep(pattern):
     response = [line for line in output.decode().rstrip().split("\n") if line and "egrep " not in line]
 
     return response
+
+
+def kill_process(pid: int, force: bool = False):
+    """Safely kill a process. Return True if process could be killed, False otherwise.
+
+    If the process doesn't exist, or you have don't the right permission to kill the process, False is returned.
+    """
+    try:
+        proc = psutil.Process(pid)
+        if force:
+            proc.kill()
+        else:
+            proc.terminate()
+        return True
+    except (psutil.NoSuchProcess, psutil.AccessDenied):
+        return False

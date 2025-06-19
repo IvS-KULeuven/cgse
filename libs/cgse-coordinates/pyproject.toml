@@ -1,6 +1,6 @@
 [project]
 name = "cgse-coordinates"
-version = "0.12.0"
+version = "0.12.1"
 description = "Reference Frames and Coordinate Transofrmations for CGSE"
 authors = [
     {name = "IvS KU Leuven"}

@@ -196,7 +196,7 @@ def create_rich_table(processes: list[ProcessInfo]):
 
     for proc in processes:
         proc = proc.as_dict()
-        cmd = re.sub(r"^.*/?python(?:\d+\.\d+)?\s+(?:-m)?\s*", "python -m ", proc["command"])
+        cmd = re.sub(r"^.*/?python(?:\d+(?:\.\d+)?)?\s+(?:-m)?\s*", "python -m ", proc["command"])
         table.add_row(
             str(proc["pid"]),
             proc["name"],
