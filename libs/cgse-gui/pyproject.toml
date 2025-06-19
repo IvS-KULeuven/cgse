@@ -1,13 +1,13 @@
 [project]
 name = "cgse-gui"
-version = "0.11.5"
+version = "0.12.0"
 description = "GUI components for CGSE"
 authors = [
     {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
     {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"}
 ]
 readme = {"file" = "README.md", "content-type" = "text/markdown"}
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = "MIT"
 keywords = [
     "CGSE",
