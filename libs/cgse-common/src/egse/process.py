@@ -23,10 +23,12 @@ from __future__ import annotations
 
 __all__ = [
     "get_process_info",
+    "get_processes",
     "is_process_running",
     "list_processes",
     "list_zombies",
     "ps_egrep",
+    "ProcessInfo",
     "ProcessStatus",
     "SubProcess",
 ]
@@ -40,6 +42,8 @@ import sys
 import threading
 import time
 import uuid
+from dataclasses import dataclass
+from typing import Callable
 from typing import List
 from typing import Optional
 
@@ -50,6 +54,69 @@ from egse.bits import humanize_bytes
 from egse.system import humanize_seconds
 
 _logger = logging.getLogger(__name__)
+
+
+@dataclass
+class ProcessInfo:
+    pid: int
+    name: str
+    username: str
+    cpu_percent: float
+    memory_percent: float
+    memory_mb: float
+    status: str
+    create_time: float
+    command: str
+
+    def as_dict(self):
+        return {
+            "pid": self.pid,
+            "name": self.name,
+            "username": self.username,
+            "cpu_percent": self.cpu_percent,
+            "memory_percent": self.memory_percent,
+            "memory_mb": self.memory_mb,
+            "status": self.status,
+            "create_time": self.create_time,
+            "command": self.command,
+        }
+
+
+def get_processes(filter_func: Callable = None) -> list[ProcessInfo]:
+    """Get current processes with optional filtering.
+
+    Args:
+        filter_func: a filter function for filtering the processes
+
+    Returns:
+        A list of process info dataclasses
+    """
+    processes = []
+
+    for proc in psutil.process_iter(
+        ["pid", "name", "username", "cpu_percent", "memory_percent", "create_time", "cmdline"]
+    ):
+        try:
+            with proc.oneshot():  # Efficient way to get multiple attributes
+                info = ProcessInfo(
+                    pid=proc.pid,
+                    name=proc.name(),
+                    username=proc.username(),
+                    cpu_percent=proc.cpu_percent(),
+                    memory_percent=proc.memory_percent(),
+                    memory_mb=proc.memory_info().rss / 1024 / 1024,
+                    status=proc.status(),
+                    create_time=proc.create_time(),
+                    command=" ".join(proc.cmdline()) if proc.cmdline() else proc.name(),
+                )
+
+                if filter_func is None or filter_func(info):
+                    processes.append(info)
+
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            continue
+
+    return processes
 
 
 class ProcessStatus:
