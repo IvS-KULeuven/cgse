@@ -77,7 +77,7 @@ def update_project_version(project_dir, new_version):
             tomlkit.dump(data, file)
 
     except tomlkit.exceptions.NonExistentKey:
-        rich.print(fr"[red]\[project.version] is not defined in pyproject.toml in {project_dir}[/]")
+        rich.print(rf"[red]\[project.version] is not defined in pyproject.toml in {project_dir}[/]")
 
 
 def update_all_projects_in_monorepo(root_dir: pathlib.Path, part: str, dry_run: bool = False, verbose: bool = True):
