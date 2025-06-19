@@ -2042,6 +2042,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#egse.dummy.DummyControlServer.propagate_metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;propagate_metrics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.dummy.DummyControlServer.quit" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;quit
@@ -2195,6 +2204,15 @@
   <a href="#egse.dummy.DummyDeviceEthernetInterface.disconnect" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;disconnect
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.dummy.DummyDeviceEthernetInterface.get_observers" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_observers
     </span>
   </a>
   
@@ -3230,6 +3248,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#egse.dummy.DummyControlServer.propagate_metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;propagate_metrics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.dummy.DummyControlServer.quit" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;quit
@@ -3383,6 +3410,15 @@
   <a href="#egse.dummy.DummyDeviceEthernetInterface.disconnect" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;disconnect
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.dummy.DummyDeviceEthernetInterface.get_observers" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_observers
     </span>
   </a>
   
@@ -4618,6 +4654,14 @@ as a generic command to send a command execution to the server.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" propagate_metrics (egse.dummy.DummyControlServer.propagate_metrics)" href="#egse.dummy.DummyControlServer.propagate_metrics">propagate_metrics</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Propagates the given housekeeping information to the metrics database.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
               <td><code><a class="autorefs autorefs-internal" title=" quit (egse.dummy.DummyControlServer.quit)" href="#egse.dummy.DummyControlServer.quit">quit</a></code></td>
               <td>
                 <div class="doc-md-description">
@@ -4997,6 +5041,59 @@ associated with this instance.
 The notification is executed in a daemon thread to avoid blocking the commanding
 chain.</p>
 </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="egse.dummy.DummyControlServer.propagate_metrics" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">propagate_metrics</span>
+
+
+<a href="#egse.dummy.DummyControlServer.propagate_metrics" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">propagate_metrics</span><span class="p">(</span><span class="n">hk</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Propagates the given housekeeping information to the metrics database.</p>
+<p>Nothing will be written to the metrics database if the <code>hk</code> dict doesn't
+contain any metrics (except for the timestamp).</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>hk</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dictionary containing parameter name and value of all device housekeeping. There is also
+       a timestamp that represents the date/time when the HK was received from the device.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
     </div>
 
 </div>
@@ -5845,6 +5942,14 @@ controller.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" get_observers (egse.dummy.DummyDeviceEthernetInterface.get_observers)" href="#egse.dummy.DummyDeviceEthernetInterface.get_observers">get_observers</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Returns a copy of the registered observers.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
               <td><code><a class="autorefs autorefs-internal" title=" is_connected (egse.dummy.DummyDeviceEthernetInterface.is_connected)" href="#egse.dummy.DummyDeviceEthernetInterface.is_connected">is_connected</a></code></td>
               <td>
                 <div class="doc-md-description">
@@ -6036,6 +6141,25 @@ controller.</p>
           </tr>
       </tbody>
     </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="egse.dummy.DummyDeviceEthernetInterface.get_observers" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_observers</span>
+
+
+<a href="#egse.dummy.DummyDeviceEthernetInterface.get_observers" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_observers</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns a copy of the registered observers.</p>
 
     </div>
 

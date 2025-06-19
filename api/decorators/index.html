@@ -1843,6 +1843,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#egse.decorators.async_timer" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;async_timer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.decorators.average_time" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;average_time
@@ -2575,6 +2584,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#egse.decorators.async_timer" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;async_timer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.decorators.average_time" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;average_time
@@ -2863,6 +2881,14 @@
         </tr>
       </thead>
       <tbody>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" async_timer (egse.decorators.async_timer)" href="#egse.decorators.async_timer">async_timer</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Print the runtime of the decorated async function.</p>
+                </div>
+              </td>
+            </tr>
             <tr class="doc-section-item">
               <td><code><a class="autorefs autorefs-internal" title=" average_time (egse.decorators.average_time)" href="#egse.decorators.average_time">average_time</a></code></td>
               <td>
@@ -3225,6 +3251,88 @@
 
 </div>
 
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.decorators.async_timer" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">async_timer</span>
+
+
+<a href="#egse.decorators.async_timer" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">async_timer</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;timer&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n"><a class="autorefs autorefs-external" title="logging.INFO" href="https://docs.python.org/3/library/logging.html#logging.INFO">INFO</a></span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Print the runtime of the decorated async function.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>name</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>a name for the Timer, will be printed in the logging message</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;timer&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>level</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the logging level for the time message [default=INFO]</p>
+              </div>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="logging.INFO" href="https://docs.python.org/3/library/logging.html#logging.INFO">INFO</a></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>precision</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the number of decimals for the time [default=3 (ms)]</p>
+              </div>
+            </td>
+            <td>
+                  <code>4</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
 
 <div class="doc doc-object doc-function">
 

@@ -2288,9 +2288,27 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#egse.process.get_processes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_processes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.process.is_process_running" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;is_process_running
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.process.kill_process" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;kill_process
     </span>
   </a>
   
@@ -2599,9 +2617,27 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#egse.process.get_processes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_processes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.process.is_process_running" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;is_process_running
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.process.kill_process" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;kill_process
     </span>
   </a>
   
@@ -2735,6 +2771,14 @@ and update metrics that can be queried by the Prometheus timeseries database.</p
               <td>
                 <div class="doc-md-description">
                   <p>Loops over all running processes and tries to match each item in 'items' to the command line</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" get_processes (egse.process.get_processes)" href="#egse.process.get_processes">get_processes</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Get current processes with optional filtering.</p>
                 </div>
               </td>
             </tr>
@@ -3499,6 +3543,79 @@ processes.</p>
 <div class="doc doc-object doc-function">
 
 
+<h3 id="egse.process.get_processes" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">get_processes</span>
+
+
+<a href="#egse.process.get_processes" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_processes</span><span class="p">(</span><span class="n">filter_func</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Get current processes with optional filtering.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>filter_func</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>a filter function for filtering the processes</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<span title="egse.process.ProcessInfo">ProcessInfo</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A list of process info dataclasses</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h3 id="egse.process.is_process_running" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">is_process_running</span>
 
@@ -3623,6 +3740,26 @@ then all mathing process PIDs are returned as a list.</p>
           </tr>
       </tbody>
     </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.process.kill_process" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">kill_process</span>
+
+
+<a href="#egse.process.kill_process" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">kill_process</span><span class="p">(</span><span class="n">pid</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Safely kill a process. Return True if process could be killed, False otherwise.</p>
+<p>If the process doesn't exist, or you have don't the right permission to kill the process, False is returned.</p>
 
     </div>
 

@@ -1828,33 +1828,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#egse.config.get_common_egse_root" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_common_egse_root
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.config.get_resource_dirs" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_resource_dirs
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.config.get_resource_path" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_resource_path
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#egse.config.set_logger_levels" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_logger_levels
@@ -2524,33 +2497,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#egse.config.get_common_egse_root" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_common_egse_root
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.config.get_resource_dirs" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_resource_dirs
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.config.get_resource_path" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_resource_path
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#egse.config.set_logger_levels" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_logger_levels
@@ -2689,30 +2635,6 @@ and to find paths and resources.</p>
               <td>
                 <div class="doc-md-description">
                   <p>Find the root folder based on the files in <code>tests</code>.</p>
-                </div>
-              </td>
-            </tr>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title=" get_common_egse_root (egse.config.get_common_egse_root)" href="#egse.config.get_common_egse_root">get_common_egse_root</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  <p>Returns the absolute path to the installation directory for the Common-EGSE.</p>
-                </div>
-              </td>
-            </tr>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title=" get_resource_dirs (egse.config.get_resource_dirs)" href="#egse.config.get_resource_dirs">get_resource_dirs</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  <p>Define directories that contain resources like images, icons, and data files.</p>
-                </div>
-              </td>
-            </tr>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title=" get_resource_path (egse.config.get_resource_path)" href="#egse.config.get_resource_path">get_resource_path</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  <p>Searches for a data file (resource) with the given name.</p>
                 </div>
               </td>
             </tr>
@@ -2908,7 +2830,7 @@ current directory.</p>
 
 
 <a href="#egse.config.find_dir" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">find_dir</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">find_dir</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">root</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2952,15 +2874,15 @@ not be what you want. To be sure only one folder is returned, use the
                 <code>root</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>the top level folder to search [default=common-egse-root]</p>
+                <p>the top level folder to search</p>
               </div>
             </td>
             <td>
-                  <code>None</code>
+                <em>required</em>
             </td>
           </tr>
       </tbody>
@@ -3001,7 +2923,7 @@ not be what you want. To be sure only one folder is returned, use the
 
 
 <a href="#egse.config.find_dirs" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">find_dirs</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">find_dirs</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">root</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3048,11 +2970,11 @@ the last part of the path needs to match these folders.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>the top level folder to search [default=common-egse-root]</p>
+                <p>the top level folder to search</p>
               </div>
             </td>
             <td>
-                  <code>None</code>
+                <em>required</em>
             </td>
           </tr>
       </tbody>
@@ -3103,7 +3025,7 @@ the last part of the path needs to match these folders.</p>
 
 
 <a href="#egse.config.find_file" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">find_file</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">in_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">find_file</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">in_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3118,7 +3040,7 @@ function and check if there is just one file returned in the list.</p>
 This requires that the path ends with the given string in <code>in_dir</code>.</p>
 <pre><code>&gt;&gt;&gt; file_pattern = 'EtherSpaceLink*.dylib'
 &gt;&gt;&gt; in_dir = 'lib/CentOS-7'
-&gt;&gt;&gt; file = find_file(file_pattern, in_dir=in_dir)
+&gt;&gt;&gt; file = find_file(file_pattern, root='.', in_dir=in_dir)
 &gt;&gt;&gt; assert file.match("*/lib/CentOS-7/EtherSpace*")
 </code></pre>
 
@@ -3159,11 +3081,11 @@ This requires that the path ends with the given string in <code>in_dir</code>.</
             </td>
             <td>
               <div class="doc-md-description">
-                <p>the top level folder to search [default=common-egse-root]</p>
+                <p>the top level folder to search</p>
               </div>
             </td>
             <td>
-                  <code>None</code>
+                <em>required</em>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -3220,7 +3142,7 @@ This requires that the path ends with the given string in <code>in_dir</code>.</
 
 
 <a href="#egse.config.find_files" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">find_files</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">in_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">find_files</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">in_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3234,7 +3156,7 @@ you intended.</p>
 that the path ends with the given string in <code>in_dir</code>.</p>
 <pre><code>&gt;&gt;&gt; file_pattern = 'EtherSpaceLink*.dylib'
 &gt;&gt;&gt; in_dir = 'lib/CentOS-7'
-&gt;&gt;&gt; for file in find_files(file_pattern, in_dir=in_dir):
+&gt;&gt;&gt; for file in find_files(file_pattern, root='.', in_dir=in_dir):
 ...     assert file.match("*lib/CentOS-7/EtherSpaceLink*")
 </code></pre>
 
@@ -3271,15 +3193,15 @@ that the path ends with the given string in <code>in_dir</code>.</p>
                 <code>root</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>the top level folder to search [default=common-egse-root]</p>
+                <p>the top level folder to search</p>
               </div>
             </td>
             <td>
-                  <code>None</code>
+                <em>required</em>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -3336,7 +3258,7 @@ that the path ends with the given string in <code>in_dir</code>.</p>
 
 
 <a href="#egse.config.find_first_occurrence_of_dir" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">find_first_occurrence_of_dir</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">find_first_occurrence_of_dir</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">root</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3347,6 +3269,8 @@ folder, if there is no match, the first folder in root is traversed until a matc
 match is found, the second folder in root is traversed.</p>
 <p>Note that the pattern may contain parent directories, like <code>/egse/data/icons</code> or <code>egse/*/icons</code>,
 in which case the full pattern is matched.</p>
+<p>In the case that you pass an empty string for the root argument, it will resolve into
+the current working directory.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -3389,7 +3313,7 @@ in which case the full pattern is matched.</p>
               </div>
             </td>
             <td>
-                  <code>None</code>
+                <em>required</em>
             </td>
           </tr>
       </tbody>
@@ -3523,268 +3447,6 @@ fail and the <code>default</code> parameter will be returned.</p>
             <td>
               <div class="doc-md-description">
                 <p>a Path which is the root folder.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="egse.config.get_common_egse_root" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">get_common_egse_root</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
-  </span>
-
-<a href="#egse.config.get_common_egse_root" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_common_egse_root</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Returns the absolute path to the installation directory for the Common-EGSE.</p>
-<p>The algorithm first tries to determine the path from the environment variable
-<code>PLATO_COMMON_EGSE_PATH</code>. If this environment variable doesn't exist, the algorithm
-tries to determine the path automatically from (1) the git root if it is a git repository,
-or (2) from the location of this module assuming the installation is done from the
-GitHub distribution.</p>
-<p>When the optional argument <code>path</code> is given, that directory will be used to start the
-search for the root folder.</p>
-<p>At this moment the algorithm does not cache the <code>egse_path</code> in order to speed up
-the successive calls to this function.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>path</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> or <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>a directory as a Path or str [optional]</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-<th>Name</th>          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-<td><code>Path</code></td>            <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a>[<a class="autorefs autorefs-external" title="pathlib.PurePath" href="https://docs.python.org/3/library/pathlib.html#pathlib.PurePath">PurePath</a>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>the absolute path to the Common-EGSE installation directory or None</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="egse.config.get_resource_dirs" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">get_resource_dirs</span>
-
-
-<a href="#egse.config.get_resource_dirs" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_resource_dirs</span><span class="p">(</span><span class="n">root_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Define directories that contain resources like images, icons, and data files.</p>
-<p>Resource directories can have the following names: <code>resources</code>, <code>data</code>, <code>icons</code>, or <code>images</code>.
-This function checks if any of the resource directories exist in the project root directory,
-in the <code>root_dir</code> that is given as an argument or in the <code>src/egse</code> sub-folder.</p>
-<p>So, the directories that are searched for the resource folders are:</p>
-<ul>
-<li><code>root_dir</code> or the project's root directory</li>
-<li>the <code>src/egse</code> sub-folder of one of the above</li>
-</ul>
-<p>For all existing directories the function returns the absolute path.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>root_dir</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>the directory to search for resource folders</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-external" title="typing.List" href="https://docs.python.org/3/library/typing.html#typing.List">List</a>[<a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>a list of absolute Paths.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="egse.config.get_resource_path" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">get_resource_path</span>
-
-
-<a href="#egse.config.get_resource_path" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_resource_path</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">resource_root_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Searches for a data file (resource) with the given name.</p>
-<p>When <code>resource_root_dir</code> is not given, the search for resources will start at the root
-folder of the project (using the function <code>get_common_egse_root()</code>). Any other root
-directory can be given, e.g. if you want to start the search from the location of your
-source code file, use <code>Path(__file__).parent</code> as the <code>resource_root_dir</code> argument.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>name</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>the name of the resource that is requested</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>resource_root_dir</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>the root directory where the search for resources should be started</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-external" title="pathlib.PurePath" href="https://docs.python.org/3/library/pathlib.html#pathlib.PurePath">PurePath</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>the absolute path of the data file with the given name. The first name that matches
-is returned. If no file with the given name or path exists, a FileNotFoundError is raised.</p>
               </div>
             </td>
           </tr>

@@ -1899,6 +1899,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#egse.control.ControlServer.propagate_metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;propagate_metrics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.control.ControlServer.quit" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;quit
@@ -2708,6 +2717,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#egse.control.ControlServer.propagate_metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;propagate_metrics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.control.ControlServer.quit" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;quit
@@ -2946,7 +2964,7 @@
 
 
 <a href="#egse.control.ControlServer" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">ControlServer</span><span class="p">()</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">ControlServer</span><span class="p">(</span><span class="n">device_id</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3080,6 +3098,14 @@ of the commanding protocol class.</p>
               <td>
                 <div class="doc-md-description">
                   <p>Notifies registered listeners about an event.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" propagate_metrics (egse.control.ControlServer.propagate_metrics)" href="#egse.control.ControlServer.propagate_metrics">propagate_metrics</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Propagates the given housekeeping information to the metrics database.</p>
                 </div>
               </td>
             </tr>
@@ -3711,6 +3737,59 @@ associated with this instance.
 The notification is executed in a daemon thread to avoid blocking the commanding
 chain.</p>
 </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="egse.control.ControlServer.propagate_metrics" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">propagate_metrics</span>
+
+
+<a href="#egse.control.ControlServer.propagate_metrics" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">propagate_metrics</span><span class="p">(</span><span class="n">hk</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Propagates the given housekeeping information to the metrics database.</p>
+<p>Nothing will be written to the metrics database if the <code>hk</code> dict doesn't
+contain any metrics (except for the timestamp).</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>hk</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dictionary containing parameter name and value of all device housekeeping. There is also
+       a timestamp that represents the date/time when the HK was received from the device.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
     </div>
 
 </div>

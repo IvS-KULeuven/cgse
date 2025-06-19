@@ -2379,6 +2379,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#egse.setup.Setup.find_device_ids" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;find_device_ids
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.setup.Setup.find_devices" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;find_devices
@@ -2828,6 +2837,15 @@
   <a href="#egse.setup.Setup.add" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;add
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.setup.Setup.find_device_ids" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;find_device_ids
     </span>
   </a>
   
@@ -3869,10 +3887,18 @@ test setup and the Camera Under Test (CUT).</p>
               </td>
             </tr>
             <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title=" find_device_ids (egse.setup.Setup.find_device_ids)" href="#egse.setup.Setup.find_device_ids">find_device_ids</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Returns a list of identifiers of the devices that are included in the setup.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
               <td><code><a class="autorefs autorefs-internal" title=" find_devices (egse.setup.Setup.find_devices)" href="#egse.setup.Setup.find_devices">find_devices</a></code></td>
               <td>
                 <div class="doc-md-description">
-                  <p>Returns a dictionary with the devices that are included in the setup.  The keys</p>
+                  <p>Returns a dictionary with the devices that are included in the setup.</p>
                 </div>
               </td>
             </tr>
@@ -4061,6 +4087,77 @@ will become available as attributes provided that all the keys are strings.</p>
 <div class="doc doc-object doc-function">
 
 
+<h4 id="egse.setup.Setup.find_device_ids" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">find_device_ids</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+  </span>
+
+<a href="#egse.setup.Setup.find_device_ids" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">find_device_ids</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">device_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns a list of identifiers of the devices that are included in the setup.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>node</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title=" NavigableDict (egse.setup.NavigableDict)" href="#egse.setup.NavigableDict">NavigableDict</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dictionary in which to look for the device identifiers.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>device_ids</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List in which to include the devices in the setup.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h4 id="egse.setup.Setup.find_devices" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">find_devices</span>
 
@@ -4075,10 +4172,9 @@ will become available as attributes provided that all the keys are strings.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Returns a dictionary with the devices that are included in the setup.  The keys
-in the dictionary are taken from the "device_name" entries in the setup file. The
-corresponding values in the dictionary are taken from the "device" entries in the
-setup file.</p>
+        <p>Returns a dictionary with the devices that are included in the setup.</p>
+<p>The keys in the dictionary are taken from the "device_name" entries in the setup file. The corresponding values
+in the dictionary are taken from the "device" entries in the setup file.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -4128,7 +4224,7 @@ setup file.</p>
     </table>
 
 
-    <p><span class="doc-section-title">Returns:</span></p>
+    <p><span class="doc-section-title">Dictionary with the devices that are included in the setup. The keys are the device name, the values</span></p>
     <table>
       <thead>
         <tr>
@@ -4139,12 +4235,11 @@ setup file.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>]]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>]]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Dictionary with the devices that are included in the setup. The keys are the device name,
-the values are tuples with the 'device' raw value and the device arguments as a tuple.</p>
+                <p>are tuples with the 'device' raw value and the device arguments as a tuple.</p>
               </div>
             </td>
           </tr>

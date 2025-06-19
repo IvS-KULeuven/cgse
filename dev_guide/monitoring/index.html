@@ -12,13 +12,9 @@
         <meta name="author" content="Rik Huygen">
       
       
-        <link rel="canonical" href="https://ivs-kuleuven.github.io/cgse/api/observer/">
+        <link rel="canonical" href="https://ivs-kuleuven.github.io/cgse/dev_guide/monitoring/">
       
       
-        <link rel="prev" href="../monitoring/">
-      
-      
-        <link rel="next" href="../obsid/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -26,7 +22,7 @@
     
     
       
-        <title>egse.observer - CGSE</title>
+        <title>Monitoring with InfluxDB and Grafana - CGSE</title>
       
     
     
@@ -112,9 +108,9 @@
 <!-- / Fathom -->
 
 
-<meta property="og:title" content="CGSE - egse.observer">
+<meta property="og:title" content="CGSE - Monitoring with InfluxDB and Grafana">
 <meta property="og:type" content="article">
-<meta property="og:url" content="https://ivs-kuleuven.github.io/cgse/api/observer/">
+<meta property="og:url" content="https://ivs-kuleuven.github.io/cgse/dev_guide/monitoring/">
 <meta property="og:site_name" content="CGSE Documentation">
 <meta property="og:description" content="CGSE is an instrument test framework for Python.">
 <meta property="og:image" content="https://raw.githubusercontent.com/IvS-KULeuven/cgse/refs/heads/main/docs/images/icons/cgse-logo.svg">
@@ -154,7 +150,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#egse.observer" class="md-skip">
+        <a href="#monitoring-with-influxdb-and-grafana" class="md-skip">
           Skip to content
         </a>
       
@@ -189,7 +185,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              egse.observer
+              Monitoring with InfluxDB and Grafana
             
           </span>
         </div>
@@ -329,7 +325,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../dev_guide/" class="md-tabs__link">
+        <a href="../" class="md-tabs__link">
           
   
     
@@ -405,13 +401,11 @@
         
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../api/" class="md-tabs__link">
           
   
     
@@ -704,7 +698,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../dev_guide/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -738,7 +732,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/monorepo/" class="md-nav__link">
+      <a href="../monorepo/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -760,7 +754,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/installation/" class="md-nav__link">
+      <a href="../installation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -782,7 +776,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/uv/" class="md-nav__link">
+      <a href="../uv/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -804,7 +798,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/coding_style/" class="md-nav__link">
+      <a href="../coding_style/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -826,7 +820,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/docs/" class="md-nav__link">
+      <a href="../docs/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -848,7 +842,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/plugins/" class="md-nav__link">
+      <a href="../plugins/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -870,7 +864,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/unit_testing/" class="md-nav__link">
+      <a href="../unit_testing/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -892,7 +886,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/nox/" class="md-nav__link">
+      <a href="../nox/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -914,7 +908,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/project-configuration/" class="md-nav__link">
+      <a href="../project-configuration/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -936,7 +930,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/versioning/" class="md-nav__link">
+      <a href="../versioning/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1513,8 +1507,6 @@
       
   
   
-    
-  
   
   
     
@@ -1581,22 +1573,19 @@
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../api/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1608,13 +1597,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="">
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             API
@@ -1630,7 +1619,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../bits/" class="md-nav__link">
+      <a href="../../api/bits/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1652,7 +1641,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../calibration/" class="md-nav__link">
+      <a href="../../api/calibration/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1674,7 +1663,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../command/" class="md-nav__link">
+      <a href="../../api/command/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1696,7 +1685,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../config/" class="md-nav__link">
+      <a href="../../api/config/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1718,7 +1707,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../control/" class="md-nav__link">
+      <a href="../../api/control/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1740,7 +1729,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../counter/" class="md-nav__link">
+      <a href="../../api/counter/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1762,7 +1751,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../decorators/" class="md-nav__link">
+      <a href="../../api/decorators/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1784,7 +1773,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../device/" class="md-nav__link">
+      <a href="../../api/device/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1806,7 +1795,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dicts/" class="md-nav__link">
+      <a href="../../api/dicts/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1828,7 +1817,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dummy/" class="md-nav__link">
+      <a href="../../api/dummy/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1850,7 +1839,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../env/" class="md-nav__link">
+      <a href="../../api/env/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1872,7 +1861,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../exceptions/" class="md-nav__link">
+      <a href="../../api/exceptions/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1894,7 +1883,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../heartbeat/" class="md-nav__link">
+      <a href="../../api/heartbeat/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1916,7 +1905,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../hk/" class="md-nav__link">
+      <a href="../../api/hk/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1938,7 +1927,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../listener/" class="md-nav__link">
+      <a href="../../api/listener/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1960,7 +1949,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../metrics/" class="md-nav__link">
+      <a href="../../api/metrics/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1982,7 +1971,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../mixin/" class="md-nav__link">
+      <a href="../../api/mixin/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2004,7 +1993,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../monitoring/" class="md-nav__link">
+      <a href="../../api/monitoring/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2023,29 +2012,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    egse.observer
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../api/observer/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2055,57 +2025,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#egse.observer" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;observer
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" observer">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#egse.observer.Observable" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Observable
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.observer.Observer" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Observer
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2118,7 +2037,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../obsid/" class="md-nav__link">
+      <a href="../../api/obsid/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2140,7 +2059,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../persistence/" class="md-nav__link">
+      <a href="../../api/persistence/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2162,7 +2081,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../plugin/" class="md-nav__link">
+      <a href="../../api/plugin/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2184,7 +2103,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../process/" class="md-nav__link">
+      <a href="../../api/process/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2206,7 +2125,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reload/" class="md-nav__link">
+      <a href="../../api/reload/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2228,7 +2147,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../settings/" class="md-nav__link">
+      <a href="../../api/settings/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2250,7 +2169,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../setup/" class="md-nav__link">
+      <a href="../../api/setup/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2272,7 +2191,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../system/" class="md-nav__link">
+      <a href="../../api/system/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2332,6 +2251,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -2340,28 +2261,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#egse.observer" class="md-nav__link">
+  <a href="#installation" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;observer
+      Installation
     </span>
   </a>
   
-    <nav class="md-nav" aria-label=" observer">
+    <nav class="md-nav" aria-label="Installation">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#egse.observer.Observable" class="md-nav__link">
+  <a href="#influxdb3-core" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Observable
+      InfluxDB3 Core
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#egse.observer.Observer" class="md-nav__link">
+  <a href="#grafana" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Observer
+      Grafana
     </span>
   </a>
   
@@ -2369,6 +2290,99 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#database-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Database Structure
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Database Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#database-name" class="md-nav__link">
+    <span class="md-ellipsis">
+      Database Name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#table-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      Table Names
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#content-of-the-tables" class="md-nav__link">
+    <span class="md-ellipsis">
+      Content of the Tables
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#propagating-metrics-to-influxdb-via-python" class="md-nav__link">
+    <span class="md-ellipsis">
+      Propagating Metrics to InfluxDB via Python
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visualisation-of-the-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Visualisation of the Metrics
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Visualisation of the Metrics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adding-influxdb-as-data-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding InfluxDB as Data Source
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-grafana-dashboards" class="md-nav__link">
+    <span class="md-ellipsis">
+      Creating Grafana Dashboards
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Open Questions
+    </span>
+  </a>
   
 </li>
       
@@ -2391,189 +2405,123 @@
   
 
 
-  <h1>egse.observer</h1>
+<h1 id="monitoring-with-influxdb-and-grafana">Monitoring with InfluxDB and Grafana<a class="headerlink" href="#monitoring-with-influxdb-and-grafana" title="Permanent link">&para;</a></h1>
+<p>The CGSE provides mechanisms to monitor metrics from different processes and devices.  These are 
+collected by InfluxDB and are visualised by means of Grafana dashboards.</p>
+<p>In this section, we explain how to install both InfluxDB and Grafana on the Server, how to set up and populate a database 
+in InfluxDB, and how to visualise the metrics in Grafana dashboards.</p>
+<hr />
+<h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
+<h3 id="influxdb3-core">InfluxDB3 Core<a class="headerlink" href="#influxdb3-core" title="Permanent link">&para;</a></h3>
+<p>To install InfluxDB3 Core, execute this in a Terminal on the Server:</p>
+<div class="highlight"><pre><span></span><code>curl -s https://repos.influxdata.com/influxdata-archive_compat.key &gt; influxdata-archive_compat.key
 
-<div class="admonition info">
-<p class="admonition-title">cgse-common</p>
-<p>This code is part of the <code>cgse-common</code> package.</p>
-</div>
+echo &#39;393e8779c89ac8d958f81f942f9ad7fb82a25e133faddaf92e15b16e6ac9ce4c influxdata-archive_compat.key&#39; | sha256sum -c &amp;&amp; cat influxdata-archive_compat.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/influxdata-archive_compat.gpg &gt; /dev/null
+echo &#39;deb [signed-by=/etc/apt/trusted.gpg.d/influxdata-archive_compat.gpg] https://repos.influxdata.com/debian stable main&#39; | sudo tee /etc/apt/sources.list.d/influxdata.list
 
+sudo apt-get update
 
-<div class="doc doc-object doc-module">
-
-
-
-<h2 id="egse.observer" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <span class="doc doc-object-name doc-module-name">egse.observer</span>
-
-
-<a href="#egse.observer" class="headerlink" title="Permanent link">&para;</a></h2>
-
-    <div class="doc doc-contents first">
-
-        <p>This module implements a standard Observer &lt;-&gt; Observable pattern.</p>
-
-
-
-
-
-
-
-<p><span class="doc-section-title">Classes:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td><code><a class="autorefs autorefs-internal" title=" Observable (egse.observer.Observable)" href="#egse.observer.Observable">Observable</a></code></td>
-            <td>
-              <div class="doc-md-description">
-                <p>The object that sends out notifications to the observers.</p>
-              </div>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td><code><a class="autorefs autorefs-internal" title=" Observer (egse.observer.Observer)" href="#egse.observer.Observer">Observer</a></code></td>
-            <td>
-              <div class="doc-md-description">
-                <p>The observer that needs to take action when notified.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-class">
-
-
-
-<h3 id="egse.observer.Observable" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">Observable</span>
-
-
-<a href="#egse.observer.Observable" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Observable</span><span class="p">()</span>
+sudo apt-get install influxdb3-core
 </code></pre></div>
+<p>For database management, you will need a token to interact with InfluxDB.  This can be generated as follows (in a 
+Terminal on the Server):</p>
+<div class="highlight"><pre><span></span><code>influxdb3 create token --admin
+</code></pre></div>
+<p>This will print out a token, starting with <code>apiv3_</code>.  Export this value as environment variable <code>INFLUXDB3_AUTH_TOKEN</code>.</p>
+<h3 id="grafana">Grafana<a class="headerlink" href="#grafana" title="Permanent link">&para;</a></h3>
+<p>To install Grafana, execute this in a Terminal on the Server:</p>
+<div class="highlight"><pre><span></span><code>sudo apt-get install -y apt-transport-https software-properties-common wget
+
+sudo mkdir -p /etc/apt/keyrings/
+wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/grafana.gpg &gt; /dev/null
+
+echo &quot;deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main&quot; | sudo tee -a /etc/apt/sources.list.d/grafana.list
+sudo apt-get update
+
+sudo apt-get install grafana
+
+sudo /bin/systemctl daemon-reload
+sudo /bin/systemctl enable grafana-server
+</code></pre></div>
+<hr />
+<h2 id="database-structure">Database Structure<a class="headerlink" href="#database-structure" title="Permanent link">&para;</a></h2>
+<h3 id="database-name">Database Name<a class="headerlink" href="#database-name" title="Permanent link">&para;</a></h3>
+<p>In the current implementation, the name of the database in which all CGSE metrics are stored, is taken 
+from the <code>PROJECT</code> environment variable.  At a later stage, we could change this by means of a dedicated 
+environment variable or by specifying it in the local settings file.</p>
+<p>To inspect the names of the available databases, execute this in a Terminal on the Server:</p>
+<div class="highlight"><pre><span></span><code>influxdb3 show databases
+</code></pre></div>
+<p>The command to create a database manually (from a Terminal on the Server) is:</p>
+<div class="highlight"><pre><span></span><code>influxdb3 create database &lt;database name&gt;
+</code></pre></div>
+<h3 id="table-names">Table Names<a class="headerlink" href="#table-names" title="Permanent link">&para;</a></h3>
+<p>For each of the processes, we have a dedicated table in the database, the name of which is the same as 
+the storage mnemonic of the process.</p>
+<p>To get an overview of the available tables, execute this in a Terminal on the Server:</p>
+<div class="highlight"><pre><span></span><code>influxdb3 query --database &lt;database name&gt; &quot;SHOW TABLES&quot;
+</code></pre></div>
+<h3 id="content-of-the-tables">Content of the Tables<a class="headerlink" href="#content-of-the-tables" title="Permanent link">&para;</a></h3>
+<p>For each table, the column names are the names of the corresponding housekeeping/metrics parameters.  The name of the column with the timestamp is <code>TIME</code>. </p>
+<p>To get an overview of the columns for a given table in a given database, execute this in a Terminal on the Server:</p>
+<div class="highlight"><pre><span></span><code>influxdb3 query --database &lt;database name&gt; &quot;SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = &#39;&lt;table name&gt;&#39;&quot;
+</code></pre></div>
+<p>To get an overview of the data stored in a given table (sorted by ascending order of timestamp), execute this in a 
+Terminal on the Server:</p>
+<div class="highlight"><pre><span></span><code>influxdb3 query --database &lt;database name&gt; &quot;SELECT * FROM &lt;table name&gt; ORDER BY TIME&quot;
+</code></pre></div>
+<hr />
+<h2 id="propagating-metrics-to-influxdb-via-python">Propagating Metrics to InfluxDB via Python<a class="headerlink" href="#propagating-metrics-to-influxdb-via-python" title="Permanent link">&para;</a></h2>
+<p>To populate the metrics in InfluxDB, we use the Python package <code>influxdb3-python</code>. This has been added to the <code>pyproject.toml</code> 
+file of the <code>cgse-common</code> module.</p>
+<p>When implementing a new device, nothing has to be done specifically to propagate the metrics to InfluxDB.  This is 
+automatically being taken care of in the <code>serve</code> method of the <code>ControlServer</code> class.  In the section where the 
+housekeeping information is written to a dedicated CSV file, the <code>propagate_metrics</code> method of the <code>ControlServer</code> 
+class is called and this takes care of everything.</p>
+<hr />
+<h2 id="visualisation-of-the-metrics">Visualisation of the Metrics<a class="headerlink" href="#visualisation-of-the-metrics" title="Permanent link">&para;</a></h2>
+<p>The Metrics are visualised in Grafana dashboards, but before we can start building those, we have to instruct Grafana to 
+interpret InfluxDB as its data source.</p>
+<h3 id="adding-influxdb-as-data-source">Adding InfluxDB as Data Source<a class="headerlink" href="#adding-influxdb-as-data-source" title="Permanent link">&para;</a></h3>
+<p>After the InfluxDB and Grafana processes have been started, you can access Grafana in your browser via http://localhost:3000. </p>
+<p>On the left-hand side, select (under "Connections") "Add new connection" and search for "Influx DB".  After clicking on 
+the search result, a Settings tab will open, in which you have to enter the following information:</p>
+<ul>
+<li><code>Name</code>: Arbitrary name for the data source (it's a good idea to make this reflect the database you are settings up, e.g. <code>influxdb3-ariel</code>);</li>
+<li><code>Query language</code>: Select "SQL";</li>
+<li><code>HTTP</code> &gt; <code>URL</code>: <code>http://127.0.0.1:8181</code>;</li>
+<li><code>Auth</code>: Only enable "Basic auth";</li>
+<li><code>InfluxDB Details</code> &gt; <code>Database</code>: Name of the database for which you want to create Grafana dashboards;</li>
+<li><code>InfluxDB Details</code> &gt; <code>Token</code>: InfluxDB token you have created earlier (see above; starting with <code>apiv3_</code>);</li>
+<li><code>InfluxDB Details</code>: Enable "Insecure Connection".</li>
+</ul>
+<p>After having configured all of this, press "Save &amp; test".</p>
+<h3 id="creating-grafana-dashboards">Creating Grafana Dashboards<a class="headerlink" href="#creating-grafana-dashboards" title="Permanent link">&para;</a></h3>
+<p>Creating a Grafana dashboard can be done by clicking "Dashboards" on the left-hand side.  In the "Queries" tab of such a 
+dashboard panel, you have to specify the following information:</p>
+<ul>
+<li><code>Data source</code>: Name of the data source you have just created (selectable via a drop-down menu);</li>
+<li><code>Table</code>: Name of the table for which you want to visualise metrics.  Remember that this is the same as the storage
+           mnemonic of the process generating the metrics (selectable via a drop-down menu);</li>
+<li><code>Data operations</code>: Besides the name of the metric (selectable via a drop-down menu), you also have to add <code>time</code> under 
+                     <code>Data Operations</code>, to make sure Grafana recognises and is able to show the timestamp in its panels.
+                     Have a look at the screenshot below for an example.
+  <img alt="grafana-queries.png" src="../../images/grafana-queries.png" /></li>
+</ul>
+<hr />
+<h2 id="open-questions">Open Questions<a class="headerlink" href="#open-questions" title="Permanent link">&para;</a></h2>
+<ul>
+<li>How can we specify the data retention period?</li>
+<li>Is it ok to use the <code>PROJECT</code> environment variable as name of the database or should this be configurable (e.g. via 
+  the local settings, an extra environment variable)?</li>
+<li>Is ms the desired write precision of the timestamp?  Should this be configurable (via the local settings)?</li>
+</ul>
 
-    <div class="doc doc-contents ">
 
 
-        <p>The object that sends out notifications to the observers.</p>
 
 
 
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h3 id="egse.observer.Observer" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">Observer</span>
-
-
-<a href="#egse.observer.Observer" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-external" title="abc.ABC" href="https://docs.python.org/3/library/abc.html#abc.ABC">ABC</a></code></p>
-
-
-        <p>The observer that needs to take action when notified.</p>
-
-
-
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-
-
-
-
-
-
-  
-  
 
 
 
@@ -2592,44 +2540,6 @@
       
         <footer class="md-footer">
   
-    
-      
-      <nav class="md-footer__inner md-grid" aria-label="Footer" >
-        
-          
-          <a href="../monitoring/" class="md-footer__link md-footer__link--prev" aria-label="Previous: egse.monitoring">
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
-            </div>
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Previous
-              </span>
-              <div class="md-ellipsis">
-                egse.monitoring
-              </div>
-            </div>
-          </a>
-        
-        
-          
-          <a href="../obsid/" class="md-footer__link md-footer__link--next" aria-label="Next: egse.obsid">
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              <div class="md-ellipsis">
-                egse.obsid
-              </div>
-            </div>
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
-            </div>
-          </a>
-        
-      </nav>
     
   
   <div class="md-footer-meta md-typeset">
