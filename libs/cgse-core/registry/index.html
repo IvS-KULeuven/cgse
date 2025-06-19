@@ -2846,11 +2846,12 @@ service registry. Applications can use the registry client without registration.
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">egse.registry.client</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncRegistryClient</span>
 
 <span class="n">registry_client</span> <span class="o">=</span> <span class="n">AsyncRegistryClient</span><span class="p">()</span>
+<span class="n">registry_client</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
 
 <span class="n">service_id</span> <span class="o">=</span> <span class="k">await</span> <span class="n">registry_client</span><span class="o">.</span><span class="n">register</span><span class="p">(</span>
     <span class="n">name</span><span class="o">=</span><span class="n">service_name</span><span class="p">,</span>
-    <span class="n">host</span><span class="o">=</span><span class="n">get_host_ip</span><span class="p">(),</span>
-    <span class="n">port</span><span class="o">=</span><span class="n">get_port</span><span class="p">(),</span>
+    <span class="n">host</span><span class="o">=</span><span class="n">hostname</span><span class="p">,</span>
+    <span class="n">port</span><span class="o">=</span><span class="n">port_number</span><span class="p">,</span>
     <span class="n">service_type</span><span class="o">=</span><span class="n">service_type</span><span class="p">,</span>
     <span class="n">metadata</span><span class="o">=</span><span class="p">{},</span>
     <span class="n">ttl</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
