@@ -31,20 +31,20 @@ Provide a `cgse` command that is extensible with new commands and command groups
 
 - [ ] Reference Frames and coordinate transformations -> Graphs
 - [ ] Metrics for all devices will be handled using InfluxDB
-- [ ] Use of Grafana to visualize the metrics
+- [x] Use of Grafana to visualize the metrics
 
 ## Core Services
 
 - [ ] Process Manager needs to be added with optimised design and performance
 - [ ] Synoptic Manager
 - [x] Distributed Service Registry
-- [ ] dynamic port assignment for all services
+- [x] dynamic port assignment for all services -> service registry
 
 ## Devices
 
 - [x] The Symétrie Hexapods: PUNA, ZONDA, JORAN
 - [x] The Keithley Data Acquisition Multimeter
-- [ ] The Lakeshore temperature controller
+- [x] The Lakeshore temperature controller
 
 ## Projects
 
@@ -72,7 +72,8 @@ Provide a `cgse` command that is extensible with new commands and command groups
 
 ## Removals
 
-- [ ] The `get_common_egse_root()` is of no use anymore and needs to be removed or replaced in some
+- [x] The `get_common_egse_root()` is of no use anymore and needs to be 
+  removed or replaced in some
   cases.
 
 ## Testing
@@ -80,4 +81,6 @@ Provide a `cgse` command that is extensible with new commands and command groups
 - [x] Add unit testing with `nox` running tests for Python 3.9, 3.10, 3.11, and 3.12
 - [ ] Add proper unit tests for all packages – using `pytest`
 - [ ] Add a CI test suite
-- [ ] Use GitHub Actions for running tests before merging
+- [ ] Add GitHub Action to check proper formatting of all the code in a pull 
+  request
+- [ ] Add GitHub Actions for running tests before merging
