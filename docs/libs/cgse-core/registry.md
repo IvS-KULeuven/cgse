@@ -44,11 +44,12 @@ A microservice can register as follows:
 from egse.registry.client import AsyncRegistryClient
 
 registry_client = AsyncRegistryClient()
+registry_client.connect()
 
 service_id = await registry_client.register(
     name=service_name,
-    host=get_host_ip(),
-    port=get_port(),
+    host=hostname,
+    port=port_number,
     service_type=service_type,
     metadata={},
     ttl=30,
