@@ -40,33 +40,6 @@ def add_cr_to_string(self, cmd_string):
     return cmd_string + "\r\n"
 
 
-def test_dry_run(monkeypatch):
-    monkeypatch.setattr(HexapodCommand, "execute", return_command_string)
-    cmd = HexapodCommand(name="dry-run-cmd", cmd="dry-run-test {flag} {arg}")
-
-    rc = cmd("--dr", "arg_1")
-    assert rc.startswith("dry-run-test")
-
-    with pytest.raises(AttributeError):
-        rc = cmd.client_call(None, "--dr", "arg_1")
-
-    GlobalState.dry_run = True
-
-    rc = cmd.client_call(None, "--dr", "arg_1")
-    assert rc.successful
-    cmd_seq = GlobalState.get_command_sequence()
-    assert cmd_seq
-    assert len(cmd_seq) == 1
-    assert str(cmd_seq[0]).startswith("[HexapodCommand] ")
-
-    print(cmd_seq[0])
-
-    # Clean up = reset global state
-
-    GlobalState.dry_run = False
-    GlobalState.clear_command_sequence()
-
-
 def test_command_class(mocker):
     mocker.patch.object(Command, "execute")
 

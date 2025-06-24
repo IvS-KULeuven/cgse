@@ -61,32 +61,11 @@ class _GlobalState:
     This class implements global state that is shared between instances of this class.
     """
 
-    # TODO (rik): turn command sequence into a class and move add_, clear_ and get_ to that class
-
     def __init__(self):
-        self._dry_run = False
-        self._command_sequence = []
         self._setup: Optional[Setup] = None
 
     def __call__(self, *args, **kwargs):
         return self
-
-    @property
-    def dry_run(self):
-        return self._dry_run
-
-    @dry_run.setter
-    def dry_run(self, flag: bool):
-        self._dry_run = flag
-
-    def add_command(self, cmd):
-        self._command_sequence.append(cmd)
-
-    def get_command_sequence(self):
-        return self._command_sequence
-
-    def clear_command_sequence(self):
-        self._command_sequence.clear()
 
     @property
     def setup(self) -> Optional[Setup]:
@@ -139,21 +118,6 @@ class _GlobalState:
 
         return self._setup
 
-    # FIXME:
-    #  These two 'private' methods are still called in plato-test-scripts, so until that is fixed,
-    #  leave the methods here
-
-    @deprecate(reason="this is a private function", alternative="reload_setup()")
-    def _reload_setup(self):
-        self._setup = Setup.from_yaml_file()
-        return self._setup
-
-    @deprecate(reason="this is a private function", alternative="reload_setup_from()")
-    def _reload_setup_from(self, filename: Path):
-        """Used by the unit tests to load a predefined setup."""
-        self._setup = Setup.from_yaml_file(filename=filename)
-        return self.setup
-
 
 GlobalState = _GlobalState()
 
@@ -169,8 +133,6 @@ if __name__ == "__main__":
             f"""\
             GlobalState info:
               Setup loaded: {GlobalState.setup.get_id()}
-              Dry run: {"ON" if GlobalState.dry_run else "OFF"}
-              Command Sequence: {GlobalState.get_command_sequence()} \
-        """
+            """
         )
     )
