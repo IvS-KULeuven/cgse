@@ -1066,12 +1066,18 @@ def test_find_devices():
                 device_name: BBB
                 device: dev-zzz-bbb
 
+            ccc:
+                device_name: CCC
+                device_id: 3578
+                device: dev-zzz-ccc
+                device_args: ["True", "False"]
         """
     )
 
     devices = {}
     devices = Setup.find_devices(setup, devices)
 
-    assert len(devices) == 4
-    assert devices["BBB"] == ("dev-zzz-bbb", ())
-    assert devices["AAA"] == ("dev-zzz-aaa", [1, 2, 3])
+    assert len(devices) == 5
+    assert devices["BBB"] == ("dev-zzz-bbb", None, ())
+    assert devices["AAA"] == ("dev-zzz-aaa", None, [1, 2, 3])
+    assert devices["CCC"] == ("dev-zzz-ccc", 3578, ["True", "False"])

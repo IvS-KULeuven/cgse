@@ -145,46 +145,6 @@ def stringify_function_call(function_info: dict) -> str:
     return result
 
 
-def dry_run(func: Callable) -> Callable:
-    """This decorator prepares the function to handle a dry run.
-
-    A dry run is used to check the logic of an instrument commanding script without
-    actually executing the instrument commands. The commands are instead added to the
-    command sequence in the global state.
-
-    Args:
-        func: the function that needs to be executed
-
-    Returns:
-        A wrapper around the given function.
-    """
-
-    @functools.wraps(func)
-    def func_wrapper(self, *args, **kwargs):
-        from egse.state import GlobalState  # prevent circular import
-
-        if GlobalState.dry_run:
-            if callable(func) and func.__name__ == "client_call":
-                # This client_call function takes an additional argument which is the Proxy.
-                # the Proxy is not part of the CommandExecution signature and shall be removed
-                # FIXME: do we introduce a memory leak here by adding 'self' to this GlobalState?
-                args = args[1:]
-                try:
-                    self.validate_arguments(*args, **kwargs)
-                except CommandError as e_ce:
-                    GlobalState.add_command(InvalidCommandExecution(e_ce, self, *args, **kwargs))
-                else:
-                    GlobalState.add_command(CommandExecution(self, *args, **kwargs))
-            else:
-                FunctionExecution = namedtuple("FunctionExecution", ["name", "args", "kwargs"])
-                GlobalState.add_command(FunctionExecution(func.__name__, args, kwargs))
-            return Success("Command execution appended to command sequence, function not executed in dry_run.")
-        else:
-            return func(self, *args, **kwargs)
-
-    return func_wrapper
-
-
 def parse_format_string(fstring):
     """
     Parse and decode the format string.
@@ -479,7 +439,6 @@ class Command:
 
 
 class ClientServerCommand(Command):
-    @dry_run
     def client_call(self, other: type, *args: tuple, **kwargs: dict) -> Any:
         """
         This method is called at the client side. It is used by the Proxy

@@ -64,20 +64,11 @@ class _GlobalState:
     # TODO (rik): turn command sequence into a class and move add_, clear_ and get_ to that class
 
     def __init__(self):
-        self._dry_run = False
         self._command_sequence = []
         self._setup: Optional[Setup] = None
 
     def __call__(self, *args, **kwargs):
         return self
-
-    @property
-    def dry_run(self):
-        return self._dry_run
-
-    @dry_run.setter
-    def dry_run(self, flag: bool):
-        self._dry_run = flag
 
     def add_command(self, cmd):
         self._command_sequence.append(cmd)
@@ -169,7 +160,6 @@ if __name__ == "__main__":
             f"""\
             GlobalState info:
               Setup loaded: {GlobalState.setup.get_id()}
-              Dry run: {"ON" if GlobalState.dry_run else "OFF"}
               Command Sequence: {GlobalState.get_command_sequence()} \
         """
         )
