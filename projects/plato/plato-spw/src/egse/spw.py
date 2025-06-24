@@ -530,6 +530,7 @@ class DataPacketType:
     def __str__(self) -> str:
         try:
             from egse.fee import n_fee_mode
+
             mode = n_fee_mode(self.mode).name
         except ImportError:
             mode = str(self.mode)
@@ -559,6 +560,7 @@ def to_string(data: Union[DataPacketType]) -> str:
     """
     try:
         from egse.fee import n_fee_mode
+
         mode = n_fee_mode(data.mode).name
     except ImportError:
         mode = str(data.mode)
@@ -687,10 +689,10 @@ class DataPacketHeader:
         self.header_data[8:10] = value.to_bytes(2, "big")
 
     def as_dict(self):
-
         data_packet_type = DataPacketType(self.type)
         try:
             from egse.fee import n_fee_mode
+
             mode = n_fee_mode(data_packet_type.mode).name
         except ImportError:
             mode = str(data_packet_type.mode)
