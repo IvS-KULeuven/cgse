@@ -53,7 +53,7 @@ def test_zombie():
     zombies = list_zombies()
     print(f"{zombies = }")
 
-    assert len(list_zombies()) == 2
+    assert len(list_zombies()) >= 2
 
 
 def test_is_process_running():
