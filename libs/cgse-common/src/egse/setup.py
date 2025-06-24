@@ -944,7 +944,7 @@ def list_setups(**attr):
         print("Could not make a connection with the Configuration Manager, no Setup to show you.")
 
 
-def get_setup(setup_id: int = None):
+def get_setup(setup_id: int = None) -> Setup | None:
     """
     Retrieve the currently active Setup from the configuration manager.
 
@@ -958,7 +958,7 @@ def get_setup(setup_id: int = None):
         from egse.confman import ConfigurationManagerProxy
     except ImportError:
         print("WARNING: package 'cgse-core' is not installed, service not available.")
-        return
+        return None
 
     try:
         with ConfigurationManagerProxy() as proxy:
@@ -966,6 +966,7 @@ def get_setup(setup_id: int = None):
         return setup
     except ConnectionError:
         print("Could not make a connection with the Configuration Manager, no Setup returned.")
+        return None
 
 
 def _check_conditions_for_get_path_of_setup_file(site_id: str) -> Path:
@@ -1079,6 +1080,9 @@ def load_setup(setup_id: int = None, site_id: str = None, from_disk: bool = Fals
 
     When no setup_id is provided, the current Setup is loaded from the configuration manager.
 
+    When `from_disk` is True, the Setup will not be loaded from the configuration manager, but it
+    will be loaded from disk. No interaction with the configuration manager happens in this case.
+
     Args:
         setup_id (int): the identifier for the Setup
         site_id (str): the name of the test house
@@ -1103,7 +1107,7 @@ def load_setup(setup_id: int = None, site_id: str = None, from_disk: bool = Fals
 
         return Setup.from_yaml_file(setup_file_path)
 
-    # When we arrive here the Setup shall be loaded from the Configuration manager
+    # When we arrive here the Setup shall be loaded from the Configuration manager.
 
     try:
         from egse.confman import ConfigurationManagerProxy

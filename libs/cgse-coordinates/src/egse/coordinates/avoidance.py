@@ -25,8 +25,7 @@ def is_avoidance_ok(hexusr, hexobj, setup: Setup = None, verbose=False):
              xy plane = FPA_SEN
              z axis pointing towards L6
 
-    setup  : GlobalSetup.setup, optional
-             if not provided, GlobalState.setup is used
+    setup  : optional, if not provided, load_setup() is used
 
 
     OUTPUT :  Boolean indicating whether the FPA is outside the avoidance volume around L6

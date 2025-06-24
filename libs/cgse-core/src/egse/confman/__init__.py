@@ -34,8 +34,8 @@ keyword arguments which are the attributes of the Setup and compares the attribu
 given value. An example should make this clear. A setup has a `site_id` and for the CSL site
 also a `position`. You can access these value as follows:
 
-    >>> from egse.state import GlobalState
-    >>> setup = GlobalState.setup
+    >>> from egse.setup import load_setup
+    >>> setup = load_setup()
     >>> setup.site_id
     'CSL'
     >>> setup.position

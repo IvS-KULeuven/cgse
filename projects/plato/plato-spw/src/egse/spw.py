@@ -528,12 +528,16 @@ class DataPacketType:
         self._data_type = x
 
     def __str__(self) -> str:
-        from egse.fee import n_fee_mode
+        try:
+            from egse.fee import n_fee_mode
+            mode = n_fee_mode(self.mode).name
+        except ImportError:
+            mode = str(self.mode)
 
         n_fee_side = GlobalState.setup.camera.fee.ccd_sides.enum
 
         return (
-            f"mode:{n_fee_mode(self.mode).name}, last_packet:{self.last_packet}, "
+            f"mode:{mode}, last_packet:{self.last_packet}, "
             f"CCD side:{n_fee_side(self.ccd_side).name}, CCD number:{self.ccd_number}, "
             f"Frame number:{self.frame_number}, Packet Type:{PacketType(self.packet_type).name}"
         )
@@ -553,7 +557,11 @@ def to_string(data: Union[DataPacketType]) -> str:
     Args:
         data: a DataPacketType
     """
-    from egse.fee import n_fee_mode
+    try:
+        from egse.fee import n_fee_mode
+        mode = n_fee_mode(data.mode).name
+    except ImportError:
+        mode = str(data.mode)
 
     n_fee_side = GlobalState.setup.camera.fee.ccd_sides.enum
 
@@ -563,7 +571,7 @@ def to_string(data: Union[DataPacketType]) -> str:
         except AttributeError:
             raise SetupError("No entry in the setup for camera.fee.ccd_numbering.CCD_BIN_TO_ID")
         return (
-            f"mode:{n_fee_mode(data.mode).name}, last_packet:{data.last_packet}, "
+            f"mode:{mode}, last_packet:{data.last_packet}, "
             f"CCD side:{n_fee_side(data.ccd_side).name}, CCD number:"
             f"{ccd_bin_to_id[data.ccd_number]}, "
             f"Frame number:{data.frame_number}, Packet Type:{PacketType(data.packet_type).name}"
@@ -679,9 +687,14 @@ class DataPacketHeader:
         self.header_data[8:10] = value.to_bytes(2, "big")
 
     def as_dict(self):
-        from egse.fee import n_fee_mode
 
         data_packet_type = DataPacketType(self.type)
+        try:
+            from egse.fee import n_fee_mode
+            mode = n_fee_mode(data_packet_type.mode).name
+        except ImportError:
+            mode = str(data_packet_type.mode)
+
         return dict(
             logical_address=f"0x{self.logical_address:02X}",
             protocol_id=f"0x{self.protocol_id:02X}",
@@ -694,7 +707,7 @@ class DataPacketHeader:
             ccd_number=data_packet_type.ccd_number,
             ccd_side=self.n_fee_side(data_packet_type.ccd_side).name,
             last_packet=data_packet_type.last_packet,
-            mode=n_fee_mode(data_packet_type.mode).name,
+            mode=mode,
         )
 
 
