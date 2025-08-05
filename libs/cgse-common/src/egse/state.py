@@ -1,11 +1,12 @@
+__all__ = [
+    "GlobalState",
+]
+
 import abc
 import logging
 import textwrap
-from pathlib import Path
-from typing import Optional
 
 from egse.decorators import borg
-from egse.decorators import deprecate
 from egse.setup import Setup
 
 LOGGER = logging.getLogger(__name__)
@@ -62,32 +63,30 @@ class _GlobalState:
     """
 
     def __init__(self):
-        self._setup: Optional[Setup] = None
+        self._setup: Setup | None = None
 
     def __call__(self, *args, **kwargs):
         return self
 
     @property
-    def setup(self) -> Optional[Setup]:
+    def setup(self) -> Setup | None:
         """
-        Returns the currently active Setup from the configuration manager. Please note that each call
-        to this property sends a request to the configuration manager to return its current Setup. If
-        you are accessing information from the Setup in a loop or function that is called often, save
-        the Setup into a local variable before proceeding.
+        Returns the currently active Setup for this process.
+
+        NOTE: The returned Setup is not necessarily the currently active Setup in the
+              configuration manager. That is only true of your process monitors the
+              notifications from the configuration manager and updates the Setup when this
+              is changed in/by the configuration manager. Use the `GlobalState.load_setup()`
+              method to force loading the Setup from the configuration manager..
 
         Returns:
-            The currently active Setup or None (when the configuration manager is not reachable).
+            The currently active Setup or None.
         """
-        return self.load_setup()
+        return self._setup
 
-    # This function should be the standard function to reload a setup from the configuration manager
-    # Since we have no proper CM yet, the function loads from the default setup.yaml file.
-    # But what happens then in other parts of the system, where e.g. the PM has also the 'rights'
-    # to call load_setup() on the CM_CS?
-
-    def load_setup(self) -> Optional[Setup]:
+    def load_setup(self) -> Setup | None:
         """
-        Loads the currently active  Setup from the Configuration manager. The current Setup is the Setup
+        Loads the currently active Setup from the Configuration manager. The current Setup is the Setup
         that is defined and loaded in the Configuration manager. When the configuration manager is not
         reachable, None will be returned and a warning will be logged.
 
@@ -108,7 +107,7 @@ class _GlobalState:
             LOGGER.warning(
                 textwrap.dedent(
                     """\
-                    Could not reach the Configuration Manager to request the Setup, returning the current local Setup.
+                    Could not reach the Configuration Manager to request the Setup.
 
                     Check if the Configuration Manager is running and why it can not be consulted. When it's
                     back on-line, do a 'load_setup()'.
@@ -116,23 +115,19 @@ class _GlobalState:
                 )
             )
 
-        return self._setup
+        return None
 
 
 GlobalState = _GlobalState()
 
-__all__ = [
-    "GlobalState",
-]
-
 if __name__ == "__main__":
-    from rich import print
+    import rich
 
-    print(
+    rich.print(
         textwrap.dedent(
             f"""\
             GlobalState info:
-              Setup loaded: {GlobalState.setup.get_id()}
+              Setup loaded: {GlobalState.setup.get_id() if GlobalState.setup else "[orange3]no Setup loaded[/]"}
             """
         )
     )

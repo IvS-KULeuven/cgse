@@ -198,18 +198,16 @@ def __focal_plane_to_ccd_coordinates__(x_fp, y_fp, ccd_code):
         Pixel coordinates (row, column) on the given CCD.
     """
 
-    setup = GlobalState.setup
-
-    if setup is not None:
-        ccd_orientation = setup.camera.ccd.orientation[int(ccd_code) - 1]
-        pixel_size = setup.camera.ccd.pixel_size / 1000.0  # [mm]
-        ccd_origin_x = GlobalState.setup.camera.ccd.origin_offset_x[int(ccd_code) - 1]
-        ccd_origin_y = GlobalState.setup.camera.ccd.origin_offset_y[int(ccd_code) - 1]
-    else:
+    if GlobalState.setup is None:
         ccd_orientation = CCD_SETTINGS.ORIENTATION[int(ccd_code) - 1]
         pixel_size = CCD_SETTINGS.PIXEL_SIZE / 1000  # Pixel size [mm]
         ccd_origin_x = CCD_SETTINGS.ZEROPOINT[0]
         ccd_origin_y = CCD_SETTINGS.ZEROPOINT[1]
+    else:
+        ccd_orientation = GlobalState.setup.camera.ccd.orientation[int(ccd_code) - 1]
+        pixel_size = GlobalState.setup.camera.ccd.pixel_size / 1000.0  # [mm]
+        ccd_origin_x = GlobalState.setup.camera.ccd.origin_offset_x[int(ccd_code) - 1]
+        ccd_origin_y = GlobalState.setup.camera.ccd.origin_offset_y[int(ccd_code) - 1]
 
     ccd_angle = radians(ccd_orientation)
 
@@ -229,6 +227,9 @@ def focal_plane_coordinates_to_angles(x_fp, y_fp):
     Conversion from focal-plane coordinates to the gnomonic distance from the optical axis and
     the in-field angle.
 
+    NOTE: if no valid Setup is loaded in the global state, the FOV_SETTINGS will be used to
+          determine the focal length.
+
     Args:
         x_fp: Focal-plane x-coordinate [mm].
         y_fp: Focal-plane y-coordinate [mm].
@@ -236,12 +237,10 @@ def focal_plane_coordinates_to_angles(x_fp, y_fp):
         Gnomonic distance from the optical axis and in-field angle [degrees].
     """
 
-    setup = GlobalState.setup
-
-    if setup is not None:
-        focal_length_mm = GlobalState.setup.camera.fov.focal_length_mm
-    else:
+    if GlobalState.setup is None:
         focal_length_mm = FOV_SETTINGS.FOCAL_LENGTH
+    else:
+        focal_length_mm = GlobalState.setup.camera.fov.focal_length_mm
 
     theta = degrees(atan(sqrt(pow(x_fp, 2) + pow(y_fp, 2)) / focal_length_mm))
     phi = degrees(atan2(y_fp, x_fp))
@@ -253,6 +252,9 @@ def ccd_to_focal_plane_coordinates(row, column, ccd_code):
     """
     Conversion from pixel-coordinates on the given CCD to focal-plane coordinates.
 
+    NOTE: if no valid Setup is loaded in the global state, the CCD_SETTINGS will be used to
+          determine the ccd information.
+
     Args:
         row: Row coordinate [pixels].
         column: Column coordinate [pixels].
@@ -261,18 +263,16 @@ def ccd_to_focal_plane_coordinates(row, column, ccd_code):
         Focal-plane coordinates (x, y) [mm].
     """
 
-    setup = GlobalState.setup
-
-    if setup is not None:
-        ccd_orientation = setup.camera.ccd.orientation[int(ccd_code) - 1]
-        pixel_size_mm = setup.camera.ccd.pixel_size / 1000.0  # [mm]
-        ccd_origin_x = GlobalState.setup.camera.ccd.origin_offset_x[int(ccd_code) - 1]
-        ccd_origin_y = GlobalState.setup.camera.ccd.origin_offset_y[int(ccd_code) - 1]
-    else:
+    if GlobalState.setup is None:
         ccd_orientation = CCD_SETTINGS.ORIENTATION[int(ccd_code) - 1]
         pixel_size_mm = CCD_SETTINGS.PIXEL_SIZE / 1000  # Pixel size [mm]
         ccd_origin_x = CCD_SETTINGS.ZEROPOINT[0]
         ccd_origin_y = CCD_SETTINGS.ZEROPOINT[1]
+    else:
+        ccd_orientation = GlobalState.setup.camera.ccd.orientation[int(ccd_code) - 1]
+        pixel_size_mm = GlobalState.setup.camera.ccd.pixel_size / 1000.0  # [mm]
+        ccd_origin_x = GlobalState.setup.camera.ccd.origin_offset_x[int(ccd_code) - 1]
+        ccd_origin_y = GlobalState.setup.camera.ccd.origin_offset_y[int(ccd_code) - 1]
 
     # Convert the pixel coordinates into [mm] coordinates
 
@@ -296,6 +296,9 @@ def angles_to_focal_plane_coordinates(theta, phi):
     Conversion from the gnomonic distance from the optical axis and
     the in-field angle to focal-plane coordinates.
 
+    NOTE: if no valid Setup is loaded in the global state, the FOV_SETTINGS will be used to
+          determine the focal length.
+
     Args:
         theta: Gnomonic distance from the optical axis [degrees].
         phi: In-field angle [degrees].
@@ -303,12 +306,10 @@ def angles_to_focal_plane_coordinates(theta, phi):
         Focal-plane coordinates (x, y) [mm].
     """
 
-    setup = GlobalState.setup
-
-    if setup is not None:
-        focal_length_mm = GlobalState.setup.camera.fov.focal_length_mm
-    else:
+    if GlobalState.setup is None:
         focal_length_mm = FOV_SETTINGS.FOCAL_LENGTH
+    else:
+        focal_length_mm = GlobalState.setup.camera.fov.focal_length_mm
 
     distance = focal_length_mm * tan(radians(theta))  # [mm]
 
