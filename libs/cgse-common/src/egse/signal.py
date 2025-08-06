@@ -163,13 +163,16 @@ class FileBasedSignaling:
             self.thread.join(timeout=1)
 
 
-def create_signal_command_file(signal_dir, service_id, command):
+def create_signal_command_file(signal_dir: Path, service_id: str, command: dict) -> None:
     """
     Atomically create a signal command file for a specific service.
 
     Creates a JSON command file using atomic file operations to prevent race
     conditions. The file is first written to a temporary file, then atomically
     renamed to the final destination.
+
+    If the signal_dir doesn't exist, it will be created by this function. The
+    signal_dir will not be removed afterward.
 
     Args:
         signal_dir (Path): Directory where the signal file will be created
@@ -198,6 +201,7 @@ def create_signal_command_file(signal_dir, service_id, command):
         The final filename format is: {service_id}_{action}.json
         If no 'action' key exists in command, defaults to 'cmd'.
     """
+    signal_dir.mkdir(exist_ok=True)
     temp_fd, temp_path = tempfile.mkstemp(dir=signal_dir, suffix=".tmp")
 
     try:
