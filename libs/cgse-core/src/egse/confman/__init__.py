@@ -112,6 +112,7 @@ from __future__ import annotations
 
 import logging
 import operator
+import random
 import textwrap
 import threading
 from pathlib import Path
@@ -1034,6 +1035,7 @@ class ConfigurationManagerProtocol(CommandProtocol):
 
         hk = {
             "timestamp": format_datetime(),
+            "random": random.randint(0, 100),
             "CM_SITE_ID": site_id,
             "CM_SETUP_ID": setup_id,
             "CM_TEST_ID": test_id,

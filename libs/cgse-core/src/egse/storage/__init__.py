@@ -109,6 +109,7 @@ import abc
 import datetime
 import logging
 import os
+import random
 import shutil
 import textwrap
 from functools import partial
@@ -1105,6 +1106,7 @@ class StorageProtocol(CommandProtocol):
     def get_housekeeping(self) -> dict:
         return {
             "timestamp": format_datetime(),
+            "random": random.randint(0, 100),
         }
 
 

@@ -1,3 +1,4 @@
+import random
 from pathlib import Path
 
 from egse.control import ControlServer
@@ -89,4 +90,7 @@ class ProcessManagerProtocol(CommandProtocol):
         Returns: Dictionary with housekeeping data for the Control Server for Process Management.
         """
 
-        return {"timestamp": format_datetime()}
+        return {
+            "timestamp": format_datetime(),
+            "random": random.randint(0, 100),
+        }

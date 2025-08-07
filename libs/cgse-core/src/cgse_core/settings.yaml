@@ -20,8 +20,16 @@ Storage Control Server:                          # SM_CS
     SERVICE_TYPE:                 SM_CS
     DELAY:                            1          # The delay time between publishing status information [seconds]
 
-Process Manager Control Server:                # PM_CS
+Process Manager Control Server:                  # PM_CS
 
-    SERVICE_TYPE:                PM_CS
-    DELAY:                          1          # The delay time between publishing status information [seconds]
-    STORAGE_MNEMONIC:              PM          # The mnemonic to be used in the filename storing the housekeeping data
+    SERVICE_TYPE:                 PM_CS
+    DELAY:                            1          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:                PM          # The mnemonic to be used in the filename storing the housekeeping data
+
+Notify Hub:
+    SERVICE_TYPE:            NOTIFY_HUB
+    COLLECTOR_PORT:                4245
+    PUBLISHER_PORT:                4246
+    
+Metrics Hub:
+    SERVICE_TYPE:           METRICS_HUB
