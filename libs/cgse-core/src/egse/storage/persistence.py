@@ -11,7 +11,7 @@ from sqlite3 import Connection
 from typing import Optional
 from typing import Union
 
-from egse.plugin import load_plugins
+from egse.plugin import load_plugins_ep
 from egse.storage import PersistenceLayer
 from egse.system import read_last_line
 
@@ -525,6 +525,6 @@ TYPES = {
     "TXT": TXT,
 }
 
-for name, ep in load_plugins(entry_point="cgse.storage.persistence").items():
+for name, ep in load_plugins_ep(entry_point="cgse.storage.persistence").items():
     if ep is not None:
         TYPES[name] = ep
