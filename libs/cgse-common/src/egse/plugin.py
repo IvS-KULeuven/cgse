@@ -118,10 +118,10 @@ def load_plugins_fn(pattern: str, package_name: str = None) -> dict[str, types.M
         except ImportError as exc:
             raise ImportError(f"Cannot import package '{package_name}': {exc}")
 
-        if hasattr(package, '__path__'):
+        if hasattr(package, "__path__"):
             package_path = package.__path__
         else:
-            package_path = [package.__file__.replace('__init__.py', '')]
+            package_path = [package.__file__.replace("__init__.py", "")]
 
     # rich.print(package_path)
 

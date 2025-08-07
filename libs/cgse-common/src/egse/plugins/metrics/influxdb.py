@@ -25,6 +25,7 @@ Other queries:
         - this is equivalent to using `get_column_names()`
 
 """
+
 __all__ = [
     "InfluxDBRepository",
     "get_repository_class",
@@ -63,8 +64,9 @@ class InfluxDBRepository(TimeSeriesRepository):
         self.close()
 
     def connect(self):
-        wco = write_client_options(write_options=SYNCHRONOUS, write_precision=self.metrics_time_precision,
-                                   flush_interval=200)
+        wco = write_client_options(
+            write_options=SYNCHRONOUS, write_precision=self.metrics_time_precision, flush_interval=200
+        )
         self.client = InfluxDBClient3(host=self.host, database=self.database, token=self.token, write_options=wco)
 
     def write(self, points: Point | dict | list[Point | dict]):
@@ -75,7 +77,7 @@ class InfluxDBRepository(TimeSeriesRepository):
             table = self.client.query(query_str, database=self.database)
         except InfluxDB3ClientError as exc:
             logger.error(f"Caught {type_name(exc)}; {exc}")
-            raise ValueError(f"Caught {type_name(exc)}: check the query \"{query_str}\"") from exc
+            raise ValueError(f'Caught {type_name(exc)}: check the query "{query_str}"') from exc
 
         match mode:
             case "all":
@@ -91,7 +93,7 @@ class InfluxDBRepository(TimeSeriesRepository):
         query = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'iox'"
 
         try:
-            result: pandas.DataFrame = self.query(query, mode='pandas')
+            result: pandas.DataFrame = self.query(query, mode="pandas")
             return [x for x in result["table_name"]]
         except Exception as exc:
             logger.error(f"Caught {type_name(exc)} while getting tables: {exc}")
@@ -102,7 +104,7 @@ class InfluxDBRepository(TimeSeriesRepository):
         query = f"SHOW COLUMNS IN {table_name}"
 
         try:
-            result: pandas.DataFrame = self.query(query, mode='pandas')
+            result: pandas.DataFrame = self.query(query, mode="pandas")
             return [x for x in result["column_name"]]
         except Exception as exc:
             logger.error(f"Caught {type_name(exc)} while getting column names: {exc}")
@@ -130,7 +132,7 @@ class InfluxDBRepository(TimeSeriesRepository):
             return _safe_convert_to_datetime_lists(df, "time", column_name)
 
     def get_values_in_range(
-            self, table_name: str, column_name: str, start_time: str, end_time: str, mode: str = "pandas"
+        self, table_name: str, column_name: str, start_time: str, end_time: str, mode: str = "pandas"
     ) -> pandas.DataFrame | list[list]:
         """Get column values within a time range."""
         query = f"""
@@ -167,10 +169,10 @@ def _safe_convert_to_datetime_lists(df, time_col, value_col):
         print(f"No conversion needed for {value_col} from object type")
     elif pandas.api.types.is_integer_dtype(df[value_col]):
         print(f"Converting {value_col} from {df[value_col].dtype} to numeric")
-        df[value_col] = pandas.to_numeric(df[value_col], errors='coerce')
+        df[value_col] = pandas.to_numeric(df[value_col], errors="coerce")
     elif pandas.api.types.is_float_dtype(df[value_col]):
         print(f"Converting {value_col} from {df[value_col].dtype} to numeric")
-        df[value_col] = pandas.to_numeric(df[value_col], errors='coerce')
+        df[value_col] = pandas.to_numeric(df[value_col], errors="coerce")
     elif pandas.api.types.is_string_dtype(df[value_col]):
         print(f"No conversion needed  for {value_col} from string type")
 

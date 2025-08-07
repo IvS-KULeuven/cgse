@@ -9,7 +9,7 @@ def test_get_metrics_repo():
     influxdb = get_metrics_repo("influxdb", {"host": "http://localhost:8181", "database": "ARIEL", "token": token})
     influxdb.connect()
 
-    result = influxdb.query("SELECT * FROM cm ORDER BY TIME DESC LIMIT 20", mode='pandas')
+    result = influxdb.query("SELECT * FROM cm ORDER BY TIME DESC LIMIT 20", mode="pandas")
     print(result)
 
     # result = influxdb.query("SHOW TABLES;")
@@ -19,7 +19,7 @@ def test_get_metrics_repo():
     result = influxdb.get_table_names()
     print(f"Tables in ARIEL: {result}")
 
-    result = influxdb.get_column_names('cm')
+    result = influxdb.get_column_names("cm")
     print(f"Columns in cm: {result}")
 
     influxdb.close()
