@@ -20,33 +20,32 @@ def test_influxdb_access():
     influxdb = get_metrics_repo("influxdb", {"host": "http://localhost:8181", "database": "ARIEL", "token": token})
     influxdb.connect()
 
-    result = influxdb.query("SELECT * FROM cm ORDER BY TIME DESC LIMIT 20", mode='pandas')
+    result = influxdb.query("SELECT * FROM cm ORDER BY TIME DESC LIMIT 20", mode="pandas")
     print(result)
     assert isinstance(result, pd.DataFrame)
 
-    result = influxdb.get_values_last_hours("cm", "cm_setup_id", hours=24, mode='pandas')
+    result = influxdb.get_values_last_hours("cm", "cm_setup_id", hours=24, mode="pandas")
     print(f"Values from 'cm_setup_id': \n{result}")
 
-    result = influxdb.get_values_in_range("cm", "cm_site_id", "2025-06-26T08:10:00Z", "2025-06-26T08:15:00Z", mode='')
+    result = influxdb.get_values_in_range("cm", "cm_site_id", "2025-06-26T08:10:00Z", "2025-06-26T08:15:00Z", mode="")
     print(f"Values from 'cm_site_id': \n{result}")
 
     result = influxdb.get_table_names()
     print(f"Tables in ARIEL: {result}")
 
-    result = influxdb.get_column_names('cm')
+    result = influxdb.get_column_names("cm")
     print(f"Columns in cm: {result}")
 
-    result = influxdb.get_column_names('storagecontrolserver')
+    result = influxdb.get_column_names("storagecontrolserver")
     print(f"Columns in storagecontrolserver: {result}")
 
-    result = influxdb.get_column_names('unit_test')
+    result = influxdb.get_column_names("unit_test")
     print(f"Columns in unit_test: {result}")
 
     influxdb.close()
 
 
 def test_influxdb_write():
-
     token = os.environ.get("INFLUXDB3_AUTH_TOKEN")
 
     influxdb = get_metrics_repo("influxdb", {"host": "http://localhost:8181", "database": "ARIEL", "token": token})
@@ -55,13 +54,10 @@ def test_influxdb_write():
 
     with influxdb:
         points = []
-        measurements = [
-            "unit_test", "ariel", "localhost", "random"
-        ]
+        measurements = ["unit_test", "ariel", "localhost", "random"]
         for count in range(500):
             points.append(
-                Point
-                .measurement(random.choice(measurements))
+                Point.measurement(random.choice(measurements))
                 .tag("site_id", "KUL")
                 .tag("origin", "UNITTEST")
                 .field("count", count)
@@ -83,10 +79,10 @@ def test_influxdb_write():
         names = influxdb.get_column_names("unit_test")
         assert "count" in names
 
-        result = influxdb.get_values_last_hours("unit_test", "count", hours=1, mode='pandas')
+        result = influxdb.get_values_last_hours("unit_test", "count", hours=1, mode="pandas")
         print(f"Values from 'count': {result}")
 
-        result = influxdb.query("SELECT * FROM unit_test ORDER BY TIME DESC LIMIT 20", mode='pandas')
+        result = influxdb.query("SELECT * FROM unit_test ORDER BY TIME DESC LIMIT 20", mode="pandas")
         print(result)
 
 
@@ -120,10 +116,7 @@ def test_speed():
         points.append(
             {
                 "measurement": "unit_test",
-                "tags": {
-                    "site_id": "KUL",
-                    "origin": "UNITTEST"
-                },
+                "tags": {"site_id": "KUL", "origin": "UNITTEST"},
                 "fields": {
                     "count": count,
                     "random": random.randint(0, 100),

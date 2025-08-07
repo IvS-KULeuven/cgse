@@ -6,7 +6,6 @@ logger = logging.getLogger("test")
 
 
 def test_load_plugins_fn():
-
     # Load ALL plugins from the `egse.plugins` namespace
     plugins_1 = load_plugins_fn("plugins/**/*.py", "egse")
     print(plugins_1)

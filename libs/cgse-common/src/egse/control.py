@@ -671,7 +671,9 @@ class ControlServer(metaclass=abc.ABCMeta):
                 }
                 self.metrics_client.write(point)
             else:
-                _LOGGER.warning(f"Could not write {origin} metrics to the time series database (self.metrics_client is None).")
+                _LOGGER.warning(
+                    f"Could not write {origin} metrics to the time series database (self.metrics_client is None)."
+                )
         except NewConnectionError:
             _LOGGER.warning(
                 f"No connection to the time series database could be established to propagate {origin} metrics.  Check "
