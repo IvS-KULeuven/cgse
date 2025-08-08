@@ -3,17 +3,24 @@ This module provides function to load plugins and settings from entry-points.
 """
 
 __all__ = [
-    "load_plugins",
+    "load_plugins_ep",
+    "load_plugins_fn",
     "get_file_infos",
     "entry_points",
     "HierarchicalEntryPoints",
 ]
+
+import importlib.util
 import logging
 import os
 import sys
 import textwrap
 import traceback
+import types
+from functools import lru_cache
 from pathlib import Path
+
+from egse.system import type_name
 
 if sys.version_info >= (3, 12):  # Use the standard library version (Python 3.10+)
     from importlib.metadata import entry_points as lib_entry_points
@@ -26,7 +33,8 @@ else:
 import click
 import rich
 
-_LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+HERE = Path(__file__).parent
 
 
 def entry_points(group: str) -> set[EntryPoint]:
@@ -43,7 +51,7 @@ def entry_points(group: str) -> set[EntryPoint]:
         return set()
 
 
-def load_plugins(entry_point: str) -> dict:
+def load_plugins_ep(entry_point: str) -> dict:
     """
     Returns a dictionary with plugins loaded. The keys are the names of the entry-points,
     the values are the loaded modules or objects.
@@ -58,9 +66,88 @@ def load_plugins(entry_point: str) -> dict:
             eps[ep.name] = ep.load()
         except Exception as exc:
             eps[ep.name] = None
-            _LOGGER.error(f"Couldn't load entry point: {exc}")
+            logger.error(f"Couldn't load entry point {entry_point}: {type_name(exc)} – {exc}")
 
     return eps
+
+
+@lru_cache
+def load_plugins_fn(pattern: str, package_name: str = None) -> dict[str, types.ModuleType]:
+    """
+    Returns a dictionary with plugins loaded for the filenames that match the given pattern.
+    The keys are the names of the modules, the values are the loaded modules.
+
+    If no package_name is provided, the pattern is relative to the location of this module
+    (which is in the top-level module `egse`).
+
+    If the pattern results in two or more modules with the same name, a warning will be logged
+    and only the last imported module will be returned in the dictionary.
+
+    Plugins are usually located in the `egse.plugins` module. Remember that `egse.plugins`
+    is a namespace and external packages can also deliver plugin modules in that location.
+
+    Note:
+        When a plugin cannot be loaded, an error is logged.
+
+        This function uses an LRU cache to avoid reloading modules. If you need to reload,
+        use `load_plugins_fn.cache_clear()` to reset the cache.
+
+    Raises:
+        ImportError when the given package_name cannot be imported as a module.
+
+    Examples:
+
+        # Loading the InfluxDB plugin for time series metrics
+        >>> influxdb = load_plugins_fn("influxdb.py", "egse.plugins.metrics")
+
+        # Loading the HDF5 storage plugin for PLATO
+        >>> hdf5 = load_plugins_fn("hdf5.py", "egse.plugins.storage")
+
+        # Loading all plugins
+        >>> x = load_plugins_fn("**/*.py", "egse.plugins")
+
+    """
+    loaded_modules = {}
+    failed_modules = {}  # we keep failed modules for housekeeping only
+
+    if package_name is None:
+        package_path = [HERE]
+    else:
+        try:
+            package = importlib.import_module(package_name)
+        except ImportError as exc:
+            raise ImportError(f"Cannot import package '{package_name}': {exc}")
+
+        if hasattr(package, "__path__"):
+            package_path = package.__path__
+        else:
+            package_path = [package.__file__.replace("__init__.py", "")]
+
+    # rich.print(package_path)
+
+    for path_entry in map(Path, package_path):
+        # rich.print(path_entry)
+        for plugin_file in path_entry.rglob(pattern):
+            # rich.print("    ", plugin_file)
+            module_name = plugin_file.stem
+            try:
+                spec = importlib.util.spec_from_file_location(module_name, plugin_file)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                if module_name in loaded_modules:
+                    logger.warning(
+                        f"Overwriting module '{module_name}' from {loaded_modules[module_name].__file__} "
+                        f"with {plugin_file}."
+                    )
+                loaded_modules[module_name] = module
+            except Exception as exc:
+                error_msg = f"Couldn't load module '{module_name}' from {plugin_file}: {type_name(exc)} – {exc}"
+                logger.error(error_msg)
+                if module_name in failed_modules:
+                    logger.warning(f"Overwriting previously unloaded module '{module_name}' with {plugin_file}.")
+                failed_modules[module_name] = error_msg
+
+    return loaded_modules
 
 
 def get_file_infos(entry_point: str) -> dict[str, tuple[Path, str]]:
@@ -93,7 +180,7 @@ def get_file_infos(entry_point: str) -> dict[str, tuple[Path, str]]:
             path = get_module_location(ep.module)
 
             if path is None:
-                _LOGGER.error(
+                logger.error(
                     f"The entry-point '{ep.name}' is ill defined. The module part doesn't exist or is a "
                     f"namespace. No settings are loaded for this entry-point."
                 )
@@ -101,7 +188,7 @@ def get_file_infos(entry_point: str) -> dict[str, tuple[Path, str]]:
                 eps[ep.name] = (path, ep.attr)
 
         except Exception as exc:
-            _LOGGER.error(f"The entry point '{ep.name}' is ill defined: {exc}")
+            logger.error(f"The entry point '{ep.name}' is ill defined: {exc}")
 
     return eps
 

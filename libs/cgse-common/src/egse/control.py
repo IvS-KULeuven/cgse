@@ -22,12 +22,15 @@ from urllib3.exceptions import NewConnectionError
 from egse.decorators import retry
 from egse.decorators import retry_with_exponential_backoff
 from egse.listener import Listeners
+from egse.metrics import get_metrics_repo
 from egse.registry.client import RegistryClient
 from egse.signal import FileBasedSignaling
 from egse.system import SignalCatcher
 from egse.system import camel_to_kebab
 from egse.system import camel_to_snake
+from egse.system import str_to_datetime
 from egse.system import time_in_ms
+from egse.system import type_name
 from egse.zmq_ser import get_port_number
 
 try:
@@ -47,9 +50,6 @@ from egse.system import get_average_execution_times
 from egse.system import get_full_classname
 from egse.system import get_host_ip
 from egse.system import save_average_execution_time
-from influxdb_client_3 import InfluxDBClient3
-from influxdb_client_3.write_client.domain.write_precision import WritePrecision
-from influxdb_client_3 import Point
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -179,12 +179,15 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         token = os.getenv("INFLUXDB3_AUTH_TOKEN")
         project = os.getenv("PROJECT")
-        self.metrics_time_precision = WritePrecision.MS
 
         if project and token:
-            self.client = InfluxDBClient3(database=project, host="http://localhost:8181", token=token)
+            self.metrics_client = get_metrics_repo(
+                "influxdb", {"host": "http://localhost:8181", "database": project, "token": token}
+            )
+            # self.metrics_client = get_metrics_repo("duckdb", {"db_path": "duckdb_metrics.db", "table_name": "cs_timeseries"})
+            self.metrics_client.connect()
         else:
-            self.client = None
+            self.metrics_client = None
             _LOGGER.warning(
                 "INFLUXDB3_AUTH_TOKEN and/or PROJECT environment variable is not set. "
                 "Metrics will not be propagated to InfluxDB."
@@ -545,7 +548,7 @@ class ControlServer(metaclass=abc.ABCMeta):
                 except Exception as exc:
                     _LOGGER.error(
                         textwrap.dedent(
-                            f"""\
+                            f"""{type_name(exc)}
                             An Exception occurred while collecting housekeeping from the device to be stored in {self.get_storage_mnemonic()}.
                             This might be a temporary problem, still needs to be looked into:
         
@@ -659,20 +662,21 @@ class ControlServer(metaclass=abc.ABCMeta):
             return
 
         try:
-            if self.client:
-                metrics_dictionary = {
-                    "measurement": origin.lower(),  # Table name
-                    "tags": {"site_id": SITE_ID, "origin": origin},  # Site ID, Origin
-                    "fields": dict((hk_name.lower(), hk[hk_name]) for hk_name in hk if hk_name != "timestamp"),
-                    "time": hk["timestamp"],
+            if self.metrics_client:
+                point = {
+                    "measurement": origin.lower(),
+                    "tags": {"site_id": SITE_ID, "origin": origin},
+                    "fields": {hk_name.lower(): hk[hk_name] for hk_name in hk if hk_name != "timestamp"},
+                    "time": str_to_datetime(hk["timestamp"]),
                 }
-                point = Point.from_dict(metrics_dictionary, write_precision=self.metrics_time_precision)
-                self.client.write(point)
+                self.metrics_client.write(point)
             else:
-                _LOGGER.warning(f"Could not write {origin} metrics to InfluxDB (self.client is None).")
+                _LOGGER.warning(
+                    f"Could not write {origin} metrics to the time series database (self.metrics_client is None)."
+                )
         except NewConnectionError:
             _LOGGER.warning(
-                f"No connection to InfluxDB could be established to propagate {origin} metrics.  Check "
+                f"No connection to the time series database could be established to propagate {origin} metrics.  Check "
                 f"whether this service is (still) running."
             )
 
