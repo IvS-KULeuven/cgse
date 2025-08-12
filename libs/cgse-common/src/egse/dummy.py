@@ -672,7 +672,6 @@ def start_dev():
 
 @app.command()
 def stop_dev():
-
     multiprocessing.current_process().name = "dummy_dev"
 
     _LOGGER.info("Stopping the Dummy Device simulator")
