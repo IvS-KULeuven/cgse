@@ -88,7 +88,7 @@ class _GlobalState:
         """
         Loads the currently active Setup from the Configuration manager. The current Setup is the Setup
         that is defined and loaded in the Configuration manager. When the configuration manager is not
-        reachable, None will be returned and a warning will be logged.
+        reachable, None will be returned, a warning will be logged, and the global state setup will be cleared.
 
         Since the GlobalState should reflect the configuration of the test, it can only load the current
         Setup from the configuration manager. If you need to work with different Setups, work with the `Setup`
@@ -114,8 +114,9 @@ class _GlobalState:
                     """
                 )
             )
+            self._setup = None
 
-        return None
+        return self._setup
 
 
 GlobalState = _GlobalState()
