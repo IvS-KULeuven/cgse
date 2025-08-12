@@ -52,7 +52,6 @@ from egse.listener import Event
 from egse.listener import EventInterface
 from egse.protocol import CommandProtocol
 from egse.proxy import Proxy
-from egse.response import Failure
 from egse.settings import Settings
 from egse.system import SignalCatcher
 from egse.system import attrdict
@@ -648,6 +647,10 @@ def start_dev():
                             if not data:
                                 _LOGGER.info("Connection closed by peer, waiting for connection..")
                                 break  # connection closed by peer
+                            if data.decode().strip() == "QUIT":
+                                _LOGGER.info("QUIT command received, terminating...")
+                                quit_request = True
+                                break
                             if (response := process_command(data.decode().rstrip())) is not None:
                                 response = f"{response}\r\n".encode()
                                 conn.sendall(response)
@@ -665,6 +668,19 @@ def start_dev():
                     _LOGGER.info(f"{exc.__class__.__name__} caught: {exc.args}")
 
     _LOGGER.info("Dummy Device terminated.")
+
+
+@app.command()
+def stop_dev():
+
+    multiprocessing.current_process().name = "dummy_dev"
+
+    _LOGGER.info("Stopping the Dummy Device simulator")
+
+    dev = DummyDeviceEthernetInterface(DEV_HOST, DEV_PORT)
+    dev.connect()
+    dev.write("QUIT\n")
+    dev.disconnect()
 
 
 COMMAND_ACTIONS_RESPONSES = {"info": (None, f"Dummy Device {__version__}"), "get_value": (None, random.random)}
