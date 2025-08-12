@@ -28,7 +28,7 @@ dependencies = [
     "pyyaml>=6.0.2",
     "rich>=13.9.4",
     "typer>=0.15.1",
-    "navdict>=0.2.4",
+    "navdict>=0.5.9",
     # Python 3.9 specific dependencies
     "numpy==1.26.4; python_version == '3.9'",
     "pandas==1.5.1; python_version == '3.9'",
