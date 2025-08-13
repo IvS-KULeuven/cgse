@@ -129,7 +129,7 @@ def init(project: str = ""):
         )
 
 
-show = typer.Typer(help="Show information about settings, environment, setup, ...", no_args_is_help=True)
+show = typer.Typer(help="Show information about settings, environment, setup, ...")
 
 
 @show.command(name="settings")
@@ -255,7 +255,7 @@ def show_setup(
             rich.print("[red]No setup files were found.[/]")
 
 
-check = typer.Typer(help="Check installation, settings, required files, etc.", no_args_is_help=True)
+check = typer.Typer(help="Check installation, settings, required files, etc.")
 
 
 @check.command(name="setups")

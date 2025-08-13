@@ -11,11 +11,11 @@ import typer
 from egse.env import get_log_file_location
 from egse.system import all_logging_disabled
 
-puna = typer.Typer(name="puna", help="PUNA Positioning Hexapod, Symétrie", no_args_is_help=True)
+puna = typer.Typer(name="puna", help="PUNA Positioning Hexapod, Symétrie")
 
-zonda = typer.Typer(name="zonda", help="ZONDA Positioning Hexapod, Symétrie", no_args_is_help=True)
+zonda = typer.Typer(name="zonda", help="ZONDA Positioning Hexapod, Symétrie")
 
-joran = typer.Typer(name="joran", help="JORAN Positioning Hexapod, Symétrie", no_args_is_help=True)
+joran = typer.Typer(name="joran", help="JORAN Positioning Hexapod, Symétrie")
 
 
 def redirect_output_to(output_fn: str) -> TextIO:

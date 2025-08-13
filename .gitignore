@@ -18,6 +18,7 @@ dist
 
 .pytest_cache
 .coverage
+.coverage.*
 .nox
 htmlcov
 

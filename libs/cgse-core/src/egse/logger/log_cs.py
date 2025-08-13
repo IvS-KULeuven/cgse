@@ -92,7 +92,7 @@ class DateTimeFormatter(logging.Formatter):
 file_formatter = DateTimeFormatter(fmt=LOG_FORMAT_KEY_VALUE, datefmt=LOG_FORMAT_DATE)
 
 app_name = "log_cs"
-app = typer.Typer(name=app_name, no_args_is_help=True)
+app = typer.Typer(name=app_name)
 
 
 @app.command()
