@@ -4,7 +4,8 @@ import rich
 import typer
 
 dev_x = typer.Typer(
-    name="dev-x", help="device-x is an imaginary device that serves as an example",
+    name="dev-x",
+    help="device-x is an imaginary device that serves as an example",
 )
 
 
