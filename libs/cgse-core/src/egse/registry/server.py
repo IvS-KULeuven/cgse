@@ -34,7 +34,7 @@ from egse.registry.client import AsyncRegistryClient
 from egse.system import TyperAsyncCommand
 from egse.system import get_logging_level
 
-app = typer.Typer(name="rs_cs", no_args_is_help=True)
+app = typer.Typer(name="rs_cs")
 
 
 class AsyncRegistryServer:
