@@ -16,23 +16,25 @@ the Setup is a dictionary, so all information can be accessed by keys as in the 
     >>> setup["gse"]["hexapod"]["ID"]
     42
 
-Second, each of the _keys_ is also available as an attribute of the Setup and that make it
+Second, each of the _keys_ is also available as an attribute of the Setup and that makes it
 possible to navigate the Setup with dot-notation:
 
     >>> id = setup.gse.hexapod.ID
 
 In the above example you can see how to navigate from the setup to a device like the PUNA Hexapod.
-The Hexapod device is connected to the control server and accepts commands as usual. If you want to
-know which keys you can use to navigate the Setup, use the `keys()` method.
+The Hexapod device is connected to the control server and accepts commands as usual.
+
+If you want to know which keys you can use to navigate the Setup, use the `keys()` method.
 
     >>> setup.gse.hexapod.keys()
     dict_keys(['ID', 'calibration'])
     >>> setup.gse.hexapod.calibration
     [0, 1, 2, 3, 4, 5]
 
-To get a full printout of the Setup, you can use the `pretty_str()` method. Be careful, because
+To get a full printout of the Setup, you can use the `rich` package and print the Setup. Be careful, because
 this can print out a lot of information when a full Setup is loaded.
 
+    >>> from rich import print
     >>> print(setup)
     Setup
     └── gse
@@ -124,8 +126,6 @@ __all__ = [
     "save_last_setup_id",
 ]
 
-import enum
-import importlib
 import logging
 import os
 import re
@@ -133,12 +133,15 @@ import textwrap
 import warnings
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
 from typing import Optional
 from typing import Union
 
 import rich
 import yaml
+from navdict import navdict
+from navdict.directive import register_directive
+from navdict.navdict import NavigableDict
+from navdict.navdict import get_resource_location
 from rich.tree import Tree
 
 from egse.env import get_conf_data_location
@@ -148,10 +151,8 @@ from egse.env import get_data_storage_location
 from egse.env import has_conf_repo_location
 from egse.env import print_env
 from egse.response import Failure
-from egse.settings import read_configuration_file
 from egse.system import format_datetime
 from egse.system import sanity_check
-from egse.system import walk_dict_tree
 
 MODULE_LOGGER = logging.getLogger(__name__)
 
@@ -162,83 +163,26 @@ class SetupError(Exception):
     pass
 
 
-def _load_class(class_name: str):
-    """
-    Find and returns a class based on the fully qualified name.
-
-    A class name can be preceded with the string `class//` or `factory//`. This is used in YAML
-    files where the class is then instantiated on load.
-
-    Args:
-        class_name (str): a fully qualified name for the class
-    """
-    if class_name.startswith("class//"):
-        class_name = class_name[7:]
-    elif class_name.startswith("factory//"):
-        class_name = class_name[9:]
-
-    module_name, class_name = class_name.rsplit(".", 1)
-    module = importlib.import_module(module_name)
-    return getattr(module, class_name)
-
-
-def _load_csv(resource_name: str):
+# This is a replacement of the standard load_csv() function from the navdict package.
+def _load_csv(value: str, parent_location: Path | None, *args, **kwargs):
     """Find and return the content of a CSV file."""
-    from numpy import genfromtxt  # FIXME: use CSV standard module
+    from numpy import genfromtxt
 
-    parts = resource_name[5:].rsplit("/", 1)
+    parts = value.rsplit("/", 1)
     [in_dir, fn] = parts if len(parts) > 1 else [None, parts[0]]
-    conf_location = get_conf_data_location()
+
+    csv_location = get_resource_location(parent_location, in_dir)
+
     try:
-        csv_location = Path(conf_location) / in_dir / fn
-        content = genfromtxt(csv_location, delimiter=",", skip_header=1)
+        content = genfromtxt(csv_location / fn, delimiter=",", skip_header=1)
+    except FileNotFoundError as exc:
+        raise ValueError(f"Resource file not found: {value} in {csv_location}")
     except TypeError as exc:
-        raise ValueError(f"Couldn't load resource '{resource_name}' from default {conf_location=}") from exc
+        raise ValueError(f"Couldn't load resource '{value}' from {csv_location}") from exc
     return content
 
 
-def _load_int_enum(enum_name: str, enum_content):
-    """Dynamically build (and return) and IntEnum.
-
-    Args:
-        - enum_name: Enumeration name (potentially prepended with "int_enum//").
-        - enum_content: Content of the enumeration, as read from the setup.
-    """
-    if enum_name.startswith("int_enum//"):
-        enum_name = enum_name[10:]
-
-    definition = {}
-    for side_name, side_definition in enum_content.items():
-        if "alias" in side_definition:
-            aliases = side_definition["alias"]
-        else:
-            aliases = []
-        value = side_definition["value"]
-
-        definition[side_name] = value
-
-        for alias in aliases:
-            definition[alias] = value
-    return enum.IntEnum(enum_name, definition)
-
-
-def _load_yaml(resource_name: str):
-    """Find and return the content of a YAML file."""
-    from egse.settings import Settings
-    from egse.settings import SettingsError
-
-    parts = resource_name[6:].rsplit("/", 1)
-    [in_dir, fn] = parts if len(parts) > 1 else [None, parts[0]]
-    conf_location = get_conf_data_location()
-    try:
-        yaml_location = Path(conf_location) / in_dir
-        content = NavigableDict(Settings.load(location=yaml_location, filename=fn, add_local_settings=False))
-    except (TypeError, SettingsError) as exc:
-        raise ValueError(f"Couldn't load resource '{resource_name}' from default {conf_location=}") from exc
-    return content
-
-
-def _load_pandas(resource_name: str, separator: str):
+def _load_pandas(value: str, parent_location: Path | None, *args, **kwargs):
     """
     Find and return the content of the given file as a pandas DataFrame object.
 
@@ -251,15 +195,22 @@ def _load_pandas(resource_name: str, separator: str):
     """
     import pandas
 
-    parts = resource_name[8:].rsplit("/", 1)
+    parts = value.rsplit("/", 1)
     [in_dir, fn] = parts if len(parts) > 1 else [None, parts[0]]
-    conf_location = get_conf_data_location()
+
+    pandas_file_location = get_resource_location(parent_location, in_dir)
 
     try:
-        pandas_file_location = Path(conf_location) / in_dir / fn
-        return pandas.read_csv(pandas_file_location, sep=separator)
+        separator = kwargs["separator"]
+    except KeyError:
+        separator = ","
+
+    try:
+        return pandas.read_csv(pandas_file_location / fn, sep=separator)
+    except FileNotFoundError as exc:
+        raise ValueError(f"Resource file not found: {value} in {pandas_file_location}")
     except TypeError as exc:
-        raise ValueError(f"Couldn't load resource '{resource_name}' from default {conf_location=}") from exc
+        raise ValueError(f"Couldn't load resource '{value}' from {pandas_file_location}") from exc
 
 
 def _get_attribute(self, name, default):
@@ -357,310 +308,11 @@ def save_last_setup_id(setup_id: int | str, site_id: str = None):
         fd.write(f"{int(setup_id):d}")
 
 
-class NavigableDict(dict):
-    """
-    A NavigableDict is a dictionary where all keys in the original dictionary are also accessible
-    as attributes to the class instance. So, if the original dictionary (setup) has a key
-    "site_id" which is accessible as `setup['site_id']`, it will also be accessible as
-    `setup.site_id`.
+# Replace the default navdict `csv//` directive with one that uses numpy and returns a numpy array
+register_directive("csv", _load_csv)
 
-    Examples:
-        >>> setup = NavigableDict({'site_id': 'KU Leuven', 'version': "0.1.0"})
-        >>> assert setup['site_id'] == setup.site_id
-        >>> assert setup['version'] == setup.version
-
-    Note:
-        We always want **all** keys to be accessible as attributes, or none. That means all
-        keys of the original dictionary shall be of type `str`.
-
-    """
-
-    def __init__(self, head: dict = None, label: str = None):
-        """
-        Args:
-            head (dict): the original dictionary
-            label (str): a label or name that is used when printing the navdict
-        """
-        head = head or {}
-        super().__init__(head)
-        self.__dict__["_memoized"] = {}
-        self.__dict__["_label"] = label
-
-        # By agreement, we only want the keys to be set as attributes if all keys are strings.
-        # That way we enforce that always all keys are navigable, or none.
-
-        if any(True for k in head.keys() if not isinstance(k, str)):
-            return
-
-        for key, value in head.items():
-            if isinstance(value, dict):
-                setattr(self, key, NavigableDict(head.__getitem__(key)))
-            else:
-                setattr(self, key, head.__getitem__(key))
-
-    def add(self, key: str, value: Any):
-        """Set a value for the given key.
-
-        If the value is a dictionary, it will be converted into a NavigableDict and the keys
-        will become available as attributes provided that all the keys are strings.
-
-        Args:
-            key (str): the name of the key / attribute to access the value
-            value (Any): the value to assign to the key
-        """
-        if isinstance(value, dict) and not isinstance(value, NavigableDict):
-            value = NavigableDict(value)
-        setattr(self, key, value)
-
-    def clear(self) -> None:
-        for key in list(self.keys()):
-            self.__delitem__(key)
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}({super()!r})"
-
-    def __delitem__(self, key):
-        dict.__delitem__(self, key)
-        object.__delattr__(self, key)
-
-    def __setattr__(self, key, value):
-        # MODULE_LOGGER.info(f"called __setattr__({self!r}, {key}, {value})")
-        if isinstance(value, dict) and not isinstance(value, NavigableDict):
-            value = NavigableDict(value)
-        self.__dict__[key] = value
-        super().__setitem__(key, value)
-        try:
-            del self.__dict__["_memoized"][key]
-        except KeyError:
-            pass
-
-    def __getattribute__(self, key):
-        # MODULE_LOGGER.info(f"called __getattribute__({key})")
-        value = object.__getattribute__(self, key)
-        if isinstance(value, str) and value.startswith("class//"):
-            try:
-                dev_args = object.__getattribute__(self, "device_args")
-            except AttributeError:
-                dev_args = ()
-            return _load_class(value)(*dev_args)
-        if isinstance(value, str) and value.startswith("factory//"):
-            factory_args = _get_attribute(self, f"{key}_args", {})
-            return _load_class(value)().create(**factory_args)
-        if isinstance(value, str) and value.startswith("int_enum//"):
-            content = object.__getattribute__(self, "content")
-            return _load_int_enum(value, content)
-        if isinstance(value, str) and value.startswith("csv//"):
-            if key in self.__dict__["_memoized"]:
-                return self.__dict__["_memoized"][key]
-            content = _load_csv(value)
-            self.__dict__["_memoized"][key] = content
-            return content
-        if isinstance(value, str) and value.startswith("yaml//"):
-            if key in self.__dict__["_memoized"]:
-                return self.__dict__["_memoized"][key]
-            content = _load_yaml(value)
-            self.__dict__["_memoized"][key] = content
-            return content
-        if isinstance(value, str) and value.startswith("pandas//"):
-            separator = object.__getattribute__(self, "separator")
-            return _load_pandas(value, separator)
-        else:
-            return value
-
-    def __delattr__(self, item):
-        # MODULE_LOGGER.info(f"called __delattr__({self!r}, {item})")
-        object.__delattr__(self, item)
-        dict.__delitem__(self, item)
-
-    def __setitem__(self, key, value):
-        # MODULE_LOGGER.info(f"called __setitem__({self!r}, {key}, {value})")
-        if isinstance(value, dict) and not isinstance(value, NavigableDict):
-            value = NavigableDict(value)
-        super().__setitem__(key, value)
-        self.__dict__[key] = value
-        try:
-            del self.__dict__["_memoized"][key]
-        except KeyError:
-            pass
-
-    def __getitem__(self, key):
-        # MODULE_LOGGER.info(f"called __getitem__({self!r}, {key})")
-        value = super().__getitem__(key)
-        if isinstance(value, str) and value.startswith("class//"):
-            try:
-                dev_args = object.__getattribute__(self, "device_args")
-            except AttributeError:
-                dev_args = ()
-            return _load_class(value)(*dev_args)
-        if isinstance(value, str) and value.startswith("csv//"):
-            return _load_csv(value)
-        if isinstance(value, str) and value.startswith("int_enum//"):
-            content = object.__getattribute__(self, "content")
-            return _load_int_enum(value, content)
-        else:
-            return value
-
-    def set_private_attribute(self, key: str, value: Any) -> None:
-        """Sets a private attribute for this object.
-
-        The name in key will be accessible as an attribute for this object, but the key will not
-        be added to the dictionary and not be returned by methods like keys().
-
-        The idea behind this private attribute is to have the possibility to add status information
-        or identifiers to this classes object that can be used by save() or load() methods.
-
-        Args:
-            key (str): the name of the private attribute (must start with an underscore character).
-            value: the value for this private attribute
-
-        Examples:
-            >>> setup = NavigableDict({'a': 1, 'b': 2, 'c': 3})
-            >>> setup.set_private_attribute("_loaded_from_dict", True)
-            >>> assert "c" in setup
-            >>> assert "_loaded_from_dict" not in setup
-            >>> assert setup.get_private_attribute("_loaded_from_dict") == True
-
-        """
-        if key in self:
-            raise ValueError(f"Invalid argument key='{key}', this key already exists in dictionary.")
-        if not key.startswith("_"):
-            raise ValueError(f"Invalid argument key='{key}', must start with underscore character '_'.")
-        self.__dict__[key] = value
-
-    def get_private_attribute(self, key: str) -> Any:
-        """Returns the value of the given private attribute.
-
-        Args:
-            key (str): the name of the private attribute (must start with an underscore character).
-
-        Returns:
-            the value of the private attribute given in `key`.
-
-        Note:
-            Because of the implementation, this private attribute can also be accessed as a 'normal'
-            attribute of the object. This use is however discouraged as it will make your code less
-            understandable. Use the methods to access these 'private' attributes.
-        """
-        if not key.startswith("_"):
-            raise ValueError(f"Invalid argument key='{key}', must start with underscore character '_'.")
-        return self.__dict__[key]
-
-    def has_private_attribute(self, key):
-        """
-        Check if the given key is defined as a private attribute.
-
-        Args:
-            key (str): the name of a private attribute (must start with an underscore)
-        Returns:
-            True if the given key is a known private attribute.
-        Raises:
-            ValueError: when the key doesn't start with an underscore.
-        """
-        if not key.startswith("_"):
-            raise ValueError(f"Invalid argument key='{key}', must start with underscore character '_'.")
-
-        try:
-            _ = self.__dict__[key]
-            return True
-        except KeyError:
-            return False
-
-    def get_raw_value(self, key):
-        """
-        Returns the raw value of the given key.
-
-        Some keys have special values that are interpreted by the AtributeDict class. An example is
-        a value that starts with 'class//'. When you access these values, they are first converted
-        from their raw value into their expected value, e.g. the instantiated object in the above
-        example. This method allows you to access the raw value before conversion.
-        """
-        try:
-            return object.__getattribute__(self, key)
-        except AttributeError:
-            raise KeyError(f"The key '{key}' is not defined.")
-
-    def __str__(self):
-        return self.pretty_str()
-
-    def pretty_str(self, indent: int = 0):
-        """
-        Returns a pretty string representation of the dictionary.
-
-        Args:
-            indent (int): number of indentations (of four spaces)
-
-        Note:
-            The indent argument is intended for the recursive call of this function.
-        """
-        msg = ""
-
-        for k, v in self.items():
-            if isinstance(v, NavigableDict):
-                msg += f"{'    ' * indent}{k}:\n"
-                msg += v.pretty_str(indent + 1)
-            else:
-                msg += f"{'    ' * indent}{k}: {v}\n"
-
-        return msg
-
-    def __rich__(self) -> Tree:
-        tree = Tree(self.__dict__["_label"] or "NavigableDict", guide_style="dim")
-        walk_dict_tree(self, tree, text_style="dark grey")
-        return tree
-
-    def _save(self, fd, indent: int = 0):
-        """
-        Recursive method to write the dictionary to the file descriptor.
-
-        Indentation is done in steps of four spaces, i.e. `'    '*indent`.
-
-        Args:
-            fd: a file descriptor as returned by the open() function
-            indent (int): indentation level of each line [default = 0]
-
-        """
-        from egse.device import DeviceInterface
-
-        # Note that the .items() method returns the actual values of the keys and doesn't use the
-        # __getattribute__ or __getitem__ methods. So the raw value is returned and not the
-        # _processed_ value.
-
-        for k, v in self.items():
-            # history shall be saved last, skip it for now
-
-            if k == "history":
-                continue
-
-            # make sure to escape a colon in the key name
-
-            if isinstance(k, str) and ":" in k:
-                k = '"' + k + '"'
-
-            if isinstance(v, NavigableDict):
-                fd.write(f"{'    ' * indent}{k}:\n")
-                v._save(fd, indent + 1)
-                fd.flush()
-                continue
-
-            if isinstance(v, DeviceInterface):
-                v = f"class//{v.__module__}.{v.__class__.__name__}"
-            if isinstance(v, float):
-                v = f"{v:.6E}"
-            fd.write(f"{'    ' * indent}{k}: {v}\n")
-            fd.flush()
-
-        # now save the history as the last item
-
-        if "history" in self:
-            fd.write(f"{'    ' * indent}history:\n")
-            self.history._save(fd, indent + 1)
-
-    def get_memoized_keys(self):
-        return list(self.__dict__["_memoized"].keys())
-
-
-navdict = NavigableDict  # noqa: ignore typo
-"""Shortcut for NavigableDict and more Pythonic."""
+# Register the navdict `pandas//` directive
+register_directive("pandas", _load_pandas)
 
 
 class Setup(NavigableDict):
@@ -668,21 +320,11 @@ class Setup(NavigableDict):
     test setup and the Camera Under Test (CUT)."""
 
     def __init__(self, nav_dict: NavigableDict | dict = None, label: str = None):
-        super().__init__(nav_dict or {}, label=label)
-
-    @staticmethod
-    def from_dict(my_dict):
-        """Create a Setup from a given dictionary.
-
-        Remember that all keys in the given dictionary shall be of type 'str' in order to be
-        accessible as attributes.
-
-        Examples:
-            >>> setup = Setup.from_dict({"ID": "my-setup-001", "version": "0.1.0"})
-            >>> assert setup["ID"] == setup.ID == "my-setup-001"
-
-        """
-        return Setup(my_dict, label="Setup")
+        try:
+            _filename = nav_dict.get_private_attribute("_filename")
+        except AttributeError:
+            _filename = None
+        super().__init__(nav_dict or {}, label=label, _filename=_filename)
 
     @staticmethod
     def from_yaml_string(yaml_content: str = None) -> Setup:
@@ -700,7 +342,7 @@ class Setup(NavigableDict):
         if not yaml_content:
             raise ValueError("Invalid argument to function: No input string or None given.")
 
-        setup_dict = yaml.safe_load(yaml_content)
+        setup_dict = navdict.from_yaml_string(yaml_content)
 
         if "Setup" in setup_dict:
             setup_dict = setup_dict["Setup"]
@@ -709,12 +351,11 @@ class Setup(NavigableDict):
 
     @staticmethod
     @lru_cache(maxsize=300)
-    def from_yaml_file(filename: Union[str, Path] = None, add_local_settings: bool = True) -> Setup:
+    def from_yaml_file(filename: Union[str, Path] = None) -> Setup:
         """Loads a Setup from the given YAML file.
 
         Args:
             filename (str): the path of the YAML file to be loaded
-            add_local_settings (bool): if local settings shall be loaded and override the settings from the YAML file.
 
         Returns:
             a Setup that was loaded from the given location.
@@ -723,29 +364,22 @@ class Setup(NavigableDict):
             ValueError: when no filename is given.
         """
 
-        if not filename:
-            raise ValueError("Invalid argument to function: No filename or None given.")
-
-        # MODULE_LOGGER.info(f"Loading {filename}...")
-
-        setup_dict = read_configuration_file(filename, force=True)
-        if setup_dict == {}:
-            warnings.warn(f"Empty Setup file: {filename!s}")
+        setup_navdict = navdict.from_yaml_file(filename)
 
         try:
-            setup_dict = setup_dict["Setup"]
+            setup_navdict = setup_navdict["Setup"]
         except KeyError:
-            warnings.warn(f"Setup file doesn't have a 'Setup' group: {filename!s}")
+            warnings.warn(f"Setup file doesn't have a top-level 'Setup' group: {filename!s}")
 
-        setup = Setup(setup_dict, label="Setup")
-        setup.set_private_attribute("_filename", Path(filename))
         if setup_id := _parse_filename_for_setup_id(str(filename)):
-            setup.set_private_attribute("_setup_id", setup_id)
+            setup_navdict.set_private_attribute("_setup_id", setup_id)
+
+        setup = Setup(setup_navdict, label="Setup")
 
         return setup
 
-    def to_yaml_file(self, filename=None):
-        """Saves a NavigableDict to a YAML file.
+    def to_yaml_file(self, filename: str | Path | None = None, header: str = None, top_level_group: str = None) -> None:
+        """Saves a Setup to a YAML file.
 
         When no filename is provided, this method will look for a 'private' attribute
         `_filename` and use that to save the data.
@@ -758,22 +392,19 @@ class Setup(NavigableDict):
             lose proper formatting and/or comments.
 
         """
-        if not filename:
-            try:
-                filename = self.get_private_attribute("_filename")
-            except KeyError:
-                raise ValueError("No filename given or known, can not save Setup.")
 
-        print(f"Saving Setup to {filename!s}")
+        header = textwrap.dedent(
+            f"""
+            # This Setup file is generated by:
+            #
+            #    Setup.to_yaml_file(setup, filename="{filename}')
+            #
+            # Created on {format_datetime()}
 
-        with Path(filename).open("w") as fd:
-            fd.write(f"# Setup generated by:\n#\n#    Setup.to_yaml_file(setup, filename='{filename}')\n#\n")
-            fd.write(f"# Created on {format_datetime()}\n\n")
-            fd.write("Setup:\n")
+            """
+        )
 
-            self._save(fd, indent=1)
-
-        self.set_private_attribute("_filename", Path(filename))
+        super().to_yaml_file(filename, header, "Setup")
 
     @staticmethod
     def compare(setup_1: NavigableDict, setup_2: NavigableDict):

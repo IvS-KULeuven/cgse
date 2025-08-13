@@ -1,5 +1,6 @@
 import datetime
 import logging
+import os
 import pickle
 import textwrap
 from dataclasses import dataclass
@@ -9,6 +10,7 @@ import numpy as np
 import pytest
 import rich
 import yaml
+from navdict import NavigableDict
 
 from egse.device import DeviceInterface
 from egse.env import env_var
@@ -16,9 +18,8 @@ from egse.env import get_conf_data_location
 from egse.env import get_conf_data_location_env_name
 from egse.env import get_conf_repo_location_env_name
 from egse.env import print_env
+from egse.env import initialize as initialize_env
 from egse.env import set_conf_repo_location
-from egse.settings import SettingsError
-from egse.setup import NavigableDict
 from egse.setup import Setup
 from egse.setup import get_last_setup_id_file_path
 from egse.setup import get_path_of_setup_file
@@ -229,9 +230,7 @@ def test_setup():
 def test_setup_from_yaml():
     """Perform some basic tests on data from the setup.yaml test data file."""
 
-    setup = Setup.from_yaml_file(
-        filename=TEST_LOCATION / "data/conf/SETUP_20250114_1519.yaml", add_local_settings=False
-    )
+    setup = Setup.from_yaml_file(filename=TEST_LOCATION / "data/conf/SETUP_20250114_1519.yaml")
 
     assert setup.site_id == "HOME"
     assert setup.creation_date == datetime.date(2025, 1, 14)
@@ -254,7 +253,7 @@ def test_from_yaml_exceptions():
     with pytest.raises(ValueError):
         Setup.from_yaml_file(None)
 
-    with pytest.raises(SettingsError):
+    with pytest.raises(IOError):
         Setup.from_yaml_file(__file__)
 
 
@@ -276,9 +275,7 @@ def test_setup_from_dict():
 def test_setup_set():
     """Test that new keys can be added to an existing Setup."""
 
-    setup = Setup.from_yaml_file(
-        filename=TEST_LOCATION / "data/conf/SETUP_20250114_1519.yaml", add_local_settings=False
-    )
+    setup = Setup.from_yaml_file(filename=TEST_LOCATION / "data/conf/SETUP_20250114_1519.yaml")
 
     setup.cal = navdict({"sma": {"h": None}})
 
@@ -373,7 +370,6 @@ def test_attr_dict_set_dict():
     assert n["ascii_table"]
 
     print(n.ascii_table)
-    print(n.pretty_str())
 
     assert n.ascii_table["a"] == "0x61"
 
@@ -427,12 +423,6 @@ def test_pretty_print():
 
     assert "NavigableDict" in repr(n)
     assert "NavigableDict" not in str(n)
-    assert "NavigableDict" not in n.pretty_str()
-
-    assert len(n.pretty_str().split("\n")) == 8
-
-    print()
-    print(n.pretty_str())
 
 
 def test_deletion():
@@ -554,7 +544,7 @@ def test_save_to_yaml():
 
     # Reload the saved Setup
 
-    saved_setup = Setup.from_yaml_file(filename=saved_setup_name, add_local_settings=False)
+    saved_setup = Setup.from_yaml_file(filename=saved_setup_name)
 
     deep_diff = Setup.compare(orig_setup, saved_setup)
 
@@ -574,6 +564,8 @@ def test_save_to_yaml():
 def test_save_to_yaml_exception():
     setup = Setup({"a": 1, "b": 2, "c": {"d": 4, "e": 5}})
 
+    # This is a Setup without a `_filename` attribute, so it will raise a ValueError
+
     with pytest.raises(ValueError):
         setup.to_yaml_file()
 
@@ -586,13 +578,14 @@ def test_lazy_load_value_from_yaml(default_test_setup):
       file identifier.
     """
 
+    initialize_env()
     print_env()
 
     Setup.from_yaml_file.cache_clear()  # needed because the same file is used elsewhere
 
     setup_path = default_test_setup.setup_path
 
-    orig_setup = Setup.from_yaml_file(setup_path, add_local_settings=False)
+    orig_setup = Setup.from_yaml_file(setup_path)
 
     # Save a file as a CVS file and add the file identifier to a key in the Setup
 
@@ -627,7 +620,7 @@ def test_pickling(default_test_setup, default_csv_test_data):
 
     setup_path = default_test_setup.setup_path
 
-    orig_setup = Setup.from_yaml_file(setup_path, add_local_settings=False)
+    orig_setup = Setup.from_yaml_file(setup_path)
 
     xx = pickle.dumps(orig_setup)
     yy = pickle.loads(xx)
@@ -642,7 +635,7 @@ def test_raw_value(default_test_setup, default_csv_test_data):
     Setup.from_yaml_file.cache_clear()  # needed because the same file is used elsewhere
 
     setup_path = default_test_setup.setup_path
-    orig_setup = Setup.from_yaml_file(setup_path, add_local_settings=False)
+    orig_setup = Setup.from_yaml_file(setup_path)
 
     assert orig_setup.get_raw_value("site_id") == "KUL"
     assert isinstance(orig_setup.get_raw_value("data_types"), NavigableDict)
@@ -714,6 +707,8 @@ Setup:
 def test_load_yaml_for_a_field(default_yaml_calibration_data):
     setup = Setup.from_yaml_string(SETUP_YAML_FOR_FIELD)
 
+    os.environ["NAVDICT_DEFAULT_RESOURCE_LOCATION"] = str(default_yaml_calibration_data.data_path.parent.parent)
+
     assert setup.gse.get_raw_value("calibration").startswith("yaml//")
     assert setup.gse.get_memoized_keys() == []
     assert setup.gse.calibration.cal_2.coefficients[1] == 24.5
@@ -751,9 +746,11 @@ def test_yaml_file_for_field_not_found():
 
     setup = Setup.from_yaml_string(SETUP_YAML_FOR_FIELD)
 
+    os.environ["NAVDICT_DEFAULT_RESOURCE_LOCATION"] = "."
+
     assert setup.gse.get_raw_value("non_existing_yaml").startswith("yaml//")
 
-    with pytest.raises(ValueError) as ve:
+    with pytest.raises(FileNotFoundError) as ve:
         _ = setup.gse.non_existing_yaml
 
     rich.print(ve.value)
@@ -764,14 +761,16 @@ def test_yaml_file_for_field_not_loaded():
 
     setup = Setup.from_yaml_string(SETUP_YAML_FOR_FIELD)
 
+    os.environ["NAVDICT_DEFAULT_RESOURCE_LOCATION"] = str(Path(__file__).parent / "data")
+
     assert setup.gse.get_raw_value("corrupt_yaml").startswith("yaml//")
 
-    with pytest.raises(ValueError) as ve:
+    with pytest.raises(IOError) as ve:
         _ = setup.gse.corrupt_yaml
 
     rich.print(ve.value)
 
-    assert "Couldn't load resource" in ve.value.args[0]
+    assert "A error occurred while scanning the YAML file" in ve.value.args[0]
 
 
 def test_saving_setup_with_yaml_and_csv_resources(default_csv_calibration_data):

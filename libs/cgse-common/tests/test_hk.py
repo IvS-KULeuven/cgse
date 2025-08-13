@@ -1,4 +1,5 @@
 import datetime
+import os
 import textwrap
 from pathlib import Path
 
@@ -9,7 +10,6 @@ from egse.hk import get_housekeeping
 from egse.setup import Setup
 from egse.system import EPOCH_1958_1970
 from egse.system import format_datetime
-
 from fixtures.helpers import create_text_file
 
 HERE = Path(__file__).parent
@@ -32,18 +32,12 @@ def test_get_housekeeping(default_env):
 
     create_text_file(
         tm_dictionary_path,
-        textwrap.dedent(
-            """\
-        TM source;Storage mnemonic;CAM EGSE mnemonic;Original name in EGSE;Name of corresponding timestamp;\
-        Origin of synoptics at CSL;Origin of synoptics at CSL1;Origin of synoptics at CSL2;\
-        Origin of synoptics at SRON;Origin of synoptics at IAS;Origin of synoptics at INTA;\
-        Description;MON screen;unit cal1;offset b cal1;slope a cal1;calibration function;\
-        MAX nonops;MIN nonops;MAX ops;MIN ops;Comment
-
-        Unit Test Manager;DAQ-TM;TEMP_ABC_001;ABC_001;timestamp;;;;;;;Temperature of ABC;;;;;;;;;;
-
-        """
-        ),
+        "TM source;Storage mnemonic;CAM EGSE mnemonic;Original name in EGSE;Name of corresponding timestamp;"
+        "Origin of synoptics at CSL;Origin of synoptics at CSL1;Origin of synoptics at CSL2;"
+        "Origin of synoptics at SRON;Origin of synoptics at IAS;Origin of synoptics at INTA;"
+        "Description;MON screen;unit cal1;offset b cal1;slope a cal1;calibration function;"
+        "MAX nonops;MIN nonops;MAX ops;MIN ops;Comment\n"
+        "Unit Test Manager;DAQ-TM;TEMP_ABC_001;ABC_001;timestamp;;;;;;;Temperature of ABC;;;;;;;;;;\n",
         create_folder=True,
     )
 
@@ -61,16 +55,19 @@ def test_get_housekeeping(default_env):
         create_folder=True,
     )
 
-    # The TM dictionary will be loaded relative from the configuration data location as defined by
-    # `get_conf_data_location()` (the latter being defined from the data storage location which is defined
-    # in `default_env`).
+    # The TM dictionary will be loaded relative from the location of the Setup YAML file.
+    # Since we read the Setup from a string, there is no location and the dictionary will
+    # be loaded from the default resource location or from the current working directory '.'.
+
+    os.environ["NAVDICT_DEFAULT_RESOURCE_LOCATION"] = str(data_dir)
 
     setup = Setup.from_yaml_string(
         textwrap.dedent(
             """
             telemetry:
-                dictionary: pandas//../../common/telemetry/tm-dictionary.csv
-                separator: ;
+                dictionary: pandas//../common/telemetry/tm-dictionary.csv
+                dictionary_kwargs:
+                    separator: ;
             """
         )
     )
@@ -89,11 +86,12 @@ def test_get_housekeeping(default_env):
         assert format_datetime(dt, fmt="%Y-%m-%d").startswith(today_with_dash)
 
     finally:
+        ...
         # Get rid of the CSV file
-        hk_path.unlink()
+        # hk_path.unlink()
 
         # Get rid of the tm dictionary file
-        tm_dictionary_path.unlink()
+        # tm_dictionary_path.unlink()
 
 
 def test_convert_hk_names():
