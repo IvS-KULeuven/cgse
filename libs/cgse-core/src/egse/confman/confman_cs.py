@@ -122,7 +122,7 @@ class ConfigurationManagerControlServer(ControlServer):
 
 
 app_name = "cm_cs"
-app = typer.Typer(name=app_name, no_args_is_help=True)
+app = typer.Typer(name=app_name)
 
 
 @app.command()
