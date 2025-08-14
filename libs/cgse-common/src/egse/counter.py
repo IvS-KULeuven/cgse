@@ -2,8 +2,6 @@
 This module manages files that have a counter in their filename.
 """
 
-from __future__ import annotations
-
 __all__ = [
     "counter_exists",
     "counter_filename",
@@ -11,12 +9,10 @@ __all__ = [
     "new_counter",
 ]
 
-import logging
 from pathlib import Path
 
 from egse.config import find_files
-
-_LOGGER = logging.getLogger(__name__)
+from egse.log import logger
 
 
 def counter_filename(location: Path, filename: Path | str) -> Path:
@@ -133,7 +129,7 @@ def get_next_counter(filename: Path) -> int:
     return counter
 
 
-def determine_counter_from_dir_list(location: str, pattern: str, index: int = -1) -> int:
+def determine_counter_from_dir_list(location: Path | str, pattern: str, index: int = -1) -> int:
     """
     Determine counter for a new file at the given location and with the given pattern.
     The next counter is determined from the sorted list of files that match the given pattern.
@@ -170,9 +166,9 @@ def determine_counter_from_dir_list(location: str, pattern: str, index: int = -1
         #  <anything here>_counter>.<extension>
 
         counter = int(parts[index].split(".")[0]) + 1
-        _LOGGER.debug(f"{counter = }")
+        logger.debug(f"{counter = }")
         return counter
 
     except ValueError:
-        _LOGGER.warning("ValueError", exc_info=True)
+        logger.warning("ValueError", exc_info=True)
         return 1

@@ -3,19 +3,15 @@ This module provides convenience functions to properly configure the CGSE
 and to find paths and resources.
 """
 
-from __future__ import annotations
-
 import fnmatch
-import logging
 import os
 from pathlib import Path
 from pathlib import PurePath
 from typing import Generator
-from typing import List
 from typing import Tuple
 from typing import Union
 
-logger = logging.getLogger(__name__)
+from egse.log import logger
 
 
 def find_first_occurrence_of_dir(pattern: str, root: Path | str) -> Path | None:
@@ -242,19 +238,6 @@ def find_root(
         prev, test = test, test.parent
 
     return Path(default) if default is not None else None
-
-
-def set_logger_levels(logger_levels: List[Tuple[str, str]] = None) -> None:
-    """
-    Set the logging level for the given loggers.
-
-    Args:
-        logger_levels: a list of tuples of logger names and logger levels/
-    """
-    logger_levels = logger_levels or []
-
-    for name, level in logger_levels:
-        logging.getLogger(name).setLevel(level)
 
 
 class WorkingDirectory:
