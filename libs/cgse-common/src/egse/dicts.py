@@ -9,14 +9,14 @@ __all__ = [
 ]
 import logging
 
-from egse.system import capture_rich_output
-from egse.system import flatten_dict
 from rich.table import Table
 
-logger = logging.getLogger(__name__)
+from egse.log import logger
+from egse.system import capture_rich_output
+from egse.system import flatten_dict
 
 
-def log_differences(dict_1, dict_2):
+def log_differences(dict_1, dict_2, log_level: int = logging.INFO):
     """
     Takes two flattened dictionaries and compares them. This function only compares those
     keys that are common to both dictionaries. The key-value pairs that are unique to one
@@ -49,13 +49,15 @@ def log_differences(dict_1, dict_2):
         for name in sorted(mismatched):
             table.add_row(name, str(dict_1[name]), str(dict_2[name]))
 
-        logger.info(capture_rich_output(table))
-        # rich.print(table)
+        logger.log(log_level, capture_rich_output(table))
     else:
-        logger.info(f"No differences between the two flattened dictionaries, {len(all_keys)} values compared.")
+        logger.log(
+            log_level,
+            f"No differences between the two flattened dictionaries, {len(all_keys)} values compared."
+        )
 
 
-def log_key_differences(dict_1, dict_2):
+def log_key_differences(dict_1, dict_2, log_level: int = logging.INFO):
     """
     Takes two dictionaries and compares the top-level keys. The differences are logged in a Rich Table at level=INFO.
     Keys that are present on both dictionaries are not logged.
@@ -81,7 +83,7 @@ def log_key_differences(dict_1, dict_2):
     not_in_s1 = s2 - s1
 
     if not not_in_s1 and not not_in_s2:
-        logger.info("Both dictionaries contains the same keys.")
+        logger.log(log_level, "Both dictionaries contains the same keys.")
 
     table = Table("Dictionary 1", "Dictionary 2", title="Key differences", title_justify="left")
 
@@ -91,12 +93,12 @@ def log_key_differences(dict_1, dict_2):
     for key in not_in_s1:
         table.add_row("", str(key))
 
-    logger.info(capture_rich_output(table))
+    logger.log(log_level, capture_rich_output(table))
 
 
 if __name__ == "__main__":
 
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
 
     d1 = {
         "A": 1,
@@ -116,7 +118,7 @@ if __name__ == "__main__":
         "C": 3,
     }
 
-    log_differences(d1, d2)
-    log_key_differences(d1, d2)
+    log_differences(d1, d2, logging.DEBUG)
+    log_key_differences(d1, d2, logging.DEBUG)
 
-    log_differences(d1, d3)
+    log_differences(d1, d3, logging.DEBUG)
