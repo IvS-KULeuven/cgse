@@ -5,23 +5,15 @@ and to find paths and resources.
 
 from __future__ import annotations
 
-import errno
 import fnmatch
 import logging
 import os
-from functools import lru_cache
-from os.path import exists
-from os.path import join
 from pathlib import Path
 from pathlib import PurePath
+from typing import Generator
 from typing import List
-from typing import Optional
 from typing import Tuple
 from typing import Union
-from typing import Generator
-
-import git
-from egse.decorators import deprecate
 
 _logger = logging.getLogger(__name__)
 
