@@ -15,7 +15,7 @@ from typing import List
 from typing import Tuple
 from typing import Union
 
-_logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def find_first_occurrence_of_dir(pattern: str, root: Path | str) -> Path | None:
@@ -244,16 +244,17 @@ def find_root(
     return Path(default) if default is not None else None
 
 
-def set_logger_levels(logger_levels: List[Tuple] = None):
+def set_logger_levels(logger_levels: List[Tuple[str, str]] = None) -> None:
     """
     Set the logging level for the given loggers.
 
+    Args:
+        logger_levels: a list of tuples of logger names and logger levels/
     """
     logger_levels = logger_levels or []
 
     for name, level in logger_levels:
-        a_logger = logging.getLogger(name)
-        a_logger.setLevel(level)
+        logging.getLogger(name).setLevel(level)
 
 
 class WorkingDirectory:
@@ -293,7 +294,7 @@ class WorkingDirectory:
         try:
             os.chdir(self._current_dir)
         except OSError as exc:
-            _logger.warning(f"Change back to previous directory failed: {exc}")
+            logger.warning(f"Change back to previous directory failed: {exc}")
 
     @property
     def path(self):
