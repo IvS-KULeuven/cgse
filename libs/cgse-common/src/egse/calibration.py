@@ -5,8 +5,8 @@ This module provides functions to calibrate sensor values.
 from __future__ import annotations
 
 import numpy as np
-
-from egse.setup import navdict, Setup, SetupError
+from navdict import navdict
+from egse.setup import Setup, SetupError
 
 
 def apply_gain_offset(counts: float, gain: float, offset: float) -> float:
