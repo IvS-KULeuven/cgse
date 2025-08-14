@@ -13,7 +13,7 @@ from egse.system import capture_rich_output
 from egse.system import flatten_dict
 from rich.table import Table
 
-LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def log_differences(dict_1, dict_2):
@@ -49,10 +49,10 @@ def log_differences(dict_1, dict_2):
         for name in sorted(mismatched):
             table.add_row(name, str(dict_1[name]), str(dict_2[name]))
 
-        LOGGER.info(capture_rich_output(table))
+        logger.info(capture_rich_output(table))
         # rich.print(table)
     else:
-        LOGGER.info(f"No differences between the two flattened dictionaries, {len(all_keys)} values compared.")
+        logger.info(f"No differences between the two flattened dictionaries, {len(all_keys)} values compared.")
 
 
 def log_key_differences(dict_1, dict_2):
@@ -81,7 +81,7 @@ def log_key_differences(dict_1, dict_2):
     not_in_s1 = s2 - s1
 
     if not not_in_s1 and not not_in_s2:
-        LOGGER.info("Both dictionaries contains the same keys.")
+        logger.info("Both dictionaries contains the same keys.")
 
     table = Table("Dictionary 1", "Dictionary 2", title="Key differences", title_justify="left")
 
@@ -91,11 +91,12 @@ def log_key_differences(dict_1, dict_2):
     for key in not_in_s1:
         table.add_row("", str(key))
 
-    LOGGER.info(capture_rich_output(table))
+    logger.info(capture_rich_output(table))
 
 
 if __name__ == "__main__":
-    import egse.logger  # noqa activates the logger
+
+    logging.basicConfig(level=logging.INFO)
 
     d1 = {
         "A": 1,
