@@ -11,7 +11,6 @@ __all__ = [
 ]
 
 import importlib.util
-import logging
 import os
 import sys
 import textwrap
@@ -20,6 +19,10 @@ import types
 from functools import lru_cache
 from pathlib import Path
 
+import click
+import rich
+
+from egse.log import logger
 from egse.system import type_name
 
 if sys.version_info >= (3, 12):  # Use the standard library version (Python 3.10+)
@@ -30,10 +33,7 @@ else:
     from importlib_metadata import entry_points as lib_entry_points
     from importlib_metadata import EntryPoint
 
-import click
-import rich
 
-logger = logging.getLogger(__name__)
 HERE = Path(__file__).parent
 
 

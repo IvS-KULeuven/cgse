@@ -19,7 +19,6 @@ __all__ = [
 
 import abc
 import inspect
-import logging
 import pickle
 import types
 from typing import Any
@@ -33,10 +32,9 @@ from egse.command import CommandExecution
 from egse.control import ControlServer
 from egse.decorators import deprecate
 from egse.device import DeviceConnectionObserver
+from egse.log import logger
 from egse.response import Failure
 from egse.system import format_datetime
-
-logger = logging.getLogger(__name__)
 
 # Define some metrics for Prometheus
 

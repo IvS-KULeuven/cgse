@@ -6,24 +6,6 @@ Warning:
     Be careful, some of the Mixin classes require certain attributes to be defined in the
     outer subclass. Read the docstrings carefully to understand what is needed.
 """
-
-import contextlib
-import enum
-import functools
-import inspect
-import logging
-import string
-from typing import Callable
-from typing import Dict
-
-from egse.command import ClientServerCommand
-from egse.command import CommandError
-from egse.command import CommandExecution
-from egse.protocol import DynamicCommandProtocol
-from egse.protocol import get_function
-
-LOGGER = logging.getLogger(__name__)
-
 __all__ = [
     "CommandType",
     "DynamicCommandMixin",
@@ -33,6 +15,20 @@ __all__ = [
     "add_lf",
     "dynamic_command",
 ]
+import contextlib
+import enum
+import functools
+import inspect
+import string
+from typing import Callable
+from typing import Dict
+
+from egse.command import ClientServerCommand
+from egse.command import CommandError
+from egse.command import CommandExecution
+from egse.log import logger
+from egse.protocol import DynamicCommandProtocol
+from egse.protocol import get_function
 
 # ----- Mixin for dynamic commanding ---------------------------------------------------------------
 
@@ -447,7 +443,7 @@ class DynamicClientCommandMixin:
             try:
                 inspect.signature(attr).bind(*args, **kwargs)
             except TypeError as exc:
-                LOGGER.error(f"Arguments do not match the signature of the function '{attr_name}': {exc}")
+                logger.error(f"Arguments do not match the signature of the function '{attr_name}': {exc}")
                 return None
 
             # Create a command execution to pass the commanded function and the given arguments

@@ -10,7 +10,6 @@ __all__ = [
 ]
 import csv
 import datetime
-import logging
 from enum import Enum
 from pathlib import Path
 from typing import Optional
@@ -19,9 +18,11 @@ from typing import Union
 import dateutil.parser as date_parser
 import numpy as np
 import pandas as pd
+
 from egse.config import find_files
 from egse.env import get_data_storage_location
 from egse.env import get_site_id
+from egse.log import logger
 from egse.obsid import ObservationIdentifier
 from egse.obsid import obsid_from_storage
 from egse.setup import Setup
@@ -32,8 +33,6 @@ from egse.system import read_last_line
 from egse.system import read_last_lines
 from egse.system import str_to_datetime
 from egse.system import time_since_epoch_1958
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class TmDictionaryColumns(str, Enum):
@@ -438,7 +437,7 @@ def _get_housekeeping_daily(hk_name: str, data_dir, time_window: int = None, set
         # (those will have to be read entirely)
 
         else:
-            _LOGGER.warning(f"No HK available for {origin} on {start_time.day}/{start_time.month}/{start_time.year}")
+            logger.warning(f"No HK available for {origin} on {start_time.day}/{start_time.month}/{start_time.year}")
 
         day = (start_time + datetime.timedelta(days=1)).date()  # The day after the first day
         last_day = datetime.date(now.year, now.month, now.day)  # Today
@@ -463,7 +462,7 @@ def _get_housekeeping_daily(hk_name: str, data_dir, time_window: int = None, set
                         hk_array = np.append(hk_array, row[hk_index])
 
             else:
-                _LOGGER.warning(f"No HK available for {origin} on {day.day}/{day.month}/{day.year}")
+                logger.warning(f"No HK available for {origin} on {day.day}/{day.month}/{day.year}")
 
             day += datetime.timedelta(days=1)
 
@@ -673,7 +672,7 @@ def read_conversion_dict(storage_mnemonic: str, use_site: bool = False, setup: O
 
     else:
         if len(original_name_col) != len(correct_name_col):
-            _LOGGER.error(
+            logger.error(
                 f"Name columns in TM dictionary have different length: "
                 f"{len(original_name_col)} != {len(correct_name_col)}"
             )

@@ -5,7 +5,6 @@ __all__ = [
 ]
 
 import json
-import logging
 import os
 import queue
 import tempfile
@@ -13,9 +12,8 @@ import threading
 import time
 from pathlib import Path
 
+from egse.log import logger
 from egse.system import format_datetime
-
-logger = logging.getLogger("egse.signal")
 
 DEFAULT_SIGNAL_DIR = "/tmp/cgse_signals"
 
