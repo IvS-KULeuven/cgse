@@ -29,13 +29,14 @@ import traceback
 
 import zmq
 
+from egse.log import LOG_FORMAT_FULL
+from egse.log import logger
 from egse.registry.client import RegistryClient
 from egse.settings import Settings
 from egse.system import is_in_ipython
 
 CTRL_SETTINGS = Settings.load("Logging Control Server")
 
-LOG_FORMAT_FULL = "%(asctime)23s:%(processName)20s:%(levelname)8s:%(name)-25s:%(lineno)5d:%(filename)-20s:%(message)s"
 
 LOGGER_ID = "LOGGER"
 """The logger id that is also used as service_tpe for service discovery."""
@@ -44,8 +45,6 @@ logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT_FULL)
 
 root_logger = logging.getLogger()
 egse_logger = logging.getLogger("egse")
-
-logger = logging.getLogger("egse.logger")
 
 _initialised = False  # will be set to True in the setup_logging() function
 

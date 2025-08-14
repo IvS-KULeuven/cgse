@@ -22,9 +22,8 @@ from typing import List
 from typing import Type
 
 from egse.decorators import dynamic_interface
+from egse.log import logger
 from egse.system import Timer
-
-LOGGER = logging.getLogger(__name__)
 
 
 class EVENT_ID(IntEnum):  # noqa
@@ -162,7 +161,7 @@ class Listeners:
             object to process the event.
         """
 
-        LOGGER.debug(f"Notifying listeners {self.get_listener_names()}")
+        logger.debug(f"Notifying listeners {self.get_listener_names()}")
 
         for name, listener in self._listeners.items():
             self.notify_listener(name, listener, event)
@@ -180,7 +179,7 @@ class Listeners:
         with Timer(f"Notify listener {name}", log_level=logging.DEBUG), proxy() as pobj:
             rc = pobj.handle_event(event)
 
-        LOGGER.debug(f"Listener {name} returned {rc=}")
+        logger.debug(f"Listener {name} returned {rc=}")
 
     def get_listener_names(self) -> List[str]:
         """Returns a list with the names of the registered listeners."""

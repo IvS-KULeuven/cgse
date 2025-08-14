@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import socket
 from typing import Any
 from typing import Dict
@@ -9,8 +8,7 @@ from egse.device import AsyncDeviceTransport
 from egse.device import DeviceConnectionError
 from egse.device import DeviceError
 from egse.device import DeviceTimeoutError
-
-logger = logging.getLogger(__name__)
+from egse.log import logger
 
 # Constants that can be overridden by specific device implementations
 DEFAULT_READ_TIMEOUT = 1.0  # seconds

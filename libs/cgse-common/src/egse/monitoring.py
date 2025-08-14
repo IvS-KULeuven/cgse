@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib
-import logging
 import multiprocessing
 import pickle
 import time
@@ -13,14 +12,13 @@ import zmq
 from zmq import ZMQError
 
 from egse.control import ControlServer
+from egse.log import logger
 from egse.protocol import CommandProtocol
 from egse.settings import Settings
 from egse.setup import load_setup
 from egse.system import format_datetime
 from egse.zmq_ser import MessageIdentifier
 from egse.zmq_ser import bind_address
-
-_LOGGER = logging.getLogger("egse.monitoring")
 
 
 class MonitoringProtocol(CommandProtocol):
@@ -85,21 +83,21 @@ class Monitoring:
             self.disconnect()
 
     def connect(self):
-        _LOGGER.debug(f"Connecting to {self._endpoint}")
+        logger.debug(f"Connecting to {self._endpoint}")
         self._socket = self._context.socket(zmq.SUB)
         self._socket.connect(self._endpoint)
 
         # Get the high watermark value for the reception socket
         rcv_hwm = self._socket.getsockopt(zmq.RCVHWM)
 
-        _LOGGER.debug(f"Receive High Water Mark: {rcv_hwm}")
+        logger.debug(f"Receive High Water Mark: {rcv_hwm}")
 
         self._setup = load_setup()
 
-        _LOGGER.debug(f"Using Setup {self._setup.get_id()}")
+        logger.debug(f"Using Setup {self._setup.get_id()}")
 
     def disconnect(self):
-        _LOGGER.debug(f"Disconnecting from {self._endpoint}")
+        logger.debug(f"Disconnecting from {self._endpoint}")
         self._socket.close(linger=0)
         self._subscriptions.clear()
 
@@ -114,12 +112,12 @@ class Monitoring:
             self._subscriptions.remove(subscribe_string)
             self._socket.unsubscribe(subscribe_string)
         except KeyError:
-            _LOGGER.warning(f"Trying to unsubscribe a key that was not previously subscribed: {subscribe_string}")
+            logger.warning(f"Trying to unsubscribe a key that was not previously subscribed: {subscribe_string}")
 
     def subscribe(self, sync_id: int = None):
         subscribe_string = sync_id.to_bytes(1, byteorder="big") if sync_id else b""
 
-        _LOGGER.debug(f"Subscribing {sync_id}")
+        logger.debug(f"Subscribing {sync_id}")
 
         if subscribe_string in self._subscriptions:
             return
@@ -161,7 +159,7 @@ class Monitoring:
                 sync_id = MessageIdentifier[item.upper()]
             except KeyError:
                 msg = f"incorrect subscribe identifier, use one of {[x.name for x in MessageIdentifier]}"
-                _LOGGER.error(f"[red]ERROR: {msg}[/]")
+                logger.error(f"[red]ERROR: {msg}[/]")
                 raise ValueError(msg)
             else:
                 self.subscribe(sync_id)
@@ -193,16 +191,16 @@ class Monitoring:
                     if do_break:
                         break
                 else:
-                    _LOGGER.info(f"{MessageIdentifier(sync_id).name}, {response}")
+                    logger.info(f"{MessageIdentifier(sync_id).name}, {response}")
             except ZMQError:
                 if self._timeout and time.monotonic() - start_time > self._timeout:
                     self.return_code = None
                     break
             except KeyboardInterrupt:
-                _LOGGER.info("KeyboardInterrupt caught!")
+                logger.info("KeyboardInterrupt caught!")
                 break
             except pickle.UnpicklingError as exc:
-                _LOGGER.error(f"UnpicklingError: {exc}")
+                logger.error(f"UnpicklingError: {exc}")
 
         return self.return_code
 
@@ -238,7 +236,7 @@ def _determine_port(proc_name: str):
     """
     name, port = PROCESS_NAMES.get(proc_name.upper(), (None, None))
 
-    _LOGGER.info(f"{name = }, {port = }")
+    logger.info(f"{name = }, {port = }")
 
     if name is not None:
         ctrl_settings = Settings.load(name)
@@ -278,8 +276,8 @@ def monitoring(
         print("You will need to provide both the HOSTNAME and the PORT argument.")
         return
 
-    _LOGGER.info(f"{type(hostname) = }, {hostname = }")
-    _LOGGER.info(f"{type(port) = }, {port = }, {_determine_port(port) = }")
+    logger.info(f"{type(hostname) = }, {hostname = }")
+    logger.info(f"{type(port) = }, {port = }, {_determine_port(port) = }")
 
     try:
         port = int(port)

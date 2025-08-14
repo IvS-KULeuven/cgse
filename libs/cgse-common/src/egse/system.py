@@ -29,7 +29,6 @@ import operator
 import os
 import platform  # For getting the operating system name
 import re
-import signal
 import socket
 import subprocess  # For executing a shell command
 import sys
@@ -59,10 +58,11 @@ from rich.text import Text
 from rich.tree import Tree
 from typer.core import TyperCommand
 
+import signal
+from egse.log import logger
+
 EPOCH_1958_1970 = 378691200
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%f%z"
-
-logger = logging.getLogger(__name__)
 
 
 # ACKNOWLEDGEMENT: The class is based on the textual.timer.Timer class from the Textual project.

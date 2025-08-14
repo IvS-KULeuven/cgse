@@ -63,11 +63,11 @@ __all__ = [
 ]
 
 import contextlib
-import logging
 import os
 import warnings
 from pathlib import Path
 
+from egse.log import logger
 from egse.system import all_logging_disabled
 from egse.system import get_caller_info
 from egse.system import ignore_m_warning
@@ -75,7 +75,6 @@ from egse.system import ignore_m_warning
 from rich.console import Console
 
 console = Console(width=100)
-logger = logging.getLogger("egse.env")
 
 # Every project shall have a PROJECT and a SITE_ID environment variable set. This variable will be used to
 # create the other environment variables that are specific to the project.

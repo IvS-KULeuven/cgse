@@ -5,8 +5,6 @@ __all__ = [
     "get_metrics_repo",
 ]
 
-import logging
-from dataclasses import dataclass
 from typing import Any
 from typing import Optional
 from typing import Protocol
@@ -16,6 +14,7 @@ import numpy as np
 from prometheus_client import Gauge
 
 from egse.hk import TmDictionaryColumns
+from egse.log import logger
 from egse.plugin import load_plugins_fn
 from egse.settings import Settings
 from egse.setup import Setup
@@ -23,8 +22,6 @@ from egse.setup import SetupError
 from egse.setup import load_setup
 from egse.system import format_datetime
 from egse.system import str_to_datetime
-
-logger = logging.getLogger("egse.metrics")
 
 SITE_ID = Settings.load("SITE").ID
 

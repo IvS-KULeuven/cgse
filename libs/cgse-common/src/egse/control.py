@@ -50,8 +50,8 @@ from egse.system import get_average_execution_times
 from egse.system import get_full_classname
 from egse.system import get_host_ip
 from egse.system import save_average_execution_time
+from egse.log import logger
 
-_LOGGER = logging.getLogger(__name__)
 
 PROCESS_SETTINGS = Settings.load("PROCESS")
 SITE_ID = get_site_id()
@@ -92,7 +92,7 @@ def is_control_server_active(endpoint: str = None, timeout: float = 0.5) -> bool
             return_code = response == "Pong"
         socket.close(linger=0)
     except Exception as exc:
-        _LOGGER.warning(f"Caught an exception while pinging a control server at {endpoint}: {exc}.")
+        logger.warning(f"Caught an exception while pinging a control server at {endpoint}: {exc}.")
 
     return return_code
 
@@ -188,7 +188,7 @@ class ControlServer(metaclass=abc.ABCMeta):
             self.metrics_client.connect()
         else:
             self.metrics_client = None
-            _LOGGER.warning(
+            logger.warning(
                 "INFLUXDB3_AUTH_TOKEN and/or PROJECT environment variable is not set. "
                 "Metrics will not be propagated to InfluxDB."
             )
@@ -393,13 +393,13 @@ class ControlServer(metaclass=abc.ABCMeta):
 
             at = task_info.get("after")
             if at and at > datetime.datetime.now(tz=datetime.timezone.utc):
-                # _LOGGER.debug(f"Task {task_name} rescheduled, not time yet....")
+                # logger.debug(f"Task {task_name} rescheduled, not time yet....")
                 rescheduled_tasks.append(task_info)
                 continue
 
             condition = task_info.get("when")
             if condition and not condition():
-                _LOGGER.debug(f"Task {task_name} rescheduled in {self.scheduled_task_delay}s, condition not met....")
+                logger.debug(f"Task {task_name} rescheduled in {self.scheduled_task_delay}s, condition not met....")
                 self.logger.info(f"Task {task_name} rescheduled in {self.scheduled_task_delay}s")
                 current_time = datetime.datetime.now(tz=datetime.timezone.utc)
                 scheduled_time = current_time + datetime.timedelta(seconds=self.scheduled_task_delay)
@@ -524,7 +524,7 @@ class ControlServer(metaclass=abc.ABCMeta):
                 try:
                     self.monitoring_protocol.send_status(save_average_execution_time(self.device_protocol.get_status))
                 except Exception as exc:
-                    _LOGGER.error(
+                    logger.error(
                         textwrap.dedent(
                             f"""\
                             An Exception occurred while collecting status info from the control server \
@@ -546,7 +546,7 @@ class ControlServer(metaclass=abc.ABCMeta):
                     self.store_housekeeping_information(hk_dict)
                     self.propagate_metrics(hk_dict)
                 except Exception as exc:
-                    _LOGGER.error(
+                    logger.error(
                         textwrap.dedent(
                             f"""{type_name(exc)}
                             An Exception occurred while collecting housekeeping from the device to be stored in {self.get_storage_mnemonic()}.
@@ -658,7 +658,7 @@ class ControlServer(metaclass=abc.ABCMeta):
         origin = self.get_storage_mnemonic()
 
         if not [x for x in hk if x != "timestamp"]:
-            _LOGGER.debug(f"no metrics defined for {origin}")
+            logger.debug(f"no metrics defined for {origin}")
             return
 
         try:
@@ -671,11 +671,11 @@ class ControlServer(metaclass=abc.ABCMeta):
                 }
                 self.metrics_client.write(point)
             else:
-                _LOGGER.warning(
+                logger.warning(
                     f"Could not write {origin} metrics to the time series database (self.metrics_client is None)."
                 )
         except NewConnectionError:
-            _LOGGER.warning(
+            logger.warning(
                 f"No connection to the time series database could be established to propagate {origin} metrics.  Check "
                 f"whether this service is (still) running."
             )
@@ -782,9 +782,9 @@ class ControlServer(metaclass=abc.ABCMeta):
         def _add_listener(proxy, listener):
             with proxy() as x, x.get_service_proxy() as srv:
                 rc = srv.add_listener(listener)
-                _LOGGER.info(f"Response from {proxy.__name__} service add_listener: {rc}")
+                logger.info(f"Response from {proxy.__name__} service add_listener: {rc}")
 
-        _LOGGER.info(f"Registering {self.__class__.__name__} as a listener to {proxy.__name__}")
+        logger.info(f"Registering {self.__class__.__name__} as a listener to {proxy.__name__}")
 
         retry_thread = threading.Thread(target=_add_listener, args=(proxy, listener))
         retry_thread.daemon = True
@@ -818,7 +818,7 @@ class ControlServer(metaclass=abc.ABCMeta):
         def _remove_listener(proxy, listener):
             with proxy() as x, x.get_service_proxy() as srv:
                 rc = srv.remove_listener(listener)
-                _LOGGER.debug(f"Response from remove_listener: {rc=}")
+                logger.debug(f"Response from remove_listener: {rc=}")
 
         # Since we do not have the endpoint available, we can not check if the CS is active, and to get the endpoint
         # we have to use the proxy anyway. So, let's use the proxy object to check if the CS is available.
@@ -827,12 +827,12 @@ class ControlServer(metaclass=abc.ABCMeta):
             with proxy():
                 pass
         except ConnectionError:
-            _LOGGER.warning(
+            logger.warning(
                 f"The {proxy.__class__.__name__} endpoint is not responding, {listener['name']} not un-registered."
             )
             return
 
-        _LOGGER.info(f"Removing {self.__class__.__name__} as a listener from {proxy.__name__}")
+        logger.info(f"Removing {self.__class__.__name__} as a listener from {proxy.__name__}")
 
         retry_thread = threading.Thread(target=_remove_listener, args=(proxy, listener))
         retry_thread.daemon = False

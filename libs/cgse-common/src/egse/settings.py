@@ -77,10 +77,9 @@ import yaml  # This module is provided by the pip package PyYaml - pip install p
 
 from egse.env import get_local_settings_env_name
 from egse.env import get_local_settings_path
+from egse.log import logger
 from egse.system import attrdict
 from egse.system import recursive_dict_update
-
-_LOGGER = logging.getLogger(__name__)
 
 _HERE = Path(__file__).resolve().parent
 
@@ -138,7 +137,7 @@ def load_settings_file(path: Path, filename: str, force: bool = False) -> attrdi
         raise SettingsError(f"The Settings YAML file '{filename}' is not found at {path!s}. ") from exc
 
     if not settings:
-        _LOGGER.warning(
+        logger.warning(
             f"The Settings YAML file '{filename}' at {path!s} is empty. "
             f"No local settings were loaded, an empty dictionary is returned."
         )
@@ -222,13 +221,13 @@ def read_configuration_file(filename: Path, *, force=False) -> dict:
     filename = str(filename)
 
     if force or not Settings.is_memoized(filename):
-        _LOGGER.debug(f"Parsing YAML configuration file {filename}.")
+        logger.debug(f"Parsing YAML configuration file {filename}.")
 
         with open(filename, "r") as stream:
             try:
                 yaml_document = yaml.load(stream, Loader=SAFE_LOADER)
             except yaml.YAMLError as exc:
-                _LOGGER.error(exc)
+                logger.error(exc)
                 raise SettingsError(f"Error loading YAML document {filename}") from exc
 
         Settings.add_memoized(filename, yaml_document)

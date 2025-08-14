@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 import pickle
 import zlib
@@ -119,3 +117,8 @@ class MessageIdentifier(IntEnum):
     # Sending out all kinds of information
 
     HDF5_FILENAMES = 0x90
+
+    STATUS = 0x91
+    CUSTOM = 0x92
+
+    HEARTBEAT = 0x99

@@ -16,6 +16,7 @@ from pathlib import Path
 from egse.command import ClientServerCommand
 from egse.control import ControlServer
 from egse.decorators import dynamic_interface
+from egse.log import logger
 from egse.protocol import CommandProtocol
 from egse.proxy import Proxy
 from egse.proxy import REQUEST_TIMEOUT
@@ -23,8 +24,6 @@ from egse.registry.client import RegistryClient
 from egse.settings import Settings
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
-
-LOGGER = logging.getLogger(__name__)
 
 HERE = Path(__file__).parent
 
@@ -69,7 +68,7 @@ class ServiceProtocol(CommandProtocol):
         """
         delay = self.get_control_server().set_mon_delay(1.0 / freq)
 
-        LOGGER.debug(f"Set monitoring frequency to {freq}Hz, ± every {delay:.0f}ms.")
+        logger.debug(f"Set monitoring frequency to {freq}Hz, ± every {delay:.0f}ms.")
 
         self.send(delay)
 
@@ -87,7 +86,7 @@ class ServiceProtocol(CommandProtocol):
         """
         delay = self.get_control_server().set_hk_delay(1.0 / freq)
 
-        LOGGER.debug(f"Set housekeeping frequency to {freq}Hz, ± every {delay:.0f}ms.")
+        logger.debug(f"Set housekeeping frequency to {freq}Hz, ± every {delay:.0f}ms.")
 
         self.send(delay)
 
@@ -132,49 +131,49 @@ class ServiceProtocol(CommandProtocol):
         self.send(msg)
 
     def handle_quit(self):
-        LOGGER.info(f"Sending interrupt to {self.control_server.__class__.__name__}.")
+        logger.info(f"Sending interrupt to {self.control_server.__class__.__name__}.")
         self.control_server.quit()
         self.send(f"Sent interrupt to {self.control_server.__class__.__name__}.")
 
     def handle_get_process_status(self):
-        LOGGER.debug(f"Asking for process status of {self.control_server.__class__.__name__}.")
+        logger.debug(f"Asking for process status of {self.control_server.__class__.__name__}.")
         self.send(self.get_status())
 
     def handle_get_cs_module(self):
         """
         Returns the module in which the control server has been implemented.
         """
-        LOGGER.debug(f"Asking for module of {self.control_server.__class__.__name__}.")
+        logger.debug(f"Asking for module of {self.control_server.__class__.__name__}.")
         self.send(inspect.getmodule(self.control_server).__spec__.name)
 
     def handle_get_average_execution_times(self):
-        LOGGER.debug(f"Asking for average execution times of {self.control_server.__class__.__name__} functions.")
+        logger.debug(f"Asking for average execution times of {self.control_server.__class__.__name__} functions.")
         self.send(self.control_server.get_average_execution_times())
 
     def handle_get_storage_mnemonic(self):
-        LOGGER.debug(f"Asking for the storage menmonic of {self.control_server.__class__.__name__}.")
+        logger.debug(f"Asking for the storage menmonic of {self.control_server.__class__.__name__}.")
         self.send(self.control_server.get_storage_mnemonic())
 
     def handle_add_listener(self, listener: dict):
-        LOGGER.debug(f"Add listener to {self.control_server.__class__.__name__}: {listener}")
+        logger.debug(f"Add listener to {self.control_server.__class__.__name__}: {listener}")
         try:
             self.control_server.listeners.add_listener(listener)
-            LOGGER.info(f"Registered listener: {listener['name']} with proxy {listener['proxy']}")
+            logger.info(f"Registered listener: {listener['name']} with proxy {listener['proxy']}")
             self.send(("ACK",))
         except ValueError as exc:
             self.send(("NACK", exc))  # Why not send back a failure object?
 
     def handle_remove_listener(self, listener: dict):
-        LOGGER.debug(f"Remove listener from {self.control_server.__class__.__name__}: {listener}")
+        logger.debug(f"Remove listener from {self.control_server.__class__.__name__}: {listener}")
         try:
             self.control_server.listeners.remove_listener(listener)
-            LOGGER.info(f"Removed listener: {listener['name']}")
+            logger.info(f"Removed listener: {listener['name']}")
             self.send(("ACK",))
         except ValueError as exc:
             self.send(("NACK", exc))  # Why not send back a failure object?
 
     def handle_get_listener_names(self):
-        LOGGER.debug(f"Get names of registered listener from {self.control_server.__class__.__name__}")
+        logger.debug(f"Get names of registered listener from {self.control_server.__class__.__name__}")
         try:
             names = self.control_server.listeners.get_listener_names()
             self.send((names,))
@@ -182,7 +181,7 @@ class ServiceProtocol(CommandProtocol):
             self.send(("", exc))  # Why not sent back a Failure object?
 
     def handle_register_to_storage(self):
-        LOGGER.debug("(re-)registering to the storage manager")
+        logger.debug("(re-)registering to the storage manager")
         try:
             self.control_server.register_to_storage_manager()
             self.send(("ACK",))

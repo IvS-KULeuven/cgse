@@ -94,7 +94,6 @@ Do we need additional hooks into this commanding?
 from __future__ import annotations
 
 import inspect
-import logging
 import re
 import typing
 from typing import Any
@@ -102,8 +101,7 @@ from typing import Callable
 
 from egse.decorators import deprecate
 from egse.exceptions import Error
-
-logger = logging.getLogger(__name__)
+from egse.log import logger
 
 if typing.TYPE_CHECKING:
     from egse.protocol import CommandProtocol
