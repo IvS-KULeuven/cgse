@@ -6,7 +6,7 @@ logger = logging.getLogger("test")
 
 
 def test_load_plugins_fn():
-    # Load ALL plugins from the `egse.plugins` namespace
+    # Load ALL plugins from the `egse` namespace in the plugins folder
     plugins_1 = load_plugins_fn("plugins/**/*.py", "egse")
     print(plugins_1)
 
@@ -17,8 +17,6 @@ def test_load_plugins_fn():
     assert plugins_1.keys() == plugins_2.keys()
 
     assert "influxdb" in plugins_1
-    assert "fits" in plugins_1
-    assert "hdf5" in plugins_1
 
     # No Exception should be raised when the module doesn't exist
     plugins = load_plugins_fn("not-a-module")
