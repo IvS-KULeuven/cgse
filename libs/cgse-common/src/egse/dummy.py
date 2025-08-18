@@ -295,9 +295,7 @@ class DummyControlServer(ControlServer):
 
         self.device_protocol = DummyProtocol(self)
 
-        logger.info(
-            f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()} for {self.__class__.__name__}"
-        )
+        logger.info(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()} for {self.__class__.__name__}")
 
         self.device_protocol.bind(self.dev_ctrl_cmd_sock)
 
