@@ -35,7 +35,6 @@ __all__ = [
 
 import contextlib
 import datetime
-import logging
 import os
 import subprocess
 import sys
@@ -51,9 +50,8 @@ import psutil
 from prometheus_client import Gauge
 
 from egse.bits import humanize_bytes
+from egse.log import logger
 from egse.system import humanize_seconds
-
-_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -309,7 +307,7 @@ class SubProcess:
             command: List | str = [*self._cmd, *self._args]
             if self._shell:
                 command = " ".join(command)
-            _logger.debug(f"SubProcess command: {command}")
+            logger.debug(f"SubProcess command: {command}")
             self._popen = subprocess.Popen(
                 command,
                 env=os.environ,
@@ -320,13 +318,13 @@ class SubProcess:
             )
             self._sub_process = psutil.Process(self._popen.pid)
 
-            _logger.debug(
+            logger.debug(
                 f"SubProcess started: {command}, pid={self._popen.pid}, sub_process="
                 f"{self._sub_process} [pid={self._sub_process.pid}]"
             )
         except Exception as exc:
             # This error is raised when the command is not an executable or is not found
-            _logger.error(f"Could not execute sub-process: {exc}", exc_info=True)
+            logger.error(f"Could not execute sub-process: {exc}", exc_info=True)
             exc_type, exc_value, exc_traceback = sys.exc_info()
             self._exc_info = {
                 "exc_type": exc_type,
@@ -373,10 +371,10 @@ class SubProcess:
         if self._sub_process.is_running():
             # it still might be a zombie process
             if self._sub_process.status() in [psutil.STATUS_ZOMBIE, psutil.STATUS_DEAD]:
-                _logger.warning("The sub-process is dead or a zombie.")
+                logger.warning("The sub-process is dead or a zombie.")
                 return False
             return True
-        # _logger.debug(f"Return value of the sub-process: {self._popen.returncode}")
+        # logger.debug(f"Return value of the sub-process: {self._popen.returncode}")
         return False
 
     def is_dead_or_zombie(self):
@@ -425,26 +423,26 @@ class SubProcess:
         """
 
         def on_terminate(proc):
-            _logger.info(f"process {proc} terminated with exit code {proc.returncode}")
+            logger.info(f"process {proc} terminated with exit code {proc.returncode}")
 
         return_code = 0
         self._exc_info = {}
 
         children = self._sub_process.children()
 
-        _logger.info(f"Children: {children}")
+        logger.info(f"Children: {children}")
 
         # send SIGTERM to subprocess
 
         try:
-            _logger.info(f"Send a SIGTERM to process with PID={self.pid}")
+            logger.info(f"Send a SIGTERM to process with PID={self.pid}")
             self._sub_process.terminate()
             try:
                 return_code = self._sub_process.wait(timeout=5.0)  # make this timeout an instance parameter
-                _logger.info(f"{return_code = }")
+                logger.info(f"{return_code = }")
             except psutil.TimeoutExpired:
-                _logger.info(f"TimeoutExpired after 5s for PID={self.pid}")
-                _logger.info(f"Send a SIGKILL to process with PID={self.pid}")
+                logger.info(f"TimeoutExpired after 5s for PID={self.pid}")
+                logger.info(f"Send a SIGKILL to process with PID={self.pid}")
 
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 self._exc_info = {
@@ -458,7 +456,7 @@ class SubProcess:
                 return -9  # meaning the process was terminated by a SIGKILL
         except psutil.NoSuchProcess:
             # If we get here, the process died already and there are also no children to terminate
-            _logger.info(f"NoSuchProcess with PID={self._sub_process.pid}")
+            logger.info(f"NoSuchProcess with PID={self._sub_process.pid}")
 
             exc_type, exc_value, exc_traceback = sys.exc_info()
             self._exc_info = {
@@ -475,7 +473,7 @@ class SubProcess:
         if children:
             for p in children:
                 try:
-                    _logger.info(f"Send a SIGTERM to child process with PID={p.pid}")
+                    logger.info(f"Send a SIGTERM to child process with PID={p.pid}")
                     p.terminate()
                 except psutil.NoSuchProcess:
                     pass
@@ -483,9 +481,9 @@ class SubProcess:
             if alive:
                 # send SIGKILL
                 for p in alive:
-                    _logger.info(f"Child process {p} survived SIGTERM; trying SIGKILL")
+                    logger.info(f"Child process {p} survived SIGTERM; trying SIGKILL")
                     try:
-                        _logger.info(f"Send a SIGKILL to child process with PID={p.pid}")
+                        logger.info(f"Send a SIGKILL to child process with PID={p.pid}")
                         p.kill()
                     except psutil.NoSuchProcess:
                         pass
@@ -493,7 +491,7 @@ class SubProcess:
                 if alive:
                     # give up
                     for p in alive:
-                        _logger.info(f"Child process {p} survived SIGKILL; giving up")
+                        logger.info(f"Child process {p} survived SIGKILL; giving up")
 
         return return_code
 
@@ -618,7 +616,7 @@ def is_process_running(
     case = pass_through if case_sensitive else lower
 
     if not items:
-        _logger.warning("Expected at least one item in 'items', none were given. False returned.")
+        logger.warning("Expected at least one item in 'items', none were given. False returned.")
         return [] if as_list else 0
 
     items = [items] if isinstance(items, str) else items
@@ -627,7 +625,7 @@ def is_process_running(
 
     for proc in psutil.process_iter(attrs=["pid", "cmdline", "name"], ad_value="n/a"):
         with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            # _logger.info(f"{proc.name().lower() = }, {proc.cmdline() = }")
+            # logger.info(f"{proc.name().lower() = }, {proc.cmdline() = }")
             if contains:
                 if all(any(case(y) in case(x) for x in proc.cmdline()) for y in items):
                     found.append(proc.pid)
@@ -697,14 +695,14 @@ def get_process_info(items: List[str] | str, contains: bool = True, case_sensiti
     case = pass_through if case_sensitive else lower
 
     if not items:
-        _logger.warning("Expected at least one item in 'items', none were given. Empty list returned.")
+        logger.warning("Expected at least one item in 'items', none were given. Empty list returned.")
         return response
 
     items = [items] if isinstance(items, str) else items
 
     for proc in psutil.process_iter():
         with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            # _logger.info(f"{proc.name().lower() = }, {proc.cmdline() = }")
+            # logger.info(f"{proc.name().lower() = }, {proc.cmdline() = }")
             if contains:
                 if all(any(case(y) in case(x) for x in proc.cmdline()) for y in items):
                     response.append(proc.as_dict(attrs=["pid", "cmdline", "create_time"]))

@@ -17,8 +17,7 @@ import rich
 
 from egse.settings import Settings
 from egse.system import get_caller_info
-
-_LOGGER = logging.getLogger(__name__)
+from egse.log import logger
 
 
 def static_vars(**kwargs):
@@ -161,14 +160,14 @@ def average_time(*, name: str = "average_time", level: int = logging.INFO, preci
         def _report_average_time():
             if func._call_count:
                 average_time = func._run_time / func._call_count
-                _LOGGER.log(
+                logger.log(
                     level,
                     f"{name}: "
                     f"average runtime of {func.__name__!r} is {average_time:.{precision}f}s, "
                     f"#calls = {func._call_count}.",
                 )
             else:
-                _LOGGER.log(level, f"{name}: function {func.__name__!r} was never called.")
+                logger.log(level, f"{name}: function {func.__name__!r} was never called.")
 
             return func._run_time, func._call_count
 
@@ -210,7 +209,7 @@ def timer(*, name: str = "timer", level: int = logging.INFO, precision: int = 4)
             value = func(*args, **kwargs)
             end_time = time.perf_counter()
             run_time = end_time - start_time
-            _LOGGER.log(level, f"{name}: Finished {func.__name__!r} in {run_time:.{precision}f} secs")
+            logger.log(level, f"{name}: Finished {func.__name__!r} in {run_time:.{precision}f} secs")
             return value
 
         return wrapper_timer
@@ -235,7 +234,7 @@ def async_timer(*, name: str = "timer", level: int = logging.INFO, precision: in
             value = await func(*args, **kwargs)
             end_time = time.perf_counter()
             run_time = end_time - start_time
-            _LOGGER.log(level, f"{name}: Finished {func.__name__!r} in {run_time:.{precision}f} secs")
+            logger.log(level, f"{name}: Finished {func.__name__!r} in {run_time:.{precision}f} secs")
             return value
 
         return wrapper_timer
@@ -307,9 +306,9 @@ def debug(func):
             args_repr = [repr(a) for a in args]
             kwargs_repr = [f"{k}={v!r}" for k, v in kwargs.items()]
             signature = ", ".join(args_repr + kwargs_repr)
-            _LOGGER.debug(f"Calling {func.__name__}({signature})")
+            logger.debug(f"Calling {func.__name__}({signature})")
             value = func(*args, **kwargs)
-            _LOGGER.debug(f"{func.__name__!r} returned {value!r}")
+            logger.debug(f"{func.__name__!r} returned {value!r}")
         else:
             value = func(*args, **kwargs)
         return value
@@ -523,7 +522,7 @@ def to_be_implemented(func):
 
     @functools.wraps(func)
     def wrapper_tbi(*args, **kwargs):
-        _LOGGER.warning(f"The function/method {func.__name__} is not yet implemented.")
+        logger.warning(f"The function/method {func.__name__} is not yet implemented.")
         return func(*args, **kwargs)
 
     return wrapper_tbi
@@ -736,12 +735,12 @@ def retry_with_exponential_backoff(
             while attempt < max_attempts:
                 try:
                     response = func(*args, **kwargs)  # Attempt to call the function
-                    _LOGGER.info(f"{func.__name__} successfully executed.")
+                    logger.info(f"{func.__name__} successfully executed.")
                     return response
                 except tuple(exceptions) as exc:
                     last_exception = exc
                     attempt += 1
-                    _LOGGER.info(
+                    logger.info(
                         f"Retry {attempt}: {func.__name__} will be executing again in {wait_time * backoff_factor}s. "
                         f"Received a {last_exception!r}."
                     )
@@ -805,7 +804,7 @@ def retry(times: int = 3, wait: float = 10.0, exceptions: List = None) -> Callab
                 except tuple(exceptions) as exc:
                     previous_exception = exc
                 if n < times:
-                    _LOGGER.info(
+                    logger.info(
                         f"Retry {n + 1}: {func.__name__} will be executing again in {wait}s. "
                         f"Received a {previous_exception!r}."
                     )

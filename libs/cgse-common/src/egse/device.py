@@ -3,7 +3,6 @@ This module defines the generic interfaces to connect devices.
 """
 
 from enum import IntEnum
-from typing import List
 
 from egse.decorators import dynamic_interface
 from egse.exceptions import Error

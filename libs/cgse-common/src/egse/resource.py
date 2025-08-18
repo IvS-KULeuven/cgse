@@ -92,24 +92,21 @@ __all__ = [
 
 import contextlib
 import errno
-import logging
 import re
+from os.path import exists
+from os.path import join
 from pathlib import Path
 from pathlib import PurePath
 from typing import Dict
 from typing import List
 from typing import Union
 
-from os.path import exists
-from os.path import join
-
-from egse.config import find_first_occurrence_of_dir
 from egse.config import find_files
+from egse.config import find_first_occurrence_of_dir
 from egse.exceptions import InternalError
+from egse.log import logger
 from egse.plugin import entry_points
 from egse.system import get_package_location
-
-_logger = logging.getLogger(__name__)
 
 
 class ResourceError(Exception):
@@ -211,7 +208,7 @@ def get_resource_dirs(root_dir: Path | str) -> List[Path]:
     """
 
     if root_dir is None:
-        _logger.warning("The argument root_dir can not be None, an empty list is returned.")
+        logger.warning("The argument root_dir can not be None, an empty list is returned.")
         return []
 
     root_dir = Path(root_dir).resolve()
@@ -281,7 +278,7 @@ def initialise_resources(root: Path | str = Path(__file__).parent):
             if location not in x:
                 x.append(location)
 
-    _logger.debug(f"Resources have been initialised: {resources = }")
+    logger.debug(f"Resources have been initialised: {resources = }")
 
 
 def print_resources():

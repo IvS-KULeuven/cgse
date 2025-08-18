@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import contextlib
-import logging
 import pickle
 import queue
 import random
@@ -12,8 +11,6 @@ import zmq
 
 from egse.system import format_datetime
 from egse.zmq_ser import MessageIdentifier
-
-_LOGGER = logging.getLogger(__name__)
 
 
 def _g_tick(period: float):

@@ -126,7 +126,6 @@ __all__ = [
     "save_last_setup_id",
 ]
 
-import logging
 import os
 import re
 import textwrap
@@ -137,7 +136,6 @@ from typing import Optional
 from typing import Union
 
 import rich
-import yaml
 from navdict import navdict
 from navdict.directive import register_directive
 from navdict.navdict import NavigableDict
@@ -150,11 +148,10 @@ from egse.env import get_conf_repo_location_env_name
 from egse.env import get_data_storage_location
 from egse.env import has_conf_repo_location
 from egse.env import print_env
+from egse.log import logger
 from egse.response import Failure
 from egse.system import format_datetime
 from egse.system import sanity_check
-
-MODULE_LOGGER = logging.getLogger(__name__)
 
 
 class SetupError(Exception):
@@ -752,7 +749,7 @@ def load_setup(setup_id: int = None, site_id: str = None, from_disk: bool = Fals
                 proxy.load_setup(setup_id)
 
         except ConnectionError:
-            MODULE_LOGGER.warning("Could not make a connection with the Configuration Manager, no Setup to show you.")
+            logger.warning("Could not make a connection with the Configuration Manager, no Setup to show you.")
             rich.print(
                 "\n"
                 "If you are not running this from an operational machine, do not have a CM "

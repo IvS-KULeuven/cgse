@@ -16,7 +16,6 @@ import zmq
 from egse.decorators import dynamic_interface
 from egse.mixin import DynamicClientCommandMixin
 from egse.response import Failure
-from egse.system import AttributeDict
 from egse.zmq_ser import split_address
 
 

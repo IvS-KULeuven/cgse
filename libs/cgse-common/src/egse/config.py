@@ -3,27 +3,15 @@ This module provides convenience functions to properly configure the CGSE
 and to find paths and resources.
 """
 
-from __future__ import annotations
-
-import errno
 import fnmatch
-import logging
 import os
-from functools import lru_cache
-from os.path import exists
-from os.path import join
 from pathlib import Path
 from pathlib import PurePath
-from typing import List
-from typing import Optional
+from typing import Generator
 from typing import Tuple
 from typing import Union
-from typing import Generator
 
-import git
-from egse.decorators import deprecate
-
-_logger = logging.getLogger(__name__)
+from egse.log import logger
 
 
 def find_first_occurrence_of_dir(pattern: str, root: Path | str) -> Path | None:
@@ -252,18 +240,6 @@ def find_root(
     return Path(default) if default is not None else None
 
 
-def set_logger_levels(logger_levels: List[Tuple] = None):
-    """
-    Set the logging level for the given loggers.
-
-    """
-    logger_levels = logger_levels or []
-
-    for name, level in logger_levels:
-        a_logger = logging.getLogger(name)
-        a_logger.setLevel(level)
-
-
 class WorkingDirectory:
     """
     WorkingDirectory is a context manager to temporarily change the working directory while
@@ -301,7 +277,7 @@ class WorkingDirectory:
         try:
             os.chdir(self._current_dir)
         except OSError as exc:
-            _logger.warning(f"Change back to previous directory failed: {exc}")
+            logger.warning(f"Change back to previous directory failed: {exc}")
 
     @property
     def path(self):

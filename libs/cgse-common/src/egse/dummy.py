@@ -2,13 +2,13 @@
 This module provides a dummy implementation for classes of the commanding chain.
 
 Start the control server with:
-```shell
-py -m egse.dummy start-cs
-```
+
+    py -m egse.dummy start-cs
+
 and stop the server with:
-```shell
-py -m egse.dummy stop-cs
-```
+
+    py -m egse.dummy stop-cs
+
 Commands that can be used with the proxy:
 
   * info – returns an info message from the dummy device, e.g. "Dummy Device <__version__>"
@@ -18,9 +18,12 @@ Commands that can be used with the proxy:
     object.
 
 The device simulator can be started with:
-```
-py -m egse.dummy start-dev
-```
+
+    py -m egse.dummy start-dev
+
+and stopped with:
+
+    py -m egse.dummy stop-dev
 """
 
 from __future__ import annotations
@@ -50,6 +53,7 @@ from egse.device import DeviceTimeoutError
 from egse.device import DeviceTransport
 from egse.listener import Event
 from egse.listener import EventInterface
+from egse.log import logger
 from egse.protocol import CommandProtocol
 from egse.proxy import Proxy
 from egse.settings import Settings
@@ -60,8 +64,6 @@ from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
 
 logging.basicConfig(level=logging.DEBUG, format=Settings.LOG_FORMAT_FULL)
-
-_LOGGER = logging.getLogger("egse.dummy")
 
 __version__ = "0.2.0"
 
@@ -200,11 +202,11 @@ class DummyController(DummyInterface, EventInterface):
         _exec_in_thread = False
 
         def _handle_event(_event):
-            _LOGGER.info(f"An event is received, {_event=}")
-            _LOGGER.info(f"CM CS active? {is_control_server_active()}")
+            logger.info(f"An event is received, {_event=}")
+            logger.info(f"CM CS active? {is_control_server_active()}")
             time.sleep(5.0)
-            _LOGGER.info(f"CM CS active? {is_control_server_active()}")
-            _LOGGER.info(f"An event is processed, {_event=}")
+            logger.info(f"CM CS active? {is_control_server_active()}")
+            logger.info(f"An event is processed, {_event=}")
 
         if _exec_in_thread:
             # We execute this function in a daemon thread so the acknowledgment is
@@ -252,7 +254,7 @@ class DummyProtocol(CommandProtocol):
         return super().get_status()
 
     def get_housekeeping(self) -> dict:
-        # _LOGGER.debug(f"Executing get_housekeeping function for {self.__class__.__name__}.")
+        # logger.debug(f"Executing get_housekeeping function for {self.__class__.__name__}.")
 
         self._count += 1
 
@@ -269,7 +271,7 @@ class DummyProtocol(CommandProtocol):
         }
 
     def quit(self):
-        _LOGGER.info("Executing 'quit()' on DummyProtocol.")
+        logger.info("Executing 'quit()' on DummyProtocol.")
 
 
 class DummyControlServer(ControlServer):
@@ -293,9 +295,7 @@ class DummyControlServer(ControlServer):
 
         self.device_protocol = DummyProtocol(self)
 
-        _LOGGER.info(
-            f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()} for {self.__class__.__name__}"
-        )
+        logger.info(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()} for {self.__class__.__name__}")
 
         self.device_protocol.bind(self.dev_ctrl_cmd_sock)
 
@@ -320,7 +320,7 @@ class DummyControlServer(ControlServer):
             )
 
         except ModuleNotFoundError as exc:
-            _LOGGER.info(
+            logger.info(
                 textwrap.dedent(
                     f"""\
                     Caught a ModuleNotFoundException: {exc}
@@ -348,7 +348,7 @@ class DummyControlServer(ControlServer):
         return "DUMMY-HK"
 
     def after_serve(self):
-        _LOGGER.debug("After Serve: unregistering Dummy CS")
+        logger.debug("After Serve: unregistering Dummy CS")
 
         with contextlib.suppress(ModuleNotFoundError):
             from egse.confman import ConfigurationManagerProxy
@@ -390,7 +390,7 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         # Sanity checks
 
         if self.is_connection_open:
-            _LOGGER.warning("Trying to connect to an already connected socket.")
+            logger.warning("Trying to connect to an already connected socket.")
             return
 
         if self.hostname in (None, ""):
@@ -420,7 +420,7 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         # approach is acceptable and not causing problems during production.
 
         try:
-            _LOGGER.debug(f'Connecting a socket to host "{self.hostname}" using port {self.port}')
+            logger.debug(f'Connecting a socket to host "{self.hostname}" using port {self.port}')
             self.sock.settimeout(CONNECT_TIMEOUT)
             self.sock.connect((self.hostname, self.port))
             self.sock.settimeout(None)
@@ -446,7 +446,7 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         # This might not be the case for your device.
 
         response = self.read()
-        _LOGGER.debug(f"After connection, we got '{response.decode().rstrip()}' as a response.")
+        logger.debug(f"After connection, we got '{response.decode().rstrip()}' as a response.")
 
     def disconnect(self):
         """
@@ -456,7 +456,7 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
              DeviceConnectionError: on failure.
         """
         try:
-            _LOGGER.debug(f"Disconnecting from {self.hostname}")
+            logger.debug(f"Disconnecting from {self.hostname}")
             self.sock.close()
             self.is_connection_open = False
         except Exception as exc:
@@ -508,13 +508,13 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
                 if n < buf_size:
                     break
         except socket.timeout as exc:
-            _LOGGER.warning(f"Socket timeout error: {exc}")
+            logger.warning(f"Socket timeout error: {exc}")
             raise DeviceTimeoutError(DEV_NAME, "Socket timeout error") from exc
         finally:
             self.sock.settimeout(saved_timeout)
 
-        # _LOGGER.debug(f"Total number of bytes received is {n_total}, idx={idx}")
-        # _LOGGER.debug(f"> {response[:80]=}")
+        # logger.debug(f"Total number of bytes received is {n_total}, idx={idx}")
+        # logger.debug(f"> {response[:80]=}")
 
         return response
 
@@ -532,7 +532,7 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
                 there was a socket related error.
         """
 
-        # _LOGGER.debug(f"{command.encode() = }")
+        # logger.debug(f"{command.encode() = }")
 
         try:
             self.sock.sendall(command.encode())
@@ -559,7 +559,7 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
             DeviceTimeoutError: when the sendall() timed out, and a DeviceConnectionError if
                 there was a socket related error.
         """
-        # MODULE_LOGGER.debug(f"{command.encode() = }")
+        # logger.debug(f"{command.encode() = }")
 
         try:
             # Attempt to send the complete command
@@ -606,7 +606,7 @@ def start_cs():
 def stop_cs():
     """Send a quit service command to the dummy control server."""
     with DummyProxy() as dummy:
-        _LOGGER.info("Sending quit_server() to Dummy CS.")
+        logger.info("Sending quit_server() to Dummy CS.")
         sp = dummy.get_service_proxy()
         sp.quit_server()
 
@@ -623,7 +623,7 @@ def start_dev():
 
     multiprocessing.current_process().name = "dummy_dev"
 
-    _LOGGER.info("Starting the Dummy Device simulator")
+    logger.info("Starting the Dummy Device simulator")
 
     quit_request = False
     timeout = 1.0
@@ -636,7 +636,7 @@ def start_dev():
             s.listen()
             conn, addr = s.accept()
             with conn:
-                _LOGGER.info(f"Accepted connection from {addr}")
+                logger.info(f"Accepted connection from {addr}")
                 conn.sendall(f"Dummy Device {__version__}".encode())
                 try:
                     while True:
@@ -645,36 +645,36 @@ def start_dev():
                         if conn in read_sockets:
                             data = conn.recv(4096)
                             if not data:
-                                _LOGGER.info("Connection closed by peer, waiting for connection..")
+                                logger.info("Connection closed by peer, waiting for connection..")
                                 break  # connection closed by peer
                             if data.decode().strip() == "QUIT":
-                                _LOGGER.info("QUIT command received, terminating...")
+                                logger.info("QUIT command received, terminating...")
                                 quit_request = True
                                 break
                             if (response := process_command(data.decode().rstrip())) is not None:
                                 response = f"{response}\r\n".encode()
                                 conn.sendall(response)
-                            _LOGGER.debug(f"{data = } -> {response = }")
+                            logger.debug(f"{data = } -> {response = }")
                         if killer.term_signal_received:
-                            _LOGGER.info("TERM signal received, terminating...")
+                            logger.info("TERM signal received, terminating...")
                             quit_request = True
                             break
-                        # _LOGGER.debug(f"Timeout received after {timeout}s..")
+                        # logger.debug(f"Timeout received after {timeout}s..")
                 except KeyboardInterrupt:
-                    _LOGGER.info("Keyboard interrupt, closing.")
+                    logger.info("Keyboard interrupt, closing.")
                 except ConnectionResetError as exc:
-                    _LOGGER.info(f"ConnectionResetError: {exc}")
+                    logger.info(f"ConnectionResetError: {exc}")
                 except Exception as exc:
-                    _LOGGER.info(f"{exc.__class__.__name__} caught: {exc.args}")
+                    logger.info(f"{exc.__class__.__name__} caught: {exc.args}")
 
-    _LOGGER.info("Dummy Device terminated.")
+    logger.info("Dummy Device terminated.")
 
 
 @app.command()
 def stop_dev():
     multiprocessing.current_process().name = "dummy_dev"
 
-    _LOGGER.info("Stopping the Dummy Device simulator")
+    logger.info("Stopping the Dummy Device simulator")
 
     dev = DummyDeviceEthernetInterface(DEV_HOST, DEV_PORT)
     dev.connect()
@@ -686,7 +686,7 @@ COMMAND_ACTIONS_RESPONSES = {"info": (None, f"Dummy Device {__version__}"), "get
 
 
 def process_command(command_string: str) -> str | None:
-    _LOGGER.debug(f"{command_string = }")
+    logger.debug(f"{command_string = }")
 
     try:
         action, response = COMMAND_ACTIONS_RESPONSES[command_string]
@@ -698,7 +698,7 @@ def process_command(command_string: str) -> str | None:
     except KeyError:
         from egse.system import get_caller_breadcrumbs
 
-        _LOGGER.info(get_caller_breadcrumbs())
+        logger.info(get_caller_breadcrumbs())
         raise NotImplementedError(f"{command_string} not yet implemented..")
 
 

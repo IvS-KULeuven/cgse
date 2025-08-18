@@ -3,13 +3,11 @@ __all__ = [
 ]
 
 import abc
-import logging
 import textwrap
 
 from egse.decorators import borg
+from egse.log import logger
 from egse.setup import Setup
-
-LOGGER = logging.getLogger(__name__)
 
 
 class StateError(Exception):
@@ -104,7 +102,7 @@ class _GlobalState:
             with ConfigurationManagerProxy() as cm_proxy:
                 self._setup = cm_proxy.get_setup()
         else:
-            LOGGER.warning(
+            logger.warning(
                 textwrap.dedent(
                     """\
                     Could not reach the Configuration Manager to request the Setup.
