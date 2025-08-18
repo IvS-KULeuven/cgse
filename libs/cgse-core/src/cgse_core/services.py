@@ -30,7 +30,6 @@ from ._stop import stop_sm_cs
 core = typer.Typer(
     name="core",
     help="handle core services: start, stop, status, re-register",
-    no_args_is_help=True,
 )
 
 
@@ -92,7 +91,6 @@ def core_reregister(force: bool = False):
 rm_cs = typer.Typer(
     name="rm_cs",
     help="handle registry services: start, stop, status, list-services",
-    no_args_is_help=True,
 )
 
 
@@ -126,7 +124,6 @@ async def reg_list_services():
 log_cs = typer.Typer(
     name="log_cs",
     help="handle log services: start, stop, status, re-register",
-    no_args_is_help=True,
 )
 
 
@@ -164,7 +161,6 @@ def log_cs_reregister(force: bool = False):
 cm_cs = typer.Typer(
     name="cm_cs",
     help="handle configuration manager: start, stop, status, re-register",
-    no_args_is_help=True,
 )
 
 
@@ -209,7 +205,6 @@ def cm_cs_register_to_storage():
 sm_cs = typer.Typer(
     name="sm_cs",
     help="handle storage manager: start, stop, status, re-register",
-    no_args_is_help=True,
 )
 
 
@@ -247,7 +242,6 @@ def sm_cs_reregister(force: bool = False):
 pm_cs = typer.Typer(
     name="pm_cs",
     help="handle process manager: start, stop, status, re-register",
-    no_args_is_help=True,
 )
 
 

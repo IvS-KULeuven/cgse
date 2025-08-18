@@ -12,7 +12,6 @@ from egse.env import get_log_file_location
 lakeshore336 = typer.Typer(
     name="LakeShore336",
     help="LakeShore336 Data Acquisition Unit, LakeShore, temperature monitoring",
-    no_args_is_help=True,
 )
 
 

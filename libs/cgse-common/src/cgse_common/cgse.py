@@ -85,7 +85,7 @@ class SortedCommandGroup(TyperGroup):
         return sorted(commands, key=get_command_priority)
 
 
-app = typer.Typer(add_completion=True, cls=SortedCommandGroup, rich_markup_mode="markdown")
+app = typer.Typer(add_completion=True, cls=SortedCommandGroup)
 
 
 @app.command()
@@ -121,22 +121,33 @@ def version(ctx: typer.Context):
             )
 
 
+def subcommand_callback(ctx: typer.Context):
+    """Normal callback."""
+    if ctx.invoked_subcommand is None:
+        typer.echo("No command specified:")
+        typer.echo(ctx.get_help())
+        raise typer.Exit()
+
+
 def build_app():
     global app
+
+    # rich.print("Available command groups:", entry_points("cgse.command"))
 
     for ep in entry_points("cgse.command"):
         try:
             obj = ep.load()
             if isinstance(obj, typer.Typer):
-                app.add_typer(ep.load(), name=ep.name)
+                obj.callback(invoke_without_command=True)(subcommand_callback)
+                app.add_typer(obj, name=ep.name)
             else:
-                app.command()(ep.load())
+                app.command()(obj)
         except Exception as exc:
             app.command()(broken_command(ep.name, ep.module, exc))
 
     cgse_eps = HierarchicalEntryPoints("cgse.service")
 
-    # rich.print("Available groups:", cgse_eps.get_all_groups())
+    # rich.print("Available services groups:", cgse_eps.get_all_groups())
 
     for group in cgse_eps.get_all_groups():
         for ep in entry_points(group):
@@ -145,12 +156,14 @@ def build_app():
                     app.add_typer(ep.load(), name=ep.name)
                 else:
                     command_group = snake_to_title(group.split(".")[-1])
-                    app.add_typer(ep.load(), name=ep.name, rich_help_panel=command_group)
+                    plugin_app: typer.Typer = ep.load()
+                    plugin_app.callback(invoke_without_command=True)(subcommand_callback)
+                    app.add_typer(plugin_app, name=ep.name, rich_help_panel=command_group)
             except Exception as exc:
                 app.command()(broken_command(ep.name, ep.module, exc))
 
 
-@app.callback(no_args_is_help=True, invoke_without_command=True)
+@app.callback(invoke_without_command=True)
 def main(ctx: typer.Context, verbose: bool = False):
     """
     The `cgse` command is used to:
@@ -166,6 +179,10 @@ def main(ctx: typer.Context, verbose: bool = False):
     # them into (sub-)commands.
 
     ctx.obj = AppState(verbose=verbose)
+
+    if ctx.invoked_subcommand is None:
+        # print("Try 'cgse --help' for a list of commands.")
+        typer.echo(ctx.get_help())
 
 
 build_app()
