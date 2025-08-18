@@ -2,8 +2,8 @@ import logging
 
 from egse.log import logger
 
-def test_log_levels(caplog):
 
+def test_log_levels(caplog):
     orig_level = logger.level
 
     # The egse logger doesn't propagate messages to parent loggers, so we

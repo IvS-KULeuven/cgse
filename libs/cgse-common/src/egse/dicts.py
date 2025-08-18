@@ -52,8 +52,7 @@ def log_differences(dict_1, dict_2, log_level: int = logging.INFO):
         logger.log(log_level, capture_rich_output(table))
     else:
         logger.log(
-            log_level,
-            f"No differences between the two flattened dictionaries, {len(all_keys)} values compared."
+            log_level, f"No differences between the two flattened dictionaries, {len(all_keys)} values compared."
         )
 
 
@@ -97,7 +96,6 @@ def log_key_differences(dict_1, dict_2, log_level: int = logging.INFO):
 
 
 if __name__ == "__main__":
-
     logging.basicConfig(level=logging.DEBUG)
 
     d1 = {

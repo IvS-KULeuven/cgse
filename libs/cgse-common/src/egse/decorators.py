@@ -19,6 +19,7 @@ from egse.settings import Settings
 from egse.system import get_caller_info
 from egse.log import logger
 
+
 def static_vars(**kwargs):
     """
     Define static variables in a function.

@@ -6,6 +6,7 @@ Warning:
     Be careful, some of the Mixin classes require certain attributes to be defined in the
     outer subclass. Read the docstrings carefully to understand what is needed.
 """
+
 __all__ = [
     "CommandType",
     "DynamicCommandMixin",
