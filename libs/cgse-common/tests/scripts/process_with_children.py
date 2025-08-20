@@ -22,7 +22,8 @@ from egse.config import find_file
 from egse.process import ProcessStatus
 from egse.process import SubProcess
 
-LOGGER = logging.getLogger("egse.tests")
+logger = logging.getLogger("egse.tests")
+
 HERE = Path(__file__).parent
 PORT = 5557
 
@@ -45,10 +46,10 @@ def main():
         try:
             message = pickle.loads(process_socket.recv())
         except KeyboardInterrupt:
-            LOGGER.info("Keyboard interrupt, terminating...")
+            logger.info("Keyboard interrupt, terminating...")
             break
 
-        LOGGER.info(f"Received request: {message}")
+        logger.info(f"Received request: {message}")
 
         #  Send reply back to client
 

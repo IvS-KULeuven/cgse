@@ -19,7 +19,7 @@ import zmq
 
 from egse.process import ProcessStatus
 
-LOGGER = logging.getLogger("egse.tests")
+logger = logging.getLogger("egse.tests")
 
 PORT = 5556
 
@@ -37,10 +37,10 @@ def main():
         try:
             message = pickle.loads(process_socket.recv())
         except KeyboardInterrupt:
-            LOGGER.info("Keyboard interrupt, terminating...")
+            logger.info("Keyboard interrupt, terminating...")
             break
 
-        LOGGER.info(f"Received request: {message}")
+        logger.info(f"Received request: {message}")
 
         #  Send reply back to client
 
