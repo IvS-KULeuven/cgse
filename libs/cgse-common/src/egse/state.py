@@ -5,9 +5,9 @@ __all__ = [
 import abc
 import textwrap
 
-from egse.decorators import borg
-from egse.log import logger
 from egse.setup import Setup
+from egse.setup import load_setup
+from egse.setup import setup_ctx
 
 
 class StateError(Exception):
@@ -54,14 +54,10 @@ class ConnectionStateInterface(abc.ABC):
         pass
 
 
-@borg
 class _GlobalState:
     """
     This class implements global state that is shared between instances of this class.
     """
-
-    def __init__(self):
-        self._setup: Setup | None = None
 
     def __call__(self, *args, **kwargs):
         return self
@@ -75,12 +71,12 @@ class _GlobalState:
               configuration manager. That is only true of your process monitors the
               notifications from the configuration manager and updates the Setup when this
               is changed in/by the configuration manager. Use the `GlobalState.load_setup()`
-              method to force loading the Setup from the configuration manager..
+              method to force loading the Setup from the configuration manager.
 
         Returns:
             The currently active Setup or None.
         """
-        return self._setup
+        return setup_ctx.get()
 
     def load_setup(self) -> Setup | None:
         """
@@ -95,26 +91,7 @@ class _GlobalState:
         Returns:
             The currently active Setup or None.
         """
-        from egse.confman import ConfigurationManagerProxy
-        from egse.confman import is_configuration_manager_active
-
-        if is_configuration_manager_active():
-            with ConfigurationManagerProxy() as cm_proxy:
-                self._setup = cm_proxy.get_setup()
-        else:
-            logger.warning(
-                textwrap.dedent(
-                    """\
-                    Could not reach the Configuration Manager to request the Setup.
-
-                    Check if the Configuration Manager is running and why it can not be consulted. When it's
-                    back on-line, do a 'load_setup()'.
-                    """
-                )
-            )
-            self._setup = None
-
-        return self._setup
+        return load_setup()
 
 
 GlobalState = _GlobalState()
