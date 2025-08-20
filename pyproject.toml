@@ -31,7 +31,7 @@ testpaths = [
     "libs/cgse-core/tests",
     "libs/cgse-coordinates/tests",
 ]
-addopts = "-rA --cov --cov-branch --cov-report html"
+addopts = "-ra --cov --cov-branch --cov-report html"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')"
 ]
