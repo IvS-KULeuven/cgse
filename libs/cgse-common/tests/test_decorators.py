@@ -25,7 +25,7 @@ from egse.decorators import transaction_command
 from egse.decorators import write_command
 from egse.settings import Settings
 
-MODULE_LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def test_static_vars():
@@ -66,6 +66,11 @@ def test_time_it(caplog):
 
 def test_debug(caplog):
     caplog.set_level(level=logging.DEBUG)
+
+    # The egse logger has level=INFO by default
+    from egse.log import logger as egse_logger
+
+    egse_logger.setLevel(logging.DEBUG)
 
     @debug
     def func1():
@@ -268,7 +273,7 @@ def test_deprecation():
 
         with pytest.deprecated_call() as record:
             deprecated_function()
-            MODULE_LOGGER.debug(record[0].message)
+            logger.debug(record[0].message)
 
     """
 

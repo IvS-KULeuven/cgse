@@ -202,7 +202,7 @@ def test_active_process():
 
     assert stub.execute()
 
-    time.sleep(0.1)
+    time.sleep(0.5)  # Give the process time to start up
 
     assert stub.is_running()
     assert is_active(cmd_port)  # check if the empty_process is active
@@ -256,6 +256,9 @@ def test_process_no_shell():
     cmd_port = 5556
 
     assert stub.execute()
+
+    time.sleep(0.5)  # Give the process time to start up
+
     assert stub.exc_info == {}
     assert is_active(cmd_port)
     assert not stub.is_dead_or_zombie()
@@ -273,6 +276,9 @@ def test_process_with_shell():
     cmd_port = 5556
 
     assert stub.execute()
+
+    time.sleep(0.5)  # Give the process time to start up
+
     assert stub.exc_info == {}
     assert is_active(cmd_port)
     assert not stub.is_dead_or_zombie()
@@ -289,6 +295,9 @@ def test_process_with_children():
     cmd_port = 5557
 
     assert parent.execute()
+
+    time.sleep(0.5)  # Give the process time to start up
+
     assert parent.exc_info == {}
     assert is_active(cmd_port)
     assert parent.children()
