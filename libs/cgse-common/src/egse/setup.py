@@ -135,6 +135,7 @@ import warnings
 from contextvars import ContextVar
 from functools import lru_cache
 from pathlib import Path
+from threading import Lock
 from typing import Optional
 from typing import Protocol
 from typing import Union
@@ -893,11 +894,20 @@ class SetupManager:
     """
 
     def __init__(self):
-        self._providers: list = []
+        self._providers: list | None = None
         self._default_source = "local"
-        self._init_providers()
+        self._discovery_lock = Lock()
 
-    def _init_providers(self):
+    @property
+    def providers(self):
+        """Lazy provider discovery - only runs when first accessed to prevent circular import problems."""
+        if self._providers is None:
+            with self._discovery_lock:
+                if self._providers is None:  # Double-check locking
+                    self._providers = self._discover_providers()
+        return self._providers
+
+    def _discover_providers(self):
         """
         Initialise the Setup provider.
 
@@ -905,6 +915,7 @@ class SetupManager:
         SetupProvider protocol. If a provider can handle 'core-services', that will become
         the default when accessing the Setups, otherwise the default will be 'local'.
         """
+        providers = []
 
         cgse_eps = HierarchicalEntryPoints("cgse.extension")
 
@@ -912,11 +923,13 @@ class SetupManager:
             provider_class = ep.load()
             provider = provider_class()
             if isinstance(provider, SetupProvider):
-                self._providers.append(provider)
+                providers.append(provider)
                 if provider.can_handle("core-services"):
                     self._default_source = "core-services"
 
-        self._providers.append(LocalSetupProvider())
+        providers.append(LocalSetupProvider())
+
+        return providers
 
     def set_default_source(self, source: str):
         self._default_source = source
@@ -924,7 +937,7 @@ class SetupManager:
     def load_setup(self, setup_id: int = None, **kwargs):
         source = kwargs.get("source") or self._default_source
 
-        for provider in self._providers:
+        for provider in self.providers:
             if provider.can_handle(source):
                 return provider.load_setup(setup_id, **kwargs)
 
@@ -933,7 +946,7 @@ class SetupManager:
 
     def submit_setup(self, setup: Setup, description: str, **kwargs):
         source = kwargs.get("source") or self._default_source
-        for provider in self._providers:
+        for provider in self.providers:
             if provider.can_handle(source):
                 return provider.submit_setup(setup, description, **kwargs)
         logger.warning(f"Couldn't find a suitable Setup provider for handling '{source}', using 'local'.")
