@@ -168,7 +168,7 @@ class Listeners:
 
     def notify_listener(self, name: str, listener: dict, event: Event):
         """
-        Notifies a registered listener fro the given event.
+        Notifies a registered listener for the given event.
         """
         proxy: Type[EventInterface] = listener["proxy"]
 

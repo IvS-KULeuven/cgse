@@ -41,7 +41,7 @@ CTRL_SETTINGS = Settings.load("Logging Control Server")
 LOGGER_ID = "LOGGER"
 """The logger id that is also used as service_tpe for service discovery."""
 
-logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT_FULL)
+logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT_FULL, style="{")
 
 root_logger = logging.getLogger()
 egse_logger = logging.getLogger("egse")

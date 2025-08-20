@@ -56,6 +56,9 @@ explore = "cgse_core.cgse_explore"
 [project.entry-points."cgse.resource"]
 icons = 'egse.icons'
 
+[project.entry-points."cgse.extension.setup_provider"]
+setup_provider = "egse._setup_core:CoreSetupProvider"
+
 [project.entry-points."cgse.process_management.core_services"]
 "Storage Manager" = "SM_CS"
 "Configuration Manager" = "CM_CS"

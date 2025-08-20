@@ -14,7 +14,6 @@ from egse.command import load_commands
 from egse.command import parse_format_string
 from egse.command import stringify_function_call
 from egse.protocol import CommandProtocol
-from egse.state import GlobalState
 from egse.system import attrdict
 
 
