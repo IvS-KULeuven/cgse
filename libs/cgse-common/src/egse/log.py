@@ -13,7 +13,8 @@ LOG_FORMAT_FULL = (
 )
 
 logger = logging.getLogger("egse")
-logger.propagate = False
+logger.propagate = True
+logger.level = logging.INFO
 handler = logging.StreamHandler()
 formatter = logging.Formatter(fmt=LOG_FORMAT_FULL, style="{")
 handler.setFormatter(formatter)
