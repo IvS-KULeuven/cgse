@@ -483,7 +483,7 @@ def get_local_settings_path() -> str or None:
 
 def has_conf_repo_location() -> bool:
     location = _env.get("CONF_REPO_LOCATION")
-    return True if location else False
+    return True if location in (None, NoValue) else False
 
 
 def get_conf_repo_location_env_name() -> str:
