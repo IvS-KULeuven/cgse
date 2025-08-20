@@ -14,6 +14,7 @@ from types import MethodType
 import zmq
 
 from egse.decorators import dynamic_interface
+from egse.log import logger
 from egse.mixin import DynamicClientCommandMixin
 from egse.response import Failure
 from egse.zmq_ser import split_address
@@ -254,7 +255,12 @@ class BaseProxy(ControlServerConnectionInterface):
 
         port = self.send("get_service_port")  # FIXME: Check if this is still returning the proper port
 
-        return ServiceProxy(protocol=transport, hostname=address, port=port)
+        logger.debug(f"----> {port=}")
+
+        if isinstance(port, Failure):
+            raise Failure
+        else:
+            return ServiceProxy(protocol=transport, hostname=address, port=port)
 
 
 class DynamicProxy(BaseProxy, DynamicClientCommandMixin):

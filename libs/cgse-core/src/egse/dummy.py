@@ -53,17 +53,17 @@ from egse.device import DeviceTimeoutError
 from egse.device import DeviceTransport
 from egse.listener import Event
 from egse.listener import EventInterface
+from egse.log import LOG_FORMAT_FULL
 from egse.log import logger
 from egse.protocol import CommandProtocol
 from egse.proxy import Proxy
-from egse.settings import Settings
 from egse.system import SignalCatcher
 from egse.system import attrdict
 from egse.system import format_datetime
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
 
-logging.basicConfig(level=logging.DEBUG, format=Settings.LOG_FORMAT_FULL)
+logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT_FULL, style="{")
 
 __version__ = "0.2.0"
 
