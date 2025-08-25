@@ -14,14 +14,14 @@ from typing import Union
 import zmq
 import zmq.asyncio
 
+from egse.log import logger
 from egse.registry import DEFAULT_RS_HB_PORT
 from egse.registry import DEFAULT_RS_PUB_PORT
 from egse.registry import DEFAULT_RS_REQ_PORT
 from egse.registry import MessageType
-from egse.registry import logger
 from egse.system import do_every
 
-REQUEST_TIMEOUT = 5000
+REQUEST_TIMEOUT = 5000  # milliseconds
 
 
 class RegistryClient:
@@ -453,6 +453,7 @@ class RegistryClient:
         )
         self._hb_thread.daemon = True
         self._hb_thread.start()
+        return None
 
     def stop_heartbeat(self) -> None:
         self._hb_stop_event.set()
@@ -1164,7 +1165,7 @@ class AsyncRegistryClient:
             await self.stop_event_listener()
             await self.stop_heartbeat()
             await self.deregister()
-            await self.close()
+            # await self.close()  # client shall not be closed by this context manager !!
 
 
 def is_service_registered(service_type: str):
