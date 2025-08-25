@@ -1,8 +1,14 @@
+import logging
 import subprocess
 import sys
 from pathlib import Path
 
 import rich
+
+from egse.log import logger
+from egse.process import is_process_running
+from egse.system import Timer
+from egse.system import waiting_for
 
 
 def stop_rm_cs():
@@ -17,6 +23,13 @@ def stop_rm_cs():
         stdin=subprocess.DEVNULL,
         close_fds=True,
     )
+
+    try:
+        with Timer("rm_cs stop timer", log_level=logging.DEBUG):
+            waiting_for(lambda: not is_process_running(["egse.registry.server", "start"]), timeout=5.0)
+    except TimeoutError:
+        logger.warning("rm_cs should not be running anymore...")
+
 
 
 def stop_log_cs():
@@ -46,6 +59,13 @@ def stop_sm_cs():
         close_fds=True,
     )
 
+    try:
+        with Timer("sm_cs stop timer", log_level=logging.DEBUG):
+            waiting_for(lambda: not is_process_running(["storage_cs", "start"]), timeout=5.0)
+    except TimeoutError:
+        logger.warning("sm_cs should not be running anymore...")
+
+
 
 def stop_cm_cs():
     rich.print("Terminating the configuration manager core service...")
@@ -60,6 +80,12 @@ def stop_cm_cs():
         close_fds=True,
     )
 
+    try:
+        with Timer("cm_cs stop timer", log_level=logging.DEBUG):
+            waiting_for(lambda: not is_process_running(["confman_cs", "start"]), timeout=5.0)
+    except TimeoutError:
+        logger.warning("cm_cs should not be running anymore...")
+
 
 def stop_pm_cs():
     rich.print("Terminating the process manager core service...")
@@ -73,3 +99,9 @@ def stop_pm_cs():
         stdin=subprocess.DEVNULL,
         close_fds=True,
     )
+
+    try:
+        with Timer("pm_cs stop timer", log_level=logging.DEBUG):
+            waiting_for(lambda: not is_process_running(["procman_cs", "start"]), timeout=5.0)
+    except TimeoutError:
+        logger.warning("pm_cs should not be running anymore...")
