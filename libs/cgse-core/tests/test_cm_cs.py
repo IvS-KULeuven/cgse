@@ -7,8 +7,10 @@ import rich
 
 from egse.confman import ConfigurationManagerProxy
 from egse.confman import is_configuration_manager_active
-from egse.confman.confman_cs import list_setups
+from egse.dummy import is_dummy_cs_active
 from egse.process import SubProcess
+from egse.system import Timer
+from egse.system import waiting_for
 
 
 def test_is_cm_cs_is_active():
@@ -64,23 +66,33 @@ def test_listeners():
     dummy_dev = SubProcess("Dummy Device", [sys.executable, "-m", "egse.dummy", "start-dev"])
     dummy_dev.execute()
 
-    dummy_cs = SubProcess("Dummy CS", [sys.executable, "-m", "egse.dummy", "start-cs"])
-
     try:
         with ConfigurationManagerProxy() as cm:
             assert "Dummy CS" not in cm.get_listener_names()
 
+            dummy_cs = SubProcess("Dummy CS", [sys.executable, "-m", "egse.dummy", "start-cs"])
             dummy_cs.execute()
 
-            time.sleep(0.5)  # Registration needs some time
+            # It takes ~1.5s to startup on my MacBook Pro M2, why is this such a long time?
+            with Timer(name="Dummy CS startup timer"):
+                waiting_for(is_dummy_cs_active, timeout=5.0)
 
             assert "Dummy CS" in cm.get_listener_names()
 
             cm.load_setup(setup_id=1)
 
+            dummy_cs_stop = SubProcess("Dummy CS", [sys.executable, "-m", "egse.dummy"], ["stop-cs"])
+            dummy_cs_stop.execute()
+
+            # It takes ~1.5s to startup on my MacBook Pro M2, why is this such a long time?
+            with Timer(name="Dummy CS shutdown timer"):
+                waiting_for(lambda: not is_dummy_cs_active(), timeout=5.0)
+
     finally:
-        dummy_dev.quit()
-        dummy_cs.quit()
+        dummy_dev_stop = SubProcess("Dummy Device", [sys.executable, "-m", "egse.dummy"], ["stop-dev"])
+        dummy_dev_stop.execute()
+
+        time.sleep(0.5)  # give the processes the time to shut down
 
         while dummy_dev.is_running():
             time.sleep(1.0)
