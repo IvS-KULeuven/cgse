@@ -253,14 +253,14 @@ class BaseProxy(ControlServerConnectionInterface):
 
         transport, address, _ = split_address(self._endpoint)
 
-        port = self.send("get_service_port")  # FIXME: Check if this is still returning the proper port
+        response = self.send("get_service_port")  # FIXME: Check if this is still returning the proper port
 
-        logger.debug(f"----> {port=}")
+        logger.debug(f"----> {response=}")
 
-        if isinstance(port, Failure):
-            raise Failure
+        if isinstance(response, Failure):
+            raise response
         else:
-            return ServiceProxy(protocol=transport, hostname=address, port=port)
+            return ServiceProxy(protocol=transport, hostname=address, port=response)
 
 
 class DynamicProxy(BaseProxy, DynamicClientCommandMixin):
