@@ -67,7 +67,8 @@ Provide a `cgse` command that is extensible with new commands and command groups
   use of command YAML files, replace `dynamic_interface` with `dynamic_command`.
 - [ ] Introduce asyncio into the commanding protocol, e.g. `get_status()` 
   and `get_housekeeping()` shall be handled asynchronously.
-- [ ] GlobalState Setup needs some redesign, especially `GlobalState.setup` which should not consult
+- [x] GlobalState Setup needs some redesign, especially `GlobalState.setup` 
+  which should not consult
   the configuration manager by default.
 
 ## Removals
