@@ -7,6 +7,7 @@ __all__ = [
     "setup_conf_data",
     "setup_data_storage_layout",
     "teardown_data_storage_layout",
+    "is_service_registry_running",
 ]
 
 import os
@@ -19,11 +20,18 @@ from egse.env import set_conf_data_location
 from egse.env import set_data_storage_location
 from egse.env import set_log_file_location
 from egse.process import is_process_running
+from egse.registry.client import RegistryClient
 
 
 def is_process_not_running(items: List):
     """Check if a process is not running currently."""
     return not is_process_running(items)
+
+
+def is_service_registry_running() -> bool:
+
+    client = RegistryClient()
+    return client.health_check()
 
 
 def setup_conf_data(tmp_data_dir: Path):

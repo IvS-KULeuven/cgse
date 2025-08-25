@@ -1,6 +1,8 @@
 import logging
 from pathlib import Path
 
+import rich
+
 from egse.env import get_log_file_location
 from egse.system import read_last_lines
 
@@ -8,7 +10,12 @@ from egse.logger import egse_logger, create_new_zmq_logger
 from egse.logger import get_log_file_name
 
 
-def test_logging_messages_of_different_levels(setup_log_service, caplog):
+def test_logging_messages_of_different_levels(setup_log_service):
+    # The egse logger doesn't propagate messages to parent loggers, so we
+    # have to add the caplog handler in order to capture logging messages for this test.
+    # egse_logger.addHandler(caplog.handler)
+    # egse_logger.setLevel(logging.DEBUG)
+
     egse_logger.debug("This is a DEBUG message.")
     egse_logger.info("This is a INFO message.")
     egse_logger.warning("This is a WARNING message.")
@@ -19,9 +26,9 @@ def test_logging_messages_of_different_levels(setup_log_service, caplog):
 
     lines = read_last_lines(filename=Path(log_location) / get_log_file_name(), num_lines=5)
 
-    print(f"{log_location = }")
+    print(f"{log_location = }, {get_log_file_name()=}")
     for line in lines:
-        print(lines)
+        print(line)
 
     # The DEBUG message should be in the log file that was created by the log_cs
 
