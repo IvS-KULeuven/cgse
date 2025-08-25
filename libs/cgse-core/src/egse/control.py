@@ -22,36 +22,27 @@ from urllib3.exceptions import NewConnectionError
 from egse.decorators import retry
 from egse.decorators import retry_with_exponential_backoff
 from egse.listener import Listeners
+from egse.log import logger
+from egse.logger import close_all_zmq_handlers
 from egse.metrics import get_metrics_repo
+from egse.process import ProcessStatus
 from egse.registry.client import RegistryClient
+from egse.settings import Settings
+from egse.settings import get_site_id
 from egse.signal import FileBasedSignaling
 from egse.system import SignalCatcher
 from egse.system import camel_to_kebab
 from egse.system import camel_to_snake
-from egse.system import str_to_datetime
-from egse.system import time_in_ms
-from egse.system import type_name
-from egse.zmq_ser import get_port_number
-
-try:
-    # This function is only available when the cgse-core package is installed
-    from egse.logger import close_all_zmq_handlers
-except ImportError:
-
-    def close_all_zmq_handlers():  # noqa
-        pass
-
-
-from egse.process import ProcessStatus
-from egse.settings import Settings, get_site_id
 from egse.system import do_every
 from egse.system import get_average_execution_time
 from egse.system import get_average_execution_times
 from egse.system import get_full_classname
 from egse.system import get_host_ip
 from egse.system import save_average_execution_time
-from egse.log import logger
-
+from egse.system import str_to_datetime
+from egse.system import time_in_ms
+from egse.system import type_name
+from egse.zmq_ser import get_port_number
 
 PROCESS_SETTINGS = Settings.load("PROCESS")
 SITE_ID = get_site_id()
@@ -74,6 +65,8 @@ def is_control_server_active(endpoint: str = None, timeout: float = 0.5) -> bool
         raise ValueError(
             "endpoint argument not provided, please provide a string with this format: '<protocol>://<address>:<port>'"
         )
+
+    logger.debug(f"Checking if {endpoint} is active {timeout=}s.")
 
     ctx = zmq.Context.instance()
 
@@ -780,9 +773,12 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         @retry_with_exponential_backoff(exceptions=[ConnectionError])
         def _add_listener(proxy, listener):
-            with proxy() as x, x.get_service_proxy() as srv:
-                rc = srv.add_listener(listener)
-                logger.info(f"Response from {proxy.__name__} service add_listener: {rc}")
+            try:
+                with proxy() as x, x.get_service_proxy() as srv:
+                    response = srv.add_listener(listener)
+                    logger.info(f"Response from {proxy.__name__} service add_listener: {response}")
+            except Exception as exc:
+                logger.error(f"Caught {type_name(exc)}: {exc} – listener '{listener['name']}' could not be registered")
 
         logger.info(f"Registering {self.__class__.__name__} as a listener to {proxy.__name__}")
 
