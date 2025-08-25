@@ -31,7 +31,6 @@ def stop_rm_cs():
         logger.warning("rm_cs should not be running anymore...")
 
 
-
 def stop_log_cs():
     rich.print("Terminating the logging core service...")
 
@@ -64,7 +63,6 @@ def stop_sm_cs():
             waiting_for(lambda: not is_process_running(["storage_cs", "start"]), timeout=5.0)
     except TimeoutError:
         logger.warning("sm_cs should not be running anymore...")
-
 
 
 def stop_cm_cs():

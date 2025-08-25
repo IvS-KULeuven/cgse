@@ -117,7 +117,7 @@ def is_dummy_cs_active() -> bool:
     """Returns True if the dummy device control server is active."""
     return is_control_server_active(
         endpoint=connect_address(ctrl_settings.PROTOCOL, ctrl_settings.HOSTNAME, ctrl_settings.COMMANDING_PORT),
-        timeout=0.2
+        timeout=0.2,
     )
 
 
@@ -135,6 +135,7 @@ def is_dummy_dev_active() -> bool:
 
 class DummyCommand(ClientServerCommand):
     """The Command class for the dummy device."""
+
     ...
 
 

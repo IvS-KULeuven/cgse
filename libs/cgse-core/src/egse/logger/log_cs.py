@@ -130,7 +130,9 @@ def start():
     if os.getenv("LOG_FORMAT", "").lower() == "full":
         stream_formatter = logging.Formatter(fmt=LOG_FORMAT_FULL, datefmt=LOG_DATE_FORMAT_FULL, style=LOG_FORMAT_STYLE)
     else:
-        stream_formatter = logging.Formatter(fmt=LOG_FORMAT_CLEAN, datefmt=LOG_DATE_FORMAT_CLEAN, style=LOG_FORMAT_STYLE)
+        stream_formatter = logging.Formatter(
+            fmt=LOG_FORMAT_CLEAN, datefmt=LOG_DATE_FORMAT_CLEAN, style=LOG_FORMAT_STYLE
+        )
 
     stream_handler = StreamHandler()
     stream_handler.setFormatter(stream_formatter)

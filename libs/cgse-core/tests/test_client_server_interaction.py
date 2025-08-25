@@ -17,14 +17,14 @@ from egse.system import Timer
 from egse.system import type_name
 from egse.system import waiting_for
 
-logger = logging.getLogger('egse.tests')
+logger = logging.getLogger("egse.tests")
+
 
 def is_service_running(services: list) -> bool:
-
     is_active = False
 
     try:
-        if 'cm' in services:
+        if "cm" in services:
             if is_configuration_manager_active():
                 is_active = True
             else:
@@ -38,7 +38,7 @@ def is_service_running(services: list) -> bool:
 
 
 # Skip entire module if service not running
-if not is_service_running(['cm']):
+if not is_service_running(["cm"]):
     pytest.skip("Core service 'cm' not available", allow_module_level=True)
 
 

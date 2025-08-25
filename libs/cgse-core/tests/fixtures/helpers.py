@@ -29,7 +29,6 @@ def is_process_not_running(items: List):
 
 
 def is_service_registry_running() -> bool:
-
     client = RegistryClient()
     return client.health_check()
 

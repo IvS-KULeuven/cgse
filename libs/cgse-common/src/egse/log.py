@@ -10,6 +10,7 @@ Environment variables that affect logging:
   - LOG_LEVEL: an integer [10, 50] or a level name DEBUG, INFO, WARNING, CRITICAL, ERROR
 
 """
+
 __all__ = [
     "LOG_FORMAT_FULL",
     "logger",
@@ -28,22 +29,24 @@ LOG_FORMAT_FULL = (
     "{asctime:19s}.{msecs:03.0f} : {processName:20s} : {levelname:8s} : {name:^25s} : {lineno:6d} : {filename:20s} : {"
     "message}"
 )
-LOG_FORMAT_CLEAN = (
-    "{asctime} [{levelname:>8s}] {message} ({filename}:{lineno:d})"
-)
+LOG_FORMAT_CLEAN = "{asctime} [{levelname:>8s}] {message} ({filename}:{lineno:d})"
 
 LOG_DATE_FORMAT_FULL = "%Y-%m-%d %H:%M:%S"
 LOG_DATE_FORMAT_CLEAN = "%Y-%m-%d %H:%M:%S"
 
+
 class EGSEFilter(logging.Filter):
     def filter(self, record):
-        return record.name.startswith('egse')
+        return record.name.startswith("egse")
+
 
 egse_filter = EGSEFilter()
 
+
 class NonEGSEFilter(logging.Filter):
     def filter(self, record):
-        return not record.name.startswith('egse')
+        return not record.name.startswith("egse")
+
 
 root_filter = NonEGSEFilter()
 
@@ -98,10 +101,7 @@ logger = egse_logger
 
 if __name__ == "__main__":
     logging.basicConfig(
-        level=get_log_level_from_env(),
-        format=LOG_FORMAT_CLEAN,
-        datefmt=LOG_DATE_FORMAT_CLEAN,
-        style="{"
+        level=get_log_level_from_env(), format=LOG_FORMAT_CLEAN, datefmt=LOG_DATE_FORMAT_CLEAN, style="{"
     )
 
     root_logger = logging.getLogger()
@@ -123,9 +123,7 @@ if __name__ == "__main__":
             f"{'Filename':20s} : {'Message'}[/]"
         )
     else:
-        rich.print(
-            f"[b]{'Date & Time':^19s} [ Level  ] Message (filename:lineno)[/]"
-        )
+        rich.print(f"[b]{'Date & Time':^19s} [ Level  ] Message (filename:lineno)[/]")
 
     rich.print("-" * 150)
     for name, level in logging.getLevelNamesMapping().items():
