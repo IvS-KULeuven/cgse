@@ -31,6 +31,7 @@ SERVER_STARTUP_TIMEOUT = 5
 
 pytestmark = pytest.mark.skipif(is_service_registry_running, reason="this file is not ready for testing yet")
 
+
 async def server_health_check(zmq_context):
     # Verify server is ready by testing the health endpoint
     start_time = time.time()

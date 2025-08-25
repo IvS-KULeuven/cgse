@@ -75,7 +75,6 @@ def setup_log_service(default_env):
         log_cs.terminate()
 
 
-
 @pytest.fixture(scope="module")
 def setup_core_services():
     """This fixture starts the CGSE core services."""
