@@ -201,7 +201,7 @@ class HierarchicalEntryPoints:
     def _discover_groups(self):
         """Discover all groups that match the base group pattern."""
         all_eps = lib_entry_points()
-        # rich.print(f"{type(all_eps) = }")
+        # print(f"{type(all_eps) = }")
 
         self.groups = {}
         self.flat_entries = []
@@ -209,14 +209,18 @@ class HierarchicalEntryPoints:
         for ep in all_eps:
             # rich.print(f"{type(ep) = }, {dir(ep) = }")
             if ep.group == self.base_group or ep.group.startswith(f"{self.base_group}."):
-                self.groups[ep.group] = ep
+                # print(f"{ep.group = }, {ep = }")
+                if ep.group in self.groups:
+                    self.groups[ep.group].append(ep)
+                else:
+                    self.groups[ep.group] = [ep]
                 self.flat_entries.append(ep)
 
-    def get_all_entry_points(self):
+    def get_all_entry_points(self) -> list:
         """Get all entry points as a flat list."""
         return self.flat_entries
 
-    def get_by_subgroup(self, subgroup=None):
+    def get_by_subgroup(self, subgroup=None) -> list:
         """Get entry points from a specific subgroup."""
         if subgroup is None:
             return self.groups.get(self.base_group, [])
@@ -224,11 +228,11 @@ class HierarchicalEntryPoints:
         full_group = f"{self.base_group}.{subgroup}"
         return self.groups.get(full_group, [])
 
-    def get_all_groups(self):
+    def get_all_groups(self) -> list:
         """Get all discovered group names."""
         return list(self.groups.keys())
 
-    def get_by_type(self, entry_type):
+    def get_by_type(self, entry_type) -> list:
         """Get entry points by type (assuming type is the subgroup name)."""
         return self.get_by_subgroup(entry_type)
 

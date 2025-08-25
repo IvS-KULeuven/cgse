@@ -7,8 +7,8 @@ These tests verify the functionality of the ZeroMQ-based service registry compon
 
 import asyncio
 import json
-import logging
 import time
+import uuid
 from unittest.mock import AsyncMock
 from unittest.mock import patch
 
@@ -17,16 +17,13 @@ import pytest_asyncio
 import zmq
 import zmq.asyncio
 
+from egse.log import logger
+from egse.registry import MessageType
 from egse.registry.backend import AsyncInMemoryBackend
 from egse.registry.client import AsyncRegistryClient
 from egse.registry.server import AsyncRegistryServer
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-12s %(lineno)5d:%(module)-20s %(message)s",
-)
-
-logger = logging.getLogger("test_registry_service")
+from egse.system import type_name
+from fixtures.helpers import is_service_registry_running
 
 # Constants for testing
 TEST_REQ_PORT = 15556
@@ -35,13 +32,16 @@ TEST_PUB_PORT = 15557
 # Wait timeout for the server to start (seconds)
 SERVER_STARTUP_TIMEOUT = 5
 
+pytestmark = pytest.mark.skipif(
+    is_service_registry_running, reason="This test starts the registry server, so it can not be running"
+)
 
 ################################################################################
 # Fixed Helper Functions
 ################################################################################
 
 
-async def send_request(socket, request, timeout=5.0):
+async def send_request(msg_type: MessageType, socket, request, timeout=5.0):
     """
     Send a request to the server and get response with proper timeout.
 
@@ -56,7 +56,9 @@ async def send_request(socket, request, timeout=5.0):
     try:
         # Send the request - add timeout to detect send failures
         try:
-            await asyncio.wait_for(socket.send_string(json.dumps(request)), timeout=timeout)
+            await asyncio.wait_for(
+                socket.send_multipart([msg_type.value, json.dumps(request).encode()]), timeout=timeout
+            )
         except asyncio.TimeoutError:
             raise TimeoutError(f"Timeout sending request: {request}")
 
@@ -68,21 +70,33 @@ async def send_request(socket, request, timeout=5.0):
 
         # Receive the response with timeout
         try:
-            response_json = await asyncio.wait_for(socket.recv_string(), timeout=timeout)
-            return json.loads(response_json)
+            message_parts = await asyncio.wait_for(socket.recv_multipart(), timeout=timeout)
+
+            if len(message_parts) >= 2:
+                message_type = MessageType(message_parts[0])
+                message_data = message_parts[1]
+
+                return json.loads(message_data)
+            else:
+                return {
+                    "success": False,
+                    "error": f"not enough parts received: {len(message_parts)}",
+                    "data": message_parts,
+                }
+
         except asyncio.TimeoutError:
             raise TimeoutError(f"Timeout receiving response for {request.get('action')}")
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON response: {e}")
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Invalid JSON response: {exc}")
 
     except KeyboardInterrupt as exc:
         logger.info("Caught Keyboard Interrupt", exc_info=True)
-    except Exception as e:
+    except Exception as exc:
         # Add diagnostics to the error
         elapsed = time.time() - start_time
-        diagnostic_msg = f"Error in send_request after {elapsed:.2f}s: {str(e)}"
+        diagnostic_msg = f"Error in send_request after {elapsed:.2f}s: {str(exc)}"
         print(diagnostic_msg)  # Print for immediate feedback during test run
-        raise RuntimeError(diagnostic_msg) from e
+        raise RuntimeError(diagnostic_msg) from exc
 
 
 async def wait_for_event(socket, timeout=2.0):
@@ -110,15 +124,18 @@ async def wait_for_event(socket, timeout=2.0):
 
 
 async def server_health_check(zmq_context) -> bool:
-    """
+    """server_health_check
     Verify if the server is ready by testing the health endpoint/action.
     """
 
     start_time = time.time()
-    test_socket = zmq_context.socket(zmq.REQ)
+    test_socket = zmq_context.socket(zmq.DEALER)
+    test_socket.setsockopt(zmq.LINGER, 0)  # Don't wait for unsent messages on close()
+    test_socket.setsockopt(zmq.IDENTITY, "health-check-id".encode())
     test_socket.connect(f"tcp://localhost:{TEST_REQ_PORT}")
 
     server_ready = False
+    msg_type = MessageType.REQUEST_WITH_REPLY
     health_request = {"action": "health"}
 
     # Try several times to connect to the server
@@ -129,20 +146,25 @@ async def server_health_check(zmq_context) -> bool:
                 break
 
             # Send health check request
-            await test_socket.send_string(json.dumps(health_request))
+            await test_socket.send_multipart([msg_type.value, json.dumps(health_request).encode()])
 
             # Wait for response
             if await test_socket.poll(timeout=1000):
-                response_json = await test_socket.recv_string()
-                response = json.loads(response_json)
+                message_parts = await test_socket.recv_multipart()
 
-                if response.get("success"):
-                    server_ready = True
-                    logger.info(f"Server ready after {attempt} attempts")
-                    break
+                if len(message_parts) >= 2:
+                    message_type = MessageType(message_parts[0])
+                    message_data = message_parts[1]
 
-        except Exception as e:
-            logger.error(f"ERROR: Attempt {attempt} failed: {e}")
+                    response = json.loads(message_data)
+
+                    if response.get("success"):
+                        server_ready = True
+                        logger.info(f"Server ready after {attempt} attempts")
+                        break
+
+        except Exception as exc:
+            logger.error(f"ERROR: Attempt {attempt} failed: {exc}", exc_info=True)
 
         # Wait before trying again
         await asyncio.sleep(0.5)
@@ -188,11 +210,16 @@ async def server(in_memory_backend, zmq_context):
 
     if not server_ready:
         # Stop the server if it failed to start properly and raise a RuntimeError
-        await server.stop()
+        server.stop()
         try:
             await asyncio.wait_for(server_task, timeout=2.0)
         except asyncio.TimeoutError:
             pass
+        except Exception as exc:
+            msg = f"Caught {type_name(exc)}: {exc}"
+            if str(exc).startswith("Address already in use"):
+                msg += " – the Registry server is probably already running."
+            logger.error(msg)
 
         raise RuntimeError(f"Server failed to start after {SERVER_STARTUP_TIMEOUT} seconds")
 
@@ -245,14 +272,14 @@ async def zmq_context():
 @pytest_asyncio.fixture
 async def req_socket(zmq_context):
     """
-    Function-scoped fixture for a REQ socket with proper timeout settings.
+    Function-scoped fixture for a DEALER socket with proper timeout settings.
     """
-    socket = zmq_context.socket(zmq.REQ)
+    socket = zmq_context.socket(zmq.DEALER)
     # Set timeouts to avoid hanging
     socket.setsockopt(zmq.LINGER, 0)  # Don't wait when closing
     socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second receive timeout
     socket.setsockopt(zmq.SNDTIMEO, 5000)  # 5 second send timeout
-
+    socket.setsockopt(zmq.IDENTITY, f"client-{uuid.uuid4()}".encode())
     socket.connect(f"tcp://localhost:{TEST_REQ_PORT}")
 
     yield socket
@@ -294,13 +321,14 @@ async def test_server_initialization(server):
 @pytest.mark.asyncio
 async def test_server_is_running(server):
     # Sleep for 10s and investigate the log, server should have printed some log messages
+    logger.info("Sleeping for 10s, server shall post some debug log messages...")
     await asyncio.sleep(10.0)
 
 
 @pytest.mark.asyncio
 async def test_server_health_check(server, req_socket):
     """Test the server's health check."""
-    response = await send_request(req_socket, {"action": "health"})
+    response = await send_request(MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "health"})
 
     assert response["success"] is True
     assert response["status"] == "ok"
@@ -311,12 +339,12 @@ async def test_server_health_check(server, req_socket):
 async def test_server_handles_invalid_request(server, req_socket):
     """Test the server's handling of invalid requests."""
     # Missing action
-    response = await send_request(req_socket, {})
+    response = await send_request(MessageType.REQUEST_WITH_REPLY, req_socket, {})
     assert response["success"] is False
     assert "Missing required field: action" in response["error"]
 
     # Unknown action
-    response = await send_request(req_socket, {"action": "unknown_action"})
+    response = await send_request(MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "unknown_action"})
     assert response["success"] is False
     assert "Unknown action" in response["error"]
 
@@ -337,7 +365,9 @@ async def test_server_register_service(server, req_socket, sub_socket):
         "metadata": {"version": "1.0.0"},
     }
 
-    response = await send_request(req_socket, {"action": "register", "service_info": service_info})
+    response = await send_request(
+        MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "register", "service_info": service_info}
+    )
 
     assert response["success"] is True
     assert "service_id" in response
@@ -356,12 +386,16 @@ async def test_server_get_service(server, req_socket):
 
     service_info = {"name": "test-service", "host": "localhost", "port": 8080}
 
-    register_response = await send_request(req_socket, {"action": "register", "service_info": service_info})
+    register_response = await send_request(
+        MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "register", "service_info": service_info}
+    )
 
     service_id = register_response["service_id"]
 
     # Now get the service
-    response = await send_request(req_socket, {"action": "get", "service_id": service_id})
+    response = await send_request(
+        MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "get", "service_id": service_id}
+    )
 
     assert response["success"] is True
     assert response["service"]["id"] == service_id
@@ -370,7 +404,9 @@ async def test_server_get_service(server, req_socket):
     assert response["service"]["port"] == 8080
 
     # Try to get a non-existent service
-    response = await send_request(req_socket, {"action": "get", "service_id": "nonexistent"})
+    response = await send_request(
+        MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "get", "service_id": "nonexistent"}
+    )
 
     assert response["success"] is False
     assert "Service not found" in response["error"]
@@ -382,6 +418,7 @@ async def test_server_list_services(server, req_socket):
 
     # Register a couple of services
     await send_request(
+        MessageType.REQUEST_WITH_REPLY,
         req_socket,
         {
             "action": "register",
@@ -390,6 +427,7 @@ async def test_server_list_services(server, req_socket):
     )
 
     await send_request(
+        MessageType.REQUEST_WITH_REPLY,
         req_socket,
         {
             "action": "register",
@@ -398,13 +436,15 @@ async def test_server_list_services(server, req_socket):
     )
 
     # List all services
-    response = await send_request(req_socket, {"action": "list"})
+    response = await send_request(MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "list"})
 
     assert response["success"] is True
     assert len(response["services"]) >= 2
 
     # List services by type
-    response = await send_request(req_socket, {"action": "list", "service_type": "type-a"})
+    response = await send_request(
+        MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "list", "service_type": "type-a"}
+    )
 
     assert response["success"] is True
     assert len(response["services"]) >= 1
@@ -417,6 +457,7 @@ async def test_server_discover_service(server, req_socket):
     """Test discovering a service by type."""
 
     await send_request(
+        MessageType.REQUEST_WITH_REPLY,
         req_socket,
         {
             "action": "register",
@@ -425,7 +466,9 @@ async def test_server_discover_service(server, req_socket):
     )
 
     # Discover a service
-    response = await send_request(req_socket, {"action": "discover", "service_type": "discovery-test"})
+    response = await send_request(
+        MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "discover", "service_type": "discovery-test"}
+    )
 
     assert response["success"] is True
     assert response["service"]["name"] == "test-service"
@@ -433,7 +476,9 @@ async def test_server_discover_service(server, req_socket):
     assert response["service"]["port"] == 8080
 
     # Try to discover a non-existent service type
-    response = await send_request(req_socket, {"action": "discover", "service_type": "nonexistent"})
+    response = await send_request(
+        MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "discover", "service_type": "nonexistent"}
+    )
 
     assert response["success"] is False
     assert "No healthy service" in response["error"]
@@ -444,13 +489,17 @@ async def test_server_deregister_service(server, req_socket, sub_socket):
     """Test de-registering a service."""
 
     register_response = await send_request(
-        req_socket, {"action": "register", "service_info": {"name": "test-service", "host": "localhost", "port": 8080}}
+        MessageType.REQUEST_WITH_REPLY,
+        req_socket,
+        {"action": "register", "service_info": {"name": "test-service", "host": "localhost", "port": 8080}},
     )
 
     service_id = register_response["service_id"]
 
     # Now deregister the service
-    response = await send_request(req_socket, {"action": "deregister", "service_id": service_id})
+    response = await send_request(
+        MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "deregister", "service_id": service_id}
+    )
 
     assert response["success"] is True
 
@@ -464,7 +513,9 @@ async def test_server_deregister_service(server, req_socket, sub_socket):
     assert event["data"]["service_id"] == service_id
 
     # Verify the service was deregistered
-    response = await send_request(req_socket, {"action": "get", "service_id": service_id})
+    response = await send_request(
+        MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "get", "service_id": service_id}
+    )
 
     assert response["success"] is False
 
@@ -474,6 +525,7 @@ async def test_server_renew_service(server, req_socket):
     """Test renewing a service's TTL."""
 
     register_response = await send_request(
+        MessageType.REQUEST_WITH_REPLY,
         req_socket,
         {"action": "register", "service_info": {"name": "test-service", "host": "localhost", "port": 8080}, "ttl": 5},
     )
@@ -481,7 +533,9 @@ async def test_server_renew_service(server, req_socket):
     service_id = register_response["service_id"]
 
     # Get the initial service data
-    service_response = await send_request(req_socket, {"action": "get", "service_id": service_id})
+    service_response = await send_request(
+        MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "get", "service_id": service_id}
+    )
 
     initial_heartbeat = service_response["service"]["last_heartbeat"]
 
@@ -489,12 +543,16 @@ async def test_server_renew_service(server, req_socket):
     await asyncio.sleep(1.0)
 
     # Renew the service
-    response = await send_request(req_socket, {"action": "renew", "service_id": service_id})
+    response = await send_request(
+        MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "renew", "service_id": service_id}
+    )
 
     assert response["success"] is True
 
     # Verify the heartbeat was updated
-    service_response = await send_request(req_socket, {"action": "get", "service_id": service_id})
+    service_response = await send_request(
+        MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "get", "service_id": service_id}
+    )
 
     assert service_response["service"]["last_heartbeat"] > initial_heartbeat
 
@@ -506,6 +564,7 @@ async def test_server_cleanup_expired_services(req_socket, sub_socket, server):
 
     # Register a service with a short TTL
     register_response = await send_request(
+        MessageType.REQUEST_WITH_REPLY,
         req_socket,
         {
             "action": "register",
@@ -528,7 +587,9 @@ async def test_server_cleanup_expired_services(req_socket, sub_socket, server):
     assert expire_event is not None, "Service expiration event not received"
 
     # Verify the service was removed
-    response = await send_request(req_socket, {"action": "get", "service_id": service_id})
+    response = await send_request(
+        MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "get", "service_id": service_id}
+    )
 
     assert response["success"] is False, "Service should have been removed"
 
@@ -599,7 +660,9 @@ async def test_client_heartbeat(client, server, req_socket):
     service_id = await client.register("heartbeat-test-service", "localhost", 8080, ttl=5)
 
     # Get initial heartbeat time
-    response = await send_request(req_socket, {"action": "get", "service_id": service_id})
+    response = await send_request(
+        MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "get", "service_id": service_id}
+    )
 
     initial_heartbeat = response["service"]["last_heartbeat"]
 
@@ -610,7 +673,9 @@ async def test_client_heartbeat(client, server, req_socket):
     await asyncio.sleep(1.5)
 
     # Check if heartbeat was updated
-    response = await send_request(req_socket, {"action": "get", "service_id": service_id})
+    response = await send_request(
+        MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "get", "service_id": service_id}
+    )
 
     assert response["service"]["last_heartbeat"] > initial_heartbeat
 
@@ -637,6 +702,7 @@ async def test_client_event_listener(client, server, req_socket):
 
     # Register a service to trigger an event
     await send_request(
+        MessageType.REQUEST_WITH_REPLY,
         req_socket,
         {"action": "register", "service_info": {"name": "event-test-service", "host": "localhost", "port": 8080}},
     )
@@ -771,12 +837,20 @@ async def test_client_register_context(client, server, req_socket):
         "context-test-service", "localhost", 8080, service_type="context-test"
     ) as service_id:
         # Verify the service was registered
-        response = await send_request(req_socket, {"action": "get", "service_id": service_id})
+        response = await send_request(
+            MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "get", "service_id": service_id}
+        )
+
+        logger.info(f"----- In test_client_register_context: {response}")
 
         assert response["success"] is True
         assert response["service"]["name"] == "context-test-service"
 
+    logger.info("----- In test_client_register_context: after context...")
+
     # After exiting the context, the service should be deregistered
-    response = await send_request(req_socket, {"action": "get", "service_id": service_id})
+    response = await send_request(
+        MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "get", "service_id": service_id}
+    )
 
     assert response["success"] is False

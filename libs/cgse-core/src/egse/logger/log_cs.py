@@ -9,12 +9,15 @@ __all__ = []
 import datetime
 import logging
 import multiprocessing
+import os
 import pickle
 import sys
+import time
 from logging import StreamHandler
 from logging.handlers import SocketHandler
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
+from time import asctime
 from typing import Optional
 
 import rich
@@ -22,6 +25,12 @@ import typer
 import zmq
 
 from egse.env import get_log_file_location
+from egse.log import LOG_DATE_FORMAT_CLEAN
+from egse.log import LOG_DATE_FORMAT_FULL
+from egse.log import LOG_FORMAT_CLEAN
+from egse.log import LOG_FORMAT_FULL
+from egse.log import LOG_FORMAT_STYLE
+from egse.log import get_log_level_from_env
 from egse.logger import LOGGER_ID
 from egse.logger import get_log_file_name
 from egse.logger import send_request
@@ -50,23 +59,19 @@ LOG_NAME_TO_LEVEL = {
 
 # The format for the log file.
 # The line that is saved in the log file shall contain as much information as possible.
+# The log record attributes are listed: https://docs.python.org/3.12/library/logging.html#logrecord-attributes
 
-LOG_FORMAT_FILE = "%(asctime)s:%(processName)s:%(process)s:%(levelname)s:%(lineno)d:%(name)s:%(message)s"
+# LOG_FORMAT_FILE = "%(asctime)s:%(processName)s:%(process)s:%(levelname)s:%(lineno)d:%(name)s:%(message)s"
+LOG_FORMAT_FILE = "{asctime} [{levelname:>8s}] {message} ({filename}:{lineno:d})"
+LOG_FORMAT_FILE_STYLE = "{"
 
 LOG_FORMAT_KEY_VALUE = (
     "level=%(levelname)s ts=%(asctime)s process=%(processName)s process_id=%(process)s "
     'name=%(name)s caller=%(filename)s:%(lineno)s function=%(funcName)s msg="%(message)s"'
 )
 
-LOG_FORMAT_DATE = "%Y-%m-%dT%H:%M:%S,%f"
-
-# The format for the console output.
-# The line that is printed on the console shall be concise.
-
-LOG_FORMAT_STREAM = "%(asctime)s:%(levelname)s:%(name)s:%(filename)s:%(funcName)s:%(message)s"
-
 LOG_LEVEL_FILE = logging.DEBUG
-LOG_LEVEL_STREAM = logging.ERROR
+LOG_LEVEL_STREAM = get_log_level_from_env()
 LOG_LEVEL_SOCKET = 1  # ALL records shall go to the socket handler
 
 LOGGER_NAME = "egse.logger"
@@ -89,10 +94,15 @@ class DateTimeFormatter(logging.Formatter):
         return f"{formatted_time}.{record.msecs:03.0f}"
 
 
-file_formatter = DateTimeFormatter(fmt=LOG_FORMAT_KEY_VALUE, datefmt=LOG_FORMAT_DATE)
+file_formatter = DateTimeFormatter(fmt=LOG_FORMAT_FILE, style=LOG_FORMAT_FILE_STYLE, datefmt=LOG_DATE_FORMAT_FULL)
 
 app_name = "log_cs"
 app = typer.Typer(name=app_name)
+
+
+def _log_record(message: str, level: int = logging.WARNING):
+    record = _create_log_record(level, message)
+    handle_log_record(record)
 
 
 @app.command()
@@ -106,6 +116,8 @@ def start():
     log_file_location = Path(get_log_file_location())
     log_file_name = get_log_file_name()
 
+    logging.warning(f"{log_file_location=}, {log_file_name=}")
+
     if not log_file_location.exists():
         raise FileNotFoundError(f"The location for the log files doesn't exist: {log_file_location!s}.")
 
@@ -115,8 +127,15 @@ def start():
     # There is no need to set the level for the handlers, because the level is checked by the
     # Logger, and we use the handlers directly here. Use a filter to restrict messages.
 
+    if os.getenv("LOG_FORMAT", "").lower() == "full":
+        stream_formatter = logging.Formatter(fmt=LOG_FORMAT_FULL, datefmt=LOG_DATE_FORMAT_FULL, style=LOG_FORMAT_STYLE)
+    else:
+        stream_formatter = logging.Formatter(
+            fmt=LOG_FORMAT_CLEAN, datefmt=LOG_DATE_FORMAT_CLEAN, style=LOG_FORMAT_STYLE
+        )
+
     stream_handler = StreamHandler()
-    stream_handler.setFormatter(logging.Formatter(fmt=LOG_FORMAT_STREAM))
+    stream_handler.setFormatter(stream_formatter)
 
     # Log records are also sent to the textualog listening server
 
@@ -139,6 +158,10 @@ def start():
 
     client = RegistryClient()
     client.connect()
+    if not client.health_check():
+        _log_record("Health check for service registry failed. Is the Registry server running?", logging.ERROR)
+        return
+
     service_id = client.register(
         name=LOGGER_ID,
         host=get_host_ip() or "127.0.0.1",
@@ -149,8 +172,7 @@ def start():
         },
     )
     if service_id is None:
-        record = _create_log_record(logging.ERROR, "Registration of LOGGER service failed.")
-        handle_log_record(record)
+        _log_record("Registration of LOGGER service failed.", logging.ERROR)
         return
 
     client.start_heartbeat()
@@ -158,11 +180,10 @@ def start():
     def reregister_service(force: bool = False):
         nonlocal service_id
 
-        record = _create_log_record(logging.WARNING, f"Re-registration of Logger {force = }.")
-        handle_log_record(record)
+        _log_record(f"Re-registration of Logger {force = }.", logging.WARNING)
 
         if client.get_service(service_id):
-            if force is True:
+            if force:
                 client.deregister(service_id)
             else:
                 return
@@ -177,8 +198,7 @@ def start():
             },
         )
         if service_id is None:
-            record = _create_log_record(logging.ERROR, "Registration of LOGGER service failed.")
-            handle_log_record(record)
+            _log_record("Registration of LOGGER service failed.", logging.ERROR)
 
     signaling = FileBasedSignaling(app_name)
     signaling.start_monitoring()
@@ -211,8 +231,7 @@ def start():
             rich.print("KeyboardInterrupt caught!")
             break
 
-    record = _create_log_record(level=logging.WARNING, msg="Logger terminated.")
-    handle_log_record(record)
+    _log_record("Logger terminated.", logging.WARNING)
 
     file_handler.close()
     stream_handler.close()

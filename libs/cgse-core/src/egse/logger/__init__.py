@@ -11,6 +11,8 @@ __all__ = [
     "LOGGER_ID",
     "LOG_FORMAT_FULL",
     "logger",
+    "root_logger",
+    "egse_logger",
     "close_all_zmq_handlers",
     "create_new_zmq_logger",
     "get_log_file_name",
@@ -30,7 +32,7 @@ import traceback
 import zmq
 
 from egse.log import LOG_FORMAT_FULL
-from egse.log import logger
+from egse.log import logger, root_logger, egse_logger
 from egse.registry.client import RegistryClient
 from egse.settings import Settings
 from egse.system import is_in_ipython
@@ -41,10 +43,6 @@ CTRL_SETTINGS = Settings.load("Logging Control Server")
 LOGGER_ID = "LOGGER"
 """The logger id that is also used as service_tpe for service discovery."""
 
-logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT_FULL)
-
-root_logger = logging.getLogger()
-egse_logger = logging.getLogger("egse")
 
 _initialised = False  # will be set to True in the setup_logging() function
 
@@ -192,7 +190,11 @@ def setup_logging(uri: str = None):
 
 
 def teardown_logging():
+    global _initialised
+
     close_all_zmq_handlers()
+
+    _initialised = False
 
 
 setup_logging()

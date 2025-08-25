@@ -116,24 +116,30 @@ from __future__ import annotations
 
 __all__ = [
     "Setup",
+    "setup_ctx",
     "navdict",  # noqa: ignore typo
     "list_setups",
+    "load_setup_from_disk",
     "load_setup",
     "get_setup",
+    "submit_setup_to_disk",
     "submit_setup",
     "SetupError",
     "load_last_setup_id",
     "save_last_setup_id",
 ]
 
-import os
 import re
 import textwrap
 import warnings
+from contextvars import ContextVar
 from functools import lru_cache
 from pathlib import Path
+from threading import Lock
 from typing import Optional
+from typing import Protocol
 from typing import Union
+from typing import runtime_checkable
 
 import rich
 from navdict import navdict
@@ -146,18 +152,20 @@ from egse.env import get_conf_data_location
 from egse.env import get_conf_repo_location
 from egse.env import get_conf_repo_location_env_name
 from egse.env import get_data_storage_location
+from egse.env import get_site_id
 from egse.env import has_conf_repo_location
 from egse.env import print_env
 from egse.log import logger
-from egse.response import Failure
+from egse.plugin import HierarchicalEntryPoints
 from egse.system import format_datetime
 from egse.system import sanity_check
 
 
+setup_ctx: ContextVar[Setup | None] = ContextVar("setup", default=None)
+
+
 class SetupError(Exception):
     """A setup-specific error."""
-
-    pass
 
 
 # This is a replacement of the standard load_csv() function from the navdict package.
@@ -322,6 +330,11 @@ class Setup(NavigableDict):
         except AttributeError:
             _filename = None
         super().__init__(nav_dict or {}, label=label, _filename=_filename)
+        try:
+            setup_id = nav_dict.get_private_attribute("_setup_id")
+            self.set_private_attribute("_setup_id", setup_id)
+        except AttributeError:
+            pass
 
     @staticmethod
     def from_yaml_string(yaml_content: str = None) -> Setup:
@@ -679,7 +692,11 @@ def get_path_of_setup_file(setup_id: int, site_id: str) -> Path:
     else:
         setup_location = _check_conditions_for_get_path_of_setup_file(site_id)
 
-    if setup_id:
+    site_id = site_id or get_site_id()
+
+    logger.info(f"{setup_location=}, {setup_id=}, {site_id=}")
+
+    if setup_id is not None and site_id is not None:
         files = list(setup_location.glob(f"SETUP_{site_id}_{setup_id:05d}_*.yaml"))
 
         if not files:
@@ -697,13 +714,12 @@ def get_path_of_setup_file(setup_id: int, site_id: str) -> Path:
     return file_path
 
 
-def load_setup(setup_id: int = None, site_id: str = None, from_disk: bool = False) -> Setup:
+def load_setup_from_disk(setup_id: int, **kwargs) -> Setup:
     """
-    This function loads the Setup corresponding with the given `setup_id`.
+    This function loads the Setup corresponding with the given `setup_id` from your local disk.
 
     Loading a Setup means:
 
-    * that this Setup will also be loaded and activated in the configuration manager,
     * that this Setup will be available from the `GlobalState.setup`
 
     When no setup_id is provided, the current Setup is loaded from the configuration manager.
@@ -714,55 +730,26 @@ def load_setup(setup_id: int = None, site_id: str = None, from_disk: bool = Fals
     Args:
         setup_id (int): the identifier for the Setup
         site_id (str): the name of the test house
-        from_disk (bool): True if the Setup needs to be loaded from disk
 
     Returns:
         The requested Setup or None when the Setup could not be loaded from the \
         configuration manager.
 
     """
-    from egse.state import GlobalState
 
-    if from_disk:
-        if site_id is None:
-            raise ValueError("The site_id argument can not be empty when from_disk is given and True")
+    site_id = kwargs.get("site_id") or get_site_id()
 
-        setup_file_path = get_path_of_setup_file(setup_id, site_id)
+    setup_file_path = get_path_of_setup_file(setup_id, site_id)
 
-        rich.print(
-            f"Loading {'' if setup_id else 'the latest '}Setup {f'{setup_id} ' if setup_id else ''}for {site_id}..."
-        )
+    if setup_id is None:
+        rich.print(f"Loading the latest Setup for {site_id}...")
+    else:
+        rich.print(f"Loading Setup {setup_id} for {site_id}...")
 
-        return Setup.from_yaml_file(setup_file_path)
-
-    # When we arrive here the Setup shall be loaded from the Configuration manager.
-
-    try:
-        from egse.confman import ConfigurationManagerProxy
-    except ImportError:
-        print("WARNING: package 'cgse-core' is not installed, service not available. Returning an empty Setup.")
-        return Setup()
-
-    if setup_id is not None:
-        try:
-            with ConfigurationManagerProxy() as proxy:
-                proxy.load_setup(setup_id)
-
-        except ConnectionError:
-            logger.warning("Could not make a connection with the Configuration Manager, no Setup to show you.")
-            rich.print(
-                "\n"
-                "If you are not running this from an operational machine, do not have a CM "
-                "running locally or don't know what this means, then: \n"
-                "  (1) define the environment variable 'PLATO_CONF_REPO_LOCATION' and \n"
-                "      it points to the location of the plato-cgse-conf repository,\n"
-                "  (2) try again using the argument 'from_disk=True'.\n"
-            )
-
-    return GlobalState.load_setup()
+    return Setup.from_yaml_file(setup_file_path)
 
 
-def submit_setup(setup: Setup, description: str) -> str | None:
+def submit_setup_to_disk(setup: Setup, description: str, **kwargs) -> str | None:
     """
     Submit the given Setup to the Configuration Manager.
 
@@ -778,69 +765,59 @@ def submit_setup(setup: Setup, description: str) -> str | None:
     Returns:
         The Setup ID of the newly created Setup or None.
     """
-    # We have not yet decided if this option should be made available. Therefore, we
-    # leave it here as hardcoded True.
 
-    # replace (bool): True if the current Setup in the configuration manager shall
-    #                 be replaced by this new Setup. [default=True]
-    replace: bool = True
+    rich.print(
+        textwrap.dedent(
+            f"""\
+            Saving setup to disk, a new setup identifier will be assigned. 
+            To finalise the submit, reload the setup:
 
-    try:
-        from egse.confman import ConfigurationManagerProxy
-    except ImportError:
-        print("WARNING: package 'cgse-core' is not installed, service not available.")
-        return
-
-    try:
-        with ConfigurationManagerProxy() as proxy:
-            setup = proxy.submit_setup(setup, description, replace)
-
-        if setup is None:
-            rich.print("[red]Submit failed for given Setup, no reason given.[/red]")
-        elif isinstance(setup, Failure):
-            rich.print(f"[red]Submit failed for given Setup[/red]: {setup}")
-            setup = None
-        elif replace:
-            rich.print(
-                textwrap.dedent(
-                    """\
-                    [green]
-                    Your new setup has been submitted and pushed to GitHub. The new setup is also
-                    activated in the configuration manager. Load the new setup in your session with:
-
-                        setup = load_setup()
-                    [/]
-                    """
-                )
-            )
-        else:
-            rich.print(
-                textwrap.dedent(
-                    """[dark_orange]
-                    Your new setup has been submitted and pushed to GitHub, but has not been
-                    activated in the configuration manager. To activate this setup, use the
-                    following command:
-
-                        setup = load_setup({str(setup.get_id())})
-                    [/]
-                    """
-                )
-            )
-
-        return setup.get_id() if setup is not None else None
-
-    except ConnectionError:
-        rich.print("Could not make a connection with the Configuration Manager, no Setup was submitted.")
-    except NotImplementedError:
-        rich.print(
-            textwrap.dedent(
-                """\
-                Caught a NotImplementedError. That usually means the configuration manager is not running or
-                can not be reached. Check on the egse-server if the `cm_cs` process is running. If not you will
-                need to be restart the core services.
-                """
-            )
+            setup = load_setup() 
+            """
         )
+    )
+
+    return "00000"
+
+
+@runtime_checkable
+class SetupProvider(Protocol):
+    def load_setup(self, setup_id: int, **kwargs) -> Setup | None: ...
+    def submit_setup(self, setup: Setup, description: str, **kwargs) -> str | None: ...
+    # def list_setups(self): ...
+    def can_handle(self, source: str) -> bool: ...
+
+
+class LocalSetupProvider:
+    def load_setup(self, setup_id: int, **kwargs) -> Setup | None:
+        logger.info(f"Loading Setup from disk, {setup_id=}, {kwargs=}")
+        return load_setup_from_disk(setup_id, **kwargs)
+
+    def submit_setup(self, setup: Setup, description: str, **kwargs) -> str | None:
+        logger.info(f"Submitting Setup to disk, {setup=}, {description=}, {kwargs=}")
+        return submit_setup_to_disk(setup, description, **kwargs)
+
+    def can_handle(self, source: str):
+        return source in ["file", "local"]
+
+
+def load_setup(setup_id: int = None, **kwargs):
+    """
+    Loads a Setup.
+
+    Args:
+        - setup_id: identifier for the requested Setup
+        - site_id:
+    """
+    setup = _setup_manager.load_setup(setup_id, **kwargs)
+
+    setup_ctx.set(setup)
+
+    return setup
+
+
+def submit_setup(setup: Setup, description: str, **kwargs) -> str | None:
+    return _setup_manager.submit_setup(setup, description, **kwargs)
 
 
 def main(args: list = None):  # pragma: no cover
@@ -849,10 +826,9 @@ def main(args: list = None):  # pragma: no cover
     from rich import print
 
     from egse.config import find_files
-    from egse.settings import Settings
 
-    SITE = Settings.load("SITE")
-    location = os.environ.get("PLATO_CONF_DATA_LOCATION")
+    site_id = get_site_id()
+    location = get_conf_data_location()
     parser = argparse.ArgumentParser(
         description=textwrap.dedent("""\
             Print out the Setup for the given setup-id. The Setup will
@@ -868,22 +844,22 @@ def main(args: list = None):  # pragma: no cover
     parser.add_argument("--use-cm", action="store_true", help="use the configuration manager.")
     args = parser.parse_args(args or [])
 
-    if args.use_cm:
-        try:
-            from egse.confman import ConfigurationManagerProxy
-        except ImportError:
-            print("WARNING: package 'cgse-core' is not installed, service not available.")
-            return
-
-        with ConfigurationManagerProxy() as cm:
-            if args.list:
-                print(cm.list_setups())
-            else:
-                print(cm.get_setup())
-        return
+    # if args.use_cm:
+    #     try:
+    #         from egse.confman import ConfigurationManagerProxy
+    #     except ImportError:
+    #         print("WARNING: package 'cgse-core' is not installed, service not available.")
+    #         return
+    #
+    #     with ConfigurationManagerProxy() as cm:
+    #         if args.list:
+    #             print(cm.list_setups())
+    #         else:
+    #             print(cm.get_setup())
+    #     return
 
     if args.list:
-        files = find_files(f"SETUP_{SITE.ID}_*_*.yaml", root=location)
+        files = find_files(f"SETUP_{site_id}_*_*.yaml", root=location)
         files = list(files)
         if files:
             location = files[0].parent.resolve()
@@ -892,9 +868,9 @@ def main(args: list = None):  # pragma: no cover
     else:
         setup_id = args.setup_id
         if setup_id == -1:
-            setup_files = find_files(f"SETUP_{SITE.ID}_*_*.yaml", root=location)
+            setup_files = find_files(f"SETUP_{site_id}_*_*.yaml", root=location)
         else:
-            setup_files = find_files(f"SETUP_{SITE.ID}_{setup_id:05d}_*.yaml", root=location)
+            setup_files = find_files(f"SETUP_{site_id}_{setup_id:05d}_*.yaml", root=location)
         setup_files = list(setup_files)
         if len(setup_files) > 0:
             setup_file = sorted(setup_files)[-1]
@@ -904,7 +880,83 @@ def main(args: list = None):  # pragma: no cover
             print("[red]No setup files were found.[/]")
 
 
-if __name__ == "__main__":
-    import sys
+class SetupManager:
+    """Unified manager that routes Setup access to appropriate providers.
 
-    main(sys.argv[1:])
+    Providers are loaded from the `cgse.extension.setup_providers` entrypoints.
+    Providers serve different purposes, the default provider accesses Setups from
+    your local disk, while other providers might access a Setup through the core
+    services or any other way, e.g. from a website API.
+
+    The default provider handles access to Setups locally, from disk, unless the
+    `cgse-core` package is installed which provides access to the Setups in the
+    configuration manager.
+    """
+
+    def __init__(self):
+        self._providers: list | None = None
+        self._default_source = "local"
+        self._discovery_lock = Lock()
+
+    @property
+    def providers(self):
+        """Lazy provider discovery - only runs when first accessed to prevent circular import problems."""
+        if self._providers is None:
+            with self._discovery_lock:
+                if self._providers is None:  # Double-check locking
+                    self._providers = self._discover_providers()
+        return self._providers
+
+    def _discover_providers(self):
+        """
+        Initialise the Setup provider.
+
+        Find and save all 'setup_provider' extensions. The extensions shall adhere to the
+        SetupProvider protocol. If a provider can handle 'core-services', that will become
+        the default when accessing the Setups, otherwise the default will be 'local'.
+        """
+        providers = []
+
+        cgse_eps = HierarchicalEntryPoints("cgse.extension")
+
+        for ep in cgse_eps.get_by_subgroup("setup_provider"):
+            provider_class = ep.load()
+            provider = provider_class()
+            if isinstance(provider, SetupProvider):
+                providers.append(provider)
+                if provider.can_handle("core-services"):
+                    self._default_source = "core-services"
+
+        providers.append(LocalSetupProvider())
+
+        return providers
+
+    def set_default_source(self, source: str):
+        self._default_source = source
+
+    def load_setup(self, setup_id: int = None, **kwargs):
+        source = kwargs.get("source") or self._default_source
+
+        for provider in self.providers:
+            if provider.can_handle(source):
+                return provider.load_setup(setup_id, **kwargs)
+
+        logger.warning(f"Couldn't find a suitable Setup provider for handling '{source}', using 'local'.")
+        return LocalSetupProvider().load_setup(setup_id, **kwargs)
+
+    def submit_setup(self, setup: Setup, description: str, **kwargs):
+        source = kwargs.get("source") or self._default_source
+        for provider in self.providers:
+            if provider.can_handle(source):
+                return provider.submit_setup(setup, description, **kwargs)
+        logger.warning(f"Couldn't find a suitable Setup provider for handling '{source}', using 'local'.")
+        return LocalSetupProvider().submit_setup(setup, description, **kwargs)
+
+
+_setup_manager = SetupManager()
+
+
+if __name__ == "__main__":
+    # main(sys.argv[1:])
+    #
+    rich.print(load_setup(site_id=get_site_id()))

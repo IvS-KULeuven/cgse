@@ -55,11 +55,11 @@ def stop_core_services():
     stop_pm_cs()
     stop_cm_cs()
     stop_sm_cs()
-    # We need the logger for logging the termination process for other services, so leave it running for half a second
+    # We need the logger for logging the termination process for other services, so leave it running for a while
     time.sleep(1.0)
     stop_log_cs()
-    # We need the registry server to stop other core services, so leave it running for half a second
-    time.sleep(0.5)
+    # We need the registry server to stop other core services, so leave it running for a while
+    time.sleep(1.0)
     stop_rm_cs()
 
 

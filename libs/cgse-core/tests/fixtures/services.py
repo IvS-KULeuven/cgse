@@ -1,8 +1,13 @@
+import subprocess
+import sys
 import time
 from logging import warning
+from pathlib import Path
 
 import pytest
 
+from egse.logger import setup_logging
+from egse.logger import teardown_logging
 from egse.process import SubProcess
 from egse.process import is_process_running
 from egse.system import waiting_for
@@ -25,23 +30,36 @@ from fixtures.helpers import is_process_not_running
 
 
 @pytest.fixture(scope="module")
-def setup_log_service():
+def setup_log_service(default_env):
     """This fixture starts the CGSE log service."""
 
     if is_process_running(items=["log_cs"]):
         pytest.xfail("The logging manager is already running")
 
+    teardown_logging()
+    setup_logging()
+
     # Starting the logging manager ------------------------------------------------------------------------------------
 
-    log_cs = SubProcess("Logging Manager", ["log_cs", "start"])
-    log_cs.execute()
+    # log_cs = SubProcess("Logging Manager", ["log_cs", "start"])
+    # log_cs.execute()
+
+    out = open(Path("~/.log_cs.start.out").expanduser(), "w")
+
+    log_cs = subprocess.Popen(
+        [sys.executable, "-m", "egse.logger.log_cs", "start"],
+        stdout=out,
+        stderr=out,
+        stdin=subprocess.DEVNULL,
+        close_fds=True,
+    )
 
     try:
         waiting_for(is_process_running, ["log_cs"], interval=1.0, timeout=5.0)
     except TimeoutError as exc:
         raise RuntimeError("Couldn't start the logging manager within the given time of 5s.") from exc
 
-    time.sleep(0.5)  # give the process some time to startup
+    time.sleep(2.0)  # give the process some time to startup
 
     yield
 
@@ -54,7 +72,7 @@ def setup_log_service():
         waiting_for(is_process_not_running, ["log_cs", "start"], interval=1.0, timeout=5.0)
     except TimeoutError as exc:
         warning("Couldn't stop the logging manager within the given time of 5s. Quiting...")
-        log_cs.quit()
+        log_cs.terminate()
 
 
 @pytest.fixture(scope="module")

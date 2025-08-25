@@ -787,62 +787,86 @@ def test_saving_setup_with_yaml_and_csv_resources(default_csv_calibration_data):
 
 
 def test_get_path_of_last_setup_file():
-    env_name = get_conf_data_location_env_name()
+    env_conf_name = get_conf_data_location_env_name()
     env_repo_name = get_conf_repo_location_env_name()
 
-    with env_var(PROJECT="CGSE"), env_var(**{env_name: None}), env_var(**{env_repo_name: None}):
+    with env_var(PROJECT="CGSE", **{env_conf_name: None, env_repo_name: None}):
         with pytest.raises(FileNotFoundError):
             get_path_of_setup_file(43, "SRON")
 
         with pytest.warns(UserWarning, match="CGSE_CONF_REPO_LOCATION doesn't exist: YYYY"):
             set_conf_repo_location("YYYY")
 
-        with (
-            pytest.raises(LookupError),
-            pytest.warns(UserWarning, match="configuration data repository doesn't exist: YYYY"),
-        ):
+        with pytest.raises(FileNotFoundError, match="No Setup found for setup_id=43 and site_id='XXXX'"):
             get_path_of_setup_file(setup_id=43, site_id="XXXX")
 
         with env_var(**{env_repo_name: "/tmp/no-such-folder"}):
-            with pytest.raises(LookupError):
+            with pytest.raises(FileNotFoundError, match="No Setup found for setup_id=43 and site_id='XXXX'"):
                 get_path_of_setup_file(setup_id=43, site_id="XXXX")
 
-            with pytest.raises(LookupError):
+            with pytest.raises(FileNotFoundError, match="No Setup found for setup_id=43 and site_id='SRON'"):
                 get_path_of_setup_file(setup_id=43, site_id="SRON")
 
-            # FIXME: these tests became invalid after a change in the strategy of checking in get_path_of_setup_file()
-            # assert "SETUP_SRON_00031" in str(get_path_of_setup_file(setup_id=None, site_id="SRON"))
-            # assert "SETUP_SRON_00029" in str(get_path_of_setup_file(setup_id=29, site_id="SRON"))
+    with env_var(
+        **{
+            env_repo_name: "/tmp/no-such-folder-either",
+            env_conf_name: str(TEST_LOCATION / "data/SRON/conf"),
+        }
+    ):
+        assert "SETUP_SRON_00031" in str(get_path_of_setup_file(setup_id=None, site_id="SRON"))
+        assert "SETUP_SRON_00029" in str(get_path_of_setup_file(setup_id=29, site_id="SRON"))
 
 
-@pytest.mark.skip(reason="load_setup prefers the repo location over the conf data location.")
+def test_load_setup():
+    from egse.setup import _setup_manager  # noqa
+
+    _setup_manager.set_default_source("local")
+
+    setup = load_setup(setup_id=28)
+    rich.print(setup)
+    assert int(setup.get_id()) == 28
+
+
+# @pytest.mark.skip(reason="load_setup prefers the repo location over the conf data location.")
 def test_load_setup_from_disk():
-    with pytest.raises(ValueError):
-        _ = load_setup(from_disk=True)
+    with pytest.raises(FileNotFoundError):
+        _ = load_setup(setup_id=1234, source="local")
 
     env_repo_name = get_conf_repo_location_env_name()
-    with env_var(**{env_repo_name: "/tmp/no-such-folder-either"}):
+    env_conf_name = get_conf_data_location_env_name()
+    with env_var(
+        **{
+            env_repo_name: "/tmp/no-such-folder-either",
+            env_conf_name: str(TEST_LOCATION / "data/SRON/conf"),
+        }
+    ):
         # This will always fail since the load_setup() -> get_path_of_setup_file() prefers the repo location
         # over the conf data location. Since we set the repo location to a non-existing folder, this will fail.
         # FIXME: provide a proper mocked repo location or se the conf data location.
 
-        setup = load_setup(site_id="SRON", from_disk=True)
+        setup = load_setup(site_id="SRON", source="local")
 
         assert setup.site_id == "SRON"
         assert setup.camera.fee.ID == 174057003
         assert 31 in setup.history
 
-        setup = load_setup(setup_id=28, site_id="SRON", from_disk=True)
+        setup = load_setup(setup_id=28, site_id="SRON", source="local")
 
         assert setup.site_id == "SRON"
         assert 29 not in setup.history
         assert "SETUP_SRON_00028" in str(setup.get_private_attribute("_filename"))
 
-        setup = load_setup(setup_id=28, site_id="CSL", from_disk=True)
+        with env_var(
+            **{
+                env_repo_name: "/tmp/no-such-folder-either",
+                env_conf_name: str(TEST_LOCATION / "data/CSL/conf"),
+            }
+        ):
+            setup = load_setup(setup_id=28, site_id="CSL", source="local")
 
-        assert setup.site_id == "CSL"
-        assert 29 not in setup.history
-        assert "SETUP_CSL_00028" in str(setup.get_private_attribute("_filename"))
+            assert setup.site_id == "CSL"
+            assert 29 not in setup.history
+            assert "SETUP_CSL_00028" in str(setup.get_private_attribute("_filename"))
 
 
 def test_last_setup_id():

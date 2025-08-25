@@ -29,13 +29,11 @@ and stopped with:
 from __future__ import annotations
 
 import contextlib
-import logging
 import multiprocessing
 import random
 import select
 import socket
 import sys
-import textwrap
 import threading
 import time
 from functools import partial
@@ -56,16 +54,14 @@ from egse.listener import EventInterface
 from egse.log import logger
 from egse.protocol import CommandProtocol
 from egse.proxy import Proxy
-from egse.settings import Settings
 from egse.system import SignalCatcher
 from egse.system import attrdict
 from egse.system import format_datetime
+from egse.system import type_name
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
 
-logging.basicConfig(level=logging.DEBUG, format=Settings.LOG_FORMAT_FULL)
-
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 DEV_HOST = "localhost"
 """The hostname or IP address of the Dummy Device."""
@@ -120,14 +116,27 @@ commands = attrdict(
 def is_dummy_cs_active() -> bool:
     """Returns True if the dummy device control server is active."""
     return is_control_server_active(
-        endpoint=connect_address(ctrl_settings.PROTOCOL, ctrl_settings.HOSTNAME, ctrl_settings.COMMANDING_PORT)
+        endpoint=connect_address(ctrl_settings.PROTOCOL, ctrl_settings.HOSTNAME, ctrl_settings.COMMANDING_PORT),
+        timeout=0.2,
     )
+
+
+def is_dummy_dev_active() -> bool:
+    try:
+        dev = DummyDeviceEthernetInterface(DEV_HOST, DEV_PORT)
+        dev.connect()
+        rc = dev.trans("ping\n")
+        dev.disconnect()
+        return rc.decode().strip() == "pong"
+    except DeviceConnectionError as exc:
+        # logger.error(f"Caught {type_name(exc)}: {exc}")
+        return False
 
 
 class DummyCommand(ClientServerCommand):
     """The Command class for the dummy device."""
 
-    pass
+    ...
 
 
 class DummyInterface:
@@ -303,34 +312,20 @@ class DummyControlServer(ControlServer):
 
         self.set_hk_delay(ctrl_settings.HK_DELAY)
 
-        try:
-            from egse.confman import ConfigurationManagerProxy
-            from egse.listener import EVENT_ID
+        from egse.confman import ConfigurationManagerProxy
+        from egse.listener import EVENT_ID
 
-            # The following import is needed because without this import, DummyProxy would
-            # be <class '__main__.DummyProxy'> instead of `egse.dummy.DummyProxy` and the
-            # ConfigurationManager control server will not be able to de-pickle
-            # the register message.
+        # The following import is needed because without this import, DummyProxy would
+        # be <class '__main__.DummyProxy'> instead of `egse.dummy.DummyProxy` and the
+        # ConfigurationManager control server will not be able to de-pickle
+        # the register message.
 
-            from egse.dummy import DummyProxy  # noqa
+        from egse.dummy import DummyProxy  # noqa
 
-            self.register_as_listener(
-                proxy=ConfigurationManagerProxy,
-                listener={"name": "Dummy CS", "proxy": DummyProxy, "event_id": EVENT_ID.SETUP},
-            )
-
-        except ModuleNotFoundError as exc:
-            logger.info(
-                textwrap.dedent(
-                    f"""\
-                    Caught a ModuleNotFoundException: {exc}
-
-                    This probably means you have not installed the `cgse-core` package and you don't have a
-                    configuration manager running. The DummyControlServer will not be registered as a listener and
-                    therefore will not receive notifications. Other then that, it should be fully functional.
-                    """
-                )
-            )
+        self.register_as_listener(
+            proxy=ConfigurationManagerProxy,
+            listener={"name": "Dummy CS", "proxy": DummyProxy, "event_id": EVENT_ID.SETUP},
+        )
 
     def get_communication_protocol(self):
         return "tcp"
@@ -420,7 +415,7 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         # approach is acceptable and not causing problems during production.
 
         try:
-            logger.debug(f'Connecting a socket to host "{self.hostname}" using port {self.port}')
+            # logger.debug(f'Connecting a socket to host "{self.hostname}" using port {self.port}')
             self.sock.settimeout(CONNECT_TIMEOUT)
             self.sock.connect((self.hostname, self.port))
             self.sock.settimeout(None)
@@ -634,6 +629,7 @@ def start_dev():
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind((DEV_HOST, DEV_PORT))
             s.listen()
+            logger.info(f"Ready to accept connection on {DEV_HOST}:{DEV_PORT}...")
             conn, addr = s.accept()
             with conn:
                 logger.info(f"Accepted connection from {addr}")
@@ -682,7 +678,11 @@ def stop_dev():
     dev.disconnect()
 
 
-COMMAND_ACTIONS_RESPONSES = {"info": (None, f"Dummy Device {__version__}"), "get_value": (None, random.random)}
+COMMAND_ACTIONS_RESPONSES = {
+    "info": (None, f"Dummy Device {__version__}"),
+    "ping": (None, "pong"),
+    "get_value": (None, random.random),
+}
 
 
 def process_command(command_string: str) -> str | None:

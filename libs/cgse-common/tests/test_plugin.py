@@ -1,5 +1,6 @@
 import logging
 
+from egse.plugin import HierarchicalEntryPoints
 from egse.plugin import load_plugins_fn
 
 logger = logging.getLogger("test")
@@ -25,3 +26,15 @@ def test_load_plugins_fn():
     # Load a normal regular module
     plugins = load_plugins_fn("bits.py", "egse")
     assert "bits" in plugins
+
+
+def test_hierarchical_entry_points():
+    # We have no extensions defined in the `cgse-common` package. A similar test should be run for
+    # the `cgse-core` package.
+
+    print()
+
+    cgse_ext = HierarchicalEntryPoints("cgse.extension")
+
+    assert cgse_ext.base_group == "cgse.extension"
+    assert len(cgse_ext.get_by_subgroup("setup")) == 0

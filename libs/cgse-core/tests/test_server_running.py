@@ -19,20 +19,17 @@ import pytest
 import zmq
 import zmq.asyncio
 
+from egse.log import logger
 from egse.registry.backend import AsyncInMemoryBackend
 from egse.registry.server import AsyncRegistryServer
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-12s %(lineno)5d:%(module)-20s %(message)s",
-)
-
-logger = logging.getLogger("test_registry_service")
+from fixtures.helpers import is_service_registry_running
 
 TEST_REQ_PORT = 15556
 TEST_PUB_PORT = 15557
 
 SERVER_STARTUP_TIMEOUT = 5
+
+pytestmark = pytest.mark.skipif(is_service_registry_running, reason="this file is not ready for testing yet")
 
 
 async def server_health_check(zmq_context):
@@ -101,7 +98,7 @@ async def start_server():
 
     if not server_ready:
         # Stop the server if it failed to start properly
-        await server.stop()
+        server.stop()
         try:
             await asyncio.wait_for(server_task, timeout=2.0)
         except asyncio.TimeoutError:

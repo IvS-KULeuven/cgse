@@ -110,11 +110,11 @@ the availability of the configuration manager.
 
 from __future__ import annotations
 
-import logging
 import operator
 import random
 import textwrap
 import threading
+import time
 from pathlib import Path
 from typing import NamedTuple
 from typing import Optional
@@ -122,7 +122,6 @@ from typing import Union
 
 import git
 import rich
-import time
 from git import GitCommandError
 
 from egse.command import ClientServerCommand
@@ -139,6 +138,7 @@ from egse.env import get_project_name
 from egse.env import get_site_id
 from egse.exceptions import InternalError
 from egse.listener import EVENT_ID
+from egse.log import logger
 from egse.obsid import ObservationIdentifier
 from egse.plugin import entry_points
 from egse.protocol import CommandProtocol
@@ -161,8 +161,6 @@ from egse.system import humanize_seconds
 from egse.version import get_version_installed
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
-
-LOGGER = logging.getLogger("egse.confman")
 
 HERE = Path(__file__).parent
 
@@ -198,13 +196,13 @@ def _push_setup_to_repo(filename: str, commit_msg: str) -> Failure | Success:
             before starting the configuration manager.
             """
         )
-        LOGGER.error(msg)
+        logger.error(msg)
         return Failure(msg)
 
     repo = git.Repo(repo_workdir)
 
     if repo.is_dirty():
-        LOGGER.warning(f"The cgse-conf repository is dirty. Check the git status at '{repo_workdir}'.")
+        logger.warning(f"The cgse-conf repository is dirty. Check the git status at '{repo_workdir}'.")
 
     untracked = repo.untracked_files
 
@@ -218,7 +216,7 @@ def _push_setup_to_repo(filename: str, commit_msg: str) -> Failure | Success:
             Untracked files: {untracked}
             """
         )
-        LOGGER.error(msg)
+        logger.error(msg)
         return Failure(msg)
 
     # match the filename to extract the full path to the file
@@ -226,7 +224,7 @@ def _push_setup_to_repo(filename: str, commit_msg: str) -> Failure | Success:
     untracked = [x for x in untracked if filename in x]
     if (n := len(untracked)) != 1:
         msg = f"There should be one match for the filename, found {n}{'' if n == 0 else untracked}."
-        LOGGER.error(msg)
+        logger.error(msg)
         return Failure(msg)
 
     untracked = untracked[0]
@@ -238,7 +236,7 @@ def _push_setup_to_repo(filename: str, commit_msg: str) -> Failure | Success:
         # assert response[0].path == untracked
     except FileNotFoundError:
         # if for some reason the untracked file can not be found, should not happen..
-        LOGGER.warning(f"Untracked file {untracked} not found. Check the git status at {repo_workdir}.")
+        logger.warning(f"Untracked file {untracked} not found. Check the git status at {repo_workdir}.")
 
     # The response is a Commit object containing e.g. the commit message, the hash, the author, ...
 
@@ -252,17 +250,17 @@ def _push_setup_to_repo(filename: str, commit_msg: str) -> Failure | Success:
     try:
         response = repo.remote("upload").pull("main")
     except Exception as exc:
-        LOGGER.error(exc, exc_info=True)
+        logger.error(exc, exc_info=True)
 
     # The response is a PushInfo object
 
     try:
         response = repo.remote("upload").push("main")
     except ValueError as exc:
-        LOGGER.error(exc, exc_info=True)
+        logger.error(exc, exc_info=True)
         return Failure(f"Push of setup [{filename}] failed", exc)
     except GitCommandError as exc:
-        LOGGER.error(exc, exc_info=True)
+        logger.error(exc, exc_info=True)
         return Failure(f"Push of setup [{filename}] failed", exc)
 
     return Success(f"Successfully pushed the setup to the repo {repo}")
@@ -294,7 +292,7 @@ def _populate_cached_setup_info():
     """
     global _cached_setup_info
 
-    LOGGER.info("Populating cache with Setup Info.")
+    logger.info("Populating cache with Setup Info.")
 
     location = get_conf_data_location()
     if location:
@@ -322,7 +320,7 @@ def _populate_cached_setup_info():
 
     _cached_setup_info = dict(sorted(setup_info.items()))
 
-    LOGGER.info("SetupInfo cache populated.")
+    logger.info("SetupInfo cache populated.")
 
 
 def _add_setup_info_to_cache(setup: Setup):
@@ -362,7 +360,7 @@ def _reload_cached_setup_info():
     try:
         Setup.from_yaml_file.cache_clear()
     except AttributeError:
-        LOGGER.warning("Setup.from_yaml_file() method is not decorated with an lru_cache.")
+        logger.warning("Setup.from_yaml_file() method is not decorated with an lru_cache.")
 
     _populate_cached_setup_info()
 
@@ -382,6 +380,7 @@ def is_configuration_manager_active(timeout: float = 0.5):
         endpoint = client.get_endpoint(CTRL_SETTINGS.SERVICE_TYPE)
 
     if endpoint is None:
+        logger.debug(f"No endpoint for {CTRL_SETTINGS.SERVICE_TYPE}")
         return False
 
     return is_control_server_active(endpoint, timeout)
@@ -640,9 +639,9 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         )
 
         if isinstance(response, Failure):
-            LOGGER.warning(f"There was a Failure when saving to the obsid-table: {response}")
+            logger.warning(f"There was a Failure when saving to the obsid-table: {response}")
         else:
-            LOGGER.info(f"Successfully created an observation with obsid={self._obsid}.")
+            logger.info(f"Successfully created an observation with obsid={self._obsid}.")
 
         return Success("Returning the OBSID", self._obsid)
 
@@ -665,7 +664,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         obs_duration = humanize_seconds(
             duration(self._obsid_start_dt, obsid_end_dt).total_seconds(), include_micro_seconds=False
         )
-        LOGGER.info(f"Successfully ended observation with obsid={self._obsid}, duration={obs_duration}.")
+        logger.info(f"Successfully ended observation with obsid={self._obsid}, duration={obs_duration}.")
 
         self._obsid = None
         self._obsid_start_dt = None
@@ -699,10 +698,10 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
                     "filename": "obsid-table.txt",
                 }
             )
-            LOGGER.info(response)
+            logger.info(response)
         else:
             self._storage = None
-            LOGGER.error("No Storage Manager available !!!!")
+            logger.error("No Storage Manager available !!!!")
 
     def load_setup(self, setup_id: int = None) -> Union[Setup, Failure]:
         """Load the Setup with the given setup_id.
@@ -737,7 +736,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         setup_files = list(find_files(pattern=f"SETUP_{SITE_ID}_{setup_id:05d}_*.yaml", root=self._data_conf_location))
 
         if len(setup_files) != 1:
-            LOGGER.error(
+            logger.error(
                 msg := f"Expected to find just one Setup YAML file, found {len(setup_files)}. "
                 f"[{SITE_ID = }, {setup_id = }, data_conf_location={self._data_conf_location}]"
             )
@@ -749,10 +748,10 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
             self._setup = Setup.from_yaml_file(setup_file)
             self._setup_id = setup_id
             self._sut_name = _get_sut_id_for_setup(self._setup)
-            LOGGER.info(f"New Setup loaded from {setup_file}")
+            logger.info(f"New Setup loaded from {setup_file}")
             save_last_setup_id(self._setup_id)
             if self._control_server:
-                LOGGER.info("Notifying listeners for a new Setup!")
+                logger.info("Notifying listeners for a new Setup!")
                 with Timer(f"Notify Listeners for Setup change, Setup={self._setup_id}"):
                     self._control_server.notify_listeners(
                         EVENT_ID.SETUP, {"event_type": "new_setup", "setup_id": self._setup_id}
@@ -763,7 +762,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
             return Failure(f"The Setup file can not be loaded from {setup_file}.", exc)
         except AttributeError as exc:
             msg = f"The Setup [id={setup_id}] has no camera.ID entry."
-            LOGGER.error(msg, exc_info=True)
+            logger.error(msg, exc_info=True)
             # FIXME: if we come here, shouldn't we load the zero Setup so that the problem of the
             #        missing camera ID gets solved?
             return Failure(msg)
@@ -791,7 +790,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
             )
 
             if len(setup_files) != 1:
-                LOGGER.error(msg := f"Expected to find just one Setup YAML file, found {len(setup_files)}.")
+                logger.error(msg := f"Expected to find just one Setup YAML file, found {len(setup_files)}.")
                 return Failure("Expected only one Setup.", InternalError(msg))
 
             setup_file = setup_files[0]
@@ -924,19 +923,19 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
                 _add_setup_info_to_cache(setup)
             except (Exception,) as exc:
                 msg = "Submit_setup could not complete it's task to send the new Setup to the repo."
-                LOGGER.error(msg, exc_info=True)
+                logger.error(msg, exc_info=True)
                 return Failure("Submit_setup could not complete it's task to send the new Setup to the repo.", exc)
             else:
-                LOGGER.info(f"Successfully pushed Setup {setup_id} to the repository.")
+                logger.info(f"Successfully pushed Setup {setup_id} to the repository.")
 
         if replace:
             self._setup = setup
             self._setup_id = setup_id
-            LOGGER.info(f"New Setup was submitted and loaded: {setup_id=}")
+            logger.info(f"New Setup was submitted and loaded: {setup_id=}")
             self._sut_name = self._setup.camera.ID.lower()
             save_last_setup_id(setup_id)
             if self._control_server:
-                LOGGER.info("Notifying listeners for a new Setup!")
+                logger.info("Notifying listeners for a new Setup!")
                 with Timer(f"Notify Listeners for Setup change, Setup={self._setup_id}"):
                     self._control_server.notify_listeners(
                         EVENT_ID.SETUP, {"event_type": "new_setup", "setup_id": setup_id}

@@ -1,17 +1,45 @@
 import contextlib
 import logging
-import os
 import re
 import sys
 import time
 
 import pytest
 
+from egse.confman import is_configuration_manager_active
 from egse.dummy import DummyProxy
+from egse.dummy import is_dummy_cs_active
+from egse.dummy import is_dummy_dev_active
 from egse.process import SubProcess
 from egse.proxy import Proxy
 from egse.response import Failure
 from egse.system import Timer
+from egse.system import type_name
+from egse.system import waiting_for
+
+logger = logging.getLogger("egse.tests")
+
+
+def is_service_running(services: list) -> bool:
+    is_active = False
+
+    try:
+        if "cm" in services:
+            if is_configuration_manager_active():
+                is_active = True
+            else:
+                logger.warning("Configuration Manager is not running.")
+                is_active = False
+    except Exception as exc:
+        logger.error(f"Caught {type_name(exc)}: {exc}")
+        is_active = False
+
+    return is_active
+
+
+# Skip entire module if service not running
+if not is_service_running(["cm"]):
+    pytest.skip("Core service 'cm' not available", allow_module_level=True)
 
 
 @contextlib.contextmanager
@@ -19,22 +47,32 @@ def dummy_service():
     dummy_dev = SubProcess("Dummy Device", [sys.executable, "-m", "egse.dummy"], ["start-dev"])
     dummy_dev.execute()
 
+    with Timer(name="Dummy Dev startup timer"):
+        waiting_for(is_dummy_dev_active, timeout=5.0)
+
     dummy_cs = SubProcess("Dummy CS", [sys.executable, "-m", "egse.dummy"], ["start-cs"])
     dummy_cs.execute()
 
     processes = [dummy_dev, dummy_cs]
 
-    time.sleep(0.5)  # give the processes the time to start up
+    # It takes ~1.5s to startup on my MacBook Pro M2, why is this such a long time?
+    with Timer(name="Dummy CS startup timer"):
+        waiting_for(is_dummy_cs_active, timeout=5.0)
 
     yield processes
 
     dummy_cs_stop = SubProcess("Dummy CS", [sys.executable, "-m", "egse.dummy"], ["stop-cs"])
     dummy_cs_stop.execute()
 
+    # It takes ~1.5s to startup on my MacBook Pro M2, why is this such a long time?
+    with Timer(name="Dummy CS shutdown timer"):
+        waiting_for(lambda: not is_dummy_cs_active(), timeout=5.0)
+
     dummy_dev_stop = SubProcess("Dummy Device", [sys.executable, "-m", "egse.dummy"], ["stop-dev"])
     dummy_dev_stop.execute()
 
-    time.sleep(0.5)  # give the processes the time to shut down
+    with Timer(name="Dummy Dev shutdown timer"):
+        waiting_for(lambda: not is_dummy_dev_active(), timeout=5.0)
 
 
 def is_valid_ip_address_format(string):
