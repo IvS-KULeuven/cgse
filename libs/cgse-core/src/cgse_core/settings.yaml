@@ -3,9 +3,13 @@ PACKAGES:
 
 Logging Control Server:                          # LOG_CS
 
-    SERVICE_TYPE:                LOGGER
+    SERVICE_TYPE:                LOG_CS
     MAX_NR_LOG_FILES:                20          # The maximum number of log files that will be maintained in a roll-over
     MAX_SIZE_LOG_FILES:              20          # The maximum size one log file can become
+#    PROTOCOL:                       tcp
+#    HOSTNAME:                 localhost
+    RECEIVER_PORT:                 4248
+    COMMANDER_PORT:                4249
     TEXTUALOG_IP_ADDRESS:     127.0.0.1          # The IP address of the textualog listening server
     TEXTUALOG_LISTENING_PORT:     19996          # The port number on which the textualog server is listening
 
@@ -27,9 +31,11 @@ Process Manager Control Server:                  # PM_CS
     STORAGE_MNEMONIC:                PM          # The mnemonic to be used in the filename storing the housekeeping data
 
 Notify Hub:
+    
     SERVICE_TYPE:            NOTIFY_HUB
     COLLECTOR_PORT:                4245
     PUBLISHER_PORT:                4246
+    REQUESTS_PORT:                 4247
     
 Metrics Hub:
     SERVICE_TYPE:           METRICS_HUB

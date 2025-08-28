@@ -21,6 +21,7 @@ from pytz import utc
 from egse.control import ControlServer
 from egse.env import get_data_storage_location
 from egse.env import get_site_id
+from egse.logger import remote_logging
 from egse.process import SubProcess
 from egse.registry.client import RegistryClient
 from egse.services import ServiceProxy
@@ -120,24 +121,24 @@ def start():
 
     from egse.storage.storage_cs import StorageControlServer  # noqa
 
-    try:
-        check_prerequisites()
-    except RuntimeError as exc:
-        logger.info(exc)
-        return 0
+    with remote_logging():
+        try:
+            check_prerequisites()
+        except RuntimeError as exc:
+            logger.info(exc)
+            return 0
 
-    try:
-        control_server = StorageControlServer()
-        control_server.serve()
-    except KeyboardInterrupt:
-        print("Shutdown requested...exiting")
-    except SystemExit as exit_code:
-        print(f"System Exit with code {exit_code}.")
-        sys.exit(exit_code.code)
-    except Exception:
-        import traceback
-
-        traceback.print_exc(file=sys.stdout)
+        try:
+            control_server = StorageControlServer()
+            control_server.serve()
+        except KeyboardInterrupt:
+            print("Shutdown requested...exiting")
+        except SystemExit as exit_code:
+            print(f"System Exit with code {exit_code}.")
+            sys.exit(exit_code.code)
+        except Exception:
+            import traceback
+            traceback.print_exc(file=sys.stdout)
 
     return 0
 
