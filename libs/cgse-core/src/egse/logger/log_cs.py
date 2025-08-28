@@ -62,7 +62,7 @@ LOG_NAME_TO_LEVEL = {
 
 # LOG_FORMAT_FILE = "%(asctime)s:%(processName)s:%(process)s:%(levelname)s:%(lineno)d:%(name)s:%(message)s"
 LOG_FORMAT_FILE = (
-    "{asctime} [{levelname:>8s}] {message} ({processName}[{process}]:{package_name}:{filename}:{lineno:d})"
+    "{asctime} [{levelname:>8s}] [{processName:>12s}] {message} ({process}:{package_name}:{filename}:{lineno:d})"
 )
 LOG_FORMAT_FILE_STYLE = "{"
 
@@ -70,6 +70,7 @@ LOG_FORMAT_KEY_VALUE = (
     "level=%(levelname)s ts=%(asctime)s process=%(processName)s process_id=%(process)s "
     'name=%(name)s caller=%(filename)s:%(lineno)s function=%(funcName)s msg="%(message)s"'
 )
+LOG_FORMAT_KEY_VALUE_STYLE = "%"
 
 LOG_LEVEL_FILE = logging.DEBUG
 LOG_LEVEL_STREAM = get_log_level_from_env()
@@ -98,7 +99,7 @@ class DateTimeFormatter(logging.Formatter):
         return f"{formatted_time}.{record.msecs:03.0f}"
 
 
-file_formatter = DateTimeFormatter(fmt=LOG_FORMAT_FILE, style=LOG_FORMAT_FILE_STYLE, datefmt=LOG_DATE_FORMAT_FULL)
+file_formatter = DateTimeFormatter(fmt=LOG_FORMAT_FILE, style=LOG_FORMAT_FILE_STYLE, datefmt=None)
 
 app_name = "log_cs"
 app = typer.Typer(name=app_name)
