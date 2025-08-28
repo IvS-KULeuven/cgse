@@ -210,6 +210,7 @@ class AsyncRegistryServer:
         self.logger.info("Started request handler task")
 
         try:
+            message_parts = None
             while self._running:
                 try:
                     # Wait for a request with timeout to allow checking if still running
@@ -234,6 +235,7 @@ class AsyncRegistryServer:
                     self.logger.error(f"ZMQ error: {exc}", exc_info=True)
                 except Exception as exc:
                     self.logger.error(f"Error handling request: {exc}", exc_info=True)
+                    self.logger.debug(f"{message_parts=}")
         except asyncio.CancelledError:
             self.logger.warning("Request handler task cancelled")
 
