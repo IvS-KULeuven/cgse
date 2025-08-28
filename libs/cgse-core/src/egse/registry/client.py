@@ -232,7 +232,7 @@ class RegistryClient:
             The service ID if successful, None otherwise
         """
         # Prepare service info
-        service_info: dict[str, str|int|dict|list] = {"name": name, "host": host, "port": port}
+        service_info: dict[str, str | int | dict | list] = {"name": name, "host": host, "port": port}
 
         # Add optional fields
         if service_type:

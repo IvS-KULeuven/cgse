@@ -77,7 +77,6 @@ def single_event_handler(event_data: dict):
 
 @pytest.mark.asyncio
 async def test_server_running_async():
-
     # This test starts the notification hub and let it running for 30s
     # In these 30s it should:
     #
@@ -86,14 +85,11 @@ async def test_server_running_async():
     # - de-register from the service registry
 
     async with async_notify_hub():
-
         await asyncio.sleep(30.0)
 
 
 def test_single_event():
-
     with notify_hub():
-
         publisher = EventPublisher()
         subscriber = EventSubscriber(["single-event"])
         subscriber.register_handler("single-event", single_event_handler)
@@ -109,7 +105,6 @@ def test_single_event():
         def poll_next_event():
             event_received = False
             while not event_received:
-
                 if subscriber.poll():
                     subscriber.handle_event()
                     event_received = True
@@ -128,11 +123,10 @@ def test_single_event():
         publisher.close()
         subscriber.close()
 
+
 @pytest.mark.asyncio
 async def test_single_event_async():
-
     async with async_notify_hub():
-
         publisher = AsyncEventPublisher()
 
         subscriber = AsyncEventSubscriber(["single-event"])

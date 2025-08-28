@@ -281,10 +281,12 @@ def pm_cs_reregister(force: bool = False):
         {"action": "reregister", "params": {"force": force}},
     )
 
+
 notifyhub = typer.Typer(
     name="notifyhub",
     help="handle notification hub: start, stop, status, re-register",
 )
+
 
 @notifyhub.command(name="start")
 def notifyhub_start():

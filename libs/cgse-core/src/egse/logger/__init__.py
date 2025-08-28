@@ -61,10 +61,9 @@ def get_log_file_name():
     """
     return settings.get("FILENAME", "general.log")
 
-def get_endpoint_from_registry(port: str = "commander"):
-    """Returns the endpoint that was constructed from information from the service registry.
 
-    """
+def get_endpoint_from_registry(port: str = "commander"):
+    """Returns the endpoint that was constructed from information from the service registry."""
     from egse.registry.client import RegistryClient
 
     try:
@@ -96,7 +95,6 @@ class ZeroMQHandler(logging.Handler):
             endpoint = f"{PROTOCOL}://{HOSTNAME}:{RECEIVER_PORT}"
 
         if endpoint:
-
             self.setLevel(logging.NOTSET)
 
             self.ctx = zmq.Context.instance()
@@ -229,6 +227,7 @@ def remote_logging():
     setup_logging()
     yield
     teardown_logging()
+
 
 # NOTE: This code is commented, you will have to set up and tear down the logging for
 #       each process individually.

@@ -14,7 +14,6 @@ REQUEST_TIMEOUT = 5.0  # seconds
 
 
 class AsyncNotificationHubClient:
-
     def __init__(
         self,
         req_endpoint: str = None,
@@ -73,7 +72,6 @@ class AsyncNotificationHubClient:
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
         return response.get("success", False)
 
-
     async def terminate_notification_hub(self):
         """
         Send a terminate request to the notification hub. Returns True when successful.
@@ -99,7 +97,9 @@ class AsyncNotificationHubClient:
             await self.req_socket.send_multipart([msg_type.value, json.dumps(request).encode()])
 
             if msg_type == MessageType.REQUEST_NO_REPLY:
-                return {"success": True, }
+                return {
+                    "success": True,
+                }
 
             try:
                 message_parts = await asyncio.wait_for(self.req_socket.recv_multipart(), timeout=self.request_timeout)
@@ -135,7 +135,6 @@ class AsyncNotificationHubClient:
 
 
 class NotificationHubClient:
-
     def __init__(
         self,
         req_endpoint: str = None,
@@ -193,7 +192,6 @@ class NotificationHubClient:
         request = {"action": "health"}
         response = self._send_request(MessageType.REQUEST_WITH_REPLY, request)
         return response.get("success", False)
-
 
     def terminate_notification_hub(self) -> bool:
         """

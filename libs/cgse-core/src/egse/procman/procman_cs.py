@@ -139,6 +139,7 @@ def start():
             sys.exit(exit_code.code)
         except Exception:
             import traceback
+
             traceback.print_exc(file=sys.stdout)
 
     return 0
