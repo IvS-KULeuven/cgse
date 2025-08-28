@@ -12,12 +12,10 @@ import multiprocessing
 import os
 import pickle
 import sys
-import time
 from logging import StreamHandler
 from logging.handlers import SocketHandler
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
-from time import asctime
 from typing import Optional
 
 import rich
@@ -30,8 +28,9 @@ from egse.log import LOG_DATE_FORMAT_FULL
 from egse.log import LOG_FORMAT_CLEAN
 from egse.log import LOG_FORMAT_FULL
 from egse.log import LOG_FORMAT_STYLE
+from egse.log import PackageFilter
 from egse.log import get_log_level_from_env
-from egse.logger import LOGGER_ID
+from egse.logger import SERVICE_TYPE
 from egse.logger import get_log_file_name
 from egse.logger import send_request
 from egse.process import SubProcess
@@ -62,7 +61,9 @@ LOG_NAME_TO_LEVEL = {
 # The log record attributes are listed: https://docs.python.org/3.12/library/logging.html#logrecord-attributes
 
 # LOG_FORMAT_FILE = "%(asctime)s:%(processName)s:%(process)s:%(levelname)s:%(lineno)d:%(name)s:%(message)s"
-LOG_FORMAT_FILE = "{asctime} [{levelname:>8s}] {message} ({filename}:{lineno:d})"
+LOG_FORMAT_FILE = (
+    "{asctime} [{levelname:>8s}] {message} ({processName}[{process}]:{package_name}:{filename}:{lineno:d})"
+)
 LOG_FORMAT_FILE_STYLE = "{"
 
 LOG_FORMAT_KEY_VALUE = (
@@ -76,9 +77,12 @@ LOG_LEVEL_SOCKET = 1  # ALL records shall go to the socket handler
 
 LOGGER_NAME = "egse.logger"
 
-PROTOCOL = "tcp"
-RECEIVER_PORT = 0  # dynamically assigned by the system
-COMMANDER_PORT = 0  # dynamically assigned by the system
+settings = Settings.load("Logging Control Server")
+
+PROTOCOL = settings.get("PROTOCOL", "tcp")
+HOSTNAME = settings.get("HOSTNAME", "localhost")
+RECEIVER_PORT = settings.get("RECEIVER_PORT", 0)  # dynamically assigned by the system if 0
+COMMANDER_PORT = settings.get("COMMANDER_PORT", 0)  # dynamically assigned by the system if 0
 
 file_handler: Optional[TimedRotatingFileHandler] = None
 stream_handler: Optional[StreamHandler] = None
@@ -123,6 +127,7 @@ def start():
 
     file_handler = TimedRotatingFileHandler(filename=log_file_location / log_file_name, when="midnight")
     file_handler.setFormatter(file_formatter)
+    file_handler.addFilter(PackageFilter())
 
     # There is no need to set the level for the handlers, because the level is checked by the
     # Logger, and we use the handlers directly here. Use a filter to restrict messages.
@@ -136,10 +141,12 @@ def start():
 
     stream_handler = StreamHandler()
     stream_handler.setFormatter(stream_formatter)
+    stream_handler.addFilter(PackageFilter())
 
     # Log records are also sent to the textualog listening server
 
     socket_handler = SocketHandler(CTRL_SETTINGS.TEXTUALOG_IP_ADDRESS, CTRL_SETTINGS.TEXTUALOG_LISTENING_PORT)
+    socket_handler.addFilter(PackageFilter())
     socket_handler.setFormatter(file_formatter)
 
     context = zmq.Context.instance()
@@ -163,10 +170,10 @@ def start():
         return
 
     service_id = client.register(
-        name=LOGGER_ID,
+        name="log_cs",
         host=get_host_ip() or "127.0.0.1",
         port=get_port_number(commander),
-        service_type="LOGGER",
+        service_type=SERVICE_TYPE,
         metadata={
             "receiver_port": get_port_number(receiver),
         },
@@ -189,10 +196,10 @@ def start():
                 return
 
         service_id = client.register(
-            name=LOGGER_ID,
+            name="log_cs",
             host=get_host_ip() or "127.0.0.1",
             port=get_port_number(commander),
-            service_type="LOGGER",
+            service_type=SERVICE_TYPE,
             metadata={
                 "receiver_port": get_port_number(receiver),
             },

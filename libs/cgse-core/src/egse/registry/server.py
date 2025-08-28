@@ -22,6 +22,7 @@ import typer
 import zmq
 import zmq.asyncio
 
+from egse.logger import remote_logging
 from egse.registry import DEFAULT_RS_DB_PATH
 from egse.registry import DEFAULT_RS_HB_PORT
 from egse.registry import DEFAULT_RS_PUB_PORT
@@ -216,7 +217,7 @@ class AsyncRegistryServer:
                         # self.logger.info("Waiting for a request with 1s timeout...")
                         message_parts = await asyncio.wait_for(self.req_socket.recv_multipart(), timeout=1.0)
                     except asyncio.TimeoutError:
-                        self.logger.debug("waiting for command request...")
+                        # self.logger.debug("waiting for command request...")
                         continue
 
                     if len(message_parts) >= 3:
@@ -322,7 +323,7 @@ class AsyncRegistryServer:
         # Generate ID if not provided
         service_id = service_info.get("id")
         if not service_id:
-            service_id = f"{service_info['name']}-{uuid.uuid4()}"
+            service_id = f"{service_info['name'].lower().replace(' ', '-')}-{uuid.uuid4()}"
             service_info["id"] = service_id
 
         # Get TTL
@@ -399,7 +400,7 @@ class AsyncRegistryServer:
                     await self.hb_socket.send_string(json.dumps(response))
 
                 except asyncio.TimeoutError:
-                    self.logger.debug("waiting for heartbeat...")
+                    # self.logger.debug("waiting for heartbeat...")
                     continue
 
                 except Exception as exc:
@@ -515,22 +516,23 @@ async def start(
     )
     logging.getLogger("aiosqlite").setLevel(logging.INFO)
 
-    server = AsyncRegistryServer(
-        req_port=req_port,
-        pub_port=pub_port,
-        hb_port=hb_port,
-        db_path=db_path,
-        cleanup_interval=cleanup_interval,
-    )
+    with remote_logging():
+        server = AsyncRegistryServer(
+            req_port=req_port,
+            pub_port=pub_port,
+            hb_port=hb_port,
+            db_path=db_path,
+            cleanup_interval=cleanup_interval,
+        )
 
-    # Set up signal handlers
-    loop = asyncio.get_running_loop()
+        # Set up signal handlers
+        loop = asyncio.get_running_loop()
 
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, lambda: asyncio.create_task(handle_signal(server)))
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            loop.add_signal_handler(sig, lambda: asyncio.create_task(handle_signal(server)))
 
-    # Start server
-    await server.start()
+        # Start server
+        await server.start()
 
 
 async def handle_signal(server):

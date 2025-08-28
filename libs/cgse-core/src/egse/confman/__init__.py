@@ -139,6 +139,8 @@ from egse.env import get_site_id
 from egse.exceptions import InternalError
 from egse.listener import EVENT_ID
 from egse.log import logger
+from egse.notifyhub.event import NotificationEvent
+from egse.notifyhub.services import EventPublisher
 from egse.obsid import ObservationIdentifier
 from egse.plugin import entry_points
 from egse.protocol import CommandProtocol
@@ -757,6 +759,16 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
                         EVENT_ID.SETUP, {"event_type": "new_setup", "setup_id": self._setup_id}
                     )
 
+            with EventPublisher() as pub:
+                pub.publish(
+                    NotificationEvent(
+                        event_type="new_setup",
+                        source_service="cm_cs",
+                        data={"setup_id": self._setup_id},
+                        timestamp=time.time(),
+                    )
+                )
+
             return self._setup
         except SettingsError as exc:
             return Failure(f"The Setup file can not be loaded from {setup_file}.", exc)
@@ -940,6 +952,16 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
                     self._control_server.notify_listeners(
                         EVENT_ID.SETUP, {"event_type": "new_setup", "setup_id": setup_id}
                     )
+
+            with EventPublisher() as pub:
+                pub.publish(
+                    NotificationEvent(
+                        event_type="new_setup",
+                        source_service="cm_cs",
+                        data={"setup_id": self._setup_id},
+                        timestamp=time.time(),
+                    )
+                )
 
         return setup
 

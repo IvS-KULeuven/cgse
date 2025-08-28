@@ -103,3 +103,23 @@ def stop_pm_cs():
             waiting_for(lambda: not is_process_running(["procman_cs", "start"]), timeout=5.0)
     except TimeoutError:
         logger.warning("pm_cs should not be running anymore...")
+
+
+def stop_notifyhub():
+    rich.print("Terminating the notification hub core service...")
+
+    out = open(Path("~/.notifyhub.stop.out").expanduser(), "w")
+
+    subprocess.Popen(
+        [sys.executable, "-m", "egse.notifyhub.server", "stop"],
+        stdout=out,
+        stderr=out,
+        stdin=subprocess.DEVNULL,
+        close_fds=True,
+    )
+
+    try:
+        with Timer("notifyhub stop timer", log_level=logging.DEBUG):
+            waiting_for(lambda: not is_process_running(["egse.notifyhub.server", "start"]), timeout=5.0)
+    except TimeoutError:
+        logger.warning("notifyhub should not be running anymore...")

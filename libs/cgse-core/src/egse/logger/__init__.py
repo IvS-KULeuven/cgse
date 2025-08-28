@@ -8,7 +8,7 @@ forwarded to the log control server.
 """
 
 __all__ = [
-    "LOGGER_ID",
+    "SERVICE_TYPE",
     "LOG_FORMAT_FULL",
     "logger",
     "root_logger",
@@ -22,9 +22,10 @@ __all__ = [
     "set_all_logger_levels",
     "setup_logging",
     "teardown_logging",
+    "remote_logging",
 ]
 
-import atexit
+import contextlib
 import logging
 import pickle
 import traceback
@@ -32,16 +33,23 @@ import traceback
 import zmq
 
 from egse.log import LOG_FORMAT_FULL
-from egse.log import logger, root_logger, egse_logger
-from egse.registry.client import RegistryClient
+from egse.log import PackageFilter
+from egse.log import egse_logger
+from egse.log import logger
+from egse.log import root_logger
 from egse.settings import Settings
 from egse.system import is_in_ipython
+from egse.system import type_name
 
-CTRL_SETTINGS = Settings.load("Logging Control Server")
+settings = Settings.load("Logging Control Server")
 
+SERVICE_TYPE = settings.get("SERVICE_TYPE", "log_cs")
+"""The logger id that is also used as service_type for service discovery."""
 
-LOGGER_ID = "LOGGER"
-"""The logger id that is also used as service_tpe for service discovery."""
+PROTOCOL = settings.get("PROTOCOL", "tcp")
+HOSTNAME = settings.get("HOSTNAME", "localhost")
+RECEIVER_PORT = settings.get("RECEIVER_PORT", 0)  # dynamically assigned by the system if 0
+COMMANDER_PORT = settings.get("COMMANDER_PORT", 0)  # dynamically assigned by the system if 0
 
 
 _initialised = False  # will be set to True in the setup_logging() function
@@ -51,40 +59,54 @@ def get_log_file_name():
     """
     Returns the filename of the log file as defined in the Settings or return the default name 'general.log'.
     """
-    return CTRL_SETTINGS.get("FILENAME", "general.log")
+    return settings.get("FILENAME", "general.log")
+
+def get_endpoint_from_registry(port: str = "commander"):
+    """Returns the endpoint that was constructed from information from the service registry.
+
+    """
+    from egse.registry.client import RegistryClient
+
+    try:
+        with RegistryClient(request_timeout=500) as reg:
+            if port == "commander":
+                endpoint = reg.get_endpoint(SERVICE_TYPE)
+            elif port == "receiver":
+                service = reg.discover_service(SERVICE_TYPE)
+                endpoint = (
+                    f"{service.get('protocol', 'tcp')}://{service['host']}:{service['metadata']['receiver_port']}"
+                )
+            else:
+                logger.error(f"Incorrect argument {port=}, no endpoint returned.")
+                endpoint = None
+    except Exception:  # noqa
+        logger.warning(f"Couldn't retrieve endpoint for {SERVICE_TYPE}. Is the log_cs process running?")
+        endpoint = None
+
+    return endpoint
 
 
 class ZeroMQHandler(logging.Handler):
-    def __init__(self, uri=None, socket_type=zmq.PUSH, ctx=None):
+    def __init__(self):
         super().__init__()
-        # logging.Handler.__init__(self)
 
-        if uri is None:
-            try:
-                with RegistryClient(request_timeout=500) as reg:
-                    # We cannot use `get_endpoint` here, because we need a different port
-                    service = reg.discover_service(LOGGER_ID)
-                    endpoint = (
-                        f"{service.get('protocol', 'tcp')}://{service['host']}:{service['metadata']['receiver_port']}"
-                    )
-            except Exception:  # noqa
-                logger.warning(f"Couldn't retrieve endpoint for {LOGGER_ID}. Is the log_cs process running?")
-            else:
-                uri = endpoint
+        if RECEIVER_PORT == 0:
+            endpoint = get_endpoint_from_registry(port="receiver")
+        else:
+            endpoint = f"{PROTOCOL}://{HOSTNAME}:{RECEIVER_PORT}"
 
-        if uri:
-            # print(f"ZeroMQHandler.__init__({uri=}, {socket_type=}, {ctx=})")
+        if endpoint:
 
             self.setLevel(logging.NOTSET)
 
-            self.ctx = ctx or zmq.Context.instance()
-            self.socket = zmq.Socket(self.ctx, socket_type)
+            self.ctx = zmq.Context.instance()
+            self.socket = zmq.Socket(self.ctx, zmq.PUSH)
             self.socket.setsockopt(zmq.SNDHWM, 0)  # never block on sending msg
             # self.socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second
             # self.socket.setsockopt(zmq.SNDTIMEO, 1000)  # 1 second
             self.socket.setsockopt(zmq.LINGER, 100)  # short wait for unsent messages on close()
             self.socket.setsockopt(zmq.IMMEDIATE, 1)  # set immediate mode
-            self.socket.connect(uri)
+            self.socket.connect(endpoint)
 
             logger.debug(f"All logging messages will be forwarded to the LOGGER at {endpoint}.")
         else:
@@ -108,8 +130,6 @@ class ZeroMQHandler(logging.Handler):
         Writes the LogRecord to the queue, preparing it for pickling first.
         """
 
-        # print(f"ZeroMQHandler.emit({record})")
-
         if not self.socket:
             return
 
@@ -123,8 +143,14 @@ class ZeroMQHandler(logging.Handler):
             self.socket.send(data, flags=zmq.NOBLOCK)
         except (KeyboardInterrupt, SystemExit):
             raise
+        except zmq.Again:
+            # This exception occurs when e.g. the log_cs server has not yet started
+            # but logging was set up in another process. An example is the service
+            # registry which starts before the logger. When it calls `setup_logging()`
+            # the `log_cs` has not yet started.
+            pass
         except Exception as exc:
-            logging.error(f"ZeroMQHandler: Exception - {exc}", exc_info=True)
+            logging.error(f"ZeroMQHandler: Caught {type_name(exc)} - {exc}", exc_info=True)
             self.handleError(record)
 
 
@@ -146,10 +172,7 @@ def print_all_handlers():
 
 def close_all_zmq_handlers():
     """
-    Close all the ZeroMQHandlers that are connected to a logger.
-
-    This function is automatically called upon termination of the control servers. For your own
-    applications, call this function before exiting the App.
+    Close and remove all the ZeroMQHandlers that are connected to a logger.
     """
 
     loggers = logging.Logger.manager.loggerDict
@@ -159,11 +182,12 @@ def close_all_zmq_handlers():
             continue
         for handler in logger.handlers:
             if isinstance(handler, ZeroMQHandler):
-                root_logger.debug(f"Closing ZeroMQHandler for logger {name}")
+                root_logger.debug(f"Close and remove ZeroMQHandler for logger {name}.")
                 handler.close()
+                logger.removeHandler(handler)
 
 
-def setup_logging(uri: str = None):
+def setup_logging():
     # Initialize logging as we want it for the Common-EGSE
     #
     # * The ZeroMQHandler to send all logging messages, i.e. level=DEBUG to the Logging Server
@@ -172,6 +196,7 @@ def setup_logging(uri: str = None):
     global root_logger, egse_logger, _initialised
 
     if _initialised:
+        logger.info("Logging has already been set up for this process.")
         return
 
     logging.disable(logging.NOTSET)
@@ -182,8 +207,9 @@ def setup_logging(uri: str = None):
 
     # Add the ZeroMQHandler to the egse_logger
 
-    zmq_handler = ZeroMQHandler(uri)
+    zmq_handler = ZeroMQHandler()
     zmq_handler.setLevel(logging.NOTSET)
+    zmq_handler.addFilter(PackageFilter())
     egse_logger.addHandler(zmq_handler)
 
     _initialised = True
@@ -197,8 +223,17 @@ def teardown_logging():
     _initialised = False
 
 
-setup_logging()
-atexit.register(teardown_logging)
+@contextlib.contextmanager
+def remote_logging():
+    """A context manager that can be used to activate remote logging."""
+    setup_logging()
+    yield
+    teardown_logging()
+
+# NOTE: This code is commented, you will have to set up and tear down the logging for
+#       each process individually.
+# setup_logging()
+# atexit.register(teardown_logging)
 
 
 def replace_zmq_handler():
@@ -276,13 +311,16 @@ TIMEOUT_RECV = 1.0  # seconds
 
 def send_request(command_request: str):
     """Sends a request to the Logger Control Server and waits for a response."""
-    ctx = zmq.Context.instance()
 
-    with RegistryClient() as client:
-        endpoint = client.get_endpoint(LOGGER_ID)
+    if RECEIVER_PORT == 0:
+        endpoint = get_endpoint_from_registry()
+    else:
+        endpoint = f"{PROTOCOL}://{HOSTNAME}:{COMMANDER_PORT}"
 
     if endpoint is None:
-        return {"error": "The log_cs has not been registered as a service."}
+        return {"error": "Couldn't determine the endpoint for the logger."}
+
+    ctx = zmq.Context.instance()
 
     socket = ctx.socket(zmq.REQ)
     socket.connect(endpoint)

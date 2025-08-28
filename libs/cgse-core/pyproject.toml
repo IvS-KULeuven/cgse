@@ -49,6 +49,7 @@ log = 'cgse_core.services:log_cs'
 cm = 'cgse_core.services:cm_cs'
 sm = 'cgse_core.services:sm_cs'
 pm = 'cgse_core.services:pm_cs'
+notify = 'cgse_core.services:notifyhub'
 
 [project.entry-points."cgse.explore"]
 explore = "cgse_core.cgse_explore"
@@ -73,8 +74,8 @@ filterwarnings = [
     "ignore::DeprecationWarning"
 ]
 log_cli = true
-log_cli_level = "INFO"
-log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
+log_cli_level = "DEBUG"
+#log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 
 [tool.coverage.run]

@@ -73,3 +73,17 @@ def start_pm_cs():
         stdin=subprocess.DEVNULL,
         close_fds=True,
     )
+
+
+def start_notifyhub():
+    rich.print("Starting the notification hub core service...")
+
+    out = open(Path("~/.notifyhub.start.out").expanduser(), "w")
+
+    subprocess.Popen(
+        [sys.executable, "-m", "egse.notifyhub.server", "start"],
+        stdout=out,
+        stderr=out,
+        stdin=subprocess.DEVNULL,
+        close_fds=True,
+    )
