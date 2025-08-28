@@ -39,8 +39,9 @@ LOG_FORMAT_FULL = (
     "{asctime:19s}.{msecs:03.0f} : {processName:20s} : {levelname:8s} : {name:^25s} : {lineno:6d} : {filename:20s} : {"
     "message}"
 )
-LOG_FORMAT_CLEAN = ("{asctime} [{levelname:>8s}] {message} ({processName}[{process}]{package_name}:{filename}:{"
-                    "lineno:d})")
+LOG_FORMAT_CLEAN = (
+    "{asctime} [{levelname:>8s}] {message} ({processName}[{process}]{package_name}:{filename}:{lineno:d})"
+)
 
 LOG_DATE_FORMAT_FULL = "%Y-%m-%d %H:%M:%S"
 LOG_DATE_FORMAT_CLEAN = "%Y-%m-%d %H:%M:%S"
@@ -56,15 +57,15 @@ class PackageFilter(logging.Filter):
 
     NOTE: this filer assumes the root package is 'egse'.
     """
-    def filter(self, record):
 
-        if hasattr(record, 'pathname'):
+    def filter(self, record):
+        if hasattr(record, "pathname"):
             parts = Path(record.pathname).parent.parts
             try:
-                egse_index = parts.index('egse')
+                egse_index = parts.index("egse")
                 package_name = ".".join(parts[egse_index:])
             except ValueError:
-                package_name = 'n/a'
+                package_name = "n/a"
 
             record.package_name = package_name
         else:
@@ -134,7 +135,6 @@ for handler in root_logger.handlers:
 logger = egse_logger
 
 if __name__ == "__main__":
-
     root_logger = logging.getLogger()
 
     rich.print(

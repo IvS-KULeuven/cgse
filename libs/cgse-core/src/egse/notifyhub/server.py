@@ -25,9 +25,9 @@ from .event import NotificationEvent
 
 app = typer.Typer(name="notify_hub")
 
+
 class AsyncNotificationHub:
     def __init__(self):
-
         self.server_id = "notification-hub-1"
 
         self.context: zmq.asyncio.Context = zmq.asyncio.Context()
@@ -89,7 +89,6 @@ class AsyncNotificationHub:
 
         # Clean shutdown
         await self._shutdown()
-
 
     async def _shutdown(self):
         self._running = False
@@ -304,7 +303,7 @@ class AsyncNotificationHub:
             "status": "healthy" if self.running else "unhealthy",
             "uptime": time.time() - self.stats["start_time"],
             "events_received": self.stats["events_received"],
-            "events_published": self.stats['events_published'],
+            "events_published": self.stats["events_published"],
             "last_message_time": self.stats["last_message_time"],
             "timestamp": time.time(),
             "request_id": request.get("request_id"),
@@ -325,6 +324,7 @@ async def start():
         hub = AsyncNotificationHub()
         await hub.start()
 
+
 @app.command(cls=TyperAsyncCommand)
 async def stop():
     with AsyncNotificationHubClient() as client:
@@ -332,7 +332,6 @@ async def stop():
 
 
 if __name__ == "__main__":
-
     try:
         rc = app()
     except zmq.ZMQError as exc:
