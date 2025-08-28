@@ -42,8 +42,8 @@ def start_core_services(log_level: str = "WARNING"):
     rich.print("[green]Starting the core services...[/]")
 
     start_rm_cs(log_level)
-    start_notifyhub()
     start_log_cs()
+    start_notifyhub()
     start_sm_cs()
     start_cm_cs()
     start_pm_cs()
@@ -58,13 +58,14 @@ def stop_core_services():
     stop_pm_cs()
     stop_cm_cs()
     stop_sm_cs()
+    stop_notifyhub()
+
     # We need the logger for logging the termination process for other services, so leave it running for a while
     time.sleep(1.0)
     stop_log_cs()
+
     # We need the registry server to stop other core services, so leave it running for a while
     time.sleep(1.0)
-    stop_notifyhub()
-    time.sleep(0.1)
     stop_rm_cs()
 
 
