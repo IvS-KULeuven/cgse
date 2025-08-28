@@ -39,7 +39,8 @@ LOG_FORMAT_FULL = (
     "{asctime:19s}.{msecs:03.0f} : {processName:20s} : {levelname:8s} : {name:^25s} : {lineno:6d} : {filename:20s} : {"
     "message}"
 )
-LOG_FORMAT_CLEAN = "{asctime} [{levelname:>8s}] {message} ([{process}]{package_name}:{filename}:{lineno:d})"
+LOG_FORMAT_CLEAN = ("{asctime} [{levelname:>8s}] {message} ({processName}[{process}]{package_name}:{filename}:{"
+                    "lineno:d})")
 
 LOG_DATE_FORMAT_FULL = "%Y-%m-%d %H:%M:%S"
 LOG_DATE_FORMAT_CLEAN = "%Y-%m-%d %H:%M:%S"
