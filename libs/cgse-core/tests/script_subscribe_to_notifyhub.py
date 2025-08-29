@@ -8,8 +8,10 @@ subscriber.connect()
 def handle_simple_event(event_data: dict):
     logger.info(f"----> {event_data=}")
 
+
 def handle_single_event(event_data: dict):
     logger.info(f"----> {event_data=}")
+
 
 subscriber.register_handler("simple-event", handle_simple_event)
 subscriber.register_handler("single-event", handle_single_event)

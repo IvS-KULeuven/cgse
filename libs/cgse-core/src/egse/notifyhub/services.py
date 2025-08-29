@@ -135,6 +135,7 @@ class AsyncEventSubscriber:
             self.subscriber.close()
         self.context.term()
 
+
 class ServiceMessaging:
     """Convenience wrapper that combines publisher and subscriber."""
 
