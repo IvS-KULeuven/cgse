@@ -75,7 +75,6 @@ class AsyncNotificationHub:
         self.publisher_socket.bind(f"tcp://*:{DEFAULT_PUBLISHER_PORT}")
         self.requests_socket.bind(f"tcp://*:{DEFAULT_REQUESTS_PORT}")
 
-        # Start concurrent tasks
         self._tasks = [
             asyncio.create_task(self._event_collector()),
             asyncio.create_task(self._stats_reporter()),
@@ -84,28 +83,21 @@ class AsyncNotificationHub:
 
         await self._register_service()
 
-        # Wait for shutdown
         await self._shutdown_event.wait()
-
-        # Clean shutdown
-        await self._shutdown()
-
-    async def _shutdown(self):
-        self._running = False
-        self.logger.info("Shutting down async notification hub...")
 
         await self._deregister_service()
 
-        # Cancel all tasks
-        for task in self._tasks:
-            task.cancel()
+        await self._shutdown()
 
-        # Wait for tasks to complete (with timeout)
+    async def _shutdown(self):
+        self.running = False
+        self.logger.info("Async Notification Hub shutdown requested...")
+
+        # Wait for tasks to gracefully complete (with timeout)
         if self._tasks:
-            try:
-                await asyncio.wait(self._tasks, timeout=2.0)
-            except asyncio.CancelledError:
-                pass
+            done, pending = await asyncio.wait(self._tasks, timeout=2.0)
+            for task in pending:
+                task.cancel()
 
         self.collector_socket.close()
         self.publisher_socket.close()
@@ -169,6 +161,7 @@ class AsyncNotificationHub:
             except asyncio.TimeoutError:
                 continue
             except asyncio.CancelledError:
+                self.logger.warning("Event collector cancelled.")
                 self.running = False
             except Exception as exc:
                 self.logger.error(f"Error in event collector: {exc}", exc_info=True)
@@ -197,9 +190,15 @@ class AsyncNotificationHub:
         """Periodically report statistics"""
         while self.running:
             try:
-                await asyncio.sleep(30)
+                await asyncio.wait_for(self._shutdown_event.wait(), timeout=30)
+                # shutdown was requested if we get here
+                # self.logger.info("Shutdown request caught in stats reporter.")
+                break
+            except asyncio.TimeoutError:
+                # normal case, 30s timeout before next report
                 self.logger.info(f"Stats: {self.stats}")
             except asyncio.CancelledError:
+                self.logger.warning("Stats reporter cancelled.")
                 self.running = False
 
     async def _handle_requests(self):
@@ -229,6 +228,7 @@ class AsyncNotificationHub:
             except Exception as exc:
                 self.logger.error(f"Error handling request: {exc}", exc_info=True)
             except asyncio.CancelledError:
+                self.logger.warning("Request handling cancelled.")
                 self.running = False
 
     async def _process_request(self, msg_data: bytes):

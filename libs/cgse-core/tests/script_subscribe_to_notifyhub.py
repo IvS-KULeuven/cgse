@@ -25,4 +25,4 @@ while True:
         logger.info("Caught KeyboardInterrupt, terminating...")
         break
 
-subscriber.close()
+subscriber.disconnect()

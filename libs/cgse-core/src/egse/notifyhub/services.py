@@ -50,11 +50,11 @@ class AsyncEventPublisher:
         await self.publisher.send(json.dumps(event.as_dict()).encode())
         self.logger.debug(f"Published: {event.event_type}")
 
-    def close(self):
+    def disconnect(self):
         """Clean shutdown"""
         self._connected = False
         if self.publisher:
-            self.publisher.close()
+            self.publisher.close(linger=0)
         self.context.term()
 
 
@@ -128,11 +128,11 @@ class AsyncEventSubscriber:
         else:
             self.logger.warning(f"No handler registered for {event_type}")
 
-    def stop(self):
+    def disconnect(self):
         """Stop listening"""
         self.running = False
         if self.subscriber is not None:
-            self.subscriber.close()
+            self.subscriber.close(linger=0)
         self.context.term()
 
 
@@ -165,11 +165,11 @@ class ServiceMessaging:
         if self.subscriber:
             await self.subscriber.start_listening()
 
-    async def close(self):
+    def disconnect(self):
         """Clean shutdown"""
-        await self.publisher.close()
+        self.publisher.disconnect()
         if self.subscriber:
-            await self.subscriber.stop()
+            self.subscriber.disconnect()
 
 
 class EventPublisher:
@@ -187,7 +187,7 @@ class EventPublisher:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
+        self.disconnect()
 
     def connect(self):
         """Connect to the notification hub"""
@@ -203,7 +203,7 @@ class EventPublisher:
         self.publisher.send(json.dumps(event.as_dict()).encode())
         self.logger.debug(f"Published: {event.event_type}")
 
-    def close(self):
+    def disconnect(self):
         """Clean shutdown"""
         if self._connected:
             self.publisher.close(linger=0)
@@ -262,7 +262,7 @@ class EventSubscriber:
         else:
             self.logger.warning(f"No handler registered for {event_type}")
 
-    def close(self):
+    def disconnect(self):
         """Stop listening"""
         if self.subscriber:
             self.subscriber.close(linger=0)

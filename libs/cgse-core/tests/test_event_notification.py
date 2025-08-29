@@ -62,7 +62,7 @@ def test_simple_event():
             if subscriber.poll():
                 subscriber.handle_event()
 
-        subscriber.close()
+        subscriber.disconnect()
 
     thread = threading.Thread(target=_start_listening)
     thread.start()
@@ -77,4 +77,4 @@ def test_simple_event():
 
     time.sleep(0.1)
 
-    publisher.close()
+    publisher.disconnect()
