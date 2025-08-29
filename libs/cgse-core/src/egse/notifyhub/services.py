@@ -20,7 +20,6 @@ import zmq.asyncio
 from . import DEFAULT_COLLECTOR_PORT
 from . import DEFAULT_PUBLISHER_PORT
 from .event import NotificationEvent
-from egse.system import type_name
 
 NOTIFY_HUB_COLLECTOR = f"tcp://localhost:{DEFAULT_COLLECTOR_PORT}"
 NOTIFY_HUB_PUBLISHER = f"tcp://localhost:{DEFAULT_PUBLISHER_PORT}"
@@ -47,17 +46,16 @@ class AsyncEventPublisher:
 
     async def publish(self, event: NotificationEvent):
         """Publish an event"""
-        if not self._connected:
-            await self.connect()
 
         await self.publisher.send(json.dumps(event.as_dict()).encode())
         self.logger.debug(f"Published: {event.event_type}")
 
-    async def close(self):
+    def close(self):
         """Clean shutdown"""
-        if self._connected:
-            await self.publisher.close()
-            self._connected = False
+        self._connected = False
+        if self.publisher:
+            self.publisher.close()
+        self.context.term()
 
 
 class AsyncEventSubscriber:
@@ -93,8 +91,6 @@ class AsyncEventSubscriber:
 
     async def start_listening(self):
         """Start listening for events"""
-        if not self.subscriber:
-            await self.connect()
 
         self.running = True
         self.logger.info("Started listening for events")
@@ -132,12 +128,12 @@ class AsyncEventSubscriber:
         else:
             self.logger.warning(f"No handler registered for {event_type}")
 
-    async def stop(self):
+    def stop(self):
         """Stop listening"""
         self.running = False
-        if self.subscriber:
-            await self.subscriber.close()
-
+        if self.subscriber is not None:
+            self.subscriber.close()
+        self.context.term()
 
 class ServiceMessaging:
     """Convenience wrapper that combines publisher and subscriber."""
@@ -203,9 +199,6 @@ class EventPublisher:
 
     def publish(self, event: NotificationEvent):
         """Publish an event"""
-        if not self._connected:
-            self.connect()
-
         self.publisher.send(json.dumps(event.as_dict()).encode())
         self.logger.debug(f"Published: {event.event_type}")
 
@@ -235,7 +228,7 @@ class EventSubscriber:
         # Subscribe to specific event types
         for event_type in self.subscriptions:
             self.subscriber.setsockopt(zmq.SUBSCRIBE, event_type.encode())
-            self.logger.info(f"Subscribed to: {event_type}")
+            self.logger.info(f"Subscribed to: {event_type or 'all'}")
 
     def register_handler(self, event_type: str, handler: Callable):
         """Register a handler for an event type"""
@@ -246,9 +239,6 @@ class EventSubscriber:
         return self.subscriber
 
     def poll(self, timeout=1000):
-        if not self.subscriber:
-            self.connect()
-
         return self.subscriber.poll(timeout=timeout)
 
     def handle_event(self):
