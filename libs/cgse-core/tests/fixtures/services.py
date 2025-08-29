@@ -33,6 +33,8 @@ from fixtures.helpers import is_process_not_running
 def setup_log_service(default_env):
     """This fixture starts the CGSE log service."""
 
+    # FIXME: this needs to be looked at with respect to `setup_logging()`
+
     if is_process_running(items=["log_cs"]):
         pytest.xfail("The logging manager is already running")
 
