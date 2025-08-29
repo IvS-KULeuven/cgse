@@ -761,12 +761,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
 
             with EventPublisher() as pub:
                 pub.publish(
-                    NotificationEvent(
-                        event_type="new_setup",
-                        source_service="cm_cs",
-                        data={"setup_id": self._setup_id},
-                        timestamp=time.time(),
-                    )
+                    NotificationEvent(event_type="new_setup", source_service="cm_cs", data={"setup_id": self._setup_id})
                 )
 
             return self._setup
@@ -955,12 +950,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
 
             with EventPublisher() as pub:
                 pub.publish(
-                    NotificationEvent(
-                        event_type="new_setup",
-                        source_service="cm_cs",
-                        data={"setup_id": self._setup_id},
-                        timestamp=time.time(),
-                    )
+                    NotificationEvent(event_type="new_setup", source_service="cm_cs", data={"setup_id": self._setup_id})
                 )
 
         return setup

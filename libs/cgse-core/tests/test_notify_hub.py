@@ -103,8 +103,6 @@ def test_single_event():
             event_type="single-event",
             source_service="test_notify_hub",
             data={"data": "Simple string for a single event"},
-            timestamp=time.time(),
-            correlation_id=None,
         )
 
         def poll_next_event():
@@ -155,8 +153,6 @@ async def test_single_event_async():
             event_type="single-event",
             source_service="test_notify_hub",
             data={"data": "Simple string for a single event"},
-            timestamp=time.time(),
-            correlation_id=None,
         )
         await publisher.publish(event)
 

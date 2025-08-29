@@ -150,7 +150,6 @@ class ServiceMessaging:
             event_type=event_type,
             source_service=self.service_name,
             data=data,
-            timestamp=time.time(),
             correlation_id=correlation_id,
         )
         await self.publisher.publish(event)
@@ -201,7 +200,7 @@ class EventPublisher:
     def publish(self, event: NotificationEvent):
         """Publish an event"""
         self.publisher.send(json.dumps(event.as_dict()).encode())
-        self.logger.debug(f"Published: {event.event_type}")
+        self.logger.debug(f"Published: {event.event_type} with correlation_id={event.correlation_id}")
 
     def disconnect(self):
         """Clean shutdown"""
