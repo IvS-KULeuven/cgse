@@ -34,7 +34,7 @@ def is_service_registry_active(timeout: float = 0.5):
 
     from egse.registry.client import RegistryClient  # prevent circular import
 
-    with RegistryClient(request_timeout=int(timeout*1000)) as client:
+    with RegistryClient(request_timeout=int(timeout * 1000)) as client:
         if not client.health_check():
             return False
         else:
