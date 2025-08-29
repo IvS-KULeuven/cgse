@@ -40,7 +40,7 @@ LOG_FORMAT_FULL = (
     "message}"
 )
 LOG_FORMAT_CLEAN = (
-    "{asctime} [{levelname:>8s}] {message} ({processName}[{process}]{package_name}:{filename}:{lineno:d})"
+    "{asctime} [{levelname:>8s}] {message} ({processName}[{process}]:{package_name}:{filename}:{lineno:d})"
 )
 
 LOG_DATE_FORMAT_FULL = "%Y-%m-%d %H:%M:%S"
