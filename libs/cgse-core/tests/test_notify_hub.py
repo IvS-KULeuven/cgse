@@ -51,7 +51,6 @@ async def async_notify_hub():
         await server_task
 
 
-
 @contextlib.contextmanager
 def notify_hub():
     """Context manager that starts a notification hub as a sub-process."""
@@ -140,7 +139,6 @@ def test_single_event():
 @pytest.mark.asyncio
 async def test_single_event_async():
     async with async_notify_hub():
-
         publisher = AsyncEventPublisher()
         await publisher.connect()
 
