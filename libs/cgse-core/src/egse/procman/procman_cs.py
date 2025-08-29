@@ -17,6 +17,7 @@ import zmq
 from egse.confman import ConfigurationManagerProxy
 from egse.control import ControlServer
 from egse.listener import EVENT_ID
+from egse.logger import remote_logging
 from egse.process import SubProcess
 from egse.procman import ProcessManagerProxy
 from egse.procman.procman_protocol import ProcessManagerProtocol
@@ -127,18 +128,19 @@ def start():
 
     multiprocessing.current_process().name = "pm_cs"
 
-    try:
-        control_server = ProcessManagerControlServer()
-        control_server.serve()
-    except KeyboardInterrupt:
-        print("Shutdown requested...exiting")
-    except SystemExit as exit_code:
-        print(f"System Exit with code {exit_code}.")
-        sys.exit(exit_code.code)
-    except Exception:
-        import traceback
+    with remote_logging():
+        try:
+            control_server = ProcessManagerControlServer()
+            control_server.serve()
+        except KeyboardInterrupt:
+            print("Shutdown requested...exiting")
+        except SystemExit as exit_code:
+            print(f"System Exit with code {exit_code}.")
+            sys.exit(exit_code.code)
+        except Exception:
+            import traceback
 
-        traceback.print_exc(file=sys.stdout)
+            traceback.print_exc(file=sys.stdout)
 
     return 0
 

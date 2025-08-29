@@ -12,6 +12,7 @@ from egse.signal import create_signal_command_file
 from egse.system import TyperAsyncCommand
 from ._start import start_cm_cs
 from ._start import start_log_cs
+from ._start import start_notifyhub
 from ._start import start_pm_cs
 from ._start import start_rm_cs
 from ._start import start_sm_cs
@@ -23,6 +24,7 @@ from ._status import status_rm_cs
 from ._status import status_sm_cs
 from ._stop import stop_cm_cs
 from ._stop import stop_log_cs
+from ._stop import stop_notifyhub
 from ._stop import stop_pm_cs
 from ._stop import stop_rm_cs
 from ._stop import stop_sm_cs
@@ -41,6 +43,7 @@ def start_core_services(log_level: str = "WARNING"):
 
     start_rm_cs(log_level)
     start_log_cs()
+    start_notifyhub()
     start_sm_cs()
     start_cm_cs()
     start_pm_cs()
@@ -55,9 +58,12 @@ def stop_core_services():
     stop_pm_cs()
     stop_cm_cs()
     stop_sm_cs()
+    stop_notifyhub()
+
     # We need the logger for logging the termination process for other services, so leave it running for a while
     time.sleep(1.0)
     stop_log_cs()
+
     # We need the registry server to stop other core services, so leave it running for a while
     time.sleep(1.0)
     stop_rm_cs()
@@ -274,3 +280,21 @@ def pm_cs_reregister(force: bool = False):
         app_name,
         {"action": "reregister", "params": {"force": force}},
     )
+
+
+notifyhub = typer.Typer(
+    name="notifyhub",
+    help="handle notification hub: start, stop, status, re-register",
+)
+
+
+@notifyhub.command(name="start")
+def notifyhub_start():
+    """Start the Process Manager."""
+    start_notifyhub()
+
+
+@notifyhub.command(name="stop")
+def notifyhub_stop():
+    """Stop the Process Manager."""
+    stop_notifyhub()

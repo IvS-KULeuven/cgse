@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import threading
 import time
 import uuid
@@ -231,7 +232,7 @@ class RegistryClient:
             The service ID if successful, None otherwise
         """
         # Prepare service info
-        service_info = {"name": name, "host": host, "port": port}
+        service_info: dict[str, str | int | dict | list] = {"name": name, "host": host, "port": port}
 
         # Add optional fields
         if service_type:
@@ -505,7 +506,7 @@ class AsyncRegistryClient:
         self.registry_hb_endpoint = registry_hb_endpoint or f"tcp://localhost:{DEFAULT_RS_HB_PORT}"
 
         self.request_timeout = request_timeout
-        self.logger = logger
+        self.logger = logging.getLogger("egse.registry.client")
 
         # Service state
         self._service_id = None
