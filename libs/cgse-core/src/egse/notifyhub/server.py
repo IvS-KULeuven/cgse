@@ -94,6 +94,8 @@ class AsyncNotificationHub:
         self._running = False
         self.logger.info("Shutting down async notification hub...")
 
+        await self._deregister_service()
+
         # Cancel all tasks
         for task in self._tasks:
             task.cancel()
@@ -104,8 +106,6 @@ class AsyncNotificationHub:
                 await asyncio.wait(self._tasks, timeout=2.0)
             except asyncio.CancelledError:
                 pass
-
-        await self._deregister_service()
 
         self.collector_socket.close()
         self.publisher_socket.close()
