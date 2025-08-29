@@ -147,7 +147,7 @@ class AsyncNotificationHub:
                     event_type=message["event_type"],
                     source_service=message["source_service"],
                     data=message["data"],
-                    timestamp=message.get("timestamp", time.time()),
+                    timestamp=message.get("timestamp"),
                     correlation_id=message.get("correlation_id"),
                 )
 

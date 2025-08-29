@@ -33,13 +33,6 @@ def test_simple_event():
     publisher = EventPublisher()
     publisher.connect()
 
-    event = NotificationEvent(
-        event_type="simple-event",
-        source_service="test-simple-event",
-        data={"message": "a unit test for event notification", "count": 0, "quit": False},
-        timestamp=time.time(),
-    )
-
     is_running = True
 
     def handle_simple_event(event_data: dict):
@@ -68,12 +61,22 @@ def test_simple_event():
     thread.start()
 
     for idx in range(10):
-        event.data["count"] = idx
-        publisher.publish(event)
+        publisher.publish(
+            NotificationEvent(
+                event_type="simple-event",
+                source_service="test-simple-event",
+                data={"message": "a unit test for event notification", "count": idx, "quit": False},
+            )
+        )
         time.sleep(0.01)
 
-    event.data["quit"] = True
-    publisher.publish(event)
+    publisher.publish(
+        NotificationEvent(
+            event_type="simple-event",
+            source_service="test-simple-event",
+            data={"message": "a unit test for event notification", "count": 10, "quit": True},
+        )
+    )
 
     time.sleep(0.1)
 
