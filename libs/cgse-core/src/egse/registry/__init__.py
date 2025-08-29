@@ -20,3 +20,22 @@ class MessageType(Enum):
 
 
 logger = logging.getLogger("egse.registry")
+
+
+def is_service_registry_active(timeout: float = 0.5):
+    """Check if the service registry is running and active.
+
+    This function will send a 'health_check' request to the service registry and
+    waits for the answer.
+
+    If no reply was received after the given timeout [default=0.5s] the request
+    will time out and return False.
+    """
+
+    from egse.registry.client import RegistryClient  # prevent circular import
+
+    with RegistryClient(request_timeout=int(timeout*1000)) as client:
+        if not client.health_check():
+            return False
+        else:
+            return True
