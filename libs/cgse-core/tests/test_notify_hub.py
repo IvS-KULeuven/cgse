@@ -37,14 +37,11 @@ async def async_notify_hub():
 
     await server.stop()
 
-    if not server_task.done():
-        server_task.cancel()
+    await server_task
 
-    # Wait for tasks to complete their cancellation
-    try:
-        await asyncio.gather(server_task, return_exceptions=True)
-    except asyncio.CancelledError as exc:
-        logger.error(f"Caught {type(exc).__name__}: {exc}.")
+    if not server_task.done():
+        logger.warning("I should not end up here!")
+        server_task.cancel()
 
 
 @contextlib.contextmanager
@@ -91,8 +88,7 @@ async def test_server_running_async():
 def test_single_event():
     with notify_hub():
         publisher = EventPublisher()
-        subscriber = EventSubscriber(["single-event"])
-        subscriber.register_handler("single-event", single_event_handler)
+        publisher.connect()
 
         event = NotificationEvent(
             event_type="single-event",
@@ -103,17 +99,25 @@ def test_single_event():
         )
 
         def poll_next_event():
+            subscriber = EventSubscriber(["single-event"])
+            subscriber.connect()
+            subscriber.register_handler("single-event", single_event_handler)
             event_received = False
             while not event_received:
                 if subscriber.poll():
                     subscriber.handle_event()
                     event_received = True
+                    continue
 
                 logger.info("no event received yet...")
                 time.sleep(1.0)
 
+            subscriber.close()
+
         thread = threading.Thread(target=poll_next_event)
         thread.start()
+
+        time.sleep(0.1)  # give the thread time to start
 
         logger.info(f"Publishing event {event.event_type}")
         publisher.publish(event)
@@ -121,17 +125,22 @@ def test_single_event():
         time.sleep(1.0)
 
         publisher.close()
-        subscriber.close()
 
 
 @pytest.mark.asyncio
 async def test_single_event_async():
     async with async_notify_hub():
         publisher = AsyncEventPublisher()
+        await publisher.connect()
 
         subscriber = AsyncEventSubscriber(["single-event"])
+        await subscriber.connect()
+
         subscriber.register_handler("single-event", single_event_handler)
+
         event_listener = asyncio.create_task(subscriber.start_listening())
+
+        await asyncio.sleep(0.1)
 
         event = NotificationEvent(
             event_type="single-event",
@@ -144,5 +153,8 @@ async def test_single_event_async():
 
         await asyncio.sleep(0.2)
 
-        await subscriber.stop()
-        await publisher.close()
+        subscriber.stop()
+
+        await event_listener
+
+        publisher.close()
