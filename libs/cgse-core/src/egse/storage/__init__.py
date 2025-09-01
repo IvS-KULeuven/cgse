@@ -107,12 +107,10 @@ __all__ = [
 
 import abc
 import datetime
-import logging
 import os
 import random
 import shutil
 import textwrap
-from functools import partial
 from pathlib import Path
 from pathlib import PurePath
 from typing import Dict
@@ -124,23 +122,24 @@ from egse.bits import humanize_bytes
 from egse.command import ClientServerCommand
 from egse.config import find_files
 from egse.control import ControlServer
-from egse.env import get_site_id
-from egse.listener import Event
-from egse.listener import EventInterface
-from egse.registry.client import RegistryClient
-from egse.response import Failure
-from egse.response import Response
-from egse.response import Success
 from egse.control import is_control_server_active
 from egse.decorators import dynamic_interface
 from egse.env import get_data_storage_location
+from egse.env import get_site_id
 from egse.exceptions import Error
+from egse.listener import Event
+from egse.listener import EventInterface
+from egse.log import logger
 from egse.obsid import ObservationIdentifier
 from egse.obsid import TEST_LAB
 from egse.persistence import PersistenceLayer
 from egse.protocol import CommandProtocol
 from egse.proxy import Proxy
 from egse.proxy import REQUEST_TIMEOUT
+from egse.registry.client import RegistryClient
+from egse.response import Failure
+from egse.response import Response
+from egse.response import Success
 from egse.settings import Settings
 from egse.setup import Setup
 from egse.setup import get_setup
@@ -149,11 +148,9 @@ from egse.system import format_datetime
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
 
-logger = logging.getLogger(__name__)
-
 HERE = Path(__file__).parent
 
-CTRL_SETTINGS = Settings.load("Storage Control Server")
+CS_SETTINGS = Settings.load("Storage Control Server")
 SITE_ID = get_site_id()
 DEVICE_SETTINGS = COMMAND_SETTINGS = Settings.load(location=HERE, filename="storage.yaml")
 
@@ -166,7 +163,7 @@ def is_storage_manager_active(timeout: float = 0.5):
     """
 
     with RegistryClient() as client:
-        endpoint = client.get_endpoint(CTRL_SETTINGS.SERVICE_TYPE)
+        endpoint = client.get_endpoint(CS_SETTINGS.SERVICE_TYPE)
 
     if endpoint is None:
         return False
@@ -192,17 +189,17 @@ def register_to_storage_manager(origin: str, persistence_class: PersistenceLayer
 
     try:
         with StorageProxy() as proxy:
-            rc = proxy.register(
+            response = proxy.register(
                 {
                     "origin": origin,
                     "persistence_class": persistence_class,
                     "prep": prep,
                 }
             )
-            if not rc.successful:
-                logger.warning(f"Couldn't register to the Storage manager: {rc}")
+            if not response.successful:
+                logger.warning(f"Couldn't register to the Storage manager: {response}")
             else:
-                logger.info(rc)
+                logger.info(response)
     except ConnectionError as exc:
         logger.warning(f"Couldn't connect to the Storage manager for registration: {exc}")
         raise
@@ -221,11 +218,11 @@ def unregister_from_storage_manager(origin: str):
 
     try:
         with StorageProxy() as proxy:
-            rc = proxy.unregister({"origin": origin})
-            if not rc.successful:
-                logger.warning(f"Couldn't unregister from the Storage manager: {rc}")
+            response = proxy.unregister({"origin": origin})
+            if not response.successful:
+                logger.warning(f"Couldn't unregister from the Storage manager: {response}")
             else:
-                logger.info(rc)
+                logger.info(response)
     except ConnectionError as exc:
         logger.warning(f"Couldn't connect to the Storage manager for de-registration: {exc}")
         raise
@@ -245,9 +242,9 @@ def store_housekeeping_information(origin: str, data: dict):
 
     try:
         with StorageProxy() as proxy:
-            rc = proxy.save({"origin": origin, "data": data})
-            if not rc.successful:
-                logger.warning(f"Couldn't save data to the Storage manager for {origin=}, cause: {rc}")
+            response = proxy.save({"origin": origin, "data": data})
+            if not response.successful:
+                logger.warning(f"Couldn't save data to the Storage manager for {origin=}, cause: {response}")
     except ConnectionError as exc:
         logger.warning(f"Couldn't connect to the Storage manager to store housekeeping: {exc}")
         raise
@@ -1047,11 +1044,17 @@ class StorageController(StorageInterface, EventInterface):
 
     def handle_event(self, event: Event) -> str:
         logger.info(f"An event is received, {event=}")
-        try:
-            if event.type == "new_setup":
-                self._cs.schedule_task(partial(self.load_setup, setup_id=event.context["setup_id"]))
-        except KeyError as exc:
-            return f"Expected event context to contain the following key: {exc}"
+
+        logger.warning(
+            f"----------> This functionality has been replaced with the notification events and will be removed soon."
+        )
+
+        # try:
+        #     if event.type == "new_setup":
+        #         self._cs.schedule_task(partial(self.load_setup, setup_id=event.context["setup_id"]))
+        # except KeyError as exc:
+        #     return f"Expected event context to contain the following key: {exc}"
+
         return "ACK"
 
 
@@ -1074,10 +1077,10 @@ class StorageProxy(Proxy, StorageInterface, EventInterface):
         """
         if hostname is None:
             with RegistryClient() as reg:
-                endpoint = reg.get_endpoint(CTRL_SETTINGS.SERVICE_TYPE)
+                endpoint = reg.get_endpoint(CS_SETTINGS.SERVICE_TYPE)
 
             if not endpoint:
-                raise RuntimeError(f"No service registered as {CTRL_SETTINGS.SERVICE_TYPE}")
+                raise RuntimeError(f"No service registered as {CS_SETTINGS.SERVICE_TYPE}")
         else:
             endpoint = connect_address(protocol, hostname, port)
 

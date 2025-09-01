@@ -1,12 +1,13 @@
 """
-Notification Hub
+Notification Hub services for event-based messaging.
 
+Provides asynchronous and synchronous publisher/subscriber classes for
+sending and receiving events between core services via ZeroMQ.
 """
 
 import asyncio
 import json
 import logging
-import time
 from asyncio import CancelledError
 from typing import Any
 from typing import Callable
@@ -26,7 +27,11 @@ NOTIFY_HUB_PUBLISHER = f"tcp://localhost:{DEFAULT_PUBLISHER_PORT}"
 
 
 class AsyncEventPublisher:
-    """Reusable event publisher component"""
+    """Publishes events asynchronously to the notification hub.
+
+    Args:
+        hub_address (str): Endpoint of the notification hub. [default=NOTIFY_HUB_COLLECTOR]
+    """
 
     def __init__(self, hub_address: str = NOTIFY_HUB_COLLECTOR):
         self.hub_address = hub_address
@@ -44,6 +49,13 @@ class AsyncEventPublisher:
             self._connected = True
             self.logger.info(f"Connected to hub at {self.hub_address}")
 
+    async def __aenter__(self):
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        self.disconnect()
+
     async def publish(self, event: NotificationEvent):
         """Publish an event"""
 
@@ -54,16 +66,18 @@ class AsyncEventPublisher:
         """Clean shutdown"""
         self._connected = False
         if self.publisher:
-            self.publisher.close(linger=0)
+            # Keep the linger parameter, otherwise the event will not be sent when
+            # you use a context manager to just send one event.
+            self.publisher.close(linger=100)
         self.context.term()
 
 
 class AsyncEventSubscriber:
-    """Subscribe to the notification hub and listens to events.
+    """Subscribes to events from the notification hub asynchronously.
 
     Args:
-        subscriptions (list): a list of event types to which to subscribe
-        hub_address (str): endpoint of the notification hub [default=NOTIFY_HUB_PUBLISHER]
+        subscriptions (List[str]): List of event types to subscribe to.
+        hub_address (str): Endpoint of the notification hub. [default=NOTIFY_HUB_PUBLISHER]
     """
 
     def __init__(self, subscriptions: List[str], hub_address: str = NOTIFY_HUB_PUBLISHER):
@@ -137,7 +151,12 @@ class AsyncEventSubscriber:
 
 
 class ServiceMessaging:
-    """Convenience wrapper that combines publisher and subscriber."""
+    """Convenience wrapper for publishing and subscribing to events.
+
+    Args:
+        service_name (str): Name of the service.
+        subscriptions (List[str], optional): Event types to subscribe to.
+    """
 
     def __init__(self, service_name: str, subscriptions: List[str] | None = None):
         self.service_name = service_name
@@ -172,7 +191,11 @@ class ServiceMessaging:
 
 
 class EventPublisher:
-    """Reusable event publisher component"""
+    """Publishes events synchronously to the notification hub.
+
+    Args:
+        hub_address (str): Endpoint of the notification hub. [default=NOTIFY_HUB_COLLECTOR]
+    """
 
     def __init__(self, hub_address: str = NOTIFY_HUB_COLLECTOR):
         self.hub_address = hub_address
@@ -205,12 +228,19 @@ class EventPublisher:
     def disconnect(self):
         """Clean shutdown"""
         if self._connected:
-            self.publisher.close(linger=0)
+            # Keep the linger parameter, otherwise the event will not be sent when
+            # you use the context manager to just send one event.
+            self.publisher.close(linger=100)
             self._connected = False
 
 
 class EventSubscriber:
-    """Reusable event subscriber component"""
+    """Subscribes to events from the notification hub. Use this class in a synchronous context.
+
+    Args:
+        subscriptions (List[str]): List of event types to subscribe to.
+        hub_address (str): Endpoint of the notification hub. [default = NOTIFY_HUB_COLLECTOR]
+    """
 
     def __init__(self, subscriptions: List[str], hub_address: str = NOTIFY_HUB_PUBLISHER):
         self.subscriptions = subscriptions
@@ -241,13 +271,17 @@ class EventSubscriber:
     def poll(self, timeout=1000):
         return self.subscriber.poll(timeout=timeout)
 
-    def handle_event(self):
+    def handle_event(self, return_event_data: bool = False) -> dict:
         topic, message_bytes = self.subscriber.recv_multipart()
 
         event_type = topic.decode()
         event_data = json.loads(message_bytes.decode())
 
-        self._handle_event(event_type, event_data)
+        if return_event_data:
+            return event_data
+        else:
+            self._handle_event(event_type, event_data)
+            return {}
 
     def _handle_event(self, event_type: str, event_data: Dict):
         """Handle received event"""

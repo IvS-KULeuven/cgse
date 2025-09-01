@@ -2,6 +2,7 @@ __all__ = [
     "DEFAULT_COLLECTOR_PORT",
     "DEFAULT_PUBLISHER_PORT",
     "DEFAULT_REQUESTS_PORT",
+    "STATS_INTERVAL",
     "is_notify_hub_active",
     "async_is_notify_hub_active",
 ]
@@ -15,6 +16,9 @@ settings = Settings.load("Notify Hub")
 DEFAULT_COLLECTOR_PORT = settings.get("COLLECTOR_PORT", 0)
 DEFAULT_PUBLISHER_PORT = settings.get("PUBLISHER_PORT", 0)
 DEFAULT_REQUESTS_PORT = settings.get("REQUESTS_PORT", 0)
+
+STATS_INTERVAL = settings.get("STATS_INTERVAL", 30)
+"""How often the notification hub sends statistics about active connections and processed events. Default to 30s."""
 
 
 async def async_is_notify_hub_active(timeout: float = 0.5) -> bool:
