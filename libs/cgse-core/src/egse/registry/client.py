@@ -39,6 +39,7 @@ THREAD_JOIN_TIMEOUT = 10.0
 PROCESS_SHUTDOWN_TIMEOUT = 10.0
 """Waiting for a process shutdown confirmation message."""
 
+
 class RegistryClient:
     """
     Synchronous client for the service registry.
