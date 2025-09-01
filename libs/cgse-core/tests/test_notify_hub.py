@@ -22,6 +22,11 @@ from egse.system import type_name
 from egse.system import waiting_for
 
 
+pytestmark = pytest.mark.skipif(
+    is_notify_hub_active(), reason="The notification hub shall NOT be running for this test."
+)
+
+
 @contextlib.asynccontextmanager
 async def async_notify_hub():
     """Asynchronous context manager that starts a notification hub as an asyncio Task."""

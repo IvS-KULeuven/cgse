@@ -81,3 +81,102 @@ def test_simple_event():
     time.sleep(0.1)
 
     publisher.disconnect()
+
+
+def test_event_retention_time_1():
+    # First publish the event
+    # Then, after 1s, subscribe and handle the event -> should fail!
+
+    publisher = EventPublisher()
+    publisher.connect()
+
+    publisher.publish(
+        NotificationEvent(
+            event_type="retention-event",
+            source_service="test-event-retention-time",
+            data={"message": "a unit test for testing event retention time", "count": 0, "quit": False},
+        )
+    )
+
+    logger.info("Waiting for 1s...")
+
+    time.sleep(1.0)
+
+    logger.info("Starting to listen...")
+    subscriber = EventSubscriber(["retention-event"])
+    subscriber.connect()
+
+    if subscriber.poll():
+        event_data = subscriber.handle_event(return_event_data=True)
+        logger.info(f"{event_data=}")
+        assert event_data["event_type"] == "retention-event"
+    else:
+        pytest.fail("Expected one retention-event...")
+
+    subscriber.disconnect()
+
+    publisher.disconnect()
+
+
+def test_event_retention_time_2():
+    # This is the scenario we will use in the control servers, e.g. the storage
+    # manager, to react on new_setup events.
+
+    # First subscribe and poll
+    # Then, after 10s, publish the event.
+    # The event should be returned, not handled.
+
+    publisher = EventPublisher()
+    publisher.connect()
+
+    is_running = True
+
+    # In this scenario, this function is not called. When return the event_data
+    # instead of calling the registered handler.
+    def report_event(event_data: dict):
+        logger.info(f"++ {event_data=}")
+
+    def listen_for_events():
+        logger.info("Starting to listen...")
+        subscriber = EventSubscriber(["retention-event"])
+        subscriber.connect()
+        subscriber.register_handler("simple-event", report_event)
+
+        while is_running:
+            if subscriber.poll():
+                event_data = subscriber.handle_event(return_event_data=True)  # don't call registered handler
+                logger.info(f"-- {event_data=}")
+                assert event_data["event_type"] == "retention-event"
+            else:
+                logger.info("Waiting for retention-event...")
+
+        subscriber.disconnect()
+
+    thread = threading.Thread(target=listen_for_events)
+    thread.start()
+
+    time.sleep(10.0)
+
+    publisher.publish(
+        NotificationEvent(
+            event_type="retention-event",
+            source_service="test-event-retention-time",
+            data={"message": "a unit test for testing event retention time", "count": 0, "quit": False},
+        )
+    )
+
+    publisher.disconnect()
+
+    is_running = False
+
+    time.sleep(1.0)
+
+
+def test_event_publisher(caplog):
+    # NOTE: Make sure logging through the egse_logger is enabled for DEBUG
+
+    # This test is to check if the message
+    with EventPublisher() as pub:
+        pub.publish(NotificationEvent(event_type="new_setup", source_service="cm_cs", data={"setup_id": "0001234"}))
+
+    assert "Published" in caplog.text

@@ -25,12 +25,14 @@ from egse.listener import Listeners
 from egse.log import logger
 from egse.logger import close_all_zmq_handlers
 from egse.metrics import get_metrics_repo
+from egse.notifyhub.services import EventSubscriber
 from egse.process import ProcessStatus
 from egse.registry.client import RegistryClient
 from egse.settings import Settings
 from egse.settings import get_site_id
 from egse.signal import FileBasedSignaling
 from egse.system import SignalCatcher
+from egse.system import Timer
 from egse.system import camel_to_kebab
 from egse.system import camel_to_snake
 from egse.system import do_every
@@ -165,10 +167,16 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         self.dev_ctrl_cmd_sock = self.zcontext.socket(zmq.REP)
 
+        # Set up the event subscription
+
+        self.event_subscription = EventSubscriber(subscriptions=self.get_event_subscriptions())
+        self.event_subscription.connect()
+
         # Initialise the poll set
 
         self.poller.register(self.dev_ctrl_service_sock, zmq.POLLIN)
         self.poller.register(self.dev_ctrl_mon_sock, zmq.POLLIN)  # FIXME: I think this should not be registered
+        self.poller.register(self.event_subscription.socket, zmq.POLLIN)
 
         token = os.getenv("INFLUXDB3_AUTH_TOKEN")
         project = os.getenv("PROJECT")
@@ -185,6 +193,14 @@ class ControlServer(metaclass=abc.ABCMeta):
                 "INFLUXDB3_AUTH_TOKEN and/or PROJECT environment variable is not set. "
                 "Metrics will not be propagated to InfluxDB."
             )
+
+    def get_event_subscriptions(self) -> list[str]:
+        """Override this in the subclass to actually subscribe to events."""
+        return []
+
+    def get_event_handlers(self) -> dict[str, Callable]:
+        """Override this in the subclass to provide methods to handle each of the subscriptions."""
+        return {}
 
     @abc.abstractmethod
     def get_communication_protocol(self) -> str:
@@ -451,6 +467,11 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         self.scheduled_tasks.append({"task": callback, "name": name, "after": scheduled_time, "when": when})
 
+    def setup_event_subscription(self):
+        for event_type, handler in self.get_event_handlers().items():
+            self.logger.info(f"Registering handler {type_name(handler)} for {event_type}")
+            self.event_subscription.register_handler(event_type, handler)
+
     def serve(self) -> None:
         """Activation of the Control Server.
 
@@ -473,6 +494,8 @@ class ControlServer(metaclass=abc.ABCMeta):
         self.setup_signaling()
 
         self.before_serve()
+
+        self.setup_event_subscription()
 
         # check if Storage Manager is available
 
@@ -507,6 +530,10 @@ class ControlServer(metaclass=abc.ABCMeta):
 
             if self.dev_ctrl_service_sock in socks:
                 self.service_protocol.execute()
+
+            if self.event_subscription.socket in socks:
+                with Timer("Handling notification event"):
+                    self.event_subscription.handle_event()
 
             # Handle sending out monitoring information periodically, based on the MON_DELAY time that is specified in
             # the YAML configuration file for the device
@@ -580,6 +607,8 @@ class ControlServer(metaclass=abc.ABCMeta):
         self.dev_ctrl_mon_sock.close(linger=0)
         self.dev_ctrl_service_sock.close(linger=0)
         self.dev_ctrl_cmd_sock.close(linger=0)
+
+        self.event_subscription.disconnect()
 
         close_all_zmq_handlers()
 
