@@ -154,6 +154,7 @@ nav:
     - cgse-core:
       - libs/cgse-core/index.md
       - libs/cgse-core/registry.md
+      - libs/cgse-core/notifyhub.md
     - cgse-coordinates:
       - libs/cgse-coordinates/index.md
     - cgse-gui:
