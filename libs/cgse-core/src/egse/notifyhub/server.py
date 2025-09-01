@@ -50,6 +50,8 @@ class AsyncNotificationHub:
         self.service_id = None
         self.service_name = "Notification Hub"
         self.service_type = "notification-hub"
+        self.is_service_registered: bool = False
+        """True if the service is registered to the service registry."""
 
         self.stats = {
             "events_received": 0,
@@ -126,8 +128,10 @@ class AsyncNotificationHub:
 
         if not self.service_id:
             self.logger.error("Failed to register with the service registry")
+            self.is_service_registered = False
         else:
             await self.registry_client.start_heartbeat()
+            self.is_service_registered = True
 
     async def _deregister_service(self):
         self.logger.info("De-registering service...")
