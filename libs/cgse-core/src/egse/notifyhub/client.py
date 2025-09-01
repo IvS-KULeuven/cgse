@@ -73,6 +73,14 @@ class AsyncNotificationHubClient:
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
         return response.get("success", False)
 
+    async def server_status(self) -> dict[str, Any]:
+        """
+        Requests the status information from the notification hub.
+        """
+        request = {"action": "info",}
+        response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
+        return response
+
     async def terminate_notification_hub(self):
         """
         Send a terminate request to the notification hub. Returns True when successful.
@@ -193,6 +201,14 @@ class NotificationHubClient:
         request = {"action": "health"}
         response = self._send_request(MessageType.REQUEST_WITH_REPLY, request)
         return response.get("success", False)
+
+    def server_status(self) -> dict[str, Any]:
+        """
+        Requests the status information from the notification hub.
+        """
+        request = {"action": "info"}
+        response = self._send_request(MessageType.REQUEST_WITH_REPLY, request)
+        return response
 
     def terminate_notification_hub(self) -> bool:
         """

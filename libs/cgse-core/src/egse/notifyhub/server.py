@@ -1,8 +1,10 @@
 import asyncio
+import datetime
 import json
 import logging
 import multiprocessing
 import sys
+import textwrap
 import time
 from typing import Any
 from typing import Callable
@@ -22,6 +24,7 @@ from egse.registry import MessageType
 from egse.registry.client import AsyncRegistryClient, REQUEST_TIMEOUT
 from egse.system import TyperAsyncCommand
 from egse.system import get_host_ip
+from egse.zmq_ser import get_port_number
 from .event import NotificationEvent
 
 REQUEST_POLL_TIMEOUT = 1.0
@@ -264,6 +267,7 @@ class AsyncNotificationHub:
 
         handlers: dict[str, Callable] = {
             "health": self._handle_health,
+            "info": self._handle_info,
             "terminate": self._handle_terminate,
         }
 
@@ -294,6 +298,21 @@ class AsyncNotificationHub:
         self.logger.info(f"Handle health request: {request}")
 
         return {"success": True, "status": "ok", "timestamp": int(time.time())}
+
+    async def _handle_info(self, request: dict[str, Any]) -> dict[str, Any]:
+        """Handle a health check request."""
+
+        self.logger.info(f"Handle info request: {request}")
+
+        return {
+            "success": True,
+            "status": "ok",
+            "collector_port": get_port_number(self.collector_socket),
+            "publisher_port": get_port_number(self.publisher_socket),
+            "requests_port": get_port_number(self.requests_socket),
+            "statistics": self.stats,
+            "timestamp": int(time.time()),
+        }
 
     async def _handle_terminate(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle a termination request."""
@@ -340,6 +359,34 @@ async def start():
 async def stop():
     with AsyncNotificationHubClient() as client:
         await client.terminate_notification_hub()
+
+
+@app.command(cls=TyperAsyncCommand)
+async def status():
+    with AsyncNotificationHubClient() as client:
+        response = await client.server_status()
+
+    if response["success"]:
+        timestamp = response["statistics"]["last_message_time"]
+        timestamp = datetime.datetime.fromtimestamp(timestamp).strftime("%d %b %Y %H:%M:%S")
+        status_report = textwrap.dedent(
+            f"""\
+            Notification Hub:
+                Status: {response["status"]}
+                Collector port: {response["collector_port"]}
+                Publisher port: {response["publisher_port"]}
+                Requests port: {response["requests_port"]}
+                Statistics: 
+                    Events received: {response["statistics"]["events_received"]}
+                    Events published: {response["statistics"]["events_published"]}
+                    Time of last message: {timestamp}
+            """
+        )
+    else:
+        status_report = "Notification Hub: not active"
+
+    print(status_report)
+
 
 
 if __name__ == "__main__":
