@@ -476,8 +476,9 @@ class RegistryClient:
         return None
 
     def stop_heartbeat(self) -> None:
-        self._hb_stop_event.set()
-        if self._hb_thread.is_alive():
+        if self._hb_stop_event:
+            self._hb_stop_event.set()
+        if self._hb_thread and self._hb_thread.is_alive():
             self._hb_thread.join(timeout=THREAD_JOIN_TIMEOUT)
 
     def close(self) -> None:

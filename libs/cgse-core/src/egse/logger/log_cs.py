@@ -166,27 +166,32 @@ def start():
 
     client = RegistryClient()
     client.connect()
-    if not client.health_check():
-        _log_record("Health check for service registry failed. Is the Registry server running?", logging.ERROR)
-        return
+    service_id = None
+    is_service_registered = False
 
-    service_id = client.register(
-        name="log_cs",
-        host=get_host_ip() or "127.0.0.1",
-        port=get_port_number(commander),
-        service_type=SERVICE_TYPE,
-        metadata={
-            "receiver_port": get_port_number(receiver),
-        },
-    )
-    if service_id is None:
-        _log_record("Registration of LOGGER service failed.", logging.ERROR)
-        return
+    if client.health_check():
+        service_id = client.register(
+            name="log_cs",
+            host=get_host_ip() or "127.0.0.1",
+            port=get_port_number(commander),
+            service_type=SERVICE_TYPE,
+            metadata={
+                "receiver_port": get_port_number(receiver),
+            },
+        )
+        if service_id is None:
+            _log_record("Registration of LOGGER service failed.", logging.ERROR)
+            is_service_registered = False
+        else:
+            is_service_registered = True
+            client.start_heartbeat()
 
-    client.start_heartbeat()
+    else:
+        _log_record("Health check for service registry failed. Is the Registry server running?", logging.INFO)
+        is_service_registered = False
 
     def reregister_service(force: bool = False):
-        nonlocal service_id
+        nonlocal service_id, is_service_registered
 
         _log_record(f"Re-registration of Logger {force = }.", logging.WARNING)
 
@@ -207,6 +212,9 @@ def start():
         )
         if service_id is None:
             _log_record("Registration of LOGGER service failed.", logging.ERROR)
+            is_service_registered = False
+        else:
+            is_service_registered = True
 
     signaling = FileBasedSignaling(app_name)
     signaling.start_monitoring()
@@ -246,8 +254,10 @@ def start():
     commander.close(linger=0)
     receiver.close(linger=0)
 
-    client.stop_heartbeat()
-    client.deregister(service_id)
+    if not is_service_registered:
+        client.stop_heartbeat()
+        client.deregister(service_id)
+
     client.disconnect()
 
 
@@ -266,6 +276,7 @@ def _create_log_record(level: int, msg: str) -> logging.LogRecord:
         func=caller_info.function,
         sinfo=None,
     )
+    record.package_name = "egse.logger"
 
     return record
 
@@ -318,19 +329,30 @@ def handle_command(command) -> dict:
     elif command.lower() == "status":
         with RegistryClient() as client:
             service = client.discover_service(SERVICE_TYPE)
+
+        status = "ACK"
+
         if service:
-            response.update(
-                dict(
-                    status="ACK",
-                    logging_port=service["metadata"]["receiver_port"],
-                    commanding_port=service["port"],
-                    file_logger_level=logging.getLevelName(LOG_LEVEL_FILE),
-                    stream_logger_level=logging.getLevelName(LOG_LEVEL_STREAM),
-                    file_logger_location=file_handler.baseFilename,
-                )
-            )
+            logging_port = service["metadata"]["receiver_port"]
+            commanding_port = service["port"]
+        elif COMMANDER_PORT != 0:
+            logging_port = RECEIVER_PORT
+            commanding_port = COMMANDER_PORT
         else:
             response.update(dict(status="NACK"))
+            return response
+
+        response.update(
+            dict(
+                status=status,
+                logging_port=logging_port,
+                commanding_port=commanding_port,
+                file_logger_level=logging.getLevelName(LOG_LEVEL_FILE),
+                stream_logger_level=logging.getLevelName(LOG_LEVEL_STREAM),
+                file_logger_location=file_handler.baseFilename,
+            )
+        )
+
     elif command.lower().startswith("set_level"):
         new_level = command.split()[-1]
         LOG_LEVEL_FILE = LOG_NAME_TO_LEVEL[new_level]
