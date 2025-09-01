@@ -77,7 +77,9 @@ class AsyncNotificationHubClient:
         """
         Requests the status information from the notification hub.
         """
-        request = {"action": "info",}
+        request = {
+            "action": "info",
+        }
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
         return response
 

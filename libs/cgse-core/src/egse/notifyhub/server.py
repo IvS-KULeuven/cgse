@@ -388,7 +388,6 @@ async def status():
     print(status_report)
 
 
-
 if __name__ == "__main__":
     try:
         rc = app()
