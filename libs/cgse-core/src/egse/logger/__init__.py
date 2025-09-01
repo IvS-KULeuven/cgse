@@ -67,7 +67,7 @@ def get_endpoint_from_registry(port: str = "commander"):
     from egse.registry.client import RegistryClient
 
     try:
-        with RegistryClient(request_timeout=500) as reg:
+        with RegistryClient() as reg:
             if port == "commander":
                 endpoint = reg.get_endpoint(SERVICE_TYPE)
             elif port == "receiver":

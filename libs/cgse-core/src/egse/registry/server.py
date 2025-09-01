@@ -554,7 +554,6 @@ async def status(
         registry_req_endpoint=f"tcp://{host}:{req_port}",
         registry_sub_endpoint=f"tcp://{host}:{pub_port}",
         registry_hb_endpoint=f"tcp://{host}:{hb_port}",
-        request_timeout=5000,  # 5 second timeout
     ) as client:
         response = await client.server_status()
 
@@ -585,7 +584,6 @@ async def stop(
         registry_req_endpoint=f"tcp://{host}:{req_port}",
         registry_sub_endpoint=f"tcp://{host}:{pub_port}",
         registry_hb_endpoint=f"tcp://{host}:{hb_port}",
-        request_timeout=5000,  # 5 second timeout
     ) as client:
         response = await client.terminate_registry_server()
 
