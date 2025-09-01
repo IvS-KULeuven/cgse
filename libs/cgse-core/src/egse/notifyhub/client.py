@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import time
 import uuid
 from typing import Any
 
@@ -199,6 +200,7 @@ class NotificationHubClient:
         """
         request = {"action": "terminate"}
         response = self._send_request(MessageType.REQUEST_NO_REPLY, request)
+        time.sleep(0.2)  # allow the request to be sent to the hub
         return response.get("success", False)
 
     def _send_request(self, msg_type: MessageType, request: dict[str, Any]) -> dict[str, Any]:
@@ -219,6 +221,11 @@ class NotificationHubClient:
         timeout_ms = int(self.request_timeout * 1000)
         try:
             self.req_socket.send_multipart([msg_type.value, json.dumps(request).encode()])
+
+            if msg_type == MessageType.REQUEST_NO_REPLY:
+                return {
+                    "success": True,
+                }
 
             try:
                 if self.req_socket.poll(timeout=timeout_ms):
