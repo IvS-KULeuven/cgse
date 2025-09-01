@@ -317,7 +317,7 @@ def handle_command(command) -> dict:
 
     elif command.lower() == "status":
         with RegistryClient() as client:
-            service = client.discover_service("LOGGER")
+            service = client.discover_service(SERVICE_TYPE)
         if service:
             response.update(
                 dict(
