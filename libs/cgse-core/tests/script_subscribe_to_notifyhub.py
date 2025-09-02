@@ -20,7 +20,8 @@ while True:
     try:
         if subscriber.poll():
             logger.info("Event spotted...")
-            subscriber.handle_event()
+            event_data = subscriber.handle_event(return_event_data=True)
+            logger.info(f"{event_data=}")
     except KeyboardInterrupt:
         logger.info("Caught KeyboardInterrupt, terminating...")
         break

@@ -16,12 +16,15 @@ from egse.logger import remote_logging
 from egse.notifyhub import DEFAULT_COLLECTOR_PORT
 from egse.notifyhub import DEFAULT_PUBLISHER_PORT
 from egse.notifyhub import DEFAULT_REQUESTS_PORT
+from egse.notifyhub import STATS_INTERVAL
 from egse.notifyhub.client import AsyncNotificationHubClient
 from egse.registry import MessageType
 from egse.registry.client import AsyncRegistryClient
 from egse.system import TyperAsyncCommand
 from egse.system import get_host_ip
 from .event import NotificationEvent
+
+RECV_REQUEST_TIMEOUT = 1.0
 
 app = typer.Typer(name="notify_hub")
 
@@ -42,7 +45,7 @@ class AsyncNotificationHub:
         self.requests_socket: zmq.asyncio.Socket = self.context.socket(zmq.ROUTER)
 
         # Register notification hub to the service registry
-        self.registry_client = AsyncRegistryClient(request_timeout=200)
+        self.registry_client = AsyncRegistryClient(request_timeout=200)  # FIXME: ms -> s and CONSTANT
         self.service_id = None
         self.service_name = "Notification Hub"
         self.service_type = "notification-hub"
@@ -190,12 +193,13 @@ class AsyncNotificationHub:
         """Periodically report statistics"""
         while self.running:
             try:
-                await asyncio.wait_for(self._shutdown_event.wait(), timeout=30)
+                await asyncio.wait_for(self._shutdown_event.wait(), timeout=STATS_INTERVAL)
                 # shutdown was requested if we get here
                 # self.logger.info("Shutdown request caught in stats reporter.")
                 break
             except asyncio.TimeoutError:
                 # normal case, 30s timeout before next report
+                # FIXME: Shouldn't this also be reported on the PUB channel?
                 self.logger.info(f"Stats: {self.stats}")
             except asyncio.CancelledError:
                 self.logger.warning("Stats reporter cancelled.")
@@ -208,7 +212,9 @@ class AsyncNotificationHub:
         while self.running:
             try:
                 try:
-                    message_parts = await asyncio.wait_for(self.requests_socket.recv_multipart(), timeout=1.0)
+                    message_parts = await asyncio.wait_for(
+                        self.requests_socket.recv_multipart(), timeout=RECV_REQUEST_TIMEOUT
+                    )
                 except asyncio.TimeoutError:
                     # self.logger.debug("waiting for command request...")
                     continue

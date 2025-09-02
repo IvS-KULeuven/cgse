@@ -11,6 +11,7 @@ import multiprocessing
 import sys
 from pathlib import Path
 from typing import Annotated
+from typing import Callable
 
 import rich
 import typer
@@ -101,6 +102,23 @@ class StorageControlServer(ControlServer):
 
     def get_monitoring_port(self):
         return get_port_number(self.dev_ctrl_mon_sock) or 0
+
+    def get_event_subscriptions(self) -> list[str]:
+        return ["new_setup"]
+
+    def get_event_handlers(self) -> dict[str, Callable]:
+        return {"new_setup": self.handle_event_new_setup}
+
+    def handle_event_new_setup(self, event_data: dict):
+        if data := event_data.get("data"):
+            if setup_id := data.get("setup_id"):
+                self.device_protocol.controller.load_setup(int(setup_id))
+            else:
+                self.logger.error("Event data doesn't have a setup_id, couldn't load new Setup.")
+                self.logger.debug(f"{event_data=}")
+        else:
+            self.logger.error("Event data has no 'data' key, corrupt notification event.")
+            self.logger.debug(f"{event_data=}")
 
 
 app_name = "sm_cs"
