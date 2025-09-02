@@ -19,6 +19,7 @@ from ._start import start_sm_cs
 from ._status import run_all_status
 from ._status import status_cm_cs
 from ._status import status_log_cs
+from ._status import status_nh_cs
 from ._status import status_pm_cs
 from ._status import status_rm_cs
 from ._status import status_sm_cs
@@ -298,3 +299,9 @@ def notifyhub_start():
 def notifyhub_stop():
     """Stop the Process Manager."""
     stop_notifyhub()
+
+
+@notifyhub.command(cls=TyperAsyncCommand, name="status")
+async def nh_cs_status(suppress_errors: bool = True):
+    """Print the status of the Process Manager."""
+    await status_nh_cs(suppress_errors)
