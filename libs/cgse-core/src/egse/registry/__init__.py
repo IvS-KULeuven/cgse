@@ -13,8 +13,8 @@ class MessageType(Enum):
     """Message types using the envelope frame in the ROUTER-DEALER protocol."""
 
     REQUEST_WITH_REPLY = b"REQ"  # Client expects a reply
-    REQUEST_NO_REPLY = b"NO-REQ"  # No reply expected by the client
-    RESPONSE = b"REP"  # Response to a request
+    REQUEST_NO_REPLY = b"REQ_NO_REPLY"  # No reply expected by the client
+    RESPONSE = b"RESPONSE"  # Response to a request
     NOTIFICATION = b"NOTIF"  # Server-initiated notification
     HEARTBEAT = b"HB"  # Heartbeat/health check
 
@@ -34,7 +34,7 @@ def is_service_registry_active(timeout: float = 0.5):
 
     from egse.registry.client import RegistryClient  # prevent circular import
 
-    with RegistryClient(request_timeout=int(timeout * 1000)) as client:
+    with RegistryClient(timeout=timeout) as client:
         if not client.health_check():
             return False
         else:

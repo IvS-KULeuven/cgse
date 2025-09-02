@@ -19,12 +19,13 @@ from egse.notifyhub import DEFAULT_REQUESTS_PORT
 from egse.notifyhub import STATS_INTERVAL
 from egse.notifyhub.client import AsyncNotificationHubClient
 from egse.registry import MessageType
-from egse.registry.client import AsyncRegistryClient
+from egse.registry.client import AsyncRegistryClient, REQUEST_TIMEOUT
 from egse.system import TyperAsyncCommand
 from egse.system import get_host_ip
 from .event import NotificationEvent
 
-RECV_REQUEST_TIMEOUT = 1.0
+REQUEST_POLL_TIMEOUT = 1.0
+"""time to wait for while listening for requests [seconds]."""
 
 app = typer.Typer(name="notify_hub")
 
@@ -45,7 +46,7 @@ class AsyncNotificationHub:
         self.requests_socket: zmq.asyncio.Socket = self.context.socket(zmq.ROUTER)
 
         # Register notification hub to the service registry
-        self.registry_client = AsyncRegistryClient(request_timeout=200)  # FIXME: ms -> s and CONSTANT
+        self.registry_client = AsyncRegistryClient(timeout=REQUEST_TIMEOUT)
         self.service_id = None
         self.service_name = "Notification Hub"
         self.service_type = "notification-hub"
@@ -206,14 +207,14 @@ class AsyncNotificationHub:
                 self.running = False
 
     async def _handle_requests(self):
-        """Simple health check endpoint simulation"""
+        """Handle basic requests like e.g. health check."""
         self.logger.info("Started request handler task")
 
         while self.running:
             try:
                 try:
                     message_parts = await asyncio.wait_for(
-                        self.requests_socket.recv_multipart(), timeout=RECV_REQUEST_TIMEOUT
+                        self.requests_socket.recv_multipart(), timeout=REQUEST_POLL_TIMEOUT
                     )
                 except asyncio.TimeoutError:
                     # self.logger.debug("waiting for command request...")
