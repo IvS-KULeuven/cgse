@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import time
 import uuid
 from typing import Any
 
@@ -71,6 +72,16 @@ class AsyncNotificationHubClient:
         request = {"action": "health"}
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
         return response.get("success", False)
+
+    async def server_status(self) -> dict[str, Any]:
+        """
+        Requests the status information from the notification hub.
+        """
+        request = {
+            "action": "info",
+        }
+        response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
+        return response
 
     async def terminate_notification_hub(self):
         """
@@ -193,12 +204,21 @@ class NotificationHubClient:
         response = self._send_request(MessageType.REQUEST_WITH_REPLY, request)
         return response.get("success", False)
 
+    def server_status(self) -> dict[str, Any]:
+        """
+        Requests the status information from the notification hub.
+        """
+        request = {"action": "info"}
+        response = self._send_request(MessageType.REQUEST_WITH_REPLY, request)
+        return response
+
     def terminate_notification_hub(self) -> bool:
         """
         Send a terminate request to the notification hub. Returns True when successful.
         """
         request = {"action": "terminate"}
         response = self._send_request(MessageType.REQUEST_NO_REPLY, request)
+        time.sleep(0.2)  # allow the request to be sent to the hub
         return response.get("success", False)
 
     def _send_request(self, msg_type: MessageType, request: dict[str, Any]) -> dict[str, Any]:
@@ -219,6 +239,11 @@ class NotificationHubClient:
         timeout_ms = int(self.request_timeout * 1000)
         try:
             self.req_socket.send_multipart([msg_type.value, json.dumps(request).encode()])
+
+            if msg_type == MessageType.REQUEST_NO_REPLY:
+                return {
+                    "success": True,
+                }
 
             try:
                 if self.req_socket.poll(timeout=timeout_ms):
