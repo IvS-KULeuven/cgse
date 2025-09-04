@@ -16,11 +16,21 @@ DEVICE_SETTINGS = Settings.load(filename="tcu.yaml", location=_HERE)
 logger = logging.getLogger("egse.ariel.tcu")
 
 class TcuCommand(ClientServerCommand):
+    """ Command class for the Ariel TCU Control Server."""
+
     pass
 
 class TcuProtocol(CommandProtocol):
+    """ Command protocol for the Ariel TCU Control Server."""
 
     def __init__(self, control_server: ControlServer, simulator: bool = False):
+        """ Initialisation of an Ariel TCU protocol.
+
+        Args:
+            control_server (ControlServer): Ariel TCU Control Server.
+            simulator (bool): Whether to use a simulator as the backend.
+        """
+
         super().__init__(control_server)
 
         self.simulator = simulator
