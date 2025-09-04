@@ -60,7 +60,7 @@ class TcuProtocol(CommandProtocol):
         return self.tcu
 
 
-    def get_status(self) -> dict[]:
+    def get_status(self) -> dict:
         """ Returns the status information for the Ariel TCU Control Server.
 
         Returns:
