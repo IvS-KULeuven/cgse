@@ -16,3 +16,4 @@ Ariel TCU Control Server:
     MONITORING_PORT:                  0     # Port on which the controller sends periodic status information about the device (PUB-SUB)
     SERVICE_PORT:                     0     # Port on which the controller listens for configuration and administration (REQ-REP)
 #    METRICS_PORT:                     0
+    STORAGE_MNEMONIC:               TCU
