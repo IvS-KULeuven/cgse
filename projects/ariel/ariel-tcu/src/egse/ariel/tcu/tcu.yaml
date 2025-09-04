@@ -1,0 +1,14 @@
+BaseClass:
+    egse.ariel.tcu.TcuInterface
+
+ProxyClass:
+    egse.ariel.tcu.TcuProxy
+
+ControlServerClass:
+    egse.ariel.tcu.TcuControlServer
+
+ControlServer:
+    egse.ariel.tcu.tcu_cs
+
+UserInterface:
+    egse.ariel.tcu.tcu_ui
