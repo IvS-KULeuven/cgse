@@ -1,0 +1,18 @@
+PACKAGES:
+    ARIEL_TCU: Telescope Control Unit for Ariel
+
+Ariel TCU Controller:
+#    HOSTNAME:                  localhost
+    COM_PORT:                       COM1
+    BAUD_RATE:                      9600
+    NUM_DATA_BITS:                     8
+    NUM_STOP_BITS:                     1
+    PARITY:                            N
+
+Ariel TCU Control Server:
+    PROTOCOL:                       tcp
+    HOSTNAME:                 localhost     # Hostname that the client shall connect to, e.g. on the same machine
+    COMMANDING_PORT:                  0     # Port on which the controller listens to commands (REQ-REP)
+    MONITORING_PORT:                  0     # Port on which the controller sends periodic status information about the device (PUB-SUB)
+    SERVICE_PORT:                     0     # Port on which the controller listens for configuration and administration (REQ-REP)
+#    METRICS_PORT:                     0
