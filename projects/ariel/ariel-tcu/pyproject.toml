@@ -27,7 +27,7 @@ dependencies = [
 ]
 
 [project.scripts]
-tcu_cs = 'egse.ariel.tcu.tcu_cs:cli'
+tcu_cs = 'egse.ariel.tcu.tcu_cs:app'
 
 #[project.gui-scripts]
 #tcu_ui = "egse.ariel.tcu.tcu_ui:main"
