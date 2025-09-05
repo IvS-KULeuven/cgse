@@ -18,8 +18,10 @@ from egse.ariel.tcu.tcu import TcuProxy
 logger = logging.getLogger(__name__)
 
 CTRL_SETTINGS = Settings.load("Ariel TCU Control Server")
+
+
 def is_tcu_cs_active(timeout: float = 0.5) -> bool:
-    """ Checks whether the Ariel TCU Control Server is running.
+    """Checks whether the Ariel TCU Control Server is running.
 
     Args:
         timeout (float): Timeout when waiting for a reply [s].
@@ -46,7 +48,7 @@ class TcuControlServer(ControlServer):
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
     def get_communication_protocol(self) -> str:
-        """ Returns the communication protocol used by the Ariel TCU Control Server.
+        """Returns the communication protocol used by the Ariel TCU Control Server.
 
         Returns:
             Communication protocol used by the Ariel TCU Control Server, as specified in the settings.
@@ -54,9 +56,8 @@ class TcuControlServer(ControlServer):
 
         return CTRL_SETTINGS.PROTOCOL
 
-
     def get_commanding_port(self) -> int:
-        """ Returns the commanding port used by the Ariel TCU Control Server.
+        """Returns the commanding port used by the Ariel TCU Control Server.
 
         Returns:
             Commanding port used by the Ariel TCU Control Server, as specified in the settings.
@@ -64,9 +65,8 @@ class TcuControlServer(ControlServer):
 
         return CTRL_SETTINGS.COMMANDING_PORT
 
-
     def get_service_port(self) -> int:
-        """ Returns the service port used by the Ariel TCU Control Server.
+        """Returns the service port used by the Ariel TCU Control Server.
 
         Returns:
             Service port used by the Ariel TCU Control Server, as specified in the settings.
@@ -74,9 +74,8 @@ class TcuControlServer(ControlServer):
 
         return CTRL_SETTINGS.SERVICE_PORT
 
-
     def get_monitoring_port(self) -> int:
-        """ Returns the monitoring port used by the Ariel TCU Control Server.
+        """Returns the monitoring port used by the Ariel TCU Control Server.
 
         Returns:
             Monitoring port used by the Ariel TCU Control Server, as specified in the settings.
@@ -84,9 +83,8 @@ class TcuControlServer(ControlServer):
 
         return CTRL_SETTINGS.MONITORING_PORT
 
-
     def get_storage_mnemonic(self) -> str:
-        """ Returns the storage mnemonic used by the Ariel TCU Control Server.
+        """Returns the storage mnemonic used by the Ariel TCU Control Server.
 
         Returns:
             Storage mnemonic used by the Ariel TCU Control Server, as specified in the settings.
@@ -136,14 +134,17 @@ class TcuControlServer(ControlServer):
     def after_serve(self) -> None:
         self.deregister_service()
 
+
 app = typer.Typer()
 
 
 @app.command()
-def start(simulator: Annotated[
+def start(
+    simulator: Annotated[
         bool, typer.Option("--simulator", "--sim", help="start the hexapod PUNA Control Server in simulator mode")
-    ] = False,):
-    """ Starts the Ariel TCU Control Server."""
+    ] = False,
+):
+    """Starts the Ariel TCU Control Server."""
 
     try:
         controller = TcuControlServer(simulator)
@@ -165,7 +166,7 @@ def start(simulator: Annotated[
 
 @app.command()
 def stop():
-    """ Sends a `quit_server` command to the Ariel TCU Control Server."""
+    """Sends a `quit_server` command to the Ariel TCU Control Server."""
 
     with RegistryClient() as reg:
         service = reg.discover_service("TCU")
@@ -187,7 +188,7 @@ def stop():
 
 @app.command()
 def status():
-    """ Requests the status information from the Ariel TCU Control Server."""
+    """Requests the status information from the Ariel TCU Control Server."""
 
     with RegistryClient() as reg:
         service = reg.discover_service("TCU")
@@ -211,7 +212,6 @@ def status():
         rich.print("Ariel TCU: [green]active")
 
         with TcuProxy() as tcu:
-
             sim = tcu.is_simulator()
             connected = tcu.is_connected()
             ip = tcu.get_ip_address()

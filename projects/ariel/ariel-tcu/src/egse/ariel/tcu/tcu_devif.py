@@ -9,17 +9,18 @@ from egse.settings import Settings
 logger = logging.getLogger(__name__)
 DEVICE_SETTINGS = Settings.load("Ariel TCU Controller")
 
+
 class TcuError(Exception):
-    """ Generic TCU error for low-level classes."""
+    """Generic TCU error for low-level classes."""
 
     pass
 
 
 class TcuDeviceInterface(DeviceConnectionInterface, DeviceTransport):
-    """ Defines the low-level interface to the Ariel TCU (Arduino). """
+    """Defines the low-level interface to the Ariel TCU (Arduino)."""
 
     def __init__(self, port: int = None):
-        """ Initialisation of a serial interface to the TCU Arduino.
+        """Initialisation of a serial interface to the TCU Arduino.
 
         Args:
             port (int): Serial port to which to connect to the TCU Arduino.
@@ -37,9 +38,8 @@ class TcuDeviceInterface(DeviceConnectionInterface, DeviceTransport):
         self.arduino.parity = DEVICE_SETTINGS["PARITY"]
         self.arduino.stopbits = DEVICE_SETTINGS["NUM_STOP_BITS"]
 
-
     def connect(self) -> None:
-        """ Opens the serial port to the TCU Arduino.
+        """Opens the serial port to the TCU Arduino.
 
         Raises:
             TcuError: When the serial port could not be opened.
@@ -57,9 +57,8 @@ class TcuDeviceInterface(DeviceConnectionInterface, DeviceTransport):
         except Exception as exc:
             raise TcuError(f"Failed to open TCU serial port {self.port}") from exc
 
-
     def disconnect(self) -> None:
-        """ Closes the serial port to the TCU Arduino.
+        """Closes the serial port to the TCU Arduino.
 
         Raises:
             TcuError: When the serial port could not be closed.
@@ -70,17 +69,15 @@ class TcuDeviceInterface(DeviceConnectionInterface, DeviceTransport):
         except Exception as exc:
             raise TcuError(f"Failed to close TCU serial port {self.port}") from exc
 
-
     def reconnect(self) -> None:
-        """ Re-connect to the Ariel TCU Arduino."""
+        """Re-connect to the Ariel TCU Arduino."""
 
         if self.is_connected():
             self.disconnect()
         self.connect()
 
-
     def is_connected(self) -> bool:
-        """ Checks whether the serial port to the TCU Arduino is open.
+        """Checks whether the serial port to the TCU Arduino is open.
 
         Returns:
             True if the serial port to the TCU Arduino is open; False otherwise.
@@ -88,9 +85,8 @@ class TcuDeviceInterface(DeviceConnectionInterface, DeviceTransport):
 
         return self.arduino.is_open
 
-
     def trans(self, command: str) -> bytes:
-        """ Sends the given command to the TCU Arduino and returns the response.
+        """Sends the given command to the TCU Arduino and returns the response.
 
         This is seen as a transaction.
 
