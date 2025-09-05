@@ -15,16 +15,18 @@ _HERE = Path(__file__).parent
 DEVICE_SETTINGS = Settings.load(filename="tcu.yaml", location=_HERE)
 logger = logging.getLogger("egse.ariel.tcu")
 
+
 class TcuCommand(ClientServerCommand):
-    """ Command class for the Ariel TCU Control Server."""
+    """Command class for the Ariel TCU Control Server."""
 
     pass
 
+
 class TcuProtocol(CommandProtocol):
-    """ Command protocol for the Ariel TCU Control Server."""
+    """Command protocol for the Ariel TCU Control Server."""
 
     def __init__(self, control_server: ControlServer, simulator: bool = False):
-        """ Initialisation of an Ariel TCU protocol.
+        """Initialisation of an Ariel TCU protocol.
 
         Args:
             control_server (ControlServer): Ariel TCU Control Server.
@@ -50,9 +52,8 @@ class TcuProtocol(CommandProtocol):
 
         self.metrics = define_metrics("TCU")
 
-
     def get_bind_address(self) -> str:
-        """ Returns the bind address for the Ariel TCU Control Server.
+        """Returns the bind address for the Ariel TCU Control Server.
 
         Returns:
             Bind address for the Ariel TCU Control Server.
@@ -60,18 +61,16 @@ class TcuProtocol(CommandProtocol):
 
         return bind_address(self.control_server.get_communication_protocol(), self.control_server.get_commanding_port())
 
-
     def get_device_interface(self) -> TcuInterface:
-        """ Returns the Ariel TCU interface.
+        """Returns the Ariel TCU interface.
 
         Returns:
             Ariel TCU interface.
         """
         return self.tcu
 
-
     def get_status(self) -> dict:
-        """ Returns the status information for the Ariel TCU Control Server.
+        """Returns the status information for the Ariel TCU Control Server.
 
         Returns:
             Status information for the Ariel TCU Control Server.
@@ -86,9 +85,8 @@ class TcuProtocol(CommandProtocol):
 
         return status
 
-
     def get_housekeeping(self) -> dict:
-        """ Returns the housekeeping information for the Ariel TCU Control Server.
+        """Returns the housekeeping information for the Ariel TCU Control Server.
 
         Returns:
             Housekeeping information for the Ariel TCU Control Server.
@@ -104,13 +102,11 @@ class TcuProtocol(CommandProtocol):
 
         return result
 
-
     def is_device_connected(self) -> bool:
-        """ Checks whether the Ariel TCU is connected.
+        """Checks whether the Ariel TCU is connected.
 
         Returns:
             True if the Ariel TCU is connected; False otherwise.
         """
 
         return self.tcu.is_connected()
-    
