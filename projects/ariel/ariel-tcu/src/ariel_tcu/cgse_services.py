@@ -9,9 +9,8 @@ import typer
 from egse.env import get_log_file_location
 from egse.system import all_logging_disabled
 
-tcu = typer.Typer(
-    name="tcu", help="Ariel Telescope Control Unit (TCU)", no_args_is_help=True
-)
+tcu = typer.Typer(name="tcu", help="Ariel Telescope Control Unit (TCU)", no_args_is_help=True)
+
 
 def redirect_output_to(output_fn: str) -> TextIO:
     """Opens a file in the log folder where process output will be re-directed to."""
@@ -25,11 +24,14 @@ def redirect_output_to(output_fn: str) -> TextIO:
 
     return out
 
+
 @tcu.command(name="start")
-def start_tcu(simulator: Annotated[
+def start_tcu(
+    simulator: Annotated[
         bool, typer.Option("--simulator", "--sim", help="use a device simulator as the backend")
-    ] = False):
-    """ Start the Ariel TCU Control Server.
+    ] = False,
+):
+    """Start the Ariel TCU Control Server.
 
     The Control Server is always started in the background.
     """
@@ -46,7 +48,7 @@ def start_tcu(simulator: Annotated[
 
 @tcu.command(name="stop")
 def stop_tcu():
-    """ Stops the Ariel TCU Control Server."""
+    """Stops the Ariel TCU Control Server."""
 
     rich.print("Stopping the Ariel TCU Control Server")
     out = redirect_output_to("tcu_cs.stop.out")
@@ -57,11 +59,13 @@ def stop_tcu():
 
 @tcu.command(name="status")
 def status_tcu():
-    """ Prints the status information about the Ariel TCU Control Server."""
+    """Prints the status information about the Ariel TCU Control Server."""
 
     with all_logging_disabled():
         from egse.ariel.tcu import tcu_cs
+
         tcu_cs.status()
+
 
 if __name__ == "__main__":
     tcu()
