@@ -29,6 +29,7 @@ import operator
 import os
 import platform  # For getting the operating system name
 import re
+import shutil
 import socket
 import subprocess  # For executing a shell command
 import sys
@@ -2254,6 +2255,56 @@ def kebab_to_title(kebab_str: str) -> str:
 def snake_to_title(snake_str: str) -> str:
     """Convert snake_case to Title Case (each word capitalized)"""
     return snake_str.replace("_", " ").title()
+
+
+def caffeinate(pid: int = None):
+    """Prevent your macOS system from entering idle sleep while a process is running.
+
+    This function uses the macOS 'caffeinate' utility to prevent the system from
+    going to sleep due to inactivity. It's particularly useful for long-running
+    background processes that may lose network connections or be interrupted
+    when the system sleeps.
+
+    The function only operates on macOS systems and silently does nothing on
+    other operating systems.
+
+    Args:
+        pid (int, optional): Process ID to monitor. If provided, caffeinate will
+            keep the system awake as long as the specified process is running.
+            If None or 0, defaults to the current process ID (os.getpid()).
+
+    Returns:
+        None
+
+    Raises:
+        FileNotFoundError: If 'caffeinate' command is not found in PATH (shouldn't
+            happen on standard macOS installations).
+        OSError: If subprocess.Popen fails to start the caffeinate process.
+
+    Example:
+        >>> # Keep system awake while current process runs
+        >>> caffeinate()
+
+        >>> # Keep system awake while specific process runs
+        >>> caffeinate(1234)
+
+    Note:
+        - Uses 'caffeinate -i -w <pid>' which prevents idle sleep (-i) and monitors
+          a specific process (-w)
+        - The caffeinate process will automatically terminate when the monitored
+          process exits
+        - On non-macOS systems, this function does nothing
+        - Logs a warning message when caffeinate is started
+
+    See Also:
+        macOS caffeinate(8) man page for more details on the underlying utility.
+    """
+    if not pid:
+        pid = os.getpid()
+
+    if get_os_name() == "macos":
+        logger.warning(f"Running 'caffeinate -i -w {pid}' on macOS to prevent the system from idle sleeping.")
+        subprocess.Popen([shutil.which("caffeinate"), "-i", "-w", str(pid)])
 
 
 ignore_m_warning("egse.system")

@@ -1,6 +1,6 @@
 [project]
 name = "cgse"
-version = "0.15.0"
+version = "0.15.1"
 description = "Generic Common-EGSE: Commanding and monitoring lab equipment"
 authors = [
     {name = "IvS KU Leuven"}
@@ -37,7 +37,7 @@ markers = [
 ]
 
 log_cli = true
-log_cli_level = "INFO"
+log_cli_level = "DEBUG"
 filterwarnings = [
     "ignore::DeprecationWarning"
 ]

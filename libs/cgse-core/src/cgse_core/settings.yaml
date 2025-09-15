@@ -1,13 +1,15 @@
 PACKAGES:
     CGSE_CORE: The core services of the CGSE
 
+Service Registry:
+    
+    CLEANUP_INTERVAL:               30
+
 Logging Control Server:                          # LOG_CS
 
     SERVICE_TYPE:                LOG_CS
     MAX_NR_LOG_FILES:                20          # The maximum number of log files that will be maintained in a roll-over
     MAX_SIZE_LOG_FILES:              20          # The maximum size one log file can become
-#    PROTOCOL:                       tcp
-#    HOSTNAME:                 localhost
     RECEIVER_PORT:                 4248
     COMMANDER_PORT:                4249
     TEXTUALOG_IP_ADDRESS:     127.0.0.1          # The IP address of the textualog listening server

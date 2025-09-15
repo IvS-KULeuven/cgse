@@ -327,19 +327,22 @@ def handle_command(command) -> dict:
         handle_log_record(record)
 
     elif command.lower() == "status":
-        with RegistryClient() as client:
-            service = client.discover_service(SERVICE_TYPE)
+        if COMMANDER_PORT == 0 or RECEIVER_PORT == 0:
+            with RegistryClient() as client:
+                service = client.discover_service(SERVICE_TYPE)
+        else:
+            service = None
 
         status = "ACK"
 
         if service:
             logging_port = service["metadata"]["receiver_port"]
             commanding_port = service["port"]
-        elif COMMANDER_PORT != 0:
+        elif COMMANDER_PORT != 0 and RECEIVER_PORT != 0:
             logging_port = RECEIVER_PORT
             commanding_port = COMMANDER_PORT
         else:
-            response.update(dict(status="NACK"))
+            response.update(dict(status="NACK", error="logger is running but ports are not properly configured."))
             return response
 
         response.update(
@@ -403,6 +406,7 @@ def status():
         rich.print(f"    Log file location: {response.get('file_logger_location')}")
     else:
         rich.print("Log Manager Status: [red]not active")
+        rich.print(f"    {response.get('error', 'no error message provided.')}")
 
 
 @app.command()
