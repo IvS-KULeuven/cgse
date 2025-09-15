@@ -134,6 +134,28 @@ async def reg_list_services():
             rich.print(service)
 
 
+@rm_cs.command(cls=TyperAsyncCommand, name="deregister")
+async def reg_deregister(service_type: str):
+    """De-register the given service from the service registry."""
+    with AsyncRegistryClient() as client:
+        services = await client.list_services(service_type)
+
+        if not services:
+            rich.print(f"[red]ERROR: No service registered as {service_type}[/]")
+            return
+
+        for service in services:
+            if service_id := service.get("id"):
+                response = await client.deregister(service_id)
+
+                if response:
+                    rich.print(f"Successfully de-registered service type {service_type}.")
+                else:
+                    rich.print(
+                        f"ERROR: Couldn't de-register service type {service_type}, check the log file for errors."
+                    )
+
+
 log_cs = typer.Typer(
     name="log_cs",
     help="handle log services: start, stop, status, re-register",
