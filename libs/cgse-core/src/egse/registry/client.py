@@ -310,7 +310,6 @@ class RegistryClient:
             self.logger.error(f"Failed to deregister service: {response.get('error')}")
             return False
 
-
     def discover_service(self, service_type: str, use_cache: bool = False) -> dict[str, Any] | None:
         """
         Discover a service of the specified type. The service is guaranteed to be healthy at the time of discovery.
