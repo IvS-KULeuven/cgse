@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
 import threading
 import time
 import uuid
@@ -15,7 +14,7 @@ from typing import Union
 import zmq
 import zmq.asyncio
 
-from egse.log import logger
+from egse.log import logging
 from egse.registry import DEFAULT_RS_HB_PORT
 from egse.registry import DEFAULT_RS_PUB_PORT
 from egse.registry import DEFAULT_RS_REQ_PORT
@@ -69,7 +68,7 @@ class RegistryClient:
 
         self.timeout = timeout
         self.timeout_ms = int(timeout * 1000)
-        self.logger = logger
+        self.logger = logging.getLogger("egse.registry.client")
 
         # Service state
         self._service_id = None
@@ -311,6 +310,7 @@ class RegistryClient:
             self.logger.error(f"Failed to deregister service: {response.get('error')}")
             return False
 
+
     def discover_service(self, service_type: str, use_cache: bool = False) -> dict[str, Any] | None:
         """
         Discover a service of the specified type. The service is guaranteed to be healthy at the time of discovery.
@@ -447,7 +447,7 @@ class RegistryClient:
 
                 response = self._send_heartbeat(request)
 
-                if not response.get("success"):
+                if not response.get("success", False):
                     self.logger.warning(f"Heartbeat failed: {response.get('error')}")
 
                     # Do a health check
@@ -518,7 +518,7 @@ class AsyncRegistryClient:
             registry_req_endpoint: ZeroMQ endpoint for REQ-REP socket, defaults to DEFAULT_RS_REQ_PORT on localhost.
             registry_sub_endpoint: ZeroMQ endpoint for SUB socket, defaults to DEFAULT_RS_PUB_PORT on localhost.
             registry_hb_endpoint: ZeroMQ endpoint for heartbeat socket, defaults to DEFAULT_RS_HB_PORT on localhost.
-            timeout: Timeout for requests in seconds, defaults to 5000.
+            timeout: Timeout for requests in seconds, defaults to 0.5.
             client_id: client identification, default='registry-client'
         """
         self.registry_req_endpoint = registry_req_endpoint or f"tcp://localhost:{DEFAULT_RS_REQ_PORT}"

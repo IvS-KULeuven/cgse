@@ -32,8 +32,12 @@ from egse.registry import logger
 from egse.registry.backend import AsyncRegistryBackend
 from egse.registry.backend import AsyncSQLiteBackend
 from egse.registry.client import AsyncRegistryClient
+from egse.settings import Settings
 from egse.system import TyperAsyncCommand
+from egse.system import caffeinate
 from egse.system import get_logging_level
+
+settings = Settings.load("Service Registry")
 
 app = typer.Typer(name="rs_cs")
 
@@ -60,13 +64,13 @@ class AsyncRegistryServer:
         hb_port: int = DEFAULT_RS_HB_PORT,
         backend: AsyncRegistryBackend | None = None,
         db_path: str = DEFAULT_RS_DB_PATH,
-        cleanup_interval: int = 10,
+        cleanup_interval: int = 0,
     ):
         self.req_port = req_port
         self.pub_port = pub_port
         self.hb_port = hb_port
         self.db_path = db_path
-        self.cleanup_interval = cleanup_interval
+        self.cleanup_interval = cleanup_interval or settings.get("CLEANUP_INTERVAL", 10)
         self.logger = logger
 
         self.context = None
@@ -116,6 +120,10 @@ class AsyncRegistryServer:
         """Start the registry server."""
 
         multiprocessing.current_process().name = "rs_cs"
+
+        # Make sure the system is not going into idle sleep mode on macOS. The reason for doing
+        # this is to make sure core services and control servers stays registered.
+        caffeinate()
 
         if self._running:
             return
@@ -507,7 +515,7 @@ async def start(
     pub_port: int = DEFAULT_RS_PUB_PORT,
     hb_port: int = DEFAULT_RS_HB_PORT,
     db_path: str = DEFAULT_RS_DB_PATH,
-    cleanup_interval: int = 10,
+    cleanup_interval: int = 0,
     log_level: str = "WARNING",
 ):
     """Run the registry server with signal handling."""
