@@ -342,10 +342,7 @@ def handle_command(command) -> dict:
             logging_port = RECEIVER_PORT
             commanding_port = COMMANDER_PORT
         else:
-            response.update(dict(
-                status="NACK",
-                error="logger is running but ports are not properly configured."
-            ))
+            response.update(dict(status="NACK", error="logger is running but ports are not properly configured."))
             return response
 
         response.update(

@@ -2298,13 +2298,13 @@ def caffeinate(pid: int = None):
 
     See Also:
         macOS caffeinate(8) man page for more details on the underlying utility.
- """
+    """
     if not pid:
         pid = os.getpid()
 
     if get_os_name() == "macos":
         logger.warning(f"Running 'caffeinate -i -w {pid}' on macOS to prevent the system from idle sleeping.")
-        subprocess.Popen([shutil.which('caffeinate'), "-i", "-w", str(pid)])
+        subprocess.Popen([shutil.which("caffeinate"), "-i", "-w", str(pid)])
 
 
 ignore_m_warning("egse.system")
