@@ -33,7 +33,7 @@ TEST_PUB_PORT = 15557
 SERVER_STARTUP_TIMEOUT = 5
 
 pytestmark = pytest.mark.skipif(
-    is_service_registry_running, reason="This test starts the registry server, so it can not be running"
+    is_service_registry_running(), reason="This test starts the registry server, so it can not be running"
 )
 
 ################################################################################
@@ -244,7 +244,7 @@ async def client(server, zmq_context):
     with AsyncRegistryClient(
         registry_req_endpoint=f"tcp://localhost:{TEST_REQ_PORT}",
         registry_sub_endpoint=f"tcp://localhost:{TEST_PUB_PORT}",
-        request_timeout=5000,  # 5 second timeout
+        timeout=5000,  # 5 second timeout
     ) as client:
         # Verify client can connect to server
         health = await client.health_check()
