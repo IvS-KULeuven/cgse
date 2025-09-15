@@ -66,6 +66,8 @@ def get_endpoint_from_registry(port: str = "commander"):
     """Returns the endpoint that was constructed from information from the service registry."""
     from egse.registry.client import RegistryClient
 
+    # logger.debug(f"Calling get_endpoint_from_registry(\"{port}\")")
+
     try:
         with RegistryClient() as reg:
             if port == "commander":
@@ -311,7 +313,7 @@ TIMEOUT_RECV = 1.0  # seconds
 def send_request(command_request: str):
     """Sends a request to the Logger Control Server and waits for a response."""
 
-    if RECEIVER_PORT == 0:
+    if COMMANDER_PORT == 0:
         endpoint = get_endpoint_from_registry()
     else:
         endpoint = f"{PROTOCOL}://{HOSTNAME}:{COMMANDER_PORT}"
