@@ -451,7 +451,7 @@ def set_local_settings(path: str | Path | None):
     _env.set("LOCAL_SETTINGS", path)
 
 
-def get_local_settings_path() -> str or None:
+def get_local_settings_path() -> str | None:
     """
     Returns the fully qualified filename of the local settings YAML file. When the local settings environment
     variable is not defined or is an empty string, None is returned.
