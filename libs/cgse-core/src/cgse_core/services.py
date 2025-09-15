@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import logging
 import time
 from pathlib import Path
@@ -10,6 +11,7 @@ from egse.registry.client import AsyncRegistryClient
 from egse.signal import DEFAULT_SIGNAL_DIR
 from egse.signal import create_signal_command_file
 from egse.system import TyperAsyncCommand
+from egse.system import format_datetime
 from ._start import start_cm_cs
 from ._start import start_log_cs
 from ._start import start_notifyhub
@@ -125,7 +127,11 @@ async def reg_list_services():
     with AsyncRegistryClient() as client:
         services = await client.list_services()
 
-        rich.print(services)
+        for service in services:
+            timestamp = service.get("last_heartbeat")
+            if timestamp:
+                service["last_heartbeat"] = format_datetime(datetime.datetime.fromtimestamp(timestamp))
+            rich.print(service)
 
 
 log_cs = typer.Typer(
