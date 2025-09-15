@@ -29,8 +29,8 @@ def is_process_not_running(items: List):
 
 
 def is_service_registry_running() -> bool:
-    client = RegistryClient()
-    return client.health_check()
+    with RegistryClient() as client:
+        return client.health_check()
 
 
 def setup_conf_data(tmp_data_dir: Path):
