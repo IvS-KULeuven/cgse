@@ -184,11 +184,11 @@ async def log_cs_status(suppress_errors: bool = True):
 def log_cs_reregister(force: bool = False):
     """Command the Logger to re-register as a service."""
 
-    from egse.logger.log_cs import app_name
+    from egse.logger.log_cs import PROCESS_NAME
 
     create_signal_command_file(
         Path(DEFAULT_SIGNAL_DIR),
-        app_name,
+        PROCESS_NAME,
         {"action": "reregister", "params": {"force": force}},
     )
 
@@ -221,11 +221,11 @@ async def cm_cs_status(suppress_errors: bool = True):
 def cm_cs_reregister(force: bool = False):
     """Command the Configuration Manager to re-register as a service."""
 
-    from egse.confman.confman_cs import app_name
+    from egse.confman import PROCESS_NAME
 
     create_signal_command_file(
         Path(DEFAULT_SIGNAL_DIR),
-        app_name,
+        PROCESS_NAME,
         {"action": "reregister", "params": {"force": force}},
     )
 
@@ -265,11 +265,11 @@ async def sm_cs_status(suppress_errors: bool = True):
 def sm_cs_reregister(force: bool = False):
     """Command the Storage Manager to re-register as a service."""
 
-    from egse.storage.storage_cs import app_name
+    from egse.storage.storage_cs import PROCESS_NAME
 
     create_signal_command_file(
         Path(DEFAULT_SIGNAL_DIR),
-        app_name,
+        PROCESS_NAME,
         {"action": "reregister", "params": {"force": force}},
     )
 
@@ -302,11 +302,11 @@ async def pm_cs_status(suppress_errors: bool = True):
 def pm_cs_reregister(force: bool = False):
     """Command the Storage Manager to re-register as a service."""
 
-    from egse.procman.procman_cs import app_name
+    from egse.procman.procman_cs import PROCESS_NAME
 
     create_signal_command_file(
         Path(DEFAULT_SIGNAL_DIR),
-        app_name,
+        PROCESS_NAME,
         {"action": "reregister", "params": {"force": force}},
     )
 

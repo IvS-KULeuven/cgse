@@ -8,6 +8,7 @@ Service Registry:
 Logging Control Server:                          # LOG_CS
 
     SERVICE_TYPE:                LOG_CS
+    PROCESS_NAME:                log_cs
     MAX_NR_LOG_FILES:                20          # The maximum number of log files that will be maintained in a roll-over
     MAX_SIZE_LOG_FILES:              20          # The maximum size one log file can become
     RECEIVER_PORT:                 4248
@@ -18,26 +19,41 @@ Logging Control Server:                          # LOG_CS
 Configuration Manager Control Server:            # CM_CS
 
     SERVICE_TYPE:                 CM_CS
+    PROCESS_NAME:                 cm_cs
+    COMMANDING_PORT:               6000          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:               6001          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                  6002          # The port on which the controller listens for configuration and administration - REQ-REP
     DELAY:                            1          # The delay time between publishing status information [seconds]
     STORAGE_MNEMONIC:                CM          # The mnemonic to be used in the filename storing the housekeeping data
 
-Storage Control Server:                          # SM_CS
+Storage Manager Control Server:                  # SM_CS
 
     SERVICE_TYPE:                 SM_CS
+    PROCESS_NAME:                 sm_cs
+    COMMANDING_PORT:               6010          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:               6011          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                  6012          # The port on which the controller listens for configuration and administration - REQ-REP
     DELAY:                            1          # The delay time between publishing status information [seconds]
 
 Process Manager Control Server:                  # PM_CS
 
     SERVICE_TYPE:                 PM_CS
+    PROCESS_NAME:                 pm_cs
+    COMMANDING_PORT:               6020          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:               6021          # The port on which the controller sends periodic status information of the devide - PUB-SUB
+    SERVICE_PORT:                  6022          # The port number on which the controller listens for configuration and administration - REQ-REP
     DELAY:                            1          # The delay time between publishing status information [seconds]
     STORAGE_MNEMONIC:                PM          # The mnemonic to be used in the filename storing the housekeeping data
 
 Notify Hub:
     
     SERVICE_TYPE:            NOTIFY_HUB
+    PROCESS_NAME:                 nh_cs
     COLLECTOR_PORT:                4245
     PUBLISHER_PORT:                4246
     REQUESTS_PORT:                 4247
     
 Metrics Hub:
+    
     SERVICE_TYPE:           METRICS_HUB
+    PROCESS_NAME:                 mh_cs

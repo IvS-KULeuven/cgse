@@ -53,7 +53,7 @@ def get_status() -> str:
     Returns: String representation of the status of the Process Manager.
     """
 
-    if is_process_manager_active():
+    try:
         with ProcessManagerProxy() as sm:
             text = textwrap.dedent(
                 f"""\
@@ -67,8 +67,8 @@ def get_status() -> str:
             )
         return text
 
-    else:
-        return "Process Manager Status: [red]not active"
+    except ConnectionError as exc:
+        return f"Process Manager Status: [red]not active[/] ({exc})"
 
 
 class StartCommand:

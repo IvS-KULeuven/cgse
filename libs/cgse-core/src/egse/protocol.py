@@ -35,6 +35,7 @@ from egse.device import DeviceConnectionObserver
 from egse.log import logger
 from egse.response import Failure
 from egse.system import format_datetime
+from egse.system import type_name
 
 # Define some metrics for Prometheus
 
@@ -119,7 +120,7 @@ class BaseCommandProtocol(DeviceConnectionObserver):
         self.__socket = socket
 
         endpoint = self.get_bind_address()
-        logger.info(f"Binding {type(self).__name__} to {endpoint}")
+        logger.info(f"Binding {type_name(self)} to {endpoint}")
 
         self.__socket.bind(endpoint)
 

@@ -45,12 +45,12 @@ cgse-core = "cgse_core:settings.yaml"
 
 [project.entry-points."cgse.service.core_command"]
 core = 'cgse_core.services:core'
-registry = 'cgse_core.services:rm_cs'
+reg = 'cgse_core.services:rm_cs'
 log = 'cgse_core.services:log_cs'
 cm = 'cgse_core.services:cm_cs'
 sm = 'cgse_core.services:sm_cs'
 pm = 'cgse_core.services:pm_cs'
-notify = 'cgse_core.services:notifyhub'
+not = 'cgse_core.services:notifyhub'
 
 [project.entry-points."cgse.explore"]
 explore = "cgse_core.cgse_explore"
