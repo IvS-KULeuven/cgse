@@ -995,11 +995,7 @@ class ConfigurationManagerProxy(Proxy, ConfigurationManagerInterface):
     """
 
     def __init__(
-            self,
-            protocol: str = PROTOCOL,
-            hostname: str = HOSTNAME,
-            port: int = COMMANDING_PORT,
-            timeout=PROXY_TIMEOUT
+        self, protocol: str = PROTOCOL, hostname: str = HOSTNAME, port: int = COMMANDING_PORT, timeout=PROXY_TIMEOUT
     ):
         """
         Args:
@@ -1092,7 +1088,6 @@ def is_not_in(a, b):
 
 
 def get_status():
-
     try:
         with ConfigurationManagerProxy() as cm:
             obsid = cm.get_obsid()

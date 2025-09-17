@@ -158,6 +158,7 @@ PROTOCOL = settings.get("PROTOCOL", "tcp")
 HOSTNAME = settings.get("HOSTNAME", "localhost")
 COMMANDING_PORT = settings.get("COMMANDING_PORT", 0)
 
+
 def is_storage_manager_active(timeout: float = 0.5):
     """Check if the Storage Manager is running.
 
@@ -1074,11 +1075,7 @@ class StorageProxy(Proxy, StorageInterface, EventInterface):
     send commands remotely."""
 
     def __init__(
-            self,
-            protocol: str = PROTOCOL,
-            hostname: str = HOSTNAME,
-            port: int = COMMANDING_PORT,
-            timeout=REQUEST_TIMEOUT
+        self, protocol: str = PROTOCOL, hostname: str = HOSTNAME, port: int = COMMANDING_PORT, timeout=REQUEST_TIMEOUT
     ):
         """
         Args:
@@ -1127,7 +1124,6 @@ class StorageProtocol(CommandProtocol):
 
 
 def get_status(full: bool = False):
-
     try:
         with StorageProxy() as sm:
             text = textwrap.dedent(

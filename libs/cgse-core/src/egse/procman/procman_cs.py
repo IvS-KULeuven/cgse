@@ -127,6 +127,7 @@ app = typer.Typer(name=PROCESS_NAME)
 
 console = Console(width=120)
 
+
 @app.command()
 def start():
     """Starts the Process Manager (pm_cs).
@@ -174,8 +175,7 @@ def stop():
                 port = service["metadata"]["service_port"]
             else:
                 rich.print(
-                    "[red]ERROR: Couldn't determine how to connect to the process manager. "
-                    "No service defined.[/]"
+                    "[red]ERROR: Couldn't determine how to connect to the process manager. No service defined.[/]"
                 )
                 return
     else:

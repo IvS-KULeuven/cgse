@@ -192,8 +192,7 @@ def stop():
                 port = service["metadata"]["service_port"]
             else:
                 rich.print(
-                    "[red]ERROR: Couldn't determine how to connect to the storage manager. "
-                    "No service defined.[/]"
+                    "[red]ERROR: Couldn't determine how to connect to the storage manager. No service defined.[/]"
                 )
                 return
 
