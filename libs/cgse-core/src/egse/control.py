@@ -633,7 +633,7 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         # FIXME: not sure if the stop heartbeat is necessary here, but I see that after
         #        a re-registration signal, the heartbeat socket is None.
-        self.registry.stop_heartbeat()
+        # self.registry.stop_heartbeat()
         self.register_service(self.service_type)
 
     def register_service(self, service_type: str):
