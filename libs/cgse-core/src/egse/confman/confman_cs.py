@@ -134,6 +134,7 @@ app = typer.Typer(name=PROCESS_NAME)
 
 console = Console(width=120)
 
+
 @app.command()
 def start():
     """
@@ -188,8 +189,7 @@ def stop():
                 port = service["metadata"]["service_port"]
             else:
                 rich.print(
-                    "[red]ERROR: Couldn't determine how to connect to the configuration manager. "
-                    "No service defined.[/]"
+                    "[red]ERROR: Couldn't determine how to connect to the configuration manager. No service defined.[/]"
                 )
                 return
     else:
@@ -202,6 +202,7 @@ def stop():
             proxy.quit_server()
     except ConnectionError as exc:
         console.print(f"[red]ERROR: Couldn't connect to configuration manager: {exc}[/]")
+
 
 @app.command()
 def status():
