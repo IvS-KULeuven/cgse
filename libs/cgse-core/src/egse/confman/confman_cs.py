@@ -18,9 +18,17 @@ from typing import Annotated
 import rich
 import typer
 import zmq
+from rich.console import Console
 
 from egse.confman import ConfigurationManagerProtocol
 from egse.confman import ConfigurationManagerProxy
+from egse.confman import PROCESS_NAME
+from egse.confman import PROTOCOL
+from egse.confman import HOSTNAME
+from egse.confman import COMMANDING_PORT
+from egse.confman import SERVICE_PORT
+from egse.confman import MONITORING_PORT
+
 from egse.control import ControlServer
 from egse.env import get_conf_data_location
 from egse.logger import remote_logging
@@ -37,18 +45,18 @@ from egse.zmq_ser import get_port_number
 
 logger = logging.getLogger("egse.confman")
 
-CTRL_SETTINGS = Settings.load("Configuration Manager Control Server")
+settings = Settings.load("Configuration Manager Control Server")
 
 
 class ConfigurationManagerControlServer(ControlServer):
     def __init__(self):
         super().__init__()
 
-        multiprocessing.current_process().name = app_name
+        multiprocessing.current_process().name = PROCESS_NAME
 
         self.logger = logger
-        self.service_name = app_name
-        self.service_type = CTRL_SETTINGS.SERVICE_TYPE
+        self.service_name = PROCESS_NAME
+        self.service_type = settings.SERVICE_TYPE
 
         self.device_protocol = ConfigurationManagerProtocol(self)
 
@@ -58,27 +66,27 @@ class ConfigurationManagerControlServer(ControlServer):
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
-        self.register_service(service_type=CTRL_SETTINGS.SERVICE_TYPE)
+        self.register_service(service_type=settings.SERVICE_TYPE)
 
         self.set_hk_delay(10.0)
 
         self.logger.info(f"CM housekeeping saved every {self.hk_delay / 1000:.1f} seconds.")
 
     def get_communication_protocol(self):
-        return "tcp"
+        return PROTOCOL
 
     def get_commanding_port(self):
-        return get_port_number(self.dev_ctrl_cmd_sock) or 0
+        return get_port_number(self.dev_ctrl_cmd_sock) or COMMANDING_PORT
 
     def get_service_port(self):
-        return get_port_number(self.dev_ctrl_service_sock) or 0
+        return get_port_number(self.dev_ctrl_service_sock) or SERVICE_PORT
 
     def get_monitoring_port(self):
-        return get_port_number(self.dev_ctrl_mon_sock) or 0
+        return get_port_number(self.dev_ctrl_mon_sock) or MONITORING_PORT
 
     def get_storage_mnemonic(self):
         try:
-            return CTRL_SETTINGS.STORAGE_MNEMONIC
+            return settings.STORAGE_MNEMONIC
         except AttributeError:
             return "CM"
 
@@ -122,9 +130,9 @@ class ConfigurationManagerControlServer(ControlServer):
         self.deregister_service()
 
 
-app_name = "cm_cs"
-app = typer.Typer(name=app_name)
+app = typer.Typer(name=PROCESS_NAME)
 
+console = Console(width=120)
 
 @app.command()
 def start():
@@ -135,7 +143,7 @@ def start():
     The cm_cs is normally started automatically on egse-server boot.
     """
 
-    multiprocessing.current_process().name = "cm_cs"
+    multiprocessing.current_process().name = PROCESS_NAME
 
     with remote_logging():
         try:
@@ -171,16 +179,29 @@ def start_bg():
 def stop():
     """Send a 'quit_server' command to the Configuration Manager."""
 
-    with RegistryClient() as reg:
-        service = reg.discover_service(CTRL_SETTINGS.SERVICE_TYPE)
-        # rich.print("service = ", service)
+    if COMMANDING_PORT == 0:
+        with RegistryClient() as reg:
+            service = reg.discover_service(settings.SERVICE_TYPE)
+            rich.print("service = ", service)
+            if service:
+                hostname = service["host"]
+                port = service["metadata"]["service_port"]
+            else:
+                rich.print(
+                    "[red]ERROR: Couldn't determine how to connect to the configuration manager. "
+                    "No service defined.[/]"
+                )
+                return
+    else:
+        hostname = HOSTNAME
+        port = SERVICE_PORT
 
-        if service:
-            with ServiceProxy(hostname=service["host"], port=service["metadata"]["service_port"]) as proxy:
-                proxy.quit_server()
-        else:
-            rich.print("[red]ERROR: Couldn't connect to 'cm_cs', process probably not running.")
-
+    rich.print("[green]Sending 'quit' command to configuration manager..[/]")
+    try:
+        with ServiceProxy(hostname=hostname, port=port) as proxy:
+            proxy.quit_server()
+    except ConnectionError as exc:
+        console.print(f"[red]ERROR: Couldn't connect to configuration manager: {exc}[/]")
 
 @app.command()
 def status():
@@ -243,7 +264,7 @@ def reload_setups():
 @app.command()
 def register_to_storage():
     with RegistryClient() as reg:
-        service = reg.discover_service(CTRL_SETTINGS.SERVICE_TYPE)
+        service = reg.discover_service(settings.SERVICE_TYPE)
         # rich.print("service = ", service)
 
         if service:

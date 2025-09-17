@@ -222,7 +222,7 @@ PROCESS_NAMES = {
     "DPU_PROCESSOR_HEARTBEAT": ("DPU Processor", "HEARTBEAT_PORT"),
     "DPU_CS": ("DPU Control Server", "MONITORING_PORT"),
     "CM_CS": ("Configuration Manager Control Server", "MONITORING_PORT"),
-    "SM_CS": ("Storage Control Server", "MONITORING_PORT"),
+    "SM_CS": ("Storage Manager Control Server", "MONITORING_PORT"),
     "PM_CS": ("Process Manager Control Server", "MONITORING_PORT"),
     "SYN_CS": ("Synoptics Manager Control Server", "MONITORING_PORT"),
     "DATA_DISTRIBUTION": ("DPU Processor", "DATA_DISTRIBUTION_PORT"),

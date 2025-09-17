@@ -80,6 +80,7 @@ LOGGER_NAME = "egse.logger"
 
 settings = Settings.load("Logging Control Server")
 
+PROCESS_NAME = settings.get("PROCESS_NAME", "log_cs")
 PROTOCOL = settings.get("PROTOCOL", "tcp")
 HOSTNAME = settings.get("HOSTNAME", "localhost")
 RECEIVER_PORT = settings.get("RECEIVER_PORT", 0)  # dynamically assigned by the system if 0
@@ -101,8 +102,7 @@ class DateTimeFormatter(logging.Formatter):
 
 file_formatter = DateTimeFormatter(fmt=LOG_FORMAT_FILE, style=LOG_FORMAT_FILE_STYLE, datefmt=None)
 
-app_name = "log_cs"
-app = typer.Typer(name=app_name)
+app = typer.Typer(name=PROCESS_NAME)
 
 
 def _log_record(message: str, level: int = logging.WARNING):
@@ -116,7 +116,7 @@ def start():
 
     global file_handler, stream_handler, socket_handler
 
-    multiprocessing.current_process().name = app_name
+    multiprocessing.current_process().name = PROCESS_NAME
 
     log_file_location = Path(get_log_file_location())
     log_file_name = get_log_file_name()
@@ -216,7 +216,7 @@ def start():
         else:
             is_service_registered = True
 
-    signaling = FileBasedSignaling(app_name)
+    signaling = FileBasedSignaling(PROCESS_NAME)
     signaling.start_monitoring()
     signaling.register_handler("reregister", reregister_service)
 
