@@ -166,9 +166,17 @@ from egse.zmq_ser import connect_address
 
 HERE = Path(__file__).parent
 
-CTRL_SETTINGS = Settings.load("Configuration Manager Control Server")
+settings = Settings.load("Configuration Manager Control Server")
+
 SITE_ID = get_site_id()
 COMMAND_SETTINGS = Settings.load(location=HERE, filename="confman.yaml")
+
+PROCESS_NAME = settings.get("PROCESS_NAME", "cm_cs")
+PROTOCOL = settings.get("PROTOCOL", "tcp")
+HOSTNAME = settings.get("HOSTNAME", "localhost")
+COMMANDING_PORT = settings.get("COMMANDING_PORT", 0)
+SERVICE_PORT = settings.get("SERVICE_PORT", 0)
+MONITORING_PORT = settings.get("MONITORING_PORT", 0)
 
 # CM_SETUP_ID = Gauge("CM_SETUP_ID", 'Setup ID')
 # CM_TEST_ID = Gauge("CM_TEST_ID", 'Test ID')
@@ -378,12 +386,14 @@ def is_configuration_manager_active(timeout: float = 0.5):
         True if the Configuration Manager is running and replied with the expected answer.
     """
 
-    with RegistryClient() as client:
-        endpoint = client.get_endpoint(CTRL_SETTINGS.SERVICE_TYPE)
-
-    if endpoint is None:
-        logger.debug(f"No endpoint for {CTRL_SETTINGS.SERVICE_TYPE}")
-        return False
+    if COMMANDING_PORT == 0:
+        with RegistryClient() as client:
+            endpoint = client.get_endpoint(settings.SERVICE_TYPE)
+            if endpoint is None:
+                logger.debug(f"No endpoint for {settings.SERVICE_TYPE}")
+                return False
+    else:
+        endpoint = connect_address(PROTOCOL, HOSTNAME, COMMANDING_PORT)
 
     return is_control_server_active(endpoint, timeout)
 
@@ -474,7 +484,7 @@ class ConfigurationManagerInterface:
         """Starts a new observation or test. The following actions will be taken:
 
         * create an observation identifier, aka `obsid`
-        * notify the Storage Control Server that a new observation is started
+        * notify the Storage Manager Control Server that a new observation is started
         * return the generated `obsid`
 
         Args:
@@ -487,7 +497,7 @@ class ConfigurationManagerInterface:
 
     @dynamic_interface
     def end_observation(self) -> Response:
-        """Ends the current observation and notifies the Storage Control Server.
+        """Ends the current observation and notifies the Storage Manager Control Server.
 
         Returns:
             `Success` when the observation could be closed properly and the Storage CS was notified
@@ -619,7 +629,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         if not response.successful:
             self._obsid = None
             return Failure(
-                "Sending a start_observation to the Storage Control Server failed",
+                "Sending a start_observation to the Storage Manager Control Server failed",
                 response,
             )
 
@@ -658,7 +668,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
 
         if not response.successful:
             return Failure(
-                "Sending an end_observation to the Storage Control Server failed.",
+                "Sending an end_observation to the Storage Manager Control Server failed.",
                 response,
             )
 
@@ -984,7 +994,9 @@ class ConfigurationManagerProxy(Proxy, ConfigurationManagerInterface):
     Control Server and send commands and requests for the configuration manager.
     """
 
-    def __init__(self, protocol: str = None, hostname: str = None, port: int = -1, timeout=PROXY_TIMEOUT):
+    def __init__(
+        self, protocol: str = PROTOCOL, hostname: str = HOSTNAME, port: int = COMMANDING_PORT, timeout=PROXY_TIMEOUT
+    ):
         """
         Args:
             protocol: the transport protocol [default is taken from settings file]
@@ -993,12 +1005,12 @@ class ConfigurationManagerProxy(Proxy, ConfigurationManagerInterface):
             port: TCP port on which the control server is listening for commands
                 [default is taken from settings file]
         """
-        if hostname is None:
+        if port == 0:
             with RegistryClient() as reg:
-                endpoint = reg.get_endpoint(CTRL_SETTINGS.SERVICE_TYPE)
+                endpoint = reg.get_endpoint(settings.SERVICE_TYPE)
 
             if not endpoint:
-                raise RuntimeError(f"No service registered as {CTRL_SETTINGS.SERVICE_TYPE}")
+                raise RuntimeError(f"No service registered as {settings.SERVICE_TYPE}")
         else:
             endpoint = connect_address(protocol, hostname, port)
 
@@ -1076,7 +1088,7 @@ def is_not_in(a, b):
 
 
 def get_status():
-    if is_configuration_manager_active():
+    try:
         with ConfigurationManagerProxy() as cm:
             obsid = cm.get_obsid()
             obsid = obsid.return_code
@@ -1098,7 +1110,7 @@ def get_status():
                 else:
                     setup_id = "[red]No Setup loaded[/]"
             except Exception as exc:
-                setup_id = "An Exception was caught: {exc}"
+                setup_id = f"An Exception was caught: {exc}"
 
             return textwrap.dedent(
                 f"""\
@@ -1114,5 +1126,5 @@ def get_status():
                     Listeners: {", ".join(cm.get_listener_names())}
                 """
             )
-    else:
-        return "Configuration Manager Status: [red]not active"
+    except ConnectionError as exc:
+        return f"Configuration Manager Status: [red]not active[/] ({exc})"

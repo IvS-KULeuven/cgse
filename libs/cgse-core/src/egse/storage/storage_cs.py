@@ -1,5 +1,5 @@
 """
-The Storage Control Server, aka Storage Manager, is the service which saves all data coming
+The Storage Manager Control Server, aka Storage Manager, is the service which saves all data coming
 from any component in the Common-EGSE.
 
 The Storage manager is implemented as a standard control server.
@@ -18,6 +18,7 @@ import typer
 import zmq
 from apscheduler.schedulers.background import BackgroundScheduler
 from pytz import utc
+from rich.console import Console
 
 from egse.control import ControlServer
 from egse.env import get_data_storage_location
@@ -36,23 +37,31 @@ from egse.zmq_ser import get_port_number
 
 logger = logging.getLogger("egse.storage")
 
-CTRL_SETTINGS = Settings.load("Storage Control Server")
+settings = Settings.load("Storage Manager Control Server")
+
+PROCESS_NAME = settings.get("PROCESS_NAME", "cm_cs")
+PROTOCOL = settings.get("PROTOCOL", "tcp")
+HOSTNAME = settings.get("HOSTNAME", "localhost")
+COMMANDING_PORT = settings.get("COMMANDING_PORT", 0)
+SERVICE_PORT = settings.get("SERVICE_PORT", 0)
+MONITORING_PORT = settings.get("MONITORING_PORT", 0)
+
 SITE_ID = get_site_id()
 
 
 class StorageControlServer(ControlServer):
     """
-    The Storage Control Server (aka Storage Manager) saves information from registered components.
+    The Storage Manager Control Server (aka Storage Manager) saves information from registered components.
     """
 
     def __init__(self):
         super().__init__()
 
-        multiprocessing.current_process().name = app_name
+        multiprocessing.current_process().name = PROCESS_NAME
 
         self.logger = logger
-        self.service_name = app_name
-        self.service_type = CTRL_SETTINGS.SERVICE_TYPE
+        self.service_name = PROCESS_NAME
+        self.service_type = settings.SERVICE_TYPE
 
         self.device_protocol = StorageProtocol(self)
 
@@ -62,7 +71,7 @@ class StorageControlServer(ControlServer):
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
-        self.register_service(service_type=CTRL_SETTINGS.SERVICE_TYPE)
+        self.register_service(service_type=settings.SERVICE_TYPE)
 
         from egse.confman import ConfigurationManagerProxy, is_configuration_manager_active
         from egse.listener import EVENT_ID
@@ -92,16 +101,16 @@ class StorageControlServer(ControlServer):
         self.deregister_service()
 
     def get_communication_protocol(self):
-        return "tcp"
+        return PROTOCOL
 
     def get_commanding_port(self):
-        return get_port_number(self.dev_ctrl_cmd_sock) or 0
+        return get_port_number(self.dev_ctrl_cmd_sock) or COMMANDING_PORT
 
     def get_service_port(self):
-        return get_port_number(self.dev_ctrl_service_sock) or 0
+        return get_port_number(self.dev_ctrl_service_sock) or SERVICE_PORT
 
     def get_monitoring_port(self):
-        return get_port_number(self.dev_ctrl_mon_sock) or 0
+        return get_port_number(self.dev_ctrl_mon_sock) or MONITORING_PORT
 
     def get_event_subscriptions(self) -> list[str]:
         return ["new_setup"]
@@ -121,15 +130,16 @@ class StorageControlServer(ControlServer):
             self.logger.debug(f"{event_data=}")
 
 
-app_name = "sm_cs"
-app = typer.Typer(name=app_name)
+app = typer.Typer(name=PROCESS_NAME)
+
+console = Console(width=120)
 
 
 @app.command()
 def start():
     """Start the Storage Manager."""
 
-    multiprocessing.current_process().name = "sm_cs"
+    multiprocessing.current_process().name = PROCESS_NAME
 
     # We import this class such that the class name is
     # 'egse.storage.storage_cs.StorageControlServer' and we
@@ -173,15 +183,29 @@ def start_bg():
 def stop():
     """Send a 'quit_server' command to the Storage Manager."""
 
-    with RegistryClient() as reg:
-        service = reg.discover_service(CTRL_SETTINGS.SERVICE_TYPE)
-        # rich.print("service = ", service)
+    if COMMANDING_PORT == 0:
+        with RegistryClient() as reg:
+            service = reg.discover_service(settings.SERVICE_TYPE)
+            rich.print("service = ", service)
+            if service:
+                hostname = service["host"]
+                port = service["metadata"]["service_port"]
+            else:
+                rich.print(
+                    "[red]ERROR: Couldn't determine how to connect to the storage manager. No service defined.[/]"
+                )
+                return
 
-        if service:
-            with ServiceProxy(hostname=service["host"], port=service["metadata"]["service_port"]) as proxy:
-                proxy.quit_server()
-        else:
-            rich.print("[red]ERROR: Couldn't connect to 'sm_cs', process probably not running.")
+    else:
+        hostname = HOSTNAME
+        port = SERVICE_PORT
+
+    rich.print("[green]Sending 'quit' command to storage manager..[/]")
+    try:
+        with ServiceProxy(hostname=hostname, port=port) as proxy:
+            proxy.quit_server()
+    except ConnectionError as exc:
+        console.print(f"[red]ERROR: Couldn't connect to storage manager: {exc}[/]")
 
 
 @app.command()

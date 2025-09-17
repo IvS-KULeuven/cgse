@@ -150,9 +150,13 @@ from egse.zmq_ser import connect_address
 
 HERE = Path(__file__).parent
 
-CS_SETTINGS = Settings.load("Storage Control Server")
+settings = Settings.load("Storage Manager Control Server")
 SITE_ID = get_site_id()
 DEVICE_SETTINGS = COMMAND_SETTINGS = Settings.load(location=HERE, filename="storage.yaml")
+
+PROTOCOL = settings.get("PROTOCOL", "tcp")
+HOSTNAME = settings.get("HOSTNAME", "localhost")
+COMMANDING_PORT = settings.get("COMMANDING_PORT", 0)
 
 
 def is_storage_manager_active(timeout: float = 0.5):
@@ -162,11 +166,15 @@ def is_storage_manager_active(timeout: float = 0.5):
         True if the Storage Manager is running and replied with the expected answer.
     """
 
-    with RegistryClient() as client:
-        endpoint = client.get_endpoint(CS_SETTINGS.SERVICE_TYPE)
+    if COMMANDING_PORT == 0:
+        with RegistryClient() as client:
+            endpoint = client.get_endpoint(settings.SERVICE_TYPE)
+            if endpoint is None:
+                logger.debug(f"No endpoint for {settings.SERVICE_TYPE}")
+                return False
 
-    if endpoint is None:
-        return False
+    else:
+        endpoint = connect_address(PROTOCOL, HOSTNAME, COMMANDING_PORT)
 
     return is_control_server_active(endpoint, timeout)
 
@@ -1066,7 +1074,9 @@ class StorageProxy(Proxy, StorageInterface, EventInterface):
     """The StorageProxy class is used to connect to the Storage Manager (control server) and
     send commands remotely."""
 
-    def __init__(self, protocol: str = None, hostname: str = None, port: int = -1, timeout=REQUEST_TIMEOUT):
+    def __init__(
+        self, protocol: str = PROTOCOL, hostname: str = HOSTNAME, port: int = COMMANDING_PORT, timeout=REQUEST_TIMEOUT
+    ):
         """
         Args:
             protocol: the transport protocol [default is taken from settings file]
@@ -1075,12 +1085,12 @@ class StorageProxy(Proxy, StorageInterface, EventInterface):
             port: TCP port on which the control server is listening for commands
                 [default is taken from settings file]
         """
-        if hostname is None:
+        if port == 0:
             with RegistryClient() as reg:
-                endpoint = reg.get_endpoint(CS_SETTINGS.SERVICE_TYPE)
+                endpoint = reg.get_endpoint(settings.SERVICE_TYPE)
 
             if not endpoint:
-                raise RuntimeError(f"No service registered as {CS_SETTINGS.SERVICE_TYPE}")
+                raise RuntimeError(f"No service registered as {settings.SERVICE_TYPE}")
         else:
             endpoint = connect_address(protocol, hostname, port)
 
@@ -1114,7 +1124,7 @@ class StorageProtocol(CommandProtocol):
 
 
 def get_status(full: bool = False):
-    if is_storage_manager_active():
+    try:
         with StorageProxy() as sm:
             text = textwrap.dedent(
                 f"""\
@@ -1146,5 +1156,5 @@ def get_status(full: bool = False):
 
         return text
 
-    else:
-        return "Storage Manager Status: [red]not active"
+    except ConnectionError as exc:
+        return f"Storage Manager Status: [red]not active[/] ({exc})"
