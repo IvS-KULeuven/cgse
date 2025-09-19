@@ -37,7 +37,7 @@ def start_lakeshore336(
 
     if background:
         location = get_log_file_location()
-        output_filename = "lakeshore336_cs.start.out"
+        output_filename = ".lakeshore336_cs.start.log"
         output_path = Path(location, output_filename).expanduser()
 
         rich.print(f"Starting the LakeShore336 Control Server ({device_id}) – {simulator = }")

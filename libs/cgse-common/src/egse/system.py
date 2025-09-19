@@ -48,6 +48,7 @@ from typing import Callable
 from typing import Iterable
 from typing import List
 from typing import Optional
+from typing import TextIO
 from typing import Tuple
 from typing import Type
 from typing import Union
@@ -60,6 +61,7 @@ from rich.tree import Tree
 from typer.core import TyperCommand
 
 import signal
+from egse.env import get_log_file_location
 from egse.log import logger
 
 EPOCH_1958_1970 = 378691200
@@ -2305,6 +2307,28 @@ def caffeinate(pid: int = None):
     if get_os_name() == "macos":
         logger.warning(f"Running 'caffeinate -i -w {pid}' on macOS to prevent the system from idle sleeping.")
         subprocess.Popen([shutil.which("caffeinate"), "-i", "-w", str(pid)])
+
+
+def redirect_output_to_log(output_fn: str, append: bool = False) -> TextIO:
+    """
+    Open file in the log folder where process output will be redirected.
+
+    When no location can be determined, the user's home directory will be used.
+
+    The file is opened in text mode at the given location and the stream (file descriptor) will be returned.
+    """
+
+    try:
+        location = get_log_file_location()
+        output_path = Path(location, output_fn).expanduser()
+    except ValueError:
+        output_path = Path.home() / output_fn
+
+    out = open(output_path, "a" if append else "w")
+
+    logger.info(f"Output will be redirected to {output_path!s}")
+
+    return out
 
 
 ignore_m_warning("egse.system")
