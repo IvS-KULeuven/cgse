@@ -1,15 +1,13 @@
 import subprocess
 import sys
 import textwrap
-from pathlib import Path
 from typing import Annotated
-from typing import TextIO
 
 import rich
 import typer
 
-from egse.env import get_log_file_location
 from egse.system import all_logging_disabled
+from egse.system import redirect_output_to_log
 
 puna = typer.Typer(name="puna", help="PUNA Positioning Hexapod, Symétrie")
 
@@ -18,25 +16,12 @@ zonda = typer.Typer(name="zonda", help="ZONDA Positioning Hexapod, Symétrie")
 joran = typer.Typer(name="joran", help="JORAN Positioning Hexapod, Symétrie")
 
 
-def redirect_output_to(output_fn: str) -> TextIO:
-    """Open file in the log folder where process output will be redirected."""
-
-    location = get_log_file_location()
-    output_path = Path(location, output_fn).expanduser()
-
-    rich.print(f"Output will be redirected to {output_path!s}")
-
-    out = open(output_path, "w")
-
-    return out
-
-
 def start_hexapod_cs_process(device_name, device_id, simulator):
     """Generic function to start the hexapod control server in the background."""
 
     rich.print(f"Starting the {device_name} hexapod control server for {device_id} – {simulator = }")
 
-    out = redirect_output_to(f"{device_name.lower()}_cs.{device_id.lower()}.start.out")
+    out = redirect_output_to_log(f".{device_name.lower()}_cs.{device_id.lower()}.start.log")
 
     cmd = [sys.executable, "-m", f"egse.hexapod.symetrie.{device_name.lower()}_cs", "start", device_id]
     if simulator:
@@ -50,7 +35,7 @@ def stop_hexapod_cs_process(device_name, device_id):
 
     rich.print(f"Terminating hexapod {device_name} control server for {device_id}...")
 
-    out = redirect_output_to(f"{device_name.lower()}_cs.{device_id.lower()}.stop.out")
+    out = redirect_output_to_log(f".{device_name.lower()}_cs.{device_id.lower()}.stop.log")
 
     cmd = [sys.executable, "-m", f"egse.hexapod.symetrie.{device_name.lower()}_cs", "stop", device_id]
 
@@ -114,7 +99,7 @@ def start_puna_sim(device_id: str):
 
     rich.print("Starting service PUNA Simulator")
 
-    out = redirect_output_to(f"puna_sim.{device_id.lower()}.start.out")
+    out = redirect_output_to_log(f".puna_sim.{device_id.lower()}.start.log")
 
     subprocess.Popen(
         [sys.executable, "-m", "egse.hexapod.symetrie.puna_sim", "start", device_id],
@@ -130,7 +115,7 @@ def stop_puna_sim(device_id: str):
     """Stop the PUNA Hexapod Simulator."""
     rich.print("Terminating the PUNA simulator.")
 
-    out = redirect_output_to(f"puna_sim.{device_id.lower()}.stop.out")
+    out = redirect_output_to_log(f".puna_sim.{device_id.lower()}.stop.log")
 
     subprocess.Popen(
         [sys.executable, "-m", "egse.hexapod.symetrie.puna_sim", "stop", device_id],
