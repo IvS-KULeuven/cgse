@@ -91,7 +91,6 @@ def stop_pm_cs():
 
     out = redirect_output_to_log(".pm_cs.stop.log")
 
-
     subprocess.Popen(
         [sys.executable, "-m", "egse.procman.procman_cs", "stop"],
         stdout=out,
