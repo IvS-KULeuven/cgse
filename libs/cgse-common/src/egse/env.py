@@ -384,7 +384,7 @@ def set_log_file_location(location: str | Path | None):
     _env.set("LOG_FILE_LOCATION", location)
 
 
-def get_log_file_location(site_id: str = None) -> str:
+def get_log_file_location(site_id: str = None, check_exists: bool = False) -> str:
     """
     Returns the full path of the location of the log files. The log file location is read from the environment
     variable `${PROJECT}_LOG_FILE_LOCATION`. The location shall be independent of any setting that is subject to change.
@@ -392,8 +392,12 @@ def get_log_file_location(site_id: str = None) -> str:
     If the environment variable is not set, a default log file location is created from the data storage location as
     follows: `<PROJECT>_DATA_STORAGE_LOCATION/<SITE_ID>/log`.
 
+    There is no check for the existence of the returned location. The caller function shall check if the
+    returned value is a directory and if it exists.
+
     Args:
         site_id: the site identifier
+        check_exists: check if the location that will be returned is a directory and exists
 
     Returns:
         The full path of location of the log files as a string.
@@ -416,6 +420,10 @@ def get_log_file_location(site_id: str = None) -> str:
             )
         data_root = data_root.rstrip("/")
         log_data_root = f"{data_root}/log"
+
+    if check_exists:
+        if not Path(log_data_root).is_dir():
+            raise ValueError(f"The location that was constructed doesn't exist: {log_data_root}")
 
     return log_data_root
 
