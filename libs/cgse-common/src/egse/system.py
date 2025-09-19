@@ -61,7 +61,6 @@ from rich.tree import Tree
 from typer.core import TyperCommand
 
 import signal
-from egse.env import get_log_file_location
 from egse.log import logger
 
 EPOCH_1958_1970 = 378691200
@@ -2319,6 +2318,8 @@ def redirect_output_to_log(output_fn: str, append: bool = False) -> TextIO:
     """
 
     try:
+        from egse.env import get_log_file_location
+
         location = get_log_file_location()
         output_path = Path(location, output_fn).expanduser()
     except ValueError:
