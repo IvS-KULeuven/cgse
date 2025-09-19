@@ -18,6 +18,8 @@ from egse.logger import remote_logging
 from egse.notifyhub import DEFAULT_COLLECTOR_PORT
 from egse.notifyhub import DEFAULT_PUBLISHER_PORT
 from egse.notifyhub import DEFAULT_REQUESTS_PORT
+from egse.notifyhub import PROCESS_NAME
+from egse.notifyhub import SERVICE_TYPE
 from egse.notifyhub import STATS_INTERVAL
 from egse.notifyhub.client import AsyncNotificationHubClient
 from egse.registry import MessageType
@@ -30,12 +32,13 @@ from .event import NotificationEvent
 REQUEST_POLL_TIMEOUT = 1.0
 """time to wait for while listening for requests [seconds]."""
 
-app = typer.Typer(name="notify_hub")
+
+app = typer.Typer(name=PROCESS_NAME)
 
 
 class AsyncNotificationHub:
     def __init__(self):
-        self.server_id = "notification-hub-1"
+        self.server_id = PROCESS_NAME
 
         self.context: zmq.asyncio.Context = zmq.asyncio.Context()
 
@@ -51,8 +54,8 @@ class AsyncNotificationHub:
         # Register notification hub to the service registry
         self.registry_client = AsyncRegistryClient(timeout=REQUEST_TIMEOUT)
         self.service_id = None
-        self.service_name = "Notification Hub"
-        self.service_type = "notification-hub"
+        self.service_name = PROCESS_NAME
+        self.service_type = SERVICE_TYPE
         self.is_service_registered: bool = False
         """True if the service is registered to the service registry."""
 
@@ -123,7 +126,7 @@ class AsyncNotificationHub:
 
         self.service_id = await self.registry_client.register(
             name=self.service_name,
-            host=get_host_ip(),
+            host=get_host_ip() or "127.0.0.1",
             port=DEFAULT_REQUESTS_PORT,
             service_type=self.service_type,
             metadata={"pub_port": DEFAULT_PUBLISHER_PORT, "collector_port": DEFAULT_COLLECTOR_PORT},

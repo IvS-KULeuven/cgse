@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Union
 
 from egse.command import ClientServerCommand
+from egse.connect import get_endpoint
 from egse.control import is_control_server_active
 from egse.decorators import dynamic_interface
 from egse.listener import EventInterface, Event
@@ -20,9 +21,14 @@ from egse.zmq_ser import connect_address
 HERE = Path(__file__).parent
 LOGGER = logging.getLogger("egse.procman")
 
-CTRL_SETTINGS = Settings.load("Process Manager Control Server")
+settings = Settings.load("Process Manager Control Server")
 COMMAND_SETTINGS = Settings.load(location=HERE, filename="procman.yaml")
 PROXY_TIMEOUT = 10_000
+
+SERVICE_TYPE = settings.get("SERVICE_TYPE", "pm_cs")
+PROTOCOL = settings.get("PROTOCOL", "tcp")
+HOSTNAME = settings.get("HOSTNAME", "localhost")
+COMMANDING_PORT = settings.get("COMMANDING_PORT", 0)  # dynamically assigned by the system if 0
 
 
 def is_process_manager_active(timeout: float = 0.5) -> bool:
@@ -39,7 +45,7 @@ def is_process_manager_active(timeout: float = 0.5) -> bool:
     """
 
     with RegistryClient() as client:
-        endpoint = client.get_endpoint(CTRL_SETTINGS.SERVICE_TYPE)
+        endpoint = client.get_endpoint(settings.SERVICE_TYPE)
 
     if endpoint is None:
         return False
@@ -394,11 +400,14 @@ class ProcessManagerController(ProcessManagerInterface):
 class ProcessManagerProxy(Proxy, ProcessManagerInterface):
     """Proxy for process management, used to connect to the Process Manager Control Server and send commands remotely."""
 
-    def __init__(self, protocol: str = None, hostname: str = None, port: int = -1, timeout=PROXY_TIMEOUT):
-        """Initialisation of a new Proxy for Process Management.
+    def __init__(
+        self, protocol: str = PROTOCOL, hostname: str = HOSTNAME, port: int = COMMANDING_PORT, timeout=PROXY_TIMEOUT
+    ):
+        """
+        Initialisation of a new Proxy for Process Management.
 
-        If no connection details (transport protocol, hostname, and port) are not provided, these are taken from the
-        settings file.
+        The connection details (transport protocol, hostname, and port) are by default taken from the
+        settings file. When the `port` is 0 (zero) the endpoint is retrieved from the service registry.
 
         Args:
             protocol (str): Transport protocol
@@ -406,15 +415,6 @@ class ProcessManagerProxy(Proxy, ProcessManagerInterface):
             port (int): TCP port on which the Control Server is listening for commands
         """
 
-        if hostname is None:
-            with RegistryClient() as reg:
-                service = reg.discover_service(CTRL_SETTINGS.SERVICE_TYPE)
+        endpoint = get_endpoint(settings.SERVICE_TYPE, protocol, hostname, port)
 
-                if service:
-                    protocol = service.get("protocol", "tcp")
-                    hostname = service["host"]
-                    port = service["port"]
-                else:
-                    raise RuntimeError(f"No service registered as {CTRL_SETTINGS.SERVICE_TYPE}")
-
-        super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
+        super().__init__(endpoint, timeout=timeout)

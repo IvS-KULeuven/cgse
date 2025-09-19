@@ -128,6 +128,7 @@ from egse.command import ClientServerCommand
 from egse.command import stringify_function_call
 from egse.config import find_file
 from egse.config import find_files
+from egse.connect import get_endpoint
 from egse.control import ControlServer
 from egse.control import is_control_server_active
 from egse.decorators import dynamic_interface
@@ -992,27 +993,22 @@ class ConfigurationManagerProxy(Proxy, ConfigurationManagerInterface):
     """
     The Configuration Manager Proxy class is used to connect to the Configuration Manager
     Control Server and send commands and requests for the configuration manager.
+
+    When the port number passed is 0 (zero), the endpoint is requested from the
+    service registry.
+
+    Args:
+        protocol: the transport protocol [default is taken from settings file]
+        hostname: location of the control server (IP address) [default is taken
+            from settings file]
+        port: TCP port on which the control server is listening for commands
+            [default is taken from settings file]
     """
 
     def __init__(
         self, protocol: str = PROTOCOL, hostname: str = HOSTNAME, port: int = COMMANDING_PORT, timeout=PROXY_TIMEOUT
     ):
-        """
-        Args:
-            protocol: the transport protocol [default is taken from settings file]
-            hostname: location of the control server (IP address) [default is taken
-                from settings file]
-            port: TCP port on which the control server is listening for commands
-                [default is taken from settings file]
-        """
-        if port == 0:
-            with RegistryClient() as reg:
-                endpoint = reg.get_endpoint(settings.SERVICE_TYPE)
-
-            if not endpoint:
-                raise RuntimeError(f"No service registered as {settings.SERVICE_TYPE}")
-        else:
-            endpoint = connect_address(protocol, hostname, port)
+        endpoint = get_endpoint(settings.SERVICE_TYPE, protocol, hostname, port)
 
         super().__init__(endpoint, timeout=timeout)
 
