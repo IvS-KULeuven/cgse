@@ -121,6 +121,7 @@ from typing import Union
 from egse.bits import humanize_bytes
 from egse.command import ClientServerCommand
 from egse.config import find_files
+from egse.connect import get_endpoint
 from egse.control import ControlServer
 from egse.control import is_control_server_active
 from egse.decorators import dynamic_interface
@@ -1071,28 +1072,25 @@ class StorageCommand(ClientServerCommand):
 
 
 class StorageProxy(Proxy, StorageInterface, EventInterface):
-    """The StorageProxy class is used to connect to the Storage Manager (control server) and
-    send commands remotely."""
+    """
+    The StorageProxy class is used to connect to the Storage Manager (control server) and
+    send commands remotely.
+
+    When the port number is 0 (zero), the endpoint will be retrieved from the service registry.
+
+    Args:
+        protocol: the transport protocol [default is taken from settings file]
+        hostname: location of the control server (IP address)
+            [default is taken from settings file]
+        port: TCP port on which the control server is listening for commands
+            [default is taken from settings file]
+
+    """
 
     def __init__(
         self, protocol: str = PROTOCOL, hostname: str = HOSTNAME, port: int = COMMANDING_PORT, timeout=REQUEST_TIMEOUT
     ):
-        """
-        Args:
-            protocol: the transport protocol [default is taken from settings file]
-            hostname: location of the control server (IP address)
-                [default is taken from settings file]
-            port: TCP port on which the control server is listening for commands
-                [default is taken from settings file]
-        """
-        if port == 0:
-            with RegistryClient() as reg:
-                endpoint = reg.get_endpoint(settings.SERVICE_TYPE)
-
-            if not endpoint:
-                raise RuntimeError(f"No service registered as {settings.SERVICE_TYPE}")
-        else:
-            endpoint = connect_address(protocol, hostname, port)
+        endpoint = get_endpoint(settings.SERVICE_TYPE, protocol, hostname, port)
 
         super().__init__(endpoint, timeout=timeout)
 

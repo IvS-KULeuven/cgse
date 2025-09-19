@@ -1,5 +1,8 @@
-import logging
 from enum import Enum
+
+from egse.log import logging
+
+logger = logging.getLogger("egse.registry")
 
 # Default ports that are assigned to REQ-REP and PUB-SUB protocols of the registry services
 DEFAULT_RS_REQ_PORT = 4242  # Handle requests
@@ -17,9 +20,6 @@ class MessageType(Enum):
     RESPONSE = b"RESPONSE"  # Response to a request
     NOTIFICATION = b"NOTIF"  # Server-initiated notification
     HEARTBEAT = b"HB"  # Heartbeat/health check
-
-
-logger = logging.getLogger("egse.registry")
 
 
 def is_service_registry_active(timeout: float = 0.5):

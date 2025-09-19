@@ -1,6 +1,13 @@
 """
 This module provides a dummy implementation for classes of the commanding chain.
 
+This is only a simplified implementation that is used for testing purposes.
+
+If you need a more elaborate example of a device and commanding chain implementation,
+check out the `cgse-dummy` project in PyPI. That project is a full implementation of
+all aspects in device access, commanding, and services. It also handles both
+synchronous and asynchronous implementations.
+
 Start the control server with:
 
     py -m egse.dummy start-cs

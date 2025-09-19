@@ -37,6 +37,7 @@ from egse.log import PackageFilter
 from egse.log import egse_logger
 from egse.log import logger
 from egse.log import root_logger
+from egse.registry.client import RegistryClient
 from egse.settings import Settings
 from egse.system import is_in_ipython
 from egse.system import type_name
@@ -62,26 +63,25 @@ def get_log_file_name():
     return settings.get("FILENAME", "general.log")
 
 
-def get_endpoint_from_registry(port: str = "commander"):
+def get_endpoint_from_registry(service_type: str, port_type: str = "commander"):
     """Returns the endpoint that was constructed from information from the service registry."""
-    from egse.registry.client import RegistryClient
 
     # logger.debug(f"Calling get_endpoint_from_registry(\"{port}\")")
 
     try:
         with RegistryClient() as reg:
-            if port == "commander":
-                endpoint = reg.get_endpoint(SERVICE_TYPE)
-            elif port == "receiver":
-                service = reg.discover_service(SERVICE_TYPE)
+            if port_type == "commander":
+                endpoint = reg.get_endpoint(service_type)
+            elif port_type == "receiver":
+                service = reg.discover_service(service_type)
                 endpoint = (
                     f"{service.get('protocol', 'tcp')}://{service['host']}:{service['metadata']['receiver_port']}"
                 )
             else:
-                logger.error(f"Incorrect argument {port=}, no endpoint returned.")
+                logger.error(f"Incorrect argument {port_type=}, no endpoint returned.")
                 endpoint = None
     except Exception:  # noqa
-        logger.warning(f"Couldn't retrieve endpoint for {SERVICE_TYPE}. Is the log_cs process running?")
+        logger.warning(f"Couldn't retrieve endpoint for {service_type}. Is the service registry process running?")
         endpoint = None
 
     return endpoint
@@ -92,7 +92,7 @@ class ZeroMQHandler(logging.Handler):
         super().__init__()
 
         if RECEIVER_PORT == 0:
-            endpoint = get_endpoint_from_registry(port="receiver")
+            endpoint = get_endpoint_from_registry(service_type=SERVICE_TYPE, port_type="receiver")
         else:
             endpoint = f"{PROTOCOL}://{HOSTNAME}:{RECEIVER_PORT}"
 
