@@ -62,9 +62,6 @@ Commands:
         description:    Submit a (new) Setup to the configuration manager. The Setup will be
                         assigned a unique identifier and committed to the git repository.
         cmd:            "{setup} {description} {replace}"
-
-    get_listener_names:
-        description:    Returns a list of names of listeners that need to be notified when a new Setup is loaded.
     
     # Commands that are mainly used by the ProcessManager
 
