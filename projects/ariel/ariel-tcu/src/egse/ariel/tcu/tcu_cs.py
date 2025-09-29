@@ -95,11 +95,11 @@ class TcuControlServer(ControlServer):
         except AttributeError:
             return "TCU"
 
-    # def is_storage_manager_active(self):
-    #     """ Checks whether the Storage Manager is active."""
-    #     from egse.storage import is_storage_manager_active
-    #
-    #     return is_storage_manager_active()
+    def is_storage_manager_active(self):
+        """ Checks whether the Storage Manager is active."""
+        from egse.storage import is_storage_manager_active
+
+        return is_storage_manager_active()
 
     def store_housekeeping_information(self, data):
         """Sends housekeeping information of the Ariel TCU to the Storage Manager."""
