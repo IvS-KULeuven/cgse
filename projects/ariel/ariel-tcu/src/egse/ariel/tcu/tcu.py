@@ -1270,7 +1270,26 @@ class TcuSimulator(TcuInterface):
         self._is_connected = True
 
 
-class TcuProxy(Proxy, TcuInterface):
-    # TODO
-    pass
 class TcuProxy(DynamicProxy, TcuInterface):
+    """
+    The TcuProxy class is used to connect to the TCU Control Server and send commands to the TCU Hardware Controller remotely.
+    """
+
+    def __init__(
+        self,
+        protocol: str = CTRL_SETTINGS.PROTOCOL,
+        hostname: str = CTRL_SETTINGS.HOSTNAME,
+        port: int = CTRL_SETTINGS.COMMANDING_PORT,
+        # timeout: int = CTRL_SETTINGS.TIMEOUT * 1000,  # Timeout [ms]: > scan count * interval + (one scan duration)
+    ):
+        """Initialisation of a DAQ6510Proxy.
+
+        Args:
+            protocol (str): Transport protocol [default is taken from settings file]
+            hostname (str): Location of the Control Server (IP address) [default is taken from settings file]
+            port (int): TCP port on which the Control Server is listening for commands [default is taken from settings
+                        file]
+            timeout (int): Timeout by which to establish the connection [ms]
+        """
+
+        super().__init__(connect_address(protocol, hostname, port))
