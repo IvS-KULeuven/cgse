@@ -8,15 +8,14 @@ from egse.command import ClientServerCommand
 from egse.connect import get_endpoint
 from egse.control import is_control_server_active
 from egse.decorators import dynamic_interface
-from egse.listener import EventInterface, Event
 from egse.plugin import entry_points
 from egse.process import SubProcess
 from egse.proxy import Proxy
 from egse.registry.client import RegistryClient
 from egse.settings import Settings
-from egse.setup import Setup, load_setup
+from egse.setup import Setup
+from egse.setup import load_setup
 from egse.storage import is_storage_manager_active
-from egse.zmq_ser import connect_address
 
 HERE = Path(__file__).parent
 LOGGER = logging.getLogger("egse.procman")
@@ -210,7 +209,7 @@ class ProcessManagerCommand(ClientServerCommand):
     pass
 
 
-class ProcessManagerInterface(EventInterface):
+class ProcessManagerInterface:
     def __init__(self):
         super().__init__()
         self.setup = load_setup()
@@ -357,12 +356,6 @@ class ProcessManagerController(ProcessManagerInterface):
 
         except AttributeError:
             return {}
-
-    def handle_event(self, event: Event):
-        LOGGER.info(f"An event is received, {event=}")
-        LOGGER.info(f"Setup ID: {event.context['setup_id']}")
-
-        self.setup = load_setup(setup_id=event.context["setup_id"])
 
     def start_process(self, start_cmd: StartCommand):
         # subprocess.call(start_cmd.cmd, shell=True) -> PM hangs

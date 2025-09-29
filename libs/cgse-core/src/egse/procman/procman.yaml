@@ -12,10 +12,6 @@ Commands:
     get_device_ids:
         description:    Returns a list of the identifiers of the devices in the current setup.
 
-    handle_event:
-        description:    Notification of an event
-        cmd:            '{event}'
-
     start_process:
         description:    Starts a process
         cmd:            '{start_cmd}'
