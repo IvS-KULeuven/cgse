@@ -6,7 +6,6 @@ Manager (from the setup).
 The Process Manager Control Server is implemented as a standard control server.
 """
 
-import logging
 import multiprocessing
 import sys
 
@@ -15,12 +14,10 @@ import typer
 import zmq
 from rich.console import Console
 
-from egse.confman import ConfigurationManagerProxy
 from egse.control import ControlServer
-from egse.listener import EVENT_ID
+from egse.log import logging
 from egse.logger import remote_logging
 from egse.process import SubProcess
-from egse.procman import ProcessManagerProxy
 from egse.procman.procman_protocol import ProcessManagerProtocol
 from egse.registry.client import RegistryClient
 from egse.services import ServiceProxy
@@ -56,10 +53,6 @@ class ProcessManagerControlServer(ControlServer):
 
         self.logger.debug(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()}")
 
-        self.register_as_listener(
-            proxy=ConfigurationManagerProxy,
-            listener={"name": "Process Manager CS", "proxy": ProcessManagerProxy, "event_id": EVENT_ID.SETUP},
-        )
         self.device_protocol.bind(self.dev_ctrl_cmd_sock)
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
@@ -116,10 +109,6 @@ class ProcessManagerControlServer(ControlServer):
         unregister_from_storage_manager(origin=self.get_storage_mnemonic())
 
     def after_serve(self):
-        from egse.confman import ConfigurationManagerProxy
-
-        self.unregister_as_listener(proxy=ConfigurationManagerProxy, listener={"name": "Process Manager CS"})
-
         self.deregister_service()
 
 

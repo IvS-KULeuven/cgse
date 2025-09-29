@@ -62,7 +62,7 @@ LOG_NAME_TO_LEVEL = {
 
 # LOG_FORMAT_FILE = "%(asctime)s:%(processName)s:%(process)s:%(levelname)s:%(lineno)d:%(name)s:%(message)s"
 LOG_FORMAT_FILE = (
-    "{asctime} [{levelname:>8s}] [{processName:>12s}] {message} ({process}:{package_name}:{filename}:{lineno:d})"
+    "{asctime} [{levelname:>8s}] [{processName:>12s}] {message} ({name}:{process}:{package_name}:{filename}:{lineno:d})"
 )
 LOG_FORMAT_FILE_STYLE = "{"
 

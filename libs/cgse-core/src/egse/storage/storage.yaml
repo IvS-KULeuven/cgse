@@ -24,10 +24,6 @@ Commands:
     #                  This method should exist in the subclass of the CommandProtocol base class, i.e.
     #                  in this case it will be the HexapodProtocol class.
 
-    handle_event:
-        description:   Notification of an event
-        cmd:           '{event}'
-
     start_observation:
         description:    Start a new observation aka test.
         cmd:            '{obsid}, {camera_name}'
