@@ -350,6 +350,100 @@ def process_m2md_kwargs(kv_pairs: dict) -> dict:
     return kv_pairs
 
 
+def process_sw_rs_xx_sw_rise_kwargs(kv_pairs: dict) -> dict:
+    """ Updates the command identifier for the `sw_rs_XX_sw_rise` command for the given position.
+
+    This is used to determine the internal command identifier for the `sw_rs_XX_sw_rise` command for the given position.
+    """
+
+    return _process_sw_rs_xx_sw_kwargs(kv_pairs, M2MDCommandIdentifier.SW_RS_XX_SW_RISE)
+
+
+def process_sw_rs_xx_sw_fall_kwargs(kv_pairs: dict) -> dict:
+    """ Updates the command identifier for the `sw_rs_xx_sw_fall` command for the given position.
+
+    This is used to determine the internal command identifier for the `sw_rs_xx_sw_fall` command for the given position.
+    """
+
+    return _process_sw_rs_xx_sw_kwargs(kv_pairs, M2MDCommandIdentifier.SW_RS_XX_SW_FALL)
+
+
+def _process_sw_rs_xx_sw_kwargs(kv_pairs: dict, m2md_cmd_id: M2MDCommandIdentifier) -> dict:
+    """Processes the keyword arguments for an SW_RS_XX_SW command.
+
+    Args:
+        kv_pairs (dict): Dictionary of keyword arguments for an M2MD TCU write command.
+        m2md_cmd_id (M2MDCommandIdentifier): M2MD command identifier.
+
+    Returns:
+        Dictionary of the processed keyword arguments.
+    """
+
+    for key, value in kv_pairs.items():
+        if isinstance(value, int):
+            # Adopted from Vladimiro's code
+            kv_pairs[key] = m2md_cmd_id.value[:2] + hex(value * 4 + int(m2md_cmd_id.value[-1]))[2:].zfill(2)
+    return kv_pairs
+
+
+def process_probe_kwargs_currentn(kv_pairs: dict) -> dict:
+    """ Updates the command identifier for the `tsm_adc_value_XX_currentn` command for the given probe.
+
+    This is used to determine the internal command identifier for the `tsm_adc_value_XX_currentn` command for the given
+    probe.
+    """
+
+    return _process_probe_kwargs(kv_pairs, TSMCommandIdentifier.TSM_ADC_VALUE_XX_CURRENTN)
+
+
+def process_probe_kwargs_biasn(kv_pairs: dict) -> dict:
+    """ Updates the command identifier for the `tsm_adc_value_XX_biasn` command for the given probe.
+
+    This is used to determine the internal command identifier for the `tsm_adc_value_XX_biasn` command for the given
+    probe.
+    """
+
+    return _process_probe_kwargs(kv_pairs, TSMCommandIdentifier.TSM_ADC_VALUE_XX_BIASN)
+
+
+def process_probe_kwargs_currentp(kv_pairs: dict) -> dict:
+    """ Updates the command identifier for the `tsm_adc_value_XX_currentp` command for the given probe.
+
+    This is used to determine the internal command identifier for the `tsm_adc_value_XX_currentp` command for the given
+    probe.
+    """
+
+    return _process_probe_kwargs(kv_pairs, TSMCommandIdentifier.TSM_ADC_VALUE_XX_CURRENTP)
+
+
+def process_probe_kwargs_biasp(kv_pairs: dict) -> dict:
+    """ Updates the command identifier for the `tsm_adc_value_XX_biasp` command for the given probe.
+
+    This is used to determine the internal command identifier for the `tsm_adc_value_XX_biasp` command for the given
+    probe.
+    """
+
+    return _process_probe_kwargs(kv_pairs, TSMCommandIdentifier.TSM_ADC_VALUE_XX_BIASP)
+
+
+def _process_probe_kwargs(kv_pairs: dict, tsm_cmd_id: TSMCommandIdentifier) -> dict:
+    """Processes the keyword arguments for a probe command.
+
+    Args:
+        kv_pairs (dict): Dictionary of keyword arguments for a probe command.
+        tsm_cmd_id (TSMCommandIdentifier): TSM command identifier.
+
+    Returns:
+        Dictionary of the processed keyword arguments.
+    """
+
+    for key, value in kv_pairs.items():
+        if isinstance(value, int):
+            # Adopted from Vladimiro's code
+            kv_pairs[key] = tsm_cmd_id.value[:2] + hex(value * 4 + int(tsm_cmd_id.value[-1]))[2:].zfill(2)
+    return kv_pairs
+
+
 def process_tsm_kwargs(kv_pairs: dict):
     """Processes the keyword arguments for a TSM command.
 
@@ -829,22 +923,22 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, "${axis}", M2MDCommandIdentifier.SW_RS_XX_SW_RISE),
-        process_kwargs=process_m2md_kwargs,
+        cmd_string=create_read_cmd_string(counter, "${axis}", "${position}"),
+        process_kwargs=process_sw_rs_xx_sw_rise_kwargs,
         process_cmd_string=append_crc16,
         post_cmd=increment_counter,
     )
-    def sw_rs_xx_sw_rise(self, axis: CommandAddress):
+    def sw_rs_xx_sw_rise(self, axis: CommandAddress, position: int):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, "${axis}", M2MDCommandIdentifier.SW_RS_XX_SW_FALL),
-        process_kwargs=process_m2md_kwargs,
+        cmd_string=create_read_cmd_string(counter, "${axis}", "${position}"),
+        process_kwargs=process_sw_rs_xx_sw_fall_kwargs,
         process_cmd_string=append_crc16,
         post_cmd=increment_counter,
     )
-    def sw_rs_xx_sw_fall(self, axis: CommandAddress):
+    def sw_rs_xx_sw_fall(self, axis: CommandAddress, position: int):
         pass
 
     # TSM commands
@@ -1034,38 +1128,78 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_VALUE_XX_CURRENTN),
+        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, "${probe}"),
+        process_kwargs=process_probe_kwargs_currentn,
         process_cmd_string=append_crc16,
         post_cmd=increment_counter,
     )
-    def tsm_adc_value_xx_currentn(self):
+    def tsm_adc_value_xx_currentn(self, probe: int):
+        """Returns the negative current to polarise the given thermistor.
+
+        Args:
+            probe (int): Thermistor identifier.
+
+        Returns:
+            Negative current to polarise the given thermistor.
+        """
+
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_VALUE_XX_BIASN),
+        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, "${probe}"),
+        process_kwargs=process_probe_kwargs_biasn,
         process_cmd_string=append_crc16,
         post_cmd=increment_counter,
     )
-    def tsm_adc_value_xx_biasn(self):
+    def tsm_adc_value_xx_biasn(self, probe: int):
+        """Returns the voltage measured on the given thermistor biased with negative current.
+
+        Args:
+            probe (int): Thermistor identifier.
+
+        Returns:
+            Voltage on the thermistor biased with the negative current.
+        """
+
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_VALUE_XX_CURRENTP),
+        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, "${probe}"),
+        process_kwargs=process_probe_kwargs_currentp,
         process_cmd_string=append_crc16,
         post_cmd=increment_counter,
     )
-    def tsm_adc_value_xx_currentp(self):
+    def tsm_adc_value_xx_currentp(self, probe: int):
+        """ Returns the positive current to polarise the given thermistor.
+
+        Args:
+            probe (int): Thermistor identifier.
+
+        Returns:
+            Positive current to polarise the given thermistor.
+        """
+
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_VALUE_XX_BIASP),
+        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, "${probe}"),
+        process_kwargs=process_probe_kwargs_biasp,
         process_cmd_string=append_crc16,
         post_cmd=increment_counter,
     )
-    def tsm_adc_value_xx_biasp(self):
+    def tsm_adc_value_xx_biasp(self, probe: int):
+        """ Returns the voltage measured on the given thermistor biased with positive current.
+
+        Args:
+            probe (int): Thermistor identifier.
+
+        Returns:
+            Voltage on the thermistor biased with the positive current.
+        """
+
         pass
 
     @dynamic_command(
@@ -1075,6 +1209,12 @@ class TcuInterface(DeviceInterface):
         post_cmd=increment_counter,
     )
     def tsm_acq_counter(self):
+        """ Reads the number of ADC measurement sequences that have been made.
+
+        Returns:
+            Number of ADC measurement sequences that have been made.
+        """
+
         pass
 
 
