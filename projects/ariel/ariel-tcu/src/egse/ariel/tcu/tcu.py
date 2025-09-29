@@ -1285,7 +1285,7 @@ class TcuProxy(DynamicProxy, TcuInterface):
         protocol: str = CTRL_SETTINGS.PROTOCOL,
         hostname: str = CTRL_SETTINGS.HOSTNAME,
         port: int = CTRL_SETTINGS.COMMANDING_PORT,
-        # timeout: int = CTRL_SETTINGS.TIMEOUT * 1000,  # Timeout [ms]: > scan count * interval + (one scan duration)
+        timeout: int = CTRL_SETTINGS.TIMEOUT
     ):
         """Initialisation of a DAQ6510Proxy.
 
@@ -1297,4 +1297,4 @@ class TcuProxy(DynamicProxy, TcuInterface):
             timeout (int): Timeout by which to establish the connection [ms]
         """
 
-        super().__init__(connect_address(protocol, hostname, port))
+        super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
