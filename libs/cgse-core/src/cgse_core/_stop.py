@@ -15,7 +15,7 @@ from egse.system import waiting_for
 def stop_rm_cs():
     rich.print("Terminating the service registry manager core service...")
 
-    out = redirect_output_to_log(".rm_cs.stop.log")
+    out = redirect_output_to_log("rm_cs.stop.log")
 
     subprocess.Popen(
         [sys.executable, "-m", "egse.registry.server", "stop"],
@@ -35,7 +35,7 @@ def stop_rm_cs():
 def stop_log_cs():
     rich.print("Terminating the logging core service...")
 
-    out = redirect_output_to_log(".log_cs.stop.log")
+    out = redirect_output_to_log("log_cs.stop.log")
 
     subprocess.Popen(
         [sys.executable, "-m", "egse.logger.log_cs", "stop"],
@@ -49,7 +49,7 @@ def stop_log_cs():
 def stop_sm_cs():
     rich.print("Terminating the storage manager core service...")
 
-    out = redirect_output_to_log(".sm_cs.stop.log")
+    out = redirect_output_to_log("sm_cs.stop.log")
 
     subprocess.Popen(
         [sys.executable, "-m", "egse.storage.storage_cs", "stop"],
@@ -69,7 +69,7 @@ def stop_sm_cs():
 def stop_cm_cs():
     rich.print("Terminating the configuration manager core service...")
 
-    out = redirect_output_to_log(".cm_cs.stop.log")
+    out = redirect_output_to_log("cm_cs.stop.log")
 
     subprocess.Popen(
         [sys.executable, "-m", "egse.confman.confman_cs", "stop"],
@@ -89,7 +89,7 @@ def stop_cm_cs():
 def stop_pm_cs():
     rich.print("Terminating the process manager core service...")
 
-    out = redirect_output_to_log(".pm_cs.stop.log")
+    out = redirect_output_to_log("pm_cs.stop.log")
 
     subprocess.Popen(
         [sys.executable, "-m", "egse.procman.procman_cs", "stop"],
@@ -109,7 +109,7 @@ def stop_pm_cs():
 def stop_notifyhub():
     rich.print("Terminating the notification hub core service...")
 
-    out = redirect_output_to_log(".nh_cs.stop.log")
+    out = redirect_output_to_log("nh_cs.stop.log")
 
     subprocess.Popen(
         [sys.executable, "-m", "egse.notifyhub.server", "stop"],
