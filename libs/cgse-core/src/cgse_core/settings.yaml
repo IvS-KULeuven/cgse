@@ -52,7 +52,7 @@ Process Manager Control Server:                  # PM_CS
 
 Notify Hub:
     
-    SERVICE_TYPE:            NOTIFY_HUB
+    SERVICE_TYPE:                 NH_CS
     SERVICE_ID:                 nh_cs_1
     PROCESS_NAME:                 nh_cs
     COLLECTOR_PORT:                6125
@@ -61,7 +61,7 @@ Notify Hub:
     
 Metrics Hub:
     
-    SERVICE_TYPE:           METRICS_HUB
+    SERVICE_TYPE:                 MH_CS
     SERVICE_ID:                 mh_cs_1
     PROCESS_NAME:                 mh_cs
     COLLECTOR_PORT:                6130
