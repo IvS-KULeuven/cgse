@@ -56,8 +56,6 @@ from egse.device import DeviceConnectionError
 from egse.device import DeviceConnectionInterface
 from egse.device import DeviceTimeoutError
 from egse.device import DeviceTransport
-from egse.listener import Event
-from egse.listener import EventInterface
 from egse.log import logger
 from egse.protocol import CommandProtocol
 from egse.proxy import Proxy
@@ -110,12 +108,6 @@ commands = attrdict(
             "description": "Read a value from the device.",
         },
         "division": {"description": "Return a / b", "cmd": "{a} {b}"},
-        "handle_event": {
-            "description": "Notification of an event",
-            "device_method": "handle_event",
-            "cmd": "{event}",
-            "response": "handle_device_method",
-        },
     }
 )
 
@@ -172,7 +164,7 @@ class DummyInterface:
         raise NotImplementedError("The division() method has not been loaded from the service.")
 
 
-class DummyProxy(Proxy, DummyInterface, EventInterface):
+class DummyProxy(Proxy, DummyInterface):
     """
     The Proxy class for the dummy device.
 
@@ -193,7 +185,7 @@ class DummyProxy(Proxy, DummyInterface, EventInterface):
         super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
 
 
-class DummyController(DummyInterface, EventInterface):
+class DummyController(DummyInterface):
     """
     The controller class for the dummy device.
 
@@ -213,32 +205,6 @@ class DummyController(DummyInterface, EventInterface):
 
     def division(self, a, b) -> float:
         return a / b
-
-    def handle_event(self, event: Event) -> str:
-        _exec_in_thread = False
-
-        def _handle_event(_event):
-            logger.info(f"An event is received, {_event=}")
-            logger.info(f"CM CS active? {is_control_server_active()}")
-            time.sleep(5.0)
-            logger.info(f"CM CS active? {is_control_server_active()}")
-            logger.info(f"An event is processed, {_event=}")
-
-        if _exec_in_thread:
-            # We execute this function in a daemon thread so the acknowledgment is
-            # sent back immediately (the ACK means 'command received and will be
-            # executed').
-
-            retry_thread = threading.Thread(target=_handle_event, args=(event,))
-            retry_thread.daemon = True
-            retry_thread.start()
-        else:
-            # An alternative to the daemon thread is to create a scheduled task that will be executed
-            # after the event is acknowledged.
-
-            self._cs.schedule_task(partial(_handle_event, event))
-
-        return "ACK"
 
 
 class DummyProtocol(CommandProtocol):
@@ -319,21 +285,6 @@ class DummyControlServer(ControlServer):
 
         self.set_hk_delay(ctrl_settings.HK_DELAY)
 
-        from egse.confman import ConfigurationManagerProxy
-        from egse.listener import EVENT_ID
-
-        # The following import is needed because without this import, DummyProxy would
-        # be <class '__main__.DummyProxy'> instead of `egse.dummy.DummyProxy` and the
-        # ConfigurationManager control server will not be able to de-pickle
-        # the register message.
-
-        from egse.dummy import DummyProxy  # noqa
-
-        self.register_as_listener(
-            proxy=ConfigurationManagerProxy,
-            listener={"name": "Dummy CS", "proxy": DummyProxy, "event_id": EVENT_ID.SETUP},
-        )
-
     def get_communication_protocol(self):
         return "tcp"
 
@@ -349,13 +300,11 @@ class DummyControlServer(ControlServer):
     def get_storage_mnemonic(self):
         return "DUMMY-HK"
 
+    def before_serve(self) -> None:
+        logger.debug("Before Serve ...")
+
     def after_serve(self):
-        logger.debug("After Serve: unregistering Dummy CS")
-
-        with contextlib.suppress(ModuleNotFoundError):
-            from egse.confman import ConfigurationManagerProxy
-
-            self.unregister_as_listener(proxy=ConfigurationManagerProxy, listener={"name": "Dummy CS"})
+        logger.debug("After Serve ...")
 
 
 class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):

@@ -128,8 +128,6 @@ from egse.decorators import dynamic_interface
 from egse.env import get_data_storage_location
 from egse.env import get_site_id
 from egse.exceptions import Error
-from egse.listener import Event
-from egse.listener import EventInterface
 from egse.log import logger
 from egse.obsid import ObservationIdentifier
 from egse.obsid import TEST_LAB
@@ -715,7 +713,7 @@ def determine_counter_from_dir_list(location, pattern, index: int = -1):
         return 1
 
 
-class StorageController(StorageInterface, EventInterface):
+class StorageController(StorageInterface):
     """
     The Storage Controller handles the registration of components, the start and end of an
     observation/test and the dispatching of the persistence functions in save.
@@ -1051,27 +1049,12 @@ class StorageController(StorageInterface, EventInterface):
             self._setup = setup
             logger.info(f"Setup {setup.get_id()} loaded in the Storage manager.")
 
-    def handle_event(self, event: Event) -> str:
-        logger.info(f"An event is received, {event=}")
-
-        logger.warning(
-            f"----------> This functionality has been replaced with the notification events and will be removed soon."
-        )
-
-        # try:
-        #     if event.type == "new_setup":
-        #         self._cs.schedule_task(partial(self.load_setup, setup_id=event.context["setup_id"]))
-        # except KeyError as exc:
-        #     return f"Expected event context to contain the following key: {exc}"
-
-        return "ACK"
-
 
 class StorageCommand(ClientServerCommand):
     pass
 
 
-class StorageProxy(Proxy, StorageInterface, EventInterface):
+class StorageProxy(Proxy, StorageInterface):
     """
     The StorageProxy class is used to connect to the Storage Manager (control server) and
     send commands remotely.
