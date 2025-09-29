@@ -15,14 +15,15 @@ Reference documents:
 """
 
 from enum import IntEnum, StrEnum
-from typing import Union
 
 import crcmod
 from serial.tools import list_ports
 from egse.device import DeviceInterface
-from egse.mixin import dynamic_command, CommandType
-from egse.proxy import Proxy
+from egse.mixin import dynamic_command, CommandType, DynamicCommandMixin
+from egse.proxy import DynamicProxy
 from egse.ariel.tcu.tcu_devif import TcuDeviceInterface
+from egse.settings import Settings
+from egse.zmq_ser import connect_address
 
 TCU_LOGICAL_ADDRESS = "03"
 DATA_LENGTH = "0004"
