@@ -1218,7 +1218,7 @@ class TcuInterface(DeviceInterface):
         pass
 
 
-class TcuController(TcuInterface):
+class TcuController(TcuInterface, DynamicCommandMixin):
     def __init__(self):
         """Initialisation of an Ariel TCU controller."""
 
@@ -1273,3 +1273,4 @@ class TcuSimulator(TcuInterface):
 class TcuProxy(Proxy, TcuInterface):
     # TODO
     pass
+class TcuProxy(DynamicProxy, TcuInterface):
