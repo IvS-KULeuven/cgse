@@ -131,9 +131,6 @@ class TcuControlServer(ControlServer):
     def after_serve(self):
         self.deregister_service()
 
-    def after_serve(self) -> None:
-        self.deregister_service()
-
 
 app = typer.Typer()
 
