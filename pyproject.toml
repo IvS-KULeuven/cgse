@@ -64,7 +64,7 @@ cgse-tools = { workspace = true }
 plato-spw = { workspace = true }
 
 [tool.uv.workspace]
-members = ["libs/*", "projects/generic/*", "projects/plato/*"]
+members = ["libs/*", "projects/generic/*", "projects/plato/*", "projects/ariel/*"]
 exclude = ["docs/*"]
 
 [tool.ruff.lint]
