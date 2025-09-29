@@ -25,33 +25,36 @@ from egse.ariel.tcu.tcu_devif import TcuDeviceInterface
 from egse.settings import Settings
 from egse.zmq_ser import connect_address
 
-TCU_LOGICAL_ADDRESS = "03"
-DATA_LENGTH = "0004"
+TCU_LOGICAL_ADDRESS = "03"  # RD02 -> Fig. 10
+DATA_LENGTH = "0004"  # Vladimiro's code
+
+CTRL_SETTINGS = Settings.load("Ariel TCU Control Server")
 
 
 class PacketType(StrEnum):
-    """Packet types (read/write).
+    """Packet types (read/write). """
 
-    Reference document: ARIEL TCU Data Handling (ARIEL-IEEC-PL-TN-007), v1.0 -> Sect. 4.1
-    """
-
-    W = WRITE = "20"  # Write command (Sect. 4.1.1)
-    R = READ = "40"  # Read command (Sect. 4.1.2)
+    W = WRITE = "20"  # Write command (RD02 -> Sect. 4.1.1)
+    R = READ = "40"  # Read command (RD02 -> Sect. 4.1.2)
 
 
 class CommandAddress(StrEnum):
-    """Identifier of the component of the TCU the commands have to be sent to."""
+    """Identifiers of the components of the TCU the commands have to be sent to."""
 
-    GENERAL = "0000"  # General TCU commands
-    M2MD_1 = "0001"  # M2MD axis-1 commands
-    M2MD_2 = "0002"  # M2MD axis-2 commands
-    M2MD_3 = "0003"  # M2MD axis-3 commands
-    TSM = "0020"  # TSM commands
-    HK = "0005"  # HK commands
+    # Adopted from Vladimiro's code
+
+    GENERAL = "0000"  # General TCU commands -> see `show_messageGEN`, where the command string is built
+    M2MD_1 = "0001"  # M2MD axis-1 commands -> see `show_messageM2M`, where the command string is built
+    M2MD_2 = "0002"  # M2MD axis-2 commands -> see `show_messageM2M`, where the command string is built
+    M2MD_3 = "0003"  # M2MD axis-3 commands -> see `show_messageM2M`, where the command string is built
+    TSM = "0004"  # TSM commands -> see `show_messageTSM`, where the command string is built
+    HK = "0005"  # HK commands -> see `show_messageHK`, where the command string is built
 
 
 class GeneralCommandIdentifier(StrEnum):
     """Identifiers for the general TCU commands."""
+
+    # Adopted from Vladimiro's code
 
     TCU_FIRMWARE_ID = "0000"  # Read
     TCU_MODE = "0001"  # Read/Write
@@ -63,6 +66,8 @@ class GeneralCommandIdentifier(StrEnum):
 
 class M2MDCommandIdentifier(StrEnum):
     """Identifiers for the M2MD commands."""
+
+    # Adopted from Vladimiro's code
 
     OPE_MNG_COMMAND = "0000"  # Write
     OPE_MNG_EVENT_CLEAR_PROTECT_FLAG = "0001"  # Write
@@ -111,6 +116,8 @@ class TSMCommandIdentifier(StrEnum):
 class HKCommandIdentifier(StrEnum):
     """Identifiers for the HK commands."""
 
+    # Adopted from Vladimiro's code
+
     VHK_PSU_VMOTOR = "0000"  # Read
     VHK_PSU_VHI = "0001"  # Read
     VHK_PSU_VLOW = "0002"  # Read
@@ -135,16 +142,16 @@ class HKCommandIdentifier(StrEnum):
     HK_ACQ_COUNTER = "0015"  # Read
 
 
-# Combine all command identifiers into one big enumeration
-
-CommandIdentifier = Union[GeneralCommandIdentifier, M2MDCommandIdentifier, TSMCommandIdentifier, HKCommandIdentifier]
-
-
 class TcuMode(IntEnum):
     """Ariel TCU operating modes.
 
-    Reference document: TCU User Manual (ARIEL-IEEC-PL-MAN-002), v1.1 -> Sect. 4.2
+    The different TCU modes are:
+    - IDLE: Waiting for commands, minimum power consumption,
+    - BASE: HK + TSM circuitry on,
+    - CALIBRATION: HK + TSM + M2MD circuitry on.
     """
+
+    # Adopted from Vladimiro's code
 
     IDLE = 0x0000  # Waiting for commands, minimum power consumption
     BASE = 0x0001  # HK + TSM circuitry on
@@ -154,8 +161,13 @@ class TcuMode(IntEnum):
 class MotorState(IntEnum):
     """State of the M2MD motors.
 
-    Reference document: TCU User Manual (ARIEL-IEEC-PL-MAN-002), v1.1 -> Sect. 5.1
+    The different motor states are:
+    - STANDBY: No motion,
+    - OPERATION: Motor moving.
     """
+
+    # Adopted from Vladimiro's code
+    # RD01 -> Sect. 5.1
 
     STANDBY = 0x0001  # No motion
     OPERATION = 0x0010  # Motor moving
@@ -164,7 +176,7 @@ class MotorState(IntEnum):
 def create_write_cmd_string(
     transaction_id: int,
     cmd_address: CommandAddress | str,
-    cmd_identifier: CommandIdentifier,
+    cmd_identifier: GeneralCommandIdentifier | TSMCommandIdentifier | M2MDCommandIdentifier | HKCommandIdentifier | str,
     cargo1: str = "0000",
     cargo2: str = "0000",
 ):
@@ -174,9 +186,12 @@ def create_write_cmd_string(
         transaction_id (int): Transaction identifier (i.e. counter that is incremented upon each command call).
         cmd_address (CommandAddress): Identifier of the commanded device.  In case of a M2MD axis, it is the reference
                                       to the axis (typically "${axis}") rather than the axis identifier enumeration.
-        cmd_identifier (CommandIdentifier): Command identifier, internal to the commanded device.
-        cargo1 (str): Reference to the first 16-bit cargo word (typically "${cargo1}").
-        cargo2 (str): Reference to the second 16-bit cargo word (typically "${cargo2}").
+        cmd_identifier (GeneralCommandIdentifier | TSMCommandIdentifier | M2MDCommandIdentifier | HKCommandIdentifier):
+                       Command identifier, internal to the commanded device.
+        cargo1 (str): Reference to the first 16-bit cargo word (typically "${cargo1}").  The exact value will be filled
+                      out upon command execution.
+        cargo2 (str): Reference to the second 16-bit cargo word (typically "${cargo2}").  The exact value will be filled
+                      out upon command execution.
 
     Returns:
         Write-command string to send to the TCU Arduino.
@@ -188,7 +203,7 @@ def create_write_cmd_string(
 def create_read_cmd_string(
     transaction_id: int,
     cmd_address: CommandAddress | str,
-    cmd_identifier: CommandIdentifier,
+    cmd_identifier: GeneralCommandIdentifier | TSMCommandIdentifier | M2MDCommandIdentifier | HKCommandIdentifier | str,
     cargo1: str = "0000",
     cargo2: str = "0000",
 ):
@@ -198,9 +213,12 @@ def create_read_cmd_string(
         transaction_id (int): Transaction identifier (i.e. counter that is incremented upon each command call).
         cmd_address (CommandAddress): Identifier of the commanded device.  In case of a M2MD axis, it is the reference
                                       to the axis (typically "${axis}") rather than the axis identifier enumeration.
-        cmd_identifier (CommandIdentifier): Command identifier, internal to the commanded device.
-        cargo1 (str): Reference to the first 16-bit cargo word (typically "${cargo1}").
-        cargo2 (str): Reference to the second 16-bit cargo word (typically "${cargo2}").
+        cmd_identifier (GeneralCommandIdentifier | TSMCommandIdentifier | M2MDCommandIdentifier | HKCommandIdentifier):
+                       Command identifier, internal to the commanded device.
+        cargo1 (str): Reference to the first 16-bit cargo word (typically "${cargo1}").  The exact value will be filled
+                      out upon command execution.
+        cargo2 (str): Reference to the second 16-bit cargo word (typically "${cargo2}").  The exact value will be filled
+                      out upon command execution.
 
     Returns:
         Read-command string to send to the TCU Arduino.
@@ -213,10 +231,10 @@ def create_cmd_string(
     packet_type: PacketType,
     transaction_id: int,
     cmd_address: CommandAddress | str,
-    cmd_identifier: CommandIdentifier,
+    cmd_identifier: GeneralCommandIdentifier | TSMCommandIdentifier | M2MDCommandIdentifier | HKCommandIdentifier | str,
     cargo1: str = "0000",
     cargo2: str = "0000",
-):
+) -> str:
     """Creates a command string to send to the TCU Arduino.
 
     Packet format (text):
@@ -237,31 +255,42 @@ def create_cmd_string(
         - DDDD: Second 16-bit cargo word;
         - CRC: Cyclic Redundancy Check (CRC-16), determined from the packet string (without the CRC itself).
 
+    Note that the CRC-16 (16-bit Cyclic Redundancy Check) is not included in the packet string.  This will be appended
+    when the command string is complete (i.e. when the cargo words are filled out).
+
     Args:
         packet_type (PacketType): Type of the packet (read or write).
         transaction_id (int): Transaction identifier (i.e. counter that is incremented upon each command call).
         cmd_address (CommandAddress): Identifier of the commanded device.  In case of a M2MD axis, it is the reference
                                       to the axis (typically "${axis}") rather than the axis identifier enumeration.
-        cmd_identifier (CommandIdentifier): Command identifier, internal to the commanded device.
-        cargo1 (str): Reference to the first 16-bit cargo word (typically "${cargo1}").
-        cargo2 (str): Reference to the second 16-bit cargo word (typically "${cargo2}").
+        cmd_identifier (GeneralCommandIdentifier | TSMCommandIdentifier | M2MDCommandIdentifier | HKCommandIdentifier
+                       | str): Command identifier, internal to the commanded device.
+        cargo1 (str): Reference to the first 16-bit cargo word (typically "${cargo1}").  The exact value will be filled
+                      out upon command execution.
+        cargo2 (str): Reference to the second 16-bit cargo word (typically "${cargo2}").  The exact value will be filled
+                      out upon command execution.
 
     Returns:
         Command string to send to the TCU Arduino.
     """
 
+    # Adopted from Vladimiro's code
+
     address = cmd_address.value if isinstance(cmd_address, CommandAddress) else cmd_address
+    cmd_identifier = cmd_identifier if isinstance(cmd_identifier, str) else cmd_identifier.value
 
     cmd_string = (
         f"{TCU_LOGICAL_ADDRESS}{packet_type.value} {hex(transaction_id)[2:].zfill(4)} {DATA_LENGTH} "
-        f"{address} {cmd_identifier.value} {cargo1} {cargo2}"
+        f"{address} {cmd_identifier} {cargo1} {cargo2}"
     )
-    # cmd_string = append_crc16(cmd_string)     # FIXME: CRC has to be added when the command string is complete
+
+    # CRC has to be added when the command string is complete -> Via `process_cmd_string`
+    # The transaction counter is incremented upon each command call -> Via `post_cmd`
 
     return cmd_string
 
 
-def process_general_kwargs(kv_pairs: dict):
+def process_general_kwargs(kv_pairs: dict) -> dict:
     """Processes the keyword arguments for a general TCU command.
 
     Only write commands can have a single input argument, which has to be written to the `cargo2` part of the command
@@ -289,10 +318,10 @@ def process_general_kwargs(kv_pairs: dict):
     return kv_pairs
 
 
-def process_m2md_kwargs(kv_pairs: dict):
+def process_m2md_kwargs(kv_pairs: dict) -> dict:
     """Processes the keyword arguments for an M2MD command.
 
-    Read commands can ha a single input argument, which has to be written to the `cmd_address` part of the command
+    Read commands can have a single input argument, which has to be written to the `cmd_address` part of the command
     string.  Write commands can have a two input arguments, which have to be written to the `cmd_address` and `cargo2`
     parts of the command string.  Note that the keywords in the given dictionary can have any name (so no necessarily
     `axis` and `cargo2`).
@@ -366,6 +395,8 @@ def create_crc16(cmd_str: str, ln: int = 14):
         Calculated 16-bit CRC checksum.
     """
 
+    # Adapted from Vladimiro's code
+
     byte_array = bytearray([int(cmd_str[2 * i : 2 * i + 2], 16) for i in range(ln)])
 
     crc16_func = crcmod.mkCrcFun(0x11021, 0xFFFF, False, 0x0)
@@ -385,6 +416,8 @@ def append_crc16(cmd_string: str, ln: int = 14):
         str: Command string with the appended CRC checksum.
     """
 
+    # Adapted from Vladimiro's code
+
     # Crop leading "0x" + ensure 4 characters
 
     crc16 = create_crc16(cmd_string, ln)[2:6].zfill(4)
@@ -402,7 +435,7 @@ def get_all_serial_ports() -> list:
     return list_ports.comports()
 
 
-counter = 0
+counter = 0     # Keep track of the transaction identifier (incremented after each command call)
 
 
 def increment_counter():
@@ -417,7 +450,7 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.GENERAL, CommandIdentifier.TCU_FIRMWARE_ID),
+        cmd_string=create_read_cmd_string(counter, CommandAddress.GENERAL, GeneralCommandIdentifier.TCU_FIRMWARE_ID),
         process_cmd_string=append_crc16,
         post_cmd=increment_counter,
     )
@@ -432,7 +465,7 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.GENERAL, CommandIdentifier.TCU_MODE),
+        cmd_string=create_read_cmd_string(counter, CommandAddress.GENERAL, GeneralCommandIdentifier.TCU_MODE),
         process_cmd_string=append_crc16,
         post_cmd=increment_counter,
     )
@@ -453,7 +486,7 @@ class TcuInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string=create_write_cmd_string(
-            counter, CommandAddress.GENERAL, CommandIdentifier.TCU_MODE, cargo2="${tcu_mode}"
+            counter, CommandAddress.GENERAL, GeneralCommandIdentifier.TCU_MODE, cargo2="${tcu_mode}"
         ),
         process_kwargs=process_general_kwargs,
         process_cmd_string=append_crc16,
@@ -490,7 +523,6 @@ class TcuInterface(DeviceInterface):
         post_cmd=increment_counter,
     )
     def tcu_simulated(self, cargo2: str):
-        # TODO How to pass the argument?
         pass
 
     @dynamic_command(
@@ -498,11 +530,11 @@ class TcuInterface(DeviceInterface):
         cmd_string=create_write_cmd_string(
             counter, CommandAddress.GENERAL, GeneralCommandIdentifier.RESTART_LINKS_PERIOD_LATCH
         ),
+        process_kwargs=process_general_kwargs,
         process_cmd_string=append_crc16,
         post_cmd=increment_counter,
     )
     def restart_links_period_latch(self, cargo2: str):
-        # TODO How to pass the argument?
         pass
 
     @dynamic_command(
@@ -526,7 +558,6 @@ class TcuInterface(DeviceInterface):
         post_cmd=increment_counter,
     )
     def set_restart_links_period(self, link_period: int = "0xFFFF"):
-        # TODO How to pass the argument?
         pass
 
     # M2MD commands
@@ -541,6 +572,13 @@ class TcuInterface(DeviceInterface):
         post_cmd=increment_counter,
     )
     def ope_mng_command(self, axis: CommandAddress, cargo2: str = 0):
+        """ Commands the action to the SENER motor driver IP core.
+
+        Args:
+            axis (CommandAddress): Axis to which the command is sent.
+            cargo2 (str): Cargo 2 part of the command string.
+        """
+
         pass
 
     @dynamic_command(
@@ -763,9 +801,6 @@ class TcuInterface(DeviceInterface):
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
         post_cmd=increment_counter,
-    )
-    @dynamic_command(
-        cmd_type=CommandType.TRANSACTION,
     )
     def set_prof_gen_axis_speed(self, axis: CommandAddress, cargo2: str):
         pass
