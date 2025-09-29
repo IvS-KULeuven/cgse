@@ -88,6 +88,11 @@ class M2MDCommandIdentifier(StrEnum):
     PROF_GEN_AXIS_SPEED = "2001"  # Read/Write
     PROF_GEN_AXIS_STATE_START = "2002"  # Read/Write
     SW_RS_XX_SW_RISE = "3001"  # Read
+    # TODO Check whether this is correct:
+    # This is how it is hard-coded in Vladimiro's code, but in his `show_messageM2M` function, he states that there's
+    # an offset of 20 between SW_RS_XX_SW_RISE and SW_RS_XX_SW_FALL (where position must in 1,...,20).  That would mean
+    # that for position 15, SW_RS_XX_SW_RISE is 3015, which clashes with the hard-coded value for
+    # SW_RS_XX_SW_FALL.
     SW_RS_XX_SW_FALL = "3015"  # Read
 
 
