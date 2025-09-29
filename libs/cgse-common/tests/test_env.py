@@ -211,11 +211,10 @@ def test_main(capsys):
 
 
 def test_bool_env():
-
-    for option in ['1', 'true', 'True', 'TRUE', 'on', 'On', 'ON', 'yes', 'Yes', 'YES']:
+    for option in ["1", "true", "True", "TRUE", "on", "On", "ON", "yes", "Yes", "YES"]:
         with env_var(VERBOSE_DEBUG=option):
-            assert bool_env('VERBOSE_DEBUG')
+            assert bool_env("VERBOSE_DEBUG")
 
-    for option in ['0', 'false', 'no', 'off']:
+    for option in ["0", "false", "no", "off"]:
         with env_var(VERBOSE_DEBUG=option):
-            assert not bool_env('VERBOSE_DEBUG')
+            assert not bool_env("VERBOSE_DEBUG")

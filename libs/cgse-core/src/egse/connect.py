@@ -6,7 +6,8 @@ logger = logging.getLogger("egse.connect")
 
 # random.seed(time.monotonic())  # uncomment for testing only, main application should set a seed.
 
-VERBOSE_DEBUG = bool_env('VERBOSE_DEBUG')
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
+
 
 def get_endpoint(
     service_type: str,
