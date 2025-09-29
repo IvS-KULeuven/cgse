@@ -138,7 +138,6 @@ from egse.env import get_conf_repo_location
 from egse.env import get_project_name
 from egse.env import get_site_id
 from egse.exceptions import InternalError
-from egse.listener import EVENT_ID
 from egse.log import logger
 from egse.notifyhub.event import NotificationEvent
 from egse.notifyhub.services import EventPublisher
@@ -552,10 +551,6 @@ class ConfigurationManagerInterface:
     def get_setup_for_obsid(self, obsid):
         raise NotImplementedError
 
-    @dynamic_interface
-    def get_listener_names(self):
-        raise NotImplementedError
-
 
 class ConfigurationManagerController(ConfigurationManagerInterface):
     """Handles the commands that are sent to the configuration manager.
@@ -763,12 +758,6 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
             self._sut_name = _get_sut_id_for_setup(self._setup)
             logger.info(f"New Setup loaded from {setup_file}")
             save_last_setup_id(self._setup_id)
-            if self._control_server:
-                logger.info("Notifying listeners for a new Setup!")
-                with Timer(f"Notify Listeners for Setup change, Setup={self._setup_id}"):
-                    self._control_server.notify_listeners(
-                        EVENT_ID.SETUP, {"event_type": "new_setup", "setup_id": self._setup_id}
-                    )
 
             with EventPublisher() as pub:
                 pub.publish(
@@ -952,12 +941,6 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
             logger.info(f"New Setup was submitted and loaded: {setup_id=}")
             self._sut_name = self._setup.camera.ID.lower()
             save_last_setup_id(setup_id)
-            if self._control_server:
-                logger.info("Notifying listeners for a new Setup!")
-                with Timer(f"Notify Listeners for Setup change, Setup={self._setup_id}"):
-                    self._control_server.notify_listeners(
-                        EVENT_ID.SETUP, {"event_type": "new_setup", "setup_id": setup_id}
-                    )
 
             with EventPublisher() as pub:
                 pub.publish(
@@ -979,10 +962,6 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         _, setup_id = disentangle_filename(last_file.name)
 
         return int(setup_id) + 1
-
-    def get_listener_names(self):
-        """Returns the names of the control servers that are listening for a new Setup."""
-        return self._control_server.get_listener_names()
 
 
 class ConfigurationManagerCommand(ClientServerCommand):
@@ -1119,7 +1098,6 @@ def get_status():
                     Monitoring port: {cm.get_monitoring_port()}
                     Commanding port: {cm.get_commanding_port()}
                     Service port: {cm.get_service_port()}
-                    Listeners: {", ".join(cm.get_listener_names())}
                 """
             )
     except ConnectionError as exc:
