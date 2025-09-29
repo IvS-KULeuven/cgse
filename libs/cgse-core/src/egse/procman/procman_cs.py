@@ -109,7 +109,6 @@ class ProcessManagerControlServer(ControlServer):
         unregister_from_storage_manager(origin=self.get_storage_mnemonic())
 
     def after_serve(self):
-
         self.deregister_service()
 
 
