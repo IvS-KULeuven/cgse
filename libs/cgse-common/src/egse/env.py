@@ -573,6 +573,15 @@ def print_env():
         console.print(f"  {get_local_settings_env_name():{col_width}s}: {get_local_settings_path()}")
 
 
+def bool_env(var_name: str) -> bool:
+    """Return True if the environment variable is set to 1, true, yes, or on. All case-insensitive."""
+
+    if value := os.getenv(var_name):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+
+    return False
+
+
 @contextlib.contextmanager
 def env_var(**kwargs: str | int | float | bool | None):
     """

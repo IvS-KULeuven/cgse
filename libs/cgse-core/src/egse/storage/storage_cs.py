@@ -6,6 +6,11 @@ The Storage manager is implemented as a standard control server.
 
 """
 
+__all__ = [
+    "StorageControlServer",
+    "StorageProxy",
+]
+
 import logging
 import multiprocessing
 import sys

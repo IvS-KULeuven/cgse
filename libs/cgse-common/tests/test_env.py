@@ -2,6 +2,7 @@ import logging
 
 import pytest
 
+from egse.env import bool_env
 from egse.env import get_conf_repo_location
 from egse.env import get_project_name
 from egse.env import get_site_id
@@ -207,3 +208,13 @@ def test_main(capsys):
         assert "PYTHONSTARTUP=my_script.py" in captured.out  # noqa
 
     _LOGGER.info(f"{get_project_name() = }, {get_site_id() = }")
+
+
+def test_bool_env():
+    for option in ["1", "true", "True", "TRUE", "on", "On", "ON", "yes", "Yes", "YES"]:
+        with env_var(VERBOSE_DEBUG=option):
+            assert bool_env("VERBOSE_DEBUG")
+
+    for option in ["0", "false", "no", "off"]:
+        with env_var(VERBOSE_DEBUG=option):
+            assert not bool_env("VERBOSE_DEBUG")

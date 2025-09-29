@@ -13,7 +13,7 @@ settings = Settings.load("Notify Hub")
 
 PROCESS_NAME = settings.get("PROCESS_NAME", "nh_cs")
 SERVICE_ID = settings.get("SERVICE_ID", "nh_cs_1")
-SERVICE_TYPE = settings.get("SERVICE_TYPE", "NOTIFY_HUB")
+SERVICE_TYPE = settings.get("SERVICE_TYPE", "NH_CS")
 
 # Default ports that are assigned to PUSH-PULL, PUB-SUB, ROUTER-DEALER protocols of the notification hub.
 # The actual ports are defined in the Settings.yaml, use local settings to change them.
