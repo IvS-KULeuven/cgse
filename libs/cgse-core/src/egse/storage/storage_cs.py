@@ -5,6 +5,7 @@ from any component in the Common-EGSE.
 The Storage manager is implemented as a standard control server.
 
 """
+
 __all__ = [
     "StorageControlServer",
     "StorageProxy",
