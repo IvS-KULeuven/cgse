@@ -47,6 +47,8 @@ class TcuControlServer(ControlServer):
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
+        self.register_service("tcu_control_server")
+
     def get_communication_protocol(self) -> str:
         """Returns the communication protocol used by the Ariel TCU Control Server.
 
@@ -166,7 +168,7 @@ def stop():
     """Sends a `quit_server` command to the Ariel TCU Control Server."""
 
     with RegistryClient() as reg:
-        service = reg.discover_service("TCU")
+        service = reg.discover_service("tcu_control_server")
         rich.print("service = ", service)
 
         if service:
@@ -188,7 +190,7 @@ def status():
     """Requests the status information from the Ariel TCU Control Server."""
 
     with RegistryClient() as reg:
-        service = reg.discover_service("TCU")
+        service = reg.discover_service("tcu_control_server")
 
         if service:
             protocol = service.get("protocol", "tcp")
