@@ -6,23 +6,9 @@ import sys
 import rich
 import typer
 
-from egse.env import get_log_file_location
-from egse.system import all_logging_disabled
+from egse.system import all_logging_disabled, redirect_output_to_log
 
 tcu = typer.Typer(name="tcu", help="Ariel Telescope Control Unit (TCU)", no_args_is_help=True)
-
-
-def redirect_output_to(output_fn: str) -> TextIO:
-    """Opens a file in the log folder where process output will be re-directed to."""
-
-    location = get_log_file_location()
-    output_path = Path(location, output_fn).expanduser()
-
-    rich.print(f"Output will be redirected to {output_path!s}")
-
-    out = open(output_path, "w")
-
-    return out
 
 
 @tcu.command(name="start")
@@ -37,7 +23,7 @@ def start_tcu(
     """
 
     rich.print(f"Starting the Ariel TCU Control Server - {simulator = }")
-    out = redirect_output_to("tcu_cs.start.out")
+    out = redirect_output_to_log("tcu_cs.start.log")
 
     cmd = [sys.executable, "-m", "egse.ariel.tcu.tcu_cs", "start"]
     if simulator:
@@ -51,7 +37,7 @@ def stop_tcu():
     """Stops the Ariel TCU Control Server."""
 
     rich.print("Stopping the Ariel TCU Control Server")
-    out = redirect_output_to("tcu_cs.stop.out")
+    out = redirect_output_to_log("tcu_cs.stop.log")
 
     cmd = [sys.executable, "-m", "egse.ariel.tcu.tcu_cs", "stop"]
     subprocess.Popen(cmd, stdout=out, stderr=out, stdin=subprocess.DEVNULL, close_fds=True)
