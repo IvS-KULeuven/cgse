@@ -177,6 +177,8 @@ HOSTNAME = settings.get("HOSTNAME", "localhost")
 COMMANDING_PORT = settings.get("COMMANDING_PORT", 0)
 SERVICE_PORT = settings.get("SERVICE_PORT", 0)
 MONITORING_PORT = settings.get("MONITORING_PORT", 0)
+STORAGE_MNEMONIC = settings.get("STORAGE_MNEMONIC", "CM")
+SERVICE_TYPE = settings.get("SERVICE_TYPE", "cm_cs")
 
 # CM_SETUP_ID = Gauge("CM_SETUP_ID", 'Setup ID')
 # CM_TEST_ID = Gauge("CM_TEST_ID", 'Test ID')
