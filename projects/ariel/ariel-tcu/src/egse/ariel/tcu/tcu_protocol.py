@@ -50,7 +50,7 @@ class TcuProtocol(CommandProtocol):
         self.load_commands(DEVICE_SETTINGS.Commands, TcuCommand, TcuInterface)
         self.build_device_method_lookup_table(self.tcu)
 
-        self.metrics = define_metrics("TCU")
+        # self.metrics = define_metrics("TCU")
 
     def get_bind_address(self) -> str:
         """Returns the bind address for the Ariel TCU Control Server.
