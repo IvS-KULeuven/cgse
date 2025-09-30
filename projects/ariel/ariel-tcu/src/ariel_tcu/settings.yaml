@@ -17,4 +17,4 @@ Ariel TCU Control Server:
     SERVICE_PORT:                     0     # Port on which the controller listens for configuration and administration (REQ-REP)
     METRICS_PORT:                     0
     STORAGE_MNEMONIC:               TCU
-    TIMEOUT:                         90
+    SERVICE_TYPE:                TCU_CS

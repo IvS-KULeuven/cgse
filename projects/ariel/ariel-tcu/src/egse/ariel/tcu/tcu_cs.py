@@ -1,3 +1,5 @@
+import multiprocessing
+import logging
 import sys
 from typing import Annotated
 
@@ -5,7 +7,16 @@ import zmq
 import typer
 import rich
 
-from egse.ariel.tcu import COMMANDING_PORT, HOSTNAME, PROTOCOL, SERVICE_PORT, MONITORING_PORT, STORAGE_MNEMONIC
+from egse.ariel.tcu import (
+    COMMANDING_PORT,
+    HOSTNAME,
+    PROTOCOL,
+    SERVICE_PORT,
+    MONITORING_PORT,
+    STORAGE_MNEMONIC,
+    PROCESS_NAME,
+    SERVICE_TYPE,
+)
 from egse.control import is_control_server_active, ControlServer
 from egse.registry.client import RegistryClient
 from egse.services import ServiceProxy
@@ -13,6 +24,8 @@ from egse.storage import store_housekeeping_information
 from egse.zmq_ser import connect_address, get_port_number
 from egse.ariel.tcu.tcu_protocol import TcuProtocol
 from egse.ariel.tcu.tcu import TcuProxy
+
+logger = logging.getLogger("egse.ariel.tcu")
 
 
 def is_tcu_cs_active(timeout: float = 0.5) -> bool:
@@ -34,6 +47,12 @@ class TcuControlServer(ControlServer):
     def __init__(self, simulator: bool = False):
         super().__init__()
 
+        multiprocessing.current_process().name = PROCESS_NAME
+
+        self.logger = logger
+        self.service_name = PROCESS_NAME
+        self.service_type = SERVICE_TYPE
+
         self.device_protocol = TcuProtocol(self, simulator=simulator)
 
         self.logger.info(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()}")
@@ -42,7 +61,7 @@ class TcuControlServer(ControlServer):
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
-        self.register_service("tcu_control_server")
+        self.register_service(SERVICE_TYPE)
 
     def get_communication_protocol(self) -> str:
         """Returns the communication protocol used by the Ariel TCU Control Server.
@@ -160,7 +179,7 @@ def stop():
     """Sends a `quit_server` command to the Ariel TCU Control Server."""
 
     with RegistryClient() as reg:
-        service = reg.discover_service("tcu_control_server")
+        service = reg.discover_service(SERVICE_TYPE)
         rich.print("service = ", service)
 
         if service:
@@ -182,7 +201,7 @@ def status():
     """Requests the status information from the Ariel TCU Control Server."""
 
     with RegistryClient() as reg:
-        service = reg.discover_service("tcu_control_server")
+        service = reg.discover_service(SERVICE_TYPE)
 
         if service:
             protocol = service.get("protocol", "tcp")
