@@ -187,7 +187,7 @@ async def send_request(request, timeout=5.0):
         logger.debug("Request sent, waiting for response")
 
         # Wait for response with poll and timeout
-        if await socket.poll(timeout=timeout * 1000) == 0:
+        if await socket.poll(timeout=int(timeout * 1000)) == 0:
             logger.error(f"Timeout polling for response to {request.get('action')}")
             raise TimeoutError(f"Timeout waiting for response to {request.get('action')}")
 
