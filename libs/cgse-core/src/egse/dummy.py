@@ -35,15 +35,11 @@ and stopped with:
 
 from __future__ import annotations
 
-import contextlib
 import multiprocessing
 import random
 import select
 import socket
 import sys
-import threading
-import time
-from functools import partial
 
 import typer
 import zmq
@@ -62,7 +58,6 @@ from egse.proxy import Proxy
 from egse.system import SignalCatcher
 from egse.system import attrdict
 from egse.system import format_datetime
-from egse.system import type_name
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
 
@@ -96,7 +91,7 @@ ctrl_settings = attrdict(
         "SERVICE_PORT": 4444,
         "MONITORING_PORT": 4445,
         "PROTOCOL": "tcp",
-        "TIMEOUT": 10_000,  # milliseconds
+        "TIMEOUT": 10.0,
         "HK_DELAY": 1.0,
     }
 )
