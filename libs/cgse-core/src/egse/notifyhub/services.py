@@ -111,7 +111,7 @@ class AsyncEventSubscriber:
 
         while self.running:
             try:
-                if await self.subscriber.poll(timeout=1000):
+                if await self.subscriber.poll(timeout=1000):  # timeout in milliseconds
                     topic, message_bytes = await self.subscriber.recv_multipart()
 
                     event_type = topic.decode()
@@ -269,7 +269,7 @@ class EventSubscriber:
         return self.subscriber
 
     def poll(self, timeout=1000):
-        return self.subscriber.poll(timeout=timeout)
+        return self.subscriber.poll(timeout=timeout)  # timeout in milliseconds
 
     def handle_event(self, return_event_data: bool = False) -> dict:
         topic, message_bytes = self.subscriber.recv_multipart()

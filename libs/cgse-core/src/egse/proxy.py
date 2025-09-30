@@ -31,7 +31,7 @@ def set_docstring(func, cmd):
     return wrap_func
 
 
-REQUEST_TIMEOUT = 30 * 1000  # timeout in millisecond
+REQUEST_TIMEOUT = 30.0  # timeout in seconds
 REQUEST_RETRIES = 0
 
 
@@ -93,10 +93,13 @@ class ControlServerConnectionInterface:
 
 
 class BaseProxy(ControlServerConnectionInterface):
-    def __init__(self, endpoint: str, timeout: int = REQUEST_TIMEOUT):
+    def __init__(self, endpoint: str, timeout: float = REQUEST_TIMEOUT):
         """
-        The `timeout` argument specifies the number of milliseconds to wait for a reply from the
-        control server.
+        The endpoint is a string that is constructed from the protocol, hostname
+         and port number and has the format: `protocol://hostname:port`.
+
+        The `timeout` argument specifies the number of fractional seconds to wait
+        for a reply from the control server.
         """
 
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -150,7 +153,7 @@ class BaseProxy(ControlServerConnectionInterface):
     def is_cs_connected(self) -> bool:
         return self.ping()
 
-    def send(self, data, retries: int = REQUEST_RETRIES, timeout: int = None):
+    def send(self, data, retries: int = REQUEST_RETRIES, timeout: float | None = None):
         """
         Sends a command to the control server and waits for a response.
 
@@ -166,14 +169,14 @@ class BaseProxy(ControlServerConnectionInterface):
         Args:
             data (str): the command that is sent to the control server, usually a
                 string, but that is not enforced.
-            timeout (int): the time to wait for a reply [in milliseconds]
+            timeout (int): the time to wait for a reply [in seconds]
             retries (int): the number of time we should retry to send the message
 
         Returns:
             response: the response from the control server or ``None`` when there was
                 a problem or a timeout.
         """
-        timeout = timeout or self._timeout
+        timeout_ms = int((timeout or self._timeout) * 1000)
 
         pickle_string = pickle.dumps(data)
 
@@ -192,7 +195,7 @@ class BaseProxy(ControlServerConnectionInterface):
         self._socket.send(pickle_string)
 
         while True:
-            socks = dict(self._poller.poll(timeout))
+            socks = dict(self._poller.poll(timeout_ms))
 
             if self._socket in socks and socks[self._socket] == zmq.POLLIN:
                 pickle_string = self._socket.recv()
@@ -223,7 +226,7 @@ class BaseProxy(ControlServerConnectionInterface):
                 self._socket.send(pickle_string)
 
     def ping(self):
-        return_code = self.send("Ping", retries=0, timeout=1000)
+        return_code = self.send("Ping", retries=0, timeout=1.0)
         self._logger.log(0, f"Check if control server is available: Ping - {return_code}")
         return return_code == "Pong"
 
@@ -278,7 +281,7 @@ class Proxy(BaseProxy, ControlServerConnectionInterface):
     during initialization, a ConnectionError will be raised.
     """
 
-    def __init__(self, endpoint, timeout: int = REQUEST_TIMEOUT):
+    def __init__(self, endpoint, timeout: float = REQUEST_TIMEOUT):
         """
         During initialization, the Proxy will connect to the control server and send a
         handshaking `Ping` command. When that succeeds the Proxy will request and load the
@@ -287,7 +290,7 @@ class Proxy(BaseProxy, ControlServerConnectionInterface):
         can fix the problem with the control server and call `connect_cs()`, followed by a call to
         `load_commands()`.
 
-        The `timeout` argument specifies the number of milliseconds
+        The `timeout` argument specifies the number of seconds
         """
 
         super().__init__(endpoint, timeout)

@@ -158,7 +158,7 @@ class FileBasedSignaling:
         """Terminate the monitoring loop thread."""
         self.running = False
         if self.thread.is_alive():
-            self.thread.join(timeout=1)
+            self.thread.join(timeout=1.0)
 
 
 def create_signal_command_file(signal_dir: Path, service_id: str, command: dict) -> None:
