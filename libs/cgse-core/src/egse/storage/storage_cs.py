@@ -32,8 +32,16 @@ from egse.logger import remote_logging
 from egse.process import SubProcess
 from egse.registry.client import RegistryClient
 from egse.services import ServiceProxy
-from egse.settings import Settings
-from egse.storage import StorageProtocol
+from egse.storage import (
+    StorageProtocol,
+    PROCESS_NAME,
+    SERVICE_TYPE,
+    PROTOCOL,
+    COMMANDING_PORT,
+    SERVICE_PORT,
+    MONITORING_PORT,
+    HOSTNAME,
+)
 from egse.storage import StorageProxy
 from egse.storage import cycle_daily_files
 from egse.zmq_ser import get_port_number
@@ -41,16 +49,6 @@ from egse.zmq_ser import get_port_number
 # Use explicit name here otherwise the logger will probably be called __main__
 
 logger = logging.getLogger("egse.storage")
-
-settings = Settings.load("Storage Manager Control Server")
-
-PROCESS_NAME = settings.get("PROCESS_NAME", "cm_cs")
-PROTOCOL = settings.get("PROTOCOL", "tcp")
-HOSTNAME = settings.get("HOSTNAME", "localhost")
-COMMANDING_PORT = settings.get("COMMANDING_PORT", 0)
-SERVICE_PORT = settings.get("SERVICE_PORT", 0)
-MONITORING_PORT = settings.get("MONITORING_PORT", 0)
-
 SITE_ID = get_site_id()
 
 
@@ -66,7 +64,7 @@ class StorageControlServer(ControlServer):
 
         self.logger = logger
         self.service_name = PROCESS_NAME
-        self.service_type = settings.SERVICE_TYPE
+        self.service_type = SERVICE_TYPE
 
         self.device_protocol = StorageProtocol(self)
 
@@ -76,7 +74,7 @@ class StorageControlServer(ControlServer):
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
-        self.register_service(service_type=settings.SERVICE_TYPE)
+        self.register_service(service_type=SERVICE_TYPE)
 
         # NOTE:
         #     Since the CM CS is started after the SM CS in the normal startup sequence, delay the task to load
@@ -179,7 +177,7 @@ def stop():
 
     if COMMANDING_PORT == 0:
         with RegistryClient() as reg:
-            service = reg.discover_service(settings.SERVICE_TYPE)
+            service = reg.discover_service(SERVICE_TYPE)
             rich.print("service = ", service)
             if service:
                 hostname = service["host"]

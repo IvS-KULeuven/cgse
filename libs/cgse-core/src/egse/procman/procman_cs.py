@@ -21,22 +21,22 @@ from egse.process import SubProcess
 from egse.procman.procman_protocol import ProcessManagerProtocol
 from egse.registry.client import RegistryClient
 from egse.services import ServiceProxy
-from egse.settings import Settings
+from egse.procman import (
+    PROCESS_NAME,
+    SERVICE_TYPE,
+    PROTOCOL,
+    COMMANDING_PORT,
+    SERVICE_PORT,
+    MONITORING_PORT,
+    HOSTNAME,
+    STORAGE_MNEMONIC,
+)
 from egse.storage import store_housekeeping_information
 from egse.zmq_ser import get_port_number
 
 # Use explicit name here otherwise the logger will probably be called __main__
 
 logger = logging.getLogger("egse.procman")
-
-settings = Settings.load("Process Manager Control Server")
-
-PROCESS_NAME = settings.get("PROCESS_NAME", "cm_cs")
-PROTOCOL = settings.get("PROTOCOL", "tcp")
-HOSTNAME = settings.get("HOSTNAME", "localhost")
-COMMANDING_PORT = settings.get("COMMANDING_PORT", 0)
-SERVICE_PORT = settings.get("SERVICE_PORT", 0)
-MONITORING_PORT = settings.get("MONITORING_PORT", 0)
 
 
 class ProcessManagerControlServer(ControlServer):
@@ -47,7 +47,7 @@ class ProcessManagerControlServer(ControlServer):
 
         self.logger = logger
         self.service_name = PROCESS_NAME
-        self.service_type = settings.SERVICE_TYPE
+        self.service_type = SERVICE_TYPE
 
         self.device_protocol = ProcessManagerProtocol(self)
 
@@ -57,7 +57,7 @@ class ProcessManagerControlServer(ControlServer):
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
-        self.register_service(service_type=settings.SERVICE_TYPE)
+        self.register_service(service_type=SERVICE_TYPE)
 
         self.set_hk_delay(10.0)
 
@@ -76,10 +76,7 @@ class ProcessManagerControlServer(ControlServer):
         return get_port_number(self.dev_ctrl_mon_sock) or MONITORING_PORT
 
     def get_storage_mnemonic(self):
-        try:
-            return settings.STORAGE_MNEMONIC
-        except AttributeError:
-            return "PM"
+        return STORAGE_MNEMONIC
 
     def is_storage_manager_active(self):
         from egse.storage import is_storage_manager_active

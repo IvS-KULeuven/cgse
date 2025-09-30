@@ -22,12 +22,16 @@ from rich.console import Console
 
 from egse.confman import ConfigurationManagerProtocol
 from egse.confman import ConfigurationManagerProxy
-from egse.confman import PROCESS_NAME
-from egse.confman import PROTOCOL
-from egse.confman import HOSTNAME
-from egse.confman import COMMANDING_PORT
-from egse.confman import SERVICE_PORT
-from egse.confman import MONITORING_PORT
+from egse.confman import (
+    PROCESS_NAME,
+    PROTOCOL,
+    HOSTNAME,
+    COMMANDING_PORT,
+    SERVICE_PORT,
+    MONITORING_PORT,
+    STORAGE_MNEMONIC,
+    SERVICE_TYPE,
+)
 
 from egse.control import ControlServer
 from egse.env import get_conf_data_location
@@ -66,7 +70,7 @@ class ConfigurationManagerControlServer(ControlServer):
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
-        self.register_service(service_type=settings.SERVICE_TYPE)
+        self.register_service(service_type=SERVICE_TYPE)
 
         self.set_hk_delay(10.0)
 
@@ -85,10 +89,7 @@ class ConfigurationManagerControlServer(ControlServer):
         return get_port_number(self.dev_ctrl_mon_sock) or MONITORING_PORT
 
     def get_storage_mnemonic(self):
-        try:
-            return settings.STORAGE_MNEMONIC
-        except AttributeError:
-            return "CM"
+        return STORAGE_MNEMONIC
 
     def is_storage_manager_active(self):
         from egse.storage import is_storage_manager_active

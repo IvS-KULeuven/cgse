@@ -25,10 +25,14 @@ COMMAND_SETTINGS = Settings.load(location=HERE, filename="procman.yaml")
 
 PROXY_TIMEOUT = 10.0  # don't wait longer than 10s
 
+PROCESS_NAME = settings.get("PROCESS_NAME", "pm_cs")
 SERVICE_TYPE = settings.get("SERVICE_TYPE", "pm_cs")
 PROTOCOL = settings.get("PROTOCOL", "tcp")
 HOSTNAME = settings.get("HOSTNAME", "localhost")
 COMMANDING_PORT = settings.get("COMMANDING_PORT", 0)  # dynamically assigned by the system if 0
+SERVICE_PORT = settings.get("SERVICE_PORT", 0)
+MONITORING_PORT = settings.get("MONITORING_PORT", 0)
+STORAGE_MNEMONIC = settings.get("STORAGE_MNEMONIC", "PM")
 
 
 def is_process_manager_active(timeout: float = 0.5) -> bool:
