@@ -20,7 +20,7 @@ def test_influxdb_access():
     influxdb = get_metrics_repo("influxdb", {"host": "http://localhost:8181", "database": "ARIEL", "token": token})
     influxdb.connect()
 
-    result = influxdb.query("SELECT * FROM cm ORDER BY TIME DESC LIMIT 20", mode="pandas")
+    result = influxdb.query("SELECT * FROM cm WHERE time >= now() - INTERVAL '2 days' ORDER BY TIME DESC LIMIT 20", mode="pandas")
     print(result)
     assert isinstance(result, pd.DataFrame)
 
