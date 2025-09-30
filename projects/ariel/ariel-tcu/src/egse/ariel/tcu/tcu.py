@@ -18,22 +18,21 @@ from enum import IntEnum, StrEnum
 
 import crcmod
 from serial.tools import list_ports
+
+from egse.ariel.tcu import PROXY_TIMEOUT
 from egse.device import DeviceInterface
 from egse.mixin import dynamic_command, CommandType, DynamicCommandMixin
 from egse.proxy import DynamicProxy
 from egse.ariel.tcu.tcu_devif import TcuDeviceInterface
 from egse.registry.client import RegistryClient
-from egse.settings import Settings
 from egse.zmq_ser import connect_address
 
 TCU_LOGICAL_ADDRESS = "03"  # RD02 -> Fig. 10
 DATA_LENGTH = "0004"  # Vladimiro's code
 
-CTRL_SETTINGS = Settings.load("Ariel TCU Control Server")
-
 
 class PacketType(StrEnum):
-    """Packet types (read/write). """
+    """Packet types (read/write)."""
 
     W = WRITE = "20"  # Write command (RD02 -> Sect. 4.1.1)
     R = READ = "40"  # Read command (RD02 -> Sect. 4.1.2)
@@ -357,7 +356,7 @@ def process_m2md_kwargs(kv_pairs: dict) -> dict:
 
 
 def process_sw_rs_xx_sw_rise_kwargs(kv_pairs: dict) -> dict:
-    """ Updates the command identifier for the `sw_rs_XX_sw_rise` command for the given position.
+    """Updates the command identifier for the `sw_rs_XX_sw_rise` command for the given position.
 
     This is used to determine the internal command identifier for the `sw_rs_XX_sw_rise` command for the given position.
     """
@@ -366,7 +365,7 @@ def process_sw_rs_xx_sw_rise_kwargs(kv_pairs: dict) -> dict:
 
 
 def process_sw_rs_xx_sw_fall_kwargs(kv_pairs: dict) -> dict:
-    """ Updates the command identifier for the `sw_rs_xx_sw_fall` command for the given position.
+    """Updates the command identifier for the `sw_rs_xx_sw_fall` command for the given position.
 
     This is used to determine the internal command identifier for the `sw_rs_xx_sw_fall` command for the given position.
     """
@@ -393,7 +392,7 @@ def _process_sw_rs_xx_sw_kwargs(kv_pairs: dict, m2md_cmd_id: M2MDCommandIdentifi
 
 
 def process_probe_kwargs_currentn(kv_pairs: dict) -> dict:
-    """ Updates the command identifier for the `tsm_adc_value_XX_currentn` command for the given probe.
+    """Updates the command identifier for the `tsm_adc_value_XX_currentn` command for the given probe.
 
     This is used to determine the internal command identifier for the `tsm_adc_value_XX_currentn` command for the given
     probe.
@@ -403,7 +402,7 @@ def process_probe_kwargs_currentn(kv_pairs: dict) -> dict:
 
 
 def process_probe_kwargs_biasn(kv_pairs: dict) -> dict:
-    """ Updates the command identifier for the `tsm_adc_value_XX_biasn` command for the given probe.
+    """Updates the command identifier for the `tsm_adc_value_XX_biasn` command for the given probe.
 
     This is used to determine the internal command identifier for the `tsm_adc_value_XX_biasn` command for the given
     probe.
@@ -413,7 +412,7 @@ def process_probe_kwargs_biasn(kv_pairs: dict) -> dict:
 
 
 def process_probe_kwargs_currentp(kv_pairs: dict) -> dict:
-    """ Updates the command identifier for the `tsm_adc_value_XX_currentp` command for the given probe.
+    """Updates the command identifier for the `tsm_adc_value_XX_currentp` command for the given probe.
 
     This is used to determine the internal command identifier for the `tsm_adc_value_XX_currentp` command for the given
     probe.
@@ -423,7 +422,7 @@ def process_probe_kwargs_currentp(kv_pairs: dict) -> dict:
 
 
 def process_probe_kwargs_biasp(kv_pairs: dict) -> dict:
-    """ Updates the command identifier for the `tsm_adc_value_XX_biasp` command for the given probe.
+    """Updates the command identifier for the `tsm_adc_value_XX_biasp` command for the given probe.
 
     This is used to determine the internal command identifier for the `tsm_adc_value_XX_biasp` command for the given
     probe.
@@ -535,7 +534,7 @@ def get_all_serial_ports() -> list:
     return list_ports.comports()
 
 
-counter = 0     # Keep track of the transaction identifier (incremented after each command call)
+counter = 0  # Keep track of the transaction identifier (incremented after each command call)
 
 
 def increment_counter():
@@ -672,7 +671,7 @@ class TcuInterface(DeviceInterface):
         post_cmd=increment_counter,
     )
     def ope_mng_command(self, axis: CommandAddress, cargo2: str = 0):
-        """ Commands the action to the SENER motor driver IP core.
+        """Commands the action to the SENER motor driver IP core.
 
         Args:
             axis (CommandAddress): Axis to which the command is sent.
@@ -1178,7 +1177,7 @@ class TcuInterface(DeviceInterface):
         post_cmd=increment_counter,
     )
     def tsm_adc_value_xx_currentp(self, probe: int):
-        """ Returns the positive current to polarise the given thermistor.
+        """Returns the positive current to polarise the given thermistor.
 
         Args:
             probe (int): Thermistor identifier.
@@ -1197,7 +1196,7 @@ class TcuInterface(DeviceInterface):
         post_cmd=increment_counter,
     )
     def tsm_adc_value_xx_biasp(self, probe: int):
-        """ Returns the voltage measured on the given thermistor biased with positive current.
+        """Returns the voltage measured on the given thermistor biased with positive current.
 
         Args:
             probe (int): Thermistor identifier.
@@ -1215,7 +1214,7 @@ class TcuInterface(DeviceInterface):
         post_cmd=increment_counter,
     )
     def tsm_acq_counter(self):
-        """ Reads the number of ADC measurement sequences that have been made.
+        """Reads the number of ADC measurement sequences that have been made.
 
         Returns:
             Number of ADC measurement sequences that have been made.
@@ -1302,7 +1301,7 @@ class TcuProxy(DynamicProxy, TcuInterface):
                 hostname = service["host"]
                 port = service["port"]
 
-                super().__init__(connect_address(protocol, hostname, port))
+                super().__init__(connect_address(protocol, hostname, port), timeout=PROXY_TIMEOUT)
 
             else:
                 raise RuntimeError(f"No service registered as tcu_control_server")
