@@ -22,7 +22,8 @@ LOGGER = logging.getLogger("egse.procman")
 
 settings = Settings.load("Process Manager Control Server")
 COMMAND_SETTINGS = Settings.load(location=HERE, filename="procman.yaml")
-PROXY_TIMEOUT = 10_000
+
+PROXY_TIMEOUT = 10.0  # don't wait longer than 10s
 
 SERVICE_TYPE = settings.get("SERVICE_TYPE", "pm_cs")
 PROTOCOL = settings.get("PROTOCOL", "tcp")
@@ -394,7 +395,11 @@ class ProcessManagerProxy(Proxy, ProcessManagerInterface):
     """Proxy for process management, used to connect to the Process Manager Control Server and send commands remotely."""
 
     def __init__(
-        self, protocol: str = PROTOCOL, hostname: str = HOSTNAME, port: int = COMMANDING_PORT, timeout=PROXY_TIMEOUT
+            self,
+            protocol: str = PROTOCOL,
+            hostname: str = HOSTNAME,
+            port: int = COMMANDING_PORT,
+            timeout: float = PROXY_TIMEOUT
     ):
         """
         Initialisation of a new Proxy for Process Management.
@@ -406,6 +411,7 @@ class ProcessManagerProxy(Proxy, ProcessManagerInterface):
             protocol (str): Transport protocol
             hostname (str): Location of the control server (IP address)
             port (int): TCP port on which the Control Server is listening for commands
+            timeout (float): number of fractional seconds before a timeout occurs
         """
 
         endpoint = get_endpoint(settings.SERVICE_TYPE, protocol, hostname, port)

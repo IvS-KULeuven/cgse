@@ -227,7 +227,7 @@ class ServiceProxy(Proxy, ServiceInterface):
         protocol: str = "tcp",
         hostname: str = None,
         port: int = None,
-        timeout: int = REQUEST_TIMEOUT,
+        timeout: float = REQUEST_TIMEOUT,
     ):
         """
         The Service Proxy class is used to send service commands to the control server.
@@ -237,7 +237,7 @@ class ServiceProxy(Proxy, ServiceInterface):
             protocol: the transport protocol [default: tcp]
             hostname: the IP address of the control server
             port: the port on which the control server is listening for service commands
-            timeout: number of milliseconds before a timeout is triggered
+            timeout: number of fractional seconds before a timeout is triggered
         """
 
         if hostname is None or port is None:

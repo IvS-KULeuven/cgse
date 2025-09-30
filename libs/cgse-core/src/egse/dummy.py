@@ -172,7 +172,7 @@ class DummyProxy(Proxy, DummyInterface):
         protocol: the transport protocol [default is taken from settings file]
         hostname: location of the control server (IP address) [default is taken from settings file]
         port: TCP port on which the control server is listening for commands [default is taken from settings file]
-        timeout: a socket timeout in milliseconds
+        timeout: a socket timeout in seconds
     """
 
     def __init__(
@@ -180,7 +180,7 @@ class DummyProxy(Proxy, DummyInterface):
         protocol: str = ctrl_settings.PROTOCOL,
         hostname: str = ctrl_settings.HOSTNAME,
         port: int = ctrl_settings.COMMANDING_PORT,
-        timeout: int = ctrl_settings.TIMEOUT,
+        timeout: float = ctrl_settings.TIMEOUT,
     ):
         super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
 

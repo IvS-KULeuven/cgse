@@ -181,7 +181,7 @@ MONITORING_PORT = settings.get("MONITORING_PORT", 0)
 # CM_SETUP_ID = Gauge("CM_SETUP_ID", 'Setup ID')
 # CM_TEST_ID = Gauge("CM_TEST_ID", 'Test ID')
 
-PROXY_TIMEOUT = 10_000  # don't wait longer than 10s by default
+PROXY_TIMEOUT = 10.0  # don't wait longer than 10s by default
 
 
 def _push_setup_to_repo(filename: str, commit_msg: str) -> Failure | Success:
@@ -982,6 +982,7 @@ class ConfigurationManagerProxy(Proxy, ConfigurationManagerInterface):
             from settings file]
         port: TCP port on which the control server is listening for commands
             [default is taken from settings file]
+        timeout: number of fractional seconds before a timeout is triggered
     """
 
     def __init__(
