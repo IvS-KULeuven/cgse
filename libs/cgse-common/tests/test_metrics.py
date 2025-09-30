@@ -11,8 +11,9 @@ def test_get_metrics_repo():
 
     # Don't use a too large time interval here, or you will get an error like:
     # 'External error: Query would exceed file limit of 432 parquet files'
-    result = influxdb.query("SELECT * FROM cm WHERE time >= now() - INTERVAL '2 days' ORDER BY TIME DESC LIMIT 20",
-                            mode="pandas")
+    result = influxdb.query(
+        "SELECT * FROM cm WHERE time >= now() - INTERVAL '2 days' ORDER BY TIME DESC LIMIT 20", mode="pandas"
+    )
     print(result)
 
     # result = influxdb.query("SHOW TABLES;")
