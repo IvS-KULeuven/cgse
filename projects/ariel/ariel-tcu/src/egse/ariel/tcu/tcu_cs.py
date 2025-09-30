@@ -140,7 +140,7 @@ app = typer.Typer()
 @app.command()
 def start(
     simulator: Annotated[
-        bool, typer.Option("--simulator", "--sim", help="start the hexapod PUNA Control Server in simulator mode")
+        bool, typer.Option("--simulator", "--sim", help="start the Ariel TCU Control Server in simulator mode")
     ] = False,
 ):
     """Starts the Ariel TCU Control Server."""
