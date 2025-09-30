@@ -22,6 +22,7 @@ from egse.device import DeviceInterface
 from egse.mixin import dynamic_command, CommandType, DynamicCommandMixin
 from egse.proxy import DynamicProxy
 from egse.ariel.tcu.tcu_devif import TcuDeviceInterface
+from egse.registry.client import RegistryClient
 from egse.settings import Settings
 from egse.zmq_ser import connect_address
 
@@ -1280,13 +1281,7 @@ class TcuProxy(DynamicProxy, TcuInterface):
     The TcuProxy class is used to connect to the TCU Control Server and send commands to the TCU Hardware Controller remotely.
     """
 
-    def __init__(
-        self,
-        protocol: str = CTRL_SETTINGS.PROTOCOL,
-        hostname: str = CTRL_SETTINGS.HOSTNAME,
-        port: int = CTRL_SETTINGS.COMMANDING_PORT,
-        timeout: int = CTRL_SETTINGS.TIMEOUT
-    ):
+    def __init__(self):
         """Initialisation of a DAQ6510Proxy.
 
         Args:
@@ -1297,4 +1292,17 @@ class TcuProxy(DynamicProxy, TcuInterface):
             timeout (int): Timeout by which to establish the connection [ms]
         """
 
-        super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
+        # super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
+
+        with RegistryClient() as reg:
+            service = reg.discover_service("tcu_control_server")
+
+            if service:
+                protocol = service.get("protocol", "tcp")
+                hostname = service["host"]
+                port = service["port"]
+
+                super().__init__(connect_address(protocol, hostname, port))
+
+            else:
+                raise RuntimeError(f"No service registered as tcu_control_server")
