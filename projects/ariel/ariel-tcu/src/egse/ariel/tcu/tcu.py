@@ -19,7 +19,7 @@ from enum import IntEnum, StrEnum
 import crcmod
 from serial.tools import list_ports
 
-from egse.ariel.tcu import PROXY_TIMEOUT
+from egse.ariel.tcu import PROXY_TIMEOUT, SERVICE_TYPE
 from egse.device import DeviceInterface
 from egse.mixin import dynamic_command, CommandType, DynamicCommandMixin
 from egse.proxy import DynamicProxy
@@ -1294,7 +1294,7 @@ class TcuProxy(DynamicProxy, TcuInterface):
         # super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
 
         with RegistryClient() as reg:
-            service = reg.discover_service("tcu_control_server")
+            service = reg.discover_service(SERVICE_TYPE)
 
             if service:
                 protocol = service.get("protocol", "tcp")
@@ -1304,4 +1304,4 @@ class TcuProxy(DynamicProxy, TcuInterface):
                 super().__init__(connect_address(protocol, hostname, port), timeout=PROXY_TIMEOUT)
 
             else:
-                raise RuntimeError(f"No service registered as tcu_control_server")
+                raise RuntimeError(f"No service registered as {SERVICE_TYPE}")

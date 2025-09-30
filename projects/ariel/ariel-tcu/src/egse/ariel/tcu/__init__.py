@@ -11,7 +11,7 @@ HOSTNAME = settings.get("HOSTNAME", "localhost")
 COMMANDING_PORT = settings.get("COMMANDING_PORT", 0)
 SERVICE_PORT = settings.get("SERVICE_PORT", 0)
 MONITORING_PORT = settings.get("MONITORING_PORT", 0)
-SERVICE_TYPE = settings.get("SERVICE_TYPE", "TCU_CS")
+SERVICE_TYPE = settings.get("SERVICE_TYPE", "tcu_cs")
 STORAGE_MNEMONIC = settings.get("STORAGE_MNEMONIC", "TCU")
 
 PROXY_TIMEOUT = 10
