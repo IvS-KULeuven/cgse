@@ -61,7 +61,7 @@ class TcuProtocol(CommandProtocol):
 
         return bind_address(self.control_server.get_communication_protocol(), self.control_server.get_commanding_port())
 
-    def get_device_interface(self) -> TcuInterface:
+    def get_device(self) -> TcuInterface:
         """Returns the Ariel TCU interface.
 
         Returns:
