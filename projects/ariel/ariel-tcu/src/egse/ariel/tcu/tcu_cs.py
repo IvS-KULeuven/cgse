@@ -1,4 +1,3 @@
-import logging
 import sys
 from typing import Annotated
 
@@ -6,18 +5,14 @@ import zmq
 import typer
 import rich
 
+from egse.ariel.tcu import COMMANDING_PORT, HOSTNAME, PROTOCOL, SERVICE_PORT, MONITORING_PORT, STORAGE_MNEMONIC
 from egse.control import is_control_server_active, ControlServer
 from egse.registry.client import RegistryClient
 from egse.services import ServiceProxy
-from egse.settings import Settings
 from egse.storage import store_housekeeping_information
-from egse.zmq_ser import connect_address
+from egse.zmq_ser import connect_address, get_port_number
 from egse.ariel.tcu.tcu_protocol import TcuProtocol
 from egse.ariel.tcu.tcu import TcuProxy
-
-logger = logging.getLogger(__name__)
-
-CTRL_SETTINGS = Settings.load("Ariel TCU Control Server")
 
 
 def is_tcu_cs_active(timeout: float = 0.5) -> bool:
@@ -30,7 +25,7 @@ def is_tcu_cs_active(timeout: float = 0.5) -> bool:
         True if the Ariel TCU Control Server is running and replied with the expected answer; False otherwise.
     """
 
-    endpoint = connect_address(CTRL_SETTINGS.PROTOCOL, CTRL_SETTINGS.HOSTNAME, CTRL_SETTINGS.COMMANDING_PORT)
+    endpoint = connect_address(PROTOCOL, HOSTNAME, COMMANDING_PORT)
 
     return is_control_server_active(endpoint, timeout)
 
@@ -56,7 +51,7 @@ class TcuControlServer(ControlServer):
             Communication protocol used by the Ariel TCU Control Server, as specified in the settings.
         """
 
-        return CTRL_SETTINGS.PROTOCOL
+        return PROTOCOL
 
     def get_commanding_port(self) -> int:
         """Returns the commanding port used by the Ariel TCU Control Server.
@@ -65,7 +60,7 @@ class TcuControlServer(ControlServer):
             Commanding port used by the Ariel TCU Control Server, as specified in the settings.
         """
 
-        return CTRL_SETTINGS.COMMANDING_PORT
+        return get_port_number(self.dev_ctrl_cmd_sock) or COMMANDING_PORT
 
     def get_service_port(self) -> int:
         """Returns the service port used by the Ariel TCU Control Server.
@@ -74,7 +69,7 @@ class TcuControlServer(ControlServer):
             Service port used by the Ariel TCU Control Server, as specified in the settings.
         """
 
-        return CTRL_SETTINGS.SERVICE_PORT
+        return get_port_number(self.dev_ctrl_service_sock) or SERVICE_PORT
 
     def get_monitoring_port(self) -> int:
         """Returns the monitoring port used by the Ariel TCU Control Server.
@@ -83,7 +78,7 @@ class TcuControlServer(ControlServer):
             Monitoring port used by the Ariel TCU Control Server, as specified in the settings.
         """
 
-        return CTRL_SETTINGS.MONITORING_PORT
+        return get_port_number(self.dev_ctrl_mon_sock) or MONITORING_PORT
 
     def get_storage_mnemonic(self) -> str:
         """Returns the storage mnemonic used by the Ariel TCU Control Server.
@@ -92,13 +87,10 @@ class TcuControlServer(ControlServer):
             Storage mnemonic used by the Ariel TCU Control Server, as specified in the settings.
         """
 
-        try:
-            return CTRL_SETTINGS.STORAGE_MNEMONIC
-        except AttributeError:
-            return "TCU"
+        return STORAGE_MNEMONIC
 
     def is_storage_manager_active(self):
-        """ Checks whether the Storage Manager is active."""
+        """Checks whether the Storage Manager is active."""
         from egse.storage import is_storage_manager_active
 
         return is_storage_manager_active()
@@ -221,6 +213,7 @@ def status():
             rich.print(f"monitoring port: {monitoring_port}")
     else:
         rich.print("Ariel TCU: [red]not active")
+
 
 if __name__ == "__main__":
     import logging
