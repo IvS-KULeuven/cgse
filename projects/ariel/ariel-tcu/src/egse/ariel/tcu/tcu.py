@@ -9,7 +9,7 @@ We discern between the following types of commands:
     - HK commands.
 
 Reference documents:
-    - RD01: TCU User Manual (ARIEL-IEEC-PL-TN-006), v1.2
+    - RD01: TCU User Manual (ARIEL-IEEC-PL-TN-002), v1.2
     - RD02: ARIEL TCU Data Handling (ARIEL-IEEC-PL-TN-007), v1.0
     - RD02: TCU code provided by Vladimiro Noce (priv. comm.)
 """
