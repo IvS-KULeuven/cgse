@@ -221,3 +221,12 @@ def status():
             rich.print(f"monitoring port: {monitoring_port}")
     else:
         rich.print("Ariel TCU: [red]not active")
+
+if __name__ == "__main__":
+    import logging
+
+    from egse.logger import set_all_logger_levels
+
+    set_all_logger_levels(logging.DEBUG)
+
+    sys.exit(app())
