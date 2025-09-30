@@ -153,9 +153,15 @@ settings = Settings.load("Storage Manager Control Server")
 SITE_ID = get_site_id()
 DEVICE_SETTINGS = COMMAND_SETTINGS = Settings.load(location=HERE, filename="storage.yaml")
 
+
+PROCESS_NAME = settings.get("PROCESS_NAME", "sm_cs")
+SERVICE_TYPE = settings.get("SERVICE_TYPE", "sm_cs")
 PROTOCOL = settings.get("PROTOCOL", "tcp")
 HOSTNAME = settings.get("HOSTNAME", "localhost")
-COMMANDING_PORT = settings.get("COMMANDING_PORT", 0)
+COMMANDING_PORT = settings.get("COMMANDING_PORT", 0)  # dynamically assigned by the system if 0
+SERVICE_PORT = settings.get("SERVICE_PORT", 0)
+MONITORING_PORT = settings.get("MONITORING_PORT", 0)
+STORAGE_MNEMONIC = settings.get("STORAGE_MNEMONIC", "SM")
 
 
 def is_storage_manager_active(timeout: float = 0.5):
