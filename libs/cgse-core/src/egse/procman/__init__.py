@@ -395,11 +395,11 @@ class ProcessManagerProxy(Proxy, ProcessManagerInterface):
     """Proxy for process management, used to connect to the Process Manager Control Server and send commands remotely."""
 
     def __init__(
-            self,
-            protocol: str = PROTOCOL,
-            hostname: str = HOSTNAME,
-            port: int = COMMANDING_PORT,
-            timeout: float = PROXY_TIMEOUT
+        self,
+        protocol: str = PROTOCOL,
+        hostname: str = HOSTNAME,
+        port: int = COMMANDING_PORT,
+        timeout: float = PROXY_TIMEOUT,
     ):
         """
         Initialisation of a new Proxy for Process Management.

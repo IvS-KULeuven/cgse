@@ -1071,11 +1071,11 @@ class StorageProxy(Proxy, StorageInterface):
     """
 
     def __init__(
-            self,
-            protocol: str = PROTOCOL,
-            hostname: str = HOSTNAME,
-            port: int = COMMANDING_PORT,
-            timeout: float = REQUEST_TIMEOUT,
+        self,
+        protocol: str = PROTOCOL,
+        hostname: str = HOSTNAME,
+        port: int = COMMANDING_PORT,
+        timeout: float = REQUEST_TIMEOUT,
     ):
         endpoint = get_endpoint(settings.SERVICE_TYPE, protocol, hostname, port)
 
