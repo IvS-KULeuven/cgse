@@ -22,6 +22,7 @@ import typer
 import zmq
 import zmq.asyncio
 
+from egse.env import bool_env
 from egse.logger import remote_logging
 from egse.registry import DEFAULT_RS_DB_PATH
 from egse.registry import DEFAULT_RS_HB_PORT
@@ -38,6 +39,8 @@ from egse.system import caffeinate
 from egse.system import get_logging_level
 
 settings = Settings.load("Service Registry")
+
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
 
 app = typer.Typer(name="rs_cs")
 
@@ -234,7 +237,9 @@ class AsyncRegistryServer:
                         message_type = MessageType(message_parts[1])
                         message_data = message_parts[2]
 
-                        self.logger.info(f"{client_id = }, {message_type = }, {message_data = }")
+                        if VERBOSE_DEBUG:
+                            self.logger.debug(f"{client_id = }, {message_type = }, {message_data = }")
+
                         response = await self._process_request(message_data)
 
                         await self._send_response(client_id, message_type, response)
@@ -274,7 +279,7 @@ class AsyncRegistryServer:
         """
         try:
             request = json.loads(msg_data.decode())
-            self.logger.info(f"Received request: {request}")
+            self.logger.debug(f"Received request: {request}")
 
         except json.JSONDecodeError as exc:
             self.logger.error(f"Invalid JSON received: {exc}")
@@ -377,7 +382,7 @@ class AsyncRegistryServer:
         """Handle a service heartbeat request."""
         service_id = request.get("service_id")
 
-        self.logger.info(f"Handle renew request: {request}")
+        self.logger.debug(f"Handle renew request: {request}")
 
         if not service_id:
             return {"success": False, "error": "Missing required field: service_id"}
@@ -428,7 +433,7 @@ class AsyncRegistryServer:
 
         service_id = request.get("service_id")
 
-        self.logger.info(f"Handle get request: {request}")
+        self.logger.debug(f"Handle get request: {request}")
 
         if not service_id:
             return {"success": False, "error": "Missing required field: service_id"}
@@ -445,7 +450,7 @@ class AsyncRegistryServer:
         """Handle a request to list services."""
         service_type = request.get("service_type")
 
-        self.logger.info(f"Handle list request: {request}")
+        self.logger.debug(f"Handle list request: {request}")
 
         # List the services
         services = await self.backend.list_services(service_type)
@@ -459,7 +464,7 @@ class AsyncRegistryServer:
         """Handle a service discovery request."""
         service_type = request.get("service_type")
 
-        self.logger.info(f"Handle discover request for service type: {service_type}")
+        self.logger.debug(f"Handle discover request for service type: {service_type}")
 
         if not service_type:
             return {"success": False, "error": "Missing required field: service_type"}
@@ -475,7 +480,7 @@ class AsyncRegistryServer:
     async def _handle_info(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle the info request and send information about the registry server."""
 
-        self.logger.info(f"Handle info request: {request}")
+        self.logger.debug(f"Handle info request: {request}")
 
         # List the services
         services = await self.backend.list_services()
@@ -491,14 +496,14 @@ class AsyncRegistryServer:
     async def _handle_health(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle a health check request."""
 
-        self.logger.info(f"Handle health request: {request}")
+        self.logger.debug(f"Handle health request: {request}")
 
         return {"success": True, "status": "ok", "timestamp": int(time.time())}
 
     async def _handle_terminate(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle a termination request."""
 
-        self.logger.info(f"Handle termination request: {request}")
+        self.logger.debug(f"Handle termination request: {request}")
 
         self.stop()
 

@@ -254,7 +254,7 @@ def start():
     commander.close(linger=0)
     receiver.close(linger=0)
 
-    if not is_service_registered:
+    if is_service_registered:
         client.stop_heartbeat()
         client.deregister(service_id)
 
