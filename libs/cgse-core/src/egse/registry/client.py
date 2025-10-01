@@ -316,8 +316,9 @@ class RegistryClient:
             return None
 
         if not self._service_info:
-            self.logger.warning("Cannot reregister: no service info was saved by this registry client or service "
-                                "already deregistered.")
+            self.logger.warning(
+                "Cannot reregister: no service info was saved by this registry client or service already deregistered."
+            )
             return None
 
         return self.register(
@@ -327,7 +328,6 @@ class RegistryClient:
             service_type=self._service_info["type"],
             metadata=self._service_info["metadata"],
         )
-
 
     def discover_service(self, service_type: str, use_cache: bool = False) -> dict[str, Any] | None:
         """
