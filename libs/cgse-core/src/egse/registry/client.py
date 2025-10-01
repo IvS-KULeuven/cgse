@@ -310,6 +310,25 @@ class RegistryClient:
             self.logger.error(f"Failed to deregister service: {response.get('error')}")
             return False
 
+    def reregister(self) -> str | None:
+        if not self._service_id:
+            self.logger.warning("Cannot reregister: no service is registered")
+            return None
+
+        if not self._service_info:
+            self.logger.warning("Cannot reregister: no service info was saved by this registry client or service "
+                                "already deregistered.")
+            return None
+
+        return self.register(
+            name=self._service_info["name"],
+            host=self._service_info["host"],
+            port=self._service_info["port"],
+            service_type=self._service_info["type"],
+            metadata=self._service_info["metadata"],
+        )
+
+
     def discover_service(self, service_type: str, use_cache: bool = False) -> dict[str, Any] | None:
         """
         Discover a service of the specified type. The service is guaranteed to be healthy at the time of discovery.
@@ -344,17 +363,23 @@ class RegistryClient:
             self.logger.warning(f"Service discovery failed: {response.get('error')}")
             return None
 
-    def get_service(self, service_id: str, use_cache: bool = True) -> dict[str, Any] | None:
+    def get_service(self, service_id: str | None = None, use_cache: bool = True) -> dict[str, Any] | None:
         """
-        Get information about a specific service.
+        Get information about a specific service. When no service_id is given,
+        the service_id known to this client will be used.
 
         Args:
-            service_id: ID of the service to get
+            service_id: ID of the service to get [default=None]
             use_cache: Whether to use cached service information
 
         Returns:
             Service information if found, None otherwise.
         """
+        service_id = service_id or self._service_id
+
+        if not service_id:
+            self.logger.warning("Cannot get service: no service id is given or known.")
+            return None
 
         request = {"action": "get", "service_id": service_id}
 
@@ -453,6 +478,9 @@ class RegistryClient:
                     if not self.health_check():
                         self.logger.warning("ServiceRegistry not responding.")
                         return
+                    else:
+                        self.logger.info("Health check succeeded, reregistering ?")
+                        self.reregister()
 
                 else:
                     self.logger.debug(response.get("message"))
@@ -477,8 +505,15 @@ class RegistryClient:
     def stop_heartbeat(self) -> None:
         if self._hb_stop_event:
             self._hb_stop_event.set()
-        if self._hb_thread and self._hb_thread.is_alive():
-            self._hb_thread.join(timeout=THREAD_JOIN_TIMEOUT)
+        if self._hb_thread:
+            if self._hb_thread.is_alive():
+                self.logger.debug(f"Heartbeat thread is alive, joining with timeout={THREAD_JOIN_TIMEOUT}s")
+                self._hb_thread.join(timeout=THREAD_JOIN_TIMEOUT)
+            else:
+                self.logger.debug("Heartbeat thread is not alive.")
+                self._hb_thread = None
+        else:
+            self.logger.debug("No heartbeat thread defined.")
 
     def close(self) -> None:
         """Clean up resources."""

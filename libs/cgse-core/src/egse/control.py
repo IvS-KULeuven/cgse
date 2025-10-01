@@ -132,8 +132,6 @@ class ControlServer(metaclass=abc.ABCMeta):
         self.registry = RegistryClient()
         self.registry.connect()
 
-        self.service_id = None
-
         # These instance variables will probably be overwritten by the subclass __init__
         self.service_type = camel_to_kebab(type(self).__name__)
         self.service_name = camel_to_snake(type(self).__name__)
@@ -620,27 +618,15 @@ class ControlServer(metaclass=abc.ABCMeta):
     def setup_signaling(self):
         self.signaling = FileBasedSignaling(self.service_name)
         self.signaling.start_monitoring()
-        self.signaling.register_handler("reregister", self._reregister_service)
+        self.signaling.register_handler("reregister", self.reregister_service)
 
-    def _reregister_service(self, force: bool = False):
-        self.logger.info(f"Re-registration of service: {self.service_name} ({force=})")
-
-        if self.registry.get_service(self.service_id):
-            if force:
-                self.deregister_service()
-            else:
-                return
-
-        # FIXME: not sure if the stop heartbeat is necessary here, but I see that after
-        #        a re-registration signal, the heartbeat socket is None.
-        # self.registry.stop_heartbeat()
-
-        self.register_service(self.service_type)
-
-    def register_service(self, service_type: str):
+    def register_service(self, service_type: str) -> None:
         self.logger.info(f"Registering service {self.service_name} as type {service_type}")
+
         self.service_type = service_type
-        self.service_id = self.registry.register(
+
+        self.registry.stop_heartbeat()
+        self.registry.register(
             name=self.service_name,
             host=get_host_ip() or "127.0.0.1",
             port=get_port_number(self.dev_ctrl_cmd_sock),
@@ -655,7 +641,18 @@ class ControlServer(metaclass=abc.ABCMeta):
     def deregister_service(self):
         if self.registry:
             self.registry.stop_heartbeat()
-            self.registry.deregister(self.service_id)
+            self.registry.deregister()
+
+    def reregister_service(self, force: bool = False) -> None:
+        self.logger.info(f"Re-registration of service: {self.service_name} ({force=})")
+
+        if self.registry.get_service():
+            if force:
+                self.deregister_service()
+            else:
+                return
+
+        self.register_service(self.service_type)
 
     def store_housekeeping_information(self, data: dict) -> None:
         """Sends housekeeping information to the Storage Manager.
