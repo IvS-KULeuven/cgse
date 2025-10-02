@@ -62,6 +62,8 @@ class StorageControlServer(ControlServer):
 
         multiprocessing.current_process().name = PROCESS_NAME
 
+        self.scheduler: BackgroundScheduler | None = None
+
         self.logger = logger
         self.service_name = PROCESS_NAME
         self.service_type = SERVICE_TYPE
@@ -75,13 +77,6 @@ class StorageControlServer(ControlServer):
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
         self.register_service(service_type=SERVICE_TYPE)
-
-        # NOTE:
-        #     Since the CM CS is started after the SM CS in the normal startup sequence, delay the task to load
-        #     the Setup until after the CM CS has been properly started. We do that now with a delay time of 30s,
-        #     but we might in the future use a function returning a boolean, until...
-        # from egse.confman import is_configuration_manager_active
-        # self.schedule_task(self.device_protocol.controller.load_setup, after=10.0, when=is_configuration_manager_active)
 
     def before_serve(self):
         self.scheduler = BackgroundScheduler(timezone=utc)
