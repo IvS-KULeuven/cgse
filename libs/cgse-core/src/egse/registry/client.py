@@ -329,7 +329,7 @@ class RegistryClient:
             metadata=self._service_info["metadata"],
         )
 
-    def discover_service(self, service_type: str, use_cache: bool = False) -> dict[str, Any] | None:
+    def discover_service(self, service_type: str) -> dict[str, Any] | None:
         """
         Discover a service of the specified type. The service is guaranteed to be healthy at the time of discovery.
 
@@ -341,15 +341,10 @@ class RegistryClient:
 
         Args:
             service_type: Type of service to discover
-            use_cache: Whether to use cached service information
 
         Returns:
             Service information if found, None otherwise
         """
-        # Try to use cache first if enabled
-        if use_cache:
-            self.logger.info("Cache not yet implemented.")
-
         request = {"action": "discover", "service_type": service_type}
 
         response = self._send_request(MessageType.REQUEST_WITH_REPLY, request)
@@ -363,14 +358,13 @@ class RegistryClient:
             self.logger.warning(f"Service discovery failed: {response.get('error')}")
             return None
 
-    def get_service(self, service_id: str | None = None, use_cache: bool = True) -> dict[str, Any] | None:
+    def get_service(self, service_id: str | None = None) -> dict[str, Any] | None:
         """
         Get information about a specific service. When no service_id is given,
         the service_id known to this client will be used.
 
         Args:
             service_id: ID of the service to get [default=None]
-            use_cache: Whether to use cached service information
 
         Returns:
             Service information if found, None otherwise.
@@ -582,10 +576,6 @@ class AsyncRegistryClient:
 
         self._event_handlers = {}
 
-        # Service cache (for discovery)
-        self._service_cache = {}
-        self._service_cache_lock = None
-
         self.req_socket: zmq.asyncio.Socket | None = None
         self.sub_socket: zmq.asyncio.Socket | None = None
         self.hb_socket: zmq.asyncio.Socket | None = None
@@ -633,11 +623,6 @@ class AsyncRegistryClient:
             self.hb_socket.setsockopt(zmq.LINGER, 0)
             self.hb_socket.close()
         self.hb_socket = None
-
-    def _get_service_cache_lock(self):
-        if self._service_cache_lock is None:
-            self._service_cache_lock = asyncio.Lock()
-        return self._service_cache_lock
 
     async def _send_request(
         self, msg_type: MessageType, request: dict[str, Any], timeout: float = None
@@ -992,9 +977,6 @@ class AsyncRegistryClient:
 
                         self.logger.debug(f"Received event: {event_type}")
 
-                        # Update service cache based on events
-                        await self._update_cache_from_event(event_type, event)
-
                         # Call registered handlers
                         handlers = self._event_handlers.get(event_type, [])
                         for handler in handlers:
@@ -1022,30 +1004,7 @@ class AsyncRegistryClient:
         self.logger.info("Started event listener task")
         return task
 
-    async def _update_cache_from_event(self, event_type: str, event: dict[str, Any]) -> None:
-        """
-        Update the service cache based on registry events.
-
-        Args:
-            event_type: Type of the event.
-            event: Event data
-        """
-        async with self._get_service_cache_lock():
-            data = event.get("data", {})
-            service_id = data.get("service_id")
-
-            if not service_id:
-                return
-
-            if event_type == "register":
-                service_info = data.get("service_info", {})
-                if service_info:
-                    self._service_cache[service_id] = service_info
-            elif event_type in ("deregister", "expire"):
-                if service_id in self._service_cache:
-                    del self._service_cache[service_id]
-
-    async def discover_service(self, service_type: str, use_cache: bool = True) -> dict[str, Any] | None:
+    async def discover_service(self, service_type: str) -> dict[str, Any] | None:
         """
         Discover a service of the specified type. The service is guaranteed to be healthy at the time of discovery.
 
@@ -1057,27 +1016,11 @@ class AsyncRegistryClient:
 
         Args:
             service_type: Type of service to discover
-            use_cache: Whether to use cached service information
 
         Returns:
             Service information if found, None otherwise
         """
-        # Try to use cache first if enabled
-        if use_cache:
-            async with self._get_service_cache_lock():
-                # Find services of the specified type
-                matching_services = []
-                for service_id, service_info in self._service_cache.items():
-                    if service_info.get("type") == service_type or service_type in service_info.get("tags", []):
-                        matching_services.append(service_info)
 
-                if matching_services:
-                    # Simple load balancing - random selection
-                    import random
-
-                    return random.choice(matching_services)
-
-        # If not found in cache or cache disabled, ask the registry
         request = {"action": "discover", "service_type": service_type}
 
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
@@ -1087,45 +1030,31 @@ class AsyncRegistryClient:
         if response.get("success"):
             service = response.get("service")
 
-            # Update cache
-            if service and "id" in service:
-                async with self._get_service_cache_lock():
-                    self._service_cache[service["id"]] = service
-
             return service
         else:
             self.logger.warning(f"Service discovery failed: {response.get('error')}")
             return None
 
-    async def get_service(self, service_id: str, use_cache: bool = True) -> dict[str, Any] | None:
+    async def get_service(self, service_id: str | None = None) -> dict[str, Any] | None:
         """
-        Get information about a specific service.
+        Get information about a specific service.  When no service_id is given,
+        the service_id known to this client will be used.
 
         Args:
             service_id: ID of the service to get
-            use_cache: Whether to use cached service information
 
         Returns:
             Service information if found, None otherwise
         """
-        # Try to use cache first if enabled
-        if use_cache:
-            async with self._get_service_cache_lock():
-                if service_id in self._service_cache:
-                    return self._service_cache[service_id]
 
-        # If not found in cache or cache disabled, ask the registry
+        service_id = service_id or self._service_id
+
         request = {"action": "get", "service_id": service_id}
 
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
         if response.get("success"):
             service = response.get("service")
-
-            # Update cache
-            if service:
-                async with self._get_service_cache_lock():
-                    self._service_cache[service_id] = service
 
             return service
         else:
@@ -1148,12 +1077,6 @@ class AsyncRegistryClient:
 
         if response.get("success"):
             services = response.get("services", [])
-
-            # Update cache
-            async with self._get_service_cache_lock():
-                for service in services:
-                    if "id" in service:
-                        self._service_cache[service["id"]] = service
 
             return services
         else:
@@ -1223,35 +1146,6 @@ class AsyncRegistryClient:
                     self.context.term()
         except Exception as exc:
             self.logger.error(f"Error during cleanup: {exc}")
-
-    @asynccontextmanager
-    async def register_context(self, *args, **kwargs):
-        """
-        Async context manager for service registration.
-
-        Example:
-            async with client.register_context("my-service", "localhost", 8080):
-                # Service is registered
-                await app.start()
-            # Service is automatically deregistered
-        """
-        service_id = await self.register(*args, **kwargs)
-
-        if not service_id:
-            raise RuntimeError("Failed to register service")
-
-        # Start heartbeat and event listener
-        await self.start_heartbeat()
-        await self.start_event_listener()
-
-        try:
-            yield service_id
-        finally:
-            # Clean up
-            await self.stop_event_listener()
-            await self.stop_heartbeat()
-            await self.deregister()
-            # await self.close()  # client shall not be closed by this context manager !!
 
 
 def is_service_registered(service_type: str):
