@@ -13,6 +13,7 @@ from types import MethodType
 
 import zmq
 
+from egse.connect import VERBOSE_DEBUG
 from egse.decorators import dynamic_interface
 from egse.log import logger
 from egse.mixin import DynamicClientCommandMixin
@@ -102,7 +103,7 @@ class BaseProxy(ControlServerConnectionInterface):
         for a reply from the control server.
         """
 
-        self._logger = logging.getLogger(self.__class__.__name__)
+        self._logger = logger
 
         self._ctx = zmq.Context.instance()
         self._poller = zmq.Poller()
@@ -123,7 +124,8 @@ class BaseProxy(ControlServerConnectionInterface):
             self.disconnect_cs()
 
     def connect_cs(self):
-        self._logger.log(0, f"Trying to connect {self.__class__.__name__} to {self._endpoint}")
+        if VERBOSE_DEBUG:
+            self._logger.debug(f"Trying to connect {self.__class__.__name__} to {self._endpoint}")
 
         self._socket = self._ctx.socket(zmq.REQ)
         self._socket.connect(self._endpoint)
@@ -135,7 +137,8 @@ class BaseProxy(ControlServerConnectionInterface):
         self._poller.unregister(self._socket)
 
     def reconnect_cs(self):
-        self._logger.log(20, f"Trying to reconnect {self.__class__.__name__} to {self._endpoint}")
+        if VERBOSE_DEBUG:
+            self._logger.debug(f"Trying to reconnect {self.__class__.__name__} to {self._endpoint}")
 
         if not self._socket.closed:
             self._socket.close(linger=0)
@@ -145,7 +148,8 @@ class BaseProxy(ControlServerConnectionInterface):
         self._poller.register(self._socket, zmq.POLLIN)
 
     def reset_cs_connection(self):
-        self._logger.debug(f"Trying to reset the connection from {self.__class__.__name__} to {self._endpoint}")
+        if VERBOSE_DEBUG:
+            self._logger.debug(f"Trying to reset the connection from {self.__class__.__name__} to {self._endpoint}")
 
         self.disconnect_cs()
         self.connect_cs()
@@ -191,7 +195,9 @@ class BaseProxy(ControlServerConnectionInterface):
         if self._socket.closed:
             self.reconnect_cs()
 
-        self._logger.log(0, f"Sending '{data}'")
+        if VERBOSE_DEBUG:
+            self._logger.debug(f"Sending '{data}'")
+
         self._socket.send(pickle_string)
 
         while True:
@@ -202,7 +208,8 @@ class BaseProxy(ControlServerConnectionInterface):
                 if not pickle_string:
                     break
                 response = pickle.loads(pickle_string)
-                self._logger.log(0, f"Receiving response: {response}")
+                if VERBOSE_DEBUG:
+                    self._logger.debug(f"Receiving response: {response}")
                 return response
             else:
                 # timeout - server unavailable
@@ -227,7 +234,8 @@ class BaseProxy(ControlServerConnectionInterface):
 
     def ping(self):
         return_code = self.send("Ping", retries=0, timeout=1.0)
-        self._logger.log(0, f"Check if control server is available: Ping - {return_code}")
+        if VERBOSE_DEBUG:
+            self._logger.debug(f"Check if control server is available: Ping - {return_code}")
         return return_code == "Pong"
 
     def get_endpoint(self) -> str:

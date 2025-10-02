@@ -490,6 +490,7 @@ class AsyncRegistryServer:
             "status": "ok",
             "req_port": self.req_port,
             "pub_port": self.pub_port,
+            "hb_port": self.hb_port,
             "services": services,
         }
 
@@ -577,6 +578,7 @@ async def status(
                 Status: {response["status"]}
                 Requests port: {response["req_port"]}
                 Notifications port: {response["pub_port"]}
+                Heartbeat port: {response["hb_port"]}
                 Registrations: {", ".join([f"({x['name']}, {x['health']})" for x in response["services"]])}\
             """
         )
