@@ -461,6 +461,9 @@ class RegistryClient:
             self.logger.warning("Cannot start heartbeat: no service is registered")
             return None
 
+        # Cancel an existing heartbeat thread if present
+        self.stop_heartbeat()
+
         # If interval not specified, use 1/3 of TTL
         if interval is None:
             interval = max(1, self._ttl // 3)
@@ -479,7 +482,7 @@ class RegistryClient:
                         self.logger.warning("ServiceRegistry not responding.")
                         return
                     else:
-                        self.logger.info("Health check succeeded, reregistering ?")
+                        self.logger.info("Health check succeeded, reregistering...")
                         self.reregister()
 
                 else:
@@ -609,8 +612,6 @@ class AsyncRegistryClient:
         # Default to receiving all events
         self.sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
 
-        self._connect_hb_socket()
-
     def _connect_hb_socket(self):
         self.hb_socket = self.context.socket(zmq.REQ)
         self.hb_socket.setsockopt(zmq.LINGER, 0)  # Don't wait for unsent messages on close()
@@ -627,11 +628,10 @@ class AsyncRegistryClient:
             self.sub_socket.close(linger=0)
         self.sub_socket = None
 
-        self._disconnect_hb_socket()
-
     def _disconnect_hb_socket(self):
         if self.hb_socket:
-            self.hb_socket.close(linger=0)
+            self.hb_socket.setsockopt(zmq.LINGER, 0)
+            self.hb_socket.close()
         self.hb_socket = None
 
     def _get_service_cache_lock(self):
@@ -653,10 +653,10 @@ class AsyncRegistryClient:
         Returns:
             The response from the registry as a dictionary.
         """
-        self.logger.debug(f"Sending request: {request}")
 
         timeout = timeout or self.timeout
         try:
+            self.logger.debug(f"Sending request: {request}")
             await self.req_socket.send_multipart([msg_type.value, json.dumps(request).encode()])
 
             try:
@@ -714,9 +714,9 @@ class AsyncRegistryClient:
             except asyncio.TimeoutError:
                 self.logger.error(f"Heartbeat request timed out after {HEART_BEAT_TIMEOUT:.2f}s")
                 # Reset the socket to avoid invalid state
-                self.hb_socket.close()
-                self.hb_socket = self.context.socket(zmq.REQ)
-                self.hb_socket.connect(self.registry_req_endpoint)
+                self._disconnect_hb_socket()
+                await asyncio.sleep(HEART_BEAT_RECONNECT)
+                self._connect_hb_socket()
                 return {"success": False, "error": "Heartbeat request timed out"}
         except zmq.ZMQError as exc:
             self.logger.error(f"ZMQ error: {exc}", exc_info=True)
@@ -816,6 +816,25 @@ class AsyncRegistryClient:
             self.logger.error(f"Failed to deregister service: {response.get('error')}")
             return False
 
+    async def reregister(self) -> str | None:
+        if not self._service_id:
+            self.logger.warning("Cannot reregister: no service is registered")
+            return None
+
+        if not self._service_info:
+            self.logger.warning(
+                "Cannot reregister: no service info was saved by this registry client or service already deregistered."
+            )
+            return None
+
+        return await self.register(
+            name=self._service_info["name"],
+            host=self._service_info["host"],
+            port=self._service_info["port"],
+            service_type=self._service_info["type"],
+            metadata=self._service_info["metadata"],
+        )
+
     async def start_heartbeat(self, interval: int | None = None) -> asyncio.Task | None:
         """
         Start sending heartbeats to the registry.
@@ -840,6 +859,8 @@ class AsyncRegistryClient:
         self._running = True
 
         async def heartbeat_loop():
+            self._connect_hb_socket()
+
             try:
                 while self._running and self._service_id:
                     try:
@@ -849,8 +870,17 @@ class AsyncRegistryClient:
 
                         if not response.get("success"):
                             self.logger.warning(f"Heartbeat failed: {response.get('error')}")
+
+                            # Do a health check
+                            if not await self.health_check():
+                                self.logger.warning("ServiceRegistry not responding.")
+                                continue
+                            else:
+                                self.logger.info("Health check succeeded, reregistering...")
+                                await self.reregister()
+
                         else:
-                            self.logger.info(response.get("message"))
+                            self.logger.debug(response.get("message"))
                     except Exception as exc:
                         self.logger.error(f"Error in heartbeat loop: {exc}", exc_info=True)
 
@@ -858,6 +888,8 @@ class AsyncRegistryClient:
                     await asyncio.sleep(interval)
             except asyncio.CancelledError:
                 self.logger.info("Heartbeat task cancelled")
+            finally:
+                self._disconnect_hb_socket()
 
         # Start the heartbeat task
         self._heartbeat_task = task = asyncio.create_task(heartbeat_loop())
