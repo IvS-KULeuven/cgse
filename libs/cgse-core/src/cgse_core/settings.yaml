@@ -18,8 +18,8 @@ Logging Control Server:                          # LOG_CS
     MAX_SIZE_LOG_FILES:              20          # The maximum size one log file can become
     RECEIVER_PORT:                 6105
     COMMANDER_PORT:                6106
-    TEXTUALOG_IP_ADDRESS:     127.0.0.1          # The IP address of the textualog listening server
-    TEXTUALOG_LISTENING_PORT:     19996          # The port number on which the textualog server is listening
+    EXTERN_LOG_HOST:          127.0.0.1          # The IP address of the external logger
+    EXTERN_LOG_PORT:             19996          # The port number on which the external logger is listening
 
 Configuration Manager Control Server:            # CM_CS
 
