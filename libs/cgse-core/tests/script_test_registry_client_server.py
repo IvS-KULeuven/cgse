@@ -30,7 +30,6 @@ Notes:
 """
 
 import asyncio
-import logging
 import sys
 import time
 
@@ -88,7 +87,7 @@ def test_proper_termination_of_tasks_sync(
     assert response["name"] == "sync-context-test-service"
     assert response["metadata"]["msg"] == "Hello, World!"
 
-    print("Sleeping for 10s to let some heartbeats come through...")
+    print("Sleeping for 50s to let some heartbeats come through...")
     time.sleep(50.0)
 
     client.stop_heartbeat()
@@ -134,8 +133,8 @@ async def test_proper_termination_of_tasks_async(
     assert response["name"] == "async-context-test-service"
     assert response["metadata"]["msg"] == "Hello, World!"
 
-    print("Sleeping for 10s to let some heartbeats come through...")
-    await asyncio.sleep(10.0)
+    print("Sleeping for 50s to let some heartbeats come through...")
+    await asyncio.sleep(50.0)
 
     await client.stop_heartbeat()
     await client.deregister(service_id)
@@ -166,9 +165,4 @@ def main(
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-12s %(lineno)5d:%(module)-20s %(message)s",
-    )
-
     sys.exit(app())

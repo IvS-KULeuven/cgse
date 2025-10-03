@@ -101,19 +101,19 @@ class AsyncRegistryServer:
         req_rep_endpoint = f"tcp://*:{self.req_port}"
         self.req_socket = self.context.socket(zmq.ROUTER)
         self.req_socket.bind(req_rep_endpoint)
-        self.logger.info(f"Binding request socket to {req_rep_endpoint}")
+        self.logger.debug(f"Binding request ROUTER socket to {req_rep_endpoint}")
 
         # Socket to publish service events
         pub_endpoint = f"tcp://*:{self.pub_port}"
         self.pub_socket = self.context.socket(zmq.PUB)
         self.pub_socket.bind(pub_endpoint)
-        self.logger.info(f"Binding publish socket to {pub_endpoint}")
+        self.logger.debug(f"Binding publish PUB socket to {pub_endpoint}")
 
         # Socket to handle heartbeats
         hb_endpoint = f"tcp://*:{self.hb_port}"
-        self.hb_socket = self.context.socket(zmq.REP)
+        self.hb_socket = self.context.socket(zmq.ROUTER)
         self.hb_socket.bind(hb_endpoint)
-        self.logger.info(f"Binding heartbeat socket to {hb_endpoint}")
+        self.logger.debug(f"Binding heartbeat ROUTER socket to {hb_endpoint}")
 
     async def initialize_backend(self):
         """Initialize the storage backend."""
@@ -137,8 +137,8 @@ class AsyncRegistryServer:
 
         self._running = True
         self.logger.info(
-            f"Async registry server started on ports {self.req_port} (ROUTER-DEALER), {self.pub_port} (PUB), "
-            f"and {self.hb_port} (Heartbeat)"
+            f"Async registry server started on ports {self.req_port} (Requests ROUTER-DEALER), "
+            f"{self.pub_port} (Publish PUB), and {self.hb_port} (Heartbeat ROUTER)"
         )
 
         # Start the cleanup task
@@ -400,22 +400,35 @@ class AsyncRegistryServer:
         self.logger.info("Started heartbeats handler task")
 
         try:
+            message_parts = None
             while self._running:
                 try:
                     # Receive heartbeat (non-blocking with timeout)
-                    message_json = await asyncio.wait_for(self.hb_socket.recv_string(), timeout=1.0)
+                    message_parts = await asyncio.wait_for(self.hb_socket.recv_multipart(), timeout=1.0)
 
-                    # Parse the request
-                    request = json.loads(message_json)
-                    self.logger.info(f"Received heartbeat request: {request}")
+                    self.logger.debug(f"{message_parts=}")
 
-                    response = await self._handle_renew(request)
+                    if len(message_parts) == 2:
+                        client_id = message_parts[0]
+                        request = message_parts[1]
 
-                    # Send the response
-                    await self.hb_socket.send_string(json.dumps(response))
+                        # Parse the request
+                        request = json.loads(request)
+                        self.logger.info(f"Received heartbeat request: {request}")
+
+                        response = await self._handle_renew(request)
+                        if VERBOSE_DEBUG:
+                            self.logger.debug(f"{response=}")
+
+                        # Send the response
+                        await self.hb_socket.send_multipart([client_id, json.dumps(response).encode()])
+
+                    else:
+                        self.logger.warning("Heartbeat request: message corrupted, check debug messages.")
 
                 except asyncio.TimeoutError:
-                    # self.logger.debug("waiting for heartbeat...")
+                    if VERBOSE_DEBUG:
+                        self.logger.debug("waiting for heartbeat...")
                     continue
 
                 except Exception as exc:
@@ -525,12 +538,6 @@ async def start(
     log_level: str = "WARNING",
 ):
     """Run the registry server with signal handling."""
-
-    logging.basicConfig(
-        level=get_logging_level(log_level),
-        format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-12s %(lineno)5d:%(module)-20s %(message)s",
-    )
-    logging.getLogger("aiosqlite").setLevel(logging.INFO)
 
     with remote_logging():
         server = AsyncRegistryServer(
