@@ -114,8 +114,9 @@ class RegistryClient:
         self.poller.register(self.sub_socket, zmq.POLLIN)
 
     def _connect_hb_socket(self):
-        self.hb_socket = self.context.socket(zmq.REQ)
+        self.hb_socket = self.context.socket(zmq.DEALER)
         self.hb_socket.setsockopt(zmq.LINGER, 0)  # Don't wait for unsent messages on close()
+        self.hb_socket.setsockopt(zmq.IDENTITY, self._client_id)
         self.hb_socket.connect(self.registry_hb_endpoint)
 
     def disconnect(self):
@@ -214,9 +215,6 @@ class RegistryClient:
                 return response
             else:
                 self.logger.error(f"Request timed out after {HEART_BEAT_TIMEOUT:.2f}s")
-                self._disconnect_hb_socket()
-                time.sleep(HEART_BEAT_RECONNECT)
-                self._connect_hb_socket()
                 return {"success": False, "error": "Request timed out"}
 
         except zmq.ZMQError as exc:
@@ -473,14 +471,14 @@ class RegistryClient:
 
                     # Do a health check
                     if not self.health_check():
-                        self.logger.warning("ServiceRegistry not responding.")
+                        self.logger.warning("Heartbeat failed: ServiceRegistry not responding.")
                         return
                     else:
-                        self.logger.info("Health check succeeded, reregistering...")
+                        self.logger.info("Heartbeat failed, but health check succeeded, reregistering...")
                         self.reregister()
 
                 else:
-                    self.logger.debug(response.get("message"))
+                    self.logger.debug(f"Heartbeat succeeded: {response.get('message')}")
 
             except Exception as exc:
                 self.logger.error(f"Error sending heartbeat: {exc}")
@@ -603,8 +601,9 @@ class AsyncRegistryClient:
         self.sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
 
     def _connect_hb_socket(self):
-        self.hb_socket = self.context.socket(zmq.REQ)
+        self.hb_socket = self.context.socket(zmq.DEALER)
         self.hb_socket.setsockopt(zmq.LINGER, 0)  # Don't wait for unsent messages on close()
+        self.hb_socket.setsockopt(zmq.IDENTITY, self._client_id)
         self.hb_socket.connect(self.registry_hb_endpoint)
 
     def disconnect(self):
@@ -698,11 +697,8 @@ class AsyncRegistryClient:
                 return response
             except asyncio.TimeoutError:
                 self.logger.error(f"Heartbeat request timed out after {HEART_BEAT_TIMEOUT:.2f}s")
-                # Reset the socket to avoid invalid state
-                self._disconnect_hb_socket()
-                await asyncio.sleep(HEART_BEAT_RECONNECT)
-                self._connect_hb_socket()
                 return {"success": False, "error": "Heartbeat request timed out"}
+
         except zmq.ZMQError as exc:
             self.logger.error(f"ZMQ error: {exc}", exc_info=True)
             return {"success": False, "error": str(exc)}
@@ -858,14 +854,14 @@ class AsyncRegistryClient:
 
                             # Do a health check
                             if not await self.health_check():
-                                self.logger.warning("ServiceRegistry not responding.")
+                                self.logger.warning("Heartbeat failed: ServiceRegistry not responding.")
                                 continue
                             else:
-                                self.logger.info("Health check succeeded, reregistering...")
+                                self.logger.info("Heartbeat failed, but health check succeeded, reregistering...")
                                 await self.reregister()
 
                         else:
-                            self.logger.debug(response.get("message"))
+                            self.logger.debug(f"Heartbeat succeeded: {response.get('message')}")
                     except Exception as exc:
                         self.logger.error(f"Error in heartbeat loop: {exc}", exc_info=True)
 
