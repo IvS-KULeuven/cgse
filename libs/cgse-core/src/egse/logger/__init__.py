@@ -35,6 +35,7 @@ import zmq
 from egse.log import LOG_FORMAT_FULL
 from egse.log import PackageFilter
 from egse.log import egse_logger
+from egse.log import get_log_level_from_env
 from egse.log import logger
 from egse.log import root_logger
 from egse.registry.client import RegistryClient
@@ -201,7 +202,7 @@ def setup_logging():
 
     logging.disable(logging.NOTSET)
     for handler in root_logger.handlers:
-        handler.setLevel(logging.INFO)
+        handler.setLevel(get_log_level_from_env())
 
     egse_logger.setLevel(logging.DEBUG)
 

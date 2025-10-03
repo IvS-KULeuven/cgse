@@ -144,9 +144,9 @@ def start():
     stream_handler.setFormatter(stream_formatter)
     stream_handler.addFilter(PackageFilter())
 
-    # Log records are also sent to the textualog listening server
+    # Log records are also sent to the external logger
 
-    socket_handler = SocketHandler(CTRL_SETTINGS.TEXTUALOG_IP_ADDRESS, CTRL_SETTINGS.TEXTUALOG_LISTENING_PORT)
+    socket_handler = SocketHandler(CTRL_SETTINGS.EXTERN_LOG_HOST, CTRL_SETTINGS.EXTERN_LOG_PORT)
     socket_handler.addFilter(PackageFilter())
     socket_handler.setFormatter(file_formatter)
 
