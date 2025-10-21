@@ -11,8 +11,8 @@ VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
 
 def get_endpoint(
     service_type: str,
-    protocol: str = None,
-    hostname: str = None,
+    protocol: str = "tcp",
+    hostname: str = "localhost",
     port: int = 0,
 ):
     """
@@ -23,9 +23,9 @@ def get_endpoint(
 
     Args:
         service_type: The service type to look up in the registry.
-        protocol: Protocol to use if constructing the endpoint.
-        hostname: Hostname to use if constructing the endpoint.
-        port: Port to use if constructing the endpoint.
+        protocol: Protocol to use if constructing the endpoint, defaults to tcp.
+        hostname: Hostname to use if constructing the endpoint, defaults to localhost.
+        port: Port to use if constructing the endpoint, defaults to 0.
 
     Returns:
         The endpoint string.
