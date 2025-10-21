@@ -32,6 +32,7 @@ from egse.command import CommandExecution
 from egse.control import ControlServer
 from egse.decorators import deprecate
 from egse.device import DeviceConnectionObserver
+from egse.env import bool_env
 from egse.log import logger
 from egse.response import Failure
 from egse.system import format_datetime
@@ -41,6 +42,8 @@ from egse.system import type_name
 
 COMMAND_REQUESTS = Counter("cs_command_requests_count", "Count the number of commands", ["target"])
 EXECUTION_TIME = Summary("cs_command_execution_time_seconds", "Time spent executing a command")
+
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
 
 
 def get_method(parent_obj: object, method_name: str) -> types.MethodType | types.MethodWrapperType | None:
@@ -496,7 +499,8 @@ class CommandProtocol(BaseCommandProtocol, metaclass=abc.ABCMeta):
 
         # Enable the following message only when debugging, because this log message can become
         # very long for data storage commands.
-        logger.debug(f"handle_device_method: {device_name}({args}, {kwargs}) -> {response!s}")
+        if VERBOSE_DEBUG:
+            logger.debug(f"handle_device_method: {device_name}({args}, {kwargs}) -> {response!s}")
 
         self.send(response)
 
