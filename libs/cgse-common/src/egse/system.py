@@ -71,19 +71,32 @@ TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%f%z"
 class Periodic:
     """A timer that periodically invokes a function in the background.
 
-    If no callback is provided, a warning message will be logged. In a future, we might send out an event to the
-    application (will need an event handler).
+    This class schedules a callback to be executed at regular intervals using asyncio.
+    If no callback is provided, a warning message will be logged. If the callback execution
+    takes longer than the interval, and `skip` is True (default), the timer will skip missed
+    intervals to maintain the schedule.
 
-    When the function execution takes longer then the interval there re several options:
-
-    - if skip is True (default) the interval will take precedence and the
     Args:
-        interval: The time between timer events, in seconds.
-        name: A name to assign the event (for debugging), defaults to `Periodic#`.
-        callback: A optional callback to invoke when the event is handled.
-        repeat: The number of times to repeat the timer, or None to repeat forever.
-        skip: Enable skipping of scheduled function calls that couldn't be sent in time.
-        pause: Start the timer paused. Use `resume()` to activate the timer.
+        interval (float): The time between timer events, in seconds.
+        name (str, optional): A name to assign the event (for debugging), defaults to `Periodic#`.
+        callback (Callable, optional): A callback to invoke when the event is handled.
+        repeat (int, optional): The number of times to repeat the timer, or None to repeat forever.
+        skip (bool, optional): Enable skipping of scheduled function calls that couldn't be sent in time.
+        pause (bool, optional): Start the timer paused. Use `resume()` to activate the timer.
+
+    Methods:
+        start(): Start the timer.
+        stop(): Stop the timer.
+        is_running(): Return True if the timer is running.
+        is_paused(): Return True if the timer is paused.
+        pause(): Pause the timer.
+        reset(): Reset the timer to start from the beginning.
+        resume(): Resume a paused timer.
+
+    Note:
+        The timer runs asynchronously and is suitable for use in asyncio-based applications.
+        If the callback is a coroutine, it will be awaited.
+
     """
 
     _periodic_count: int = 0
