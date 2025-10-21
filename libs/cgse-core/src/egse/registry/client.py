@@ -3,9 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import threading
-import time
 import uuid
-from contextlib import asynccontextmanager
 from typing import Any
 from typing import Callable
 from typing import Coroutine
@@ -14,12 +12,15 @@ from typing import Union
 import zmq
 import zmq.asyncio
 
+from egse.env import bool_env
 from egse.log import logging
 from egse.registry import DEFAULT_RS_HB_PORT
 from egse.registry import DEFAULT_RS_PUB_PORT
 from egse.registry import DEFAULT_RS_REQ_PORT
 from egse.registry import MessageType
 from egse.system import do_every
+
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
 
 REQUEST_TIMEOUT = 0.5
 """time to wait for a request-reply [seconds]. For responsive message handling."""
@@ -46,9 +47,9 @@ class RegistryClient:
 
     def __init__(
         self,
-        registry_req_endpoint: str = None,
-        registry_sub_endpoint: str = None,
-        registry_hb_endpoint: str = None,
+        registry_req_endpoint: str | None = None,
+        registry_sub_endpoint: str | None = None,
+        registry_hb_endpoint: str | None = None,
         timeout: float = REQUEST_TIMEOUT,
         client_id: str = "registry-client",
     ):
@@ -762,7 +763,7 @@ class AsyncRegistryClient:
             self.logger.error(f"Failed to register service: {response.get('error')}")
             return None
 
-    async def deregister(self, service_id: str = None) -> bool:
+    async def deregister(self, service_id: str | None = None) -> bool:
         """
         Deregister this service or the service with service_id from the registry.
 
@@ -861,7 +862,8 @@ class AsyncRegistryClient:
                                 await self.reregister()
 
                         else:
-                            self.logger.debug(f"Heartbeat succeeded: {response.get('message')}")
+                            VERBOSE_DEBUG and self.logger.debug(f"Heartbeat succeeded: {response.get('message')}")
+
                     except Exception as exc:
                         self.logger.error(f"Error in heartbeat loop: {exc}", exc_info=True)
 
@@ -873,40 +875,46 @@ class AsyncRegistryClient:
                 self._disconnect_hb_socket()
 
         # Start the heartbeat task
+
+        self.logger.info(f"Starting heartbeat task with interval {interval}s")
+
         self._heartbeat_task = task = asyncio.create_task(heartbeat_loop())
         self._tasks.add(task)
         task.add_done_callback(lambda t: self._tasks.discard(t))
 
-        self.logger.info(f"Started heartbeat task with interval {interval}s")
         return task
 
     async def stop_heartbeat(self) -> None:
         """Stop the running heartbeat task."""
-        if self._heartbeat_task is not None:
-            self._heartbeat_task.cancel()
-            try:
-                await self._heartbeat_task
-            except asyncio.CancelledError:
-                pass
-            self._tasks.discard(self._heartbeat_task)
-            self._heartbeat_task = None
-            self.logger.info("Stopped heartbeat task")
-        else:
-            self.logger.info("Couldn't stop heartbeat, heartbeat_task is None")
+
+        if self._heartbeat_task is None:
+            VERBOSE_DEBUG and self.logger.debug("Couldn't stop heartbeat, heartbeat_task is None")
+            return
+
+        self._heartbeat_task.cancel()
+        try:
+            await self._heartbeat_task
+        except asyncio.CancelledError:
+            pass
+        self._tasks.discard(self._heartbeat_task)
+        self._heartbeat_task = None
+        self.logger.info("Stopped heartbeat task")
 
     async def stop_event_listener(self) -> None:
         """Stop the running event listener task."""
-        if self._event_listener_task is not None:
-            self._event_listener_task.cancel()
-            try:
-                await self._event_listener_task
-            except asyncio.CancelledError:
-                pass
-            self._tasks.discard(self._event_listener_task)
-            self._event_listener_task = None
-            self.logger.info("Stopped event listener task")
-        else:
-            self.logger.info("Couldn't stop event_listener, event_listener_task is None")
+
+        if self._event_listener_task is None:
+            VERBOSE_DEBUG and self.logger.debug("Couldn't stop event_listener, event_listener_task is None")
+            return
+
+        self._event_listener_task.cancel()
+        try:
+            await self._event_listener_task
+        except asyncio.CancelledError:
+            pass
+        self._tasks.discard(self._event_listener_task)
+        self._event_listener_task = None
+        self.logger.info("Stopped event listener task")
 
     async def stop_all_tasks(self) -> None:
         self._running = False
@@ -1021,8 +1029,6 @@ class AsyncRegistryClient:
 
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
-        self.logger.debug(f"{response = }")
-
         if response.get("success"):
             service = response.get("service")
 
@@ -1100,7 +1106,6 @@ class AsyncRegistryClient:
             True if healthy, False otherwise
         """
         request = {"action": "health"}
-
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request, timeout=HEALTH_CHECK_TIMEOUT)
         return response.get("success", False)
 
@@ -1116,9 +1121,7 @@ class AsyncRegistryClient:
         """
         Requests the status information from the service registry.
         """
-        request = {
-            "action": "info",
-        }
+        request = {"action": "info"}
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
         return response
 

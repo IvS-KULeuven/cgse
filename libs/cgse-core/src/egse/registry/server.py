@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
 import multiprocessing
 import signal
 import sys
@@ -36,7 +35,6 @@ from egse.registry.client import AsyncRegistryClient
 from egse.settings import Settings
 from egse.system import TyperAsyncCommand
 from egse.system import caffeinate
-from egse.system import get_logging_level
 
 settings = Settings.load("Service Registry")
 
@@ -427,8 +425,7 @@ class AsyncRegistryServer:
                         self.logger.warning("Heartbeat request: message corrupted, check debug messages.")
 
                 except asyncio.TimeoutError:
-                    if VERBOSE_DEBUG:
-                        self.logger.debug("waiting for heartbeat...")
+                    VERBOSE_DEBUG and self.logger.debug("waiting for heartbeat...")
                     continue
 
                 except Exception as exc:
