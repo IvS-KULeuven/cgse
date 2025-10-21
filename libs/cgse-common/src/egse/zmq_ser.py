@@ -44,17 +44,26 @@ def recv_zipped_pickle(socket, flags=0, protocol=-1):
     return pickle.loads(p)
 
 
-def get_port_number(socket: zmq.Socket) -> int | None:
+def get_port_number(socket: zmq.Socket | None) -> int:
     """
-    Returns the port number associated with this socket. Returns None for sockets
-    that do not bind to a TCP or IPC transport.
+    Returns the port number associated with this socket.
+
+    If the socket is bound to a TCP or IPC transport, the port number is extracted from the
+    LAST_ENDPOINT socket option.
+
+    Returns:
+        - 0 for sockets that do not bound to a TCP or IPC transport.
+        - 0 if the socket is None.
     """
+    if socket is None:
+        return 0
+
     endpoint = socket.getsockopt(zmq.LAST_ENDPOINT)
-    if endpoint:
+    if endpoint and isinstance(endpoint, bytes):
         port = endpoint.decode("utf-8").split(":")[-1]
         return int(port)
     else:
-        return None
+        return 0
 
 
 def zmq_string_request(request: str) -> list:
