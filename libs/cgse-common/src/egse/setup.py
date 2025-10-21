@@ -117,6 +117,7 @@ from __future__ import annotations
 __all__ = [
     "Setup",
     "setup_ctx",
+    "disentangle_filename",
     "navdict",  # noqa: ignore typo
     "list_setups",
     "load_setup_from_disk",

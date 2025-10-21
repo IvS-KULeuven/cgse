@@ -6,6 +6,7 @@ PUNA Alpha+ Controller:
     password: provide password in local settings
 
 Hexapod Control Server:
+    SERVICE_TYPE:                puna
     PROTOCOL:                     tcp
     HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. on the same machine
     COMMANDING_PORT:                0          # The port on which the controller listens to commands - REQ-REP

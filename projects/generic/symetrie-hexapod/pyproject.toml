@@ -1,6 +1,6 @@
 [project]
 name = "symetrie-hexapod"
-version = "0.16.10"
+version = "0.16.11"
 description = "Symetrie Hexapod implementation for CGSE"
 authors = [
     {name = "IvS KU Leuven"}
@@ -36,7 +36,7 @@ zonda_cs = 'egse.hexapod.symetrie.zonda_cs:app'
 joran_cs = 'egse.hexapod.symetrie.joran_cs:app'
 
 [project.gui-scripts]
-puna_ui = "egse.hexapod.symetrie.puna_ui:main"
+puna_ui = "egse.hexapod.symetrie.puna_ui:app"
 zonda_ui = "egse.hexapod.symetrie.zonda_ui:main"
 joran_ui = "egse.hexapod.symetrie.joran_ui:main"
 

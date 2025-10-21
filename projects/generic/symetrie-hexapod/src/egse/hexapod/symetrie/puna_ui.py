@@ -15,44 +15,44 @@ platform that supports Python and Qt5.
 """
 
 import argparse
-import logging
 import multiprocessing
 import sys
 import threading
 from enum import IntEnum
 from pathlib import Path
 
+import typer
 from PyQt5.QtCore import QLockFile
-
-from egse.hexapod.symetrie import ControllerFactory
-from egse.hexapod.symetrie import ProxyFactory
-from egse.hexapod.symetrie import get_hexapod_controller_pars
-from egse.hexapod.symetrie.punaplus import PunaPlusController
-from egse.hexapod.symetrie.punaplus import PunaPlusProxy
-
-multiprocessing.current_process().name = "puna_ui"
-
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QMessageBox
+from PyQt5.QtWidgets import QApplication
 from PyQt5.QtWidgets import QFrame
 from PyQt5.QtWidgets import QHBoxLayout
+from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import QVBoxLayout
-from prometheus_client import start_http_server
 
 from egse.gui import show_warning_message
 from egse.gui.led import Indic
 from egse.gui.states import States
+from egse.hexapod.symetrie import ControllerFactory
+from egse.hexapod.symetrie import ProxyFactory
+from egse.hexapod.symetrie import get_hexapod_controller_pars
 from egse.hexapod.symetrie.hexapod_ui import ActuatorStates
 from egse.hexapod.symetrie.hexapod_ui import HexapodUIController
 from egse.hexapod.symetrie.hexapod_ui import HexapodUIModel
 from egse.hexapod.symetrie.hexapod_ui import HexapodUIView
 from egse.hexapod.symetrie.puna import PunaSimulator
+from egse.hexapod.symetrie.punaplus import PunaPlusController
+from egse.hexapod.symetrie.punaplus import PunaPlusProxy
+from egse.log import logging
 from egse.process import ProcessStatus
 from egse.resource import get_resource
 from egse.settings import Settings
 from egse.system import do_every
+from dotenv import load_dotenv
 
 MODULE_LOGGER = logging.getLogger(__name__)
+
+load_dotenv(override=True)
 
 
 class DeviceControllerType(IntEnum):
@@ -283,8 +283,8 @@ class PunaUIView(HexapodUIView):
 
 
 class PunaUIModel(HexapodUIModel):
-    def __init__(self, connection_type):
-        hostname, port, dev_id, dev_name, _ = get_hexapod_controller_pars()
+    def __init__(self, connection_type, device_id):
+        hostname, port, dev_id, dev_name, *_ = get_hexapod_controller_pars(device_id)
         if connection_type == "proxy":
             device = ProxyFactory().create(dev_name, device_id=dev_id)
         elif connection_type == "direct":
@@ -346,15 +346,19 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def main():
+app = typer.Typer()
+
+
+@app.command()
+def main(device_id: str, device_type: str = "proxy", profile: bool = False):
+    multiprocessing.current_process().name = "puna_ui"
+
     lock_file = QLockFile(str(Path("~/puna_ui.app.lock").expanduser()))
 
     styles_location = get_resource(":/styles/default.qss")
     app_logo = get_resource(":/icons/logo-puna.svg")
 
-    args = list(sys.argv)
-    args[1:1] = ["-stylesheet", str(styles_location)]
-    app = QApplication(args)
+    app = QApplication(["-stylesheet", str(styles_location)])
     app.setWindowIcon(QIcon(str(app_logo)))
 
     if lock_file.tryLock(100):
@@ -364,13 +368,11 @@ def main():
         timer_thread.daemon = True
         timer_thread.start()
 
-        args = parse_arguments()
-
-        if args.profile:
+        if profile:
             Settings.set_profiling(True)
 
-        if args.type == "proxy":
-            *_, device_id, device_name, _ = get_hexapod_controller_pars()
+        if device_type == "proxy":
+            *_, device_id, device_name, _ = get_hexapod_controller_pars(device_id)
             factory = ProxyFactory()
             proxy = factory.create(device_name, device_id=device_id)
             if not proxy.ping():
@@ -385,7 +387,7 @@ def main():
 
                 show_warning_message(description, info_text)
 
-        model = PunaUIModel(args.type)
+        model = PunaUIModel(device_type, device_id)
         view = PunaUIView(model.get_device_controller_type(), model.device_id)
         PunaUIController(model, view)
 
@@ -405,4 +407,4 @@ def main():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format=Settings.LOG_FORMAT_FULL)
 
-    sys.exit(main())
+    sys.exit(app())
