@@ -372,7 +372,7 @@ def main(device_id: str, device_type: str = "proxy", profile: bool = False):
             Settings.set_profiling(True)
 
         if device_type == "proxy":
-            *_, device_id, device_name, _ = get_hexapod_controller_pars(device_id)
+            _, _, device_id, device_name, *_ = get_hexapod_controller_pars(device_id)
             factory = ProxyFactory()
             proxy = factory.create(device_name, device_id=device_id)
             if not proxy.ping():
