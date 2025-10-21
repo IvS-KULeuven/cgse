@@ -54,6 +54,7 @@ MODULE_LOGGER = logging.getLogger(__name__)
 
 load_dotenv(override=True)
 
+
 class DeviceControllerType(IntEnum):
     ALPHA = 0
     ALPHA_PLUS = 1
@@ -346,6 +347,7 @@ def parse_arguments():
 
 
 app = typer.Typer()
+
 
 @app.command()
 def main(device_id: str, device_type: str = "proxy", profile: bool = False):

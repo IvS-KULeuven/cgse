@@ -102,7 +102,6 @@ class ProxyFactory(DeviceFactoryInterface):
     """
 
     def create(self, device_type: str, *, device_id: str = None, **_ignored):
-
         logger.debug(f"{device_type=}, {device_id=}")
 
         with RegistryClient() as reg:
