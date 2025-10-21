@@ -15,10 +15,13 @@ from datetime import datetime
 from datetime import timedelta
 from typing import List
 
+from egse.env import bool_env
 from egse.hexapod.symetrie import logger
 from egse.hexapod.symetrie.pmac_regex import match_float_response
 from egse.hexapod.symetrie.pmac_regex import match_int_response
 from egse.hexapod.symetrie.pmac_regex import match_string_response
+
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
 
 # Command set Request
 
@@ -517,7 +520,8 @@ class EthernetCommand:
         headerStr = struct.pack(">BBHHH", self.requestType, self.request, self.value, self.index, len(command))
         wrappedCommand = headerStr + command.encode()
 
-        logger.debug(f"Command Packet generated: {wrappedCommand}")
+        if VERBOSE_DEBUG:
+            logger.debug(f"Command Packet generated: {wrappedCommand}")
 
         return wrappedCommand
 
@@ -729,13 +733,17 @@ class PmacEthernetInterface(object):
 
             # Attempt to send the complete command to PMAC
 
-            logger.debug(f"Sending out to PMAC: {command}")
+            if VERBOSE_DEBUG:
+                logger.debug(f"Sending out to PMAC: {command}")
+
             self.sock.sendall(self.getResponseCommand.getCommandPacket(command))
 
             # wait for, read and return the response from PMAC (will be at most 1400 chars)
 
             returnStr = self.sock.recv(2048)
-            logger.debug(f"Received from PMAC: {returnStr}")
+
+            if VERBOSE_DEBUG:
+                logger.debug(f"Received from PMAC: {returnStr}")
 
             return returnStr
 
@@ -798,7 +806,9 @@ class PmacEthernetInterface(object):
         for qVar in qVars:
             cmd += f"Q{qVar:02} "
         retStr = self.getResponse(cmd)
-        logger.debug(f"retStr={retStr} of type {type(retStr)}")
+
+        if VERBOSE_DEBUG:
+            logger.debug(f"retStr={retStr} of type {type(retStr)}")
 
         if retStr == b"\x00":
             raise PMACError(f"No response received for {cmd}, return value is {retStr}")
@@ -949,11 +959,13 @@ class PmacEthernetInterface(object):
         else:
             fullCommand = cmd["cmd"]
 
-        logger.debug(f"Sending the {cmd['name']} command.")
+        if VERBOSE_DEBUG:
+            logger.debug(f"Sending the {cmd['name']} command.")
 
         retStr = self.getResponse(fullCommand)
 
-        logger.debug(f"Command '{cmd['name']}' returned \"{retStr}\"")
+        if VERBOSE_DEBUG:
+            logger.debug(f"Command '{cmd['name']}' returned \"{retStr}\"")
 
         # Check the return code (usually Q20)
 
