@@ -1,6 +1,9 @@
 import re
 
+from egse.env import bool_env
 from egse.hexapod.symetrie import logger
+
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
 
 regex_response = {
     # Error message as ERRXXX
@@ -24,7 +27,8 @@ def match_regex_response(regex_prog, res):
 
     Return None if no match and the match object otherwise.
     """
-    logger.debug(f"res = {res} with type {type(res)}")
+    if VERBOSE_DEBUG:
+        logger.debug(f"res = {res} with type {type(res)}")
     if isinstance(res, bytes):
         res = res.decode()
     match_obj = regex_prog.match(res)
