@@ -42,6 +42,7 @@ locations and settings.
 from __future__ import annotations
 
 __all__ = [
+    "bool_env",
     "env_var",
     "get_conf_data_location",
     "get_conf_data_location_env_name",
