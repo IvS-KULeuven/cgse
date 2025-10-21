@@ -53,6 +53,8 @@ class AsyncNotificationHub:
 
         # Register notification hub to the service registry
         self.registry_client = AsyncRegistryClient(timeout=REQUEST_TIMEOUT)
+        self.registry_client.connect()
+
         self.service_id = None
         self.service_name = PROCESS_NAME
         self.service_type = SERVICE_TYPE
@@ -78,7 +80,7 @@ class AsyncNotificationHub:
         """Start the notification hub. This will start the event collector and
         publisher, the health check, and the stats reporter as asyncio Tasks.
         """
-        multiprocessing.current_process().name = "notifyhub"
+        multiprocessing.current_process().name = PROCESS_NAME
 
         self.running = True
         self.logger.info("Starting Async Notification Hub...")
@@ -93,15 +95,15 @@ class AsyncNotificationHub:
             asyncio.create_task(self._handle_requests()),
         ]
 
-        await self._register_service()
+        await self.register_service()
 
         await self._shutdown_event.wait()
 
-        await self._deregister_service()
+        await self.deregister_service()
 
-        await self._shutdown()
+        await self.shutdown()
 
-    async def _shutdown(self):
+    async def shutdown(self):
         self.running = False
         self.logger.info("Async Notification Hub shutdown requested...")
 
@@ -115,14 +117,14 @@ class AsyncNotificationHub:
         self.publisher_socket.close()
         self.requests_socket.close()
 
-        self.context.term()
+        self.registry_client.disconnect()
 
         self.logger.info("Async Notification Hub shutdown complete")
 
-    async def _register_service(self):
-        self.logger.info("Registering service...")
+        self.context.term()
 
-        self.registry_client.connect()
+    async def register_service(self):
+        self.logger.info("Registering service...")
 
         self.service_id = await self.registry_client.register(
             name=self.service_name,
@@ -139,14 +141,12 @@ class AsyncNotificationHub:
             await self.registry_client.start_heartbeat()
             self.is_service_registered = True
 
-    async def _deregister_service(self):
+    async def deregister_service(self):
         self.logger.info("De-registering service...")
 
         if self.service_id:
             await self.registry_client.stop_heartbeat()
             await self.registry_client.deregister()
-
-        self.registry_client.disconnect()
 
     async def _event_collector(self):
         """Main event collection loop"""
