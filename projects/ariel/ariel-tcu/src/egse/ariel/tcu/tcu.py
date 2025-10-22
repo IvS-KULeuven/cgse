@@ -20,6 +20,7 @@ import crcmod
 from serial.tools import list_ports
 
 from egse.ariel.tcu import PROXY_TIMEOUT, SERVICE_TYPE
+from egse.decorators import static_vars
 from egse.device import DeviceInterface
 from egse.mixin import dynamic_command, CommandType, DynamicCommandMixin
 from egse.proxy import DynamicProxy
@@ -179,7 +180,6 @@ class MotorState(IntEnum):
 
 
 def create_write_cmd_string(
-    transaction_id: int,
     cmd_address: CommandAddress | str,
     cmd_identifier: GeneralCommandIdentifier | TSMCommandIdentifier | M2MDCommandIdentifier | HKCommandIdentifier | str,
     cargo1: str = "0000",
@@ -188,7 +188,6 @@ def create_write_cmd_string(
     """Creates a write-command string to send to the TCU Arduino.
 
     Args:
-        transaction_id (int): Transaction identifier (i.e. counter that is incremented upon each command call).
         cmd_address (CommandAddress): Identifier of the commanded device.  In case of a M2MD axis, it is the reference
                                       to the axis (typically "${axis}") rather than the axis identifier enumeration.
         cmd_identifier (GeneralCommandIdentifier | TSMCommandIdentifier | M2MDCommandIdentifier | HKCommandIdentifier):
@@ -202,11 +201,10 @@ def create_write_cmd_string(
         Write-command string to send to the TCU Arduino.
     """
 
-    return create_cmd_string(PacketType.WRITE, transaction_id, cmd_address, cmd_identifier, cargo1, cargo2)
+    return create_cmd_string(PacketType.WRITE, cmd_address, cmd_identifier, cargo1, cargo2)
 
 
 def create_read_cmd_string(
-    transaction_id: int,
     cmd_address: CommandAddress | str,
     cmd_identifier: GeneralCommandIdentifier | TSMCommandIdentifier | M2MDCommandIdentifier | HKCommandIdentifier | str,
     cargo1: str = "0000",
@@ -215,7 +213,6 @@ def create_read_cmd_string(
     """Creates a read-command string to send to the TCU Arduino.
 
     Args:
-        transaction_id (int): Transaction identifier (i.e. counter that is incremented upon each command call).
         cmd_address (CommandAddress): Identifier of the commanded device.  In case of a M2MD axis, it is the reference
                                       to the axis (typically "${axis}") rather than the axis identifier enumeration.
         cmd_identifier (GeneralCommandIdentifier | TSMCommandIdentifier | M2MDCommandIdentifier | HKCommandIdentifier):
@@ -229,12 +226,12 @@ def create_read_cmd_string(
         Read-command string to send to the TCU Arduino.
     """
 
-    return create_cmd_string(PacketType.READ, transaction_id, cmd_address, cmd_identifier, cargo1, cargo2)
+    return create_cmd_string(PacketType.READ, cmd_address, cmd_identifier, cargo1, cargo2)
 
 
+@static_vars(transaction_id=-1)
 def create_cmd_string(
     packet_type: PacketType,
-    transaction_id: int,
     cmd_address: CommandAddress | str,
     cmd_identifier: GeneralCommandIdentifier | TSMCommandIdentifier | M2MDCommandIdentifier | HKCommandIdentifier | str,
     cargo1: str = "0000",
@@ -265,7 +262,6 @@ def create_cmd_string(
 
     Args:
         packet_type (PacketType): Type of the packet (read or write).
-        transaction_id (int): Transaction identifier (i.e. counter that is incremented upon each command call).
         cmd_address (CommandAddress): Identifier of the commanded device.  In case of a M2MD axis, it is the reference
                                       to the axis (typically "${axis}") rather than the axis identifier enumeration.
         cmd_identifier (GeneralCommandIdentifier | TSMCommandIdentifier | M2MDCommandIdentifier | HKCommandIdentifier
@@ -279,13 +275,17 @@ def create_cmd_string(
         Command string to send to the TCU Arduino.
     """
 
+    create_cmd_string.transaction_id += 1
+
     # Adopted from Vladimiro's code
 
     address = cmd_address.value if isinstance(cmd_address, CommandAddress) else cmd_address
     cmd_identifier = cmd_identifier if isinstance(cmd_identifier, str) else cmd_identifier.value
 
+    # FIXME
+
     cmd_string = (
-        f"{TCU_LOGICAL_ADDRESS}{packet_type.value} {hex(transaction_id)[2:].zfill(4)} {DATA_LENGTH} "
+        f"{TCU_LOGICAL_ADDRESS}{packet_type.value} {hex(create_cmd_string.transaction_id)[2:].zfill(4)} {DATA_LENGTH} "
         f"{address} {cmd_identifier} {cargo1} {cargo2}"
     )
 
@@ -534,24 +534,13 @@ def get_all_serial_ports() -> list:
     return list_ports.comports()
 
 
-counter = 0  # Keep track of the transaction identifier (incremented after each command call)
-
-
-def increment_counter():
-    """Increment the counter that is used as transaction identifier in the commands."""
-
-    global counter
-    counter += 1
-
-
 class TcuInterface(DeviceInterface):
     # General commands
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.GENERAL, GeneralCommandIdentifier.TCU_FIRMWARE_ID),
+        cmd_string=create_read_cmd_string(CommandAddress.GENERAL, GeneralCommandIdentifier.TCU_FIRMWARE_ID),
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def tcu_firmware_id(self):
         """Selects the Instrument Control Unit (ICU) channel and returns the firmware version.
@@ -564,9 +553,8 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.GENERAL, GeneralCommandIdentifier.TCU_MODE),
+        cmd_string=create_read_cmd_string(CommandAddress.GENERAL, GeneralCommandIdentifier.TCU_MODE),
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def get_tcu_mode(self):
         """Returns the current mode of the Ariel TCU.
@@ -589,7 +577,6 @@ class TcuInterface(DeviceInterface):
         ),
         process_kwargs=process_general_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def set_tcu_mode(self, tcu_mode: TcuMode = TcuMode.IDLE):
         """Selects the Ariel TCU working mode.
@@ -605,9 +592,8 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.GENERAL, GeneralCommandIdentifier.TCU_STATUS),
+        cmd_string=create_read_cmd_string(CommandAddress.GENERAL, GeneralCommandIdentifier.TCU_STATUS),
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def tcu_status(self):
         pass
@@ -615,34 +601,27 @@ class TcuInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string=create_write_cmd_string(
-            counter, CommandAddress.GENERAL, GeneralCommandIdentifier.TCU_SIMULATED, cargo2="${cargo2}"
+            CommandAddress.GENERAL, GeneralCommandIdentifier.TCU_SIMULATED, cargo2="${cargo2}"
         ),
         process_kwargs=process_general_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def tcu_simulated(self, cargo2: str):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_write_cmd_string(
-            counter, CommandAddress.GENERAL, GeneralCommandIdentifier.RESTART_LINKS_PERIOD_LATCH
-        ),
+        cmd_string=create_write_cmd_string(CommandAddress.GENERAL, GeneralCommandIdentifier.RESTART_LINKS_PERIOD_LATCH),
         process_kwargs=process_general_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def restart_links_period_latch(self, cargo2: str):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(
-            counter, CommandAddress.GENERAL, GeneralCommandIdentifier.RESTART_LINKS_PERIOD
-        ),
+        cmd_string=create_read_cmd_string(CommandAddress.GENERAL, GeneralCommandIdentifier.RESTART_LINKS_PERIOD),
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def get_restart_links_period(self):
         pass
@@ -650,11 +629,10 @@ class TcuInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string=create_write_cmd_string(
-            counter, CommandAddress.GENERAL, GeneralCommandIdentifier.RESTART_LINKS_PERIOD, cargo2="${link_period}"
+            CommandAddress.GENERAL, GeneralCommandIdentifier.RESTART_LINKS_PERIOD, cargo2="${link_period}"
         ),
         process_kwargs=process_general_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def set_restart_links_period(self, link_period: int = "0xFFFF"):
         pass
@@ -663,12 +641,9 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_write_cmd_string(
-            counter, "${axis}", M2MDCommandIdentifier.OPE_MNG_COMMAND, cargo2="${cargo2}"
-        ),
+        cmd_string=create_write_cmd_string("${axis}", M2MDCommandIdentifier.OPE_MNG_COMMAND, cargo2="${cargo2}"),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def ope_mng_command(self, axis: CommandAddress, cargo2: str = 0):
         """Commands the action to the SENER motor driver IP core.
@@ -683,155 +658,127 @@ class TcuInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string=create_write_cmd_string(
-            counter, "${axis}", M2MDCommandIdentifier.OPE_MNG_EVENT_CLEAR_PROTECT_FLAG, cargo2="${cargo2}"
+            "${axis}", M2MDCommandIdentifier.OPE_MNG_EVENT_CLEAR_PROTECT_FLAG, cargo2="${cargo2}"
         ),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def ope_mng_event_clear_protect_flag(self, cargo2: str = 0):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_write_cmd_string(
-            counter, "${axis}", M2MDCommandIdentifier.OPE_MNG_EVENT_CLEAR, cargo2="${cargo2}"
-        ),
+        cmd_string=create_write_cmd_string("${axis}", M2MDCommandIdentifier.OPE_MNG_EVENT_CLEAR, cargo2="${cargo2}"),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def ope_mng_event_clear(self, axis: CommandAddress, cargo2: str = 0):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, "${axis}", M2MDCommandIdentifier.OPE_MNG_STATUS),
+        cmd_string=create_read_cmd_string("${axis}", M2MDCommandIdentifier.OPE_MNG_STATUS),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def ope_mng_status(self, axis: CommandAddress):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, "${axis}", M2MDCommandIdentifier.OPE_MNG_EVENT_REG),
+        cmd_string=create_read_cmd_string("${axis}", M2MDCommandIdentifier.OPE_MNG_EVENT_REG),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def ope_mng_event_reg(self, axis: CommandAddress):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, "${axis}", M2MDCommandIdentifier.ACQ_CURR_OFF_CORR),
+        cmd_string=create_read_cmd_string("${axis}", M2MDCommandIdentifier.ACQ_CURR_OFF_CORR),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def get_acq_curr_off_corr(self, axis: CommandAddress):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_write_cmd_string(
-            counter, "${axis}", M2MDCommandIdentifier.ACQ_CURR_OFF_CORR, cargo2="${cargo2}"
-        ),
+        cmd_string=create_write_cmd_string("${axis}", M2MDCommandIdentifier.ACQ_CURR_OFF_CORR, cargo2="${cargo2}"),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def set_acq_curr_off_corr(self, axis: CommandAddress, cargo2: str = 0):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, "${axis}", M2MDCommandIdentifier.ACQ_CURR_GAIN_CORR),
+        cmd_string=create_read_cmd_string("${axis}", M2MDCommandIdentifier.ACQ_CURR_GAIN_CORR),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def get_acq_curr_gain_corr(self, axis: CommandAddress):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_write_cmd_string(
-            counter, "${axis}", M2MDCommandIdentifier.ACQ_CURR_GAIN_CORR, cargo2="${cargo2}"
-        ),
+        cmd_string=create_write_cmd_string("${axis}", M2MDCommandIdentifier.ACQ_CURR_GAIN_CORR, cargo2="${cargo2}"),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def set_acq_curr_gain_corr(self, axis: CommandAddress, cargo2: str = 0):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, "${axis}", M2MDCommandIdentifier.ACQ_AXIS_A_CURR_READ),
+        cmd_string=create_read_cmd_string("${axis}", M2MDCommandIdentifier.ACQ_AXIS_A_CURR_READ),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def acq_axis_a_curr_read(self, axis: CommandAddress):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, "${axis}", M2MDCommandIdentifier.ACQ_AXIS_B_CURR_READ),
+        cmd_string=create_read_cmd_string("${axis}", M2MDCommandIdentifier.ACQ_AXIS_B_CURR_READ),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def acq_axis_b_curr_read(self, axis: CommandAddress):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_write_cmd_string(
-            counter, "${axis}", M2MDCommandIdentifier.ACQ_AVE_LPF_EN, cargo2="${cargo2}"
-        ),
+        cmd_string=create_write_cmd_string("${axis}", M2MDCommandIdentifier.ACQ_AVE_LPF_EN, cargo2="${cargo2}"),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def acq_ave_lpf_en(self, axis: CommandAddress, cargo2: str):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_write_cmd_string(
-            counter, "${axis}", M2MDCommandIdentifier.ACQ_OVC_CFG_FILTER, cargo2="${cargo2}"
-        ),
+        cmd_string=create_write_cmd_string("${axis}", M2MDCommandIdentifier.ACQ_OVC_CFG_FILTER, cargo2="${cargo2}"),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def acq_ovc_cfg_filter(self, axis: CommandAddress, cargo2: str):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_write_cmd_string(
-            counter, "${axis}", M2MDCommandIdentifier.ACQ_AVC_FILT_TIME, cargo2="${cargo2}"
-        ),
+        cmd_string=create_write_cmd_string("${axis}", M2MDCommandIdentifier.ACQ_AVC_FILT_TIME, cargo2="${cargo2}"),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def acq_avc_filt_time(self, axis: CommandAddress, cargo2: str):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_write_cmd_string(
-            counter, "${axis}", M2MDCommandIdentifier.ACQ_AVERAGE_TYPE, cargo2="${cargo2}"
-        ),
+        cmd_string=create_write_cmd_string("${axis}", M2MDCommandIdentifier.ACQ_AVERAGE_TYPE, cargo2="${cargo2}"),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def acq_average_type(self, axis: CommandAddress, cargo2: str):
         pass
@@ -839,77 +786,64 @@ class TcuInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string=create_write_cmd_string(
-            counter, "${axis}", M2MDCommandIdentifier.ACQ_SPK_FILT_COUNTER_LIM, cargo2="${cargo2}"
+            "${axis}", M2MDCommandIdentifier.ACQ_SPK_FILT_COUNTER_LIM, cargo2="${cargo2}"
         ),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def acq_spk_filt_counter_lim(self, axis: CommandAddress, cargo2: str):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_write_cmd_string(
-            counter, "${axis}", M2MDCommandIdentifier.ACQ_SPK_FILT_INCR_THR, cargo2="${cargo2}"
-        ),
+        cmd_string=create_write_cmd_string("${axis}", M2MDCommandIdentifier.ACQ_SPK_FILT_INCR_THR, cargo2="${cargo2}"),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def acq_spk_filt_incr_thr(self, axis: CommandAddress, cargo2: str):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, "${axis}", M2MDCommandIdentifier.PROF_GEN_AXIS_STEP),
+        cmd_string=create_read_cmd_string("${axis}", M2MDCommandIdentifier.PROF_GEN_AXIS_STEP),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def get_prof_gen_axis_step(self, axis: CommandAddress):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_write_cmd_string(
-            counter, "${axis}", M2MDCommandIdentifier.PROF_GEN_AXIS_STEP, cargo2="${cargo2}"
-        ),
+        cmd_string=create_write_cmd_string("${axis}", M2MDCommandIdentifier.PROF_GEN_AXIS_STEP, cargo2="${cargo2}"),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def set_prof_gen_axis_step(self, axis: CommandAddress, cargo2: str):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, "${axis}", M2MDCommandIdentifier.PROF_GEN_AXIS_SPEED),
+        cmd_string=create_read_cmd_string("${axis}", M2MDCommandIdentifier.PROF_GEN_AXIS_SPEED),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def get_prof_gen_axis_speed(self, axis: CommandAddress):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_write_cmd_string(
-            counter, "${axis}", M2MDCommandIdentifier.PROF_GEN_AXIS_SPEED, cargo2="${cargo2}"
-        ),
+        cmd_string=create_write_cmd_string("${axis}", M2MDCommandIdentifier.PROF_GEN_AXIS_SPEED, cargo2="${cargo2}"),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def set_prof_gen_axis_speed(self, axis: CommandAddress, cargo2: str):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, "${axis}", M2MDCommandIdentifier.PROF_GEN_AXIS_STATE_START),
+        cmd_string=create_read_cmd_string("${axis}", M2MDCommandIdentifier.PROF_GEN_AXIS_STATE_START),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def get_prof_gen_axis_state_start(self, axis: CommandAddress):
         pass
@@ -917,31 +851,28 @@ class TcuInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string=create_write_cmd_string(
-            counter, "${axis}", M2MDCommandIdentifier.PROF_GEN_AXIS_STATE_START, cargo2="${cargo2}"
+            "${axis}", M2MDCommandIdentifier.PROF_GEN_AXIS_STATE_START, cargo2="${cargo2}"
         ),
         process_kwargs=process_m2md_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def set_prof_gen_axis_state_start(self, axis: CommandAddress, cargo2: str):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, "${axis}", "${position}"),
+        cmd_string=create_read_cmd_string("${axis}", "${position}"),
         process_kwargs=process_sw_rs_xx_sw_rise_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def sw_rs_xx_sw_rise(self, axis: CommandAddress, position: int):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, "${axis}", "${position}"),
+        cmd_string=create_read_cmd_string("${axis}", "${position}"),
         process_kwargs=process_sw_rs_xx_sw_fall_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def sw_rs_xx_sw_fall(self, axis: CommandAddress, position: int):
         pass
@@ -950,18 +881,16 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_write_cmd_string(counter, CommandAddress.TSM, TSMCommandIdentifier.TSM_LATCH),
+        cmd_string=create_write_cmd_string(CommandAddress.TSM, TSMCommandIdentifier.TSM_LATCH),
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def tsm_latch(self):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, TSMCommandIdentifier.TSM_CURRENT_VALUE),
+        cmd_string=create_read_cmd_string(CommandAddress.TSM, TSMCommandIdentifier.TSM_CURRENT_VALUE),
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def get_tsm_current_value(self):
         pass
@@ -969,20 +898,18 @@ class TcuInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string=create_write_cmd_string(
-            counter, CommandAddress.TSM, TSMCommandIdentifier.TSM_CURRENT_VALUE, cargo1="${cargo1}", cargo2="${cargo2}"
+            CommandAddress.TSM, TSMCommandIdentifier.TSM_CURRENT_VALUE, cargo1="${cargo1}", cargo2="${cargo2}"
         ),
         process_kwargs=process_tsm_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def set_tsm_current_value(self, cargo1: str, cargo2: str):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, TSMCommandIdentifier.TSM_CURRENT_OFFSET),
+        cmd_string=create_read_cmd_string(CommandAddress.TSM, TSMCommandIdentifier.TSM_CURRENT_OFFSET),
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def get_tsm_current_offset(self):
         pass
@@ -990,40 +917,34 @@ class TcuInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string=create_write_cmd_string(
-            counter, CommandAddress.TSM, TSMCommandIdentifier.TSM_CURRENT_OFFSET, cargo1="${cargo1}", cargo2="${cargo2}"
+            CommandAddress.TSM, TSMCommandIdentifier.TSM_CURRENT_OFFSET, cargo1="${cargo1}", cargo2="${cargo2}"
         ),
         process_kwargs=process_tsm_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def set_tsm_current_offset(self, cargo1: str, cargo2: str):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_ID_REGISTER),
+        cmd_string=create_read_cmd_string(CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_ID_REGISTER),
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def tsm_adc_id_register(self):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_write_cmd_string(
-            counter, CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_CONFIGURATION_REGISTER
-        ),
+        cmd_string=create_write_cmd_string(CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_CONFIGURATION_REGISTER),
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def tsm_adc_configuration_register(self):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_HPF_REGISTER),
+        cmd_string=create_read_cmd_string(CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_HPF_REGISTER),
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def get_tsm_adc_hpf_register(self):
         pass
@@ -1031,7 +952,6 @@ class TcuInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string=create_write_cmd_string(
-            counter,
             CommandAddress.TSM,
             TSMCommandIdentifier.TSM_ADC_HPF_REGISTER,
             cargo1="${cargo1}",
@@ -1039,16 +959,14 @@ class TcuInterface(DeviceInterface):
         ),
         process_kwargs=process_tsm_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def set_tsm_adc_hpf_register(self, cargo1: str, cargo2: str):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_OFC_REGISTER),
+        cmd_string=create_read_cmd_string(CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_OFC_REGISTER),
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def get_tsm_adc_ofc_register(self):
         pass
@@ -1056,7 +974,6 @@ class TcuInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string=create_write_cmd_string(
-            counter,
             CommandAddress.TSM,
             TSMCommandIdentifier.TSM_ADC_OFC_REGISTER,
             cargo1="${cargo1}",
@@ -1064,16 +981,14 @@ class TcuInterface(DeviceInterface):
         ),
         process_kwargs=process_tsm_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def set_tsm_adc_ofc_register(self, cargo1: str, cargo2: str):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_FSC_REGISTER),
+        cmd_string=create_read_cmd_string(CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_FSC_REGISTER),
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def get_tsm_adc_fsc_register(self):
         pass
@@ -1081,7 +996,6 @@ class TcuInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string=create_read_cmd_string(
-            counter,
             CommandAddress.TSM,
             TSMCommandIdentifier.TSM_ADC_FSC_REGISTER,
             cargo1="${cargo1}",
@@ -1089,16 +1003,14 @@ class TcuInterface(DeviceInterface):
         ),
         process_kwargs=process_tsm_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def set_tsm_adc_fsc_register(self, cargo1: str, cargo2: str):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_COMMAND_LATCH),
+        cmd_string=create_read_cmd_string(CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_COMMAND_LATCH),
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def tsm_adc_command_latch(self):
         pass
@@ -1106,11 +1018,10 @@ class TcuInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string=create_read_cmd_string(
-            counter, CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_COMMAND, cargo1="${cargo1}", cargo2="${cargo2}"
+            CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_COMMAND, cargo1="${cargo1}", cargo2="${cargo2}"
         ),
         process_kwargs=process_tsm_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def tsm_adc_command(self, cargo1: str, cargo2: str):
         pass
@@ -1118,7 +1029,6 @@ class TcuInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string=create_read_cmd_string(
-            counter,
             CommandAddress.TSM,
             TSMCommandIdentifier.TSM_ADC_CALIBRATION,
             cargo1="${cargo1}",
@@ -1126,17 +1036,15 @@ class TcuInterface(DeviceInterface):
         ),
         process_kwargs=process_tsm_kwargs,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def tsm_adc_calibration(self, cargo1: str, cargo2: str):
         pass
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, "${probe}"),
+        cmd_string=create_read_cmd_string(CommandAddress.TSM, "${probe}"),
         process_kwargs=process_probe_kwargs_currentn,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def tsm_adc_value_xx_currentn(self, probe: int):
         """Returns the negative current to polarise the given thermistor.
@@ -1152,10 +1060,9 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, "${probe}"),
+        cmd_string=create_read_cmd_string(CommandAddress.TSM, "${probe}"),
         process_kwargs=process_probe_kwargs_biasn,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def tsm_adc_value_xx_biasn(self, probe: int):
         """Returns the voltage measured on the given thermistor biased with negative current.
@@ -1171,10 +1078,9 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, "${probe}"),
+        cmd_string=create_read_cmd_string(CommandAddress.TSM, "${probe}"),
         process_kwargs=process_probe_kwargs_currentp,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def tsm_adc_value_xx_currentp(self, probe: int):
         """Returns the positive current to polarise the given thermistor.
@@ -1190,10 +1096,9 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, "${probe}"),
+        cmd_string=create_read_cmd_string(CommandAddress.TSM, "${probe}"),
         process_kwargs=process_probe_kwargs_biasp,
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def tsm_adc_value_xx_biasp(self, probe: int):
         """Returns the voltage measured on the given thermistor biased with positive current.
@@ -1209,9 +1114,8 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string=create_read_cmd_string(counter, CommandAddress.TSM, TSMCommandIdentifier.TSM_ACQ_COUNTER),
+        cmd_string=create_read_cmd_string(CommandAddress.TSM, TSMCommandIdentifier.TSM_ACQ_COUNTER),
         process_cmd_string=append_crc16,
-        post_cmd=increment_counter,
     )
     def tsm_acq_counter(self):
         """Reads the number of ADC measurement sequences that have been made.
