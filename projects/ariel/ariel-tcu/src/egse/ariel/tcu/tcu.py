@@ -1133,7 +1133,7 @@ class TcuController(TcuInterface, DynamicCommandMixin):
 
         super().__init__()
 
-        self.tcu = TcuDeviceInterface()
+        self.transport = self.tcu = TcuDeviceInterface()
 
     # noinspection PyMethodMayBeStatic
     def is_simulator(self):
