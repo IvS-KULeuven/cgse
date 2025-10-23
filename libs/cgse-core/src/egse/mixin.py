@@ -104,7 +104,7 @@ def add_cr_lf(cmd_string: str) -> str:
     return cmd_string
 
 
-def expand_kwargs(kwargs: Dict):
+def expand_kwargs(kwargs: Dict) -> str:
     """Expand keyword arguments and their values as 'key=value' separated by spaces."""
     return " ".join(f"{k}={v}" for k, v in kwargs.items())
 
