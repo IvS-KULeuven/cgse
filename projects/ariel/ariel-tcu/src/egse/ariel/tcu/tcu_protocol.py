@@ -6,7 +6,7 @@ from egse.command import ClientServerCommand
 from egse.control import ControlServer
 from egse.device import DeviceConnectionState
 from egse.metrics import define_metrics
-from egse.protocol import CommandProtocol
+from egse.protocol import DynamicCommandProtocol
 from egse.settings import Settings
 from egse.system import format_datetime
 from egse.zmq_ser import bind_address
@@ -22,7 +22,7 @@ class TcuCommand(ClientServerCommand):
     pass
 
 
-class TcuProtocol(CommandProtocol):
+class TcuProtocol(DynamicCommandProtocol):
     """Command protocol for the Ariel TCU Control Server."""
 
     def __init__(self, control_server: ControlServer, simulator: bool = False):
@@ -46,9 +46,6 @@ class TcuProtocol(CommandProtocol):
             self.tcu.connect()
         except ConnectionError:
             logger.warning("Couldn't establish connection to the Ariel TCU, check the log messages.")
-
-        self.load_commands(DEVICE_SETTINGS.Commands, TcuCommand, TcuInterface)
-        self.build_device_method_lookup_table(self.tcu)
 
         # self.metrics = define_metrics("TCU")
 
