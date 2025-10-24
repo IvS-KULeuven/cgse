@@ -201,9 +201,26 @@ def pre_command(transport: DeviceTransport = None, **kwargs):
     LOGGER.info(f"Inside pre_command({transport.__class__.__name__}, {kwargs})")
 
 
-def post_command(transport: DeviceTransport = None, response: bytes = None):
+def post_command(transport: DeviceTransport = None, response: bytes = None) -> bytes:
     LOGGER.info(f"Inside post_command(transport={transport.__class__.__name__}, {response=})")
     return response
+
+
+def rewrite_kwargs(kwargs: dict) -> str:
+    """Rewrite some of the keyword arguments according to device specs."""
+
+    def calc_crc(data) -> int:
+        return len(data)
+
+    # assume we need to build our own fancy device command string...
+    address = kwargs.get("address")
+    identifier = kwargs.get("identifier")
+    cargo1 = kwargs.get("cargo1", 1)
+    cargo2 = kwargs.get("cargo2", 2)
+
+    cmd = f"{address:06X} 0x{identifier:06x} DEV_07463 CARGO1={cargo1:04d} CARGO2={cargo2}"
+
+    return f"{cmd} {calc_crc(cmd)}"
 
 
 class NewStyleCommandInterface:
@@ -251,9 +268,21 @@ class NewStyleCommandInterface:
     def test_cmd_enum_with_format(self, enumeration: MyEnum):
         """Returns the command string"""
 
+    @dynamic_command(cmd_type="transaction", cmd_string="ARG_EXPANSION::{mode}::{crc:06x}", use_format=True)
+    def test_cmd_with_arg_expansion(self, *, mode, crc):
+        """Return the command string, after processing the arguments in the overriding function."""
+
     @dynamic_command(cmd_type="transaction", cmd_string="msg = ${msg}", pre_cmd=pre_command, post_cmd=post_command)
-    def test_cmd_pre_post(self, msg: str):
+    def test_cmd_pre_post(self, msg: str) -> bytes:
         """Return the command string, executes pre- and post-commands."""
+
+    @dynamic_command(cmd_type="transaction", cmd_string="TRANS ${a} ${kwargs}")
+    def test_cmd_process_kwargs(self, *, a, **kwargs):
+        """Returns the command string."""
+
+    @dynamic_command(cmd_type="transaction", cmd_string="TRANS ${kwargs}", process_kwargs=rewrite_kwargs)
+    def test_cmd_rewrite_kwargs(self, **kwargs):
+        """Returns the command string with rewritten kwargs."""
 
 
 class NewStyleCommand(DynamicCommandMixin, NewStyleCommandInterface):
@@ -262,6 +291,26 @@ class NewStyleCommand(DynamicCommandMixin, NewStyleCommandInterface):
     def __init__(self):
         self.transport = NewStyleTransport()
         super().__init__()
+
+    def test_cmd_with_arg_expansion(self, *, mode, **kwargs):
+        # This function overrides the function from the NewStyleCommandInterface. The reason for doing that is
+        # because we need to reformat and/or process the arguments before passing them to the decorated function.
+
+        # rewrite 'mode'
+        mode = f"{mode:04x}"
+
+        if "crc" in kwargs:
+            crc = kwargs["crc"]
+        else:
+            # 'calculate' the checksum
+            crc = 0x1234
+
+        # pass the method as defined in the NewStyleCommandInterface, to the handle_dynamic_command method of
+        # the mixin class. Provide the expected parameters as if the decorated function would have been called.
+        return DynamicCommandMixin.handle_dynamic_command(self, super().test_cmd_with_arg_expansion)(mode=mode, crc=crc)
+
+        # Note that the following doesn't work, I didn't really figure out why yet...
+        # return super().test_cmd_with_mode_expansion(mode, crc)
 
 
 def test_new_style(caplog):
@@ -317,6 +366,17 @@ def test_new_style(caplog):
     assert (
         "Inside post_command(transport=NewStyleTransport, response=b'msg = testing pre- and post-commands')"
         in caplog.text
+    )
+
+    assert ns.test_cmd_with_arg_expansion(mode=23) == b"ARG_EXPANSION::0017::001234"
+    assert ns.test_cmd_with_arg_expansion(mode=0x10, crc=5678) == b"ARG_EXPANSION::0010::00162e"
+
+    # This tests the expansion of kwargs in the function's signature, by the default `expand_kwargs`
+    assert ns.test_cmd_process_kwargs(a=5, b=2, c=3) == b"TRANS 5 b=2 c=3"
+
+    tcu_mode = 42  # == 0x2A
+    assert ns.test_cmd_rewrite_kwargs(address=5, identifier=2, cargo2=f"{hex(int(tcu_mode))[2:].zfill(4)}") == (
+        b"TRANS 000005 0x000002 DEV_07463 CARGO1=0001 CARGO2=002a 49"
     )
 
 
