@@ -121,6 +121,7 @@ def dynamic_command(
     *,
     cmd_type: str,  # required keyword-only argument
     cmd_string: str = None,
+    cmd_string_func: Callable = None,
     process_response: Callable = None,
     process_cmd_string: Callable = None,
     process_kwargs: Callable = None,
@@ -179,6 +180,7 @@ def dynamic_command(
     Args:
         cmd_type (str): one of 'read', 'write', 'query', or 'transaction' [required keyword]
         cmd_string (str): format string for the generation of the instrument command
+        cmd_string_func (Callable): DIY function that will create a command string
         process_response (Callable): function to process the response
         process_cmd_string (Callable): function to process the command string after substitution
         process_kwargs (Callable): function to expand the kwargs after substitution
@@ -192,8 +194,8 @@ def dynamic_command(
     if cmd_type not in COMMAND_TYPES:
         raise ValueError(f"Unknown type passed into dynamic command decorator: {type=}")
 
-    if cmd_type in ("write", "query", "transaction") and cmd_string is None:
-        raise ValueError(f"No cmd_string was provided for {cmd_type=}.")
+    if cmd_type in ("write", "query", "transaction") and cmd_string is None and cmd_string_func is None:
+        raise ValueError(f"No cmd_string nor a cmd_string_func was provided for {cmd_type=}.")
 
     def func_wrapper(func: Callable):
         """Adds the different static attributes."""
@@ -204,6 +206,9 @@ def dynamic_command(
 
         if cmd_string is not None:
             setattr(func, "__cmd_string", cmd_string)
+
+        if cmd_string_func is not None:
+            setattr(func, "__cmd_string_func", cmd_string_func)
 
         if process_response is not None:
             setattr(func, "__process_response", process_response)
@@ -250,11 +255,31 @@ class DynamicCommandMixin:
             raise AttributeError("Transport was not defined in sub-class of DynamicInterfaceMixin")
 
     @staticmethod
-    def create_command_string(func: Callable, template_str: str, *args, **kwargs):
+    def create_command_string(func: Callable, provider: str | Callable[..., str], *args, **kwargs) -> str:
         """
-        Creates a command string that is understood by the instrument. This can be an SCPI
-        command or a specific proprietary command string. The `cmd_str` can contain placeholders
-        similar to what is used in string formatting.
+        Create the instrument command string from a template or from a provider callable.
+
+        The resulting string can be an SCPI command or a specific proprietary command string.
+
+        The `provider` argument controls how the raw command string is produced:
+
+        - If `provider` is a **callable**, it is invoked as `provider(*args, **kwargs)` and must
+          return the fully formed command string. This allows arbitrary construction logic
+          (e.g. conditional pieces, lookups, or complex formatting) outside the template
+          mechanics used below.
+
+        - If `provider` is a **string**, it is treated as a template and variables are
+          substituted from the bound arguments of `func`. Two string styles are supported:
+
+            - Template style using `string.Template` with `$name` placeholders (safe substitution).
+            - Format style using `str.format` with `{name}` placeholders, activated when
+              the wrapped `func` has the `__use_format` attribute set.
+
+          The code binds `args` and `kwargs` to `func`'s signature to produce a mapping of
+          parameter names to values. For parameters declared as `**kwargs` the mixin will
+          expand them with a `__process_kwargs` callable if present on `func`, otherwise
+          it uses the default `expand_kwargs`. When template substitution is used, enum
+          values are converted to their `.value`.
 
         As an example, we have a function with two positional arguments 'a', and 'b' and one keyword
         argument flag:
@@ -265,49 +290,67 @@ class DynamicCommandMixin:
         We have the following template string: `CREATE:FUN:${a} ${b} [${flag}]`.
 
         When we call the function as follows: `func("TEMP", 23)`, we would then expect
-        the returned string to be "CREATE:FUN:TEMP 23 [True]"
+        the returned string to be "CREATE:FUN:TEMP 23 [True]".This function will be called as:
 
-            DynamicCommandMixin.create_command_string(func, template, "TEMP", 23)
+            DynamicCommandMixin.create_command_string(func, provider, "TEMP", 23)
+
+        Note:
+            The processing attributes `__process_kwargs` and `__use_format` are only used when
+            `provider` is a string. The attribute `__process_cmd_string` is used when `provider`
+             is a template/format string or when it's a callable. The `__process_cmd_string` is
+             the last action taken before the result is returned.
 
         Args:
-            func (Callable): a function or method that provides the signature
-            template_str (str): a template for the command
+            func (Callable): a function or method that provides the signature which defines
+                the names available for substitution. The function may also carry processing
+                attributes (`__use_format`, `__process_kwargs`, `__process_cmd_string`).
+            provider (str | Callable): a template/format string or a function that returns a string
             args (tuple): positional arguments that will be used in the command string
             kwargs (dict): keywords arguments that will be used in the command string
+
+        Returns:
+            the final command string ready to be sent to the transport.
+
+        Raises:
+            CommandError: if `args`/`kwargs` cannot be bound to `func`'s signature.
         """
-        try:
-            process_kwargs = getattr(func, "__process_kwargs")
-        except AttributeError:
-            process_kwargs = expand_kwargs
 
-        template = string.Template(template_str)
-
-        sig = inspect.signature(func)
-        try:
-            bound = sig.bind(*args, **kwargs)
-        except TypeError as exc:
-            raise CommandError(
-                f"Arguments {args}, {kwargs} do not match function signature for {func.__name__}{sig}"
-            ) from exc
-
-        variables = {}
-        for idx, par in enumerate(sig.parameters.values()):
-            # if the argument is of signature '**kwargs' then expand the kwargs
-            if par.kind == inspect.Parameter.VAR_KEYWORD:
-                variables[par.name] = process_kwargs(bound.arguments[par.name])
-                continue
-
-            # otherwise, use the argument value or the default
-            try:
-                variables[par.name] = bound.arguments[par.name]
-            except KeyError:
-                variables[par.name] = par.default
-
-        if hasattr(func, "__use_format"):
-            cmd_string = template_str.format(**variables)
+        if callable(provider):
+            cmd_string = provider(*args, **kwargs)
         else:
-            variables = {k: v.value if isinstance(v, enum.Enum) else v for k, v in variables.items()}
-            cmd_string = template.safe_substitute(variables)
+            try:
+                process_kwargs = getattr(func, "__process_kwargs")
+            except AttributeError:
+                process_kwargs = expand_kwargs
+
+            template = string.Template(template_str := provider)
+
+            sig = inspect.signature(func)
+            try:
+                bound = sig.bind(*args, **kwargs)
+            except TypeError as exc:
+                raise CommandError(
+                    f"Arguments {args}, {kwargs} do not match function signature for {func.__name__}{sig}"
+                ) from exc
+
+            variables = {}
+            for idx, par in enumerate(sig.parameters.values()):
+                # if the argument is of signature '**kwargs' then expand the kwargs
+                if par.kind == inspect.Parameter.VAR_KEYWORD:
+                    variables[par.name] = process_kwargs(bound.arguments[par.name])
+                    continue
+
+                # otherwise, use the argument value or the default
+                try:
+                    variables[par.name] = bound.arguments[par.name]
+                except KeyError:
+                    variables[par.name] = par.default
+
+            if hasattr(func, "__use_format"):
+                cmd_string = template_str.format(**variables)
+            else:
+                variables = {k: v.value if isinstance(v, enum.Enum) else v for k, v in variables.items()}
+                cmd_string = template.safe_substitute(variables)
 
         try:
             process_cmd_string = getattr(func, "__process_cmd_string")
@@ -337,10 +380,14 @@ class DynamicCommandMixin:
         @functools.wraps(attr)
         def command_wrapper(*args, **kwargs):
             """Generates command strings and executes the transport functions."""
-            try:
+
+            if hasattr(attr, "__cmd_string"):
                 cmd_str = getattr(attr, "__cmd_string")
                 cmd_str = self.create_command_string(attr, cmd_str, *args, **kwargs)
-            except AttributeError:
+            elif hasattr(attr, "__cmd_string_func"):
+                func = getattr(attr, "__cmd_string_func")
+                cmd_str = self.create_command_string(attr, func, *args, **kwargs)
+            else:
                 cmd_str = None
 
             response = None
