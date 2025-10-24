@@ -223,6 +223,10 @@ def rewrite_kwargs(kwargs: dict) -> str:
     return f"{cmd} {calc_crc(cmd)}"
 
 
+def create_fancy_cmd_string(a: str, b: int, *, c: float, d: str) -> str:
+    return f"FANCY {a}, {d} – {b:04d} {c=:.3f}"
+
+
 class NewStyleCommandInterface:
     """Interface definition for new style dynamic commands."""
 
@@ -283,6 +287,10 @@ class NewStyleCommandInterface:
     @dynamic_command(cmd_type="transaction", cmd_string="TRANS ${kwargs}", process_kwargs=rewrite_kwargs)
     def test_cmd_rewrite_kwargs(self, **kwargs):
         """Returns the command string with rewritten kwargs."""
+
+    @dynamic_command(cmd_type="transaction", cmd_string_func=create_fancy_cmd_string)
+    def test_cmd_string_func(self, a: str, b: int, *, c: float, d: str) -> bytes:
+        """Returns a command string based on the arguments."""
 
 
 class NewStyleCommand(DynamicCommandMixin, NewStyleCommandInterface):
@@ -378,6 +386,8 @@ def test_new_style(caplog):
     assert ns.test_cmd_rewrite_kwargs(address=5, identifier=2, cargo2=f"{hex(int(tcu_mode))[2:].zfill(4)}") == (
         b"TRANS 000005 0x000002 DEV_07463 CARGO1=0001 CARGO2=002a 49"
     )
+
+    assert ns.test_cmd_string_func("Hello!", 5, c=3.14, d="World!").decode() == "FANCY Hello!, World! – 0005 c=3.140"
 
 
 def test_interface_definition():
