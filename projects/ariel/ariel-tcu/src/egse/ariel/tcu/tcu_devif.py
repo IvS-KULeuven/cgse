@@ -100,6 +100,3 @@ class TcuDeviceInterface(DeviceConnectionInterface, DeviceTransport):
         self.arduino.write(command.encode("utf-8"))
         time.sleep(0.05)
         return self.arduino.readline()
-
-    # read = trans
-    # write = trans
