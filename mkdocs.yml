@@ -140,6 +140,7 @@ nav:
     - dev_guide/coding_style.md
     - dev_guide/docs.md
     - dev_guide/plugins.md
+    - dev_guide/dotenv.md
     - dev_guide/unit_testing.md
     - dev_guide/nox.md
     - dev_guide/project-configuration.md
