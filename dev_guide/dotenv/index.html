@@ -2510,10 +2510,16 @@ project more secure. At the start of an application, call <code>load_dotenv()</c
 <code>.gitignore</code>, commit a <code>.env.example</code> template (with dummy values) so other developers know what variables are needed,
 and call <code>load_dotenv()</code> at the top of your main entry point before accessing any environment variables. In production,
 you usually skip the <code>.env</code> file entirely and set real environment variables through your hosting platform.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code>load_dotenv()</code> function will <strong>not overwrite</strong> existing environment variables in <code>os.environ</code>. This means
+environment variables already set in your shell or system take precedence over values in your <code>.env</code> file. 
+To override this behavior and force <code>.env</code> values to take priority, use <code>load_dotenv(override=True)</code>.</p>
+</div>
 <p>Below, we have summarised some basic know-hows for using dotenv:</p>
 <ul>
 <li>place the <code>.env</code> file at the root location of your project. When you are developing for the CGSE, use the top-level
-  folder of the monorepo. Please note that the <code>load_dotenv()</code> function searches for a <code>.env</code> file in the current 
+  folder of the monorepo. Please note that the <code>load_dotenv()</code> function searches for a <code>.env</code> file in the current
   folder, the parent folder up until it hits your home directory.</li>
 <li>the format to use for the environment variables is <code>KEY=VALUE</code>.</li>
 <li>do not use quotes, unless the VALUE contains spaces.</li>
