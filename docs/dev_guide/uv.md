@@ -28,7 +28,7 @@ Python, but currently these have not been tested. So, we will for the moment sti
 3.9.20. Install this version as follows:
 
 ```shell
-$ uv python install 3.9.20
+$ uv python install 3.10
 ```
 
 !!! note "`pyenv`"
@@ -38,7 +38,7 @@ $ uv python install 3.9.20
     error. This is a known issue with `uv`.
 
     ```
-    pyenv: version `3.9.20' is not installed (set by /Users/rik/github/cgse/libs/cgse-common/.python-version)
+    pyenv: version `3.10.16' is not installed (set by /Users/rik/github/cgse/libs/cgse-common/.python-version)
     ```
 
 You can check which Python versions are installed already on your system:
@@ -67,7 +67,7 @@ You can check which Python versions are installed already on your system:
     You can pin a python version with the command:
 
     ```
-    $ uv python pin 3.9.20
+    $ uv python pin 3.10
     ```
 
     `uv` will search for a pinned version in the parent folders up to the root folder or your home directory.
@@ -83,7 +83,7 @@ When creating a virtual environment make sure you are in the root folder, e.g. `
 
 ```shell
 $ cd ~/github/cgse
-$ uv venv --python 3.9.20
+$ uv venv --python 3.10
 ```
 
 If you want to name your virtual environment, use the optional argument `--prompt <venv name>` in
@@ -103,7 +103,7 @@ with the command:
 
 ```shell
 $ uv pip list -v
-Using Python 3.9.20 environment at: /Users/rik/github/cgse/.venv
+Using Python 3.10.16 environment at: /Users/rik/github/cgse/.venv
 Package           Version     Editable project location
 ----------------- ----------- ---------------------------------------
 apscheduler       3.11.0

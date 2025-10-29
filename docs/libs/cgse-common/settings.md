@@ -39,8 +39,8 @@ Settings
 │   ├── METRICS_PORT: 7003
 │   ├── MAX_NR_LOG_FILES: 20
 │   ├── MAX_SIZE_LOG_FILES: 20
-│   ├── TEXTUALOG_IP_ADDRESS: 127.0.0.1
-│   └── TEXTUALOG_LISTENING_PORT: 19996
+│   ├── EXTERN_LOG_HOST: 127.0.0.1
+│   └── EXTERN_LOG_PORT: 19996
 ├── Configuration Manager Control Server
 │   ├── PROTOCOL: tcp
 │   ├── HOSTNAME: localhost
@@ -146,8 +146,8 @@ Logging Control Server:                          # LOG_CS
     METRICS_PORT:                  7003          # The HTTP port where Prometheus will connect to for retrieving metrics
     MAX_NR_LOG_FILES:                20          # The maximum number of log files that will be maintained in a roll-over
     MAX_SIZE_LOG_FILES:              20          # The maximum size one log file can become
-    TEXTUALOG_IP_ADDRESS:     127.0.0.1          # The IP address of the textualog listening server
-    TEXTUALOG_LISTENING_PORT:     19996          # The port number on which the textualog server is listening
+    EXTERN_LOG_HOST:          127.0.0.1          # The IP address of the external logger 
+    EXTERN_LOG_PORT:              19996          # The port number on which the external logger is listening
 
 Configuration Manager Control Server:            # CM_CS
 

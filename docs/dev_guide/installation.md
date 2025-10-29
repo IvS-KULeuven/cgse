@@ -43,7 +43,7 @@ Now you will have to create a virtual environment and populated it with all the 
 
     The following three commands will get you going quickly:
     ```
-    $ uv venv --python 3.9.20
+    $ uv venv --python 3.10
     $ uv sync --all-packages
     $ uv run cgse
     
