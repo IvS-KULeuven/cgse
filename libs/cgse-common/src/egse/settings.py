@@ -197,7 +197,7 @@ def load_local_settings(force: bool = False) -> attrdict:
     local_settings_path = get_local_settings_path()
 
     if local_settings_path:
-        path = Path(local_settings_path)
+        path = Path(local_settings_path).expanduser()
         local_settings = load_settings_file(path.parent, path.name, force)
 
     return local_settings
