@@ -130,6 +130,7 @@ nav:
     - getting_started.md
     - package_list.md
     - initialize.md
+    - tutorial.md
     - help.md
   - Developer Guide:
     - dev_guide/index.md
@@ -143,8 +144,10 @@ nav:
     - dev_guide/nox.md
     - dev_guide/project-configuration.md
     - dev_guide/versioning.md
+    - dev_guide/monitoring.md
   - User Guide:
     - user_guide/index.md
+    - user_guide/cli.md
   - Libs:
     - libs/index.md
     - cgse-common:
