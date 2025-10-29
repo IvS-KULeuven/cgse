@@ -12,13 +12,13 @@
         <meta name="author" content="Rik Huygen">
       
       
-        <link rel="canonical" href="https://ivs-kuleuven.github.io/cgse/api/calibration/">
+        <link rel="canonical" href="https://ivs-kuleuven.github.io/cgse/dev_guide/dotenv/">
       
       
-        <link rel="prev" href="../bits/">
+        <link rel="prev" href="../plugins/">
       
       
-        <link rel="next" href="../command/">
+        <link rel="next" href="../unit_testing/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -26,7 +26,7 @@
     
     
       
-        <title>egse.calibration - CGSE</title>
+        <title>Using dotenv - CGSE</title>
       
     
     
@@ -112,9 +112,9 @@
 <!-- / Fathom -->
 
 
-<meta property="og:title" content="CGSE - egse.calibration">
+<meta property="og:title" content="CGSE - Using dotenv">
 <meta property="og:type" content="article">
-<meta property="og:url" content="https://ivs-kuleuven.github.io/cgse/api/calibration/">
+<meta property="og:url" content="https://ivs-kuleuven.github.io/cgse/dev_guide/dotenv/">
 <meta property="og:site_name" content="CGSE Documentation">
 <meta property="og:description" content="CGSE is an instrument test framework for Python.">
 <meta property="og:image" content="https://raw.githubusercontent.com/IvS-KULeuven/cgse/refs/heads/main/docs/images/icons/cgse-logo.svg">
@@ -154,7 +154,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#egse.calibration" class="md-skip">
+        <a href="#using-dotenv" class="md-skip">
           Skip to content
         </a>
       
@@ -189,7 +189,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              egse.calibration
+              Using dotenv
             
           </span>
         </div>
@@ -333,11 +333,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../dev_guide/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -421,13 +423,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../api/" class="md-tabs__link">
           
   
   
@@ -711,6 +711,8 @@
       
   
   
+    
+  
   
   
     
@@ -748,18 +750,21 @@
     
     
       
+        
+        
+      
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../dev_guide/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -772,13 +777,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Developer Guide
@@ -794,7 +799,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/monorepo/" class="md-nav__link">
+      <a href="../monorepo/" class="md-nav__link">
         
   
   
@@ -817,7 +822,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/installation/" class="md-nav__link">
+      <a href="../installation/" class="md-nav__link">
         
   
   
@@ -840,7 +845,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/uv/" class="md-nav__link">
+      <a href="../uv/" class="md-nav__link">
         
   
   
@@ -863,7 +868,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/coding_style/" class="md-nav__link">
+      <a href="../coding_style/" class="md-nav__link">
         
   
   
@@ -886,7 +891,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/docs/" class="md-nav__link">
+      <a href="../docs/" class="md-nav__link">
         
   
   
@@ -909,7 +914,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/plugins/" class="md-nav__link">
+      <a href="../plugins/" class="md-nav__link">
         
   
   
@@ -929,10 +934,19 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../dev_guide/dotenv/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -943,6 +957,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -955,7 +970,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/unit_testing/" class="md-nav__link">
+      <a href="../unit_testing/" class="md-nav__link">
         
   
   
@@ -978,7 +993,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/nox/" class="md-nav__link">
+      <a href="../nox/" class="md-nav__link">
         
   
   
@@ -1001,7 +1016,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/project-configuration/" class="md-nav__link">
+      <a href="../project-configuration/" class="md-nav__link">
         
   
   
@@ -1024,7 +1039,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/versioning/" class="md-nav__link">
+      <a href="../versioning/" class="md-nav__link">
         
   
   
@@ -1047,7 +1062,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev_guide/monitoring/" class="md-nav__link">
+      <a href="../monitoring/" class="md-nav__link">
         
   
   
@@ -1692,8 +1707,6 @@
       
   
   
-    
-  
   
   
     
@@ -1761,21 +1774,18 @@
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../api/" class="md-nav__link ">
               
   
   
@@ -1788,13 +1798,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="">
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             API
@@ -1810,7 +1820,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../bits/" class="md-nav__link">
+      <a href="../../api/bits/" class="md-nav__link">
         
   
   
@@ -1830,30 +1840,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    egse.calibration
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../api/calibration/" class="md-nav__link">
         
   
   
@@ -1864,102 +1854,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#egse.calibration" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;calibration
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" calibration">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#egse.calibration.apply_gain_offset" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;apply_gain_offset
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.calibration.callendar_van_dusen" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;callendar_van_dusen
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.calibration.chebychev" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;chebychev
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.calibration.counts_to_resistance" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;counts_to_resistance
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.calibration.counts_to_temperature" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;counts_to_temperature
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.calibration.resistance_to_temperature" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;resistance_to_temperature
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.calibration.solve_temperature" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;solve_temperature
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1972,7 +1866,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../command/" class="md-nav__link">
+      <a href="../../api/command/" class="md-nav__link">
         
   
   
@@ -1995,7 +1889,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../config/" class="md-nav__link">
+      <a href="../../api/config/" class="md-nav__link">
         
   
   
@@ -2018,7 +1912,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../control/" class="md-nav__link">
+      <a href="../../api/control/" class="md-nav__link">
         
   
   
@@ -2041,7 +1935,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../counter/" class="md-nav__link">
+      <a href="../../api/counter/" class="md-nav__link">
         
   
   
@@ -2064,7 +1958,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../decorators/" class="md-nav__link">
+      <a href="../../api/decorators/" class="md-nav__link">
         
   
   
@@ -2087,7 +1981,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../device/" class="md-nav__link">
+      <a href="../../api/device/" class="md-nav__link">
         
   
   
@@ -2110,7 +2004,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dicts/" class="md-nav__link">
+      <a href="../../api/dicts/" class="md-nav__link">
         
   
   
@@ -2133,7 +2027,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dummy/" class="md-nav__link">
+      <a href="../../api/dummy/" class="md-nav__link">
         
   
   
@@ -2156,7 +2050,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../env/" class="md-nav__link">
+      <a href="../../api/env/" class="md-nav__link">
         
   
   
@@ -2179,7 +2073,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../exceptions/" class="md-nav__link">
+      <a href="../../api/exceptions/" class="md-nav__link">
         
   
   
@@ -2202,7 +2096,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../heartbeat/" class="md-nav__link">
+      <a href="../../api/heartbeat/" class="md-nav__link">
         
   
   
@@ -2225,7 +2119,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../hk/" class="md-nav__link">
+      <a href="../../api/hk/" class="md-nav__link">
         
   
   
@@ -2248,7 +2142,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../listener/" class="md-nav__link">
+      <a href="../../api/listener/" class="md-nav__link">
         
   
   
@@ -2271,7 +2165,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../metrics/" class="md-nav__link">
+      <a href="../../api/metrics/" class="md-nav__link">
         
   
   
@@ -2294,7 +2188,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../mixin/" class="md-nav__link">
+      <a href="../../api/mixin/" class="md-nav__link">
         
   
   
@@ -2317,7 +2211,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../monitoring/" class="md-nav__link">
+      <a href="../../api/monitoring/" class="md-nav__link">
         
   
   
@@ -2340,7 +2234,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../observer/" class="md-nav__link">
+      <a href="../../api/observer/" class="md-nav__link">
         
   
   
@@ -2363,7 +2257,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../obsid/" class="md-nav__link">
+      <a href="../../api/obsid/" class="md-nav__link">
         
   
   
@@ -2386,7 +2280,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../persistence/" class="md-nav__link">
+      <a href="../../api/persistence/" class="md-nav__link">
         
   
   
@@ -2409,7 +2303,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../plugin/" class="md-nav__link">
+      <a href="../../api/plugin/" class="md-nav__link">
         
   
   
@@ -2432,7 +2326,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../process/" class="md-nav__link">
+      <a href="../../api/process/" class="md-nav__link">
         
   
   
@@ -2455,7 +2349,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reload/" class="md-nav__link">
+      <a href="../../api/reload/" class="md-nav__link">
         
   
   
@@ -2478,7 +2372,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../settings/" class="md-nav__link">
+      <a href="../../api/settings/" class="md-nav__link">
         
   
   
@@ -2501,7 +2395,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../setup/" class="md-nav__link">
+      <a href="../../api/setup/" class="md-nav__link">
         
   
   
@@ -2524,7 +2418,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../system/" class="md-nav__link">
+      <a href="../../api/system/" class="md-nav__link">
         
   
   
@@ -2586,92 +2480,8 @@
   
   
   
+    
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#egse.calibration" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;calibration
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" calibration">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#egse.calibration.apply_gain_offset" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;apply_gain_offset
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.calibration.callendar_van_dusen" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;callendar_van_dusen
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.calibration.chebychev" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;chebychev
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.calibration.counts_to_resistance" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;counts_to_resistance
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.calibration.counts_to_temperature" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;counts_to_temperature
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.calibration.resistance_to_temperature" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;resistance_to_temperature
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#egse.calibration.solve_temperature" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;solve_temperature
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
   
 </nav>
                   </div>
@@ -2690,844 +2500,35 @@
   
 
 
-  <h1>egse.calibration</h1>
-
-<div class="admonition info">
-<p class="admonition-title">cgse-common</p>
-<p>This code is part of the <code>cgse-common</code> package.</p>
-</div>
-
-
-<div class="doc doc-object doc-module">
-
-
-
-<h2 id="egse.calibration" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <span class="doc doc-object-name doc-module-name">egse.calibration</span>
-
-
-<a href="#egse.calibration" class="headerlink" title="Permanent link">&para;</a></h2>
-
-    <div class="doc doc-contents first">
-
-        <p>This module provides functions to calibrate sensor values.</p>
-
-
-
-
-
-
-
-
-
-
-<p><span class="doc-section-title">Functions:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="            apply_gain_offset (egse.calibration.apply_gain_offset)" href="#egse.calibration.apply_gain_offset">apply_gain_offset</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  <p>Applies the given gain and offset to the given counts.</p>
-                </div>
-              </td>
-            </tr>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="            callendar_van_dusen (egse.calibration.callendar_van_dusen)" href="#egse.calibration.callendar_van_dusen">callendar_van_dusen</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  <p>Solves the Callendar - van Dusen equation for temperature.</p>
-                </div>
-              </td>
-            </tr>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="            chebychev (egse.calibration.chebychev)" href="#egse.calibration.chebychev">chebychev</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  <p>Solves the Chebychev equation for temperature.</p>
-                </div>
-              </td>
-            </tr>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="            counts_to_resistance (egse.calibration.counts_to_resistance)" href="#egse.calibration.counts_to_resistance">counts_to_resistance</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  <p>Converts the given counts for the given sensor to resistance.</p>
-                </div>
-              </td>
-            </tr>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="            counts_to_temperature (egse.calibration.counts_to_temperature)" href="#egse.calibration.counts_to_temperature">counts_to_temperature</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  <p>Converts the given counts for the given sensor to temperature.</p>
-                </div>
-              </td>
-            </tr>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="            resistance_to_temperature (egse.calibration.resistance_to_temperature)" href="#egse.calibration.resistance_to_temperature">resistance_to_temperature</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  <p>Converts the given resistance for the given sensor to temperature.</p>
-                </div>
-              </td>
-            </tr>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="            solve_temperature (egse.calibration.solve_temperature)" href="#egse.calibration.solve_temperature">solve_temperature</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  <p>Solves the temperature from the temperature -&gt; resistance polynomial.</p>
-                </div>
-              </td>
-            </tr>
-      </tbody>
-    </table>
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="egse.calibration.apply_gain_offset" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">apply_gain_offset</span>
-
-
-<a href="#egse.calibration.apply_gain_offset" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">apply_gain_offset</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">gain</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Applies the given gain and offset to the given counts.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>counts</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Uncalibrated, raw data [ADU]</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>gain</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Gain to apply</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>offset</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Offset to apply</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Counts after applying the given gain and offset.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="egse.calibration.callendar_van_dusen" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">callendar_van_dusen</span>
-
-
-<a href="#egse.calibration.callendar_van_dusen" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">callendar_van_dusen</span><span class="p">(</span>
-    <span class="n">resistance</span><span class="p">,</span> <span class="n">ref_resistance</span><span class="p">,</span> <span class="n">standard</span><span class="p">,</span> <span class="n">setup</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Solves the Callendar - van Dusen equation for temperature.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>resistance</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Resistance [Ohm] for which to calculate the temperature</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>ref_resistance</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Resistance [Ohm] for a temperature of 0°C</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>standard</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Sensor standard</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>setup</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="            Setup (egse.setup.Setup)" href="../setup/#egse.setup.Setup">Setup</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Setup</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Temperature [°C] corresponding to the given resistance.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="egse.calibration.chebychev" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">chebychev</span>
-
-
-<a href="#egse.calibration.chebychev" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">chebychev</span><span class="p">(</span><span class="n">resistance</span><span class="p">,</span> <span class="n">sensor_info</span><span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Solves the Chebychev equation for temperature.</p>
-<p>Implemented as specified in the calibration certificate of the LakeShore Cernox sensors.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>resistance</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Resistance [Ohm] for which to calculate the temperature</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>sensor_info</code>
-            </td>
-            <td>
-                  <code><span title="navdict.navdict">navdict</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Calibration information</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Temperature [°C] corresponding to the given resistance.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="egse.calibration.counts_to_resistance" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">counts_to_resistance</span>
-
-
-<a href="#egse.calibration.counts_to_resistance" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">counts_to_resistance</span><span class="p">(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">counts</span><span class="p">,</span> <span class="n">sensor_info</span><span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Converts the given counts for the given sensor to resistance.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>sensor_name</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Sensor name</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>counts</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Uncalibrated, raw data [ADU]</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>sensor_info</code>
-            </td>
-            <td>
-                  <code><span title="navdict.navdict">navdict</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Calibration information for the given sensor (type)</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Resistance [Ohm] for the given sensor.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="egse.calibration.counts_to_temperature" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">counts_to_temperature</span>
-
-
-<a href="#egse.calibration.counts_to_temperature" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">counts_to_temperature</span><span class="p">(</span>
-    <span class="n">sensor_name</span><span class="p">,</span> <span class="n">counts</span><span class="p">,</span> <span class="n">sensor_info</span><span class="p">,</span> <span class="n">setup</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Converts the given counts for the given sensor to temperature.</p>
-<p>This conversion can be done as follows:</p>
-<pre><code>- (1) Directly from counts to temperature, by applying the gain and offset;
-- (2) Directly from counts to temperature, by applying a function;
-- (3) From counts, via resistance, to temperature.
-</code></pre>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>sensor_name</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Sensor name</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>counts</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Uncalibrated, raw data [ADU]</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>sensor_info</code>
-            </td>
-            <td>
-                  <code><span title="navdict.navdict">navdict</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Calibration information for the given sensor (type)</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>setup</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="            Setup (egse.setup.Setup)" href="../setup/#egse.setup.Setup">Setup</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Setup</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> | <span title="numpy.ndarray">ndarray</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Calibrated temperature [°C] for the given sensor</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="egse.calibration.resistance_to_temperature" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">resistance_to_temperature</span>
-
-
-<a href="#egse.calibration.resistance_to_temperature" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">resistance_to_temperature</span><span class="p">(</span>
-    <span class="n">sensor_name</span><span class="p">,</span> <span class="n">resistance</span><span class="p">,</span> <span class="n">sensor_info</span><span class="p">,</span> <span class="n">setup</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Converts the given resistance for the given sensor to temperature.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>sensor_name</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Sensor name</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>resistance</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Resistance [Ohm]</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>sensor_info</code>
-            </td>
-            <td>
-                  <code><span title="navdict.navdict">navdict</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Calibration information for the given sensor (type)</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>setup</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="            Setup (egse.setup.Setup)" href="../setup/#egse.setup.Setup">Setup</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Setup</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> | <span title="numpy.ndarray">ndarray</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Temperature [°C] for the given sensor.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="egse.calibration.solve_temperature" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">solve_temperature</span>
-
-
-<a href="#egse.calibration.solve_temperature" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">solve_temperature</span><span class="p">(</span>
-    <span class="n">temperature_to_resistance_coefficients</span><span class="p">,</span> <span class="n">resistance</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Solves the temperature from the temperature -&gt; resistance polynomial.</p>
-<p>For the given temperature -&gt; resistance polynomial and the given resistance, we determine what the corresponding
-temperature is by:</p>
+<h1 id="using-dotenv">Using dotenv<a class="headerlink" href="#using-dotenv" title="Permanent link">&para;</a></h1>
+<p>The <code>cgse</code> command and subcommands make use of <code>dotenv</code>. The package loads environment variables from a <code>.env</code> file into
+your application's environment (<code>os.environ</code>). The idea is to store sensitive data like API keys, database passwords, or
+configuration settings in the <code>.env</code> file. This file stays local on your machine and is ignored by git making your
+project more secure. At the start of an application, call <code>load_dotenv()</code> and then access variables using
+<code>os.getenv('KEY')</code> throughout your code.</p>
+<p>The typical workflow is: create a <code>.env</code> file in your project root with your environment variables, add <code>.env</code> to the
+<code>.gitignore</code>, commit a <code>.env.example</code> template (with dummy values) so other developers know what variables are needed,
+and call <code>load_dotenv()</code> at the top of your main entry point before accessing any environment variables. In production,
+you usually skip the <code>.env</code> file entirely and set real environment variables through your hosting platform.</p>
+<p>Below, we have summarised some basic know-hows for using dotenv:</p>
 <ul>
-<li>Finding the roots of polynomial(temperature) = resistance;</li>
-<li>Discarding the roots with an imaginary component;</li>
-<li>Selecting the remaining root in the relevant temperature regime (here: [-200°C, 200°C]).</li>
+<li>place the <code>.env</code> file at the root location of your project. When you are developing for the CGSE, use the top-level
+  folder of the monorepo. Please note that the <code>load_dotenv()</code> function searches for a <code>.env</code> file in the current 
+  folder, the parent folder up until it hits your home directory.</li>
+<li>the format to use for the environment variables is <code>KEY=VALUE</code>.</li>
+<li>do not use quotes, unless the VALUE contains spaces.</li>
+<li>do not use the <em><code>export</code></em> statement (the <code>.env</code> files are not shell scripts).</li>
+<li>add a comment after a hash character: '<code>#</code>'</li>
+<li>call the <code>load_dotenv()</code> function at the top of your entry point file or app, right after the imports.</li>
+<li>Call the <code>load_dotenv()</code> function only once at application startup, not in every module.</li>
+<li>Do not call the function in library code.</li>
 </ul>
 
 
-    </div>
-
-</div>
-
-
-
-  </div>
-
-    </div>
-
-</div>
 
 
 
 
-
-
-
-  
-  
 
 
 
@@ -3551,7 +2552,7 @@ temperature is by:</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../bits/" class="md-footer__link md-footer__link--prev" aria-label="Previous: egse.bits">
+          <a href="../plugins/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Plugins">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3561,20 +2562,20 @@ temperature is by:</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                egse.bits
+                Plugins
               </div>
             </div>
           </a>
         
         
           
-          <a href="../command/" class="md-footer__link md-footer__link--next" aria-label="Next: egse.command">
+          <a href="../unit_testing/" class="md-footer__link md-footer__link--next" aria-label="Next: Testing the Software">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                egse.command
+                Testing the Software
               </div>
             </div>
             <div class="md-footer__button md-icon">
