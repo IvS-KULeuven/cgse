@@ -2,19 +2,28 @@ All you need to get started using and building the CGSE.
 
 ## Requirements
 
-- Python 3.9.x (we do not yet support higher versions, but are working to extend the list)
+- Python 3.10.x (although we know at least the `cgse-common` works with Python versions up to 3.13, we do not yet 
+  fully support higher versions, but are working to extend the list)
 - macOS or Linux
 
 ## Virtual environment
 
 You should always work inside a virtual environment to somehow containerize your project such that it doesn't 
 pollute your global environment and you can run different projects next to each other. Create and activate a new 
-virtual environment as follows. It should be Python >= 3.9
+virtual environment as follows. It should be Python >= 3.10.
 
-```shell
-$ python -m venv venv
-$ source venv/bin/activate
-```
+=== "venv"
+
+    ```shell
+    $ python -m venv venv
+    $ source venv/bin/activate
+    ```
+
+=== "uv"
+
+    ```shell
+    $ uv venv --python 3.10
+    ```
 
 ## Installation
 
@@ -26,7 +35,7 @@ with the `cgse-common` which contains all common code that is generic and useful
 $ pip install cgse-common
 ```
 
-Check the [list of packages](./package_list.md) that are part of the CGSE repo and can be installed with `pip`. The 
+Check the [list of packages](./package_list.md) that are part of the CGSE monorepo and can be installed with `pip`. The 
 packages are described in more detail in the sections [Libs](./libs/index.md) and [Projects](./projects/index.md).
 
 ## Set up your environment
@@ -38,8 +47,8 @@ probably be higher and more lines will appear when other packages are installed.
 
 ```shell
 $ py -m egse.version
-CGSE version in Settings: 0.5.0
-Installed version for cgse-common= 0.5.0
+CGSE version in Settings: 0.15.1
+Installed version for cgse-common= 0.15.1
 ```
 
 Check your environment with the command below. This will probably print out some warning since you have not defined 
