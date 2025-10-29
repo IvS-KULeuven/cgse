@@ -18,7 +18,7 @@
         <link rel="prev" href="../package_list/">
       
       
-        <link rel="next" href="../help/">
+        <link rel="next" href="../tutorial/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -551,6 +551,8 @@
       
         
       
+        
+      
     
     
     
@@ -724,6 +726,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorial
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../help/" class="md-nav__link">
         
   
@@ -758,6 +783,8 @@
       
         
           
+        
+      
         
       
         
@@ -1053,6 +1080,29 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dev_guide/monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Monitoring with InfluxDB and Grafana
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1071,6 +1121,8 @@
       
         
           
+        
+      
         
       
     
@@ -1100,6 +1152,11 @@
 
             </a>
             
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
           </div>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
@@ -1109,6 +1166,29 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guide/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CLI Commands CGSE
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
               
             
           </ul>
@@ -2484,9 +2564,9 @@ Install the <code>cgse-tools</code> and <code>cgse-core</code> packages which de
 </code></pre></div>
 <p>You should now have at least the follow three packages installed in your virtual environment:</p>
 <div class="highlight"><pre><span></span><code>$ pip list | grep cgse
-cgse-common       0.5.0
-cgse-core         0.5.0
-cgse-tools        0.5.0
+cgse-common       0.15.1
+cgse-core         0.15.1
+cgse-tools        0.15.1
 </code></pre></div>
 <h2 id="the-cgse-command">The <code>cgse</code> command<a class="headerlink" href="#the-cgse-command" title="Permanent link">&para;</a></h2>
 <p>The two new packages that have been installed (<code>cgse-core</code> and <code>cgse-tools</code>) provide the <code>cgse</code>
@@ -2518,9 +2598,9 @@ different parts of the system, manage core services and device drivers, etc.</p>
 be used to maintain the system, manage and inspect services and devices. For example, to check the
 version of the different components, use:</p>
 <div class="highlight"><pre><span></span><code>$ cgse version
-CGSE-COMMON installed version = 0.5.0 — Software framework to support hardware testing
-CGSE-CORE installed version = 0.5.0 — Core services for the CGSE framework
-CGSE-TOOLS installed version = 0.5.0 — Tools for CGSE
+CGSE-COMMON installed version = 0.15.1 — Software framework to support hardware testing
+CGSE-CORE installed version = 0.15.1 — Core services for the CGSE framework
+CGSE-TOOLS installed version = 0.15.1 — Tools for CGSE
 </code></pre></div>
 <p>We will for now concentrate on the <code>init</code> command. This command will guide us through a number of
 steps to define the location of our device data, configuration data, etc. We will basically define
@@ -2600,13 +2680,13 @@ the <a href="../user_guide/">user guide</a>.</p>
         
         
           
-          <a href="../help/" class="md-footer__link md-footer__link--next" aria-label="Next: Help">
+          <a href="../tutorial/" class="md-footer__link md-footer__link--next" aria-label="Next: Tutorial">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Help
+                Tutorial
               </div>
             </div>
             <div class="md-footer__button md-icon">

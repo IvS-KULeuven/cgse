@@ -549,6 +549,8 @@
       
         
       
+        
+      
     
     
     
@@ -659,6 +661,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../../tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorial
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../help/" class="md-nav__link">
         
   
@@ -693,6 +718,8 @@
       
         
           
+        
+      
         
       
         
@@ -988,6 +1015,29 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev_guide/monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Monitoring with InfluxDB and Grafana
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1006,6 +1056,8 @@
       
         
           
+        
+      
         
       
     
@@ -1035,6 +1087,11 @@
 
             </a>
             
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
           </div>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
@@ -1044,6 +1101,29 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CLI Commands CGSE
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
               
             
           </ul>
@@ -2959,7 +3039,7 @@ methods to read, write, and query an instrument.</p>
    (egse.mixin.DynamicCommandMixin.create_command_string)" href="#egse.mixin.DynamicCommandMixin.create_command_string">create_command_string</a></code></td>
               <td>
                 <div class="doc-md-description">
-                  <p>Creates a command string that is understood by the instrument. This can be an SCPI</p>
+                  <p>Create the instrument command string from a template or from a provider callable.</p>
                 </div>
               </td>
             </tr>
@@ -3001,14 +3081,36 @@ methods to read, write, and query an instrument.</p>
   </span>
 
 <a href="#egse.mixin.DynamicCommandMixin.create_command_string" class="headerlink" title="Permanent link">&para;</a></h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">create_command_string</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">template_str</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">create_command_string</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">provider</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Creates a command string that is understood by the instrument. This can be an SCPI
-command or a specific proprietary command string. The <code>cmd_str</code> can contain placeholders
-similar to what is used in string formatting.</p>
+        <p>Create the instrument command string from a template or from a provider callable.</p>
+<p>The resulting string can be an SCPI command or a specific proprietary command string.</p>
+<p>The <code>provider</code> argument controls how the raw command string is produced:</p>
+<ul>
+<li>
+<p>If <code>provider</code> is a <strong>callable</strong>, it is invoked as <code>provider(*args, **kwargs)</code> and must
+  return the fully formed command string. This allows arbitrary construction logic
+  (e.g. conditional pieces, lookups, or complex formatting) outside the template
+  mechanics used below.</p>
+</li>
+<li>
+<p>If <code>provider</code> is a <strong>string</strong>, it is treated as a template and variables are
+  substituted from the bound arguments of <code>func</code>. Two string styles are supported:</p>
+<ul>
+<li>Template style using <code>string.Template</code> with <code>$name</code> placeholders (safe substitution).</li>
+<li>Format style using <code>str.format</code> with <code>{name}</code> placeholders, activated when
+  the wrapped <code>func</code> has the <code>__use_format</code> attribute set.</li>
+</ul>
+</li>
+</ul>
+<p>The code binds <code>args</code> and <code>kwargs</code> to <code>func</code>'s signature to produce a mapping of
+  parameter names to values. For parameters declared as <code>**kwargs</code> the mixin will
+  expand them with a <code>__process_kwargs</code> callable if present on <code>func</code>, otherwise
+  it uses the default <code>expand_kwargs</code>. When template substitution is used, enum
+  values are converted to their <code>.value</code>.</p>
 <p>As an example, we have a function with two positional arguments 'a', and 'b' and one keyword
 argument flag:</p>
 <pre><code>def func(a, b, flag=True):
@@ -3016,10 +3118,18 @@ argument flag:</p>
 </code></pre>
 <p>We have the following template string: <code>CREATE:FUN:${a} ${b} [${flag}]</code>.</p>
 <p>When we call the function as follows: <code>func("TEMP", 23)</code>, we would then expect
-the returned string to be "CREATE:FUN:TEMP 23 [True]"</p>
-<pre><code>DynamicCommandMixin.create_command_string(func, template, "TEMP", 23)
+the returned string to be "CREATE:FUN:TEMP 23 [True]".This function will be called as:</p>
+<pre><code>DynamicCommandMixin.create_command_string(func, provider, "TEMP", 23)
 </code></pre>
 
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>The processing attributes <code>__process_kwargs</code> and <code>__use_format</code> are only used when
+<code>provider</code> is a string. The attribute <code>__process_cmd_string</code> is used when <code>provider</code>
+ is a template/format string or when it's a callable. The <code>__process_cmd_string</code> is
+ the last action taken before the result is returned.</p>
+</details>
 
 <p><span class="doc-section-title">Parameters:</span></p>
     <table>
@@ -3041,7 +3151,9 @@ the returned string to be "CREATE:FUN:TEMP 23 [True]"</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>a function or method that provides the signature</p>
+                <p>a function or method that provides the signature which defines
+the names available for substitution. The function may also carry processing
+attributes (<code>__use_format</code>, <code>__process_kwargs</code>, <code>__process_cmd_string</code>).</p>
               </div>
             </td>
             <td>
@@ -3050,14 +3162,14 @@ the returned string to be "CREATE:FUN:TEMP 23 [True]"</p>
           </tr>
           <tr class="doc-section-item">
             <td>
-                <code>template_str</code>
+                <code>provider</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>a template for the command</p>
+                <p>a template/format string or a function that returns a string</p>
               </div>
             </td>
             <td>
@@ -3094,6 +3206,52 @@ the returned string to be "CREATE:FUN:TEMP 23 [True]"</p>
             </td>
             <td>
                   <code>{}</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the final command string ready to be sent to the transport.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            CommandError (egse.command.CommandError)" href="../command/#egse.command.CommandError">CommandError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>if <code>args</code>/<code>kwargs</code> cannot be bound to <code>func</code>'s signature.</p>
+              </div>
             </td>
           </tr>
       </tbody>
@@ -3521,6 +3679,7 @@ has not been listed.</p>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">cmd_type</span><span class="p">,</span>
     <span class="n">cmd_string</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">cmd_string_func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">process_response</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">process_cmd_string</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">process_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -3612,6 +3771,22 @@ response argument. The <code>post_cmd</code> function shall return (i.e. pass th
             <td>
               <div class="doc-md-description">
                 <p>format string for the generation of the instrument command</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>cmd_string_func</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>DIY function that will create a command string</p>
               </div>
             </td>
             <td>

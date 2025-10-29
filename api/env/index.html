@@ -549,6 +549,8 @@
       
         
       
+        
+      
     
     
     
@@ -659,6 +661,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../../tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorial
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../help/" class="md-nav__link">
         
   
@@ -693,6 +718,8 @@
       
         
           
+        
+      
         
       
         
@@ -988,6 +1015,29 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev_guide/monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Monitoring with InfluxDB and Grafana
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1006,6 +1056,8 @@
       
         
           
+        
+      
         
       
     
@@ -1035,6 +1087,11 @@
 
             </a>
             
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
           </div>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
@@ -1044,6 +1101,29 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CLI Commands CGSE
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
               
             
           </ul>
@@ -2000,6 +2080,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#egse.env.bool_env" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;bool_env
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.env.env_var" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;env_var
@@ -2652,6 +2741,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#egse.env.bool_env" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;bool_env
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.env.env_var" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;env_var
@@ -2948,6 +3046,14 @@ by this module. If there is a need to change the environment variables, e.g. in 
       </thead>
       <tbody>
             <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title="            bool_env (egse.env.bool_env)" href="#egse.env.bool_env">bool_env</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Return True if the environment variable is set to 1, true, yes, or on. All case-insensitive.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
               <td><code><a class="autorefs autorefs-internal" title="            env_var (egse.env.env_var)" href="#egse.env.env_var">env_var</a></code></td>
               <td>
                 <div class="doc-md-description">
@@ -3155,6 +3261,26 @@ by this module. If there is a need to change the environment variables, e.g. in 
 
 </div>
 
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.bool_env" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">bool_env</span>
+
+
+<a href="#egse.env.bool_env" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">bool_env</span><span class="p">(</span><span class="n">var_name</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return True if the environment variable is set to 1, true, yes, or on. All case-insensitive.</p>
+
+
+    </div>
+
+</div>
 
 <div class="doc doc-object doc-function">
 
@@ -3570,7 +3696,7 @@ variable is not defined or is an empty string, None is returned.</p>
 
 
 <a href="#egse.env.get_log_file_location" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_log_file_location</span><span class="p">(</span><span class="n">site_id</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_log_file_location</span><span class="p">(</span><span class="n">site_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">check_exists</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3579,6 +3705,8 @@ variable is not defined or is an empty string, None is returned.</p>
 variable <code>${PROJECT}_LOG_FILE_LOCATION</code>. The location shall be independent of any setting that is subject to change.</p>
 <p>If the environment variable is not set, a default log file location is created from the data storage location as
 follows: <code>&lt;PROJECT&gt;_DATA_STORAGE_LOCATION/&lt;SITE_ID&gt;/log</code>.</p>
+<p>There is no check for the existence of the returned location. The caller function shall check if the
+returned value is a directory and if it exists.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -3606,6 +3734,22 @@ follows: <code>&lt;PROJECT&gt;_DATA_STORAGE_LOCATION/&lt;SITE_ID&gt;/log</code>.
             </td>
             <td>
                   <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>check_exists</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>check if the location that will be returned is a directory and exists</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
             </td>
           </tr>
       </tbody>

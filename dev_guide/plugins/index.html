@@ -549,6 +549,8 @@
       
         
       
+        
+      
     
     
     
@@ -659,6 +661,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../../tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorial
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../help/" class="md-nav__link">
         
   
@@ -695,6 +720,8 @@
       
         
           
+        
+      
         
       
         
@@ -1104,6 +1131,29 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Monitoring with InfluxDB and Grafana
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1122,6 +1172,8 @@
       
         
           
+        
+      
         
       
     
@@ -1151,6 +1203,11 @@
 
             </a>
             
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
           </div>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
@@ -1160,6 +1217,29 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CLI Commands CGSE
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
               
             
           </ul>
@@ -2700,15 +2780,24 @@ use this entry-point to perform certain tasks on the package. This is currently 
 <p>So, what happens is that a command that wants to apply a functionality on an external package 
 loads the <code>cgse_explore.py</code> module for that package and checks if a function with a specific 
 name exists in that module. It then executes that function. For the <code>show procs</code> command, the 
-function <code>show_processes</code> is expected and it shall return a list of strings which currently are 
-printed to the terminal. This entry-point is currently implemented for <code>cgse-core</code> and 
+function <code>show_processes</code> is expected, and it shall return a list of ProcessInfo objects which 
+will be used to print a nice process table. This entry-point is currently implemented for <code>cgse-core</code> and 
 <code>cgse-dummy</code> (an external demo package) and when you run the <code>cgse show procs</code> command it looks 
 something like below (the format is from the unix <code>ps -ef</code> command). </p>
-<div class="highlight"><pre><span></span><code>➜  cgse show procs
-459800007 76849     1   0 11:07PM ttys003    0:03.53 /Users/rik/tmp/test_dummy/venv/bin/python3.9 -m egse.logger.log_cs start
-459800007 76850     1   0 11:07PM ttys003    2:18.60 /Users/rik/tmp/test_dummy/venv/bin/python3.9 -m egse.storage.storage_cs start
-459800007 76851     1   0 11:07PM ttys003    2:20.10 /Users/rik/tmp/test_dummy/venv/bin/python3.9 -m egse.confman.confman_cs start
-459800007 13825     1   0  4:31PM ttys003    0:02.97 /Users/rik/tmp/test_dummy/venv/bin/python3.9 -m cgse_dummy.dummy_sim start
+<div class="highlight"><pre><span></span><code>➜ cgse show procs
+                                                 Process Information                                                 
+┏━━━━━━━┳━━━━━━━━━━━━┳━━━━━━┳━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ PID   ┃ Name       ┃ User ┃ CPU% ┃ Memory MB ┃ Status  ┃ Command                                                  ┃
+┡━━━━━━━╇━━━━━━━━━━━━╇━━━━━━╇━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 94461 │ python3.12 │ rik  │  0.0 │      46.9 │ running │ python -m cgse_dummy.dummy_sim start                     │
+│ 94554 │ python3.12 │ rik  │  0.0 │     124.1 │ running │ python -m cgse_dummy.dummy_cs start                      │
+│ 94360 │ python3.12 │ rik  │  0.0 │     121.3 │ running │ python -m egse.registry.server start --log-level WARNING │
+│ 94361 │ python3.12 │ rik  │  0.0 │      49.6 │ running │ python -m egse.logger.log_cs start                       │
+│ 94362 │ python3.12 │ rik  │  0.0 │      40.5 │ running │ python -m egse.notifyhub.server start                    │
+│ 94363 │ python3.12 │ rik  │  0.0 │     125.9 │ running │ python -m egse.storage.storage_cs start                  │
+│ 94364 │ python3.12 │ rik  │  0.0 │     126.1 │ running │ python -m egse.confman.confman_cs start                  │
+│ 94365 │ python3.12 │ rik  │  0.0 │     125.6 │ running │ python -m egse.procman.procman_cs start                  │
+└───────┴────────────┴──────┴──────┴───────────┴─────────┴──────────────────────────────────────────────────────────┘
 </code></pre></div>
 <h2 id="register-resources">Register resources<a class="headerlink" href="#register-resources" title="Permanent link">&para;</a></h2>
 <p>TODO: what if two packages provide a resource <code>icons</code> ?</p>
