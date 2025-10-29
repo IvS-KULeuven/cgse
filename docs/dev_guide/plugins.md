@@ -163,17 +163,26 @@ explore = "<package>.cgse_explore"
 So, what happens is that a command that wants to apply a functionality on an external package 
 loads the `cgse_explore.py` module for that package and checks if a function with a specific 
 name exists in that module. It then executes that function. For the `show procs` command, the 
-function `show_processes` is expected and it shall return a list of strings which currently are 
-printed to the terminal. This entry-point is currently implemented for `cgse-core` and 
+function `show_processes` is expected, and it shall return a list of ProcessInfo objects which 
+will be used to print a nice process table. This entry-point is currently implemented for `cgse-core` and 
 `cgse-dummy` (an external demo package) and when you run the `cgse show procs` command it looks 
 something like below (the format is from the unix `ps -ef` command). 
 
 ```text
-➜  cgse show procs
-459800007 76849     1   0 11:07PM ttys003    0:03.53 /Users/rik/tmp/test_dummy/venv/bin/python3.9 -m egse.logger.log_cs start
-459800007 76850     1   0 11:07PM ttys003    2:18.60 /Users/rik/tmp/test_dummy/venv/bin/python3.9 -m egse.storage.storage_cs start
-459800007 76851     1   0 11:07PM ttys003    2:20.10 /Users/rik/tmp/test_dummy/venv/bin/python3.9 -m egse.confman.confman_cs start
-459800007 13825     1   0  4:31PM ttys003    0:02.97 /Users/rik/tmp/test_dummy/venv/bin/python3.9 -m cgse_dummy.dummy_sim start
+➜ cgse show procs
+                                                 Process Information                                                 
+┏━━━━━━━┳━━━━━━━━━━━━┳━━━━━━┳━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ PID   ┃ Name       ┃ User ┃ CPU% ┃ Memory MB ┃ Status  ┃ Command                                                  ┃
+┡━━━━━━━╇━━━━━━━━━━━━╇━━━━━━╇━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 94461 │ python3.12 │ rik  │  0.0 │      46.9 │ running │ python -m cgse_dummy.dummy_sim start                     │
+│ 94554 │ python3.12 │ rik  │  0.0 │     124.1 │ running │ python -m cgse_dummy.dummy_cs start                      │
+│ 94360 │ python3.12 │ rik  │  0.0 │     121.3 │ running │ python -m egse.registry.server start --log-level WARNING │
+│ 94361 │ python3.12 │ rik  │  0.0 │      49.6 │ running │ python -m egse.logger.log_cs start                       │
+│ 94362 │ python3.12 │ rik  │  0.0 │      40.5 │ running │ python -m egse.notifyhub.server start                    │
+│ 94363 │ python3.12 │ rik  │  0.0 │     125.9 │ running │ python -m egse.storage.storage_cs start                  │
+│ 94364 │ python3.12 │ rik  │  0.0 │     126.1 │ running │ python -m egse.confman.confman_cs start                  │
+│ 94365 │ python3.12 │ rik  │  0.0 │     125.6 │ running │ python -m egse.procman.procman_cs start                  │
+└───────┴────────────┴──────┴──────┴───────────┴─────────┴──────────────────────────────────────────────────────────┘
 ```
 
 ## Register resources

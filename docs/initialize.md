@@ -19,9 +19,9 @@ You should now have at least the follow three packages installed in your virtual
 
 ```text
 $ pip list | grep cgse
-cgse-common       0.5.0
-cgse-core         0.5.0
-cgse-tools        0.5.0
+cgse-common       0.15.1
+cgse-core         0.15.1
+cgse-tools        0.15.1
 ```
 
 ## The `cgse` command
@@ -61,9 +61,9 @@ version of the different components, use:
 
 ```text
 $ cgse version
-CGSE-COMMON installed version = 0.5.0 — Software framework to support hardware testing
-CGSE-CORE installed version = 0.5.0 — Core services for the CGSE framework
-CGSE-TOOLS installed version = 0.5.0 — Tools for CGSE
+CGSE-COMMON installed version = 0.15.1 — Software framework to support hardware testing
+CGSE-CORE installed version = 0.15.1 — Core services for the CGSE framework
+CGSE-TOOLS installed version = 0.15.1 — Tools for CGSE
 ```
 
 We will for now concentrate on the `init` command. This command will guide us through a number of
