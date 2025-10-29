@@ -24,6 +24,7 @@ import textwrap
 
 import rich
 import typer
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.traceback import Traceback
 from typer.core import TyperGroup
@@ -34,6 +35,7 @@ from egse.plugin import entry_points
 from egse.system import get_package_description
 from egse.system import snake_to_title
 
+load_dotenv()
 
 def broken_command(name: str, module: str, exc: Exception):
     """
