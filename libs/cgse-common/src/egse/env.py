@@ -244,7 +244,7 @@ def set_data_storage_location(location: str | Path | None):
         _env.set("DATA_STORAGE_LOCATION", None)
         return
 
-    if not Path(location).exists():
+    if not Path(location).expanduser().exists():
         warnings.warn(f"The location you provided for the environment variable {env_name} doesn't exist: {location}.")
 
     os.environ[env_name] = str(location)
@@ -312,7 +312,7 @@ def set_conf_data_location(location: str | Path | None):
         _env.set("CONF_DATA_LOCATION", None)
         return
 
-    if not Path(location).exists():
+    if not Path(location).expanduser().exists():
         warnings.warn(f"The location you provided for the environment variable {env_name} doesn't exist: {location}.")
 
     os.environ[env_name] = location
@@ -378,7 +378,7 @@ def set_log_file_location(location: str | Path | None):
         _env.set("LOG_FILE_LOCATION", None)
         return
 
-    if not Path(location).exists():
+    if not Path(location).expanduser().exists():
         warnings.warn(f"The location you provided for the environment variable {env_name} doesn't exist: {location}.")
 
     os.environ[env_name] = location
@@ -423,7 +423,7 @@ def get_log_file_location(site_id: str = None, check_exists: bool = False) -> st
         log_data_root = f"{data_root}/log"
 
     if check_exists:
-        if not Path(log_data_root).is_dir():
+        if not Path(log_data_root).expanduser().is_dir():
             raise ValueError(f"The location that was constructed doesn't exist: {log_data_root}")
 
     return log_data_root
@@ -453,8 +453,9 @@ def set_local_settings(path: str | Path | None):
         _env.set("LOCAL_SETTINGS", None)
         return
 
-    if not Path(path).exists():
-        warnings.warn(f"The location you provided for the environment variable {env_name} doesn't exist: {path}.")
+    if not Path(path).expanduser().is_file():
+        warnings.warn(f"The location you provided for the environment variable {env_name} doesn't exist or is not a "
+                      f"regular file: {path}.")
 
     os.environ[env_name] = path
     _env.set("LOCAL_SETTINGS", path)
@@ -481,9 +482,9 @@ def get_local_settings_path() -> str | None:
         )
         return None
 
-    if not Path(local_settings).exists():
+    if not Path(local_settings).expanduser().is_file():
         warnings.warn(
-            f"The local settings path '{local_settings}' doesn't exist. As a result, "
+            f"The local settings path '{local_settings}' doesn't exist or is not a regular file. As a result, "
             f"the local settings for your project will not be loaded."
         )
 
@@ -519,7 +520,7 @@ def get_conf_repo_location() -> str | None:
         )
         return None
 
-    if not Path(location).exists():
+    if not Path(location).expanduser().exists():
         warnings.warn(f"The location of the configuration data repository doesn't exist: {location}.")
         return None
 
@@ -545,7 +546,7 @@ def set_conf_repo_location(location: str | Path | None):
         _env.set("CONF_REPO_LOCATION", None)
         return
 
-    if not Path(location).exists():
+    if not Path(location).expanduser().exists():
         warnings.warn(f"The location you provided for the environment variable {env_name} doesn't exist: {location}.")
 
     os.environ[env_name] = location
@@ -660,11 +661,11 @@ def main(args: list | None = None):  # pragma: no cover
 
         if value == NoValue():
             value = "[bold red]not set"
-        elif not value.startswith("/"):
+        elif not Path(value).expanduser().is_absolute():
             value = f"[default]{value} [bold orange3](this is a relative path!)"
-        elif not os.path.exists(value):
+        elif not Path(value).expanduser().exists():
             value = f"[default]{value} [bold red](location doesn't exist!)"
-        elif not os.path.isdir(value):
+        elif not Path(value).expanduser().is_dir():
             value = f"[default]{value} [bold red](location is not a directory!)"
         else:
             value = f"[default]{value}"
@@ -675,7 +676,7 @@ def main(args: list | None = None):  # pragma: no cover
 
         if not value:
             value = "[bold red]not set"
-        elif not os.path.exists(value):
+        elif not Path(value).expanduser().exists():
             value = f"[default]{value} [bold red](location doesn't exist!)"
         else:
             value = f"[default]{value}"
@@ -701,7 +702,7 @@ def main(args: list | None = None):  # pragma: no cover
         try:
             rich.print(f"    {get_data_storage_location() = }", flush=True, end="")
             location = get_data_storage_location()
-            if not Path(location).exists():
+            if not Path(location).expanduser().exists():
                 if args.mkdir:
                     rich.print(f"  [green]⟶ Creating data storage location: {location} (+ daily + obs)[/]")
                     Path(location).mkdir(parents=True)
@@ -717,7 +718,7 @@ def main(args: list | None = None):  # pragma: no cover
         try:
             rich.print(f"    {get_conf_data_location() = }", flush=True, end="")
             location = get_conf_data_location()
-            if not Path(location).exists():
+            if not Path(location).expanduser().exists():
                 if args.mkdir:
                     rich.print(f"  [green]⟶ Creating configuration data location: {location}[/]")
                     Path(location).mkdir(parents=True)
@@ -731,7 +732,7 @@ def main(args: list | None = None):  # pragma: no cover
         try:
             rich.print(f"    {get_conf_repo_location() = }", flush=True, end="")
             location = get_conf_repo_location()
-            if location is None or not Path(location).exists():
+            if location is None or not Path(location).expanduser().exists():
                 rich.print("  [red]⟶ ERROR: The configuration repository location doesn't exist![/]")
             else:
                 rich.print()
@@ -741,7 +742,7 @@ def main(args: list | None = None):  # pragma: no cover
         try:
             rich.print(f"    {get_log_file_location() = }", flush=True, end="")
             location = get_log_file_location()
-            if not Path(location).exists():
+            if not Path(location).expanduser().exists():
                 if args.mkdir:
                     rich.print(f"  [green]⟶ Creating log files location: {location}[/]")
                     Path(location).mkdir(parents=True)
@@ -755,7 +756,7 @@ def main(args: list | None = None):  # pragma: no cover
         try:
             rich.print(f"    {get_local_settings_path() = }", flush=True, end="")
             location = get_local_settings_path()
-            if location is None or not Path(location).exists():
+            if location is None or not Path(location).expanduser().exists():
                 rich.print("  [red]⟶ ERROR: The local settings file is not defined or doesn't exist![/]")
             else:
                 rich.print()

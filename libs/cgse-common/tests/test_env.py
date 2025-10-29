@@ -69,10 +69,16 @@ def test_get_data_storage_location():
     print_env()
 
 
-@pytest.mark.skip()
+# @pytest.mark.skip()
 def test_set_data_storage_location():
-    with env_var(PROJECT="PLATO"):
+    orig_location = get_data_storage_location()
+
+    with (
+        env_var(PROJECT="PLATO"),
+        env_var(PLATO_DATA_STORAGE_LOCATION="~/data/PLATO")
+    ):
         saved_location = get_data_storage_location()
+        assert saved_location.startswith("~/data/PLATO")
 
         with pytest.warns(UserWarning, match="PLATO_DATA_STORAGE_LOCATION"):
             set_data_storage_location("/tmp/data")
@@ -82,6 +88,11 @@ def test_set_data_storage_location():
         # Cleanup data storage location
 
         set_data_storage_location(saved_location)
+
+        saved_location = get_data_storage_location()
+        assert saved_location.startswith("~/data/PLATO")
+
+    assert get_data_storage_location() == orig_location
 
 
 def test_get_conf_data_location():
