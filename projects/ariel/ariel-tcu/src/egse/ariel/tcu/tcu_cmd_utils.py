@@ -526,7 +526,7 @@ def set_restart_links_period(link_period: str | int = "0xFFFF") -> str:
 # M2MD commands
 
 
-def ope_mng_command(axis: CommandAddress | str | int, cargo2: str | int = 0) -> str:
+def ope_mng_command(axis: CommandAddress | str | int, cargo2: str | int = "0x0002") -> str:
     """Builds the command string fort he M2MD OPE_MNG_COMMAND write command.
 
     Args:
@@ -540,7 +540,7 @@ def ope_mng_command(axis: CommandAddress | str | int, cargo2: str | int = 0) -> 
     return _create_write_cmd_string(axis, M2MDCommandIdentifier.OPE_MNG_COMMAND, cargo2=cargo2)
 
 
-def ope_mng_event_clear_protect_flag(axis: CommandAddress | str | int, cargo2: str | int = 0) -> str:
+def ope_mng_event_clear_protect_flag(axis: CommandAddress | str | int, cargo2: str | int = "0xAAAA") -> str:
     """Builds the command string for the M2MD OPE_MNG_EVENT_CLEAR_PROTECT_FLAG write command.
 
     Args:
@@ -607,7 +607,7 @@ def get_acq_curr_off_corr(axis: CommandAddress | str | int) -> str:
     return _create_read_cmd_string(axis, M2MDCommandIdentifier.ACQ_CURR_OFF_CORR)
 
 
-def set_acq_curr_off_corr(axis: CommandAddress | str | int, cargo2: str | int = 0) -> str:
+def set_acq_curr_off_corr(axis: CommandAddress | str | int, cargo2: str | int = "0x03FB") -> str:
     """Builds the command string for the M2MD ACQ_CURR_OFF_CORR write command.
 
     Args:
@@ -634,7 +634,7 @@ def get_acq_curr_gain_corr(axis: CommandAddress | str | int) -> str:
     return _create_read_cmd_string(axis, M2MDCommandIdentifier.ACQ_CURR_GAIN_CORR)
 
 
-def set_acq_curr_gain_corr(axis: CommandAddress | str | int, cargo2: str | int = 0):
+def set_acq_curr_gain_corr(axis: CommandAddress | str | int, cargo2: str | int = "0x074C"):
     """Builds the command string for the M2MD ACQ_CURR_GAIN_CORR write command.
 
     Args:
@@ -716,7 +716,7 @@ def acq_avc_filt_time(axis: CommandAddress | str | int, cargo2: str | int = 0) -
     return _create_write_cmd_string(axis, M2MDCommandIdentifier.ACQ_AVC_FILT_TIME, cargo2=cargo2)
 
 
-def acq_average_type(axis: CommandAddress | str | int, cargo2: str | int = 0) -> str:
+def acq_average_type(axis: CommandAddress | str | int, cargo2: str | int = "0x0000") -> str:
     """Builds the command string for the M2MD ACQ_AVERAGE_TYPE write command.
 
     Args:
@@ -730,7 +730,7 @@ def acq_average_type(axis: CommandAddress | str | int, cargo2: str | int = 0) ->
     return _create_write_cmd_string(axis, M2MDCommandIdentifier.ACQ_AVERAGE_TYPE, cargo2=cargo2)
 
 
-def acq_spk_filt_counter_lim(axis: CommandAddress | str | int, cargo2: str | int = 0) -> str:
+def acq_spk_filt_counter_lim(axis: CommandAddress | str | int, cargo2: str | int = "0x0001") -> str:
     """Builds the command string for the M2MD ACQ_SPK_FILT_COUNTER_LIM write command.
 
     Args:
@@ -744,7 +744,7 @@ def acq_spk_filt_counter_lim(axis: CommandAddress | str | int, cargo2: str | int
     return _create_write_cmd_string(axis, M2MDCommandIdentifier.ACQ_SPK_FILT_COUNTER_LIM, cargo2=cargo2)
 
 
-def acq_spk_filt_incr_thr(axis: CommandAddress | str | int, cargo2: str | int = 0) -> str:
+def acq_spk_filt_incr_thr(axis: CommandAddress | str | int, cargo2: str | int = "0x04C0") -> str:
     """Builds the command string for the M2MD ACQ_SPK_FILT_INCR_THR write command.
 
     Args:
@@ -771,7 +771,7 @@ def get_prof_gen_axis_step(axis: CommandAddress | str | int) -> str:
     return _create_read_cmd_string(axis, M2MDCommandIdentifier.PROF_GEN_AXIS_STEP)
 
 
-def set_prof_gen_axis_step(axis: CommandAddress | str | int, cargo2: str | int = 0) -> str:
+def set_prof_gen_axis_step(axis: CommandAddress | str | int, cargo2: str | int = "0x0480") -> str:
     """Builds the command string for the M2MD PROF_GEN_AXIS_STEP write command.
 
     Args:
@@ -798,7 +798,7 @@ def get_prof_gen_axis_speed(axis: CommandAddress | str | int) -> str:
     return _create_read_cmd_string(axis, M2MDCommandIdentifier.PROF_GEN_AXIS_SPEED)
 
 
-def set_prof_gen_axis_speed(axis: CommandAddress | str | int, cargo2: str | int = 0) -> str:
+def set_prof_gen_axis_speed(axis: CommandAddress | str | int, cargo2: str | int = "0x1777") -> str:
     """Builds the command string for the M2MD PROF_GEN_AXIS_SPEED write command.
 
     Args:

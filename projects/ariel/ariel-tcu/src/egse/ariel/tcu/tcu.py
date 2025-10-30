@@ -183,7 +183,7 @@ class TcuInterface(DeviceInterface):
     # M2MD commands
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ope_mng_command)
-    def ope_mng_command(self, axis: CommandAddress | str | int, cargo2: str | int = 0):
+    def ope_mng_command(self, axis: CommandAddress | str | int, cargo2: str | int = "0x0002"):
         """Commands the action to the SENER motor driver IP core.
 
         Args:
@@ -194,11 +194,11 @@ class TcuInterface(DeviceInterface):
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ope_mng_event_clear_protect_flag)
-    def ope_mng_event_clear_protect_flag(self, axis: CommandAddress | str | int, cargo2: str | int = 0):
+    def ope_mng_event_clear_protect_flag(self, axis: CommandAddress | str | int, cargo2: str | int = "0xAAAA"):
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ope_mng_event_clear)
-    def ope_mng_event_clear(self, axis: CommandAddress | str | int, cargo2: str | int = 0):
+    def ope_mng_event_clear(self, axis: CommandAddress | str | int, cargo2: str | int = "0x0001"):
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ope_mng_status)
@@ -214,7 +214,7 @@ class TcuInterface(DeviceInterface):
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_acq_curr_off_corr)
-    def set_acq_curr_off_corr(self, axis: CommandAddress | str | int, cargo2: str | int = 0):
+    def set_acq_curr_off_corr(self, axis: CommandAddress | str | int, cargo2: str | int = "0x03FB"):
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_acq_curr_gain_corr)
@@ -222,7 +222,7 @@ class TcuInterface(DeviceInterface):
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_acq_curr_gain_corr)
-    def set_acq_curr_gain_corr(self, axis: CommandAddress | str | int, cargo2: str | int = 0):
+    def set_acq_curr_gain_corr(self, axis: CommandAddress | str | int, cargo2: str | int = "0x074C"):
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=acq_axis_a_curr_read)
@@ -234,7 +234,7 @@ class TcuInterface(DeviceInterface):
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=acq_ave_lpf_en)
-    def acq_ave_lpf_en(self, axis: CommandAddress | str | int, cargo2: str | int = 0):
+    def acq_ave_lpf_en(self, axis: CommandAddress | str | int, cargo2: str | int = "0x0001"):
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=acq_ovc_cfg_filter)
@@ -246,15 +246,15 @@ class TcuInterface(DeviceInterface):
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=acq_average_type)
-    def acq_average_type(self, axis: CommandAddress | str | int, cargo2: str | int = 0):
+    def acq_average_type(self, axis: CommandAddress | str | int, cargo2: str | int = "0x0000"):
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=acq_spk_filt_counter_lim)
-    def acq_spk_filt_counter_lim(self, axis: CommandAddress | str | int, cargo2: str | int = 0):
+    def acq_spk_filt_counter_lim(self, axis: CommandAddress | str | int, cargo2: str | int = "0x0001"):
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=acq_spk_filt_incr_thr)
-    def acq_spk_filt_incr_thr(self, axis: CommandAddress | str | int, cargo2: str | int = 0):
+    def acq_spk_filt_incr_thr(self, axis: CommandAddress | str | int, cargo2: str | int = "0x04C0"):
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_prof_gen_axis_step)
@@ -262,7 +262,7 @@ class TcuInterface(DeviceInterface):
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_prof_gen_axis_step)
-    def set_prof_gen_axis_step(self, axis: CommandAddress | str | int, cargo2: str | int):
+    def set_prof_gen_axis_step(self, axis: CommandAddress | str | int, cargo2: str | int = "0x0480"):
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_prof_gen_axis_speed)
@@ -270,7 +270,7 @@ class TcuInterface(DeviceInterface):
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_prof_gen_axis_speed)
-    def set_prof_gen_axis_speed(self, axis: CommandAddress | str | int, cargo2: str | int = 0):
+    def set_prof_gen_axis_speed(self, axis: CommandAddress | str | int, cargo2: str | int = "0x1777"):
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_prof_gen_axis_state_start)
