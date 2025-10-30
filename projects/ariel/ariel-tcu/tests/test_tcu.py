@@ -11,6 +11,7 @@ from egse.ariel.tcu.tcu_cmd_utils import (
     format_value,
     PacketType,
     M2MDCommandIdentifier,
+    HKCommandIdentifier,
 )
 import logging
 
@@ -2918,3 +2919,311 @@ def test_tsm_acq_counter():
     assert get_cargo2(cmd_string) == "0000"
 
     assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0004 20C0 0000 0000")
+
+
+def test_vhk_psu_vmotor():
+    cmd_string = TCU_TEST.vhk_psu_vmotor().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.VHK_PSU_VMOTOR.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 0000 0000 0000")
+
+
+def test_vhk_psu_vhi():
+    cmd_string = TCU_TEST.vhk_psu_vhi().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.VHK_PSU_VHI.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 0001 0000 0000")
+
+
+def test_vhk_psu_vlow():
+    cmd_string = TCU_TEST.vhk_psu_vlow().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.VHK_PSU_VLOW.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 0002 0000 0000")
+
+
+def test_vhk_psu_vmedp():
+    cmd_string = TCU_TEST.vhk_psu_vmedp().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.VHK_PSU_VMEDP.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 0003 0000 0000")
+
+
+def test_vhk_psu_vmedn():
+    cmd_string = TCU_TEST.vhk_psu_vmedn().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.VHK_PSU_VMEDN.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 0004 0000 0000")
+
+
+def test_ihk_psu_vmedn():
+    cmd_string = TCU_TEST.ihk_psu_vmedn().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.IHK_PSU_VMEDN.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 0005 0000 0000")
+
+
+def test_ihk_psu_vmedp():
+    cmd_string = TCU_TEST.ihk_psu_vmedp().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.IHK_PSU_VMEDP.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 0006 0000 0000")
+
+
+def test_ihk_psu_vlow():
+    cmd_string = TCU_TEST.ihk_psu_vlow().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.IHK_PSU_VLOW.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 0007 0000 0000")
+
+
+def test_ihk_psu_vhi():
+    cmd_string = TCU_TEST.ihk_psu_vhi().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.IHK_PSU_VHI.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 0008 0000 0000")
+
+
+def test_ihk_psu_vmotor():
+    cmd_string = TCU_TEST.ihk_psu_vmotor().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.IHK_PSU_VMOTOR.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 0009 0000 0000")
+
+
+def test_thk_psu_first():
+    cmd_string = TCU_TEST.thk_psu_first().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.THK_PSU_FIRST.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 000A 0000 0000")
+
+
+def test_thk_m2md_first():
+    cmd_string = TCU_TEST.thk_m2md_first().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.THK_M2MD_FIRST.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 000B 0000 0000")
+
+
+def test_thk_psu_second():
+    cmd_string = TCU_TEST.thk_psu_second().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.THK_PSU_SECOND.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 000C 0000 0000")
+
+
+def test_thk_m2md_second():
+    cmd_string = TCU_TEST.thk_m2md_second().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.THK_M2MD_SECOND.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 000D 0000 0000")
+
+
+def test_thk_cts_q1():
+    cmd_string = TCU_TEST.thk_cts_q1().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.THK_CTS_Q1.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 000E 0000 0000")
+
+
+def test_thk_cts_q2():
+    cmd_string = TCU_TEST.thk_cts_q2().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.THK_CTS_Q2.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 000F 0000 0000")
+
+
+def test_thk_cts_q3():
+    cmd_string = TCU_TEST.thk_cts_q3().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.THK_CTS_Q3.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 0010 0000 0000")
+
+
+def test_thk_cts_q4():
+    cmd_string = TCU_TEST.thk_cts_q4().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.THK_CTS_Q4.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 0011 0000 0000")
+
+
+def test_thk_cts_fpga():
+    cmd_string = TCU_TEST.thk_cts_fpga().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.THK_CTS_FPGA.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 0012 0000 0000")
+
+
+def test_thk_cts_ads1282():
+    cmd_string = TCU_TEST.thk_cts_ads1282().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.THK_CTS_ADS1282.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 0013 0000 0000")
+
+
+def test_vhk_ths_ret():
+    cmd_string = TCU_TEST.vhk_ths_ret().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.VHK_THS_RET.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 0014 0000 0000")
+
+
+def test_hk_acq_counter():
+    cmd_string = TCU_TEST.hk_acq_counter().decode()
+
+    assert is_tcu_read_cmd(cmd_string)
+    assert get_transaction_id(cmd_string) == get_expected_transaction_id_as_hex()
+    assert get_data_length(cmd_string) == str(DATA_LENGTH)
+    assert get_address(cmd_string) == CommandAddress.HK.value
+    assert get_cmd_id(cmd_string) == HKCommandIdentifier.HK_ACQ_COUNTER.value
+    assert get_cargo1(cmd_string) == "0000"
+    assert get_cargo2(cmd_string) == "0000"
+
+    assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 0005 0015 0000 0000")
