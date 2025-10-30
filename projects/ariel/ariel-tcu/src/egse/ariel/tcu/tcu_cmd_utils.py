@@ -1,4 +1,4 @@
-""" Utility functions to build the TCU command strings.
+"""Utility functions to build the TCU command strings.
 
 We discern between the following types of commands:
     - General commands;
