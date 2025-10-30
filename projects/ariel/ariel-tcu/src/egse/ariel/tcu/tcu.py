@@ -458,17 +458,7 @@ class TcuProxy(DynamicProxy, TcuInterface):
     """
 
     def __init__(self):
-        """Initialisation of a DAQ6510Proxy.
-
-        Args:
-            protocol (str): Transport protocol [default is taken from settings file]
-            hostname (str): Location of the Control Server (IP address) [default is taken from settings file]
-            port (int): TCP port on which the Control Server is listening for commands [default is taken from settings
-                        file]
-            timeout (int): Timeout by which to establish the connection [ms]
-        """
-
-        # super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
+        """Initialisation of a TCUProxy."""
 
         with RegistryClient() as reg:
             service = reg.discover_service(SERVICE_TYPE)
