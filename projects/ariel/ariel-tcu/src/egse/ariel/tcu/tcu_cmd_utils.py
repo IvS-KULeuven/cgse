@@ -252,10 +252,10 @@ def format_value(value: int | str | StrEnum) -> str:
 
 
 def _create_write_cmd_string(
-    cmd_address: CommandAddress | str,
+    cmd_address: CommandAddress | str | int,
     cmd_identifier: GeneralCommandIdentifier | TSMCommandIdentifier | M2MDCommandIdentifier | HKCommandIdentifier | str,
-    cargo1: str = "0000",
-    cargo2: str = "0000",
+    cargo1: int = 0,
+    cargo2: int = 0,
 ) -> str:
     """Creates a write-command string to send to the TCU Arduino.
 
@@ -264,14 +264,11 @@ def _create_write_cmd_string(
     importing the interface in which such a decorator call is made will increase the transaction identifier)..
 
     Args:
-        cmd_address (CommandAddress): Identifier of the commanded device.  In case of a M2MD axis, it is the reference
-                                      to the axis (typically "{axis:04x}") rather than the axis identifier enumeration.
+        cmd_address (CommandAddress | str | int): Identifier of the commanded device.
         cmd_identifier (GeneralCommandIdentifier | TSMCommandIdentifier | M2MDCommandIdentifier | HKCommandIdentifier):
                        Command identifier, internal to the commanded device.
-        cargo1 (str): Reference to the first 16-bit cargo word (typically "{cargo1:04x}").  The exact value will be
-                      filled out upon command execution.
-        cargo2 (str): Reference to the second 16-bit cargo word (typically "{cargo2:04x}").  The exact value will be
-                      filled out upon command execution.
+        cargo1 (int): Reference to the first 16-bit cargo word.
+        cargo2 (int): Reference to the second 16-bit cargo word.
 
     Returns:
         Write-command string to send to the TCU Arduino.
@@ -281,10 +278,10 @@ def _create_write_cmd_string(
 
 
 def _create_read_cmd_string(
-    cmd_address: CommandAddress | str,
+    cmd_address: CommandAddress | str | int,
     cmd_identifier: GeneralCommandIdentifier | TSMCommandIdentifier | M2MDCommandIdentifier | HKCommandIdentifier | str,
-    cargo1: str = "0000",
-    cargo2: str = "0000",
+    cargo1: int = 0,
+    cargo2: int = 0,
 ) -> str:
     """Creates a read-command string to send to the TCU Arduino.
 
@@ -293,14 +290,11 @@ def _create_read_cmd_string(
     importing the interface in which such a decorator call is made will increase the transaction identifier)..
 
     Args:
-        cmd_address (CommandAddress): Identifier of the commanded device.  In case of a M2MD axis, it is the reference
-                                      to the axis (typically "${axis}") rather than the axis identifier enumeration.
+        cmd_address (CommandAddress | str | int): Identifier of the commanded device.
         cmd_identifier (GeneralCommandIdentifier | TSMCommandIdentifier | M2MDCommandIdentifier | HKCommandIdentifier):
                        Command identifier, internal to the commanded device.
-        cargo1 (str): Reference to the first 16-bit cargo word (typically "${cargo1}").  The exact value will be filled
-                      out upon command execution.
-        cargo2 (str): Reference to the second 16-bit cargo word (typically "${cargo2}").  The exact value will be filled
-                      out upon command execution.
+        cargo1 (int): Reference to the first 16-bit cargo word.
+        cargo2 (int): Reference to the second 16-bit cargo word.
 
     Returns:
         Read-command string to send to the TCU Arduino.
@@ -312,10 +306,10 @@ def _create_read_cmd_string(
 @static_vars(transaction_id=-1)
 def _create_cmd_string(
     packet_type: PacketType,
-    cmd_address: CommandAddress | str,
+    cmd_address: CommandAddress | str | int,
     cmd_identifier: GeneralCommandIdentifier | TSMCommandIdentifier | M2MDCommandIdentifier | HKCommandIdentifier | str,
-    cargo1: str = "0000",
-    cargo2: str = "0000",
+    cargo1: int = 0,
+    cargo2: int = 0,
 ) -> str:
     """Creates a command string to send to the TCU Arduino.
 
@@ -347,10 +341,8 @@ def _create_cmd_string(
                                       to the axis (typically "${axis}") rather than the axis identifier enumeration.
         cmd_identifier (GeneralCommandIdentifier | TSMCommandIdentifier | M2MDCommandIdentifier | HKCommandIdentifier
                        | str): Command identifier, internal to the commanded device.
-        cargo1 (str): Reference to the first 16-bit cargo word (typically "${cargo1}").  The exact value will be filled
-                      out upon command execution.
-        cargo2 (str): Reference to the second 16-bit cargo word (typically "${cargo2}").  The exact value will be filled
-                      out upon command execution.
+        cargo1 (int): Reference to the first 16-bit cargo word.
+        cargo2 (int): Reference to the second 16-bit cargo word.
 
     Returns:
         Command string to send to the TCU Arduino.
@@ -445,11 +437,11 @@ def get_tcu_mode() -> str:
     return _create_read_cmd_string(CommandAddress.GENERAL, GeneralCommandIdentifier.TCU_MODE)
 
 
-def set_tcu_mode(tcu_mode: TcuMode | str | int = TcuMode.IDLE):
+def set_tcu_mode(tcu_mode: TcuMode | int = TcuMode.IDLE):
     """Builds the command string for the general TCU_MODE write command.
 
     Args:
-        tcu_mode (TcuMode | str | int): TCU mode.
+        tcu_mode (TcuMode | int): TCU mode.
 
     Returns:
         Command string for the general TCU_MODE write command.
@@ -468,11 +460,11 @@ def tcu_status() -> str:
     return _create_read_cmd_string(CommandAddress.GENERAL, GeneralCommandIdentifier.TCU_STATUS)
 
 
-def tcu_simulated(cargo2: str | int):
+def tcu_simulated(cargo2: int):
     """Builds the command string for the general TCU_SIMULATED write command.
 
     Args:
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the general TCU_SIMULATED write command.
@@ -481,11 +473,11 @@ def tcu_simulated(cargo2: str | int):
     return _create_write_cmd_string(CommandAddress.GENERAL, GeneralCommandIdentifier.TCU_SIMULATED, cargo2=cargo2)
 
 
-def restart_links_period_latch(cargo2: str | int):
+def restart_links_period_latch(cargo2: int):
     """Builds the command string for the general RESTART_LINKS_PERIOD_LATCH write command.
 
     Args:
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the general RESTART_LINKS_PERIOD_LATCH write command.
@@ -506,11 +498,11 @@ def get_restart_links_period() -> str:
     return _create_read_cmd_string(CommandAddress.GENERAL, GeneralCommandIdentifier.RESTART_LINKS_PERIOD)
 
 
-def set_restart_links_period(link_period: str | int = "0xFFFF") -> str:
+def set_restart_links_period(link_period: int = 0xFFFF) -> str:
     """Builds the command string for the general RESTART_LINKS_PERIOD write command.
 
     Args:
-        link_period (str | int): Link period.
+        link_period (int): Link period.
 
     Returns:
         Command string for the general RESTART_LINKS_PERIOD write command.
@@ -526,12 +518,12 @@ def set_restart_links_period(link_period: str | int = "0xFFFF") -> str:
 # M2MD commands
 
 
-def ope_mng_command(axis: CommandAddress | str | int, cargo2: str | int = "0x0002") -> str:
+def ope_mng_command(axis: CommandAddress | str | int, cargo2: int = 0x0002) -> str:
     """Builds the command string fort he M2MD OPE_MNG_COMMAND write command.
 
     Args:
         axis (CommandAddress | str | int): Axis to which the command is sent.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the M2MD OPE_MNG_COMMAND write command.
@@ -540,12 +532,12 @@ def ope_mng_command(axis: CommandAddress | str | int, cargo2: str | int = "0x000
     return _create_write_cmd_string(axis, M2MDCommandIdentifier.OPE_MNG_COMMAND, cargo2=cargo2)
 
 
-def ope_mng_event_clear_protect_flag(axis: CommandAddress | str | int, cargo2: str | int = "0xAAAA") -> str:
+def ope_mng_event_clear_protect_flag(axis: CommandAddress | str | int, cargo2: str | int = 0xAAAA) -> str:
     """Builds the command string for the M2MD OPE_MNG_EVENT_CLEAR_PROTECT_FLAG write command.
 
     Args:
         axis (CommandAddress | str | int): Axis to which the command is sent.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the M2MD OPE_MNG_EVENT_CLEAR_PROTECT_FLAG write command.
@@ -554,12 +546,12 @@ def ope_mng_event_clear_protect_flag(axis: CommandAddress | str | int, cargo2: s
     return _create_write_cmd_string(axis, M2MDCommandIdentifier.OPE_MNG_EVENT_CLEAR_PROTECT_FLAG, cargo2=cargo2)
 
 
-def ope_mng_event_clear(axis: CommandAddress | str | int, cargo2: str | int = 0) -> str:
+def ope_mng_event_clear(axis: CommandAddress | str | int, cargo2: int = 0) -> str:
     """Builds the command string for the M2MD OPE_MNG_EVENT_CLEAR write command.
 
     Args:
         axis (CommandAddress | str | int): Axis to which the command is sent.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the M2MD OPE_MNG_EVENT_CLEAR write command.
@@ -607,12 +599,12 @@ def get_acq_curr_off_corr(axis: CommandAddress | str | int) -> str:
     return _create_read_cmd_string(axis, M2MDCommandIdentifier.ACQ_CURR_OFF_CORR)
 
 
-def set_acq_curr_off_corr(axis: CommandAddress | str | int, cargo2: str | int = "0x03FB") -> str:
+def set_acq_curr_off_corr(axis: CommandAddress | str | int, cargo2: int = 0x03FB) -> str:
     """Builds the command string for the M2MD ACQ_CURR_OFF_CORR write command.
 
     Args:
         axis (CommandAddress | str | int): Axis to which the command is sent.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the M2MD ACQ_CURR_OFF_CORR write command.
@@ -634,12 +626,12 @@ def get_acq_curr_gain_corr(axis: CommandAddress | str | int) -> str:
     return _create_read_cmd_string(axis, M2MDCommandIdentifier.ACQ_CURR_GAIN_CORR)
 
 
-def set_acq_curr_gain_corr(axis: CommandAddress | str | int, cargo2: str | int = "0x074C"):
+def set_acq_curr_gain_corr(axis: CommandAddress | str | int, cargo2: int = 0x074C):
     """Builds the command string for the M2MD ACQ_CURR_GAIN_CORR write command.
 
     Args:
         axis (CommandAddress | str | int): Axis to which the command is sent.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the M2MD ACQ_CURR_GAIN_CORR write command.
@@ -674,12 +666,12 @@ def acq_axis_b_curr_read(axis: CommandAddress | str | int) -> str:
     return _create_read_cmd_string(axis, M2MDCommandIdentifier.ACQ_AXIS_B_CURR_READ)
 
 
-def acq_ave_lpf_en(axis: CommandAddress | str | int, cargo2: str | int = 0) -> str:
+def acq_ave_lpf_en(axis: CommandAddress | str | int, cargo2: int = 0) -> str:
     """Builds the command string for the M2MD ACQ_AVE_LPF_EN write command.
 
     Args:
         axis (CommandAddress | str | int): Axis to which the command is sent.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the M2MD ACQ_AVE_LPF_EN write command.
@@ -688,12 +680,12 @@ def acq_ave_lpf_en(axis: CommandAddress | str | int, cargo2: str | int = 0) -> s
     return _create_write_cmd_string(axis, M2MDCommandIdentifier.ACQ_AVE_LPF_EN, cargo2=cargo2)
 
 
-def acq_ovc_cfg_filter(axis: CommandAddress | str | int, cargo2: str | int = 0) -> str:
+def acq_ovc_cfg_filter(axis: CommandAddress | str | int, cargo2: int = 0) -> str:
     """Builds the command string for the M2MD ACQ_OVC_CFG_FILTER write command.
 
     Args:
         axis (CommandAddress | str | int): Axis to which the command is sent.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the M2MD ACQ_OVC_CFG_FILTER write command.
@@ -702,12 +694,12 @@ def acq_ovc_cfg_filter(axis: CommandAddress | str | int, cargo2: str | int = 0) 
     return _create_write_cmd_string(axis, M2MDCommandIdentifier.ACQ_OVC_CFG_FILTER, cargo2=cargo2)
 
 
-def acq_avc_filt_time(axis: CommandAddress | str | int, cargo2: str | int = 0) -> str:
+def acq_avc_filt_time(axis: CommandAddress | str | int, cargo2: int = 0) -> str:
     """Builds the command string for the M2MD ACQ_AVC_FILT_TIME write command.
 
     Args:
         axis (CommandAddress | str | int): Axis to which the command is sent.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the M2MD ACQ_AVC_FILT_TIME write command.
@@ -716,12 +708,12 @@ def acq_avc_filt_time(axis: CommandAddress | str | int, cargo2: str | int = 0) -
     return _create_write_cmd_string(axis, M2MDCommandIdentifier.ACQ_AVC_FILT_TIME, cargo2=cargo2)
 
 
-def acq_average_type(axis: CommandAddress | str | int, cargo2: str | int = "0x0000") -> str:
+def acq_average_type(axis: CommandAddress | str | int, cargo2: int = 0x0000) -> str:
     """Builds the command string for the M2MD ACQ_AVERAGE_TYPE write command.
 
     Args:
         axis (CommandAddress | str | int): Axis to which the command is sent.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the M2MD ACQ_AVERAGE_TYPE write command.
@@ -730,12 +722,12 @@ def acq_average_type(axis: CommandAddress | str | int, cargo2: str | int = "0x00
     return _create_write_cmd_string(axis, M2MDCommandIdentifier.ACQ_AVERAGE_TYPE, cargo2=cargo2)
 
 
-def acq_spk_filt_counter_lim(axis: CommandAddress | str | int, cargo2: str | int = "0x0001") -> str:
+def acq_spk_filt_counter_lim(axis: CommandAddress | str | int, cargo2: int = 0x0001) -> str:
     """Builds the command string for the M2MD ACQ_SPK_FILT_COUNTER_LIM write command.
 
     Args:
         axis (CommandAddress | str | int): Axis to which the command is sent.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the M2MD ACQ_SPK_FILT_COUNTER_LIM write command.
@@ -744,12 +736,12 @@ def acq_spk_filt_counter_lim(axis: CommandAddress | str | int, cargo2: str | int
     return _create_write_cmd_string(axis, M2MDCommandIdentifier.ACQ_SPK_FILT_COUNTER_LIM, cargo2=cargo2)
 
 
-def acq_spk_filt_incr_thr(axis: CommandAddress | str | int, cargo2: str | int = "0x04C0") -> str:
+def acq_spk_filt_incr_thr(axis: CommandAddress | str | int, cargo2: int = 0x04C0) -> str:
     """Builds the command string for the M2MD ACQ_SPK_FILT_INCR_THR write command.
 
     Args:
         axis (CommandAddress | str | int): Axis to which the command is sent.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the M2MD ACQ_SPK_FILT_INCR_THR write command.
@@ -771,12 +763,12 @@ def get_prof_gen_axis_step(axis: CommandAddress | str | int) -> str:
     return _create_read_cmd_string(axis, M2MDCommandIdentifier.PROF_GEN_AXIS_STEP)
 
 
-def set_prof_gen_axis_step(axis: CommandAddress | str | int, cargo2: str | int = "0x0480") -> str:
+def set_prof_gen_axis_step(axis: CommandAddress | str | int, cargo2: int = 0x0480) -> str:
     """Builds the command string for the M2MD PROF_GEN_AXIS_STEP write command.
 
     Args:
         axis (CommandAddress | str | int): Axis to which the command is sent.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the M2MD PROF_GEN_AXIS_STEP write command.
@@ -798,12 +790,12 @@ def get_prof_gen_axis_speed(axis: CommandAddress | str | int) -> str:
     return _create_read_cmd_string(axis, M2MDCommandIdentifier.PROF_GEN_AXIS_SPEED)
 
 
-def set_prof_gen_axis_speed(axis: CommandAddress | str | int, cargo2: str | int = "0x1777") -> str:
+def set_prof_gen_axis_speed(axis: CommandAddress | str | int, cargo2: int = 0x1777) -> str:
     """Builds the command string for the M2MD PROF_GEN_AXIS_SPEED write command.
 
     Args:
         axis (CommandAddress | str | int): Axis to which the command is sent.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the M2MD PROF_GEN_AXIS_SPEED write command.
@@ -825,12 +817,12 @@ def get_prof_gen_axis_state_start(axis: CommandAddress | str | int) -> str:
     return _create_read_cmd_string(axis, M2MDCommandIdentifier.PROF_GEN_AXIS_STATE_START)
 
 
-def set_prof_gen_axis_state_start(axis: CommandAddress | str | int, cargo2: str | int = 0) -> str:
+def set_prof_gen_axis_state_start(axis: CommandAddress | str | int, cargo2: int = 0) -> str:
     """Builds the command string for the M2MD PROF_GEN_AXIS_STATE_START write command.
 
     Args:
         axis (CommandAddress | str | int): Axis to which the command is sent.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the M2MD PROF_GEN_AXIS_STATE_START write command.
@@ -839,7 +831,7 @@ def set_prof_gen_axis_state_start(axis: CommandAddress | str | int, cargo2: str 
     return _create_write_cmd_string(axis, M2MDCommandIdentifier.PROF_GEN_AXIS_STATE_START, cargo2=cargo2)
 
 
-def sw_rs_xx_sw_rise(axis: CommandAddress | str | int, position: int) -> str:
+def sw_rs_xx_sw_rise(axis: CommandAddress | str | int, position: int = 1) -> str:
     """Builds the command string for the M2MD SW_RS_XX_SW_RISE read command.
 
     Args:
@@ -856,7 +848,7 @@ def sw_rs_xx_sw_rise(axis: CommandAddress | str | int, position: int) -> str:
     return _create_read_cmd_string(axis, cmd_identifier=m2md_cmd_id)
 
 
-def sw_rs_xx_sw_fall(axis: CommandAddress | str | int, position: int) -> str:
+def sw_rs_xx_sw_fall(axis: CommandAddress | str | int, position: int = 1) -> str:
     """Builds the command string for the M2MD SW_RS_XX_SW_FALL read command.
 
     Args:
@@ -877,12 +869,12 @@ def sw_rs_xx_sw_fall(axis: CommandAddress | str | int, position: int) -> str:
 # TSM commands
 
 
-def tsm_latch(cargo1: str | int, cargo2: str | int) -> str:
+def tsm_latch(cargo1: int = 0, cargo2: int = 0) -> str:
     """Builds the command string for the TSM TSM_LATCH write command.
 
     Args:
-        cargo1 (str | int): Cargo 1 part of the command string.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo1 (int): Cargo 1 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the TSM TSM_LATCH write command.
@@ -901,12 +893,12 @@ def get_tsm_current_value() -> str:
     return _create_read_cmd_string(CommandAddress.TSM, TSMCommandIdentifier.TSM_CURRENT_VALUE)
 
 
-def set_tsm_current_value(cargo1: str | int, cargo2: str | int) -> str:
+def set_tsm_current_value(cargo1: int = 0, cargo2: int = 0) -> str:
     """Builds the command string for the TSM TSM_CURRENT_VALUE write command.
 
     Args:
-        cargo1 (str | int): Cargo 1 part of the command string.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo1 (int): Cargo 1 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the TSM TSM_CURRENT_VALUE write command.
@@ -927,12 +919,12 @@ def get_tsm_current_offset() -> str:
     return _create_read_cmd_string(CommandAddress.TSM, TSMCommandIdentifier.TSM_CURRENT_OFFSET)
 
 
-def set_tsm_current_offset(cargo1: str | int, cargo2: str | int) -> str:
+def set_tsm_current_offset(cargo1: int = 0, cargo2: int = 0) -> str:
     """Builds the command string for the TSM TSM_CURRENT_OFFSET write command.
 
     Args:
-        cargo1 (str | int): Cargo 1 part of the command string.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo1 (int): Cargo 1 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the TSM TSM_CURRENT_OFFSET write command.
@@ -943,12 +935,12 @@ def set_tsm_current_offset(cargo1: str | int, cargo2: str | int) -> str:
     )
 
 
-def tsm_adc_register_latch(cargo1: str | int, cargo2: str | int) -> str:
+def tsm_adc_register_latch(cargo1: int = 0, cargo2: int = 0) -> str:
     """Builds the command string for the TSM TSM_ADC_REGISTER_LATCH write command.
 
     Args:
-        cargo1 (str | int): Cargo 1 part of the command string.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo1 (int): Cargo 1 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the TSM TSM_ADC_REGISTER_LATCH write command.
@@ -989,12 +981,12 @@ def get_tsm_adc_hpf_register() -> str:
     return _create_read_cmd_string(CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_HPF_REGISTER)
 
 
-def set_tsm_adc_hpf_register(cargo1: str | int, cargo2: str | int) -> str:
+def set_tsm_adc_hpf_register(cargo1: int = 0, cargo2: int = 0) -> str:
     """Builds the command string for the TSM TSM_ADC_HPF_REGISTER write command.
 
     Args:
-        cargo1 (str | int): Cargo 1 part of the command string.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo1 (int): Cargo 1 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the TSM TSM_ADC_HPF_REGISTER write command.
@@ -1015,12 +1007,12 @@ def get_tsm_adc_ofc_register() -> str:
     return _create_read_cmd_string(CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_OFC_REGISTER)
 
 
-def set_tsm_adc_ofc_register(cargo1: str | int, cargo2: str | int) -> str:
+def set_tsm_adc_ofc_register(cargo1: int = 0, cargo2: int = 0) -> str:
     """Builds the command string for the TSM TSM_ADC_OFC_REGISTER write command.
 
     Args:
-        cargo1 (str | int): Cargo 1 part of the command string.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo1 (int): Cargo 1 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the TSM TSM_ADC_OFC_REGISTER write command.
@@ -1041,12 +1033,12 @@ def get_tsm_adc_fsc_register() -> str:
     return _create_read_cmd_string(CommandAddress.TSM, TSMCommandIdentifier.TSM_ADC_FSC_REGISTER)
 
 
-def set_tsm_adc_fsc_register(cargo1: str | int, cargo2: str | int) -> str:
+def set_tsm_adc_fsc_register(cargo1: int = 0, cargo2: int = 0) -> str:
     """Builds the command string for the TSM TSM_ADC_FSC_REGISTER write command.
 
     Args:
-        cargo1 (str | int): Cargo 1 part of the command string.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo1 (int): Cargo 1 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the TSM TSM_ADC_FSC_REGISTER write command.
@@ -1057,12 +1049,12 @@ def set_tsm_adc_fsc_register(cargo1: str | int, cargo2: str | int) -> str:
     )
 
 
-def tsm_adc_command_latch(cargo1: str | int, cargo2: str | int) -> str:
+def tsm_adc_command_latch(cargo1: int = 0, cargo2: int = 0) -> str:
     """Builds the command string for the TSM TSM_ADC_COMMAND_LATCH write command.
 
     Args:
-        cargo1 (str | int): Cargo 1 part of the command string.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo1 (int): Cargo 1 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the TSM TSM_ADC_COMMAND_LATCH write command.
@@ -1073,12 +1065,12 @@ def tsm_adc_command_latch(cargo1: str | int, cargo2: str | int) -> str:
     )
 
 
-def tsm_adc_command(cargo1: str | int, cargo2: str | int) -> str:
+def tsm_adc_command(cargo1: int = 0, cargo2: int = 0) -> str:
     """Builds the command string for the TSM TSM_ADC_COMMAND write command.
 
     Args:
-        cargo1 (str | int): Cargo 1 part of the command string.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo1 (int): Cargo 1 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the TSM TSM_ADC_COMMAND write command.
@@ -1089,12 +1081,12 @@ def tsm_adc_command(cargo1: str | int, cargo2: str | int) -> str:
     )
 
 
-def tsm_adc_calibration(cargo1: str | int, cargo2: str | int) -> str:
+def tsm_adc_calibration(cargo1: int = 0, cargo2: int = 0) -> str:
     """Builds the command string for the TSM TSM_ADC_CALIBRATION write command.
 
     Args:
-        cargo1 (str | int): Cargo 1 part of the command string.
-        cargo2 (str | int): Cargo 2 part of the command string.
+        cargo1 (int): Cargo 1 part of the command string.
+        cargo2 (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the TSM TSM_ADC_CALIBRATION write command.
@@ -1105,7 +1097,7 @@ def tsm_adc_calibration(cargo1: str | int, cargo2: str | int) -> str:
     )
 
 
-def tsm_adc_value_xx_currentn(probe: int) -> str:
+def tsm_adc_value_xx_currentn(probe: int = 1) -> str:
     """Builds the command string for the TSM TSM_ADC_VALUE_XX_CURRENTN read command.
 
     Args:
@@ -1120,7 +1112,7 @@ def tsm_adc_value_xx_currentn(probe: int) -> str:
     return _create_read_cmd_string(CommandAddress.TSM, tsm_cmd_id)
 
 
-def tsm_adc_value_xx_biasn(probe: int):
+def tsm_adc_value_xx_biasn(probe: int = 1):
     """Builds the command string for the TSM TSM_ADC_VALUE_XX_BIASN read command.
 
     Args:
@@ -1135,7 +1127,7 @@ def tsm_adc_value_xx_biasn(probe: int):
     return _create_read_cmd_string(CommandAddress.TSM, tsm_cmd_id)
 
 
-def tsm_adc_value_xx_currentp(probe: int) -> str:
+def tsm_adc_value_xx_currentp(probe: int = 1) -> str:
     """Builds the command string for the TSM TSM_ADC_VALUE_XX_CURRENTP read command.
 
     Args:
@@ -1150,7 +1142,7 @@ def tsm_adc_value_xx_currentp(probe: int) -> str:
     return _create_read_cmd_string(CommandAddress.TSM, tsm_cmd_id)
 
 
-def tsm_adc_value_xx_biasp(probe: int) -> str:
+def tsm_adc_value_xx_biasp(probe: int = 1) -> str:
     """Builds the command string for the TSM TSM_ADC_VALUE_XX_BIASP read command.
 
     Args:
