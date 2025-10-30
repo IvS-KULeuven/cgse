@@ -428,9 +428,10 @@ class TcuController(TcuInterface, DynamicCommandMixin):
         self.connect()
 
 
-class TcuSimulator(TcuInterface):
+class TcuSimulator(TcuInterface, DynamicCommandMixin):
     def __init__(self):
         super().__init__()
+
         self._is_connected = True
 
     # noinspection PyMethodMayBeStatic
