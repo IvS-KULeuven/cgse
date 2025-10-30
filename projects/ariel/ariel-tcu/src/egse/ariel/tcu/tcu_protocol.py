@@ -5,7 +5,6 @@ from egse.ariel.tcu.tcu import TcuController, TcuSimulator, TcuInterface
 from egse.command import ClientServerCommand
 from egse.control import ControlServer
 from egse.device import DeviceConnectionState
-from egse.metrics import define_metrics
 from egse.protocol import DynamicCommandProtocol
 from egse.settings import Settings
 from egse.system import format_datetime
