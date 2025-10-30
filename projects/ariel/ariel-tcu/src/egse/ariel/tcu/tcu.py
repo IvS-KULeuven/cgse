@@ -75,6 +75,28 @@ from egse.ariel.tcu.tcu_cmd_utils import (
     tsm_acq_counter,
     get_tsm_adc_hpf_register,
     tsm_adc_register_latch,
+    vhk_psu_vmotor,
+    vhk_psu_vhi,
+    vhk_psu_vlow,
+    vhk_psu_vmedp,
+    vhk_psu_vmedn,
+    ihk_psu_vmedn,
+    ihk_psu_vlow,
+    ihk_psu_vmedp,
+    ihk_psu_vhi,
+    ihk_psu_vmotor,
+    thk_psu_first,
+    thk_m2md_first,
+    thk_psu_second,
+    thk_m2md_second,
+    thk_cts_q1,
+    thk_cts_q2,
+    thk_cts_q3,
+    thk_cts_q4,
+    thk_cts_fpga,
+    thk_cts_ads1282,
+    vhk_ths_ret,
+    hk_acq_counter,
 )
 
 from egse.device import DeviceInterface
@@ -395,6 +417,228 @@ class TcuInterface(DeviceInterface):
 
         Returns:
             Number of ADC measurement sequences that have been made.
+        """
+
+        pass
+
+    # HK commands
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=vhk_psu_vmotor)
+    def vhk_psu_vmotor(self):
+        """Returns the HK PSU motor voltage value.
+
+        Returns:
+            HK PSU motor voltage value.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=vhk_psu_vhi)
+    def vhk_psu_vhi(self):
+        """Returns the HK PSU high voltage value.
+
+        Returns:
+            HK PSU motor high voltage value.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=vhk_psu_vlow)
+    def vhk_psu_vlow(self):
+        """Returns the HK PSU low voltage value.
+
+        Returns:
+            HK PSU motor low voltage value.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=vhk_psu_vmedp)
+    def vhk_psu_vmedp(self):
+        """Returns the HK PSU medium positive voltage value.
+
+        Returns:
+            HK PSU medium positive voltage value.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=vhk_psu_vmedn)
+    def vhk_psu_vmedn(self):
+        """Returns the HK PSU medium negative voltage value.
+
+        Returns:
+            HK PSU medium negative voltage value.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ihk_psu_vmedn)
+    def ihk_psu_vmedn(self):
+        """Returns the HK medium negative current value.
+
+        Returns:
+            HK medium negative current value.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ihk_psu_vmedp)
+    def ihk_psu_vmedp(self):
+        """Returns the HK medium positive current value.
+
+        Returns:
+            HK medium positive current value.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ihk_psu_vlow)
+    def ihk_psu_vlow(self):
+        """Returns the HK PSU low current value.
+
+        Returns:
+            HK PSU low current value.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ihk_psu_vhi)
+    def ihk_psu_vhi(self):
+        """Returns the HK PSU high current value.
+
+        Returns:
+            HK PSU high current value.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ihk_psu_vmotor)
+    def ihk_psu_vmotor(self):
+        """Returns the HK PSU motor current value.
+
+        Returns:
+            HK PSU motor current value.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_psu_first)
+    def thk_psu_first(self):
+        """Returns the HK PSU temperature zone 1.
+
+        Returns:
+            HK PSU temperature zone 1.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_m2md_first)
+    def thk_m2md_first(self):
+        """Returns the HK M2MD temperature zone 1.
+
+        Returns:
+            HK M2MD temperature zone 1.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_psu_second)
+    def thk_psu_second(self):
+        """Returns the HK M2MD temperature zone 2.
+
+        Returns:
+            HK M2MD temperature zone 2.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_m2md_second)
+    def thk_m2md_second(self):
+        """Returns the HK M2MD temperature zone 2.
+
+        Returns:
+            HK M2MD temperature zone 2.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_cts_q1)
+    def thk_cts_q1(self):
+        """Returns the HK CTS temperature first quarter.
+
+        Returns:
+            HK CTS temperature first quarter.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_cts_q2)
+    def thk_cts_q2(self):
+        """Returns the HK CTS temperature second quarter.
+
+        Returns:
+            HK CTS temperature second quarter.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_cts_q3)
+    def thk_cts_q3(self):
+        """Returns the HK CTS temperature third quarter.
+
+        Returns:
+            HK CTS temperature third quarter.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_cts_q4)
+    def thk_cts_q4(self):
+        """Returns the HK CTS temperature fourth quarter.
+
+        Returns:
+            HK CTS temperature fourth quarter.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_cts_fpga)
+    def thk_cts_fpga(self):
+        """Returns the HK CTS temperature FPGA.
+
+        Returns:
+            HK CTS temperature FPGA.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_cts_ads1282)
+    def thk_cts_ads1282(self):
+        """Returns the HK CTS temperature ADS1282.
+
+        Returns:
+            HK CTS temperature ADS1282.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=vhk_ths_ret)
+    def vhk_ths_ret(self):
+        """Returns the HK CTS thermistors return voltage.
+
+        Returns:
+            HK CTS thermistors return voltage.
+        """
+
+        pass
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=hk_acq_counter)
+    def hk_acq_counter(self):
+        """Returns the running counter that indicates the number of HK measurement sequences that have been made.
+
+        Returns:
+            Free running counter that indicates the number of HK measurement sequences that have been made.
         """
 
         pass

@@ -1173,3 +1173,223 @@ def tsm_acq_counter() -> str:
     """
 
     return _create_read_cmd_string(CommandAddress.TSM, TSMCommandIdentifier.TSM_ACQ_COUNTER)
+
+
+def vhk_psu_vmotor() -> str:
+    """Builds the command string for the HK VHK_PSU_VMOTOR read command.
+
+    Returns:
+        Command string for the HK PSU VHK_PSU_VMOTOR read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.VHK_PSU_VMOTOR)
+
+
+def vhk_psu_vhi() -> str:
+    """Builds the command string for the HK VHK_PSU_VHI read command.
+
+    Returns:
+        Command string for the HK PSU VHK_PSU_VHI read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.VHK_PSU_VHI)
+
+
+def vhk_psu_vlow() -> str:
+    """Builds the command string for the HK VHK_PSU_VLW read command.
+
+    Returns:
+        Command string for the HK PSU VHK_PSU_VLOW read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.VHK_PSU_VLOW)
+
+
+def vhk_psu_vmedp() -> str:
+    """Builds the command string for the HK VHK_PSU_VMEDP read command.
+
+    Returns:
+        Command string for the HK PSU VHK_PSU_VMEDP read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.VHK_PSU_VMEDP)
+
+
+def vhk_psu_vmedn() -> str:
+    """Builds the command string for the HK VHK_PSU_VMEDN read command.
+
+    Returns:
+        Command string for the HK PSU VHK_PSU_VMEDN read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.VHK_PSU_VMEDN)
+
+
+def ihk_psu_vmedn() -> str:
+    """Builds the command string for the HK IHK_PSU_VMEDN read command.
+
+    Returns:
+        Command string for the HK PSU IHK_PSU_VMEDN read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.IHK_PSU_VMEDN)
+
+
+def ihk_psu_vmedp() -> str:
+    """Builds the command string for the HK IHK_PSU_VMEDP read command.
+
+    Returns:
+        Command string for the HK PSU IHK_PSU_VMEDP read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.IHK_PSU_VMEDP)
+
+
+def ihk_psu_vlow() -> str:
+    """Builds the command string for the HK IHK_PSU_VLOW read command.
+
+    Returns:
+        Command string for the HK PSU IHK_PSU_VLOW read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.IHK_PSU_VLOW)
+
+
+def ihk_psu_vhi():
+    """Builds the command string for the HK IHK_PSU_VHI read command.
+
+    Returns:
+        Command string for the HK PSU IHK_PSU_VHI read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.IHK_PSU_VHI)
+
+
+def ihk_psu_vmotor() -> str:
+    """Builds the command string for the HK IHK_PSU_VMOTOR read command.
+
+    Returns:
+        Command string for the HK PSU IHK_PSU_VMOTOR read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.IHK_PSU_VMOTOR)
+
+
+def thk_psu_first() -> str:
+    """Builds the command string for the HK THK_PSU_FIRST read command.
+
+    Returns:
+        Command string for the HK PSU THK_PSU_FIRST read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.THK_PSU_FIRST)
+
+
+def thk_m2md_first() -> str:
+    """Builds the command string for the HK THK_M2MD_FIRST read command.
+
+    Returns:
+        Command string for the HK M2MD THK_M2MD_FIRST read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.THK_M2MD_FIRST)
+
+
+def thk_psu_second() -> str:
+    """Builds the command string for the HK THK_PSU_SECOND read command.
+
+    Returns:
+        Command string for the HK PSU THK_PSU_SECOND read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.THK_PSU_SECOND)
+
+
+def thk_m2md_second() -> str:
+    """Builds the command string for the HK THK_M2MD_SECOND read command.
+
+    Returns:
+        Command string for the HK M2MD THK_M2MD_SECOND read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.THK_M2MD_SECOND)
+
+
+def thk_cts_q1() -> str:
+    """Builds the command string for the HK THK_CTS_Q1 read command.
+
+    Returns:
+        Command string for the HK CTS THK_CTS_Q1 read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.THK_CTS_Q1)
+
+
+def thk_cts_q2() -> str:
+    """Builds the command string for the HK THK_CTS_Q2 read command.
+
+    Returns:
+        Command string for the HK CTS THK_CTS_Q2 read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.THK_CTS_Q2)
+
+
+def thk_cts_q3() -> str:
+    """Builds the command string for the HK THK_CTS_Q3 read command.
+
+    Returns:
+        Command string for the HK CTS THK_CTS_Q3 read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.THK_CTS_Q3)
+
+
+def thk_cts_q4() -> str:
+    """Builds the command string for the HK THK_CTS_Q4 read command.
+
+    Returns:
+        Command string for the HK CTS THK_CTS_Q4 read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.THK_CTS_Q4)
+
+
+def thk_cts_fpga() -> str:
+    """Builds the command string for the HK THK_CTS_FPGA read command.
+
+    Returns:
+        Command string for the HK CTS THK_CTS_FPGA read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.THK_CTS_FPGA)
+
+
+def thk_cts_ads1282() -> str:
+    """Builds the command string for the HK THK_CTS_ADS1282 read command.
+
+    Returns:
+        Command string for the HK CTS THK_CTS_ADS1282 read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.THK_CTS_ADS1282)
+
+
+def vhk_ths_ret() -> str:
+    """Builds the command string for the HK VHK_THS_RET read command.
+
+    Returns:
+        Command string for the HK VHK_THS_RET read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.VHK_THS_RET)
+
+
+def hk_acq_counter() -> str:
+    """Builds the command string for the HK HK_ACQ_COUNTER read command.
+
+    Returns:
+        Command string for the HK HK_ACQ_COUNTER read command.
+    """
+
+    return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.HK_ACQ_COUNTER)
