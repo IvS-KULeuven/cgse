@@ -245,7 +245,7 @@ def format_value(value: int | str | StrEnum) -> str:
     if isinstance(value, StrEnum):
         value = value.value
     if isinstance(value, int):
-        value = hex(value)  # Integer -> Hex string
+        value = f"0x{value:X}"  # Integer -> Hex string
     if value.startswith("0x"):  # Strip off leading 0x
         value = value[2:]
     return value.zfill(4)
@@ -365,7 +365,7 @@ def _create_cmd_string(
     cargo1 = format_value(cargo1)
     cargo2 = format_value(cargo2)
 
-    transaction_id = hex(_create_cmd_string.transaction_id)[2:].zfill(4)
+    transaction_id = f"0x{_create_cmd_string.transaction_id:X}"[2:].zfill(4)
 
     cmd_string = (
         f"{TCU_LOGICAL_ADDRESS}{packet_type.value} {transaction_id} {DATA_LENGTH} "

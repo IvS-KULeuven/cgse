@@ -107,7 +107,6 @@ def get_transaction_id(cmd_string: str) -> str:
     """
 
     transaction_id_hex_str = cmd_string[TRANSACTION_ID_OFFSET : TRANSACTION_ID_OFFSET + 4]
-    # transaction_id_int = int(transaction_id_hex_str, 16)
 
     return transaction_id_hex_str
 
@@ -187,7 +186,7 @@ def get_random_hex(strip_off_0x: bool = True) -> str:
         Random hex string of maximum length 4, without leading "0x".
     """
 
-    random_hex = hex(random.getrandbits(16))[2:]
+    random_hex = f"0x{random.getrandbits(16):X}"
 
     return random_hex[2:] if strip_off_0x else random_hex
 
@@ -203,13 +202,22 @@ def hex_to_int(hex_value: str) -> int:
     """
 
     if hex_value.startswith("0x"):
-        hex_value = hex_value[2:]
+        hex_value = hex_value[2:]  # Strip off leading "0x"
 
     return int(hex_value.zfill(4), 16)
 
 
-def get_expected_transaction_id_as_hex():
-    return hex(EXPECTED_TRANSACTION_ID)[2:].zfill(4)
+def get_expected_transaction_id_as_hex() -> str:
+    """Returns the expected transaction identifier.
+
+    The leading "0x" is stripped off and the transaction identifier is padded with leading zeros to ensure it is
+    always 4 characters long.
+
+    Returns:
+        Expected transaction identifier.
+    """
+
+    return f"{EXPECTED_TRANSACTION_ID:X}".zfill(4)
 
 
 def test_tcu_firmware_id():
