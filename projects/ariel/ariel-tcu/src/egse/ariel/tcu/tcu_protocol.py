@@ -94,7 +94,28 @@ class TcuProtocol(DynamicCommandProtocol):
         if self.state == DeviceConnectionState.DEVICE_NOT_CONNECTED and not self.simulator:
             return result
 
-        # TODO Add HK
+        result["TCU_VHK_PSU_VMOTOR"] = self.tcu.vhk_psu_vmotor()
+        result["TCU_VHK_PSU_VHI"] = self.tcu.vhk_psu_vhi()
+        result["TCU_VHK_PSU_VLOW"] = self.tcu.vhk_psu_vlow()
+        result["TCU_VHK_PSU_VMEDP"] = self.tcu.vhk_psu_vmedp()
+        result["TCU_VHK_PSU_VMEDN"] = self.tcu.vhk_psu_vmedn()
+        result["TCU_IHK_PSU_VMEDN"] = self.tcu.ihk_psu_vmedn()
+        result["TCU_IHK_PSU_VMEDP"] = self.tcu.ihk_psu_vmedp()
+        result["TCU_IHK_PSU_VLOW"] = self.tcu.ihk_psu_vlow()
+        result["TCU_IHK_PSU_VHI"] = self.tcu.ihk_psu_vhi()
+        result["TCU_IHK_PSU_VMOTOR"] = self.tcu.ihk_psu_vmotor()
+        result["TCU_THK_PSU_FIRST"] = self.tcu.thk_psu_first()
+        result["TCU_THK_M2MD_FIRST"] = self.tcu.thk_m2md_first()
+        result["TCU_THK_PSU_SECOND"] = self.tcu.thk_psu_second()
+        result["TCU_THK_M2MD_SECOND"] = self.tcu.thk_m2md_second()
+        result["TCU_THK_CTS_Q1"] = self.tcu.thk_cts_q1()
+        result["TCU_THK_CTS_Q2"] = self.tcu.thk_cts_q2()
+        result["TCU_THK_CTS_Q3"] = self.tcu.thk_cts_q3()
+        result["TCU_THK_CTS_Q4"] = self.tcu.thk_cts_q4()
+        result["TCU_THK_CTS_FPGA"] = self.tcu.thk_cts_fpga()
+        result["TCU_THK_CTS_ADS1282"] = self.tcu.thk_cts_ads1282()
+        result["TCU_VHK_THS_RET"] = self.tcu.vhk_ths_ret()
+        result["TCU_HK_ACQ_COUNTER"] = self.tcu.hk_acq_counter()
 
         return result
 
