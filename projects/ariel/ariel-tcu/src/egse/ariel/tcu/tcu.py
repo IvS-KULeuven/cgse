@@ -282,11 +282,11 @@ class TcuInterface(DeviceInterface):
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=sw_rs_xx_sw_rise)
-    def sw_rs_xx_sw_rise(self, axis: CommandAddress | str | int, position: int):
+    def sw_rs_xx_sw_rise(self, axis: CommandAddress | str | int, position: int = 1):
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=sw_rs_xx_sw_fall)
-    def sw_rs_xx_sw_fall(self, axis: CommandAddress | str | int, position: int):
+    def sw_rs_xx_sw_fall(self, axis: CommandAddress | str | int, position: int = 1):
         pass
 
     # TSM commands
@@ -678,6 +678,18 @@ class TcuSimulator(TcuInterface, DynamicCommandMixin):
 
         self._is_connected = True
 
+        self.tcu_mode = TcuMode.IDLE
+        self.restart_links_period = 0
+        self.acq_curr_off_corr_list = [None, 0, 0, 0]
+        self.acq_curr_gain_corr_list = [None, 0, 0, 0]
+
+        self.acq_axis_a_curr_read_list = [0, 1, 2, 3]
+        self.acq_axis_b_curr_read_list = [0, 4, 5, 6]
+
+        self.prof_gen_axis_step_list = [None, 7, 8, 9]
+        self.prof_gen_axis_speed_list = [None, 10, 11, 12]
+        self.prof_gen_axis_state_start_list = [None, 13, 14, 14]
+
     # noinspection PyMethodMayBeStatic
     def is_simulator(self):
         return True
@@ -694,6 +706,69 @@ class TcuSimulator(TcuInterface, DynamicCommandMixin):
 
     def reconnect(self):
         self._is_connected = True
+
+    def tcu_firmware_id(self):
+        return "TCU Simulator"
+
+    def get_tcu_mode(self):
+        return self.tcu_mode
+
+    def set_tcu_mode(self, tcu_mode: TcuMode | int = TcuMode.IDLE):
+        if isinstance(tcu_mode, TcuMode):
+            self.tcu_mode = tcu_mode.value
+
+        elif isinstance(tcu_mode, int):
+            self.tcu_mode = tcu_mode
+
+    def tcu_status(self):
+        # TODO
+        pass
+
+    def tcu_simulated(self, cargo2: int):
+        # TODO
+        pass
+
+    def set_restart_links_period(self, link_period: int = 0xFFFF):
+        self.restart_links_period = link_period
+
+    def get_restart_links_period(self):
+        return self.restart_links_period
+
+    def get_acq_curr_off_corr(self, axis: CommandAddress | str | int):
+        return self.acq_curr_off_corr_list[int(axis)]
+
+    def set_acq_curr_off_corr(self, axis: CommandAddress | str | int, cargo2: int = 0x03FB):
+        self.acq_curr_off_corr_list[int(axis)] = cargo2
+
+    def get_acq_curr_gain_corr(self, axis: CommandAddress | str | int):
+        return self.acq_curr_gain_corr_list[int(axis)]
+
+    def set_acq_curr_gain_corr(self, axis: CommandAddress | str | int, cargo2: int = 0x074C):
+        self.acq_curr_gain_corr_list[int(axis)] = cargo2
+
+    def acq_axis_a_curr_read(self, axis: CommandAddress | str | int):
+        return self.acq_axis_a_curr_read_list[int(axis)]
+
+    def acq_axis_b_curr_read(self, axis: CommandAddress | str | int):
+        return self.acq_axis_b_curr_read_list[int(axis)]
+
+    def get_prof_gen_axis_step(self, axis: CommandAddress | str | int):
+        return self.prof_gen_axis_step_list[int(axis)]
+
+    def set_prof_gen_axis_step(self, axis: CommandAddress | str | int, cargo2: int = 0x0480):
+        self.prof_gen_axis_step_list[int(axis)] = cargo2
+
+    def get_prof_gen_axis_speed(self, axis: CommandAddress | str | int):
+        return self.prof_gen_axis_speed_list[int(axis)]
+
+    def set_prof_gen_axis_speed(self, axis: CommandAddress | str | int, cargo2: int = 0x1777):
+        self.prof_gen_axis_speed_list[int(axis)] = cargo2
+
+    def get_prof_gen_axis_state_start(self, axis: CommandAddress | str | int):
+        return self.prof_gen_axis_state_start_list[int(axis)]
+
+    def set_prof_gen_axis_state_start(self, axis: CommandAddress | str | int, cargo2: int = 0):
+        self.prof_gen_axis_state_start_list[int(axis)] = cargo2
 
 
 class TcuProxy(DynamicProxy, TcuInterface):
