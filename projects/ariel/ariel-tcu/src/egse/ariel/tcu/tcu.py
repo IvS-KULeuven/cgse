@@ -475,20 +475,20 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ihk_psu_vmedn)
     def ihk_psu_vmedn(self):
-        """Returns the HK medium negative current value.
+        """Returns the HK PSU medium negative current value.
 
         Returns:
-            HK medium negative current value.
+            HK PSU medium negative current value.
         """
 
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ihk_psu_vmedp)
     def ihk_psu_vmedp(self):
-        """Returns the HK medium positive current value.
+        """Returns the HK PSU medium positive current value.
 
         Returns:
-            HK medium positive current value.
+            HK PSU medium positive current value.
         """
 
         pass
