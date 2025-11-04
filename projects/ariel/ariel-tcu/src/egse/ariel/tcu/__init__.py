@@ -1,3 +1,11 @@
+"""General information for the Ariel Telescope Control Unit (TCU).
+
+Reference documents:
+    - RD01: TCU User Manual (ARIEL-IEEC-PL-TN-002), v1.2
+    - RD02: ARIEL TCU Data Handling (ARIEL-IEEC-PL-TN-007), v1.0
+    - RD02: TCU code provided by Vladimiro Noce (priv. comm.)
+"""
+
 from enum import IntEnum
 from pathlib import Path
 

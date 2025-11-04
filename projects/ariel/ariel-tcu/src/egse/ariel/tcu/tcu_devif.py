@@ -1,3 +1,5 @@
+"""Device connection interface for the Ariel Telescope Control Unit (TCU)."""
+
 import logging
 import time
 
