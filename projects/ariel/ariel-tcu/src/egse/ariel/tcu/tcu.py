@@ -677,13 +677,13 @@ class TcuController(TcuInterface, DynamicCommandMixin):
         self.connect()
 
 
-class TcuSimulator(TcuInterface, DynamicCommandMixin):
+class TcuSimulator(TcuInterface):
     def __init__(self):
         super().__init__()
 
         self._is_connected = True
 
-        self.tcu_mode = TcuMode.IDLE
+        self.tcu_mode = TcuMode.IDLE.value
         self.restart_links_period = 0
         self.acq_curr_off_corr_list = [None, 0, 0, 0]
         self.acq_curr_gain_corr_list = [None, 0, 0, 0]
