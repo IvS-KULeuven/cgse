@@ -94,6 +94,7 @@ class TcuProtocol(DynamicCommandProtocol):
         if self.state == DeviceConnectionState.DEVICE_NOT_CONNECTED and not self.simulator:
             return result
 
+        result["TCU_MODE"] = self.tcu.get_tcu_mode()
         result["TCU_VHK_PSU_VMOTOR"] = self.tcu.vhk_psu_vmotor()
         result["TCU_VHK_PSU_VHI"] = self.tcu.vhk_psu_vhi()
         result["TCU_VHK_PSU_VLOW"] = self.tcu.vhk_psu_vlow()
@@ -116,6 +117,20 @@ class TcuProtocol(DynamicCommandProtocol):
         result["TCU_THK_CTS_ADS1282"] = self.tcu.thk_cts_ads1282()
         result["TCU_VHK_THS_RET"] = self.tcu.vhk_ths_ret()
         result["TCU_HK_ACQ_COUNTER"] = self.tcu.hk_acq_counter()
+
+        for probe in range(1, NUM_TSM_PROBES_PER_FRAME + 1):
+            bias_pos = self.tcu.tsm_adc_value_xx_biasp(probe=probe)
+            result[f"TCU_BIAS_POS_PROBE_{probe}"] = bias_pos
+            bias_neg = self.tcu.tsm_adc_value_xx_biasn(probe=probe)
+            result[f"TCU_BIAS_NEG_PROBE_{probe}"] = bias_neg
+            current_pos = self.tcu.tsm_adc_value_xx_currentp(probe=probe)
+            result[f"TCU_CURRENT_POS_PROBE_{probe}"] = current_pos
+            current_neg = self.tcu.tsm_adc_value_xx_currentn(probe=probe)
+            result[f"TCU_CURRENT_NEG_PROBE_{probe}"] = current_neg
+
+            # alpha = (bias_pos - bias_neg) / (current_pos - current_neg)
+            # (c0, c1) ??
+            # resistance = alpha / (alpha * c1 + c0)
 
         return result
 
