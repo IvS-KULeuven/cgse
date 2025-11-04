@@ -1,3 +1,5 @@
+"""Command protocol for the Ariel Telescope Control Unit (TCU)."""
+
 import logging
 from pathlib import Path
 

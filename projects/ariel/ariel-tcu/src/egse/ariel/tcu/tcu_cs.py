@@ -1,3 +1,5 @@
+"""Control Server for the Ariel Telescope Control Unit (TCU)."""
+
 import multiprocessing
 import logging
 import sys
