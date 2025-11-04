@@ -116,7 +116,12 @@ def get_all_serial_ports() -> list:
         List of all available serial ports.
     """
 
-    return list_ports.comports()
+    ports = list_ports.comports()
+
+    for port in ports:
+        print(port)
+
+    return ports
 
 
 class TcuInterface(DeviceInterface):
