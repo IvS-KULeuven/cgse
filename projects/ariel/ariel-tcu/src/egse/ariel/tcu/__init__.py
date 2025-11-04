@@ -17,6 +17,12 @@ STORAGE_MNEMONIC = settings.get("STORAGE_MNEMONIC", "TCU")
 
 PROXY_TIMEOUT = 10
 
+NUM_TSM_FRAMES = 2
+NUM_TSM_PROBES_PER_FRAME = 22
+NUM_M2MD_POSITIONS = 18
+
+NUM_AXES = 3
+
 
 class TcuMode(IntEnum):
     """Ariel TCU operating modes.

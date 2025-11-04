@@ -1,6 +1,6 @@
 import random
 
-from egse.ariel.tcu import TcuMode
+from egse.ariel.tcu import TcuMode, NUM_TSM_PROBES_PER_FRAME, NUM_TSM_FRAMES, NUM_AXES
 from egse.ariel.tcu.tcu import TcuInterface, TcuSimulator
 from egse.ariel.tcu.tcu_cmd_utils import (
     CommandAddress,
@@ -357,7 +357,7 @@ def test_ope_mng_command():
             f"0320 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 0000 0000 {format_value(cargo2)}"
         )
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cargo2 = get_random_hex()
         cmd_string = TCU_TEST.ope_mng_command(axis=axis, cargo2=cargo2).decode()
 
@@ -391,7 +391,7 @@ def test_ope_mng_event_clear_protect_flag():
             f"0320 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 0001 0000 {format_value(cargo2)}"
         )
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cargo2 = get_random_hex()
         cmd_string = TCU_TEST.ope_mng_event_clear_protect_flag(axis=axis, cargo2=cargo2).decode()
 
@@ -425,7 +425,7 @@ def test_ope_mng_event_clear():
             f"0320 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 0002 0000 {format_value(cargo2)}"
         )
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cargo2 = get_random_hex()
         cmd_string = TCU_TEST.ope_mng_event_clear(axis=axis, cargo2=cargo2).decode()
 
@@ -456,7 +456,7 @@ def test_ope_mng_status():
 
         assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 0003 0000 0000")
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cmd_string = TCU_TEST.ope_mng_status(axis=axis).decode()
 
         assert is_tcu_read_cmd(cmd_string)
@@ -486,7 +486,7 @@ def test_ope_mng_event_reg():
 
         assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 0004 0000 0000")
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cmd_string = TCU_TEST.ope_mng_event_reg(axis=axis).decode()
 
         assert is_tcu_read_cmd(cmd_string)
@@ -516,7 +516,7 @@ def test_get_acq_curr_off_corr():
 
         assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 1000 0000 0000")
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cmd_string = TCU_TEST.get_acq_curr_off_corr(axis=axis).decode()
 
         assert is_tcu_read_cmd(cmd_string)
@@ -549,7 +549,7 @@ def test_set_acq_curr_off_corr():
             f"0320 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 1000 0000 {format_value(cargo2)}"
         )
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cargo2 = get_random_hex()
         cmd_string = TCU_TEST.set_acq_curr_off_corr(axis=axis, cargo2=cargo2).decode()
 
@@ -580,7 +580,7 @@ def test_get_acq_curr_gain_corr():
 
         assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 1001 0000 0000")
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cmd_string = TCU_TEST.get_acq_curr_gain_corr(axis=axis).decode()
 
         assert is_tcu_read_cmd(cmd_string)
@@ -613,7 +613,7 @@ def test_set_acq_curr_gain_corr():
             f"0320 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 1001 0000 {format_value(cargo2)}"
         )
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cargo2 = get_random_hex()
         cmd_string = TCU_TEST.set_acq_curr_gain_corr(axis=axis, cargo2=cargo2).decode()
 
@@ -644,7 +644,7 @@ def test_acq_axis_a_curr_read():
 
         assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 1002 0000 0000")
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cmd_string = TCU_TEST.acq_axis_a_curr_read(axis=axis).decode()
 
         assert is_tcu_read_cmd(cmd_string)
@@ -674,7 +674,7 @@ def test_acq_axis_b_curr_read():
 
         assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 1003 0000 0000")
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cmd_string = TCU_TEST.acq_axis_b_curr_read(axis=axis).decode()
 
         assert is_tcu_read_cmd(cmd_string)
@@ -707,7 +707,7 @@ def test_acq_ave_lpf_en():
             f"0320 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 1004 0000 {format_value(cargo2)}"
         )
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cargo2 = get_random_hex()
         cmd_string = TCU_TEST.acq_ave_lpf_en(axis=axis, cargo2=cargo2).decode()
 
@@ -741,7 +741,7 @@ def test_acq_ovc_cfg_filter():
             f"0320 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 1005 0000 {format_value(cargo2)}"
         )
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cargo2 = get_random_hex()
         cmd_string = TCU_TEST.acq_ovc_cfg_filter(axis=axis, cargo2=cargo2).decode()
 
@@ -776,7 +776,7 @@ def test_acq_avc_filt_time():
             f"0320 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 1006 0000 {format_value(cargo2)}"
         )
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cargo2 = get_random_hex()
         cmd_string = TCU_TEST.acq_avc_filt_time(axis=axis, cargo2=cargo2).decode()
 
@@ -810,7 +810,7 @@ def test_acq_average_type():
             f"0320 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 1007 0000 {format_value(cargo2)}"
         )
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cargo2 = get_random_hex()
         cmd_string = TCU_TEST.acq_average_type(axis=axis, cargo2=cargo2).decode()
 
@@ -845,7 +845,7 @@ def test_acq_spk_filt_counter_lim():
             f"0320 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 1008 0000 {format_value(cargo2)}"
         )
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cargo2 = get_random_hex()
         cmd_string = TCU_TEST.acq_spk_filt_counter_lim(axis=axis, cargo2=cargo2).decode()
 
@@ -1008,7 +1008,7 @@ def test_set_prof_gen_axis_speed():
             f"0320 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 2001 0000 {format_value(cargo2)}"
         )
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cargo2 = get_random_hex()
         cmd_string = TCU_TEST.set_prof_gen_axis_speed(axis=axis, cargo2=cargo2).decode()
 
@@ -1039,7 +1039,7 @@ def test_get_prof_gen_axis_state_start():
 
         assert cmd_string.startswith(f"0340 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 2002 0000 0000")
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cmd_string = TCU_TEST.get_prof_gen_axis_state_start(axis=axis).decode()
 
         assert is_tcu_read_cmd(cmd_string)
@@ -1072,7 +1072,7 @@ def test_set_prof_gen_axis_state_start():
             f"0320 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 2002 0000 {format_value(cargo2)}"
         )
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cargo2 = get_random_hex()
         cmd_string = TCU_TEST.set_prof_gen_axis_state_start(axis=axis, cargo2=cargo2).decode()
 
@@ -1107,7 +1107,7 @@ def test_sw_rs_xx_sw_rise():
                 f"0340 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 30{hex(position)[2:].zfill(2)} 0000 0000"
             )
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         for position in range(1, 21):
             expected_cmd_id = f"{M2MDCommandIdentifier.SW_RS_XX_SW_RISE.value[:2]}{hex(position)[2:].zfill(2)}"
             cmd_string = TCU_TEST.sw_rs_xx_sw_rise(axis=axis, position=position).decode()
@@ -1144,7 +1144,7 @@ def test_sw_rs_xx_sw_fall():
                 f"0340 {get_expected_transaction_id_as_hex()} 0004 {axis.value} 30{hex(position + offset)[2:].zfill(2)} 0000 0000"
             )
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         offset = 21
         for position in range(1, 21):
             expected_cmd_id = f"{M2MDCommandIdentifier.SW_RS_XX_SW_FALL.value[:2]}{hex(position + offset)[2:].zfill(2)}"
@@ -1443,7 +1443,7 @@ def test_tsm_adc_calibration():
 
 # noinspection SpellCheckingInspection
 def test_tsm_adc_value_xx_currentn():
-    for sens_n in range(1, 48):
+    for sens_n in range(1, NUM_TSM_FRAMES * NUM_TSM_PROBES_PER_FRAME + 1):
         sens_a = 4 * sens_n
         cmd_string = TCU_TEST.tsm_adc_value_xx_currentn(probe=sens_n).decode()
         expected_cmd_id = "20" + hex(sens_a)[2:].zfill(2)
@@ -1463,7 +1463,7 @@ def test_tsm_adc_value_xx_currentn():
 
 # noinspection SpellCheckingInspection
 def test_tsm_adc_value_xx_biasn():
-    for sens_n in range(1, 48):
+    for sens_n in range(1, NUM_TSM_FRAMES * NUM_TSM_PROBES_PER_FRAME + 1):
         sens_a = 4 * sens_n + 1
         cmd_string = TCU_TEST.tsm_adc_value_xx_biasn(probe=sens_n).decode()
         expected_cmd_id = "20" + hex(sens_a)[2:].zfill(2)
@@ -1483,7 +1483,7 @@ def test_tsm_adc_value_xx_biasn():
 
 # noinspection SpellCheckingInspection
 def test_tsm_adc_value_xx_currentp():
-    for sens_n in range(1, 48):
+    for sens_n in range(1, NUM_TSM_FRAMES * NUM_TSM_PROBES_PER_FRAME + 1):
         sens_a = 4 * sens_n + 2
         cmd_string = TCU_TEST.tsm_adc_value_xx_currentp(probe=sens_n).decode()
         expected_cmd_id = "20" + hex(sens_a)[2:].zfill(2)
@@ -1503,7 +1503,7 @@ def test_tsm_adc_value_xx_currentp():
 
 # noinspection SpellCheckingInspection
 def test_tsm_adc_value_xx_biasp():
-    for sens_n in range(1, 48):
+    for sens_n in range(1, NUM_TSM_FRAMES * NUM_TSM_PROBES_PER_FRAME + 1):
         sens_a = 4 * sens_n + 3
         cmd_string = TCU_TEST.tsm_adc_value_xx_biasp(probe=sens_n).decode()
         expected_cmd_id = "20" + hex(sens_a)[2:].zfill(2)
@@ -1886,7 +1886,7 @@ def test_acq_curr_off_corr_sim():
 
         assert TCU_SIMULATOR.get_acq_curr_off_corr(axis=axis) == cargo2
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cargo2 = get_random_hex()
         TCU_SIMULATOR.set_acq_curr_off_corr(axis=axis, cargo2=cargo2)
 
@@ -1900,7 +1900,7 @@ def test_acq_curr_gain_corr_sim():
 
         assert TCU_SIMULATOR.get_acq_curr_gain_corr(axis=axis) == cargo2
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cargo2 = get_random_hex()
         TCU_SIMULATOR.set_acq_curr_gain_corr(axis=axis, cargo2=cargo2)
 
@@ -1911,7 +1911,7 @@ def test_acq_axis_a_curr_read_sim():
     for axis in [CommandAddress.M2MD_1, CommandAddress.M2MD_2, CommandAddress.M2MD_3]:
         assert TCU_SIMULATOR.acq_axis_a_curr_read(axis=axis) == int(axis)
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         assert TCU_SIMULATOR.acq_axis_a_curr_read(axis=axis) == axis
 
 
@@ -1919,7 +1919,7 @@ def test_acq_axis_b_curr_read_sim():
     for axis in [CommandAddress.M2MD_1, CommandAddress.M2MD_2, CommandAddress.M2MD_3]:
         assert TCU_SIMULATOR.acq_axis_b_curr_read(axis=axis) == int(axis) + 3
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         assert TCU_SIMULATOR.acq_axis_b_curr_read(axis=axis) == axis + 3
 
 
@@ -1929,7 +1929,7 @@ def test_prof_gen_axis_step_sim():
         TCU_SIMULATOR.set_prof_gen_axis_step(axis=axis, cargo2=cargo2)
         assert TCU_SIMULATOR.get_prof_gen_axis_step(axis=axis) == cargo2
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cargo2 = get_random_hex()
         TCU_SIMULATOR.set_prof_gen_axis_step(axis=axis, cargo2=cargo2)
         assert TCU_SIMULATOR.get_prof_gen_axis_step(axis=axis) == cargo2
@@ -1941,7 +1941,7 @@ def test_prof_gen_axis_speed_sim():
         TCU_SIMULATOR.set_prof_gen_axis_speed(axis=axis, cargo2=cargo2)
         assert TCU_SIMULATOR.get_prof_gen_axis_speed(axis=axis) == cargo2
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cargo2 = get_random_hex()
         TCU_SIMULATOR.set_prof_gen_axis_speed(axis=axis, cargo2=cargo2)
         assert TCU_SIMULATOR.get_prof_gen_axis_speed(axis=axis) == cargo2
@@ -1953,7 +1953,7 @@ def test_prof_gen_axis_state_start_sim():
         TCU_SIMULATOR.set_prof_gen_axis_state_start(axis=axis, cargo2=cargo2)
         assert TCU_SIMULATOR.get_prof_gen_axis_state_start(axis=axis) == cargo2
 
-    for axis in range(1, 4):
+    for axis in range(1, NUM_AXES + 1):
         cargo2 = get_random_hex()
         TCU_SIMULATOR.set_prof_gen_axis_state_start(axis=axis, cargo2=cargo2)
         assert TCU_SIMULATOR.get_prof_gen_axis_state_start(axis=axis) == cargo2

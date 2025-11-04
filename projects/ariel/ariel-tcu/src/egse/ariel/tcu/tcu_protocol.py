@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 
+from egse.ariel.tcu import NUM_TSM_PROBES_PER_FRAME
 from egse.ariel.tcu.tcu import TcuController, TcuSimulator, TcuInterface
 from egse.command import ClientServerCommand
 from egse.control import ControlServer
