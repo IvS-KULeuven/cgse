@@ -61,3 +61,26 @@ class MotorState(IntEnum):
 
     STANDBY = 0x0001  # No motion
     OPERATION = 0x0010  # Motor moving
+
+
+# To interpret the error code values
+# Taken from RD02 -> Table 3
+
+ERROR_CODES = {
+    0x00: "No errors",
+    0x01: "Command not executed",
+    0x02: "Command error",
+    0x03: "Command not allowed",
+    0x04: "Destination address error",
+    0x05: "Protocol ID error",
+    0x06: "Source address error",
+    0x07: "Unexpected sequence error",
+    0x08: "Address error",
+    0x09: "Data length error",
+    0x0A: "CRC error",
+    0x0B: "Parameter values error",
+    0x0C: "Bad mode",
+    0x0D: "Timeout",
+    0x0E: "Unknown",
+    0x0F: "Extended error, see cargo",
+}
