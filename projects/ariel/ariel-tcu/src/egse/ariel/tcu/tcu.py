@@ -882,24 +882,65 @@ class TcuController(TcuInterface, DynamicCommandMixin):
         return False
 
     def is_connected(self):
+        """Checks whether the serial port to the TCU Arduino is open.
+
+        Returns:
+            True if the serial port to the TCU Arduino is open; False otherwise.
+        """
+
         return self.tcu.is_connected()
 
     def connect(self):
-        # TODO
-        pass
+        """Opens the serial port to the TCU Arduino.
+
+        Raises:
+            TcuError: When the serial port could not be opened.
+        """
+
+        self.tcu.connect()
 
     def disconnect(self):
-        # TODO
-        pass
+        """Closes the serial port to the TCU Arduino.
+
+        Raises:
+            TcuError: When the serial port could not be closed.
+        """
+
+        self.tcu.disconnect()
 
     def reconnect(self):
-        if self.is_connected():
-            self.disconnect()
-        self.connect()
+        """Re-connects to the Ariel TCU Arduino."""
+
+        self.tcu.reconnect()
 
 
 class TcuSimulator(TcuInterface):
+    VHK_PSU_MOTOR = 0x0080
+    VHK_PSU_VHI = 0x0280
+    VHK_SPI_VLOW = 0x0480
+    VHK_PSU_VMEDP = 0x0680
+    VHK_PSU_VMEDN = 0x0880
+    IHK_PSU_VMEDN = 0x0A80
+    IHK_PSU_VMEDP = 0x0A80
+    IHK_PSU_VLOW = 0x0A80
+    IHK_PSU_VHI = 0x0A80
+    IHK_PSU_VMOTOR = 0x0A80
+    THK_PSU_FIRST = 0x0A80
+    THK_M2MD_FIRST = 0x0A80
+    THK_PSU_SECOND = 0x0C80
+    THK_M2MD_SECOND = 0x0C80
+    THK_CTS_Q1 = 0x0A80
+    THK_CTS_Q2 = 0x0C80
+    THK_CTS_Q3 = 0x0C80
+    THK_CTS_Q4 = 0x0C80
+    THK_CTS_FPGA = 0x0A80
+    THK_CTS_ADS1282 = 0x0C80
+    VHK_THS_RET = 0x0E80
+    HK_ACQ_COUNTER = 0x002A
+
     def __init__(self):
+        """Initialisation of an Ariel TCU simulator."""
+
         super().__init__()
 
         self._is_connected = True
@@ -946,14 +987,6 @@ class TcuSimulator(TcuInterface):
         elif isinstance(tcu_mode, int):
             self.tcu_mode = tcu_mode
 
-    def tcu_status(self):
-        # TODO
-        pass
-
-    def tcu_simulated(self, cargo2: int):
-        # TODO
-        pass
-
     def set_restart_links_period(self, link_period: int = 0xFFFF):
         self.restart_links_period = link_period
 
@@ -995,6 +1028,72 @@ class TcuSimulator(TcuInterface):
 
     def set_prof_gen_axis_state_start(self, axis: CommandAddress | str | int, cargo2: int = 0):
         self.prof_gen_axis_state_start_list[int(axis)] = cargo2
+
+    def vhk_psu_vmotor(self):
+        return TcuSimulator.VHK_PSU_MOTOR
+
+    def vhk_psu_vhi(self):
+        return TcuSimulator.VHK_PSU_VHI
+
+    def vhk_psu_vlow(self):
+        return TcuSimulator.VHK_SPI_VLOW
+
+    def vhk_psu_vmedp(self):
+        return TcuSimulator.VHK_PSU_VMEDP
+
+    def vhk_psu_vmedn(self):
+        return TcuSimulator.VHK_PSU_VMEDN
+
+    def ihk_psu_vmedn(self):
+        return TcuSimulator.IHK_PSU_VMEDN
+
+    def ihk_psu_vmedp(self):
+        return TcuSimulator.IHK_PSU_VMEDP
+
+    def ihk_psu_vlow(self):
+        return TcuSimulator.IHK_PSU_VLOW
+
+    def ihk_psu_vhi(self):
+        return TcuSimulator.IHK_PSU_VHI
+
+    def ihk_psu_vmotor(self):
+        return TcuSimulator.IHK_PSU_VMOTOR
+
+    def thk_psu_first(self):
+        return TcuSimulator.THK_PSU_FIRST
+
+    def thk_m2md_first(self):
+        return TcuSimulator.THK_M2MD_FIRST
+
+    def thk_psu_second(self):
+        return TcuSimulator.THK_PSU_SECOND
+
+    def thk_m2md_second(self):
+        return TcuSimulator.THK_M2MD_SECOND
+
+    def thk_cts_q1(self):
+        return TcuSimulator.THK_CTS_Q1
+
+    def thk_cts_q2(self):
+        return TcuSimulator.THK_CTS_Q2
+
+    def thk_cts_q3(self):
+        return TcuSimulator.THK_CTS_Q3
+
+    def thk_cts_q4(self):
+        return TcuSimulator.THK_CTS_Q4
+
+    def thk_cts_fpga(self):
+        return TcuSimulator.THK_CTS_FPGA
+
+    def thk_cts_ads1282(self):
+        return TcuSimulator.THK_CTS_ADS1282
+
+    def vhk_ths_ret(self):
+        return TcuSimulator.VHK_THS_RET
+
+    def hk_acq_counter(self):
+        return TcuSimulator.HK_ACQ_COUNTER
 
 
 class TcuProxy(DynamicProxy, TcuInterface):
