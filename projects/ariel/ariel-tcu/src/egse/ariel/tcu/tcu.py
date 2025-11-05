@@ -917,7 +917,7 @@ class TcuController(TcuInterface, DynamicCommandMixin):
 class TcuSimulator(TcuInterface):
     VHK_PSU_MOTOR = 0x0080
     VHK_PSU_VHI = 0x0280
-    VHK_SPI_VLOW = 0x0480
+    VHK_PSU_VLOW = 0x0480
     VHK_PSU_VMEDP = 0x0680
     VHK_PSU_VMEDN = 0x0880
     IHK_PSU_VMEDN = 0x0A80
@@ -1036,7 +1036,7 @@ class TcuSimulator(TcuInterface):
         return TcuSimulator.VHK_PSU_VHI
 
     def vhk_psu_vlow(self):
-        return TcuSimulator.VHK_SPI_VLOW
+        return TcuSimulator.VHK_PSU_VLOW
 
     def vhk_psu_vmedp(self):
         return TcuSimulator.VHK_PSU_VMEDP
