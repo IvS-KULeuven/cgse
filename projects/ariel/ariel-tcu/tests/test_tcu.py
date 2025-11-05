@@ -1,6 +1,6 @@
 import random
 
-from egse.ariel.tcu import TcuMode, NUM_TSM_PROBES_PER_FRAME, NUM_TSM_FRAMES, NUM_M2MD_AXES, AXIS_VELOCITY
+from egse.ariel.tcu import TcuMode, NUM_TSM_PROBES_PER_FRAME, NUM_TSM_FRAMES, NUM_M2MD_AXES
 from egse.ariel.tcu.tcu import TcuInterface, TcuSimulator
 from egse.ariel.tcu.tcu_cmd_utils import (
     CommandAddress,
@@ -1957,3 +1957,91 @@ def test_prof_gen_axis_state_start_sim():
         cargo2 = get_random_hex()
         TCU_SIMULATOR.set_prof_gen_axis_state_start(axis=axis, cargo2=cargo2)
         assert TCU_SIMULATOR.get_prof_gen_axis_state_start(axis=axis) == cargo2
+
+
+def test_vhk_psu_vmotor_sim():
+    assert TCU_SIMULATOR.vhk_psu_vmotor() == TcuSimulator.VHK_PSU_MOTOR
+
+
+def test_vhk_psu_vhi_sim():
+    assert TCU_SIMULATOR.vhk_psu_vhi() == TcuSimulator.VHK_PSU_VHI
+
+
+def test_vhk_psu_vlow_sim():
+    assert TCU_SIMULATOR.vhk_psu_vlow() == TcuSimulator.VHK_PSU_VLOW
+
+
+def test_vhk_psu_vmedp_sim():
+    assert TCU_SIMULATOR.vhk_psu_vmedp() == TcuSimulator.VHK_PSU_VMEDP
+
+
+def test_vhk_psu_vmedn_sim():
+    assert TCU_SIMULATOR.vhk_psu_vmedn() == TcuSimulator.VHK_PSU_VMEDN
+
+
+def test_ihk_psu_vmedn_sim():
+    assert TCU_SIMULATOR.ihk_psu_vmedn() == TcuSimulator.IHK_PSU_VMEDN
+
+
+def test_ihk_psu_vmedp_sim():
+    assert TCU_SIMULATOR.ihk_psu_vmedp() == TcuSimulator.IHK_PSU_VMEDP
+
+
+def test_ihk_psu_vlow_sim():
+    assert TCU_SIMULATOR.ihk_psu_vlow() == TcuSimulator.IHK_PSU_VLOW
+
+
+def test_ihk_psu_vhi_sim():
+    assert TCU_SIMULATOR.ihk_psu_vhi() == TcuSimulator.IHK_PSU_VHI
+
+
+def test_ihk_psu_vmotor_sim():
+    assert TCU_SIMULATOR.ihk_psu_vmotor() == TcuSimulator.IHK_PSU_VMOTOR
+
+
+def test_thk_psu_first_sim():
+    assert TCU_SIMULATOR.thk_psu_first() == TcuSimulator.THK_PSU_FIRST
+
+
+def test_thk_m2md_first_sim():
+    assert TCU_SIMULATOR.thk_m2md_first() == TcuSimulator.THK_M2MD_FIRST
+
+
+def test_thk_psu_second_sim():
+    assert TCU_SIMULATOR.thk_psu_second() == TcuSimulator.THK_PSU_SECOND
+
+
+def test_thk_m2md_second_sim():
+    assert TCU_SIMULATOR.thk_m2md_second() == TcuSimulator.THK_M2MD_SECOND
+
+
+def test_thk_cts_q1_sim():
+    assert TCU_SIMULATOR.thk_cts_q1() == TcuSimulator.THK_CTS_Q1
+
+
+def test_thk_cts_q2_sim():
+    assert TCU_SIMULATOR.thk_cts_q2() == TcuSimulator.THK_CTS_Q2
+
+
+def test_thk_cts_q3_sim():
+    assert TCU_SIMULATOR.thk_cts_q3() == TcuSimulator.THK_CTS_Q3
+
+
+def test_thk_cts_q4_sim():
+    assert TCU_SIMULATOR.thk_cts_q4() == TcuSimulator.THK_CTS_Q4
+
+
+def test_thk_cts_fpga_sim():
+    assert TCU_SIMULATOR.thk_cts_fpga() == TcuSimulator.THK_CTS_FPGA
+
+
+def test_thk_cts_ads1282_sim():
+    assert TCU_SIMULATOR.thk_cts_ads1282() == TcuSimulator.THK_CTS_ADS1282
+
+
+def test_vhk_ths_ret_sim():
+    assert TCU_SIMULATOR.vhk_ths_ret() == TcuSimulator.VHK_THS_RET
+
+
+def test_hk_acq_counter_sim():
+    assert TCU_SIMULATOR.hk_acq_counter() == TcuSimulator.HK_ACQ_COUNTER
