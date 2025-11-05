@@ -72,7 +72,7 @@ class TcuDeviceInterface(DeviceConnectionInterface, DeviceTransport):
             raise TcuError(f"Failed to close TCU serial port {self.port}") from exc
 
     def reconnect(self) -> None:
-        """Re-connect to the Ariel TCU Arduino."""
+        """Re-connects to the Ariel TCU Arduino."""
 
         if self.is_connected():
             self.disconnect()
