@@ -1,0 +1,64 @@
+[project]
+name = "ariel-tcu"
+version = "0.0.1"
+description = "Telescope Control Unit (TCU) for Ariel"
+authors = [
+    {name = "IVS KU Leuven"}
+]
+maintainers = [
+    {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
+    {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"}
+]
+
+requires-python = ">=3.10"
+license = "MIT"
+keywords = [
+    "hardware testing",
+    "software framework",
+    "telescope control",
+    "Ariel",
+]
+dependencies = [
+    "cgse-common",
+    "cgse-core",
+    "cgse-gui",
+    "crcmod>=1.7",
+    "pyserial>=3.5",
+]
+
+[project.scripts]
+tcu_cs = 'egse.ariel.tcu.tcu_cs:app'
+
+#[project.gui-scripts]
+#tcu_ui = "egse.ariel.tcu.tcu_ui:main"
+
+[project.entry-points."cgse.version"]
+ariel-tcu = 'egse.version:get_version_installed'
+
+[project.entry-points."cgse.settings"]
+ariel-tcu = "ariel_tcu:settings.yaml"
+
+[project.entry-points."cgse.service.device_command"]
+tcu = 'ariel_tcu.cgse_services:tcu'
+
+[project.entry-points."cgse.explore"]
+explore = "ariel_tcu.cgse_explore"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/tests",
+    "/.gitignore",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/egse", "src/ariel_tcu"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+extend-select = ["E501"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

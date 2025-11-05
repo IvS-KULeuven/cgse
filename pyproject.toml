@@ -17,6 +17,7 @@ dependencies = [
     "cgse-core",
     "cgse-tools",
     "marimo>=0.17.0",
+    "pandas-stubs==2.3.2.250926",
     "rich>=13.9.4",
     "tomlkit>=0.13.2",
 ]
@@ -64,7 +65,7 @@ cgse-tools = { workspace = true }
 plato-spw = { workspace = true }
 
 [tool.uv.workspace]
-members = ["libs/*", "projects/generic/*", "projects/plato/*"]
+members = ["libs/*", "projects/generic/*", "projects/plato/*", "projects/ariel/*"]
 exclude = ["docs/*"]
 
 [tool.ruff.lint]
