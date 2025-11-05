@@ -29,7 +29,7 @@ NUM_TSM_FRAMES = 2
 NUM_TSM_PROBES_PER_FRAME = 22
 NUM_M2MD_POSITIONS = 18
 
-NUM_AXES = 3
+NUM_M2MD_AXES = 3
 
 
 class TcuMode(IntEnum):
@@ -61,6 +61,21 @@ class MotorState(IntEnum):
 
     STANDBY = 0x0001  # No motion
     OPERATION = 0x0010  # Motor moving
+
+
+AXIS_VELOCITY = {
+    1: 0x5DC0,  # Writing @ 1Hz
+    2: 0x2EE0,  # Writing @ 2Hz
+    4: 0x1770,  # Writing @ 4Hz
+    8: 0x0BB8,  # Writing @ 8Hz
+    16: 0x05DC,  # Writing @ 16Hz
+    32: 0x02EE,  # Writing @ 32Hz
+    64: 0x0177,  # Writing @ 64Hz
+    # For testing purposes
+    75: 0x0140,  # Writing @ 75Hz
+    80: 0x012C,  # Writing @ 80Hz
+    96: 0x00FA,  # Writing @ 96Hz
+}
 
 
 # To interpret the error code values
