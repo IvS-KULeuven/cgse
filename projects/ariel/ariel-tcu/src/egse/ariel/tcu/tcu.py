@@ -11,7 +11,9 @@ We discern between the following types of commands:
 Reference documents:
     - RD01: TCU User Manual (ARIEL-IEEC-PL-TN-002), v1.2
     - RD02: ARIEL TCU Data Handling (ARIEL-IEEC-PL-TN-007), v1.0
-    - RD02: TCU code provided by Vladimiro Noce (priv. comm.)
+    - RD03: TCU code provided by Vladimiro Noce (priv. comm.)
+    - RD04: ARIEL Telescope Control Unit Design Description Document (ARIEL-IEEC-PL-DD-001), v1.10
+    - RD05: ARIEL TCU FW Architecture Design(ARIEL-IEEC-PL-DD-002), v1.5
 """
 
 import logging
@@ -167,14 +169,66 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tcu_status)
     def tcu_status(self):
+        """Returns the TCU status.
+
+        The TCU status is a bit word that indicates the current state of the TCU.  The meaning of a bit being set
+        to one is as follows:
+
+            - bit 0: main link enabled
+            - bit 1: secondary link enabled
+            - bit 2: TSM enabled
+            - bit3: M2MD enabled
+            - bit 4: TSM in simulated mode
+            - bit 5: M2MD in simulated mode
+            - bit 6: HK in simulated mode
+            - bit 7: M2MD axis 1 enabled
+            - bit 8: M2MD axis 2 enabled
+            - bit 9: M2MD axis 3 enabled
+            - bit 10: TSM initialised
+            - bit 11: ADS_MFLAG active
+            - bit 12: ADS_REGISTERS_ERROR active
+
+        Returns:
+            Bit word that indicated the current state of the TCU.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tcu_simulated)
     def tcu_simulated(self, cargo2: int):
+        """Changes a TCU sub-system in simulated mode.
+
+        This is only possible in IDLE mode.
+
+        The cargo2 parameter denotes which sub-system to change to simulated mode.  The meaning of a bit being set to
+        one is as follows:
+
+            - bit 0: TBD
+            - bit 1: TBD
+            - bit 2: TBD
+            - bit 3: TBD
+            - bit 4: Put the TSM in simulated mode
+            - bit 5: Put the M2MD in simulated mode
+            - bit 6: Put the HK in simulated mode
+
+        Args:
+            cargo2 (int): Cargo 2 part of the command string.
+        """
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=restart_links_period_latch)
     def restart_links_period_latch(self, cargo2: int):
+        """Re-starts the link period latch.
+
+        This is only possible in IDLE mode.
+
+
+        Note that a read does not disarm the latch.
+
+        Args:
+            cargo2 (int): Cargo 2 part of the command string.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_restart_links_period)
@@ -183,13 +237,24 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_restart_links_period)
     def set_restart_links_period(self, link_period: int = 0xFFFF):
+        """Re-start both links if no message is received after the given link period +1s.
+
+        Args:
+            link_period (int): 1s after this time duration, both links will be re-started if no message is received.
+        """
         pass
 
     # M2MD commands
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ope_mng_command)
     def ope_mng_command(self, axis: CommandAddress | str | int, cargo2: int = 0x0002):
-        """Commands the action to the SENER motor driver IP core.
+        """Commands the action to the SENER motor driver IP core for the given M2MD axis.
+
+        The cargo2 parameter denotes the action to be performed.  The meaning of a bit being set to
+        one is as follows:
+
+            - bit 0: Activate motion
+            - bit 1: Stop motion
 
         Args:
             axis (CommandAddress): Axis to which the command is sent.
@@ -200,18 +265,51 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ope_mng_event_clear_protect_flag)
     def ope_mng_event_clear_protect_flag(self, axis: CommandAddress | str | int, cargo2: int = 0xAAAA):
+        """Clears the event register protection flag.
+
+        Args:
+            axis (CommandAddress): Axis to which the command is sent.
+            cargo2 (int): Cargo 2 part of the command string.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ope_mng_event_clear)
     def ope_mng_event_clear(self, axis: CommandAddress | str | int, cargo2: int = 0x0001):
+        """Clears the event register for the given M2MD axis.
+
+        Args:
+            axis (CommandAddress): Axis to which the command is sent.
+            cargo2 (int): Cargo 2 part of the command string.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ope_mng_status)
     def ope_mng_status(self, axis: CommandAddress | str | int):
+        """Returns the current status of the motor for the given M2MD axis.
+
+        Args:
+            axis (CommandAddress): Axis to which the command is sent.
+
+        Returns:
+            Current status of the motor for the given M2MD axis. Bit 0 being set to one means that the motor is
+            in stand-by mode; bit 1 being set to one means that the motor is in operation state.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ope_mng_event_reg)
     def ope_mng_event_reg(self, axis: CommandAddress | str | int):
+        """Returns the list of all events since wake-up or the last clear event.
+
+        Args:
+            axis (CommandAddress): Axis to which the command is sent.
+
+        Returns:
+            List of all events since wake-up or the last clear event.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_acq_curr_off_corr)
@@ -268,14 +366,40 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_prof_gen_axis_step)
     def set_prof_gen_axis_step(self, axis: CommandAddress | str | int, cargo2: int = 0x0480):
+        """Axis position command for the given M2MD axis.
+
+        The cargo2 parameter denotes the desired positioning. The meaning of its constituent bits is as follows:
+
+            - bits 0-14: Number of steps to be carried out
+            - bit 15: Direction of motion (0: counterclockwise, 1: clockwise)
+
+        Args:
+            axis (CommandAddress | str | int): Axis to which the command is sent.
+            cargo2 (int): Cargo 2 part of the command string.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_prof_gen_axis_speed)
     def get_prof_gen_axis_speed(self, axis: CommandAddress | str | int):
+        """Returns the axis writing speed for the given M2MD axis.
+
+        Args:
+            axis (CommandAddress | str | int): Axis to which the command is sent.
+        """
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_prof_gen_axis_speed)
-    def set_prof_gen_axis_speed(self, axis: CommandAddress | str | int, cargo2: int = 0x1777):
+    def set_prof_gen_axis_speed(self, axis: CommandAddress | str | int, cargo2: int = 0x0177):
+        """Axis velocity command for the given M2MD axis.
+
+        The cargo2 parameter denotes the desired velocity.
+
+        Args:
+            axis (CommandAddress | str | int): Axis to which the command is sent.
+            cargo2 (int): Cargo 2 part of the command string.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_prof_gen_axis_state_start)
@@ -284,52 +408,137 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_prof_gen_axis_state_start)
     def set_prof_gen_axis_state_start(self, axis: CommandAddress | str | int, cargo2: int = 0):
+        """Changes the starting point of the magnetic state for the given M2MD axis.
+
+
+        Args:
+            axis (CommandAddress | str | int): Axis to which the command is sent.
+            cargo2 (int): Cargo 2 part of the command string.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=sw_rs_xx_sw_rise)
     def sw_rs_xx_sw_rise(self, axis: CommandAddress | str | int, position: int = 1):
+        """Position switch rise.
+
+        Args:
+            axis (CommandAddress | str | int): Axis to which the command is sent.
+            position (int): Position of the SW_RS_XX_SW_RISE command.
+
+        Returns:
+            Relative position measured when the rising edge of the given switch is detected.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=sw_rs_xx_sw_fall)
     def sw_rs_xx_sw_fall(self, axis: CommandAddress | str | int, position: int = 1):
+        """Position switch fall.
+
+        Args:
+            axis (CommandAddress | str | int): Axis to which the command is sent.
+            position (int): Position of the SW_RS_XX_SW_FALL command.
+
+        Returns:
+            Relative position measured when the falling edge of the given switch is detected.
+        """
+
         pass
 
     # TSM commands
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tsm_latch)
     def tsm_latch(self, cargo1: str | int, cargo2: int = 0):
+        """Latches to allow the modification of the operation management register.
+
+        Args:
+            cargo1 (str | int): Cargo 1 part of the command string.
+            cargo2 (int): Cargo 2 part of the command string.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_tsm_current_value)
     def get_tsm_current_value(self):
+        """Returns the TSM current.
+
+        Returns:
+            TSM current.
+        """
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_tsm_current_value)
     def set_tsm_current_value(self, cargo1: int = 0, cargo2: int = 0):
+        """Sets the TSM current value.
+
+        Args:
+            cargo1 (int): Cargo 1 part of the command string.
+            cargo2 (int): Cargo 2 part of the command string.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_tsm_current_offset)
     def get_tsm_current_offset(self):
+        """Returns the TSM current offset.
+
+        Returns:
+            TSM current offset.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_tsm_current_offset)
     def set_tsm_current_offset(self, cargo1: int = 0, cargo2: int = 0):
+        """Sets the TSM current offset.
+
+        Args:
+            cargo1 (int): Cargo 1 part of the command string.
+            cargo2 (int): Cargo 2 part of the command string.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tsm_adc_register_latch)
     def tsm_adc_register_latch(self, cargo1: int = 0, cargo2: int = 0):
+        """Re-starts the TSM ADC register latch.
+
+        Args:
+            cargo1 (int): Cargo 1 part of the command string.
+            cargo2 (int): Cargo 2 part of the command string.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tsm_adc_id_register)
     def tsm_adc_id_register(self):
+        """Returns the content of the TSM ADC identifier register.
+
+        Returns:
+            Content of the TSM ADC identifier register.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tsm_adc_configuration_register)
     def tsm_adc_configuration_register(self):
+        """Returns the content of the TSM ADC configuration register.
+
+        Returns:
+            Content of the TSM ADC configuration register.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_tsm_adc_hpf_register)
     def get_tsm_adc_hpf_register(self):
+        """Returns the content of the high-pass corner frequency register.
+
+        Returns:
+            Content of the high-pass corner frequency register.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_tsm_adc_hpf_register)
@@ -338,6 +547,12 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_tsm_adc_ofc_register)
     def get_tsm_adc_ofc_register(self):
+        """Returns the content of the offset calibration register.
+
+        Returns:
+            Content of the offset calibration register.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_tsm_adc_ofc_register)
@@ -346,6 +561,12 @@ class TcuInterface(DeviceInterface):
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_tsm_adc_fsc_register)
     def get_tsm_adc_fsc_register(self):
+        """Returns the content of the full-scale calibration register.
+
+        Returns:
+            Content of the full-scale calibration register.
+        """
+
         pass
 
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_tsm_adc_fsc_register)

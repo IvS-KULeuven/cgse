@@ -14,14 +14,18 @@ from egse.settings import Settings
 HERE = Path(__file__).parent
 settings = Settings.load("Ariel TCU Control Server")
 
-PROCESS_NAME = settings.get("PROCESS_NAME", "tcu_cs")
-PROTOCOL = settings.get("PROTOCOL", "tcp")
-HOSTNAME = settings.get("HOSTNAME", "localhost")
-COMMANDING_PORT = settings.get("COMMANDING_PORT", 0)
-SERVICE_PORT = settings.get("SERVICE_PORT", 0)
-MONITORING_PORT = settings.get("MONITORING_PORT", 0)
-SERVICE_TYPE = settings.get("SERVICE_TYPE", "tcu_cs")
-STORAGE_MNEMONIC = settings.get("STORAGE_MNEMONIC", "TCU")
+# General information about the TCU Control Server
+
+PROCESS_NAME = settings.get("PROCESS_NAME", "tcu_cs")  # Name under which it is registered in the service registry
+SERVICE_TYPE = settings.get(
+    "SERVICE_TYPE", "tcu_cs"
+)  # Service type under which it is registered in the service registry
+PROTOCOL = settings.get("PROTOCOL", "tcp")  # Communication protocol
+HOSTNAME = settings.get("HOSTNAME", "localhost")  # Hostname
+COMMANDING_PORT = settings.get("COMMANDING_PORT", 0)  # Commanding port (as per settings or dynamically assigned)
+SERVICE_PORT = settings.get("SERVICE_PORT", 0)  # Service port (as per settings or dynamically assigned)
+MONITORING_PORT = settings.get("MONITORING_PORT", 0)  # Monitoring port (as per settings or dynamically assigned)
+STORAGE_MNEMONIC = settings.get("STORAGE_MNEMONIC", "TCU")  # Storage mnemonic (used in the HK filenames)
 
 PROXY_TIMEOUT = 10
 
