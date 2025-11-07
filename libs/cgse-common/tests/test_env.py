@@ -73,10 +73,7 @@ def test_get_data_storage_location():
 def test_set_data_storage_location():
     orig_location = get_data_storage_location()
 
-    with (
-        env_var(PROJECT="PLATO"),
-        env_var(PLATO_DATA_STORAGE_LOCATION="~/data/PLATO")
-    ):
+    with env_var(PROJECT="PLATO"), env_var(PLATO_DATA_STORAGE_LOCATION="~/data/PLATO"):
         saved_location = get_data_storage_location()
         assert saved_location.startswith("~/data/PLATO")
 
