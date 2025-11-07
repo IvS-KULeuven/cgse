@@ -1024,7 +1024,7 @@ class StorageController(StorageInterface):
         return response
 
     def get_disk_usage(self):
-        location = Path(get_data_storage_location(site_id=SITE_ID))
+        location = Path(get_data_storage_location(site_id=SITE_ID)).expanduser()
         total, used, free = shutil.disk_usage(location)
         return total, used, free
 
@@ -1145,7 +1145,7 @@ def get_status(full: bool = False):
                 text += f"Used disk space: {humanize_bytes(used)} ({(used / total * 100):.2f}%)\n"
                 text += f"Free disk space: {humanize_bytes(free)} ({(free / total * 100):.2f}%)\n"
 
-        return text
+            return text
 
     except ConnectionError as exc:
         return f"Storage Manager Status: [red]not active[/] ({exc})"

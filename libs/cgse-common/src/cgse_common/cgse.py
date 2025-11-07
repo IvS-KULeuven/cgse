@@ -37,6 +37,7 @@ from egse.system import snake_to_title
 
 load_dotenv()
 
+
 def broken_command(name: str, module: str, exc: Exception):
     """
     Rather than completely crash the CLI when a broken plugin is loaded, this

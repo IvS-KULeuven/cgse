@@ -250,9 +250,9 @@ def sm_cs_stop():
 
 
 @sm_cs.command(cls=TyperAsyncCommand, name="status")
-async def sm_cs_status(suppress_errors: bool = True):
+async def sm_cs_status(full: bool = False, suppress_errors: bool = True):
     """Print the status of the Storage Manager."""
-    await status_sm_cs(suppress_errors)
+    await status_sm_cs(full, suppress_errors)
 
 
 @sm_cs.command(name="re-register")
