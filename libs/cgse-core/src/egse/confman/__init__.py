@@ -308,7 +308,7 @@ def _populate_cached_setup_info():
 
     location = get_conf_data_location()
     if location:
-        data_conf_location = Path(location)
+        data_conf_location = Path(location).expanduser()
     else:
         raise ValueError(
             "Couldn't determine location of the configuration data with 'get_conf_data_location()'. "
@@ -575,7 +575,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
 
         location = get_conf_data_location()
         if location:
-            self._data_conf_location = Path(location)
+            self._data_conf_location = Path(location).expanduser()
         else:
             raise ValueError("The location for the configuration data is not defined. Please check your environment.")
 

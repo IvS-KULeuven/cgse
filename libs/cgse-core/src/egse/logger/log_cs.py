@@ -118,7 +118,7 @@ def start():
 
     multiprocessing.current_process().name = PROCESS_NAME
 
-    log_file_location = Path(get_log_file_location())
+    log_file_location = Path(get_log_file_location()).expanduser()
     log_file_name = get_log_file_name()
 
     logging.warning(f"{log_file_location=}, {log_file_name=}")

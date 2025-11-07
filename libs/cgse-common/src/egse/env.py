@@ -68,12 +68,13 @@ import os
 import warnings
 from pathlib import Path
 
+from dotenv import load_dotenv, find_dotenv
+from rich.console import Console
+
 from egse.log import logger
 from egse.system import all_logging_disabled
 from egse.system import get_caller_info
 from egse.system import ignore_m_warning
-
-from rich.console import Console
 
 console = Console(width=100)
 
@@ -109,6 +110,10 @@ def initialize():
     """
 
     global _env
+
+    if dotenv_location := find_dotenv():
+        logger.debug(f"Loading environment variables from {dotenv_location}.")
+        load_dotenv()
 
     for name in MANDATORY_ENVIRONMENT_VARIABLES:
         try:
