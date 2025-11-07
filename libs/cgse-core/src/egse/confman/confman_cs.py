@@ -20,19 +20,16 @@ import typer
 import zmq
 from rich.console import Console
 
+from egse.confman import COMMANDING_PORT
 from egse.confman import ConfigurationManagerProtocol
 from egse.confman import ConfigurationManagerProxy
-from egse.confman import (
-    PROCESS_NAME,
-    PROTOCOL,
-    HOSTNAME,
-    COMMANDING_PORT,
-    SERVICE_PORT,
-    MONITORING_PORT,
-    STORAGE_MNEMONIC,
-    SERVICE_TYPE,
-)
-
+from egse.confman import HOSTNAME
+from egse.confman import MONITORING_PORT
+from egse.confman import PROCESS_NAME
+from egse.confman import PROTOCOL
+from egse.confman import SERVICE_PORT
+from egse.confman import SERVICE_TYPE
+from egse.confman import STORAGE_MNEMONIC
 from egse.control import ControlServer
 from egse.env import get_conf_data_location
 from egse.logger import remote_logging
@@ -293,7 +290,7 @@ def check_prerequisites():
     if not location:
         raise RuntimeError("The location for the configuration data is not defined. Please check your environment.")
 
-    location = Path(location)
+    location = Path(location).expanduser()
 
     if not location.exists():
         logger.error(

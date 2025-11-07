@@ -222,7 +222,7 @@ def check_prerequisites():
     if not location:
         raise RuntimeError("The data storage location is not defined. Please check your environment.")
 
-    location = Path(location)
+    location = Path(location).expanduser()
 
     if not location.exists():
         logger.error(f"The directory {location} does not exist, provide a writable location for storing the data.")
