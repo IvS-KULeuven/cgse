@@ -459,8 +459,10 @@ def set_local_settings(path: str | Path | None):
         return
 
     if not Path(path).expanduser().is_file():
-        warnings.warn(f"The location you provided for the environment variable {env_name} doesn't exist or is not a "
-                      f"regular file: {path}.")
+        warnings.warn(
+            f"The location you provided for the environment variable {env_name} doesn't exist or is not a "
+            f"regular file: {path}."
+        )
 
     os.environ[env_name] = path
     _env.set("LOCAL_SETTINGS", path)
