@@ -23,13 +23,14 @@ from egse.env import env_var
 
 _LOGGER = logging.getLogger("egse.test_env")
 
+
 @pytest.fixture
 def no_dotenv():
     saved_var = os.getenv("CGSE_DOTENV_DISABLED")
-    os.environ["CGSE_DOTENV_DISABLED"]="true"
+    os.environ["CGSE_DOTENV_DISABLED"] = "true"
     yield
     if saved_var is not None:
-        os.environ["CGSE_DOTENV_DISABLED"]=saved_var
+        os.environ["CGSE_DOTENV_DISABLED"] = saved_var
 
 
 def test_get_project_name(no_dotenv):
@@ -242,13 +243,12 @@ def test_bool_env():
 
 
 def test_int_env():
-
     for name, value, default, minimum, expected in (
-            ("CGSE_VAR", 10_000, 1_000, 0, 10_000),
-            ("CGSE_VAR", 23, 42, None, 23),
-            ("CGSE_VAR", 23, 42, 30, 42),  # value < minimum -> default
-            ("CGSE_VAR", None, 23, 1, 23),  # var not defined -> default
-            ("CGSE_VAR", "xxx", 74, 0, 74),  # invalid var -> default
+        ("CGSE_VAR", 10_000, 1_000, 0, 10_000),
+        ("CGSE_VAR", 23, 42, None, 23),
+        ("CGSE_VAR", 23, 42, 30, 42),  # value < minimum -> default
+        ("CGSE_VAR", None, 23, 1, 23),  # var not defined -> default
+        ("CGSE_VAR", "xxx", 74, 0, 74),  # invalid var -> default
     ):
         if value is None:
             assert int_env(name, default, minimum=minimum) == expected
