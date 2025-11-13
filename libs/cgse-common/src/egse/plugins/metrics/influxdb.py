@@ -37,11 +37,14 @@ import pandas
 import pyarrow
 from influxdb_client_3 import InfluxDBClient3
 from influxdb_client_3 import Point
-from influxdb_client_3 import SYNCHRONOUS
+from influxdb_client_3 import WriteType
 from influxdb_client_3 import write_client_options
 from influxdb_client_3.exceptions import InfluxDB3ClientError
 from influxdb_client_3.write_client.domain.write_precision import WritePrecision
 
+from egse.env import bool_env
+from egse.env import int_env
+from egse.env import str_env
 from egse.metrics import TimeSeriesRepository
 from egse.system import type_name
 
@@ -63,9 +66,38 @@ class InfluxDBRepository(TimeSeriesRepository):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
+    def _load_client_options(self):
+        self._batch_size = int_env("CGSE_INFLUX_BATCH_SIZE", 1_000)
+        self._flush_interval = int_env("CGSE_INFLUX_FLUSH_MS", 1_000)
+        self._retry_interval = int_env("CGSE_INFLUX_RETRY_MS", 3_000)
+        self._max_retry_delay = int_env("CGSE_INFLUX_RETRY_MAX_DELAY_MS", 3_000)
+        self._max_retry_time = int_env("CGSE_INFLUX_RETRY_MAX_TIME_MS", 6_000, minimum=0)
+        self._max_retries = int_env("CGSE_INFLUX_MAX_RETRIES", 5, minimum=0)
+        self._no_sync = bool_env("CGSE_INFLUX_NO_SYNC", default=True)
+        self._write_type_env = str_env("CGSE_INFLUX_WRITE_TYPE")
+        self._write_type = WriteType.asynchronous
+        if self._write_type_env:
+            match self._write_type_env.strip().lower():
+                case "batch":
+                    self._write_type = WriteType.batching
+                case "async":
+                    self._write_type = WriteType.asynchronous
+                case "sync":
+                    self._write_type = WriteType.synchronous
+
     def connect(self):
+        self._load_client_options()
+
         wco = write_client_options(
-            write_options=SYNCHRONOUS, write_precision=self.metrics_time_precision, flush_interval=200
+            write_type=self._write_type,
+            batch_size=self._batch_size,
+            flush_interval=self._flush_interval,
+            retry_interval=self._retry_interval,
+            max_retries=self._max_retries,
+            max_retry_delay=self._max_retry_delay,
+            max_retry_time=self._max_retry_time,
+            no_sync=self._no_sync,
+            write_precision=self.metrics_time_precision,
         )
         self.client = InfluxDBClient3(host=self.host, database=self.database, token=self.token, write_options=wco)
 

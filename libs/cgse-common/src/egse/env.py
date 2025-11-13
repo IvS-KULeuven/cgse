@@ -43,6 +43,8 @@ from __future__ import annotations
 
 __all__ = [
     "bool_env",
+    "int_env",
+    "str_env",
     "env_var",
     "get_conf_data_location",
     "get_conf_data_location_env_name",
@@ -75,6 +77,7 @@ from egse.log import logger
 from egse.system import all_logging_disabled
 from egse.system import get_caller_info
 from egse.system import ignore_m_warning
+from egse.system import type_name
 
 console = Console(width=100)
 
@@ -101,6 +104,37 @@ KNOWN_PROJECT_ENVIRONMENT_VARIABLES = [
 
 
 def initialize():
+def int_env(var_name: str, default: int, *, minimum: int | None = 1) -> int:
+    """Return an integer environment override, falling back to `default` on errors."""
+    raw = os.getenv(var_name)
+    if raw is None:
+        return default
+    try:
+        value = int(raw)
+    except ValueError:
+        logger.warning(f"Ignoring invalid integer for {var_name}: {raw!r}, returning {default=}")
+        return default
+    if minimum is not None and value < minimum:
+        logger.warning(f"Ignoring {var_name} because value {value} < {minimum}, returning {default=}")
+        return default
+    return value
+
+
+def bool_env(var_name: str, default: bool = False) -> bool:
+    """Return True if the environment variable is set to 1, true, yes, or on. All case-insensitive."""
+
+    if value := os.getenv(var_name):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+
+    return default
+
+
+def str_env(var_name: str, default: str | None = None) -> str:
+    """Return the value of the environment variable or default if variable is not defined."""
+    return os.getenv(var_name, default)
+
+
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
     """
     Initialize the environment variables that are required for the CGSE to function properly.
     This function will print a warning if any of the mandatory environment variables is not set.
