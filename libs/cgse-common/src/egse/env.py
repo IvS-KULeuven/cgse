@@ -43,6 +43,10 @@ from __future__ import annotations
 
 __all__ = [
     "bool_env",
+    "int_env",
+    "str_env",
+    "load_dotenv",
+    "setup_env",
     "env_var",
     "get_conf_data_location",
     "get_conf_data_location_env_name",
@@ -68,15 +72,17 @@ import os
 import warnings
 from pathlib import Path
 
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv as _load_dotenv
+from dotenv import find_dotenv
 from rich.console import Console
 
 from egse.log import logger
 from egse.system import all_logging_disabled
 from egse.system import get_caller_info
 from egse.system import ignore_m_warning
+from egse.system import type_name
 
-console = Console(width=100)
+console = Console(width=100)  # FIXME: why is this needed here?
 
 # Every project shall have a PROJECT and a SITE_ID environment variable set. This variable will be used to
 # create the other environment variables that are specific to the project.
@@ -100,7 +106,56 @@ KNOWN_PROJECT_ENVIRONMENT_VARIABLES = [
 ]
 
 
-def initialize():
+def int_env(var_name: str, default: int, *, minimum: int | None = 1) -> int:
+    """Return an integer environment override, falling back to `default` on errors."""
+    raw = os.getenv(var_name)
+    if raw is None:
+        return default
+    try:
+        value = int(raw)
+    except ValueError:
+        logger.warning(f"Ignoring invalid integer for {var_name}: {raw!r}, returning {default=}")
+        return default
+    if minimum is not None and value < minimum:
+        logger.warning(f"Ignoring {var_name} because value {value} < {minimum}, returning {default=}")
+        return default
+    return value
+
+
+def bool_env(var_name: str, default: bool = False) -> bool:
+    """Return True if the environment variable is set to 1, true, yes, or on. All case-insensitive."""
+
+    if value := os.getenv(var_name):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+
+    return default
+
+
+def str_env(var_name: str, default: str | None = None) -> str:
+    """Return the value of the environment variable or default if variable is not defined."""
+    return os.getenv(var_name, default)
+
+
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
+
+
+def load_dotenv():
+    """Overwrites the load_dotenv function for CGSE specifics.
+
+    - set `CGSE_DOTENV_DISABLED=true` to disable loading the `.env` file
+    - the `.env` file is searched for relative to the current working directory,
+      unlike the default, which searches from the script location.
+
+    NOTE:
+    - don't use the `load_dotenv` function from the `dotenv` package
+    - don't use `load_dotenv` in any modules, only in entrypoints and apps.
+    """
+    if not bool_env("CGSE_DOTENV_DISABLED") and (dotenv_location := find_dotenv(usecwd=True)):
+        logger.debug(f"Loading environment variables from {dotenv_location}.")
+        _load_dotenv(dotenv_path=dotenv_location)
+
+
+def setup_env():
     """
     Initialize the environment variables that are required for the CGSE to function properly.
     This function will print a warning if any of the mandatory environment variables is not set.
@@ -111,9 +166,10 @@ def initialize():
 
     global _env
 
-    if dotenv_location := find_dotenv():
-        logger.debug(f"Loading environment variables from {dotenv_location}.")
-        load_dotenv()
+    if VERBOSE_DEBUG:
+        logger.debug(f"Initialising the environment...")
+
+    load_dotenv()
 
     for name in MANDATORY_ENVIRONMENT_VARIABLES:
         try:
@@ -141,8 +197,12 @@ class _Env:
     def set(self, key, value):
         if value is None:
             if key in self._env:
+                if VERBOSE_DEBUG:
+                    logger.debug(f"Unsetting environment variable {key}")
                 del self._env[key]
         else:
+            if VERBOSE_DEBUG:
+                logger.debug(f"Setting environment variable {key}={value}")
             self._env[key] = value
 
     def get(self, key) -> str:
@@ -171,11 +231,11 @@ class NoValue:
         return False
 
     def __repr__(self):
-        return f"{self.__class__.__name__}"
+        return f"{type_name(self)}"
 
 
 # The module needs to be initialized before it can be used.
-initialize()
+setup_env()
 
 
 def _check_no_value(var_name, value):
@@ -582,15 +642,6 @@ def print_env():
         console.print(f"  {get_local_settings_env_name():{col_width}s}: {get_local_settings_path()}")
 
 
-def bool_env(var_name: str) -> bool:
-    """Return True if the environment variable is set to 1, true, yes, or on. All case-insensitive."""
-
-    if value := os.getenv(var_name):
-        return value.strip().lower() in {"1", "true", "yes", "on"}
-
-    return False
-
-
 @contextlib.contextmanager
 def env_var(**kwargs: str | int | float | bool | None):
     """
@@ -622,7 +673,7 @@ def env_var(**kwargs: str | int | float | bool | None):
         else:
             os.environ[k] = v
 
-    initialize()
+    setup_env()
 
     yield
 
@@ -633,7 +684,7 @@ def env_var(**kwargs: str | int | float | bool | None):
         else:
             os.environ[k] = v
 
-    initialize()
+    setup_env()
 
 
 def main(args: list | None = None):  # pragma: no cover
@@ -662,6 +713,8 @@ def main(args: list | None = None):  # pragma: no cover
     )
 
     args = parser.parse_args(args or [])
+
+    setup_env()
 
     def check_env_dir(env_var: str):
         value = _env.get(env_var)
