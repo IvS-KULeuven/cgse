@@ -106,7 +106,7 @@ def test_speed():
                 duration = time.time() - start_time
                 print(f"Wrote {len(points)} points in {duration:.3f}s")
 
-                if duration > 0.1:  # Warn if > 100ms
+                if duration > 1.0:  # Warn if > 1000ms
                     print(f"⚠️  Slow write detected: {duration:.3f}s for {len(points)} points")
 
     token = os.environ.get("INFLUXDB3_AUTH_TOKEN")
@@ -114,7 +114,7 @@ def test_speed():
     influxdb.connect()
 
     points = []
-    for count in range(10):
+    for count in range(10_000):
         points.append(
             {
                 "measurement": "unit_test",

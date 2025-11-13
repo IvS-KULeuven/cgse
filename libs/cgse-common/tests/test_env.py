@@ -1,4 +1,5 @@
 import logging
+import os
 
 import pytest
 
@@ -11,6 +12,7 @@ from egse.env import get_data_storage_location
 from egse.env import get_local_settings_path
 from egse.env import get_local_settings_env_name
 from egse.env import get_log_file_location
+from egse.env import int_env
 from egse.env import print_env
 from egse.env import set_conf_data_location
 from egse.env import set_conf_repo_location
@@ -21,8 +23,16 @@ from egse.env import env_var
 
 _LOGGER = logging.getLogger("egse.test_env")
 
+@pytest.fixture
+def no_dotenv():
+    saved_var = os.getenv("CGSE_DOTENV_DISABLED")
+    os.environ["CGSE_DOTENV_DISABLED"]="true"
+    yield
+    if saved_var is not None:
+        os.environ["CGSE_DOTENV_DISABLED"]=saved_var
 
-def test_get_project_name():
+
+def test_get_project_name(no_dotenv):
     print()
 
     with env_var(PROJECT="CGSE"):
@@ -34,7 +44,7 @@ def test_get_project_name():
     print_env()
 
 
-def test_get_site_id():
+def test_get_site_id(no_dotenv):
     print()
 
     with env_var(SITE_ID="HOME"):
@@ -46,7 +56,7 @@ def test_get_site_id():
     print_env()
 
 
-def test_get_data_storage_location():
+def test_get_data_storage_location(no_dotenv):
     print()
 
     with env_var(PROJECT="TEST"), env_var(SITE_ID="ESA"), env_var(TEST_DATA_STORAGE_LOCATION="/data/test"):
@@ -226,3 +236,22 @@ def test_bool_env():
     for option in ["0", "false", "no", "off"]:
         with env_var(VERBOSE_DEBUG=option):
             assert not bool_env("VERBOSE_DEBUG")
+
+    assert bool_env("UNKNOWN_UNDEFINED", default=True)
+    assert not bool_env("UNKNOWN_UNDEFINED")
+
+
+def test_int_env():
+
+    for name, value, default, minimum, expected in (
+            ("CGSE_VAR", 10_000, 1_000, 0, 10_000),
+            ("CGSE_VAR", 23, 42, None, 23),
+            ("CGSE_VAR", 23, 42, 30, 42),  # value < minimum -> default
+            ("CGSE_VAR", None, 23, 1, 23),  # var not defined -> default
+            ("CGSE_VAR", "xxx", 74, 0, 74),  # invalid var -> default
+    ):
+        if value is None:
+            assert int_env(name, default, minimum=minimum) == expected
+        else:
+            with env_var(**{name: str(value)}):
+                assert int_env(name, default, minimum=minimum) == expected
