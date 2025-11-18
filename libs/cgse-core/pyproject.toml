@@ -27,6 +27,7 @@ dependencies = [
 ]
 
 [project.scripts]
+monitor = "egse.monitoring:app"
 log_cs = 'egse.logger.log_cs:app'
 reg_cs = 'egse.registry.server:app'
 nh_cs = 'egse.notifyhub.server:app'

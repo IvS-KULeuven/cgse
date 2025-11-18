@@ -48,7 +48,6 @@ dependencies = [
 
 [project.scripts]
 cgse = 'cgse_common.cgse:app'
-monitor = "egse.monitoring:app"
 
 [project.entry-points."cgse.version"]
 cgse-common = 'egse.version:get_version_installed'
@@ -61,7 +60,7 @@ pythonpath = "src"
 testpaths = ["tests"]
 addopts = "-ra --cov --cov-branch --cov-report html"
 log_cli = true
-log_cli_level = "INFO"
+log_cli_level = "DEBUG"
 filterwarnings = [
     "ignore::DeprecationWarning"
 ]
