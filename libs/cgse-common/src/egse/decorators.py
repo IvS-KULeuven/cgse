@@ -15,7 +15,6 @@ from typing import Optional
 
 import rich
 
-from egse.settings import Settings
 from egse.system import get_caller_info
 from egse.log import logger
 
@@ -389,6 +388,8 @@ def profile(func):
     """
     if not hasattr(profile, "counter"):
         profile.counter = 0
+
+    from egse.settings import Settings
 
     @functools.wraps(func)
     def wrapper_profile(*args, **kwargs):
