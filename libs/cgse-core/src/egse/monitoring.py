@@ -267,6 +267,9 @@ def monitoring(
     multiprocessing.current_process().name = "Monitoring"
 
     from rich import print
+    from egse.env import setup_env
+
+    setup_env()
 
     if list_names:
         print("The available process names as aliases for port numbers are: ", end="")
