@@ -64,7 +64,7 @@ class CSV1(PersistenceLayer):
             prep (dict): preparation information to initialise the persistence layer
         """
         prep = prep or {}
-        self._filepath = Path(filename)
+        self._filepath = Path(filename).expanduser()
         self._column_names = prep.get("column_names") or []
         self._mode = prep.get("mode") or "r"
         self._quote_char = prep.get("quote_char") or "|"
@@ -188,7 +188,7 @@ class CSV2(PersistenceLayer):
             prep (dict): preparation information to initialise the persistence layer
         """
         prep = prep or {}
-        self._filepath = Path(filename)
+        self._filepath = Path(filename).expanduser()
         self._column_names = prep.get("column_names") or []
         self._mode = prep.get("mode") or "r"
         self._quote_char = prep.get("quote_char") or "|"
@@ -313,7 +313,7 @@ class TXT(PersistenceLayer):
             prep (dict): preparation information to initialise the persistence layer
         """
         prep = prep or {}
-        self._filepath = Path(filename)
+        self._filepath = Path(filename).expanduser()
         self._mode = prep.get("mode") or "r"
         self._ending = prep.get("ending") or ""
         self._header = prep.get("header") or ""
@@ -409,7 +409,7 @@ class SQLite(PersistenceLayer):
     extension = "sqlite3"
 
     def __init__(self, filename: Union[str, Path], prep: dict = None):
-        self._filepath = Path(filename).with_suffix(f".{self.extension}")
+        self._filepath = Path(filename).expanduser().with_suffix(f".{self.extension}")
         self._prep = prep
         self._connection: Optional[Connection] = None
 
