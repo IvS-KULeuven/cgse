@@ -644,7 +644,7 @@ def _check_conditions_for_get_path_of_setup_file(site_id: str) -> Path:
 
     print_env()
 
-    repo_location = Path(repo_location)
+    repo_location = Path(repo_location).expanduser()
     setup_location = repo_location / "data" / site_id / "conf"
 
     if not repo_location.is_dir():
@@ -689,7 +689,7 @@ def get_path_of_setup_file(setup_id: int, site_id: str) -> Path:
     """
 
     if not has_conf_repo_location():
-        setup_location = Path(get_conf_data_location(site_id))
+        setup_location = Path(get_conf_data_location(site_id)).expanduser()
     else:
         setup_location = _check_conditions_for_get_path_of_setup_file(site_id)
 
@@ -823,10 +823,11 @@ def submit_setup(setup: Setup, description: str, **kwargs) -> str | None:
 
 def main(args: list = None):  # pragma: no cover
     import argparse
-
     from rich import print
-
     from egse.config import find_files
+    from egse.env import setup_env
+
+    setup_env()
 
     site_id = get_site_id()
     location = get_conf_data_location()
@@ -882,7 +883,7 @@ def main(args: list = None):  # pragma: no cover
 
 
 class SetupManager:
-    """Unified manager that routes Setup access to appropriate providers.
+    """A unified manager that routes Setup access to appropriate providers.
 
     Providers are loaded from the `cgse.extension.setup_providers` entrypoints.
     Providers serve different purposes, the default provider accesses Setups from
@@ -958,6 +959,11 @@ _setup_manager = SetupManager()
 
 
 if __name__ == "__main__":
+    from egse.env import setup_env
+
+    setup_env()
+
+    # import sys
     # main(sys.argv[1:])
-    #
+
     rich.print(load_setup(site_id=get_site_id()))
