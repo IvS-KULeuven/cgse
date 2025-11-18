@@ -80,7 +80,7 @@ if __name__ == "__main__":
     broadcaster.start()
 
     # You will see that the timestamp of this custom message is drifting because
-    # we do not take the execution time of the `set_message()` etc. intyo accout.
+    # we do not take the execution time of the `set_message()` etc. into account.
     # In the actual HeartbeatBroadcaster above, we do take that into account.
 
     try:
