@@ -27,7 +27,7 @@ class HDF5(PersistenceLayer):
 
         """
         # LOGGER.debug(f"{h5py.version.hdf5_version=}")
-        self._filepath = Path(filename)
+        self._filepath = Path(filename).expanduser()
         self._mode = prep.get("mode") or "r"
         self._h5file: Optional[h5py.File] = None
 
