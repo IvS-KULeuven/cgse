@@ -586,6 +586,7 @@ def _construct_filename(
 
     site_id = site_id or SITE_ID
     location = location or get_data_storage_location(site_id=site_id)
+    location = Path(location).expanduser()
 
     if obsid:
         timestamp = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%d_%H%M%S")
