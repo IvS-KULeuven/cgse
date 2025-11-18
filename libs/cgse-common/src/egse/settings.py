@@ -66,9 +66,6 @@ The above code will read the YAML file from the given location and not from the 
 
 """
 
-from __future__ import annotations
-
-import logging
 import re
 from pathlib import Path
 from typing import Any
@@ -386,7 +383,9 @@ def main(args: list | None = None):  # pragma: no cover
     #
     # Use the '--help' option to see what your choices are.
 
-    logging.basicConfig(level=20)
+    from egse.env import setup_env
+
+    setup_env()
 
     import argparse
 
