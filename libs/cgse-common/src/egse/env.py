@@ -76,13 +76,12 @@ from dotenv import load_dotenv as _load_dotenv
 from dotenv import find_dotenv
 from rich.console import Console
 
+from egse.decorators import static_vars
 from egse.log import logger
 from egse.system import all_logging_disabled
 from egse.system import get_caller_info
 from egse.system import ignore_m_warning
 from egse.system import type_name
-
-console = Console(width=100)  # FIXME: why is this needed here?
 
 # Every project shall have a PROJECT and a SITE_ID environment variable set. This variable will be used to
 # create the other environment variables that are specific to the project.
@@ -155,6 +154,7 @@ def load_dotenv():
         _load_dotenv(dotenv_path=dotenv_location)
 
 
+@static_vars(is_initialized=False)
 def setup_env():
     """
     Initialize the environment variables that are required for the CGSE to function properly.
@@ -165,6 +165,9 @@ def setup_env():
     """
 
     global _env
+
+    if setup_env.is_initialized:
+        return
 
     if VERBOSE_DEBUG:
         logger.debug(f"Initialising the environment...")
@@ -184,8 +187,10 @@ def setup_env():
     project = _env.get("PROJECT")
 
     for gen_var_name in KNOWN_PROJECT_ENVIRONMENT_VARIABLES:
-        env_var = f"{project}_{gen_var_name}"
-        _env.set(gen_var_name, os.environ.get(env_var, NoValue()))
+        _env_var = f"{project}_{gen_var_name}"
+        _env.set(gen_var_name, os.environ.get(_env_var, NoValue()))
+
+    setup_env.is_initialized = True
 
 
 class _Env:
@@ -645,8 +650,8 @@ def print_env():
 @contextlib.contextmanager
 def env_var(**kwargs: str | int | float | bool | None):
     """
-    Context manager to run some code that need alternate settings for environment variables.
-    This will automatically initialize the CGSE environment upon entry and re-initialize upon exit.
+    Context manager to run some code that need alternate settings for environment variables. This will automatically
+    initialize the CGSE environment upon entry and re-initialize when the context manager exits.
 
     Note:
         This context manager is different from the one in `egse.system` because of the CGSE environment changes.
@@ -709,15 +714,15 @@ def main(args: list | None = None):  # pragma: no cover
         "--mkdir",
         default=False,
         action="store_true",
-        help="Create directory that doesn't exist.",
+        help="Create any directory that doesn't exist.",
     )
 
     args = parser.parse_args(args or [])
 
     setup_env()
 
-    def check_env_dir(env_var: str):
-        value = _env.get(env_var)
+    def check_env_dir(_env_var: str):
+        value = _env.get(_env_var)
 
         if value == NoValue():
             value = "[bold red]not set"
@@ -731,8 +736,8 @@ def main(args: list | None = None):  # pragma: no cover
             value = f"[default]{value}"
         return value
 
-    def check_env_file(env_var: str):
-        value = _env.get(env_var)
+    def check_env_file(_env_var: str):
+        value = _env.get(_env_var)
 
         if not value:
             value = "[bold red]not set"
@@ -843,8 +848,8 @@ def main(args: list | None = None):  # pragma: no cover
     of the name. By default, this directory is located in the overall data storage folder.
 
 [bold]PROJECT_CONF_REPO_LOCATION[/bold]:
-    This variable is the root of the working copy of the 'plato-cgse-conf' project.
-    The value is usually set to `~/git/plato-cgse-conf`.
+    This variable is the root of the working copy of the repo for configuration files.
+    The value is usually set to `~/git/{project}-conf`.
 
 [bold]PROJECT_DATA_STORAGE_LOCATION[/bold]:
     This directory contains all the data files from the control servers and other
@@ -866,7 +871,7 @@ def main(args: list | None = None):  # pragma: no cover
 [bold]PROJECT_LOCAL_SETTINGS[/bold]:
     This file is used for local site-specific settings. When the environment
     variable is not set, no local settings will be loaded. By default, this variable
-    is assumed to be '/cgse/local_settings.yaml'.
+    assumes to be '/cgse/local_settings.yaml'.
 """
 
     if args.doc:
