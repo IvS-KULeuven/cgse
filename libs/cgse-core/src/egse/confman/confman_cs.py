@@ -256,22 +256,29 @@ def reload_setups():
     Note that this does not affect the currently loaded setup.
     """
 
-    with ConfigurationManagerProxy() as pm:
-        pm.reload_setups()
+    with ConfigurationManagerProxy() as cm_proxy:
+        cm_proxy.reload_setups()
 
 
 @app.command()
 def register_to_storage():
     with RegistryClient() as reg:
         service = reg.discover_service(settings.SERVICE_TYPE)
-        # rich.print("service = ", service)
+
+        # The service will register the control server to the storage, i.e. with the STORAGE_MNEMONIC from the Settings
+        # of that control server.
 
         if service:
             rich.print("Registering CM to the storage manager")
-            with ServiceProxy(hostname=service["host"], port=service["metadata"]["service_port"]) as proxy:
-                proxy.register_to_storage()
+            with ServiceProxy(hostname=service["host"], port=service["metadata"]["service_port"]) as service_proxy:
+                service_proxy.register_to_storage()  # register the control server
         else:
             rich.print("[red]ERROR: Couldn't connect to 'cm_cs', process probably not running.")
+
+        # The configuration manager controller will register the obsid table to the storage with the `obsid` name.
+
+        with ConfigurationManagerProxy() as cm_proxy:
+            cm_proxy.register_to_storage()  # register the obsid table
 
 
 def check_prerequisites():

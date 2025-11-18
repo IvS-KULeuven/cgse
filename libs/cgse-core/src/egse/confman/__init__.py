@@ -155,7 +155,6 @@ from egse.setup import Setup
 from egse.setup import disentangle_filename
 from egse.setup import load_last_setup_id
 from egse.setup import save_last_setup_id
-from egse.system import Timer
 from egse.system import duration
 from egse.system import filter_by_attr
 from egse.system import format_datetime
