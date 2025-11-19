@@ -13,14 +13,11 @@ import textwrap
 import threading
 from functools import partial
 from typing import Callable
-from typing import Type
 from typing import Union
 
 import zmq
 from urllib3.exceptions import NewConnectionError
 
-from egse.decorators import retry
-from egse.decorators import retry_with_exponential_backoff
 from egse.listener import Listeners
 from egse.log import logger
 from egse.logger import close_all_zmq_handlers
