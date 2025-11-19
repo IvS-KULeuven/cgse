@@ -135,20 +135,27 @@ for handler in root_logger.handlers:
 logger = egse_logger
 
 if __name__ == "__main__":
+    from egse.env import str_env
+
     root_logger = logging.getLogger()
 
-    rich.print(
+    print(
         textwrap.dedent(
             """
+            Environment variables:
+              - LOG_LEVEL=debug|info|warning|critical
+              - LOG_FORMAT=full|clean
+            
             Example logging statements
               - logging level set to INFO
+              - logging format set to full
               - fields are separated by a colon ':'
               - fields: date & time: process name : level : logger name : lineno : filename : message
             """
         )
     )
 
-    if os.getenv("LOG_FORMAT_FULL") == "true":
+    if str_env("LOG_FORMAT", "clean").strip().lower() == "full":
         rich.print(
             f"[b]{'Date & Time':^23s} : {'Process Name':20s} : {'Level':8s} : {'Logger Name':^25s} : {' Line '} : "
             f"{'Filename':20s} : {'Message'}[/]"
