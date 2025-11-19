@@ -51,7 +51,7 @@ log = 'cgse_core.services:log_cs'
 cm = 'cgse_core.services:cm_cs'
 sm = 'cgse_core.services:sm_cs'
 pm = 'cgse_core.services:pm_cs'
-not = 'cgse_core.services:notifyhub'
+nh = 'cgse_core.services:notifyhub'
 
 [project.entry-points."cgse.explore"]
 explore = "cgse_core.cgse_explore"
