@@ -770,6 +770,11 @@ class AsyncRegistryClient:
         When you register and deregister with the same client instance, you don't have to provide
         the service_id.
 
+        NOTE:
+            When a registry client is running and sending out heartbeats, it will reregister if it finds the
+            registry server to be healthy. If you want to permanently deregister the service, you will need
+            to stop the registry client for the service or terminate the service.
+
         Args:
             service_id: the service identifier that was previously handed out by the ServiceRegistry after
                 registration. If not provided, the service_id that was saved when registering is used.
