@@ -72,13 +72,14 @@ from typing import Any
 
 import yaml  # This module is provided by the pip package PyYaml - pip install pyyaml
 
+from egse.env import bool_env
 from egse.env import get_local_settings_env_name
 from egse.env import get_local_settings_path
 from egse.log import logger
 from egse.system import attrdict
 from egse.system import recursive_dict_update
 
-_HERE = Path(__file__).resolve().parent
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
 
 
 class SettingsError(Exception):
@@ -192,6 +193,9 @@ def load_local_settings(force: bool = False) -> attrdict:
     local_settings = attrdict()
 
     local_settings_path = get_local_settings_path()
+    if VERBOSE_DEBUG:
+        logger.debug(f"{get_local_settings_env_name()=}")
+        logger.debug(f"{local_settings_path=}")
 
     if local_settings_path:
         path = Path(local_settings_path).expanduser()
@@ -218,7 +222,8 @@ def read_configuration_file(filename: Path, *, force=False) -> dict:
     filename = str(filename)
 
     if force or not Settings.is_memoized(filename):
-        logger.debug(f"Parsing YAML configuration file {filename}.")
+        if VERBOSE_DEBUG:
+            logger.debug(f"Parsing YAML configuration file {filename}.")
 
         with open(filename, "r") as stream:
             try:
