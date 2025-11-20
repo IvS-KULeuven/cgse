@@ -20,12 +20,14 @@ We have the following generic packages:
 - `cgse-tools`: Tools for the `cgse` command.
 - `symetrie-hexapod`: The Symétrie Hexapod drivers. We put this in the generic folder because it is a generic device driver that can be used by different projects.
 - `keithley-tempcontrol`: The DAQ6510 data acquisition and logging multimeter from Keithley.
+- `lakeshore-tempcontrol`: The LakeShore Model 336 Temperature Controller.
 
 We have the following project specific packages:
 
 - `plato-spw`: The PLATO SpaceWire drivers.
 - `plato-fits`: The PLATO FITS plugins.
 - `plato-hdf5`: The PLATO HDF5 plugins.
+- `ariel-tcu`: The Telescope Control Unit for the ARIEL spacecraft
 
 # Installation
 
@@ -40,6 +42,6 @@ $ pip install cgse
 Always install in a virtual environment or use `uv`:
 
 ```shell
-$ uv venv
+$ uv venv --python 3.12
 $ uv pip install cgse
 ```
