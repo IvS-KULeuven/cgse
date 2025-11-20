@@ -1,6 +1,6 @@
 [project]
 name = "cgse-common"
-version = "0.17.0"
+version = "0.17.1"
 description = "Software framework to support hardware testing"
 authors = [
     {name = "IvS KU Leuven"}
@@ -63,6 +63,9 @@ log_cli = true
 log_cli_level = "DEBUG"
 filterwarnings = [
     "ignore::DeprecationWarning"
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')"
 ]
 
 [tool.coverage.run]

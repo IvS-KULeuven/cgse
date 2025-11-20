@@ -12,6 +12,7 @@ import time
 from pathlib import Path
 
 import pytest
+import rich
 from pytest import approx
 
 from egse.decorators import execution_count
@@ -47,6 +48,7 @@ from egse.system import is_not_in
 from egse.system import ping
 from egse.system import read_last_line
 from egse.system import read_last_lines
+from egse.system import recursive_dict_update
 from egse.system import replace_environment_variable
 from egse.system import save_average_execution_time
 from egse.system import touch
@@ -906,7 +908,6 @@ def test_touch():
 
 
 def test_is_module():
-    import egse
     import egse.version
     from egse.system import get_os_name
 
@@ -921,7 +922,6 @@ def test_is_module():
 
 
 def test_is_namespace():
-    import egse
     import egse.version
     from egse.system import get_os_name
 
@@ -1107,3 +1107,32 @@ def test_camel_to_snake():
     assert camel_to_snake("My123BestProject") == "my123_best_project"
 
     assert camel_to_snake("is_already_snake") == "is_already_snake"
+
+
+def test_recursive_dict_update():
+    print()
+
+    top = {"GROUP": {"G1": "initial top-level group"}}
+    x = {"NEW_GROUP": {"G2": "additional top-level group"}}
+
+    recursive_dict_update(top, x)
+
+    assert "NEW_GROUP" in top
+    assert "initial" in top["GROUP"]["G1"]
+    assert "additional" in top["NEW_GROUP"]["G2"]
+
+    x = {"NEW_SUBGROUP": "a new subgroup added to NEW_GROUP"}
+
+    recursive_dict_update(top["NEW_GROUP"], x)
+
+    rich.print(top)
+
+    assert "NEW_SUBGROUP" in top["NEW_GROUP"]
+
+    x = {"GROUP": {"G3": "a new group added to top-level GROUP"}}
+
+    recursive_dict_update(top, x)
+
+    rich.print(top)
+
+    assert "G3" in top["GROUP"]

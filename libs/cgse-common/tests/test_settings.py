@@ -78,15 +78,17 @@ def test_load_local_settings():
 
 
 def test_load_new_local_settings():
-    with env_var(CGSE_LOCAL_SETTINGS=str(HERE / "data" / "data" / "new_local_settings.yaml")):
+    print()
+
+    with env_var(PROJECT="CGSE"), env_var(CGSE_LOCAL_SETTINGS=str(HERE / "data" / "data" / "new_local_settings.yaml")):
         settings = Settings.load(add_local_settings=False)
-        rich.print(settings)
+        # rich.print(settings)
 
         with pytest.raises(AttributeError):
             assert settings.NEW_GROUP["ID"] == "the ID of the new group"
 
-        settings = Settings.load(add_local_settings=True)
-        rich.print(settings)
+        settings = Settings.load(add_local_settings=True, force=True)
+        # rich.print(settings)
 
         # This should have been added, we can add new main groups
 
@@ -136,3 +138,7 @@ def test_profiling(capsys):
     assert "PACKAGES" in x
 
     Settings.set_profiling(False)
+
+
+if __name__ == "__main__":
+    test_load_new_local_settings()

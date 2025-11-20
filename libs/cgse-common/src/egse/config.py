@@ -154,13 +154,14 @@ def find_files(pattern: str, root: Path | str, in_dir: str = None) -> Generator[
     Returns:
         Paths of files matching pattern, from root.
     """
-    root = Path(root).resolve()
+    root = Path(root).expanduser().resolve()
     if not root.is_dir():
         root = root.parent
     if not root.exists():
         raise ValueError(f"The root argument didn't resolve into a valid directory: {root}.")
 
-    exclude_dirs = ("venv", "venv38", ".venv", ".nox", ".git", ".idea", ".DS_Store")
+    # FIXME: at some point we might want to make this configurable, through env?
+    exclude_dirs = ("venv", "venv38", ".venv", ".nox", ".git", ".idea", ".DS_Store", "__pycache__")
 
     for path, folders, files in os.walk(root):
         folders[:] = list(filter(lambda x: x not in exclude_dirs, folders))
