@@ -6,25 +6,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased](https://github.com/IvS-KULeuven/cgse/compare/v0.17.0...HEAD)
+## [Unreleased](https://github.com/IvS-KULeuven/cgse/compare/v0.17.1...HEAD)
 
+### Fixed
+- ...
 ### Added
 - ...
 
-## [v0.17.0](https://github.com/IvS-KULeuven/cgse/compare/v0.16.14...v0.17.0)
+## [v0.17.1](https://github.com/IvS-KULeuven/cgse/compare/v0.17.0...v0.17.1) – 20/11/2025
+
+### Fixed
+- Fixed a missing expanduser(). Apparently a `pathresolve()` doesn't handle the '`~`' character.
+- Fixed `env_var()` which is a context manager for temporarily setting an environment variable. It uses `setup_env()` 
+  to update the environment before and after the `yield`, but `setup_env()` only initializes once.
+- Fixed unit tests for settings, setup, and env.
+
+### Changed
+- Some of the debug messages in settings are now filtered behind the VERBOSE_DEBUG flag.
+
+## [v0.17.0](https://github.com/IvS-KULeuven/cgse/compare/v0.16.14...v0.17.0) – 20/11/2025
 
 ### Added
-- Added this CHANGELOG file.
-- Added an initial implementation of the ARIEL Telescope Control Unit (TCU). This is a separate package in this monorepo that is located at `projects/ariel/ariel-tcu`. The package will be added to PyPI as `ariel-tcu`.
-- Added a `read_string()` method to the `DeviceTransport` and `AsyncDeviceTransport` classes.
+- Added this CHANGELOG file. [#209](https://github.com/IvS-KULeuven/cgse/pull/209)
+- Added an initial implementation of the ARIEL Telescope Control Unit (TCU). This is a separate package in this 
+  monorepo that is located at `projects/ariel/ariel-tcu`. The package will be added to PyPI as `ariel-tcu`. [#178](https://github.com/IvS-KULeuven/cgse/pull/178)
+- Added a `read_string()` method to the `DeviceTransport` and `AsyncDeviceTransport` classes. [#209](https://github.com/IvS-KULeuven/cgse/pull/209)
 ### Fixed
-- Fixed the `sm_cs` for the missing `--full` cli argument.
-- Fixed the configuration of the InfluxDB client. The client can now be fully configured with environment variables if needed.
+- Fixed the `sm_cs` for the missing `--full` cli argument. [#204](https://github.com/IvS-KULeuven/cgse/pull/204)
+- Fixed the configuration of the InfluxDB client. The client can now be fully configured with environment variables 
+  if needed. [#206](https://github.com/IvS-KULeuven/cgse/pull/206)
 ### Changed
-- Improved initialization of the process environment with `setup_env()`.
-- The configuration manager now also re-registers the obsid table to the storage.
-- The `cgse` subcommand to start the notification hub is changed from `not` to `nh`. Use `cgse nh [start|stop|status]`.
-- The environment variables that contain a path can start with a tilde '`~`' which will be expanded to the user's home directory when used.
+- Improved initialization of the process environment with `setup_env()`. [#208](https://github.com/IvS-KULeuven/cgse/pull/208)
+- The configuration manager now also re-registers the obsid table to the storage. [#207](https://github.com/IvS-KULeuven/cgse/pull/207)
+- The `cgse` subcommand to start the notification hub is changed from `not` to `nh`. Use `cgse nh [start|stop|status]`.  [#209](https://github.com/IvS-KULeuven/cgse/pull/209)
+- The environment variables that contain a path can start with a tilde '`~`' which will be expanded to the user's 
+  home directory when used. [#204](https://github.com/IvS-KULeuven/cgse/pull/204)
 ### Docs
 - Documentation updates for the Python version, the CLI `cgse` subcommands,  environment and the introduction of `dotenv`, ...
 - Updated information on the use of `dotenv` in the developer guid.
