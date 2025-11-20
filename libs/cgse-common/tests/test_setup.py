@@ -18,7 +18,7 @@ from egse.env import get_conf_data_location
 from egse.env import get_conf_data_location_env_name
 from egse.env import get_conf_repo_location_env_name
 from egse.env import print_env
-from egse.env import initialize as initialize_env
+from egse.env import setup_env
 from egse.env import set_conf_repo_location
 from egse.setup import Setup
 from egse.setup import get_last_setup_id_file_path
@@ -578,7 +578,7 @@ def test_lazy_load_value_from_yaml(default_test_setup):
       file identifier.
     """
 
-    initialize_env()
+    setup_env()
     print_env()
 
     Setup.from_yaml_file.cache_clear()  # needed because the same file is used elsewhere
@@ -591,7 +591,7 @@ def test_lazy_load_value_from_yaml(default_test_setup):
 
     arr = np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
 
-    new_csv_file_name = Path(get_conf_data_location()) / "data/test_arr.csv"
+    new_csv_file_name = Path(get_conf_data_location()).expanduser() / "data/test_arr.csv"
     np.savetxt(new_csv_file_name, arr, delimiter=",", header="Test data used in test_setup.py")
 
     # Test the values from the original array
