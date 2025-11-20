@@ -80,10 +80,7 @@ def test_load_local_settings():
 def test_load_new_local_settings():
     print()
 
-    with (
-            env_var(PROJECT="CGSE"),
-            env_var(CGSE_LOCAL_SETTINGS=str(HERE / "data" / "data" / "new_local_settings.yaml"))
-    ):
+    with env_var(PROJECT="CGSE"), env_var(CGSE_LOCAL_SETTINGS=str(HERE / "data" / "data" / "new_local_settings.yaml")):
         settings = Settings.load(add_local_settings=False)
         # rich.print(settings)
 
@@ -143,6 +140,5 @@ def test_profiling(capsys):
     Settings.set_profiling(False)
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     test_load_new_local_settings()
