@@ -1110,7 +1110,6 @@ def test_camel_to_snake():
 
 
 def test_recursive_dict_update():
-
     print()
 
     top = {"GROUP": {"G1": "initial top-level group"}}
@@ -1119,7 +1118,7 @@ def test_recursive_dict_update():
     recursive_dict_update(top, x)
 
     assert "NEW_GROUP" in top
-    assert "initial" in top['GROUP']['G1']
+    assert "initial" in top["GROUP"]["G1"]
     assert "additional" in top["NEW_GROUP"]["G2"]
 
     x = {"NEW_SUBGROUP": "a new subgroup added to NEW_GROUP"}
@@ -1130,11 +1129,7 @@ def test_recursive_dict_update():
 
     assert "NEW_SUBGROUP" in top["NEW_GROUP"]
 
-    x = {
-        "GROUP": {
-            "G3": "a new group added to top-level GROUP"
-        }
-    }
+    x = {"GROUP": {"G3": "a new group added to top-level GROUP"}}
 
     recursive_dict_update(top, x)
 
