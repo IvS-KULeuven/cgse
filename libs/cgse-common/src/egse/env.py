@@ -678,6 +678,7 @@ def env_var(**kwargs: str | int | float | bool | None):
         else:
             os.environ[k] = v
 
+    setup_env.is_initialized = False
     setup_env()
 
     yield
@@ -689,6 +690,7 @@ def env_var(**kwargs: str | int | float | bool | None):
         else:
             os.environ[k] = v
 
+    setup_env.is_initialized = False
     setup_env()
 
 
