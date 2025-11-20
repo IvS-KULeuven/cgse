@@ -217,6 +217,7 @@ def show_setup(
     list_all: Annotated[bool, typer.Option(help="Print a list of all available setups")] = False,
     setup_id: Annotated[int, typer.Option(help="Show the setup with this id")] = -1,
 ):
+    """Show the Setup that was selected from the options."""
     if use_cm:
         try:
             from egse.confman import ConfigurationManagerProxy
