@@ -21,6 +21,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - The environment variables that contain a path can start with a tilde '`~`' which will be expanded to the user's home directory when used.
 ### Docs
 - Documentation updates for the Python version, the CLI `cgse` subcommands,  environment and the introduction of `dotenv`, ...
+- Updated information on the use of `dotenv` in the developer guid.
+- Added information on the environment variables to the user guide.
 
 ## [0.16.14](https://github.com/IvS-KULeuven/cgse/compare/v0.16.13...v0.16.14) – 24/10/2025
 
