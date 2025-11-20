@@ -1085,6 +1085,8 @@
       
         
       
+        
+      
     
     
     
@@ -1141,6 +1143,29 @@
   
   <span class="md-ellipsis">
     CLI Commands CGSE
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/env/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    The Environment
     
   </span>
   
@@ -2231,9 +2256,18 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#egse.env.initialize" class="md-nav__link">
+  <a href="#egse.env.int_env" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;initialize
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;int_env
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.load_dotenv" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;load_dotenv
     </span>
   </a>
   
@@ -2306,6 +2340,24 @@
   <a href="#egse.env.set_site_id" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_site_id
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.setup_env" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;setup_env
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.str_env" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;str_env
     </span>
   </a>
   
@@ -2892,9 +2944,18 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#egse.env.initialize" class="md-nav__link">
+  <a href="#egse.env.int_env" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;initialize
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;int_env
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.load_dotenv" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;load_dotenv
     </span>
   </a>
   
@@ -2967,6 +3028,24 @@
   <a href="#egse.env.set_site_id" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_site_id
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.setup_env" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;setup_env
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.env.str_env" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;str_env
     </span>
   </a>
   
@@ -3082,7 +3161,7 @@ by this module. If there is a need to change the environment variables, e.g. in 
               <td><code><a class="autorefs autorefs-internal" title="            env_var (egse.env.env_var)" href="#egse.env.env_var">env_var</a></code></td>
               <td>
                 <div class="doc-md-description">
-                  <p>Context manager to run some code that need alternate settings for environment variables.</p>
+                  <p>Context manager to run some code that need alternate settings for environment variables. This will automatically</p>
                 </div>
               </td>
             </tr>
@@ -3183,6 +3262,22 @@ by this module. If there is a need to change the environment variables, e.g. in 
               </td>
             </tr>
             <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title="            int_env (egse.env.int_env)" href="#egse.env.int_env">int_env</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Return an integer environment override, falling back to <code>default</code> on errors.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title="            load_dotenv (egse.env.load_dotenv)" href="#egse.env.load_dotenv">load_dotenv</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Overwrites the load_dotenv function for CGSE specifics.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
               <td><code><a class="autorefs autorefs-internal" title="            set_conf_data_location (egse.env.set_conf_data_location)" href="#egse.env.set_conf_data_location">set_conf_data_location</a></code></td>
               <td>
                 <div class="doc-md-description">
@@ -3219,6 +3314,22 @@ by this module. If there is a need to change the environment variables, e.g. in 
               <td>
                 <div class="doc-md-description">
                   <p>Sets the environment variable and the internal representation to the given value.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title="            setup_env (egse.env.setup_env)" href="#egse.env.setup_env">setup_env</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Initialize the environment variables that are required for the CGSE to function properly.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title="            str_env (egse.env.str_env)" href="#egse.env.str_env">str_env</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Return the value of the environment variable or default if variable is not defined.</p>
                 </div>
               </td>
             </tr>
@@ -3295,7 +3406,7 @@ by this module. If there is a need to change the environment variables, e.g. in 
 
 
 <a href="#egse.env.bool_env" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">bool_env</span><span class="p">(</span><span class="n">var_name</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">bool_env</span><span class="p">(</span><span class="n">var_name</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3320,8 +3431,8 @@ by this module. If there is a need to change the environment variables, e.g. in 
 
     <div class="doc doc-contents ">
 
-        <p>Context manager to run some code that need alternate settings for environment variables.
-This will automatically initialize the CGSE environment upon entry and re-initialize upon exit.</p>
+        <p>Context manager to run some code that need alternate settings for environment variables. This will automatically
+initialize the CGSE environment upon entry and re-initialize when the context manager exits.</p>
 
 
 <details class="note" open>
@@ -3894,20 +4005,45 @@ returned value is a directory and if it exists.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="egse.env.initialize" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">initialize</span>
+<h3 id="egse.env.int_env" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">int_env</span>
 
 
-<a href="#egse.env.initialize" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">initialize</span><span class="p">()</span>
+<a href="#egse.env.int_env" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">int_env</span><span class="p">(</span><span class="n">var_name</span><span class="p">,</span> <span class="n">default</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">minimum</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Initialize the environment variables that are required for the CGSE to function properly.
-This function will print a warning if any of the mandatory environment variables is not set.</p>
-<p>This function is automatically called on import and can be called whenever the environment
-variables have been changed, e.g. in unit tests.</p>
+        <p>Return an integer environment override, falling back to <code>default</code> on errors.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.load_dotenv" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">load_dotenv</span>
+
+
+<a href="#egse.env.load_dotenv" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">load_dotenv</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Overwrites the load_dotenv function for CGSE specifics.</p>
+<ul>
+<li>set <code>CGSE_DOTENV_DISABLED=true</code> to disable loading the <code>.env</code> file</li>
+<li>the <code>.env</code> file is searched for relative to the current working directory,
+  unlike the default, which searches from the script location.</li>
+</ul>
+<p>NOTE:
+- don't use the <code>load_dotenv</code> function from the <code>dotenv</code> package
+- don't use <code>load_dotenv</code> in any modules, only in entrypoints and apps.</p>
 
 
     </div>
@@ -4097,6 +4233,49 @@ representation will be NoValue().</p>
     <div class="doc doc-contents ">
 
         <p>Set the environment variable SITE_ID and its internal representation.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.setup_env" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">setup_env</span>
+
+
+<a href="#egse.env.setup_env" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">setup_env</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Initialize the environment variables that are required for the CGSE to function properly.
+This function will print a warning if any of the mandatory environment variables is not set.</p>
+<p>This function is automatically called on import and can be called whenever the environment
+variables have been changed, e.g. in unit tests.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.env.str_env" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">str_env</span>
+
+
+<a href="#egse.env.str_env" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">str_env</span><span class="p">(</span><span class="n">var_name</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return the value of the environment variable or default if variable is not defined.</p>
 
 
     </div>

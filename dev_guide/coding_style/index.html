@@ -936,6 +936,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#language" class="md-nav__link">
+    <span class="md-ellipsis">
+      Language
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#classes" class="md-nav__link">
     <span class="md-ellipsis">
       Classes
@@ -1204,6 +1213,8 @@
       
         
       
+        
+      
     
     
     
@@ -1260,6 +1271,29 @@
   
   <span class="md-ellipsis">
     CLI Commands CGSE
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/env/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    The Environment
     
   </span>
   
@@ -2612,6 +2646,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#language" class="md-nav__link">
+    <span class="md-ellipsis">
+      Language
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#classes" class="md-nav__link">
     <span class="md-ellipsis">
       Classes
@@ -2699,6 +2742,11 @@
 </thead>
 <tbody>
 <tr>
+<td>Language</td>
+<td>American Standard English</td>
+<td>Color (~~Colour~~), initialize (~~initialise~~), center (~~centre~~), ...</td>
+</tr>
+<tr>
 <td>Classes</td>
 <td>CapWords</td>
 <td>ProcessManager, ImageViewer, CommandList, Observation, MetaData</td>
@@ -2744,6 +2792,9 @@
 you will have to replace that text AND the brackets with your own text. As an example,
 if you see <code>--prompt &lt;venv name&gt;</code>, replace this with something like <code>--prompt cgse-venv</code>.  </p>
 </div>
+<h2 id="language">Language<a class="headerlink" href="#language" title="Permanent link">&para;</a></h2>
+<p>The code and documentation shall be written in American Standard English for consistency and to avoid confusion when 
+searching for terms like "color" rather than "colour."</p>
 <h2 id="classes">Classes<a class="headerlink" href="#classes" title="Permanent link">&para;</a></h2>
 <p>Always use CamelCase (Python uses CapWords) for class names. When using acronyms, keep them all UPPER case.</p>
 <ul>
@@ -2776,16 +2827,16 @@ if you see <code>--prompt &lt;venv name&gt;</code>, replace this with something 
 <li>Never use the form <code>from &lt;module&gt; import *</code></li>
 <li>Always use absolute imports in scripts</li>
 </ul>
-<p>Be careful that you do not name any modules the same as a module in the Python standard library. This can result in strange effects and may result in an <code>AttributeError</code>. Suppose you have named a module <code>math</code> in the <code>egse</code> directory and it is imported and used further in the code as follows:</p>
+<p>Be careful that you do not name any modules the same as a module in the Python standard library. This can result in strange effects and may result in an <code>AttributeError</code>. Suppose you have named a module <code>math</code> in the <code>egse</code> directory, and it is imported and used further in the code as follows:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">egse</span><span class="w"> </span><span class="kn">import</span> <span class="n">math</span>
 
 <span class="c1"># in some expression further down the code you might use</span>
 
-<span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 </code></pre></div>
 <p>This will result in the following runtime error:</p>
 <div class="highlight"><pre><span></span><code>File &quot;some_module.py&quot;, line 8, in &lt;module&gt;
-  print(math.exp(a))
+  print(math.exp(2))
 AttributeError: module &#39;egse.math&#39; has no attribute &#39;exp&#39;
 </code></pre></div>
 <p>Of course this is an obvious example, but it might be more obscure like e.g. in this <a href="https://github.com/ParmEd/ParmEd/issues/148">GitHub issue</a>: 'module' 

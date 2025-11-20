@@ -1085,6 +1085,8 @@
       
         
       
+        
+      
     
     
     
@@ -1141,6 +1143,29 @@
   
   <span class="md-ellipsis">
     CLI Commands CGSE
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/env/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    The Environment
     
   </span>
   
@@ -2220,6 +2245,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#egse.device.AsyncDeviceTransport.read_string" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;read_string
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.device.AsyncDeviceTransport.trans" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;trans
@@ -2607,6 +2641,15 @@
   <a href="#egse.device.DeviceTransport.read" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;read
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.device.DeviceTransport.read_string" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;read_string
     </span>
   </a>
   
@@ -3343,6 +3386,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#egse.device.AsyncDeviceTransport.read_string" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;read_string
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.device.AsyncDeviceTransport.trans" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;trans
@@ -3736,6 +3788,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#egse.device.DeviceTransport.read_string" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;read_string
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.device.DeviceTransport.trans" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;trans
@@ -3832,7 +3893,7 @@
             <td><code><a class="autorefs autorefs-internal" title="            AsyncDeviceInterface (egse.device.AsyncDeviceInterface)" href="#egse.device.AsyncDeviceInterface">AsyncDeviceInterface</a></code></td>
             <td>
               <div class="doc-md-description">
-                <p>Generic interface for all device classes.</p>
+                <p>A generic interface for all device classes.</p>
               </div>
             </td>
           </tr>
@@ -3912,7 +3973,7 @@
             <td><code><a class="autorefs autorefs-internal" title="            DeviceInterface (egse.device.DeviceInterface)" href="#egse.device.DeviceInterface">DeviceInterface</a></code></td>
             <td>
               <div class="doc-md-description">
-                <p>Generic interface for all device classes.</p>
+                <p>A generic interface for all device classes.</p>
               </div>
             </td>
           </tr>
@@ -4367,7 +4428,7 @@ the following commands: <code>connect</code>, <code>disconnect</code>, <code>rec
               Bases: <code><a class="autorefs autorefs-internal" title="            AsyncDeviceConnectionInterface (egse.device.AsyncDeviceConnectionInterface)" href="#egse.device.AsyncDeviceConnectionInterface">AsyncDeviceConnectionInterface</a></code></p>
 
 
-        <p>Generic interface for all device classes.</p>
+        <p>A generic interface for all device classes.</p>
 
 
 
@@ -4850,6 +4911,19 @@ the following commands: <code>connect</code>, <code>disconnect</code>, <code>rec
               </td>
             </tr>
             <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title="            read_string
+
+
+  
+      async
+   (egse.device.AsyncDeviceTransport.read_string)" href="#egse.device.AsyncDeviceTransport.read_string">read_string</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Reads a bytes object from the instrument and returns it converted into a stripped UTF-8 string.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
               <td><code><a class="autorefs autorefs-internal" title="            trans
 
 
@@ -4992,6 +5066,30 @@ method as it delegates to <code>trans</code>.</p>
     <div class="doc doc-contents ">
 
         <p>Reads a bytes object back from the instrument and returns it unaltered.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="egse.device.AsyncDeviceTransport.read_string" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">read_string</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+<a href="#egse.device.AsyncDeviceTransport.read_string" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">read_string</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Reads a bytes object from the instrument and returns it converted into a stripped UTF-8 string.</p>
 
 
     </div>
@@ -6371,7 +6469,7 @@ them to the device constructor, but they will usually be ignored.</p>
               Bases: <code><a class="autorefs autorefs-internal" title="            DeviceConnectionInterface (egse.device.DeviceConnectionInterface)" href="#egse.device.DeviceConnectionInterface">DeviceConnectionInterface</a></code></p>
 
 
-        <p>Generic interface for all device classes.</p>
+        <p>A generic interface for all device classes.</p>
 
 
 
@@ -7002,6 +7100,14 @@ them to the device constructor, but they will usually be ignored.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title="            read_string (egse.device.DeviceTransport.read_string)" href="#egse.device.DeviceTransport.read_string">read_string</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Reads a bytes object from the instrument and returns it converted into a stripped UTF-8 string.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
               <td><code><a class="autorefs autorefs-internal" title="            trans (egse.device.DeviceTransport.trans)" href="#egse.device.DeviceTransport.trans">trans</a></code></td>
               <td>
                 <div class="doc-md-description">
@@ -7126,6 +7232,26 @@ method as it delegates to <code>trans</code>.</p>
     <div class="doc doc-contents ">
 
         <p>Reads a bytes object back from the instrument and returns it unaltered.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="egse.device.DeviceTransport.read_string" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">read_string</span>
+
+
+<a href="#egse.device.DeviceTransport.read_string" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">read_string</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Reads a bytes object from the instrument and returns it converted into a stripped UTF-8 string.</p>
 
 
     </div>
