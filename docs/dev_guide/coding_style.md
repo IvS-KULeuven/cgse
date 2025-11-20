@@ -8,13 +8,14 @@ The following sections will give the most used conventions with a few examples o
 
 ## TL;DR
 
-| Type | Style | Example |
-|------|-------|---------|
-| Classes | CapWords | ProcessManager, ImageViewer, CommandList, Observation, MetaData |
-| Methods & Functions | lowercase with underscores | get_value, set_mask, create_image |
-| Variables | lowercase with underscores | key, last_value, model, index, user_info |
-| Constants | UPPERCASE with underscores | MAX_LINES, BLACK, COMMANDING_PORT |
-| Modules & packages | lowercase **no** underscores | dataset, commanding, multiprocessing |
+| Type                | Style                        | Example                                                                   |
+|---------------------|------------------------------|---------------------------------------------------------------------------|
+| Language            | American Standard English    | Color (~~Colour~~), initialize (~~initialise~~), center (~~centre~~), ... |
+| Classes             | CapWords                     | ProcessManager, ImageViewer, CommandList, Observation, MetaData           |
+| Methods & Functions | lowercase with underscores   | get_value, set_mask, create_image                                         |
+| Variables           | lowercase with underscores   | key, last_value, model, index, user_info                                  |
+| Constants           | UPPERCASE with underscores   | MAX_LINES, BLACK, COMMANDING_PORT                                         |
+| Modules & packages  | lowercase **no** underscores | dataset, commanding, multiprocessing                                      |
 
 ## General
 
@@ -31,6 +32,10 @@ The following sections will give the most used conventions with a few examples o
     you will have to replace that text AND the brackets with your own text. As an example,
     if you see `--prompt <venv name>`, replace this with something like `--prompt cgse-venv`.  
 
+## Language
+
+The code and documentation shall be written in American Standard English for consistency and to avoid confusion when 
+searching for terms like "color" rather than "colour."
 
 ## Classes
 
@@ -83,21 +88,21 @@ Use simple words for modules, preferably just one word like `datasets` or `comma
 * Never use the form `from <module> import *`
 * Always use absolute imports in scripts
 
-Be careful that you do not name any modules the same as a module in the Python standard library. This can result in strange effects and may result in an `AttributeError`. Suppose you have named a module `math` in the `egse` directory and it is imported and used further in the code as follows:
+Be careful that you do not name any modules the same as a module in the Python standard library. This can result in strange effects and may result in an `AttributeError`. Suppose you have named a module `math` in the `egse` directory, and it is imported and used further in the code as follows:
 
 ```python
 from egse import math
 
 # in some expression further down the code you might use
 
-math.exp(a)
+math.exp(2)
 ```
 
 This will result in the following runtime error:
 
 ```text
 File "some_module.py", line 8, in <module>
-  print(math.exp(a))
+  print(math.exp(2))
 AttributeError: module 'egse.math' has no attribute 'exp'
 ```
 

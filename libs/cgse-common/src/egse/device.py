@@ -199,7 +199,7 @@ class DeviceConnectionInterface(DeviceConnectionObservable):
 
 
 class DeviceInterface(DeviceConnectionInterface):
-    """Generic interface for all device classes."""
+    """A generic interface for all device classes."""
 
     @dynamic_interface
     def is_simulator(self) -> bool:
@@ -235,6 +235,10 @@ class DeviceTransport:
         """
 
         raise NotImplementedError
+
+    def read_string(self, encoding="utf-8") -> str:
+        """Reads a bytes object from the instrument and returns it converted into a stripped UTF-8 string."""
+        return self.read().decode(encoding).strip()
 
     def trans(self, command: str) -> bytes:
         """
@@ -293,6 +297,11 @@ class AsyncDeviceTransport:
         """
 
         raise NotImplementedError
+
+    async def read_string(self, encoding="utf-8") -> str:
+        """Reads a bytes object from the instrument and returns it converted into a stripped UTF-8 string."""
+        b = await self.read()
+        return b.decode(encoding).strip()
 
     async def trans(self, command: str) -> bytes:
         """
