@@ -149,6 +149,7 @@ nav:
   - User Guide:
     - user_guide/index.md
     - user_guide/cli.md
+    - user_guide/env.md
   - Libs:
     - libs/index.md
     - cgse-common:
