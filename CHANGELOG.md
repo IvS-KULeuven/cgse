@@ -9,7 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Changed
-- The CHANGELOG file now 
+- To improve readability, the CHANGELOG file now contains all [link titles](https://github.github.com/gfm/#links) at 
+  the bottom, both for version comparison and for issue/pull request linking.
+
 
 ## [0.17.1] - 2025-11-20
 
