@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+- To improve readability, the CHANGELOG file now contains all [link titles](https://github.github.com/gfm/#links) at 
+  the bottom, both for version comparison and for issue/pull request linking.
 
 
 ## [0.17.1] - 2025-11-20
@@ -15,30 +18,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Fixed
 - Fixed a missing expanduser(). Apparently a `path.resolve()` doesn't handle the '`~`' character. [#210]
 - Fixed `env_var()` which is a context manager for temporarily setting an environment variable. It uses `setup_env()` 
-  to update the environment before and after the `yield`, but `setup_env()` only initializes once. #210
-- Fixed unit tests for settings, setup, and env. [210](https://github.com/IvS-KULeuven/cgse/pull/210)
+  to update the environment before and after the `yield`, but `setup_env()` only initializes once. [#210]
+- Fixed unit tests for settings, setup, and env. [#210]
 
 ### Changed
-- Some of the debug messages in settings are now filtered behind the VERBOSE_DEBUG flag. [210](https://github.com/IvS-KULeuven/cgse/pull/210)
+- Some of the debug messages in settings are now filtered behind the VERBOSE_DEBUG flag. [#210]
 
 
 ## [0.17.0] - 2025-11-20
 
 ### Added
-- Added this CHANGELOG file. [#209](https://github.com/IvS-KULeuven/cgse/pull/209)
+- Added this CHANGELOG file. [#209]
 - Added an initial implementation of the ARIEL Telescope Control Unit (TCU). This is a separate package in this 
-  monorepo that is located at `projects/ariel/ariel-tcu`. The package will be added to PyPI as `ariel-tcu`. [#178](https://github.com/IvS-KULeuven/cgse/pull/178)
-- Added a `read_string()` method to the `DeviceTransport` and `AsyncDeviceTransport` classes. [#209](https://github.com/IvS-KULeuven/cgse/pull/209)
+  monorepo that is located at `projects/ariel/ariel-tcu`. The package will be added to PyPI as `ariel-tcu`. [#178]
+- Added a `read_string()` method to the `DeviceTransport` and `AsyncDeviceTransport` classes. [#209]
 ### Fixed
-- Fixed the `sm_cs` for the missing `--full` cli argument. [#204](https://github.com/IvS-KULeuven/cgse/pull/204)
+- Fixed the `sm_cs` for the missing `--full` cli argument. [#204]
 - Fixed the configuration of the InfluxDB client. The client can now be fully configured with environment variables 
-  if needed. [#206](https://github.com/IvS-KULeuven/cgse/pull/206)
+  if needed. [#206]
 ### Changed
-- Improved initialization of the process environment with `setup_env()`. [#208](https://github.com/IvS-KULeuven/cgse/pull/208)
-- The configuration manager now also re-registers the obsid table to the storage. [#207](https://github.com/IvS-KULeuven/cgse/pull/207)
-- The `cgse` subcommand to start the notification hub is changed from `not` to `nh`. Use `cgse nh [start|stop|status]`.  [#209](https://github.com/IvS-KULeuven/cgse/pull/209)
+- Improved initialization of the process environment with `setup_env()`. [#208]
+- The configuration manager now also re-registers the obsid table to the storage. [#207]
+- The `cgse` subcommand to start the notification hub is changed from `not` to `nh`. Use `cgse nh [start|stop|status]`.  [#209]
 - The environment variables that contain a path can start with a tilde '`~`' which will be expanded to the user's 
-  home directory when used. [#204](https://github.com/IvS-KULeuven/cgse/pull/204)
+  home directory when used. [#204]
 ### Docs
 - Documentation updates for the Python version, the CLI `cgse` subcommands,  environment and the introduction of `dotenv`, ...
 - Updated information on the use of `dotenv` in the developer guid.
@@ -50,12 +53,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 - Added `cmd_string_func` parameter to the `@dynamic_command` interface. Use this parameter if you need to create a fancy command string from the arguments passed into the command function.
 
-## [0.16.13](https://github.com/IvS-KULeuven/cgse/compare/v0.16.12...v0.16.13) – 2025-10-23
+## [0.16.13] - 2025-10-23
 
 ### Changed
 - Improved unit tests for the `mixin.py` module.
 
-## [0.16.12](https://github.com/IvS-KULeuven/cgse/compare/v0.16.11...v0.16.12) – 2025-10-21
+## [0.16.12] - 2025-10-21
 
 ### Fixed
 - Fixed a bug in starting the puna proxy.
@@ -180,3 +183,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 [0.16.2]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.1...v0.16.2
 [0.16.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.15.1...v0.16.0
+
+[#210]: https://github.com/IvS-KULeuven/cgse/pull/210
+[#209]: https://github.com/IvS-KULeuven/cgse/pull/209
+[#208]: https://github.com/IvS-KULeuven/cgse/pull/208
+[#207]: https://github.com/IvS-KULeuven/cgse/pull/207
+[#206]: https://github.com/IvS-KULeuven/cgse/pull/206
+[#205]: https://github.com/IvS-KULeuven/cgse/pull/205
+[#204]: https://github.com/IvS-KULeuven/cgse/pull/204
+
+[#178]: https://github.com/IvS-KULeuven/cgse/pull/178
