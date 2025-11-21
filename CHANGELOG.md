@@ -6,25 +6,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased](https://github.com/IvS-KULeuven/cgse/compare/v0.17.1...HEAD)
+## [Unreleased]
+
+
+
+## [0.17.1] - 2025-11-20
 
 ### Fixed
-- ...
-### Added
-- ...
-
-## [v0.17.1](https://github.com/IvS-KULeuven/cgse/compare/v0.17.0...v0.17.1) – 20/11/2025
-
-### Fixed
-- Fixed a missing expanduser(). Apparently a `pathresolve()` doesn't handle the '`~`' character.
+- Fixed a missing expanduser(). Apparently a `path.resolve()` doesn't handle the '`~`' character. [#210]
 - Fixed `env_var()` which is a context manager for temporarily setting an environment variable. It uses `setup_env()` 
-  to update the environment before and after the `yield`, but `setup_env()` only initializes once.
-- Fixed unit tests for settings, setup, and env.
+  to update the environment before and after the `yield`, but `setup_env()` only initializes once. #210
+- Fixed unit tests for settings, setup, and env. [210](https://github.com/IvS-KULeuven/cgse/pull/210)
 
 ### Changed
-- Some of the debug messages in settings are now filtered behind the VERBOSE_DEBUG flag.
+- Some of the debug messages in settings are now filtered behind the VERBOSE_DEBUG flag. [210](https://github.com/IvS-KULeuven/cgse/pull/210)
 
-## [v0.17.0](https://github.com/IvS-KULeuven/cgse/compare/v0.16.14...v0.17.0) – 20/11/2025
+
+## [0.17.0] - 2025-11-20
 
 ### Added
 - Added this CHANGELOG file. [#209](https://github.com/IvS-KULeuven/cgse/pull/209)
@@ -46,22 +44,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Updated information on the use of `dotenv` in the developer guid.
 - Added information on the environment variables to the user guide.
 
-## [0.16.14](https://github.com/IvS-KULeuven/cgse/compare/v0.16.13...v0.16.14) – 24/10/2025
+
+## [0.16.14] - 2025-10-24
 
 ### Added
 - Added `cmd_string_func` parameter to the `@dynamic_command` interface. Use this parameter if you need to create a fancy command string from the arguments passed into the command function.
 
-## [0.16.13](https://github.com/IvS-KULeuven/cgse/compare/v0.16.12...v0.16.13) – 23/10/2025
+## [0.16.13](https://github.com/IvS-KULeuven/cgse/compare/v0.16.12...v0.16.13) – 2025-10-23
 
 ### Changed
 - Improved unit tests for the `mixin.py` module.
 
-## [0.16.12](https://github.com/IvS-KULeuven/cgse/compare/v0.16.11...v0.16.12) – 21/10/2025
+## [0.16.12](https://github.com/IvS-KULeuven/cgse/compare/v0.16.11...v0.16.12) – 2025-10-21
 
 ### Fixed
 - Fixed a bug in starting the puna proxy.
 
-## [0.16.11](https://github.com/IvS-KULeuven/cgse/compare/v0.16.10...v0.16.11) – 21/10/2025
+
+## [0.16.11] - 2025-10-21
 
 ### Fixed
 - Fixed starting the hexapod GUI by specifying a device identifier.
@@ -75,41 +75,48 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Introduced the `VERBOSE_DEBUG` environment variable that can be used to restrict debug logging messages only when 
   this environment variable is set. Use this for very verbose debug logging.
 
-## [0.16.10](https://github.com/IvS-KULeuven/cgse/compare/v0.16.9...v0.16.10) – 03/10/2025
+
+## [0.16.10] - 2025-10-03
 
 ### Changed
 - Renamed Settings for external logger from `TEXTUALOG_*` to `EXTERN_LOG_*`.
 - The heartbeat ZeroMQ protocol now uses ROUTER-DEALER instead of REQ-REP. This was needed because too often we got an invalid state for the REQ sockets after one of the services went down.
 
-## [0.16.9](https://github.com/IvS-KULeuven/cgse/compare/v0.16.8...v0.16.9) – 02/10/2025
+
+## [0.16.9] - 2025-10-02
 
 ### Removed
 - Removed caching from the async registry client.
 
-## [0.16.8](https://github.com/IvS-KULeuven/cgse/compare/v0.16.7...v0.16.8) – 02/10/2025
+
+## [0.16.8] - 2025-10-02
 
 ### Fixed
 - Fixed re-registration for the async registry client.
 
-## [0.16.7](https://github.com/IvS-KULeuven/cgse/compare/v0.16.6...v0.16.7) – 01/10/2025
+
+## [0.16.7] - 2025-10-01
 
 ### Fixed
 - Fixed re-registration problem in the service registry.
 ### Changed
 - Read the Settings in the `__init__.py` files where possible. Do not spread Settings in all modules of a package.
 
-## [0.16.6](https://github.com/IvS-KULeuven/cgse/compare/v0.16.5...v0.16.6) – 30/09/2025
+
+## [0.16.6] - 2025-09-30
 
 ### Fixed
 - Fixed timeouts for Proxy (sub)classes to seconds instead of milliseconds. We strive to have all timeout in seconds and only convert to milliseconds when needed for a library call.
 
-## [0.16.5](https://github.com/IvS-KULeuven/cgse/compare/v0.16.4...v0.16.5) – 29/09/2025
+
+## [0.16.5] - 2025-09-29
 
 ### Changed
 - The service type for the notification hub is now `NH_CS` instead of `NOTIFY_HUB`.
 - Remove the leading dot '`.`' from all startup log filenames. Startup log files are log files per `cgse` subcommand that are located in the `LOG_FILE_LOCATION`. You will find a log file there for the `start` and the `stop` for each core service or device control server.
 
-## [0.16.4](https://github.com/IvS-KULeuven/cgse/compare/v0.16.3...v0.16.4) – 29/09/2025
+
+## [0.16.4] - 2025-09-29
 
 ### Added
 - Added the `bool_env()` function in `env.py`.
@@ -120,17 +127,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Remove the listener notification from the configuration manager. 
 - Remove listener registration from the storage manager and the process manager.
 
-## [0.16.3](https://github.com/IvS-KULeuven/cgse/compare/v0.16.2...v0.16.3) – 19/09/2025
+
+## [0.16.3] - 2025-09-19
 
 ### Fixed
 - Fixed a circular import problem in `system.py`.
 
-## [0.16.2](https://github.com/IvS-KULeuven/cgse/compare/v0.16.1...v0.16.2) – 19/09/2025
+
+## [0.16.2] - 2025-09-19
 
 ### Changed
 - The output of startup scripts is now redirected to the log location.
 
-## [0.16.1](https://github.com/IvS-KULeuven/cgse/compare/v0.16.0...v0.16.1) – 19/09/2025
+
+## [0.16.1] - 2025-09-19
 
 ### Changed
 - Use the `get_endpoint()` function in Proxy subclasses.
@@ -139,7 +149,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   overwritten in the local settings file.
 - When `port == 0` use the service registry to get the endpoint.
 
-## [0.16.0](https://github.com/IvS-KULeuven/cgse/compare/v0.15.1...v0.16.0) – 17/09/2025
+
+## [0.16.0] - 2025-09-17
 
 ### Added
 - Added a `deregister` subcommand to the service registry. Usage: `cgse reg deregister <SERVICE_TYPE>`.
@@ -149,3 +160,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 - Proxies now handle fixed port numbers properly.
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
+
+
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.17.1...HEAD
+[0.17.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.17.0...v0.17.1
+[0.17.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.14...v0.17.0
+[0.16.14]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.13...v0.16.14
+[0.16.13]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.12...v0.16.13
+[0.16.12]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.11...v0.16.12
+[0.16.11]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.10...v0.16.11
+[0.16.10]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.9...v0.16.10
+[0.16.9]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.8...v0.16.9
+[0.16.8]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.7...v0.16.8
+[0.16.7]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.6...v0.16.7
+[0.16.6]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.5...v0.16.6
+[0.16.5]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.4...v0.16.5
+[0.16.4]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.3...v0.16.4
+[0.16.3]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.2...v0.16.3
+[0.16.2]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.1...v0.16.2
+[0.16.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.0...v0.16.1
+[0.16.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.15.1...v0.16.0
