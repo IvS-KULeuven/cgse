@@ -33,7 +33,7 @@ def extract_bits(value: int, start_position: int, num_bits: int) -> int:
     return extracted_bits
 
 
-def set_bit(value: int, bit) -> int:
+def set_bit(value: int, bit: int) -> int:
     """
     Set bit to 1 for the given value.
 
@@ -47,7 +47,7 @@ def set_bit(value: int, bit) -> int:
     return value | (1 << bit)
 
 
-def set_bits(value: int, bits: tuple) -> int:
+def set_bits(value: int, bits: tuple[int, int]) -> int:
     """
     Set the given bits in value to 1.
 
@@ -63,7 +63,7 @@ def set_bits(value: int, bits: tuple) -> int:
     return value
 
 
-def clear_bit(value: int, bit) -> int:
+def clear_bit(value: int, bit: int) -> int:
     """
     Set bit to 0 for the given value.
 
@@ -77,7 +77,7 @@ def clear_bit(value: int, bit) -> int:
     return value & ~(1 << bit)
 
 
-def clear_bits(value: int, bits: tuple) -> int:
+def clear_bits(value: int, bits: tuple[int, int]) -> int:
     """
     Set the given bits in value to 0.
 
@@ -93,7 +93,7 @@ def clear_bits(value: int, bits: tuple) -> int:
     return value
 
 
-def toggle_bit(value: int, bit) -> int:
+def toggle_bit(value: int, bit: int) -> int:
     """
     Toggle the bit in the given value.
 
@@ -107,7 +107,7 @@ def toggle_bit(value: int, bit) -> int:
     return value ^ (1 << bit)
 
 
-def bit_set(value: int, bit) -> bool:
+def bit_set(value: int, bit: int) -> bool:
     """
     Return True if the bit is set.
 
@@ -122,27 +122,25 @@ def bit_set(value: int, bit) -> bool:
     return value & bit_value == bit_value
 
 
-def bits_set(value: int, *args: Union[int, Iterable[int]]) -> bool:
+def bits_set(value: int, *args: int) -> bool:
     """
     Return True if all the bits are set.
 
     Args:
         value (int): the value to check
         args: a set of indices of the bits to check, starting from 0 at the LSB.
-            All the indices can be given as separate arguments, or they can be passed
-            in as a list.
+            All the indices shall be given as separate arguments, i.e. unpack a list
+            if needed.
 
     Returns:
         True if all the bits are set (1).
 
     Examples:
-        >>> assert bits_set(0b0101_0000_1011, [0, 1, 3, 8, 10])
-        >>> assert bits_set(0b0101_0000_1011, [3, 8])
-        >>> assert not bits_set(0b0101_0000_1011, [1, 2, 3])
+        >>> assert bits_set(0b0101_0000_1011, 0, 1, 3, 8, 10)
+        >>> assert bits_set(0b0101_0000_1011, 3, 8)
+        >>> assert not bits_set(0b0101_0000_1011, *[1, 2, 3])
     """
 
-    if len(args) == 1 and isinstance(args[0], list):
-        args = args[0]
     return all([bit_set(value, bit) for bit in args])
 
 
