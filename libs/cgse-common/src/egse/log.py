@@ -18,6 +18,7 @@ __all__ = [
     "LOG_DATE_FORMAT_FULL",
     "LOG_DATE_FORMAT_CLEAN",
     "logger",
+    "logging",  # export to guarantee that this module is imported and initialized before users use logging
     "root_logger",
     "egse_logger",
     "get_log_level_from_env",
