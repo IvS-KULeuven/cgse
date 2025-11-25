@@ -504,7 +504,7 @@ def crc_calc(data: list[bytes | int], start: int, len_: int) -> int:
     Reference:
         The description of the CRC calculation for RMAP is given in the ECSS document
         _Space Engineering: SpaceWire - Remote Memory Access Protocol_, section A.3
-        on page 80 [ECSS‐E‐ST‐50‐52C].
+        on page 80 [ECSS-E-ST-50-52C].
 
     """
     crc: int = 0
@@ -546,7 +546,7 @@ def s16(value: int) -> int:
         >>> s16(0b1000_0000_0001_0001)
         -32751
 
-        The 'bin()' fuction will return a strange representation of this number:
+        The 'bin()' function will return a strange representation of this number:
 
         >>> bin(-32751)
         '-0b111111111101111'
