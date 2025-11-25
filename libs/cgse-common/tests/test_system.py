@@ -13,52 +13,51 @@ from pathlib import Path
 
 import pytest
 import rich
-from fixtures.helpers import create_empty_file, create_text_file
+from fixtures.helpers import create_empty_file
+from fixtures.helpers import create_text_file
 from pytest import approx
 
 from egse.decorators import execution_count
-from egse.system import (
-    AttributeDict,
-    Periodic,
-    SignalCatcher,
-    Timer,
-    camel_to_kebab,
-    camel_to_snake,
-    check_argument_type,
-    clear_average_execution_times,
-    do_every,
-    duration,
-    env_var,
-    execution_time,
-    filter_by_attr,
-    format_datetime,
-    get_average_execution_time,
-    get_average_execution_times,
-    get_caller_breadcrumbs,
-    get_caller_info,
-    get_current_location,
-    get_full_classname,
-    get_os_name,
-    get_os_version,
-    get_referenced_var_name,
-    get_system_name,
-    get_system_stats,
-    humanize_seconds,
-    is_in,
-    is_module,
-    is_namespace,
-    is_not_in,
-    ping,
-    read_last_line,
-    read_last_lines,
-    recursive_dict_update,
-    replace_environment_variable,
-    round_up,
-    save_average_execution_time,
-    touch,
-    wait_until,
-    waiting_for,
-)
+from egse.system import AttributeDict
+from egse.system import Periodic
+from egse.system import SignalCatcher
+from egse.system import Timer
+from egse.system import camel_to_kebab
+from egse.system import camel_to_snake
+from egse.system import check_argument_type
+from egse.system import clear_average_execution_times
+from egse.system import do_every
+from egse.system import duration
+from egse.system import env_var
+from egse.system import execution_time
+from egse.system import filter_by_attr
+from egse.system import format_datetime
+from egse.system import get_average_execution_time
+from egse.system import get_average_execution_times
+from egse.system import get_caller_breadcrumbs
+from egse.system import get_caller_info
+from egse.system import get_current_location
+from egse.system import get_full_classname
+from egse.system import get_os_name
+from egse.system import get_os_version
+from egse.system import get_referenced_var_name
+from egse.system import get_system_name
+from egse.system import get_system_stats
+from egse.system import humanize_seconds
+from egse.system import is_in
+from egse.system import is_module
+from egse.system import is_namespace
+from egse.system import is_not_in
+from egse.system import ping
+from egse.system import read_last_line
+from egse.system import read_last_lines
+from egse.system import recursive_dict_update
+from egse.system import replace_environment_variable
+from egse.system import round_up
+from egse.system import save_average_execution_time
+from egse.system import touch
+from egse.system import wait_until
+from egse.system import waiting_for
 
 
 def test_get_current_location():
