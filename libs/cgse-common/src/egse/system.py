@@ -10,7 +10,7 @@ The module has external dependencies to:
 
 """
 
-from __future__ import annotations
+# from __future__ import annotations
 
 import asyncio
 import builtins
@@ -30,6 +30,7 @@ import os
 import platform  # For getting the operating system name
 import re
 import shutil
+import signal
 import socket
 import subprocess  # For executing a shell command
 import sys
@@ -38,20 +39,10 @@ import time
 import warnings
 from collections import namedtuple
 from contextlib import contextmanager
-from io import SEEK_END
-from io import SEEK_SET
+from io import SEEK_END, SEEK_SET
 from pathlib import Path
-from types import FunctionType
-from types import ModuleType
-from typing import Any
-from typing import Callable
-from typing import Iterable
-from typing import List
-from typing import Optional
-from typing import TextIO
-from typing import Tuple
-from typing import Type
-from typing import Union
+from types import FunctionType, ModuleType
+from typing import Any, Callable, Iterable, List, Optional, TextIO, Tuple, Type, Union
 
 import distro  # For determining the Linux distribution
 import psutil
@@ -60,7 +51,6 @@ from rich.text import Text
 from rich.tree import Tree
 from typer.core import TyperCommand
 
-import signal
 from egse.log import logger
 
 EPOCH_1958_1970 = 378691200
@@ -107,7 +97,7 @@ class Periodic:
         interval: float,
         *,
         name: str | None = None,
-        callback: Callable = None,
+        callback: Callable | None = None,
         repeat: int | None = None,
         skip: bool = True,
         pause: bool = False,
@@ -202,7 +192,7 @@ class Periodic:
         """Triggers the Timer's action: either call its callback, or logs a message."""
 
         if self._callback is None:
-            self._logger.warning(f"Periodic – No callback provided for interval timer {self.name}.")
+            self._logger.warning(f"Periodic - No callback provided for interval timer {self.name}.")
             return
 
         try:
@@ -211,7 +201,7 @@ class Periodic:
             self._logger.debug("Caught CancelledError on callback function in Periodic.")
             raise
         except Exception as exc:
-            self._logger.error(f"{type(exc).__name__} caught: {exc}")
+            self._logger.error(f"{type_name(exc)} caught: {exc}")
 
     @property
     def interval(self):
@@ -370,8 +360,8 @@ def ignore_m_warning(modules=None):
         modules = [modules]
 
     try:
-        import warnings
         import re
+        import warnings
 
         msg = "'{module}' found in sys.modules after import of package"
         for module in modules:
@@ -390,7 +380,10 @@ def now(utc: bool = True):
 
 
 def format_datetime(
-    dt: Union[str, datetime.datetime] = None, fmt: str = None, width: int = 6, precision: int = 3
+    dt: str | datetime.datetime | datetime.date | None = None,
+    fmt: str | None = None,
+    width: int = 6,
+    precision: int = 3,
 ) -> str:
     """Format a datetime as YYYY-mm-ddTHH:MM:SS.μs+0000.
 
@@ -452,6 +445,10 @@ def format_datetime(
     if fmt:
         timestamp = dt.strftime(fmt)
     else:
+        # If dt is a date (not datetime), convert to datetime at midnight
+        if isinstance(dt, datetime.date) and not isinstance(dt, datetime.datetime):
+            dt = datetime.datetime.combine(dt, datetime.time.min)
+
         width = min(width, precision)
         timestamp = (
             f"{dt.strftime('%Y-%m-%dT%H:%M')}:"
@@ -727,18 +724,29 @@ def get_host_ip() -> Optional[str]:
     return None
 
 
-def get_current_location():
+def get_current_location() -> tuple[str, int, str]:
     """
     Returns the location where this function is called, i.e. the filename, line number, and function name.
-    """
-    frame = inspect.currentframe().f_back
 
-    filename = inspect.getframeinfo(frame).filename
-    line_number = inspect.getframeinfo(frame).lineno
-    function_name = inspect.getframeinfo(frame).function
+    If the location cannot be determined, ("", 0, "") is returned.
+    """
+    frame = inspect.currentframe()
+    logger.debug(f"{frame = }")
+    if frame is None:
+        return "", 0, ""
+
+    previous_frame = frame.f_back
+    logger.debug(f"{previous_frame = }")
+    if previous_frame is None:
+        return "", 0, ""
+
+    filename = inspect.getframeinfo(previous_frame).filename
+    line_number = inspect.getframeinfo(previous_frame).lineno
+    function_name = inspect.getframeinfo(previous_frame).function
 
     # Clean up to prevent reference cycles
     del frame
+    del previous_frame
 
     return filename, line_number, function_name
 
