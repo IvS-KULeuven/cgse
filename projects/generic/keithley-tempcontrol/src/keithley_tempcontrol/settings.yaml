@@ -3,6 +3,8 @@ PACKAGES:
 
 
 Keithley DAQ6510:
+    
+    DEVICE_NAME:              DAQ6510
     HOSTNAME:                 unknown
     PORT:                        5025
     MAC_ADDRESS:    08:00:11:24:0C:7A
@@ -11,6 +13,8 @@ Keithley DAQ6510:
 
 Keithley Control Server:
 
+    SERVICE_TYPE:             DAQ6510
+    PROCESS_NAME:          daq6510_cs
     PROTOCOL:                     tcp
     HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
     COMMANDING_PORT:             6920          # The port on which the controller listens to commands - REQ-REP
