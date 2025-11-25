@@ -5,7 +5,6 @@ This module contains a number of convenience functions to work with bits, bytes 
 from __future__ import annotations
 
 import ctypes
-from collections.abc import Iterable
 from typing import Union
 
 
