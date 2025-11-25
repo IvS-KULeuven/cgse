@@ -32,6 +32,11 @@ venv
 
 .idea
 
+# VSCode IDE
+
+.vscode
+*.code-workspace
+
 # MKDOCS documentation site
 
 /site
