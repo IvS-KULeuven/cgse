@@ -13,26 +13,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 - To improve readability, the CHANGELOG file now contains all [link titles](https://github.github.com/gfm/#links) at 
-  the bottom, both for version comparison and for issue/pull request linking.
+  the bottom, both for version comparison and for issue/pull request linking. [#215]
 - The args in the function `bits_set(value, *args)` should always be unpacked. Previously, the `args` could also be a 
   list, but that made the function call needlessly confusing. This should not be a problem (not a breaking change) 
-  since this function is apparently only used in the unit tests currently.
+  since this function is apparently only used in the unit tests currently. [#215]
 - The `egse.log` module exports the logging module, so, when users import logging from egse.log, the specific CGSE 
-  loggers will be configured.
-- Changed the type of the default argument in `get_log_level_from_env()` function (not a breaking change)
+  loggers will be configured. [#215]
+- Changed the type of the default argument in `get_log_level_from_env()` function (not a breaking change) [#215]
 - Changed the return value of the different `get_version_*()` functions to return "0.0.0" when the version cannot 
-  be determined. Previously, these functions returned None.
+  be determined. Previously, these functions returned None. [#215]
 
 ### Added
 - Added a `from_string()` class method to Settings. This is mainly for testing and when you need to load 
-  Settings from a specific file.
-- Added an example `.env` file
+  Settings from a specific file. [#215]
+- Added an example `.env` file [#215]
 
 ### Testing
-- Added a test for the `round_up()` function in `egse.system`
-- Added unit tests for `egse.version` and `egse.settings`
+- Added a test for the `round_up()` function in `egse.system` [#215]
+- Added unit tests for `egse.version` and `egse.settings` [#215]
 - Fixed the test `test_quit_process()` temporarily as it is not clear on macOS what is the actual return value 
-  from a process when it is terminated or killed.
+  from a process when it is terminated or killed. [#215]
 
 
 ## [0.17.1] - 2025-11-20
@@ -206,6 +206,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 [0.16.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.15.1...v0.16.0
 
+[#215]: https://github.com/IvS-KULeuven/cgse/pull/215
 [#210]: https://github.com/IvS-KULeuven/cgse/pull/210
 [#209]: https://github.com/IvS-KULeuven/cgse/pull/209
 [#208]: https://github.com/IvS-KULeuven/cgse/pull/208
