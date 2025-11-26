@@ -380,6 +380,37 @@ class Settings:
 
         return msg.rstrip()
 
+    @classmethod
+    def from_string(cls, yaml_string: str, group: str | None = None) -> attrdict:
+        """
+        Creates a Settings object from a YAML string.
+
+        Args:
+            yaml_string (str): the YAML configuration as a string
+
+        Returns:
+            An attribute dictionary with all the settings from the given string.
+        """
+        try:
+            yaml_document = yaml.load(yaml_string, Loader=SAFE_LOADER)
+            settings = attrdict({name: value for name, value in yaml_document.items()}, label="Settings")
+        except yaml.YAMLError as exc:
+            logger.error(exc)
+            raise SettingsError("Error loading YAML document from string") from exc
+
+        if not settings:
+            logger.warning(
+                "The Settings YAML string is empty. No local settings were loaded, an empty dictionary is returned."
+            )
+
+        if group:
+            if group in settings:
+                settings = attrdict({name: value for name, value in settings[group].items()}, label=group)
+            else:
+                raise SettingsError(f"Group name '{group}' is not defined in the provided YAML string.")
+
+        return settings
+
 
 def main(args: list | None = None):  # pragma: no cover
     # We provide convenience to inspect the settings by calling this module directly from Python.
