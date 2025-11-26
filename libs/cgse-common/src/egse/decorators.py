@@ -15,8 +15,8 @@ from typing import Optional
 
 import rich
 
-from egse.system import get_caller_info
 from egse.log import logger
+from egse.system import get_caller_info
 
 
 def static_vars(**kwargs):
@@ -316,7 +316,10 @@ def debug(func):
 
 
 def profile_func(
-    output_file: str = None, sort_by: str = "cumulative", lines_to_print: int = None, strip_dirs: bool = False
+    output_file: str | None = None,
+    sort_by: str = "cumulative",
+    lines_to_print: int | None = None,
+    strip_dirs: bool = False,
 ) -> Callable:
     """A time profiler decorator.
 
@@ -346,7 +349,7 @@ def profile_func(
         decorator](https://gist.github.com/ekhoda/2de44cf60d29ce24ad29758ce8635b78).
 
         Inspired by and modified the profile decorator of Giampaolo Rodola:
-        [profile decorato](http://code.activestate.com/recipes/577817-profile-decorator/).
+        [profile decorator](http://code.activestate.com/recipes/577817-profile-decorator/).
 
 
     """

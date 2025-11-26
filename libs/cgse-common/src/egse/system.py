@@ -37,10 +37,20 @@ import time
 import warnings
 from collections import namedtuple
 from contextlib import contextmanager
-from io import SEEK_END, SEEK_SET
+from io import SEEK_END
+from io import SEEK_SET
 from pathlib import Path
-from types import FunctionType, ModuleType
-from typing import Any, Callable, Iterable, List, Optional, TextIO, Tuple, Type, Union
+from types import FunctionType
+from types import ModuleType
+from typing import Any
+from typing import Callable
+from typing import Iterable
+from typing import List
+from typing import Optional
+from typing import TextIO
+from typing import Tuple
+from typing import Type
+from typing import Union
 
 import distro  # For determining the Linux distribution
 import psutil
