@@ -78,7 +78,7 @@ def test_get_version_from_settings():
     from egse.settings import SettingsError
     from egse.system import attrdict
 
-    with patch.object(egse.settings, "Settings") as inner_settings:
+    with patch.object(egse.settings, "Settings", autospec=True) as inner_settings:
         inner_settings.load.return_value = attrdict({"VERSION": "2025.11.26", "SITE_ID": "TEST_LAB_2"})
         version = get_version_from_settings("CGSE")
         assert version == "2025.11.26"
@@ -87,8 +87,8 @@ def test_get_version_from_settings():
     # which is tested below. With the WRONG_GROUP name, Settings.load() will raise a SettingsError
     # and the get_version_from_settings_file_raw() will raise a RuntimeError.
 
-    with patch.object(egse.settings, "Settings") as inner_settings:
-        inner_settings.load.side_effect = SettingsError()
+    with patch.object(egse.settings, "Settings", autospec=True) as inner_settings:
+        inner_settings.load.side_effect = SettingsError
         with pytest.raises(RuntimeError):
             get_version_from_settings("WRONG_GROUP")
 
