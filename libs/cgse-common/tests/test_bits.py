@@ -66,11 +66,11 @@ def test_set_bit():
     assert bit_set(bf, 7)
     logger.debug(f"bf = {bf:4}, 0b{bf:08b}")
     assert bits_set(bf, 0, 3, 7)
-    assert bits_set(bf, [0, 3, 7])
-    assert not bits_set(bf, [0, 1, 3, 7])
+    assert bits_set(bf, *[0, 3, 7])
+    assert not bits_set(bf, *[0, 1, 3, 7])
 
     assert bits_set(bf, 0)
-    assert bits_set(bf, [0])
+    assert bits_set(bf, *[0])
 
 
 def test_toggle_bit():

@@ -13,6 +13,8 @@ from pathlib import Path
 
 import pytest
 import rich
+from fixtures.helpers import create_empty_file
+from fixtures.helpers import create_text_file
 from pytest import approx
 
 from egse.decorators import execution_count
@@ -34,6 +36,7 @@ from egse.system import get_average_execution_time
 from egse.system import get_average_execution_times
 from egse.system import get_caller_breadcrumbs
 from egse.system import get_caller_info
+from egse.system import get_current_location
 from egse.system import get_full_classname
 from egse.system import get_os_name
 from egse.system import get_os_version
@@ -50,12 +53,33 @@ from egse.system import read_last_line
 from egse.system import read_last_lines
 from egse.system import recursive_dict_update
 from egse.system import replace_environment_variable
+from egse.system import round_up
 from egse.system import save_average_execution_time
 from egse.system import touch
 from egse.system import wait_until
 from egse.system import waiting_for
-from fixtures.helpers import create_empty_file
-from fixtures.helpers import create_text_file
+
+
+def test_get_current_location():
+    def internal_function():
+        return get_current_location()
+
+    location = internal_function()
+
+    assert "test_system.py" in location[0]
+    assert type(location[1]) is int
+    assert "internal_function" in location[2]
+
+
+def test_round_up():
+    assert round_up(3.14159, 0) == 4.0
+    assert round_up(3.14159, 1) == 3.2
+    assert round_up(3.14159, 2) == 3.15
+    assert round_up(3.14159, 3) == 3.142
+
+    # an integer is returned as float, but no rounding is done
+    assert round_up(4, 3) == 4.0
+    assert round_up(1, 2) == 1.0
 
 
 def test_attr_dict():
@@ -776,9 +800,10 @@ def test_function_timing():
 
 
 def test_get_module_location():
+    import multiprocessing.dummy
+
     import egse
     from egse.system import get_module_location
-    import multiprocessing.dummy
 
     # egse is a namespace package which can have different locations!
     assert get_module_location(egse) is None
@@ -837,6 +862,7 @@ def test_log_levels_disabled(caplog):
     print()
 
     import logging
+
     from egse.system import all_logging_disabled
 
     with all_logging_disabled(highest_level=logging.WARNING):

@@ -72,8 +72,8 @@ import os
 import warnings
 from pathlib import Path
 
-from dotenv import load_dotenv as _load_dotenv
 from dotenv import find_dotenv
+from dotenv import load_dotenv as _load_dotenv
 from rich.console import Console
 
 from egse.decorators import static_vars
@@ -697,6 +697,7 @@ def env_var(**kwargs: str | int | float | bool | None):
 def main(args: list | None = None):  # pragma: no cover
     import argparse
     import sys
+
     import rich
 
     parser = argparse.ArgumentParser()

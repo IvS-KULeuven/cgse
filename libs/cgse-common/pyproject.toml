@@ -90,7 +90,11 @@ packages = ["src/egse", "src/scripts", "src/cgse_common"]
 line-length = 120
 
 [tool.ruff.lint]
+select = ["F", "I"]
 extend-select = ["E", "W"]
+
+[tool.ruff.lint.isort]
+force-single-line = true
 
 [build-system]
 requires = ["hatchling"]

@@ -18,6 +18,7 @@ __all__ = [
     "LOG_DATE_FORMAT_FULL",
     "LOG_DATE_FORMAT_CLEAN",
     "logger",
+    "logging",  # export to guarantee that this module is imported and initialized before users use logging
     "root_logger",
     "egse_logger",
     "get_log_level_from_env",
@@ -84,7 +85,7 @@ class NonEGSEFilter(logging.Filter):
         return not record.name.startswith("egse")
 
 
-def get_log_level_from_env(env_var: str = "LOG_LEVEL", default: int = logging.INFO):
+def get_log_level_from_env(env_var: str = "LOG_LEVEL", default: str = "INFO") -> int:
     """Read the log level from an environment variable."""
     log_level_str = os.getenv(env_var, default)
 
@@ -95,18 +96,16 @@ def get_log_level_from_env(env_var: str = "LOG_LEVEL", default: int = logging.IN
         if 10 <= log_level <= 50:
             return log_level
         else:
-            logging.warning(
-                f"Log level {log_level} outside standard range (10-50). Using {logging.getLevelName(default)}."
-            )
-            return default
+            logging.warning(f"Log level {log_level} outside standard range (10-50). Using {default.upper()}.")
+            return logging._nameToLevel[default.upper()]
 
     except ValueError:
         log_level_str = log_level_str.upper()
         try:
             return getattr(logging, log_level_str)
         except AttributeError:
-            logging.error(f"Invalid LOG_LEVEL '{log_level_str}'. Using {logging.getLevelName(default)}.")
-            return default
+            logging.error(f"Invalid LOG_LEVEL '{log_level_str}'. Using {default.upper()}.")
+            return logging._nameToLevel[default.upper()]
 
 
 egse_logger = logging.getLogger("egse")
@@ -145,7 +144,7 @@ if __name__ == "__main__":
             Environment variables:
               - LOG_LEVEL=debug|info|warning|critical
               - LOG_FORMAT=full|clean
-            
+
             Example logging statements
               - logging level set to INFO
               - logging format set to full
