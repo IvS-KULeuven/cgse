@@ -68,19 +68,23 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')"
 ]
 
+# Some of these omitted files are only temporary omitted until refactored
 [tool.coverage.run]
 omit = [
     "tests/*",
     "conftest.py",
+    "src/egse/ratelimit.py",
+    "src/egse/plugins/metrics/duckdb.py",
+    "src/egse/plugins/metrics/timescaledb.py",
 ]
 
 [tool.hatch.build.targets.sdist]
 exclude = [
-    "/tests",
-    "/pytest.ini",
-    "/.gitignore",
-    "/*poetry*",
-    "/*setuptools*",
+    "tests",
+    "pytest.ini",
+    ".gitignore",
+    "*poetry*",
+    "*setuptools*",
 ]
 
 [tool.hatch.build.targets.wheel]
