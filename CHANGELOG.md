@@ -8,9 +8,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+...
+
 ### Changed
 - To improve readability, the CHANGELOG file now contains all [link titles](https://github.github.com/gfm/#links) at 
   the bottom, both for version comparison and for issue/pull request linking.
+- The args in the function `bits_set(value, *args)` should always be unpacked. Previously, the `args` could also be a 
+  list, but that made the function call needlessly confusing. This should not be a problem (not a breaking change) 
+  since this function is apparently only used in the unit tests currently.
+- The `egse.log` module exports the logging module, so, when users import logging from egse.log, the specific CGSE 
+  loggers will be configured.
+- Changed the type of the default argument in `get_log_level_from_env()` function (not a breaking change)
+- Changed the return value of the different `get_version_*()` functions to return "0.0.0" when the version cannot 
+  be determined. Previously, these functions returned None.
+
+### Added
+- Added a `from_string()` class method to Settings. This is mainly for testing and when you need to load 
+  Settings from a specific file.
+- Added an example `.env` file
+
+### Testing
+- Added a test for the `round_up()` function in `egse.system`
+- Added unit tests for `egse.version` and `egse.settings`
+- Fixed the test `test_quit_process()` temporarily as it is not clear on macOS what is the actual return value 
+  from a process when it is terminated or killed.
 
 
 ## [0.17.1] - 2025-11-20
