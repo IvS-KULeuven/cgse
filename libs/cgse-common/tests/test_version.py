@@ -88,7 +88,7 @@ def test_get_version_from_settings():
     # and the get_version_from_settings_file_raw() will raise a RuntimeError.
 
     with patch.object(egse.settings, "Settings") as inner_settings:
-        inner_settings.load.side_effect = SettingsError()
+        inner_settings.load.side_effect = SettingsError
         with pytest.raises(RuntimeError):
             get_version_from_settings("WRONG_GROUP")
 
