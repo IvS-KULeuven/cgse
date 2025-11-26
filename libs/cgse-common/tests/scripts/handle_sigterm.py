@@ -29,6 +29,8 @@ def main(ignore_sigterm: bool = False):
 def _handle_sigterm():
     killer = SignalCatcher()
 
+    logger.info("in _handle_sigterm...")
+
     while "waiting for a SIGTERM signal":
         if killer.term_signal_received:
             logger.info(f"{killer.signal_number = }")
@@ -42,6 +44,8 @@ def _handle_sigterm():
 
 def _ignore_sigterm():
     killer = SignalCatcher()
+
+    logger.info("in _ignore_sigterm...")
 
     while "ignoring a SIGTERM signal":
         if killer.term_signal_received:
