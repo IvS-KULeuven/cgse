@@ -1,4 +1,5 @@
 from pathlib import Path
+import textwrap
 
 import pytest
 import rich
@@ -20,6 +21,32 @@ def test_load_filename():
 
     assert "Commands" in settings
     assert settings.Commands["list_commands"]["description"] == "Returns a list of the available commands."
+
+
+def test_load_from_string():
+    settings_str = textwrap.dedent(
+        """\
+        VERSION: 2025.11.25
+        SITE_ID: TEST_SITE
+        GROUP_1:
+            LOCATION: Earth
+            TYPE: Ground Station
+        GROUP_2:
+            LOCATION: Mars
+            TYPE: Orbiter
+        """
+    )
+
+    settings = Settings.from_string(settings_str)
+
+    assert settings.SITE_ID == "TEST_SITE"
+    assert settings.VERSION == "2025.11.25"
+    assert settings.GROUP_1["LOCATION"] == "Earth"
+    assert settings.GROUP_2["TYPE"] == "Orbiter"
+
+    settings = Settings.from_string(settings_str, group="GROUP_1")
+    assert settings.LOCATION == "Earth"
+    assert settings.TYPE == "Ground Station"
 
 
 def test_load_settings_file():
