@@ -10,6 +10,7 @@ import shutil
 import textwrap
 import time
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 import rich
@@ -52,12 +53,15 @@ from egse.system import ping
 from egse.system import read_last_line
 from egse.system import read_last_lines
 from egse.system import recursive_dict_update
+from egse.system import redirect_output_to_log
 from egse.system import replace_environment_variable
 from egse.system import round_up
 from egse.system import save_average_execution_time
 from egse.system import touch
 from egse.system import wait_until
 from egse.system import waiting_for
+
+HERE = Path(__file__).parent
 
 
 def test_get_current_location():
@@ -803,6 +807,7 @@ def test_get_module_location():
     import multiprocessing.dummy
 
     import egse
+    import egse.system
     from egse.system import get_module_location
 
     # egse is a namespace package which can have different locations!
@@ -943,7 +948,7 @@ def test_is_module():
     assert is_module(egse.version)
     assert is_module("egse.version")
 
-    assert not is_module(get_os_name)
+    assert not is_module(get_os_name)  # type: ignore
     assert not is_module("non-existing-module")
 
 
@@ -957,7 +962,7 @@ def test_is_namespace():
     assert not is_namespace(egse.version)
     assert not is_namespace("egse.version")
 
-    assert not is_module(get_os_name)
+    assert not is_module(get_os_name)  # type: ignore
     assert not is_namespace("non-existing-module")
 
 
@@ -1116,7 +1121,7 @@ async def test_periodic_exception(caplog):
     await asyncio.sleep(1.2)
 
     assert "ValueError caught: This is not good!" in caplog.text
-    assert not_good.counts() == 2
+    assert not_good.counts() == 2  # type: ignore
 
 
 def test_camel_to_kebab():
@@ -1162,3 +1167,65 @@ def test_recursive_dict_update():
     rich.print(top)
 
     assert "G3" in top["GROUP"]
+
+
+def test_redirect_output_to_log():
+    import egse.env
+
+    # The redirected log file will be created in the current folder for this test
+
+    with patch.object(egse.env, "get_log_file_location", return_value=Path(HERE)):
+        log = redirect_output_to_log("test_redirect_output_to_log.log")
+        log.write("This is a test message to be logged.\n")
+        log.close()
+
+        log_path = Path(HERE) / "test_redirect_output_to_log.log"
+
+        assert log_path.exists()
+
+        with open(log_path, "r") as f:
+            content = f.read()
+            assert "This is a test message to be logged." in content
+
+        # Test appending to the log file
+
+        log = redirect_output_to_log("test_redirect_output_to_log.log", append=True)
+        log.write("Appending a new test message to be logged.\n")
+        log.close()
+
+        with open(log_path, "r") as f:
+            content = f.read()
+            assert "Appending a new test message to be logged." in content
+
+        log = redirect_output_to_log("test_redirect_output_to_log.log", append=False, overwrite=True)
+        log.write("Overwriting a new test message to be logged.\n")
+        log.close()
+
+        with open(log_path, "r") as f:
+            content = f.read()
+            assert content.splitlines() == ["Overwriting a new test message to be logged."]
+
+        # Test overwriting the log file.
+        # The overwrite argument is False, so it should raise an exception
+
+        with pytest.raises(FileExistsError):
+            log = redirect_output_to_log("test_redirect_output_to_log.log", overwrite=False)
+
+        log_path.unlink()  # Clean up the log file after test
+
+        # Test the behavior when the output_fn is absolute and the directory does not exist.
+
+        absolute_log_path = Path(HERE) / "xxx1234/absolute_test_log.log"
+
+        log = redirect_output_to_log(str(absolute_log_path))
+        log.write("This is a test message to be logged in an absolute path.\n")
+        log.close()
+
+        assert absolute_log_path.exists()
+
+        with open(absolute_log_path, "r") as f:
+            content = f.read()
+            assert "This is a test message to be logged in an absolute path." in content
+
+        absolute_log_path.unlink()  # Clean up the absolute log file after test
+        absolute_log_path.parent.rmdir()  # Remove the created directory

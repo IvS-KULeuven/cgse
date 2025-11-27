@@ -1380,7 +1380,7 @@ def chdir(dirname=None):
 
 
 @contextlib.contextmanager
-def env_var(**kwargs: dict[str, str]):
+def env_var(**kwargs: str):
     """
     Context manager to run some code that need alternate settings for environment variables.
 
@@ -2337,22 +2337,44 @@ def caffeinate(pid: int = None):
         subprocess.Popen([shutil.which("caffeinate"), "-i", "-w", str(pid)])
 
 
-def redirect_output_to_log(output_fn: str, append: bool = False) -> TextIO:
+def redirect_output_to_log(output_fn: str, append: bool = False, overwrite=True) -> TextIO:
     """
-    Open file in the log folder where process output will be redirected.
-
+    Open the file in the log folder where the current process output will be redirected.
     When no location can be determined, the user's home directory will be used.
 
-    The file is opened in text mode at the given location and the stream (file descriptor) will be returned.
+    The file will be opened in text mode.
+
+    Args:
+        output_fn: the name of the output file
+        append: True to append to the file, False to overwrite
+        overwrite: when False and the file exists, an exception is raised
+
+    Returns:
+        The file stream (TextIO) where output can be redirected to.
+
+    Raises:
+        FileExistsError: when the output file exists, append is False and overwrite is False.
     """
 
-    try:
-        from egse.env import get_log_file_location
+    if Path(output_fn).is_absolute():
+        output_path = Path(output_fn)
+    else:
+        try:
+            from egse.env import get_log_file_location
 
-        location = get_log_file_location()
-        output_path = Path(location, output_fn).expanduser()
-    except ValueError:
-        output_path = Path.home() / output_fn
+            location = get_log_file_location()
+            output_path = Path(location, output_fn).expanduser()
+        except ValueError:
+            output_path = Path.home() / output_fn
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if output_path.exists() and not append:
+        if not overwrite:
+            raise FileExistsError(
+                f"Output file {output_path!s} already exists and will be overwritten. "
+                f"Use overwrite=True to allow overwriting."
+            )
 
     out = open(output_path, "a" if append else "w")
 
