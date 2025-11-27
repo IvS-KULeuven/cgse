@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Changed the type of the default argument in `get_log_level_from_env()` function (not a breaking change) [#215]
 - Changed the return value of the different `get_version_*()` functions to return "0.0.0" when the version cannot 
   be determined. Previously, these functions returned None. [#215]
+- Improvements to `redirect_output_to_log()`: the file can be an absolute path, added a guard to overwrite
 
 ### Added
 - Added a `from_string()` class method to Settings. This is mainly for testing and when you need to load 
@@ -30,9 +31,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Testing
 - Added a test for the `round_up()` function in `egse.system` [#215]
-- Added unit tests for `egse.version` and `egse.settings` [#215]
+- Added unit tests for `egse.version` and `egse.settings` [#215], [#216]
 - Fixed the test `test_quit_process()` temporarily as it is not clear on macOS what is the actual return value 
   from a process when it is terminated or killed. [#215]
+- Added unit test for `redirect_output_to_log()`
 
 
 ## [0.17.1] - 2025-11-20
@@ -206,6 +208,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 [0.16.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.15.1...v0.16.0
 
+[#216]: https://github.com/IvS-KULeuven/cgse/pull/216
 [#215]: https://github.com/IvS-KULeuven/cgse/pull/215
 [#210]: https://github.com/IvS-KULeuven/cgse/pull/210
 [#209]: https://github.com/IvS-KULeuven/cgse/pull/209
