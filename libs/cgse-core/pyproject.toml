@@ -1,6 +1,6 @@
 [project]
 name = "cgse-core"
-version = "0.17.1"
+version = "0.17.2"
 description = "Core services for the CGSE framework"
 authors = [
     {name = "IvS KU Leuven"}
@@ -20,6 +20,7 @@ keywords = [
 ]
 dependencies = [
     "cgse-common",
+    "cgse-tools",
     "apscheduler>=3.11.0",
     "aiosqlite>=0.21.0",
     "aiohttp>=3.11.16",
@@ -72,13 +73,11 @@ setup_provider = "egse._setup_core:CoreSetupProvider"
 pythonpath = "src"
 testpaths = ["tests"]
 addopts = "-rA --cov --cov-branch --cov-report html"
+log_cli = true
+log_cli_level = "DEBUG"
 filterwarnings = [
     "ignore::DeprecationWarning"
 ]
-log_cli = true
-log_cli_level = "DEBUG"
-#log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
-log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 
 [tool.coverage.run]
 omit = [
@@ -89,9 +88,14 @@ omit = [
 
 [tool.hatch.build.targets.sdist]
 exclude = [
-    "/tests",
-    "/pytest.ini",
-    "/.gitignore",
+    "tests",
+    "pytest.ini",
+    ".gitignore",
+]
+include = [
+    "src/",
+    "README.md",
+    "LICENSE",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -101,7 +105,11 @@ packages = ["src/egse", "src/cgse_core"]
 line-length = 120
 
 [tool.ruff.lint]
-extend-select = ["E501"]
+select = ["F", "I"]
+extend-select = ["E", "W"]
+
+[tool.ruff.lint.isort]
+force-single-line = true
 
 [build-system]
 requires = ["hatchling"]
