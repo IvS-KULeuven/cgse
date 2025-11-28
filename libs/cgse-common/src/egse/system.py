@@ -1556,6 +1556,7 @@ def read_last_lines(filename: str | Path, num_lines: int) -> List[str]:
     sanity_check(num_lines >= 0, "the number of lines to read shall be a positive number or zero.")
 
     if not filename.exists():
+        logger.warning(f"File does not exist: {filename}")
         return []
 
     # Declaring variable to implement exponential search
