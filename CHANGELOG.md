@@ -28,9 +28,9 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Changed the return value of the different `get_version_*()` functions to return "0.0.0" when the version cannot 
   be determined. Previously, these functions returned None. [#215]
 - Improvements to `redirect_output_to_log()`: the file can be an absolute path, added a guard to overwrite [#217]
-- A warning message is now logged when you try to read the last few lines from a non-existing file 
+- A warning message is now logged when you try to read the last few lines from a non-existing file [#218]
 - InitializationError = InitialisationError, to be conform to the styling guide promoting the use of standard 
-  American English for code, comments  and docs 
+  American English for code, comments  and docs [#218]
 
 ### Added
 - Added a `from_string()` class method to Settings. This is mainly for testing and when you need to load 
@@ -216,6 +216,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 [0.16.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.15.1...v0.16.0
 
+[#219]: https://github.com/IvS-KULeuven/cgse/pull/219
+[#218]: https://github.com/IvS-KULeuven/cgse/pull/218
 [#217]: https://github.com/IvS-KULeuven/cgse/pull/217
 [#216]: https://github.com/IvS-KULeuven/cgse/pull/216
 [#215]: https://github.com/IvS-KULeuven/cgse/pull/215
