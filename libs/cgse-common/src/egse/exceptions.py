@@ -61,3 +61,6 @@ class Abort(RuntimeError):
 
 class InitialisationError(Error):
     """Raised when an initialisation failed."""
+
+
+InitializationError = InitialisationError  # Alias with American spelling
