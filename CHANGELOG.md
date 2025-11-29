@@ -9,6 +9,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 
+## [0.17.3] - 2025-11-29
+
+In the previous release, uncommitted and untracked files were released by mistake. This release fixes this. Nothings has been changed with respect of release 0.17.2, except the removal of the uncommitted and untracked files.
+
+
 ## [0.17.2] - 2025-11-28
 
 This release is mainly on maintenance and improvements to the `cgse-common` package. 
