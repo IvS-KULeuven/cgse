@@ -57,7 +57,7 @@ COMMANDER_PORT = settings.get("COMMANDER_PORT", 0)  # dynamically assigned by th
 _initialised = False  # will be set to True in the setup_logging() function
 
 
-def get_log_file_name():
+def get_log_file_name() -> str:
     """
     Returns the filename of the log file as defined in the Settings or return the default name 'general.log'.
     """
@@ -315,7 +315,7 @@ def send_request(command_request: str):
     """Sends a request to the Logger Control Server and waits for a response."""
 
     if COMMANDER_PORT == 0:
-        endpoint = get_endpoint_from_registry()
+        endpoint = get_endpoint_from_registry(SERVICE_TYPE)
     else:
         endpoint = f"{PROTOCOL}://{HOSTNAME}:{COMMANDER_PORT}"
 
