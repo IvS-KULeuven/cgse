@@ -580,11 +580,18 @@ def start_dev():
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind((DEV_HOST, DEV_PORT))
             s.listen()
+            s.settimeout(CONNECT_TIMEOUT)
             logger.info(f"Ready to accept connection on {DEV_HOST}:{DEV_PORT}...")
-            conn, addr = s.accept()
+            while True:
+                with contextlib.suppress(socket.timeout):
+                    conn, addr = s.accept()
+                    break
+                if killer.term_signal_received:
+                    return
             with conn:
                 logger.info(f"Accepted connection from {addr}")
                 conn.sendall(f"Dummy Device {__version__}".encode())
+                conn.settimeout(READ_TIMEOUT)
                 try:
                     while True:
                         error_msg = ""
