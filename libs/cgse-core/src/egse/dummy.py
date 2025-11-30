@@ -18,9 +18,9 @@ and stop the server with:
 
 Commands that can be used with the proxy:
 
-  * info – returns an info message from the dummy device, e.g. "Dummy Device <__version__>"
-  * get_value – returns a random float between 0.0 and 1.0
-  * division – returns the result of the division between arguments 'a' and 'b'.
+  * info - returns an info message from the dummy device, e.g. "Dummy Device <__version__>"
+  * get_value - returns a random float between 0.0 and 1.0
+  * division - returns the result of the division between arguments 'a' and 'b'.
     This can be used also to induce a ZeroDivisionError that should return a Failure
     object.
 
@@ -35,6 +35,7 @@ and stopped with:
 
 from __future__ import annotations
 
+import contextlib
 import multiprocessing
 import random
 import select
@@ -52,12 +53,14 @@ from egse.device import DeviceConnectionError
 from egse.device import DeviceConnectionInterface
 from egse.device import DeviceTimeoutError
 from egse.device import DeviceTransport
+from egse.env import bool_env
 from egse.log import logger
 from egse.protocol import CommandProtocol
 from egse.proxy import Proxy
 from egse.system import SignalCatcher
 from egse.system import attrdict
 from egse.system import format_datetime
+from egse.system import type_name
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
 
@@ -76,6 +79,9 @@ WRITE_TIMEOUT = 1.0
 """The maximum time in seconds to wait for a socket send command."""
 CONNECT_TIMEOUT = 3.0
 """The maximum time in seconds to wait for establishing a socket connect."""
+
+
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG", default=False)
 
 # Especially DummyCommand and DummyController need to be defined in a known module
 # because those objects are pickled and when de-pickled at the clients side the class
@@ -116,14 +122,17 @@ def is_dummy_cs_active() -> bool:
 
 
 def is_dummy_dev_active() -> bool:
+    if VERBOSE_DEBUG:
+        logger.debug("Checking if dummy device is active...")
     try:
         dev = DummyDeviceEthernetInterface(DEV_HOST, DEV_PORT)
         dev.connect()
         rc = dev.trans("ping\n")
         dev.disconnect()
         return rc.decode().strip() == "pong"
-    except DeviceConnectionError as exc:
-        # logger.error(f"Caught {type_name(exc)}: {exc}")
+    except (DeviceConnectionError, ConnectionResetError, DeviceTimeoutError) as exc:
+        if VERBOSE_DEBUG:
+            logger.debug(f"Caught {type_name(exc)}: {exc} - returning False")
         return False
 
 
@@ -309,11 +318,10 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
     Args:
         hostname (str): the IP address or fully qualified hostname of the Dummy Device
             controller.
-
         port (int): the IP port number to connect to.
     """
 
-    def __init__(self, hostname: str = None, port: int = None):
+    def __init__(self, hostname: str | None = None, port: int | None = None):
         super().__init__()
 
         # Basic connection settings, loaded from the configuration YAML file
