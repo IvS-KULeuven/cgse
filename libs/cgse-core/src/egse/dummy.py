@@ -358,7 +358,8 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         except socket.error as exc:
-            self.sock.close()
+            if self.sock is not None:
+                self.sock.close()
             raise DeviceConnectionError("Dummy Device", "Failed to create socket.") from exc
 
         # Attempt to establish a connection to the remote host
@@ -411,7 +412,8 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         """
         try:
             logger.debug(f"Disconnecting from {self.hostname}")
-            self.sock.close()
+            if self.sock is not None:
+                self.sock.close()
             self.is_connection_open = False
         except Exception as exc:
             raise DeviceConnectionError(DEV_NAME, f"Could not close socket to {self.hostname}") from exc
@@ -446,6 +448,8 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         n_total = 0
         buf_size = 1024 * 10
         response = bytes()
+
+        assert self.sock is not None
 
         # Set a timeout of READ_TIMEOUT to the socket.recv
 
@@ -486,6 +490,8 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
                 there was a socket related error.
         """
 
+        assert self.sock is not None
+
         # logger.debug(f"{command.encode() = }")
 
         try:
@@ -513,6 +519,9 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
             DeviceTimeoutError: when the sendall() timed out, and a DeviceConnectionError if
                 there was a socket related error.
         """
+
+        assert self.sock is not None
+
         # logger.debug(f"{command.encode() = }")
 
         try:
@@ -656,7 +665,8 @@ def process_command(command_string: str) -> str | None:
 
     try:
         action, response = COMMAND_ACTIONS_RESPONSES[command_string]
-        action and action()
+        if action:
+            action()
         if error_msg:
             return error_msg
         else:
