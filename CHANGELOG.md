@@ -64,6 +64,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 
 ## [0.17.0] - 2025-11-20
 
+This release adds a new package, the ARIEL TCU, which you will find in the `projects` folder. This package is specific for the ARIEL space project and will be available in PyPI as `ariel-tcu`.
+
 ### Added
 - Added this CHANGELOG file. [#209]
 - Added an initial implementation of the ARIEL Telescope Control Unit (TCU). This is a separate package in this 
