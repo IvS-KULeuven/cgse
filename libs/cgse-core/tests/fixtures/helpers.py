@@ -12,6 +12,7 @@ __all__ = [
 
 import os
 import textwrap
+from contextlib import contextmanager
 from pathlib import Path
 from typing import List
 
@@ -19,11 +20,12 @@ from egse.env import get_site_id
 from egse.env import set_conf_data_location
 from egse.env import set_data_storage_location
 from egse.env import set_log_file_location
+from egse.log import logging
 from egse.process import is_process_running
 from egse.registry.client import RegistryClient
 
 
-def is_process_not_running(items: List):
+def is_process_not_running(items: List) -> bool:
     """Check if a process is not running currently."""
     return not is_process_running(items)
 
@@ -194,6 +196,64 @@ def create_text_file(filename: str | Path, content: str, create_folder: bool = F
             self.filename.unlink()
 
     return _ContextManager(filename, create_folder)
+
+
+class LogCaptureHandler(logging.Handler):
+    """Handler that captures log records in a list."""
+
+    def __init__(self, level=logging.NOTSET):
+        super().__init__(level)
+        self.records = []
+
+    def emit(self, record):
+        self.records.append(record)
+
+    def get_messages(self):
+        return [self.format(record) for record in self.records]
+
+    def clear(self):
+        self.records.clear()
+
+    @property
+    def text(self):
+        return "\n".join(self.get_messages())
+
+
+@contextmanager
+def capture_log_records(logger_name=None, level=logging.DEBUG):
+    """
+    Context manager that captures log records (not just strings).
+
+    Example:
+        ```python
+        with capture_log_records('my_logger') as handler:
+            logger = logging.getLogger('my_logger')
+            logger.warning("Warning!")
+            logger.error("Error!")
+
+        # Access records directly
+        assert len(handler.records) == 2
+        assert handler.records[0].levelname == 'WARNING'
+
+        # Or get formatted messages
+        messages = handler.get_messages()
+        ```
+    """
+    logger = logging.getLogger(logger_name)
+
+    handler = LogCaptureHandler(level)
+    formatter = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
+    handler.setFormatter(formatter)
+
+    logger.addHandler(handler)
+    original_level = logger.level
+    logger.setLevel(level)
+
+    try:
+        yield handler
+    finally:
+        logger.removeHandler(handler)
+        logger.setLevel(original_level)
 
 
 # Test the helper functions
