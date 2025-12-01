@@ -1,0 +1,20 @@
+Facility HK:
+    HOSTNAME:                  localhost
+    PROTOCOL:                        tcp
+    COMMANDING_PORT:                   0     # Port on which the controller listens to commands (REQ-REP)
+    MONITORING_PORT:                   0     # Port on which the controller sends periodic status information about the device (PUB-SUB)
+    SERVICE_PORT:                      0     # Port on which the controller listens for configuration and administration (REQ-REP)
+    METRICS_PORT:                      0
+    STORAGE_MNEMONIC:           FACILITY
+    SERVICE_NAME:            FACILITY_HK
+    SERVICE_TYPE:            FACILITY_HK
+    TABLES:                                       # Storage mnemonic: (table name, server ID)
+        ORIGIN1:        (TABLE1, SERVER_ID_1)
+        ORIGIN2:        (TABLE2, SERVER_ID_2)
+
+
+Facility DB:
+    HOST:                      localhost
+    PORT:                           3306
+    USER:                            TBD
+    PASSWORD:                        TBD
