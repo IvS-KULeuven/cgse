@@ -47,7 +47,11 @@ class DatabaseTableWatcher:
         self.origin = origin
         self.server_id = server_id
 
-        self.hk_conversion_dict = read_conversion_dict(self.origin, use_site=False, setup=load_setup())
+        # noinspection PyBroadException
+        try:
+            self.hk_conversion_dict = read_conversion_dict(self.origin, use_site=False, setup=load_setup())
+        except:
+            self.hk_conversion_dict = None
 
         # Make a thread and let it start watching the specified table in the facility database
 
@@ -145,7 +149,10 @@ class DatabaseTableWatcher:
         hk[self.table_name] = hk[VALUE_COLUMN_NAME]
         del hk[VALUE_COLUMN_NAME]
 
-        return convert_hk_names(hk, self.hk_conversion_dict)
+        if self.hk_conversion_dict:
+            return convert_hk_names(hk, self.hk_conversion_dict)
+        else:
+            return hk
 
     def store_housekeeping_information(self, hk: dict):
         """Sends the given housekeeping information to the Storage Manager.
