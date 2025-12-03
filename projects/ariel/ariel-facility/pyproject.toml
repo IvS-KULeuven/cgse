@@ -1,0 +1,63 @@
+[project]
+name = "ariel-facility"
+version = "0.0.1"
+description = "Extract HK from MySQL Facility Database for Ariel"
+authors = [
+    {name = "IVS KU Leuven"}
+]
+maintainers = [
+    {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
+    {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"}
+]
+
+requires-python = ">=3.10"
+license = "MIT"
+keywords = [
+    "hardware testing",
+    "software framework",
+    "facility",
+    "housekeeping",
+    "Ariel",
+]
+dependencies = [
+    "cgse-common",
+    "cgse-core",
+    "cgse-gui",
+    "crcmod>=1.7",
+    "pyserial>=3.5",
+    "mysql-replication",
+]
+
+[project.scripts]
+facility_hk = 'egse.ariel.facility.hk:app'
+
+[project.entry-points."cgse.version"]
+ariel-facility = 'egse.version:get_version_installed'
+
+[project.entry-points."cgse.settings"]
+ariel-facility = "ariel_facility:settings.yaml"
+
+[project.entry-points."cgse.service.device_command"]
+facility_hk = 'ariel_facility.cgse_services:facility_hk'
+
+[project.entry-points."cgse.explore"]
+explore = "ariel_facility.cgse_explore"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/tests",
+    "/.gitignore",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/egse", "src/ariel_facility"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+extend-select = ["E501"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
