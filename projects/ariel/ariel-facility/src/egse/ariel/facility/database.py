@@ -5,15 +5,28 @@ store those into the dedicated CSV files for the TA-EGSE framework.
 """
 
 import threading
+from datetime import datetime
+
+from egse.confman.confman_cs import load_setup
+from egse.hk import read_conversion_dict, convert_hk_names
 from egse.log import egse_logger
-from egse.settings import Settings
+from egse.system import str_to_datetime, format_datetime
+from egse.metrics import get_metrics_repo
+from egse.settings import Settings, get_site_id
 from pymysqlreplication import BinLogStreamReader
 from pymysqlreplication.row_event import WriteRowsEvent
+from urllib3.exceptions import NewConnectionError
+import os
 
 from egse.storage import StorageProxy
 
 LOGGER = egse_logger
+SITE_ID = get_site_id()
 FACILITY_DB_SETTINGS = Settings.load("Facility DB")
+
+ID_COLUMN_NAME = "measure_id"
+TIMESTAMP_COLUMN_NAME = "measure_timestamp"
+VALUE_COLUMN_NAME = "measure_value"
 
 
 class DatabaseTableWatcher:
@@ -41,6 +54,23 @@ class DatabaseTableWatcher:
         self.watch_thread = threading.Thread(target=self.watch_db_table)
         self.watch_thread.daemon = True
         self.keep_watching = True
+
+        # Metrics client
+
+        token = os.getenv("INFLUXDB3_AUTH_TOKEN")
+        project = os.getenv("PROJECT")
+
+        if project and token:
+            self.metrics_client = get_metrics_repo(
+                "influxdb", {"host": "http://localhost:8181", "database": project, "token": token}
+            )
+            self.metrics_client.connect()
+        else:
+            self.metrics_client = None
+            LOGGER.warning(
+                "INFLUXDB3_AUTH_TOKEN and/or PROJECT environment variable is not set.  Metrics will not be propagated "
+                "to InfluxDB."
+            )
 
     def start_watching_db_table(self):
         """Starts the thread that checks for new entries in the specified table in the facility database."""
@@ -140,3 +170,38 @@ class DatabaseTableWatcher:
                 f"Couldn't connect to the Storage Manager to store facility housekeeping for {self.origin}: {exc}"
             )
             raise
+
+    def propagate_metrics(self, hk: dict):
+        """Propagates the given housekeeping information to the metrics database.
+
+        The housekeeping is passed as a dictionary, with the parameter names as keys.  There's also an entry for the
+        timestamp, which represents the date/time at which the value was received.  In case only the timestamp is
+        present in the dictionary, nothing will be written to the metrics database.
+
+        Args:
+            hk (dict): Housekeeping that was extracted from the facility database, after converting the parameter names
+                       to TA-EGSE-consistent names.
+        """
+
+        if not [x for x in hk if x != "timestamp"]:
+            LOGGER.debug(f"no metrics defined for {self.origin}")
+            return
+
+        try:
+            if self.metrics_client:
+                point = {
+                    "measurement": self.origin.lower(),
+                    "tags": {"site_id": SITE_ID, "origin": self.origin},
+                    "fields": {hk_name.lower(): hk[hk_name] for hk_name in hk if hk_name != "timestamp"},
+                    "time": str_to_datetime(hk["timestamp"]),
+                }
+                self.metrics_client.write(point)
+            else:
+                LOGGER.warning(
+                    f"Could not write {self.origin} metrics to the time series database (self.metrics_client is None)."
+                )
+        except NewConnectionError:
+            LOGGER.warning(
+                f"No connection to the time series database could be established to propagate {self.origin} metrics.  "
+                f"Check whether this service is (still) running."
+            )
