@@ -21,13 +21,39 @@ ORIGIN_LIST = {"TCU": "TCU_TABLE", "LAKESHORE": "LAKESHORE_TABLE"}
 
 class FacilityHousekeepingExporter:
     def __init__(self):
+        """Initialisation of a facility HK exporter.
+
+        This process will extract HK from the facility database, store it in TA-EGSE-consistent CSV files and ingest it
+        into the metrics database.
+
+        Upon initialisation, the following actions are performed:
+
+            - From the settings file, we read which tables in the facility database have to be watched for new entries
+              (one table per sensor).  In this file, we also configure which is the corresponding storage mnemonic that
+              will be used by the Storage Manager.
+            - For each selected table, a dedicated watcher is defined.  It is the task of the watcher to keep an eye
+              on its database table, extract new entries, pass them to the Storage Manager (with the corresponding
+              storage mnemonics), and ingest it into the metrics database.
+            - Register the process to the registry client.  This way we can find back its host and ports (which is
+              required when using dynamic port allocation), and report its status.
+            - We will probably store the data from multiple sensors in the same file.  We therefore need to pass on to
+              the Storage Manager which origin will receives and store which column names.  If we don't do this, we end
+              up with corrupt CSV files.
+        """
+
         self.watchers = {}
 
         # Define a watcher for the tables listed in the settings
+        # Keep track of all (unique) storage mnemonics / origins (to collect the corresponding column names)
 
-        for origin in CTRL_SETTINGS.TABLES:
-            table_name, server_id = CTRL_SETTINGS.TABLES[origin]
-            self.watchers[origin] = DatabaseTableWatcher(origin, table_name, server_id)
+        self.origins = []
+
+        for table_name in CTRL_SETTINGS.TABLES:
+            origin, server_id = CTRL_SETTINGS.TABLES[table_name]
+            self.origins.append(origin)
+            self.watchers[table_name] = DatabaseTableWatcher(table_name, origin, server_id)
+
+        self.origins = list(set(self.origins))  # Remove duplicates
 
         self.keep_extracting = True
         print(f"Keep extracting: {self.keep_extracting}")
@@ -37,13 +63,12 @@ class FacilityHousekeepingExporter:
         self.zmq_context = zmq.Context.instance()
         self.cmd_socket = self.zmq_context.socket(zmq.REP)
         endpoint = bind_address(CTRL_SETTINGS.PROTOCOL, CTRL_SETTINGS.COMMANDING_PORT)
-        self.cmd_socket.bind(endpoint)  # Bind the socket to the endpoint -> port allocation happens here
+        self.cmd_socket.bind(endpoint)  # Bind the socket to the endpoint -> Port allocation happens here
 
         # Registration to the registry client
 
         self.registry = RegistryClient()
         self.registry.connect()
-
         self.register_service()
 
     def run(self):
@@ -99,7 +124,7 @@ class FacilityHousekeepingExporter:
         )
         self.registry.start_heartbeat()
 
-    def deregister_service(self):
+    def deregister_service(self) -> None:
         """De-registers the FacilityHousekeepingExporter from the Registry Client."""
 
         if self.registry:
@@ -139,7 +164,7 @@ def _check_commander_status(commander, poller: zmq.Poller) -> bool:
     return False
 
 
-def send_request(command_request: str):
+def send_request(command_request: str) -> Any:
     """Sends a request to the FacilityHousekeepingExporter process and wait for a response.
 
     Args:
@@ -181,7 +206,7 @@ app = typer.Typer()
 
 
 @app.command()
-def start():
+def start() -> None:
     """Starts the FacilityHousekeepingExporter."""
 
     try:
@@ -198,7 +223,7 @@ def start():
 
 
 @app.command()
-def stop():
+def stop() -> None:
     """Stops the FacilityHousekeepingExporter."""
 
     response = send_request("quit")
@@ -210,7 +235,7 @@ def stop():
 
 
 @app.command()
-def status():
+def status() -> None:
     """Prints the status of the FacilityHousekeepingExporter."""
 
     rich.print("FacilityHousekeepingExporter:")
