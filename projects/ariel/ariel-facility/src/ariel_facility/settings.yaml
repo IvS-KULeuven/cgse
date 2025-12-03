@@ -8,9 +8,9 @@ Facility HK:
     STORAGE_MNEMONIC:           FACILITY
     SERVICE_NAME:            FACILITY_HK
     SERVICE_TYPE:            FACILITY_HK
-    TABLES:                                       # Storage mnemonic: (table name, server ID)
-        ORIGIN1:        (TABLE1, SERVER_ID_1)
-        ORIGIN2:        (TABLE2, SERVER_ID_2)
+    TABLES:                                       # Table name: (storage mnemonic, server ID)
+        TABLE1:        (ORIGIN1, SERVER_ID_1)
+        TABLE2:        (ORIGIN2, SERVER_ID_2)
 
 
 Facility DB:
