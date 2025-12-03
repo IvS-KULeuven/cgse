@@ -168,8 +168,13 @@ class FacilityHousekeepingExporter:
             # database.  This is configured in the telemetry dictionary.
 
             for origin, table_names in storage_registrations.items():
-                hk_conversion_dict = read_conversion_dict(origin, use_site=False, setup=load_setup())
-                column_names = [hk_conversion_dict[table_name] for table_name in table_names]
+                # noinspection PyBroadException
+                try:
+                    hk_conversion_dict = read_conversion_dict(origin, use_site=False, setup=load_setup())
+                    column_names = [hk_conversion_dict[table_name] for table_name in table_names]
+                except:
+                    column_names = table_names
+
 
                 # Make sure there is also a column (the first one) for the timestamp
 
