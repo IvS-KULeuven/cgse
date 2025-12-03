@@ -25,8 +25,8 @@ class DatabaseTableWatcher:
         given storage mnemonic.
 
         Args:
-            origin (str): Storage mnemonic for the data in the TA-EGSE framework.
             table_name (str): Name of the table in the facility database.
+            origin (str): Storage mnemonic for the data in the TA-EGSE framework.
             server_id (int): Unique identifier for the MySQL binlog stream reader.
         """
 
