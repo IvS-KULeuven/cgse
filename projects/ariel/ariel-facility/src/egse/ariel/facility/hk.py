@@ -1,5 +1,8 @@
+from typing import Any
+
 import sys
 
+from egse.hk import read_conversion_dict
 from egse.log import egse_logger
 from egse.registry.client import RegistryClient
 from egse.settings import Settings
@@ -9,6 +12,8 @@ from egse.ariel.facility.database import DatabaseTableWatcher
 import typer
 import rich
 
+from egse.setup import load_setup
+from egse.storage import register_to_storage_manager, TYPES, is_storage_manager_active, StorageProxy
 from egse.system import get_host_ip
 from egse.zmq_ser import connect_address, get_port_number, bind_address
 
@@ -71,6 +76,10 @@ class FacilityHousekeepingExporter:
         self.registry.connect()
         self.register_service()
 
+        # Register to the Storage Manager (pass the columns names for each storage mnemonic)
+
+        self.register_to_storage_manager()
+
     def run(self):
         """Starts watching for changes in the specified tables in the facility database."""
 
@@ -112,6 +121,10 @@ class FacilityHousekeepingExporter:
         for _, watcher in self.watchers.items():
             watcher.stop_watching_db_table()
 
+        # De-registration from the Storage Manager
+
+        self.unregister_from_storage_manager()
+
     def register_service(self) -> None:
         """Registers the FacilityHousekeepingExporter to the Registry Client."""
 
@@ -131,6 +144,67 @@ class FacilityHousekeepingExporter:
             self.registry.stop_heartbeat()
             self.registry.deregister()
             self.registry.close()
+
+    @staticmethod
+    def register_to_storage_manager() -> None:
+        """Registers the origins to the Storage Manager.
+
+        Each sensor has its own table in the facility database.  In the TA-EGSE framework, we want to offer the option
+        to store data from multiple sensors in the same file.  Therefore we must register - for each storage
+        mnemonic - which are all the possible column names.  Note that the column names in the CSV files do not
+        necessarily correspond to the table names in the facility database.  This is configured in the telemetry
+        dictionary.
+        """
+
+        if is_storage_manager_active():
+            storage_registrations = {}
+
+            # Data from which table in the facility database should be extracted and stored under which storage mnemonic?
+
+            for table_name, (origin, _) in CTRL_SETTINGS.TABLES.items():
+                storage_registrations.setdefault(origin, []).append(table_name)
+
+            # The column names in the CSV files do not necessarily correspond to the table names in the facility
+            # database.  This is configured in the telemetry dictionary.
+
+            for origin, table_names in storage_registrations.items():
+                hk_conversion_dict = read_conversion_dict(origin, use_site=False, setup=load_setup())
+                column_names = [hk_conversion_dict[table_name] for table_name in table_names]
+
+                # Make sure there is also a column (the first one) for the timestamp
+
+                column_names = ["timestamp"] + column_names
+
+                register_to_storage_manager(
+                    origin=origin,
+                    persistence_class=TYPES["CSV"],
+                    prep={
+                        "column_names": column_names,
+                        "mode": "a",
+                    },
+                )
+        else:
+            LOGGER.warning("The Storage Manager is not active")
+            raise
+
+    def unregister_from_storage_manager(self) -> None:
+        """De-registers all storage mnemonics for the facility database from the Storage Manager."""
+
+        if is_storage_manager_active():
+            try:
+                with StorageProxy() as proxy:
+                    for origin in self.origins:
+                        response = proxy.unregister({"origin": origin})
+                        if not response.successful:
+                            LOGGER.warning(f"Couldn't unregister {origin} from the Storage Manager: {response}")
+                        else:
+                            LOGGER.info(response)
+            except ConnectionError as exc:
+                LOGGER.warning(f"Couldn't connect to the Storage Manager for de-registration: {exc}")
+                raise
+        else:
+            LOGGER.warning("The Storage Manager is not active")
+            raise
 
 
 def _check_commander_status(commander, poller: zmq.Poller) -> bool:

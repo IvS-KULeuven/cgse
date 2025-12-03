@@ -17,7 +17,7 @@ FACILITY_DB_SETTINGS = Settings.load("Facility DB")
 
 
 class DatabaseTableWatcher:
-    def __init__(self, origin: str, table_name: str, server_id: int):
+    def __init__(self, table_name: str, origin: str, server_id: int):
         """Initialisation of a watcher for a specific table in the facility database.
 
         The watcher is a daemon thread the watches the specified table in the facility database for new entries.  If
