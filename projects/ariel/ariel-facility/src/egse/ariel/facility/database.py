@@ -30,9 +30,11 @@ class DatabaseTableWatcher:
             server_id (int): Unique identifier for the MySQL binlog stream reader.
         """
 
-        self.origin = origin
         self.table_name = table_name
+        self.origin = origin
         self.server_id = server_id
+
+        self.hk_conversion_dict = read_conversion_dict(self.origin, use_site=False, setup=load_setup())
 
         # Make a thread and let it start watching the specified table in the facility database
 
@@ -79,21 +81,56 @@ class DatabaseTableWatcher:
         while self.keep_watching:
             for bin_log_event in stream:
                 for row in bin_log_event.rows:
-                    values = row["values"]
-                    self.send_to_storage(values)
+                    values = row["values"]  # Dictionary with the column names (from the facility database) as keys
+                    hk = self.translate_parameter_names(values)  # Convert to TA-EGSE-consistent names
+                    self.store_housekeeping_information(hk)
+                    self.propagate_metrics(hk)
 
         stream.close()
 
-    def send_to_storage(self, data: dict):
-        """Sends the given data to the Storage Manager.
+    def translate_parameter_names(self, hk: dict):
+        """Converts the parameter names from the facility database to TA-EGSE-consistent names.
 
-        The Storage Manager will store the given data in the HK file for the specified storage mnemonic.
+        Args:
+            hk (dict): Dictionary with the column names (from the facility database) as keys.
+
+        Returns:
+            Dictionary with the TA-EGSE-consistent names as keys.
+        """
+
+        # Timestamp
+
+        # noinspection PyUnresolvedReferences
+        hk["timestamp"] = format_datetime(
+            datetime.datetime.fromtimestamp(hk[TIMESTAMP_COLUMN_NAME], datetime.UTC)
+        )  # Unix time -> datetime [UTC]
+        del hk[TIMESTAMP_COLUMN_NAME]
+
+        # Delete identifier of the entry
+
+        del hk[ID_COLUMN_NAME]
+
+        # Parameter value
+
+        hk[self.table_name] = hk[VALUE_COLUMN_NAME]
+        del hk[VALUE_COLUMN_NAME]
+
+        return convert_hk_names(hk, self.hk_conversion_dict)
+
+    def store_housekeeping_information(self, hk: dict):
+        """Sends the given housekeeping information to the Storage Manager.
+
+        The housekeeping is passed as a dictionary, with the parameter names as keys.  There's also an entry for the
+        timestamp, which represents the date/time at which the value was received.
+
+        Args:
+            hk (dict): Housekeeping that was extracted from the facility database, after converting the parameter names
+                       to TA-EGSE-consistent names.
         """
 
         try:
             with StorageProxy() as storage:
-                # TODO Should we check how the timestamp is stored in the DB (name, format, etc.)?
-                response = storage.save({"origin": self.origin, "data": data})
+                response = storage.save({"origin": self.origin, "data": hk})
                 if not response.successful:
                     LOGGER.warning(
                         f"Couldn't save facility data to the Storage manager for {self.origin}, cause: {response}"
