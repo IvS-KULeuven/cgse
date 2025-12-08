@@ -158,6 +158,7 @@ def start(
 ):
     """Starts the Ariel TCU Control Server."""
 
+    # noinspection PyBroadException
     try:
         controller = TcuControlServer(simulator)
         controller.serve()
