@@ -27,13 +27,13 @@ SERVICE_PORT = settings.get("SERVICE_PORT", 0)  # Service port (as per settings 
 MONITORING_PORT = settings.get("MONITORING_PORT", 0)  # Monitoring port (as per settings or dynamically assigned)
 STORAGE_MNEMONIC = settings.get("STORAGE_MNEMONIC", "TCU")  # Storage mnemonic (used in the HK filenames)
 
+
+NUM_TSM_FRAMES = settings.get("NUM_TSM_FRAMES", 2)
+NUM_TSM_PROBES_PER_FRAME = settings.get("NUM_TSM_PROBES_PER_FRAME", 22)
+NUM_M2MD_POSITIONS = settings.get("NUM_M2MD_POSITIONS", 18)
+NUM_M2MD_AXES = settings.get("NUM_M2MD_AXES", 3)
+
 PROXY_TIMEOUT = 10
-
-NUM_TSM_FRAMES = 2
-NUM_TSM_PROBES_PER_FRAME = 22
-NUM_M2MD_POSITIONS = 18
-
-NUM_M2MD_AXES = 3
 
 
 class TcuMode(IntEnum):
