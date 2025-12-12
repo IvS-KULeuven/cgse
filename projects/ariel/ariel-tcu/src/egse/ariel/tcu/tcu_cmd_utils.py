@@ -1388,3 +1388,59 @@ def hk_acq_counter() -> str:
     """
 
     return _create_read_cmd_string(CommandAddress.HK, HKCommandIdentifier.HK_ACQ_COUNTER)
+
+
+def general_cmd():
+    """Decorator for general TCU commands.
+
+    This is used to decorate these commands in the TcuInterface class, to enable an easier identification of the
+    component of the TCU that the command is for (which is necessary in the TCU UI).
+    """
+
+    def decorator(func):
+        func.target_comp = "GENERAL"
+        return func
+
+    return decorator
+
+
+def m2md_cmd():
+    """Decorator for M2MD commands.
+
+    This is used to decorate these commands in the TcuInterface class, to enable an easier identification of the
+    component of the TCU that the command is for (which is necessary in the TCU UI).
+    """
+
+    def decorator(func):
+        func.target_comp = "M2MD"
+        return func
+
+    return decorator
+
+
+def tsm_cmd():
+    """Decorator for TSM commands.
+
+    This is used to decorate these commands in the TcuInterface class, to enable an easier identification of the
+    component of the TCU that the command is for (which is necessary in the TCU UI).
+    """
+
+    def decorator(func):
+        func.target_comp = "TSM"
+        return func
+
+    return decorator
+
+
+def hk_cmd():
+    """Decorator for HK commands.
+
+    This is used to decorate these commands in the TcuInterface class, to enable an easier identification of the
+    component of the TCU that the command is for (which is necessary in the TCU UI).
+    """
+
+    def decorator(func):
+        func.target_comp = "HK"
+        return func
+
+    return decorator
