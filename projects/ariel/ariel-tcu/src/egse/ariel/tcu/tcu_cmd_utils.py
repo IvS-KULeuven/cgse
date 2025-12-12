@@ -263,7 +263,7 @@ def _create_write_cmd_string(
 
     Note that this function should not be called directly in the `@dynamic_command` decorator (in the `cmd_string`
     attribute), as this will increase the transaction identifier without actually calling the function (merely
-    importing the interface in which such a decorator call is made will increase the transaction identifier)..
+    importing the interface in which such a decorator call is made will increase the transaction identifier).
 
     Args:
         cmd_address (CommandAddress | str | int): Identifier of the commanded device.
@@ -289,7 +289,7 @@ def _create_read_cmd_string(
 
     Note that this function should not be called directly in the `@dynamic_command` decorator (in the `cmd_string`
     attribute), as this will increase the transaction identifier without actually calling the function (merely
-    importing the interface in which such a decorator call is made will increase the transaction identifier)..
+    importing the interface in which such a decorator call is made will increase the transaction identifier)>
 
     Args:
         cmd_address (CommandAddress | str | int): Identifier of the commanded device.
@@ -327,7 +327,8 @@ def _create_cmd_string(
             - 0001: M2MD axis-1 commands;
             - 0002: M2MD axis-2 commands;
             - 0003: M2MD axis-3 commands;
-            - 0020: TSM commands;
+            - 0004: TSM commands;
+            - 0005: HK commands
         - BBBB: Command identifier, internal to the commanded device;
         - CCCC: First 16-bit cargo word;
         - DDDD: Second 16-bit cargo word;
@@ -335,7 +336,7 @@ def _create_cmd_string(
 
     Note that this function should not be called directly in the `@dynamic_command` decorator (in the `cmd_string`
     attribute), as this will increase the transaction identifier without actually calling the function (merely
-    importing the interface in which such a decorator call is made will increase the transaction identifier)..
+    importing the interface in which such a decorator call is made will increase the transaction identifier).
 
     Args:
         packet_type (PacketType): Type of the packet (read or write).
@@ -792,18 +793,18 @@ def get_prof_gen_axis_speed(axis: CommandAddress | str | int) -> str:
     return _create_read_cmd_string(axis, M2MDCommandIdentifier.PROF_GEN_AXIS_SPEED)
 
 
-def set_prof_gen_axis_speed(axis: CommandAddress | str | int, cargo2: int = 0x1777) -> str:
+def set_prof_gen_axis_speed(axis: CommandAddress | str | int, speed: int = 0x1777) -> str:
     """Builds the command string for the M2MD PROF_GEN_AXIS_SPEED write command.
 
     Args:
         axis (CommandAddress | str | int): Axis to which the command is sent.
-        cargo2 (int): Cargo 2 part of the command string.
+        speed (int): Cargo 2 part of the command string.
 
     Returns:
         Command string for the M2MD PROF_GEN_AXIS_SPEED write command.
     """
 
-    return _create_write_cmd_string(axis, M2MDCommandIdentifier.PROF_GEN_AXIS_SPEED, cargo2=cargo2)
+    return _create_write_cmd_string(axis, M2MDCommandIdentifier.PROF_GEN_AXIS_SPEED, cargo2=speed)
 
 
 def get_prof_gen_axis_state_start(axis: CommandAddress | str | int) -> str:
