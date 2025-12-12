@@ -104,11 +104,11 @@ from egse.ariel.tcu.tcu_cmd_utils import (
 from egse.device import DeviceInterface
 from egse.mixin import dynamic_command, CommandType, DynamicCommandMixin
 from egse.proxy import DynamicProxy
-from egse.ariel.tcu.tcu_devif import TcuDeviceInterface
+from egse.ariel.tcu.tcu_devif import TcuDeviceInterface, TcuHexInterface
 from egse.registry.client import RegistryClient
 from egse.zmq_ser import connect_address
 
-logger = logging.getLogger("egse.ariel.tcu")
+LOGGER = logging.getLogger("egse.ariel.tcu")
 
 
 def get_all_serial_ports() -> list:
