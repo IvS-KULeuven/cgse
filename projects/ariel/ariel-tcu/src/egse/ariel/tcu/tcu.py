@@ -17,9 +17,11 @@ Reference documents:
 """
 
 import logging
+
 from serial.tools import list_ports
 
-from egse.ariel.tcu import PROXY_TIMEOUT, SERVICE_TYPE, TcuMode
+from egse.ariel.tcu import PROXY_TIMEOUT, SERVICE_TYPE, TcuMode, PROTOCOL, HOSTNAME, COMMANDING_PORT
+from egse.ariel.tcu.tcu_cmd_utils import general_cmd, m2md_cmd, tsm_cmd, hk_cmd
 from egse.ariel.tcu.tcu_cmd_utils import (
     set_tcu_mode,
     tcu_simulated,
@@ -100,12 +102,10 @@ from egse.ariel.tcu.tcu_cmd_utils import (
     vhk_ths_ret,
     hk_acq_counter,
 )
-from egse.ariel.tcu.tcu_cmd_utils import general_cmd, m2md_cmd, tsm_cmd, hk_cmd
-
+from egse.ariel.tcu.tcu_devif import TcuDeviceInterface, TcuHexInterface
 from egse.device import DeviceInterface
 from egse.mixin import dynamic_command, CommandType, DynamicCommandMixin
 from egse.proxy import DynamicProxy
-from egse.ariel.tcu.tcu_devif import TcuDeviceInterface, TcuHexInterface
 from egse.registry.client import RegistryClient
 from egse.zmq_ser import connect_address
 
@@ -1181,18 +1181,27 @@ class TcuProxy(DynamicProxy, TcuInterface):
     def __init__(self):
         """Initialisation of a TCUProxy."""
 
-        with RegistryClient() as reg:
-            service = reg.discover_service(SERVICE_TYPE)
+        # Fixed ports -> Use information from settings
+        # This allows use to use the TCU CS without the core services
 
-            if service:
-                protocol = service.get("protocol", "tcp")
-                hostname = service["host"]
-                port = service["port"]
+        if COMMANDING_PORT != 0:
+            super().__init__(connect_address(PROTOCOL, HOSTNAME, COMMANDING_PORT))
 
-                super().__init__(connect_address(protocol, hostname, port), timeout=PROXY_TIMEOUT)
+        # Dynamic port allocation -> Use Registry Client
 
-            else:
-                raise RuntimeError(f"No service registered as {SERVICE_TYPE}")
+        else:
+            with RegistryClient() as reg:
+                service = reg.discover_service(SERVICE_TYPE)
+
+                if service:
+                    protocol = service.get("protocol", "tcp")
+                    hostname = service["host"]
+                    port = service["port"]
+
+                    super().__init__(connect_address(protocol, hostname, port), timeout=PROXY_TIMEOUT)
+
+                else:
+                    raise RuntimeError(f"No service registered as {SERVICE_TYPE}")
 
 
 class TcuHex(TcuInterface, DynamicCommandMixin):
