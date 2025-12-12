@@ -1,13 +1,13 @@
 """Control Server for the Ariel Telescope Control Unit (TCU)."""
 
-import multiprocessing
 import logging
-import sys
+import multiprocessing
 from typing import Annotated
 
-import zmq
-import typer
 import rich
+import sys
+import typer
+import zmq
 
 from egse.ariel.tcu import (
     COMMANDING_PORT,
@@ -19,13 +19,13 @@ from egse.ariel.tcu import (
     PROCESS_NAME,
     SERVICE_TYPE,
 )
+from egse.ariel.tcu.tcu import TcuProxy
+from egse.ariel.tcu.tcu_protocol import TcuProtocol
 from egse.control import is_control_server_active, ControlServer
 from egse.registry.client import RegistryClient
 from egse.services import ServiceProxy
 from egse.storage import store_housekeeping_information
 from egse.zmq_ser import connect_address, get_port_number
-from egse.ariel.tcu.tcu_protocol import TcuProtocol
-from egse.ariel.tcu.tcu import TcuProxy
 
 logger = logging.getLogger("egse.ariel.tcu")
 
@@ -40,7 +40,25 @@ def is_tcu_cs_active(timeout: float = 0.5) -> bool:
         True if the Ariel TCU Control Server is running and replied with the expected answer; False otherwise.
     """
 
-    endpoint = connect_address(PROTOCOL, HOSTNAME, COMMANDING_PORT)
+    if COMMANDING_PORT != 0:
+        protocol = PROTOCOL
+        hostname = HOSTNAME
+        port = COMMANDING_PORT
+
+    else:
+        with RegistryClient() as reg:
+            service = reg.discover_service(SERVICE_TYPE)
+
+            if service:
+                protocol = service.get("protocol", "tcp")
+                hostname = service["host"]
+                port = service["port"]
+
+            else:
+                return False
+
+    # noinspection PyUnboundLocalVariable
+    endpoint = connect_address(protocol, hostname, port)
 
     return is_control_server_active(endpoint, timeout)
 
@@ -170,9 +188,6 @@ def start(
         sys.exit(exit_code)
     except Exception:
         logger.exception("Cannot start the Ariel TCU Control Server")
-        # The above line does exactly the same as the traceback, but on the logger
-        # import traceback
-        # traceback.print_exc(file=sys.stdout)
 
     return 0
 
@@ -183,14 +198,11 @@ def stop():
 
     with RegistryClient() as reg:
         service = reg.discover_service(SERVICE_TYPE)
-        rich.print("service = ", service)
 
         if service:
             proxy = ServiceProxy(protocol="tcp", hostname=service["host"], port=service["metadata"]["service_port"])
             proxy.quit_server()
         else:
-            # *_, device_type, controller_type = get_hexapod_controller_pars(device_id)
-
             try:
                 with TcuProxy() as tcu_proxy:
                     with tcu_proxy.get_service_proxy() as sp:
@@ -203,26 +215,34 @@ def stop():
 def status():
     """Requests the status information from the Ariel TCU Control Server."""
 
-    with RegistryClient() as reg:
-        service = reg.discover_service(SERVICE_TYPE)
+    if COMMANDING_PORT != 0:
+        endpoint = connect_address(PROTOCOL, HOSTNAME, COMMANDING_PORT)
+        port = COMMANDING_PORT
+        service_port = SERVICE_PORT
+        monitoring_port = MONITORING_PORT
 
-        if service:
-            protocol = service.get("protocol", "tcp")
-            hostname = service["host"]
-            port = service["port"]
-            service_port = service["metadata"]["service_port"]
-            monitoring_port = service["metadata"]["monitoring_port"]
-            endpoint = connect_address(protocol, hostname, port)
-        else:
-            rich.print(
-                f"[red]The Ariel TCU Control Server isn't registered as a service. The Control Server cannot be "
-                f"contacted without the required information from the service registry.[/]"
-            )
-            rich.print("Ariel TCU: [red]not active")
-            return
+    else:
+        with RegistryClient() as reg:
+            service = reg.discover_service(SERVICE_TYPE)
 
-    if is_control_server_active(endpoint):
-        rich.print("Ariel TCU: [green]active")
+            if service:
+                protocol = service.get("protocol", "tcp")
+                hostname = service["host"]
+                port = service["port"]
+                service_port = service["metadata"]["service_port"]
+                monitoring_port = service["metadata"]["monitoring_port"]
+                endpoint = connect_address(protocol, hostname, port)
+            else:
+                rich.print(
+                    f"[red]The Ariel TCU Control Server isn't registered as a service. The Control Server cannot be "
+                    f"contacted without the required information from the service registry.[/]"
+                )
+                rich.print("Ariel TCU: [red]not active")
+                return
+
+    # noinspection PyUnboundLocalVariable
+    if is_control_server_active(endpoint, timeout=2):
+        rich.print(f"Ariel TCU: [green]active -> {endpoint}")
 
         with TcuProxy() as tcu:
             sim = tcu.is_simulator()
@@ -230,8 +250,11 @@ def status():
             ip = tcu.get_ip_address()
             rich.print(f"mode: {'simulator' if sim else 'device'}{'' if connected else ' not'} connected")
             rich.print(f"hostname: {ip}")
+            # noinspection PyUnboundLocalVariable
             rich.print(f"commanding port: {port}")
+            # noinspection PyUnboundLocalVariable
             rich.print(f"service port: {service_port}")
+            # noinspection PyUnboundLocalVariable
             rich.print(f"monitoring port: {monitoring_port}")
     else:
         rich.print("Ariel TCU: [red]not active")
