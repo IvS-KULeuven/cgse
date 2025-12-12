@@ -11,6 +11,8 @@ from egse.settings import Settings
 logger = logging.getLogger(__name__)
 DEVICE_SETTINGS = Settings.load("Ariel TCU Controller")
 
+EXPECTED_TRANSACTION_ID = -1
+
 
 class TcuError(Exception):
     """Generic TCU error for low-level classes."""
@@ -102,3 +104,28 @@ class TcuDeviceInterface(DeviceConnectionInterface, DeviceTransport):
         self.arduino.write(command.encode("utf-8"))
         time.sleep(0.05)
         return self.arduino.readline()
+
+
+class TcuHexInterface(DeviceTransport):
+    """Transport class to generate the hex strings that are sent to the TCU."""
+
+    def trans(self, command: str) -> bytes:
+        """Returns the given command string as bytes.
+
+        This can be used to:
+
+            - Test whether the command string is built correctly (and the transaction identifier is incremented for
+              each command call);
+            - Generate the hex string that is sent to the TCU, such that it can be displayed in the TCU UI.
+
+        Args:
+            command (str): Command string to encode.
+
+        Returns:
+            Encoded command string.
+        """
+
+        global EXPECTED_TRANSACTION_ID
+        EXPECTED_TRANSACTION_ID += 1
+
+        return command.encode()

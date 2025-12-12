@@ -1116,3 +1116,9 @@ class TcuProxy(DynamicProxy, TcuInterface):
 
             else:
                 raise RuntimeError(f"No service registered as {SERVICE_TYPE}")
+
+
+class TcuHex(TcuInterface, DynamicCommandMixin):
+    def __init__(self):
+        super().__init__()
+        self.transport = self.tcu = TcuHexInterface()
