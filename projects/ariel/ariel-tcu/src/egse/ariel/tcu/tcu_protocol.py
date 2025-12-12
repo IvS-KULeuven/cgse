@@ -15,7 +15,7 @@ from egse.zmq_ser import bind_address
 
 _HERE = Path(__file__).parent
 DEVICE_SETTINGS = Settings.load(filename="tcu.yaml", location=_HERE)
-logger = logging.getLogger("egse.ariel.tcu")
+LOGGER = logging.getLogger("egse.ariel.tcu")
 
 
 class TcuCommand(ClientServerCommand):
@@ -47,7 +47,7 @@ class TcuProtocol(DynamicCommandProtocol):
         try:
             self.tcu.connect()
         except ConnectionError:
-            logger.warning("Couldn't establish connection to the Ariel TCU, check the log messages.")
+            LOGGER.warning("Couldn't establish connection to the Ariel TCU, check the log messages.")
 
         # self.metrics = define_metrics("TCU")
 
