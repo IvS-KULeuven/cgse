@@ -3,7 +3,9 @@
 Reference documents:
     - RD01: TCU User Manual (ARIEL-IEEC-PL-TN-002), v1.2
     - RD02: ARIEL TCU Data Handling (ARIEL-IEEC-PL-TN-007), v1.0
-    - RD02: TCU code provided by Vladimiro Noce (priv. comm.)
+    - RD03: TCU code provided by Vladimiro Noce (priv. comm.)
+    - RD04: ARIEL Telescope Control Unit Design Description Document (ARIEL-IEEC-PL-DD-001), v1.10
+    - RD05: ARIEL TCU FW Architecture Design(ARIEL-IEEC-PL-DD-002), v1.5
 """
 
 from enum import IntEnum
@@ -26,7 +28,6 @@ COMMANDING_PORT = settings.get("COMMANDING_PORT", 0)  # Commanding port (as per 
 SERVICE_PORT = settings.get("SERVICE_PORT", 0)  # Service port (as per settings or dynamically assigned)
 MONITORING_PORT = settings.get("MONITORING_PORT", 0)  # Monitoring port (as per settings or dynamically assigned)
 STORAGE_MNEMONIC = settings.get("STORAGE_MNEMONIC", "TCU")  # Storage mnemonic (used in the HK filenames)
-
 
 NUM_TSM_FRAMES = settings.get("NUM_TSM_FRAMES", 2)
 NUM_TSM_PROBES_PER_FRAME = settings.get("NUM_TSM_PROBES_PER_FRAME", 22)
