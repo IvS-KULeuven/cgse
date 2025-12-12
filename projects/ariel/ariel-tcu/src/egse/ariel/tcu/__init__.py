@@ -68,6 +68,10 @@ class MotorState(IntEnum):
     OPERATION = 0x0010  # Motor moving
 
 
+# Axis velocity settings
+#   - Keys: Axis speed in Hz
+#   - Values: Hex string representing the axis speed
+#             -> This has to be used as cargo2 in the hex command that is sent to the Arduino
 AXIS_VELOCITY = {
     1: 0x5DC0,  # Writing @ 1Hz
     2: 0x2EE0,  # Writing @ 2Hz
