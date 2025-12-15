@@ -29,8 +29,8 @@ dependencies = [
 [project.scripts]
 tcu_cs = 'egse.ariel.tcu.tcu_cs:app'
 
-#[project.gui-scripts]
-#tcu_ui = "egse.ariel.tcu.tcu_ui:main"
+[project.gui-scripts]
+tcu_ui = "egse.ariel.tcu.tcu_ui:main"
 
 [project.entry-points."cgse.version"]
 ariel-tcu = 'egse.version:get_version_installed'
