@@ -6,7 +6,7 @@
 - RD02: ARIEL TCU Data Handling (ARIEL-IEEC-PL-TN-007), v1.0
 - RD03: TCU code provided by Vladimiro Noce (priv. comm.)
 - RD04: ARIEL Telescope Control Unit Design Description Document (ARIEL-IEEC-PL-DD-001), v1.10
-- RD05: ARIEL TCU FW Architecture Design(ARIEL-IEEC-PL-DD-002), v1.5
+- RD05: ARIEL TCU FW Architecture Design (ARIEL-IEEC-PL-DD-002), v1.5
 
 
 ## Boards
