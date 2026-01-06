@@ -36,7 +36,7 @@ from egse.settings import Settings
 from egse.storage import store_housekeeping_information
 from egse.zmq_ser import connect_address
 
-CTRL_SETTINGS = Settings.load("Hexapod Control Server")
+CTRL_SETTINGS = Settings.load("Hexapod Control Server")["ZONDA"]
 
 
 class ZondaControlServer(ControlServer):
