@@ -2,7 +2,7 @@ import textwrap
 
 import pytest
 
-from egse.coordinates import ReferenceFrame
+from egse.coordinates.reference_frame import ReferenceFrame
 from egse.coordinates.avoidance import is_avoidance_ok
 from egse.setup import Setup
 
@@ -18,7 +18,7 @@ def test_is_avoidance_with_faulty_arguments():
 def test_is_avoidance_with_master_ref_frames():
     print()  # Print a blank line to start fresh with printed output
 
-    master_ref_frame = ReferenceFrame.createMaster()
+    master_ref_frame = ReferenceFrame.create_master()
 
     setup = Setup.from_yaml_string(
         textwrap.dedent(
