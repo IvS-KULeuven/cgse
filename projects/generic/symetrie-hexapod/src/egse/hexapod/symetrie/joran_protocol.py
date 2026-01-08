@@ -15,7 +15,7 @@ from egse.zmq_ser import bind_address
 
 logger = logging.getLogger(__name__)
 
-ctrl_settings = Settings.load("Hexapod JORAN Control Server")
+ctrl_settings = Settings.load("Hexapod Control Server")["JORAN"]
 joran_settings = Settings.load(filename="joran.yaml")
 
 
