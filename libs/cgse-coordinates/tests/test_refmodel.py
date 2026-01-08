@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import pytest
 
-from egse.coordinates import ReferenceFrame
+from egse.coordinates.reference_frame import ReferenceFrame
 from egse.coordinates import dict_to_ref_model
 from egse.coordinates import ref_model_to_dict
 from egse.coordinates.refmodel import ReferenceFrameModel
@@ -16,7 +16,7 @@ def test_construction():
 
     assert len(model) == 0
 
-    model = ReferenceFrameModel({"Master": ReferenceFrame.createMaster()})
+    model = ReferenceFrameModel({"Master": ReferenceFrame.create_master()})
 
     assert len(model) == 1
 
@@ -31,10 +31,10 @@ def test_construction():
         "ReferenceFrame//([0.000000, 0.000000, 0.000000] | [0.000000, -0.000000, 0.000000] | Master | Master | [])"
     )
 
-    model.add_frame("A", translation=[0.0, 0.0, 1.0], rotation=[0.0, 0.0, 0.0], ref="Master")
+    model.add_frame("A", translation=[0.0, 0.0, 1.0], rotation=[0.0, 0.0, 0.0], reference="Master")
 
     with pytest.raises(KeyError):
-        model.add_frame("A", translation=[0.0, 0.0, 1.0], rotation=[0.0, 0.0, 0.0], ref="Master")
+        model.add_frame("A", translation=[0.0, 0.0, 1.0], rotation=[0.0, 0.0, 0.0], reference="Master")
 
     model.add_link("A", "Master")
 
@@ -49,20 +49,26 @@ def test_construction():
 
 def test_construction_from_list():
     rot_config = "sxyz"
-    master = ReferenceFrame.createMaster()
+    master = ReferenceFrame.create_master()
 
-    a_ref = ReferenceFrame(transformation=np.identity(4), ref=master, name="a_ref", rot_config=rot_config)
-    a_ref.addLink(master)
-
-    b_ref = ReferenceFrame(transformation=np.identity(4), ref=a_ref, name="b_ref", rot_config=rot_config)
-
-    c_ref = ReferenceFrame.fromTranslationRotation(
-        [-2, -2, -2], [-3, -4, -5], rot_config=rot_config, ref=b_ref, name="c_ref"
+    a_ref = ReferenceFrame(
+        transformation=np.identity(4), reference_frame=master, name="a_ref", rotation_config=rot_config
     )
-    c_ref.addLink(b_ref)
-    c_ref.addLink(a_ref)
+    a_ref.add_link(master)
 
-    d_ref = ReferenceFrame(transformation=np.identity(4), ref=c_ref, name="d_ref", rot_config=rot_config)
+    b_ref = ReferenceFrame(
+        transformation=np.identity(4), reference_frame=a_ref, name="b_ref", rotation_config=rot_config
+    )
+
+    c_ref = ReferenceFrame.from_translation_rotation(
+        [-2, -2, -2], [-3, -4, -5], rotation_config=rot_config, reference_frame=b_ref, name="c_ref"
+    )
+    c_ref.add_link(b_ref)
+    c_ref.add_link(a_ref)
+
+    d_ref = ReferenceFrame(
+        transformation=np.identity(4), reference_frame=c_ref, name="d_ref", rotation_config=rot_config
+    )
 
     model_list = [a_ref, b_ref, c_ref, d_ref, master]
 
@@ -80,7 +86,7 @@ def test_add_frame_from_transformation():
     model = ReferenceFrameModel()
 
     model.add_master_frame()
-    model.add_frame("a_ref", transformation=np.identity(4), ref="Master")
+    model.add_frame("a_ref", transformation=np.identity(4), reference="Master")
     model.add_link("a_ref", "Master")
 
     print(model)
@@ -90,8 +96,8 @@ def test_move_absolute():
     model = ReferenceFrameModel()
 
     model.add_master_frame()
-    model.add_frame("A", translation=[4, 0, 2], rotation=[0, 0, 0], ref="Master")
-    model.add_frame("B", translation=[-2, 0, 7], rotation=[0, 0, 0], ref="Master")
+    model.add_frame("A", translation=[4, 0, 2], rotation=[0, 0, 0], reference="Master")
+    model.add_frame("B", translation=[-2, 0, 7], rotation=[0, 0, 0], reference="Master")
 
     print(model)
 
@@ -115,20 +121,26 @@ def test_move_absolute():
 
 def test_proper_ref_model():
     rot_config = "sxyz"
-    master = ReferenceFrame.createMaster()
+    master = ReferenceFrame.create_master()
 
-    a_ref = ReferenceFrame(transformation=np.identity(4), ref=master, name="a_ref", rot_config=rot_config)
-    a_ref.addLink(master)
-
-    b_ref = ReferenceFrame(transformation=np.identity(4), ref=a_ref, name="b_ref", rot_config=rot_config)
-
-    c_ref = ReferenceFrame.fromTranslationRotation(
-        [-2, -2, -2], [-3, -4, -5], rot_config=rot_config, ref=b_ref, name="c_ref"
+    a_ref = ReferenceFrame(
+        transformation=np.identity(4), reference_frame=master, name="a_ref", rotation_config=rot_config
     )
-    c_ref.addLink(b_ref)
-    c_ref.addLink(a_ref)
+    a_ref.add_link(master)
 
-    d_ref = ReferenceFrame(transformation=np.identity(4), ref=c_ref, name="d_ref", rot_config=rot_config)
+    b_ref = ReferenceFrame(
+        transformation=np.identity(4), reference_frame=a_ref, name="b_ref", rotation_config=rot_config
+    )
+
+    c_ref = ReferenceFrame.from_translation_rotation(
+        [-2, -2, -2], [-3, -4, -5], rotation_config=rot_config, reference_frame=b_ref, name="c_ref"
+    )
+    c_ref.add_link(b_ref)
+    c_ref.add_link(a_ref)
+
+    d_ref = ReferenceFrame(
+        transformation=np.identity(4), reference_frame=c_ref, name="d_ref", rotation_config=rot_config
+    )
 
     model_list = [a_ref, b_ref, c_ref, d_ref, master]
 
@@ -158,12 +170,12 @@ def test_proper_ref_model():
 
     # find any reference frame that refers to another reference frame not inside the model
 
-    x = [ref for ref in no_master_list if ref.ref not in no_master_list]
+    x = [ref for ref in no_master_list if ref.reference_frame not in no_master_list]
     LOGGER.warning(x)
 
     # the model is missing a reference frame
 
     missing_ref_model = [master, b_ref, d_ref]
 
-    x = [ref for ref in missing_ref_model if ref.ref not in missing_ref_model]
+    x = [ref for ref in missing_ref_model if ref.reference_frame not in missing_ref_model]
     LOGGER.warning(x)

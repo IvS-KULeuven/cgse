@@ -1,61 +1,50 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Sep  9 17:19:47 2020
-
-@author: pierre
-"""
-
 import numpy as np
 
 from egse.coordinates.point import Points
+from egse.coordinates.reference_frame import ReferenceFrame
 from egse.setup import Setup, load_setup
 
 
-def is_avoidance_ok(hexusr, hexobj, setup: Setup = None, verbose=False):
-    """
-    is_avoidance_ok(hexusr,hexobj,setup=None)
+def is_avoidance_ok(hexusr: ReferenceFrame, hexobj: ReferenceFrame, setup: Setup = None, verbose: bool = False):
+    """Checks whether the FPA is outside the avoidance volume around L6.
 
-    INPUT
-    hexusr : ReferenceFrame
-             xy plane = maximal height of the FPA_SEN
-             z axis  pointing away from the FPA
-
-    hexobj : ReferenceFrame
-             xy plane = FPA_SEN
-             z axis pointing towards L6
-
-    setup  : optional, if not provided, load_setup() is used
+    This function is used to verify that a requested movement of the PUNA hexapod will not cause the FPA to enter the
+    avoidance volume around L6.
 
 
-    OUTPUT :  Boolean indicating whether the FPA is outside the avoidance volume around L6
+    Args:
+        hexusr (ReferenceFrame): User Reference Frame for the PUNA hexapod.  Its xy-plane corresponds to the maximum
+                                 height of FPA_SEN.  Its z-axis points away from the FPA.
+        hexobj (ReferenceFrame): Object Reference Frame for the PUNA hexapod.  Its xy-plane coincides with FPA_SEN. Its
+                                 z-axis points towards L6.
+        setup (Setup): Setup object containing the default reference frames.
+        verbose (bool): Indicates whether to print verbose output.
+
+    Returns:
+        True if the FPA is outside the avoidance volume around L6; False otherwise.
     """
 
     setup = setup or load_setup()
 
-    """
-    A. HORIZONTAL AVOIDANCE
-    Ensure that the center of L6, materialised by HEX_USR (incl. z-direction security wrt TOU_L6)
-    stays within a given radius of the origin of FPA_SEN
-    """
+    # A. HORIZONTAL AVOIDANCE
+    # Ensure that the centre of L6, materialised by HEX_USR (incl. z-direction security wrt TOU_L6) stays within a
+    # given radius of the origin of FPA_SEN
 
     # Clearance = the tolerance in every horizontal direction (3 mm; PLATO-KUL-PL-ICD-0001 v1.2)
     clearance_xy = setup.camera.fpa.avoidance.clearance_xy
 
-    # l6xy = the projection of the origin of HEX_USR on the X-Y plane of FPA_SEN
-    l6xy = hexusr.getOrigin().expressIn(hexobj)[:2]
+    # Projection of the origin of HEX_USR on the xy-plane of FPA_SEN
+    l6xy = hexusr.get_origin().express_in(hexobj)[:2]
 
-    # !! This is a verification of the current situation --> need to replace by a simulation of the forthcoming
-    # movement in the building block
+    # !! This is a verification of the current situation
+    # -> need to replace by a simulation of the forthcoming movement in the building block
     horizontal_check = (l6xy[0] ** 2.0 + l6xy[1] ** 2.0) < clearance_xy * clearance_xy
 
-    """
-    B. VERTICAL AVOIDANCE
-    Ensure that the CCD never hits L6.
-    The definition of HEX_USR includes a tolerance below L6 (1.65 mm)
-    We include a tolerance above FPA_SEN here (0.3 mm)
-    We define a collection of points to act at the vertices of the avoidance volume above the FPA
-    """
+    # B. VERTICAL AVOIDANCE
+    # Ensure that the CCD never hits L6.
+    #   - The definition of HEX_USR includes a tolerance below L6 (1.65 mm).
+    #   - We include a tolerance above FPA_SEN here (0.3 mm).
+    #   - We define a collection of points to act at the vertices. of the avoidance volume above the FPA
 
     # Clearance = vertical uncertainty on the CCD location (0.3 mm; PLATO-KUL-PL-ICD-0001 v1.2)
     clearance_z = setup.camera.fpa.avoidance.clearance_z
@@ -70,12 +59,15 @@ def is_avoidance_ok(hexusr, hexobj, setup: Setup = None, verbose=False):
     vertices_y = np.sin(angles) * vertices_radius
     vertices_z = np.ones_like(angles) * clearance_z
 
-    # The collection of Points defining the avoidance volume around FPA_SEN
-    vert_obj = Points(coordinates=np.array([vertices_x, vertices_y, vertices_z]), ref=hexobj, name="vert_obj")
+    # The collection of points defining the avoidance volume around FPA_SEN
+
+    vert_obj = Points(
+        coordinates=np.array([vertices_x, vertices_y, vertices_z]), reference_frame=hexobj, name="vert_obj"
+    )
 
     # Their coordinates in HEX_USR
-    # NB: vert_obj is a Points, vert_usr is an array
-    vert_usr = vert_obj.expressIn(hexusr)
+    # NB: vert_obj is a Points object, vert_usr is an array
+    vert_usr = vert_obj.express_in(hexusr)
 
     # !! Same as above : this is verifying the current situation, not the one after a planned movement
     # Verify that all vertices ("protecting" FPA_SEN) are below the x-y plane of HEX_USR ("protecting" L6)
