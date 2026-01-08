@@ -40,7 +40,7 @@ from prometheus_client import start_http_server
 
 logger = logging.getLogger(__name__)
 
-CTRL_SETTINGS = Settings.load("Hexapod JORAN Control Server")
+CTRL_SETTINGS = Settings.load("Hexapod Control Server")["JORAN"]
 
 
 class JoranControlServer(ControlServer):
