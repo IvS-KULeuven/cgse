@@ -1,15 +1,60 @@
 PACKAGES:
     SYMETRIE_HEXAPOD: Device driver for the Symétrie Hexapods PUNA, ZONDA, and JORAN
 
-PUNA Alpha+ Controller:
-    user_name: provide username in local settings
-    password: provide password in local settings
+Hexapod Controller:
+    PUNA_PLUS:
+        HOSTNAME: localhost
+        PORT: 1025
+        CONTROLLER_TYPE: alpha_plus
+        DEVICE_NAME: Puna Hexapod
+        DEVICE_TYPE: PUNA
+        user_name: provide username in local settings
+        password: provide password in local settings
+
+    ZONDA:
+        HOSTNAME: localhost
+        PORT: 1025
+        CONTROLLER_TYPE: alpha_plus
+        DEVICE_NAME: Zonda Hexapod
+        DEVICE_TYPE: ZONDA
+
+    JORAN:
+        HOSTNAME: localhost
+        PORT: 1025
+        CONTROLLER_TYPE: alpha_plus
+        DEVICE_NAME: Joran Hexapod
+        DEVICE_TYPE: JORAN
 
 Hexapod Control Server:
-    SERVICE_TYPE:                puna
-    PROTOCOL:                     tcp
-    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. on the same machine
-    COMMANDING_PORT:                0          # The port on which the controller listens to commands - REQ-REP
-    MONITORING_PORT:                0          # The port on which the controller sends periodic status information of the device - PUB-SUB
-    SERVICE_PORT:                   0          # The port on which the controller listens for configuration and administration - REQ-REP
-    METRICS_PORT:                   0          # The HTTP port where Prometheus will connect to for retrieving metrics
+    PUNA:
+        SERVICE_TYPE: puna
+        PROTOCOL: tcp
+        HOSTNAME: localhost
+        COMMANDING_PORT: 0
+        MONITORING_PORT: 0
+        SERVICE_PORT: 0
+        METRICS_PORT: 0
+    PUNA_PLUS:
+        SERVICE_TYPE:       puna
+        PROTOCOL:           tcp
+        HOSTNAME:           localhost
+        COMMANDING_PORT:    0
+        MONITORING_PORT:    0
+        SERVICE_PORT:       0
+        METRICS_PORT:       0
+    ZONDA:
+        SERVICE_TYPE:       zonda
+        PROTOCOL:           tcp
+        HOSTNAME:           localhost
+        COMMANDING_PORT:    0
+        MONITORING_PORT:    0
+        SERVICE_PORT:       0
+        METRICS_PORT:       0
+    JORAN:
+        SERVICE_TYPE:       joran
+        PROTOCOL:           tcp
+        HOSTNAME:           localhost
+        COMMANDING_PORT:    0
+        MONITORING_PORT:    0
+        SERVICE_PORT:       0
+        METRICS_PORT:       0

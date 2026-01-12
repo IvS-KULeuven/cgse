@@ -39,7 +39,7 @@ from egse.system import Timer
 from egse.system import wait_until
 
 LOGGER = logging.getLogger(__name__)
-PUNA_PLUS = Settings.load("PUNA Alpha+ Controller")
+PUNA_PLUS = Settings.load("Hexapod Controller")["PUNA_PLUS"]
 
 # The following constants represent the index into the GENERAL_STATE list and are used in the code
 # to match the name of a flag in the general_state.
