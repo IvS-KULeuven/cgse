@@ -13,13 +13,15 @@ Reference documents:
     - RD02: ARIEL TCU Data Handling (ARIEL-IEEC-PL-TN-007), v1.0
     - RD03: TCU code provided by Vladimiro Noce (priv. comm.)
     - RD04: ARIEL Telescope Control Unit Design Description Document (ARIEL-IEEC-PL-DD-001), v1.10
-    - RD05: ARIEL TCU FW Architecture Design(ARIEL-IEEC-PL-DD-002), v1.5
+    - RD05: ARIEL TCU FW Architecture Design (ARIEL-IEEC-PL-DD-002), v1.5
 """
 
 import logging
+
 from serial.tools import list_ports
 
-from egse.ariel.tcu import PROXY_TIMEOUT, SERVICE_TYPE, TcuMode
+from egse.ariel.tcu import PROXY_TIMEOUT, SERVICE_TYPE, TcuMode, PROTOCOL, HOSTNAME, COMMANDING_PORT
+from egse.ariel.tcu.tcu_cmd_utils import general_cmd, m2md_cmd, tsm_cmd, hk_cmd
 from egse.ariel.tcu.tcu_cmd_utils import (
     set_tcu_mode,
     tcu_simulated,
@@ -100,15 +102,14 @@ from egse.ariel.tcu.tcu_cmd_utils import (
     vhk_ths_ret,
     hk_acq_counter,
 )
-
+from egse.ariel.tcu.tcu_devif import TcuDeviceInterface, TcuHexInterface
 from egse.device import DeviceInterface
 from egse.mixin import dynamic_command, CommandType, DynamicCommandMixin
 from egse.proxy import DynamicProxy
-from egse.ariel.tcu.tcu_devif import TcuDeviceInterface
 from egse.registry.client import RegistryClient
 from egse.zmq_ser import connect_address
 
-logger = logging.getLogger("egse.ariel.tcu")
+LOGGER = logging.getLogger("egse.ariel.tcu")
 
 
 def get_all_serial_ports() -> list:
@@ -129,6 +130,7 @@ def get_all_serial_ports() -> list:
 class TcuInterface(DeviceInterface):
     # General commands
 
+    @general_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tcu_firmware_id)
     def tcu_firmware_id(self):
         """Selects the Instrument Control Unit (ICU) channel and returns the firmware version.
@@ -139,6 +141,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @general_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_tcu_mode)
     def get_tcu_mode(self):
         """Returns the current mode of the Ariel TCU.
@@ -154,6 +157,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @general_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_tcu_mode)
     def set_tcu_mode(self, tcu_mode: TcuMode | int = TcuMode.IDLE):
         """Selects the Ariel TCU working mode.
@@ -167,6 +171,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @general_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tcu_status)
     def tcu_status(self):
         """Returns the TCU status.
@@ -194,6 +199,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @general_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tcu_simulated)
     def tcu_simulated(self, cargo2: int):
         """Changes a TCU sub-system in simulated mode.
@@ -216,6 +222,7 @@ class TcuInterface(DeviceInterface):
         """
         pass
 
+    @general_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=restart_links_period_latch)
     def restart_links_period_latch(self, cargo2: int):
         """Re-starts the link period latch.
@@ -231,10 +238,12 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @general_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_restart_links_period)
     def get_restart_links_period(self):
         pass
 
+    @general_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_restart_links_period)
     def set_restart_links_period(self, link_period: int = 0xFFFF):
         """Re-start both links if no message is received after the given link period +1s.
@@ -246,6 +255,7 @@ class TcuInterface(DeviceInterface):
 
     # M2MD commands
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ope_mng_command)
     def ope_mng_command(self, axis: CommandAddress | str | int, cargo2: int = 0x0002):
         """Commands the action to the SENER motor driver IP core for the given M2MD axis.
@@ -263,6 +273,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ope_mng_event_clear_protect_flag)
     def ope_mng_event_clear_protect_flag(self, axis: CommandAddress | str | int, cargo2: int = 0xAAAA):
         """Clears the event register protection flag.
@@ -274,6 +285,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ope_mng_event_clear)
     def ope_mng_event_clear(self, axis: CommandAddress | str | int, cargo2: int = 0x0001):
         """Clears the event register for the given M2MD axis.
@@ -285,6 +297,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ope_mng_status)
     def ope_mng_status(self, axis: CommandAddress | str | int):
         """Returns the current status of the motor for the given M2MD axis.
@@ -299,6 +312,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ope_mng_event_reg)
     def ope_mng_event_reg(self, axis: CommandAddress | str | int):
         """Returns the list of all events since wake-up or the last clear event.
@@ -312,58 +326,72 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_acq_curr_off_corr)
     def get_acq_curr_off_corr(self, axis: CommandAddress | str | int):
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_acq_curr_off_corr)
     def set_acq_curr_off_corr(self, axis: CommandAddress | str | int, cargo2: int = 0x03FB):
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_acq_curr_gain_corr)
     def get_acq_curr_gain_corr(self, axis: CommandAddress | str | int):
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_acq_curr_gain_corr)
     def set_acq_curr_gain_corr(self, axis: CommandAddress | str | int, cargo2: int = 0x074C):
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=acq_axis_a_curr_read)
     def acq_axis_a_curr_read(self, axis: CommandAddress | str | int):
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=acq_axis_b_curr_read)
     def acq_axis_b_curr_read(self, axis: CommandAddress | str | int):
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=acq_ave_lpf_en)
     def acq_ave_lpf_en(self, axis: CommandAddress | str | int, cargo2: int = 0x0001):
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=acq_ovc_cfg_filter)
     def acq_ovc_cfg_filter(self, axis: CommandAddress | str | int, cargo2: int = 0):
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=acq_avc_filt_time)
     def acq_avc_filt_time(self, axis: CommandAddress | str | int, cargo2: int = 0):
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=acq_average_type)
     def acq_average_type(self, axis: CommandAddress | str | int, cargo2: int = 0x0000):
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=acq_spk_filt_counter_lim)
     def acq_spk_filt_counter_lim(self, axis: CommandAddress | str | int, cargo2: int = 0x0001):
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=acq_spk_filt_incr_thr)
     def acq_spk_filt_incr_thr(self, axis: CommandAddress | str | int, cargo2: int = 0x04C0):
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_prof_gen_axis_step)
     def get_prof_gen_axis_step(self, axis: CommandAddress | str | int):
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_prof_gen_axis_step)
     def set_prof_gen_axis_step(self, axis: CommandAddress | str | int, cargo2: int = 0x0480):
         """Axis position command for the given M2MD axis.
@@ -380,6 +408,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_prof_gen_axis_speed)
     def get_prof_gen_axis_speed(self, axis: CommandAddress | str | int):
         """Returns the axis writing speed for the given M2MD axis.
@@ -389,23 +418,26 @@ class TcuInterface(DeviceInterface):
         """
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_prof_gen_axis_speed)
-    def set_prof_gen_axis_speed(self, axis: CommandAddress | str | int, cargo2: int = 0x0177):
+    def set_prof_gen_axis_speed(self, axis: CommandAddress | str | int, speed: int = 0x0177):
         """Axis velocity command for the given M2MD axis.
 
         The cargo2 parameter denotes the desired velocity.
 
         Args:
             axis (CommandAddress | str | int): Axis to which the command is sent.
-            cargo2 (int): Cargo 2 part of the command string.
+            speed (int): Cargo 2 part of the command string.
         """
 
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_prof_gen_axis_state_start)
     def get_prof_gen_axis_state_start(self, axis: CommandAddress | str | int):
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_prof_gen_axis_state_start)
     def set_prof_gen_axis_state_start(self, axis: CommandAddress | str | int, cargo2: int = 0):
         """Changes the starting point of the magnetic state for the given M2MD axis.
@@ -418,6 +450,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=sw_rs_xx_sw_rise)
     def sw_rs_xx_sw_rise(self, axis: CommandAddress | str | int, position: int = 1):
         """Position switch rise.
@@ -432,6 +465,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @m2md_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=sw_rs_xx_sw_fall)
     def sw_rs_xx_sw_fall(self, axis: CommandAddress | str | int, position: int = 1):
         """Position switch fall.
@@ -448,6 +482,7 @@ class TcuInterface(DeviceInterface):
 
     # TSM commands
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tsm_latch)
     def tsm_latch(self, cargo1: str | int, cargo2: int = 0):
         """Latches to allow the modification of the operation management register.
@@ -459,6 +494,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_tsm_current_value)
     def get_tsm_current_value(self):
         """Returns the TSM current.
@@ -468,6 +504,7 @@ class TcuInterface(DeviceInterface):
         """
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_tsm_current_value)
     def set_tsm_current_value(self, cargo1: int = 0, cargo2: int = 0):
         """Sets the TSM current value.
@@ -479,6 +516,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_tsm_current_offset)
     def get_tsm_current_offset(self):
         """Returns the TSM current offset.
@@ -489,6 +527,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_tsm_current_offset)
     def set_tsm_current_offset(self, cargo1: int = 0, cargo2: int = 0):
         """Sets the TSM current offset.
@@ -500,6 +539,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tsm_adc_register_latch)
     def tsm_adc_register_latch(self, cargo1: int = 0, cargo2: int = 0):
         """Re-starts the TSM ADC register latch.
@@ -511,6 +551,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tsm_adc_id_register)
     def tsm_adc_id_register(self):
         """Returns the content of the TSM ADC identifier register.
@@ -521,6 +562,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tsm_adc_configuration_register)
     def tsm_adc_configuration_register(self):
         """Returns the content of the TSM ADC configuration register.
@@ -531,6 +573,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_tsm_adc_hpf_register)
     def get_tsm_adc_hpf_register(self):
         """Returns the content of the high-pass corner frequency register.
@@ -541,10 +584,12 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_tsm_adc_hpf_register)
     def set_tsm_adc_hpf_register(self, cargo1: int = 0, cargo2: int = 0):
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_tsm_adc_ofc_register)
     def get_tsm_adc_ofc_register(self):
         """Returns the content of the offset calibration register.
@@ -555,10 +600,12 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_tsm_adc_ofc_register)
     def set_tsm_adc_ofc_register(self, cargo1: int = 0, cargo2: int = 0):
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=get_tsm_adc_fsc_register)
     def get_tsm_adc_fsc_register(self):
         """Returns the content of the full-scale calibration register.
@@ -569,22 +616,27 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=set_tsm_adc_fsc_register)
     def set_tsm_adc_fsc_register(self, cargo1: int = 0, cargo2: int = 0):
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tsm_adc_command_latch)
     def tsm_adc_command_latch(self, cargo1: int = 0, cargo2: int = 0):
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tsm_adc_command)
     def tsm_adc_command(self, cargo1: int = 0, cargo2: int = 0):
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tsm_adc_calibration)
     def tsm_adc_calibration(self, cargo1: int = 0, cargo2: int = 0):
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tsm_adc_value_xx_currentn)
     def tsm_adc_value_xx_currentn(self, probe: int = 1):
         """Returns the negative current to polarise the given thermistor.
@@ -598,6 +650,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tsm_adc_value_xx_biasn)
     def tsm_adc_value_xx_biasn(self, probe: int = 1):
         """Returns the voltage measured on the given thermistor biased with negative current.
@@ -611,6 +664,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tsm_adc_value_xx_currentp)
     def tsm_adc_value_xx_currentp(self, probe: int = 1):
         """Returns the positive current to polarise the given thermistor.
@@ -624,6 +678,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tsm_adc_value_xx_biasp)
     def tsm_adc_value_xx_biasp(self, probe: int = 1):
         """Returns the voltage measured on the given thermistor biased with positive current.
@@ -637,6 +692,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @tsm_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=tsm_acq_counter)
     def tsm_acq_counter(self):
         """Reads the number of ADC measurement sequences that have been made.
@@ -649,6 +705,7 @@ class TcuInterface(DeviceInterface):
 
     # HK commands
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=vhk_psu_vmotor)
     def vhk_psu_vmotor(self):
         """Returns the HK PSU motor voltage value.
@@ -659,6 +716,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=vhk_psu_vhi)
     def vhk_psu_vhi(self):
         """Returns the HK PSU high voltage value.
@@ -669,6 +727,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=vhk_psu_vlow)
     def vhk_psu_vlow(self):
         """Returns the HK PSU low voltage value.
@@ -679,6 +738,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=vhk_psu_vmedp)
     def vhk_psu_vmedp(self):
         """Returns the HK PSU medium positive voltage value.
@@ -689,6 +749,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=vhk_psu_vmedn)
     def vhk_psu_vmedn(self):
         """Returns the HK PSU medium negative voltage value.
@@ -699,6 +760,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ihk_psu_vmedn)
     def ihk_psu_vmedn(self):
         """Returns the HK PSU medium negative current value.
@@ -709,6 +771,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ihk_psu_vmedp)
     def ihk_psu_vmedp(self):
         """Returns the HK PSU medium positive current value.
@@ -719,6 +782,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ihk_psu_vlow)
     def ihk_psu_vlow(self):
         """Returns the HK PSU low current value.
@@ -729,6 +793,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=ihk_psu_vhi)
     def ihk_psu_vhi(self):
         """Returns the HK PSU high current value.
@@ -749,6 +814,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_psu_first)
     def thk_psu_first(self):
         """Returns the HK PSU temperature zone 1.
@@ -759,6 +825,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_m2md_first)
     def thk_m2md_first(self):
         """Returns the HK M2MD temperature zone 1.
@@ -769,6 +836,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_psu_second)
     def thk_psu_second(self):
         """Returns the HK M2MD temperature zone 2.
@@ -779,6 +847,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_m2md_second)
     def thk_m2md_second(self):
         """Returns the HK M2MD temperature zone 2.
@@ -789,6 +858,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_cts_q1)
     def thk_cts_q1(self):
         """Returns the HK CTS temperature first quarter.
@@ -799,6 +869,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_cts_q2)
     def thk_cts_q2(self):
         """Returns the HK CTS temperature second quarter.
@@ -809,6 +880,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_cts_q3)
     def thk_cts_q3(self):
         """Returns the HK CTS temperature third quarter.
@@ -819,6 +891,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_cts_q4)
     def thk_cts_q4(self):
         """Returns the HK CTS temperature fourth quarter.
@@ -829,6 +902,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_cts_fpga)
     def thk_cts_fpga(self):
         """Returns the HK CTS temperature FPGA.
@@ -839,6 +913,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=thk_cts_ads1282)
     def thk_cts_ads1282(self):
         """Returns the HK CTS temperature ADS1282.
@@ -849,6 +924,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=vhk_ths_ret)
     def vhk_ths_ret(self):
         """Returns the HK CTS thermistors return voltage.
@@ -859,6 +935,7 @@ class TcuInterface(DeviceInterface):
 
         pass
 
+    @hk_cmd()
     @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string_func=hk_acq_counter)
     def hk_acq_counter(self):
         """Returns the running counter that indicates the number of HK measurement sequences that have been made.
@@ -1104,15 +1181,30 @@ class TcuProxy(DynamicProxy, TcuInterface):
     def __init__(self):
         """Initialisation of a TCUProxy."""
 
-        with RegistryClient() as reg:
-            service = reg.discover_service(SERVICE_TYPE)
+        # Fixed ports -> Use information from settings
+        # This allows use to use the TCU CS without the core services
 
-            if service:
-                protocol = service.get("protocol", "tcp")
-                hostname = service["host"]
-                port = service["port"]
+        if COMMANDING_PORT != 0:
+            super().__init__(connect_address(PROTOCOL, HOSTNAME, COMMANDING_PORT))
 
-                super().__init__(connect_address(protocol, hostname, port), timeout=PROXY_TIMEOUT)
+        # Dynamic port allocation -> Use Registry Client
 
-            else:
-                raise RuntimeError(f"No service registered as {SERVICE_TYPE}")
+        else:
+            with RegistryClient() as reg:
+                service = reg.discover_service(SERVICE_TYPE)
+
+                if service:
+                    protocol = service.get("protocol", "tcp")
+                    hostname = service["host"]
+                    port = service["port"]
+
+                    super().__init__(connect_address(protocol, hostname, port), timeout=PROXY_TIMEOUT)
+
+                else:
+                    raise RuntimeError(f"No service registered as {SERVICE_TYPE}")
+
+
+class TcuHex(TcuInterface, DynamicCommandMixin):
+    def __init__(self):
+        super().__init__()
+        self.transport = self.tcu = TcuHexInterface()

@@ -3,7 +3,9 @@
 Reference documents:
     - RD01: TCU User Manual (ARIEL-IEEC-PL-TN-002), v1.2
     - RD02: ARIEL TCU Data Handling (ARIEL-IEEC-PL-TN-007), v1.0
-    - RD02: TCU code provided by Vladimiro Noce (priv. comm.)
+    - RD03: TCU code provided by Vladimiro Noce (priv. comm.)
+    - RD04: ARIEL Telescope Control Unit Design Description Document (ARIEL-IEEC-PL-DD-001), v1.10
+    - RD05: ARIEL TCU FW Architecture Design(ARIEL-IEEC-PL-DD-002), v1.5
 """
 
 from enum import IntEnum
@@ -27,13 +29,12 @@ SERVICE_PORT = settings.get("SERVICE_PORT", 0)  # Service port (as per settings 
 MONITORING_PORT = settings.get("MONITORING_PORT", 0)  # Monitoring port (as per settings or dynamically assigned)
 STORAGE_MNEMONIC = settings.get("STORAGE_MNEMONIC", "TCU")  # Storage mnemonic (used in the HK filenames)
 
+NUM_TSM_FRAMES = settings.get("NUM_TSM_FRAMES", 2)
+NUM_TSM_PROBES_PER_FRAME = settings.get("NUM_TSM_PROBES_PER_FRAME", 22)
+NUM_M2MD_POSITIONS = settings.get("NUM_M2MD_POSITIONS", 18)
+NUM_M2MD_AXES = settings.get("NUM_M2MD_AXES", 3)
+
 PROXY_TIMEOUT = 10
-
-NUM_TSM_FRAMES = 2
-NUM_TSM_PROBES_PER_FRAME = 22
-NUM_M2MD_POSITIONS = 18
-
-NUM_M2MD_AXES = 3
 
 
 class TcuMode(IntEnum):
@@ -67,6 +68,10 @@ class MotorState(IntEnum):
     OPERATION = 0x0010  # Motor moving
 
 
+# Axis velocity settings
+#   - Keys: Axis speed in Hz
+#   - Values: Hex string representing the axis speed
+#             -> This has to be used as cargo2 in the hex command that is sent to the Arduino
 AXIS_VELOCITY = {
     1: 0x5DC0,  # Writing @ 1Hz
     2: 0x2EE0,  # Writing @ 2Hz

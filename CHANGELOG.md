@@ -64,8 +64,6 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 
 ## [0.17.0] - 2025-11-20
 
-This release adds a new package, the ARIEL TCU, which you will find in the `projects` folder. This package is specific for the ARIEL space project and will be available in PyPI as `ariel-tcu`.
-
 ### Added
 - Added this CHANGELOG file. [#209]
 - Added an initial implementation of the ARIEL Telescope Control Unit (TCU). This is a separate package in this 
@@ -204,7 +202,9 @@ This release adds a new package, the ARIEL TCU, which you will find in the `proj
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.17.1...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.17.3...HEAD
+[0.17.3]: https://github.com/IvS-KULeuven/cgse/compare/v0.17.2...v0.17.3
+[0.17.2]: https://github.com/IvS-KULeuven/cgse/compare/v0.17.1...v0.17.2
 [0.17.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.17.0...v0.17.1
 [0.17.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.14...v0.17.0
 [0.16.14]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.13...v0.16.14

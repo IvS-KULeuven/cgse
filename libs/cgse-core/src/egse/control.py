@@ -558,7 +558,8 @@ class ControlServer(metaclass=abc.ABCMeta):
                 try:
                     hk_dict = save_average_execution_time(self.device_protocol.get_housekeeping)
 
-                    self.store_housekeeping_information(hk_dict)
+                    if storage_manager:
+                        self.store_housekeeping_information(hk_dict)
                     self.propagate_metrics(hk_dict)
                 except Exception as exc:
                     logger.error(
