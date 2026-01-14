@@ -223,6 +223,7 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 [0.16.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.15.1...v0.16.0
 
+[#219]: https://github.com/IvS-KULeuven/cgse/pull/219
 [#218]: https://github.com/IvS-KULeuven/cgse/pull/218
 [#217]: https://github.com/IvS-KULeuven/cgse/pull/217
 [#216]: https://github.com/IvS-KULeuven/cgse/pull/216

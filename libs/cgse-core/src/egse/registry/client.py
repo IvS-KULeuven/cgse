@@ -639,6 +639,8 @@ class AsyncRegistryClient:
             The response from the registry as a dictionary.
         """
 
+        assert self.req_socket is not None, "REQ socket is not connected, cannot send request."
+
         timeout = timeout or self.timeout
         try:
             self.logger.debug(f"Sending request: {request}")
@@ -686,6 +688,8 @@ class AsyncRegistryClient:
         Returns:
             The response from the registry as a dictionary.
         """
+
+        assert self.hb_socket is not None, "HB socket is not connected, cannot send heartbeat request."
 
         try:
             self.logger.debug(f"Sending heartbeat request: {request}")
@@ -867,7 +871,8 @@ class AsyncRegistryClient:
                                 await self.reregister()
 
                         else:
-                            VERBOSE_DEBUG and self.logger.debug(f"Heartbeat succeeded: {response.get('message')}")
+                            if VERBOSE_DEBUG:
+                                self.logger.debug(f"Heartbeat succeeded: {response.get('message')}")
 
                     except Exception as exc:
                         self.logger.error(f"Error in heartbeat loop: {exc}", exc_info=True)
@@ -893,13 +898,15 @@ class AsyncRegistryClient:
         """Stop the running heartbeat task."""
 
         if self._heartbeat_task is None:
-            VERBOSE_DEBUG and self.logger.debug("Couldn't stop heartbeat, heartbeat_task is None")
+            if VERBOSE_DEBUG:
+                self.logger.debug("Couldn't stop heartbeat, heartbeat_task is None")
             return
 
         self._heartbeat_task.cancel()
         try:
             await self._heartbeat_task
         except asyncio.CancelledError:
+            self.logger.info("Heartbeat task cancelled")
             pass
         self._tasks.discard(self._heartbeat_task)
         self._heartbeat_task = None
@@ -909,7 +916,8 @@ class AsyncRegistryClient:
         """Stop the running event listener task."""
 
         if self._event_listener_task is None:
-            VERBOSE_DEBUG and self.logger.debug("Couldn't stop event_listener, event_listener_task is None")
+            if VERBOSE_DEBUG:
+                self.logger.debug("Couldn't stop event_listener, event_listener_task is None")
             return
 
         self._event_listener_task.cancel()
@@ -1142,12 +1150,14 @@ class AsyncRegistryClient:
                 self.sub_socket.close()
 
             # We can not terminate the context, because we use a global instance, i.e. a singleton context.
-            # When we try to terminate it, even after checking if it was closed,
+            # When we try to terminate it, even after checking if it was closed, it raises an exception.
             if hasattr(self, "context") and self.context:
                 self.logger.info(f"{self.context = !r}")
                 self.logger.info(f"{self.context._sockets = !r}")
-                if not self.context.closed:
-                    self.context.term()
+                # The zmq context instance is the global singleton instance.
+                # Terminating it here would affect other parts of the application using zmq.
+                # if not self.context.closed:
+                #     self.context.term()
         except Exception as exc:
             self.logger.error(f"Error during cleanup: {exc}")
 

@@ -218,13 +218,15 @@ class AsyncRegistryServer:
         """Task that handles incoming requests."""
         self.logger.info("Started request handler task")
 
+        assert self.req_socket is not None, "REQ socket is not connected, cannot handle requests."
+
         try:
             message_parts = None
             while self._running:
                 try:
                     # Wait for a request with timeout to allow checking if still running
                     try:
-                        # self.logger.info("Waiting for a request with 1s timeout...")
+                        # self.logger.debug("Waiting for a request with 1s timeout...")
                         message_parts = await asyncio.wait_for(self.req_socket.recv_multipart(), timeout=1.0)
                     except asyncio.TimeoutError:
                         # self.logger.debug("waiting for command request...")
@@ -241,6 +243,9 @@ class AsyncRegistryServer:
                         response = await self._process_request(message_data)
 
                         await self._send_response(client_id, message_type, response)
+                    else:
+                        self.logger.warning("Request handler: message corrupted, check debug messages.")
+                        self.logger.debug(f"{message_parts=}")
 
                 except zmq.ZMQError as exc:
                     self.logger.error(f"ZMQ error: {exc}", exc_info=True)
@@ -397,6 +402,8 @@ class AsyncRegistryServer:
         """Task that handles heartbeat messages."""
         self.logger.info("Started heartbeats handler task")
 
+        assert self.hb_socket is not None, "HB socket is not connected, cannot handle heartbeat messages."
+
         try:
             message_parts = None
             while self._running:
@@ -425,7 +432,8 @@ class AsyncRegistryServer:
                         self.logger.warning("Heartbeat request: message corrupted, check debug messages.")
 
                 except asyncio.TimeoutError:
-                    VERBOSE_DEBUG and self.logger.debug("waiting for heartbeat...")
+                    if VERBOSE_DEBUG:
+                        self.logger.debug("waiting for heartbeat...")
                     continue
 
                 except Exception as exc:

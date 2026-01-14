@@ -23,10 +23,12 @@ from egse.notifyhub import SERVICE_TYPE
 from egse.notifyhub import STATS_INTERVAL
 from egse.notifyhub.client import AsyncNotificationHubClient
 from egse.registry import MessageType
-from egse.registry.client import AsyncRegistryClient, REQUEST_TIMEOUT
+from egse.registry.client import REQUEST_TIMEOUT
+from egse.registry.client import AsyncRegistryClient
 from egse.system import TyperAsyncCommand
 from egse.system import get_host_ip
 from egse.zmq_ser import get_port_number
+
 from .event import NotificationEvent
 
 REQUEST_POLL_TIMEOUT = 1.0

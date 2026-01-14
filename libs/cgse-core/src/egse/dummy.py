@@ -18,9 +18,9 @@ and stop the server with:
 
 Commands that can be used with the proxy:
 
-  * info – returns an info message from the dummy device, e.g. "Dummy Device <__version__>"
-  * get_value – returns a random float between 0.0 and 1.0
-  * division – returns the result of the division between arguments 'a' and 'b'.
+  * info - returns an info message from the dummy device, e.g. "Dummy Device <__version__>"
+  * get_value - returns a random float between 0.0 and 1.0
+  * division - returns the result of the division between arguments 'a' and 'b'.
     This can be used also to induce a ZeroDivisionError that should return a Failure
     object.
 
@@ -35,6 +35,7 @@ and stopped with:
 
 from __future__ import annotations
 
+import contextlib
 import multiprocessing
 import random
 import select
@@ -52,12 +53,14 @@ from egse.device import DeviceConnectionError
 from egse.device import DeviceConnectionInterface
 from egse.device import DeviceTimeoutError
 from egse.device import DeviceTransport
+from egse.env import bool_env
 from egse.log import logger
 from egse.protocol import CommandProtocol
 from egse.proxy import Proxy
 from egse.system import SignalCatcher
 from egse.system import attrdict
 from egse.system import format_datetime
+from egse.system import type_name
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
 
@@ -76,6 +79,9 @@ WRITE_TIMEOUT = 1.0
 """The maximum time in seconds to wait for a socket send command."""
 CONNECT_TIMEOUT = 3.0
 """The maximum time in seconds to wait for establishing a socket connect."""
+
+
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG", default=False)
 
 # Especially DummyCommand and DummyController need to be defined in a known module
 # because those objects are pickled and when de-pickled at the clients side the class
@@ -116,14 +122,17 @@ def is_dummy_cs_active() -> bool:
 
 
 def is_dummy_dev_active() -> bool:
+    if VERBOSE_DEBUG:
+        logger.debug("Checking if dummy device is active...")
     try:
         dev = DummyDeviceEthernetInterface(DEV_HOST, DEV_PORT)
         dev.connect()
         rc = dev.trans("ping\n")
         dev.disconnect()
         return rc.decode().strip() == "pong"
-    except DeviceConnectionError as exc:
-        # logger.error(f"Caught {type_name(exc)}: {exc}")
+    except (DeviceConnectionError, ConnectionResetError, DeviceTimeoutError) as exc:
+        if VERBOSE_DEBUG:
+            logger.debug(f"Caught {type_name(exc)}: {exc} - returning False")
         return False
 
 
@@ -309,11 +318,10 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
     Args:
         hostname (str): the IP address or fully qualified hostname of the Dummy Device
             controller.
-
         port (int): the IP port number to connect to.
     """
 
-    def __init__(self, hostname: str = None, port: int = None):
+    def __init__(self, hostname: str | None = None, port: int | None = None):
         super().__init__()
 
         # Basic connection settings, loaded from the configuration YAML file
@@ -350,7 +358,8 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         except socket.error as exc:
-            self.sock.close()
+            if self.sock is not None:
+                self.sock.close()
             raise DeviceConnectionError("Dummy Device", "Failed to create socket.") from exc
 
         # Attempt to establish a connection to the remote host
@@ -403,7 +412,8 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         """
         try:
             logger.debug(f"Disconnecting from {self.hostname}")
-            self.sock.close()
+            if self.sock is not None:
+                self.sock.close()
             self.is_connection_open = False
         except Exception as exc:
             raise DeviceConnectionError(DEV_NAME, f"Could not close socket to {self.hostname}") from exc
@@ -438,6 +448,8 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         n_total = 0
         buf_size = 1024 * 10
         response = bytes()
+
+        assert self.sock is not None
 
         # Set a timeout of READ_TIMEOUT to the socket.recv
 
@@ -478,6 +490,8 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
                 there was a socket related error.
         """
 
+        assert self.sock is not None
+
         # logger.debug(f"{command.encode() = }")
 
         try:
@@ -505,6 +519,9 @@ class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):
             DeviceTimeoutError: when the sendall() timed out, and a DeviceConnectionError if
                 there was a socket related error.
         """
+
+        assert self.sock is not None
+
         # logger.debug(f"{command.encode() = }")
 
         try:
@@ -580,11 +597,18 @@ def start_dev():
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind((DEV_HOST, DEV_PORT))
             s.listen()
+            s.settimeout(CONNECT_TIMEOUT)
             logger.info(f"Ready to accept connection on {DEV_HOST}:{DEV_PORT}...")
-            conn, addr = s.accept()
+            while True:
+                with contextlib.suppress(socket.timeout):
+                    conn, addr = s.accept()
+                    break
+                if killer.term_signal_received:
+                    return
             with conn:
                 logger.info(f"Accepted connection from {addr}")
                 conn.sendall(f"Dummy Device {__version__}".encode())
+                conn.settimeout(READ_TIMEOUT)
                 try:
                     while True:
                         error_msg = ""
@@ -641,7 +665,8 @@ def process_command(command_string: str) -> str | None:
 
     try:
         action, response = COMMAND_ACTIONS_RESPONSES[command_string]
-        action and action()
+        if action:
+            action()
         if error_msg:
             return error_msg
         else:

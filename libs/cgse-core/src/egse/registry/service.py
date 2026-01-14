@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
 import time
 from typing import Any
 from typing import Callable
@@ -10,13 +9,14 @@ from typing import Callable
 import zmq
 import zmq.asyncio
 
+from egse.log import logging
 from egse.registry import DEFAULT_RS_PUB_PORT
 from egse.registry import DEFAULT_RS_REQ_PORT
 from egse.registry.client import AsyncRegistryClient
 from egse.system import get_host_ip
 from egse.zmq_ser import get_port_number
 
-module_module_logger_name = "async_microservice"
+module_module_logger_name = "egse.async_microservice"
 module_logger = logging.getLogger(module_module_logger_name)
 
 
@@ -64,7 +64,7 @@ class ZMQMicroservice:
         self.registry_sub_endpoint = registry_sub_endpoint or f"tcp://localhost:{DEFAULT_RS_PUB_PORT}"
         self.metadata = metadata or {}
 
-        self.host_ip = get_host_ip()
+        self.host_ip = get_host_ip() or "localhost"
 
         # Service ID will be set when registered
         self.service_id = None
@@ -164,6 +164,7 @@ class ZMQMicroservice:
 
         if not self.service_id:
             module_logger.error("Failed to register with the service registry")
+            await self._cleanup()
             return True
 
         module_logger.info(f"Registered with service ID: {self.service_id}")
@@ -175,12 +176,17 @@ class ZMQMicroservice:
         # Start request handler
         request_task = asyncio.create_task(self._handle_requests())
         self._tasks.add(request_task)
-        request_task.add_done_callback(self._tasks.discard)
+        # request_task.add_done_callback(self._tasks.discard)
 
         # Wait for shutdown signal
         await self._shutdown.wait()
 
-        # Clean shutdown
+        # request_task.cancel()
+        # try:
+        #     await request_task
+        # except asyncio.CancelledError:
+        #     module_logger.info("Request handler task cancelled during shutdown")
+
         await self._cleanup()
 
         return False
