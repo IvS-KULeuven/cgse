@@ -175,7 +175,6 @@ class FacilityHousekeepingExporter:
                 except:
                     column_names = table_names
 
-
                 # Make sure there is also a column (the first one) for the timestamp
 
                 column_names = ["timestamp"] + column_names
