@@ -1,0 +1,23 @@
+PACKAGES:
+    DIGILENT: Digilent temperature and voltage monitoring
+
+
+Digilent MEASURpoint DT8874:
+
+    DEVICE_NAME:               DT8874
+    HOSTNAME:           10.33.179.128
+    PORT:                        5025
+#    TIMEOUT:                       60
+
+Digilent MEASURpoint DT8874 Control Server:
+
+    SERVICE_TYPE:              DT8874
+    PROCESS_NAME:           dt8874_cs
+    PROTOCOL:                     tcp
+    HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
+    COMMANDING_PORT:                0          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:                0          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                   0          # The port on which the controller listens for configuration and administration - REQ-REP
+    METRICS_PORT:                   0          # The HTTP port where Prometheus will connect to for retrieving metrics
+    DELAY:                         10          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:          DT8874          # The mnemonic to be used in the filename storing the housekeeping data
