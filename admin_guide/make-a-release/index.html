@@ -2745,29 +2745,34 @@
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>checkout<span class="w"> </span>main
 git<span class="w"> </span>pull<span class="w"> </span>upstream<span class="w"> </span>main
 </code></pre></div>
-<p>Now, create the release branch: e.g. <code>release/v0.17.3</code>
-- <code>git checkout -b release/v0.17.3</code>
-- add all notable changes to the CHANGELOG file
-  - fix the links in the headers if needed
-  - add links to the different pull requests
-  - commit the CHANGELOG file
-- bump the version number: <code>uv run bump.py [patch|minor|major]</code>
-- commit all <code>pyproject.toml</code> files after the version bump
-- push the changes to <code>origin</code>
-- create (and merge) a pull request, use the CHANGELOG as description</p>
+<p>Now, create the release branch: e.g. <code>release/v0.17.3</code></p>
+<ul>
+<li><code>git checkout -b release/v0.17.3</code></li>
+<li>add all notable changes to the CHANGELOG file</li>
+<li>fix the links in the headers if needed</li>
+<li>add links to the different pull requests</li>
+<li>commit the CHANGELOG file</li>
+<li>bump the version number: <code>uv run bump.py [patch|minor|major]</code></li>
+<li>commit all <code>pyproject.toml</code> files after the version bump</li>
+<li>push the changes to <code>origin</code></li>
+<li>create (and merge) a pull request, use the CHANGELOG as description</li>
+</ul>
 <p>In order to prevent publishing all remaining uncommitted changes and untracked files too, stash all changes and untracked files:</p>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>stash<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;All development work&quot;</span>
 </code></pre></div>
 <h2 id="publish-the-new-release">Publish the new release<a class="headerlink" href="#publish-the-new-release" title="Permanent link">&para;</a></h2>
 <p>(also check the docs: <a href="https://ivs-kuleuven.github.io/cgse/dev_guide/uv/#building-and-publishing-all-packages">Building and publishing packages</a>)</p>
-<p>Now, build and publish the packages:
-- remove the old distributions: <code>rm -r dist</code>
-- build the packages: <code>uv build --all-packages</code>
-- publish the packages to PyPI: <code>uv publish --token $UV_PUBLISH_TOKEN</code></p>
-<p>Put back the changes and untracked files:
-- <code>git checkout main</code>
-- <code>git pull upstream main</code>
-- <code>git stash pop</code></p>
+<p>Now, build and publish the packages:</p>
+<ul>
+<li>remove the old distributions: <code>rm -r dist</code></li>
+<li>build the packages: <code>uv build --all-packages</code></li>
+<li>publish the packages to PyPI: <code>uv publish --token $UV_PUBLISH_TOKEN</code></li>
+</ul>
+<p>Put back the changes and untracked files:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>checkout<span class="w"> </span>main
+git<span class="w"> </span>pull<span class="w"> </span>upstream<span class="w"> </span>main
+git<span class="w"> </span>stash<span class="w"> </span>pop
+</code></pre></div>
 <h2 id="tag-the-new-release">Tag the new release<a class="headerlink" href="#tag-the-new-release" title="Permanent link">&para;</a></h2>
 <ul>
 <li>create a tag for the commit of the bump: <code>git tag &lt;version number&gt; &lt;commit hash&gt;</code>, e.g. <code>git tag v0.16.0 559bbfc</code><ul>
