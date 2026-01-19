@@ -8,8 +8,6 @@ Those methods start with the name `hexapod_`, e.g. `hexapod_goto_zero_position()
 
 """
 
-from typing import List
-
 import numpy as np
 from egse.coordinates.refmodel import ReferenceFrameModel
 
