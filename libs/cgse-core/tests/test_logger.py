@@ -1,13 +1,11 @@
 import logging
 from pathlib import Path
 
-import rich
-
 from egse.env import get_log_file_location
-from egse.system import read_last_lines
-
-from egse.logger import egse_logger, create_new_zmq_logger
+from egse.logger import create_new_zmq_logger
+from egse.logger import egse_logger
 from egse.logger import get_log_file_name
+from egse.system import read_last_lines
 
 
 def test_logging_messages_of_different_levels(setup_log_service):
@@ -24,7 +22,12 @@ def test_logging_messages_of_different_levels(setup_log_service):
 
     log_location = get_log_file_location()
 
-    lines = read_last_lines(filename=Path(log_location) / get_log_file_name(), num_lines=5)
+    lines = read_last_lines(filename=Path(log_location) / get_log_file_name(), num_lines=20)
+
+    # FIXME:
+    #    In my setup, lines is [], so nothing has been read from the log file. When I inspect
+    #    the log file after the test, the expected line is there!
+    #    -> check if the log_cs service is running and writing to the expected location.
 
     print(f"{log_location = }, {get_log_file_name()=}")
     for line in lines:
@@ -38,7 +41,7 @@ def test_logging_messages_of_different_levels(setup_log_service):
 def test_logging_exception(caplog):
     try:
         raise ValueError("incorrect value entered.")
-    except ValueError as exc:
+    except ValueError:
         egse_logger.exception("Reporting a ValueError")
 
     assert "incorrect value entered" in caplog.text
@@ -48,7 +51,7 @@ def test_logging_exception(caplog):
 def test_logging_error(caplog):
     try:
         raise ValueError("incorrect value entered.")
-    except ValueError as exc:
+    except ValueError:
         egse_logger.error("Reporting a ValueError")
         egse_logger.error("Reporting a ValueError with exc_info", exc_info=True)
 
