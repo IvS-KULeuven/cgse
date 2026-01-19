@@ -17,7 +17,6 @@ from egse.connect import get_endpoint
 from egse.device import DeviceConnectionError
 from egse.log import logging
 from egse.registry import is_service_registry_active
-from egse.registry.client import RegistryClient
 from egse.socketdevice import AsyncSocketDevice
 
 logger = logging.getLogger("egse.test.connect")
@@ -402,7 +401,7 @@ async def test_socket_connection_async():
 
             await asyncio.sleep(1.0)  # Check every second
 
-    async def run_main_test(connector: AsyncServiceConnector):
+    async def run_main_test(connector: AsyncSocketServiceConnector):
         assert connector.is_connected()
         assert await connector.health_check()
 
@@ -410,7 +409,8 @@ async def test_socket_connection_async():
 
         assert connector.is_connected()
         assert await connector.health_check()
-        device: AsyncSocketDevice = connector.get_device()
+        device: Optional[AsyncSocketDevice] = connector.get_device()
+        assert device is not None
         assert device.is_connected()
         response = await device.trans("some_command: pars\x03")
         logger.info(f"Response received: {response}")
@@ -441,7 +441,8 @@ async def test_socket_connection_async():
         while not task.done():
             await asyncio.sleep(0.1)
         await connector.disconnect_from_service()
-        server and server.terminate()
+        if server:
+            server.terminate()
 
 
 def test_connection_sync(attempts: int = 2):
