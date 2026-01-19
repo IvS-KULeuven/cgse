@@ -12,13 +12,13 @@
         <meta name="author" content="Rik Huygen">
       
       
-        <link rel="canonical" href="https://ivs-kuleuven.github.io/cgse/projects/cgse-tools/">
+        <link rel="canonical" href="https://ivs-kuleuven.github.io/cgse/admin_guide/make-a-release/">
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../../user_guide/env/">
       
       
-        <link rel="next" href="../symetrie-hexapod/">
+        <link rel="next" href="../../libs/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -26,7 +26,7 @@
     
     
       
-        <title>Tools for the CGSE framework - CGSE</title>
+        <title>Make a release - CGSE</title>
       
     
     
@@ -112,9 +112,9 @@
 <!-- / Fathom -->
 
 
-<meta property="og:title" content="CGSE - Tools for the CGSE framework">
+<meta property="og:title" content="CGSE - Make a release">
 <meta property="og:type" content="article">
-<meta property="og:url" content="https://ivs-kuleuven.github.io/cgse/projects/cgse-tools/">
+<meta property="og:url" content="https://ivs-kuleuven.github.io/cgse/admin_guide/make-a-release/">
 <meta property="og:site_name" content="CGSE Documentation">
 <meta property="og:description" content="CGSE is an instrument test framework for Python.">
 <meta property="og:image" content="https://raw.githubusercontent.com/IvS-KULeuven/cgse/refs/heads/main/docs/images/icons/cgse-logo.svg">
@@ -154,7 +154,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#tools-for-the-cgse-framework" class="md-skip">
+        <a href="#making-a-release" class="md-skip">
           Skip to content
         </a>
       
@@ -189,7 +189,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Tools for the CGSE framework
+              Make a release
             
           </span>
         </div>
@@ -377,11 +377,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../admin_guide/make-a-release/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
           
   
   
@@ -421,13 +423,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../projects/" class="md-tabs__link">
           
   
   
@@ -1209,8 +1209,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -1220,17 +1222,20 @@
     
     
       
+        
+        
+      
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
@@ -1243,7 +1248,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Administrator Guide
@@ -1254,10 +1259,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../admin_guide/make-a-release/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Make a release
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1268,6 +1293,60 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#making-a-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      Making a release
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#publish-the-new-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      Publish the new release
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tag-the-new-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tag the new release
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#building-and-publishing-the-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Building and publishing the documentation
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1701,8 +1780,6 @@
       
   
   
-    
-  
   
   
     
@@ -1720,21 +1797,18 @@
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../projects/" class="md-nav__link ">
               
   
   
@@ -1747,13 +1821,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="">
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             Projects
@@ -1766,19 +1840,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../projects/cgse-tools/" class="md-nav__link">
         
   
   
@@ -1789,7 +1854,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -1802,7 +1866,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../symetrie-hexapod/" class="md-nav__link">
+      <a href="../../projects/symetrie-hexapod/" class="md-nav__link">
         
   
   
@@ -2602,8 +2666,50 @@
   
   
   
-    
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#making-a-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      Making a release
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#publish-the-new-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      Publish the new release
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tag-the-new-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tag the new release
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#building-and-publishing-the-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Building and publishing the documentation
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -2622,7 +2728,58 @@
   
 
 
-<h1 id="tools-for-the-cgse-framework">Tools for the CGSE framework<a class="headerlink" href="#tools-for-the-cgse-framework" title="Permanent link">&para;</a></h1>
+  <h1>Make a release</h1>
+
+<h2 id="making-a-release">Making a release<a class="headerlink" href="#making-a-release" title="Permanent link">&para;</a></h2>
+<p>The first thing to do is to properly format your code changes, run:</p>
+<div class="highlight"><pre><span></span><code>uvx<span class="w"> </span>ruff<span class="w"> </span>format
+</code></pre></div>
+<p>You should be on the branch with the developments that you want to push and merge the pull request on GitHub before making the release.</p>
+<ul>
+<li>commit all changes with a proper message</li>
+<li>push changes to <code>origin</code></li>
+<li>create a pull request (possibly needs a review)</li>
+<li>merge the pull request</li>
+</ul>
+<p>When all pull requests that should go into the release are merged, checkout main again and pull all the latest changes:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>checkout<span class="w"> </span>main
+git<span class="w"> </span>pull<span class="w"> </span>upstream<span class="w"> </span>main
+</code></pre></div>
+<p>Now, create the release branch: e.g. <code>release/v0.17.3</code>
+- <code>git checkout -b release/v0.17.3</code>
+- add all notable changes to the CHANGELOG file
+  - fix the links in the headers if needed
+  - add links to the different pull requests
+  - commit the CHANGELOG file
+- bump the version number: <code>uv run bump.py [patch|minor|major]</code>
+- commit all <code>pyproject.toml</code> files after the version bump
+- push the changes to <code>origin</code>
+- create (and merge) a pull request, use the CHANGELOG as description</p>
+<p>In order to prevent publishing all remaining uncommitted changes and untracked files too, stash all changes and untracked files:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>stash<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;All development work&quot;</span>
+</code></pre></div>
+<h2 id="publish-the-new-release">Publish the new release<a class="headerlink" href="#publish-the-new-release" title="Permanent link">&para;</a></h2>
+<p>(also check the docs: <a href="https://ivs-kuleuven.github.io/cgse/dev_guide/uv/#building-and-publishing-all-packages">Building and publishing packages</a>)</p>
+<p>Now, build and publish the packages:
+- remove the old distributions: <code>rm -r dist</code>
+- build the packages: <code>uv build --all-packages</code>
+- publish the packages to PyPI: <code>uv publish --token $UV_PUBLISH_TOKEN</code></p>
+<p>Put back the changes and untracked files:
+- <code>git checkout main</code>
+- <code>git pull upstream main</code>
+- <code>git stash pop</code></p>
+<h2 id="tag-the-new-release">Tag the new release<a class="headerlink" href="#tag-the-new-release" title="Permanent link">&para;</a></h2>
+<ul>
+<li>create a tag for the commit of the bump: <code>git tag &lt;version number&gt; &lt;commit hash&gt;</code>, e.g. <code>git tag v0.16.0 559bbfc</code><ul>
+<li>you can find the commit hash with: <code>git log --oneline</code></li>
+</ul>
+</li>
+<li>push the tag to upstream: <code>git push upstream &lt;tag name&gt;</code>, e.g. <code>git push upstream v0.16.0</code></li>
+</ul>
+<h2 id="building-and-publishing-the-documentation">Building and publishing the documentation<a class="headerlink" href="#building-and-publishing-the-documentation" title="Permanent link">&para;</a></h2>
+<ul>
+<li>see <a href="https://ivs-kuleuven.github.io/cgse/dev_guide/docs/#building-the-documentation">Building the documentation</a></li>
+</ul>
 
 
 
@@ -2652,7 +2809,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Projects">
+          <a href="../../user_guide/env/" class="md-footer__link md-footer__link--prev" aria-label="Previous: The Environment">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2662,20 +2819,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Projects
+                The Environment
               </div>
             </div>
           </a>
         
         
           
-          <a href="../symetrie-hexapod/" class="md-footer__link md-footer__link--next" aria-label="Next: The Symétrie Hexapods">
+          <a href="../../libs/" class="md-footer__link md-footer__link--next" aria-label="Next: Libraries">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                The Symétrie Hexapods
+                Libraries
               </div>
             </div>
             <div class="md-footer__button md-icon">
