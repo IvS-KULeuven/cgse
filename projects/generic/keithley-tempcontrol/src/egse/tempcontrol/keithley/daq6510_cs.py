@@ -1,22 +1,29 @@
-import logging
 import multiprocessing
 import sys
 
-import click
-import invoke
 import rich
+import typer
 import zmq
+
+from egse.connect import get_endpoint
 from egse.control import ControlServer
 from egse.control import is_control_server_active
+from egse.log import logger
+from egse.logger import remote_logging
+from egse.registry.client import RegistryClient
 from egse.settings import Settings
+from egse.storage import store_housekeeping_information
 from egse.tempcontrol.keithley.daq6510 import DAQ6510Proxy
 from egse.tempcontrol.keithley.daq6510_protocol import DAQ6510Protocol
 from egse.zmq_ser import connect_address
-from prometheus_client import start_http_server
 
-logger = logging.getLogger(__name__)
+cs_settings = Settings.load("Keithley Control Server")
 
-CTRL_SETTINGS = Settings.load("Keithley Control Server")
+PROTOCOL = cs_settings.get("PROTOCOL", "tcp")
+HOSTNAME = cs_settings.get("HOSTNAME", "localhost")
+COMMANDING_PORT = cs_settings.get("COMMANDING_PORT", 0)
+STORAGE_MNEMONIC = cs_settings.get("STORAGE_MNEMONIC", "DAQ6510")
+SERVICE_TYPE = cs_settings.get("SERVICE_TYPE", "daq6510")
 
 
 def is_daq6510_cs_active(timeout: float = 0.5) -> bool:
@@ -28,7 +35,14 @@ def is_daq6510_cs_active(timeout: float = 0.5) -> bool:
     Returns:  True if the Control Server is running and replied with the expected answer; False otherwise.
     """
 
-    endpoint = connect_address(CTRL_SETTINGS.PROTOCOL, CTRL_SETTINGS.HOSTNAME, CTRL_SETTINGS.COMMANDING_PORT)
+    if COMMANDING_PORT == 0:
+        with RegistryClient() as client:
+            endpoint = client.get_endpoint(SERVICE_TYPE)
+            if endpoint is None:
+                logger.debug(f"No endpoint for {SERVICE_TYPE}")
+                return False
+    else:
+        endpoint = connect_address(PROTOCOL, HOSTNAME, COMMANDING_PORT)
 
     return is_control_server_active(endpoint, timeout)
 
@@ -62,13 +76,15 @@ class DAQ6510ControlServer(ControlServer):
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
+        self.register_service(service_type=cs_settings.SERVICE_TYPE)
+
     def get_communication_protocol(self) -> str:
         """Returns the communication protocol used by the Control Server.
 
         Returns: Communication protocol used by the Control Server, as specified in the settings.
         """
 
-        return CTRL_SETTINGS.PROTOCOL
+        return cs_settings.PROTOCOL
 
     def get_commanding_port(self) -> int:
         """Returns the commanding port used by the Control Server.
@@ -76,7 +92,7 @@ class DAQ6510ControlServer(ControlServer):
         Returns: Commanding port used by the Control Server, as specified in the settings.
         """
 
-        return CTRL_SETTINGS.COMMANDING_PORT
+        return cs_settings.COMMANDING_PORT
 
     def get_service_port(self):
         """Returns the service port used by the Control Server.
@@ -84,7 +100,7 @@ class DAQ6510ControlServer(ControlServer):
         Returns: Service port used by the Control Server, as specified in the settings.
         """
 
-        return CTRL_SETTINGS.SERVICE_PORT
+        return cs_settings.SERVICE_PORT
 
     def get_monitoring_port(self):
         """Returns the monitoring port used by the Control Server.
@@ -92,7 +108,7 @@ class DAQ6510ControlServer(ControlServer):
         Returns: Monitoring port used by the Control Server, as specified in the settings.
         """
 
-        return CTRL_SETTINGS.MONITORING_PORT
+        return cs_settings.MONITORING_PORT
 
     def get_storage_mnemonic(self):
         """Returns the storage mnemonics used by the Control Server.
@@ -104,56 +120,87 @@ class DAQ6510ControlServer(ControlServer):
                  settings, "DAQ6510" will be used.
         """
 
-        try:
-            return CTRL_SETTINGS.STORAGE_MNEMONIC
-        except AttributeError:
-            return "DAQ6510"
+        return STORAGE_MNEMONIC
+
+    def is_storage_manager_active(self):
+        from egse.storage import is_storage_manager_active
+
+        return is_storage_manager_active()
+
+    def store_housekeeping_information(self, data):
+        """Send housekeeping information to the Storage manager."""
+
+        origin = self.get_storage_mnemonic()
+        store_housekeeping_information(origin, data)
+
+    def register_to_storage_manager(self):
+        from egse.storage import register_to_storage_manager
+        from egse.storage.persistence import TYPES
+
+        register_to_storage_manager(
+            origin=self.get_storage_mnemonic(),
+            persistence_class=TYPES["CSV"],
+            prep={
+                "column_names": list(self.device_protocol.get_housekeeping().keys()),
+                "mode": "a",
+            },
+        )
+
+    def unregister_from_storage_manager(self):
+        from egse.storage import unregister_from_storage_manager
+
+        unregister_from_storage_manager(origin=self.get_storage_mnemonic())
 
     def before_serve(self):
         """Steps to take before the Control Server is activated."""
 
-        start_http_server(CTRL_SETTINGS.METRICS_PORT)
+
+app = typer.Typer(name="daq6510_cs")
 
 
-@click.group()
-def cli():
-    pass
-
-
-@cli.command()
+@app.command()
 def start():
     """Starts the Keithley DAQ6510 Control Server."""
 
     multiprocessing.current_process().name = "daq6510_cs (start)"
 
-    try:
-        control_server = DAQ6510ControlServer()
-        control_server.serve()
-    except KeyboardInterrupt:
-        logger.debug("Shutdown requested...exiting")
-    except SystemExit as exit_code:
-        logger.debug("System Exit with code {}.".format(exit_code))
-        sys.exit(exit_code)
-    except Exception:
-        msg = "Cannot start the DAQ6510 Control Server"
-        logger.exception(msg)
-        rich.print(f"[red]{msg}.")
+    with remote_logging():
+        from egse.env import setup_env
+
+        setup_env()
+
+        try:
+            control_server = DAQ6510ControlServer()
+            control_server.serve()
+        except KeyboardInterrupt:
+            logger.debug("Shutdown requested...exiting")
+        except SystemExit as exit_code:
+            logger.debug("System Exit with code {}.".format(exit_code))
+            sys.exit(exit_code.code)
+        except Exception:
+            msg = "Cannot start the DAQ6510 Control Server"
+            logger.exception(msg)
+            rich.print(f"[red]{msg}.")
 
     return 0
 
 
-@cli.command()
+@app.command()
 def start_bg():
     """Starts the DAQ6510 Control Server in the background."""
 
-    invoke.run("daq6510_cs start", disown=True)
+    print("Starting the DAQ6510 in the background is not implemented.")
 
 
-@cli.command()
+@app.command()
 def stop():
     """Sends a 'quit_server' command to the Keithley DAQ6510 Control Server."""
 
     multiprocessing.current_process().name = "daq6510_cs (stop)"
+
+    from egse.env import setup_env
+
+    setup_env()
 
     try:
         with DAQ6510Proxy() as daq:
@@ -165,17 +212,17 @@ def stop():
         rich.print(f"[red]{msg}, could not send the Quit command. [black]Check log messages.")
 
 
-@cli.command()
+@app.command()
 def status():
     """Requests status information from the Control Server."""
 
     multiprocessing.current_process().name = "daq6510_cs (status)"
 
-    protocol = CTRL_SETTINGS.PROTOCOL
-    hostname = CTRL_SETTINGS.HOSTNAME
-    port = CTRL_SETTINGS.COMMANDING_PORT
+    from egse.env import setup_env
 
-    endpoint = connect_address(protocol, hostname, port)
+    setup_env()
+
+    endpoint = get_endpoint(SERVICE_TYPE, PROTOCOL, HOSTNAME, COMMANDING_PORT)
 
     if is_control_server_active(endpoint):
         rich.print("DAQ6510 CS: [green]active")
@@ -190,6 +237,4 @@ def status():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG, format=Settings.LOG_FORMAT_FULL)
-
-    sys.exit(cli())
+    sys.exit(app())

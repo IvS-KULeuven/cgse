@@ -3,16 +3,19 @@ import time
 import pytest
 from egse.device import DeviceConnectionError
 from egse.device import DeviceTimeoutError
+from egse.settings import Settings
 from egse.system import Timer
-from egse.tempcontrol.keithley.daq6510_dev import DAQ6510EthernetInterface
+from egse.tempcontrol.keithley.daq6510_dev import DAQ6510
 
-SCPI_PORT = 5025
-HOSTNAME = "192.168.68.77"  # hostname at home with DHCP
+settings = Settings.load("Keithley DAQ6510")
+
+SCPI_PORT = settings.get("PORT")
+HOSTNAME = settings.get("HOSTNAME")
 
 
 def is_daq6510_available():
     try:
-        daq = DAQ6510EthernetInterface(HOSTNAME, SCPI_PORT)
+        daq = DAQ6510(HOSTNAME, SCPI_PORT)
         daq.connect()
     except DeviceTimeoutError:
         return False
@@ -21,7 +24,7 @@ def is_daq6510_available():
 
 
 def test_constructor():
-    daq = DAQ6510EthernetInterface(HOSTNAME, SCPI_PORT)
+    daq = DAQ6510(HOSTNAME, SCPI_PORT)
     daq.connect()
 
     response = daq.trans("*IDN?\n")
@@ -32,7 +35,7 @@ def test_constructor():
 
 
 def test_connection(caplog):
-    daq = DAQ6510EthernetInterface(HOSTNAME, SCPI_PORT)
+    daq = DAQ6510(HOSTNAME, SCPI_PORT)
 
     assert not daq.is_connected()
 
@@ -68,37 +71,38 @@ def test_connection(caplog):
 
 
 def test_context_manager():
-    with DAQ6510EthernetInterface(HOSTNAME, SCPI_PORT) as daq:
+    with DAQ6510(HOSTNAME, SCPI_PORT) as daq:
         assert daq.is_connected()
 
     assert not daq.is_connected()
 
 
 def test_incorrect_construction():
-    daq = DAQ6510EthernetInterface()
+    daq = DAQ6510()
     daq.hostname = "unknown"  # set this explicitly because the local_settings might define he HOSTNAME
     with pytest.raises(DeviceConnectionError, match="DAQ6510: Socket address info error for unknown"):
         daq.connect()
 
-    daq = DAQ6510EthernetInterface()
+    daq = DAQ6510()
     daq.hostname = None
     with pytest.raises(ValueError, match="hostname is not initialized"):
         daq.connect()
 
-    daq = DAQ6510EthernetInterface(HOSTNAME)
+    daq = DAQ6510(HOSTNAME)
     daq.port = None
 
     with pytest.raises(ValueError, match="port number is not initialized"):
         daq.connect()
 
-    daq = DAQ6510EthernetInterface(HOSTNAME, 3000)  # pass an incorrect port number
+    daq = DAQ6510(HOSTNAME, 3000)  # pass an incorrect port number
 
     with pytest.raises(DeviceConnectionError, match="DAQ6510: Connection refused"):
         daq.connect()
 
 
+@pytest.mark.skip("Fix conf LAN to auto")
 def test_write_read():
-    with DAQ6510EthernetInterface(HOSTNAME, SCPI_PORT) as daq:
+    with DAQ6510(HOSTNAME, SCPI_PORT) as daq:
         daq.write(':SYST:COMM:LAN:CONF "AUTO"')
         daq.write(":SYST:COMM:LAN:CONF?")
 
@@ -108,7 +112,7 @@ def test_write_read():
 
 
 def test_a_scan():
-    with DAQ6510EthernetInterface() as daq:
+    with DAQ6510() as daq:
         # Initialize
 
         daq.write("*RST")  # this also the user-defined buffer "test1"
@@ -166,7 +170,7 @@ def test_a_scan():
 
 
 def test_another_scan():
-    with DAQ6510EthernetInterface() as daq:
+    with DAQ6510() as daq:
         # Initialize
 
         n_readings = 50

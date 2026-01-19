@@ -4,16 +4,22 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 
+from egse.device import AsyncDeviceInterface
 from egse.device import AsyncDeviceTransport
 from egse.device import DeviceConnectionError
 from egse.device import DeviceError
 from egse.device import DeviceTimeoutError
+from egse.env import bool_env
 from egse.log import logger
 
-# Constants that can be overridden by specific device implementations
 DEFAULT_READ_TIMEOUT = 1.0  # seconds
 DEFAULT_CONNECT_TIMEOUT = 3.0  # seconds
 IDENTIFICATION_QUERY = "*IDN?"
+
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
+
+SEPARATOR = b"\n"
+SEPARATOR_STR = SEPARATOR.decode()
 
 
 class SCPICommand:
@@ -32,7 +38,7 @@ class SCPICommand:
         raise NotImplementedError("Subclasses must implement get_cmd_string().")
 
 
-class AsyncSCPIInterface(AsyncDeviceTransport):
+class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
     """Generic asynchronous interface for devices that use SCPI commands over Ethernet."""
 
     def __init__(
@@ -56,7 +62,9 @@ class AsyncSCPIInterface(AsyncDeviceTransport):
             read_timeout: Timeout for read operations in seconds
             id_validation: String that should appear in the device's identification response
         """
-        self.device_name = device_name
+        super().__init__()
+
+        self._device_name = device_name
         self.hostname = hostname
         self.port = port
         self.settings = settings or {}
@@ -70,8 +78,66 @@ class AsyncSCPIInterface(AsyncDeviceTransport):
         self._connect_lock = asyncio.Lock()
         """Prevents multiple, simultaneous connect or disconnect attempts."""
         self._io_lock = asyncio.Lock()
-        """Prevents multiple coroutines from attempting to read, write or query from the same stream
-        at the same time."""
+        """Prevents multiple coroutines from attempting to read, write or query from the same stream at the same time."""
+
+    def is_simulator(self) -> bool:
+        return False
+
+    @property
+    def device_name(self) -> str:
+        return self._device_name
+
+    async def initialize(self, commands: list[tuple[str, bool]] = None, reset_device: bool = False) -> list[str | None]:
+        """Initialize the device with optional reset and command sequence.
+
+        Performs device initialization by optionally resetting the device and then
+        executing a sequence of commands. Each command can optionally expect a
+        response that will be logged for debugging purposes.
+
+        Args:
+            commands: List of tuples containing (command_string, expects_response).
+                Each tuple specifies a command to send and whether to wait for and
+                log the response. Defaults to None (no commands executed).
+            reset_device: Whether to send a reset command (*RST) before executing
+                the command sequence. Defaults to False.
+
+        Returns:
+           Response for each of the commands, or None when no response was expected.
+
+        Raises:
+            Any exceptions raised by the underlying write() or trans() methods,
+            typically communication errors or device timeouts.
+
+        Example:
+            await device.initialize(
+                [
+                    ("*IDN?", True),           # Query device ID, expect response
+                    ("SYST:ERR?", True),       # Check for errors, expect response
+                    ("OUTP ON", False),        # Enable output, no response expected
+                ],
+                reset_device=True
+            )
+        """
+
+        commands = commands or []
+        responses = []
+
+        if reset_device:
+            logger.info(f"Resetting the {self._device_name}...")
+            await self.write("*RST")  # this also resets the user-defined buffer
+
+        for cmd, expects_response in commands:
+            if expects_response:
+                logger.debug(f"Sending {cmd}...")
+                response = (await self.trans(cmd)).decode().strip()
+                responses.append(response)
+                logger.debug(f"{response = }")
+            else:
+                logger.debug(f"Sending {cmd}...")
+                await self.write(cmd)
+                responses.append(None)
+
+        return responses
 
     async def connect(self) -> None:
         """Connect to the device asynchronously.
@@ -84,47 +150,51 @@ class AsyncSCPIInterface(AsyncDeviceTransport):
         async with self._connect_lock:
             # Sanity checks
             if self._is_connection_open:
-                logger.warning(f"{self.device_name}: Trying to connect to an already connected device.")
+                logger.warning(f"{self._device_name}: Trying to connect to an already connected device.")
                 return
 
             if not self.hostname:
-                raise ValueError(f"{self.device_name}: Hostname is not initialized.")
+                raise ValueError(f"{self._device_name}: Hostname is not initialized.")
 
             if not self.port:
-                raise ValueError(f"{self.device_name}: Port number is not initialized.")
+                raise ValueError(f"{self._device_name}: Port number is not initialized.")
 
             # Attempt to establish a connection
             try:
-                logger.debug(f'Connecting to {self.device_name} at "{self.hostname}" using port {self.port}')
+                logger.debug(f'Connecting to {self._device_name} at "{self.hostname}" using port {self.port}')
 
                 connect_task = asyncio.open_connection(self.hostname, self.port)
                 self._reader, self._writer = await asyncio.wait_for(connect_task, timeout=self.connect_timeout)
 
                 self._is_connection_open = True
 
-                logger.debug(f"Successfully connected to {self.device_name}.")
+                response = await self.read_string()
+                if VERBOSE_DEBUG:
+                    logger.debug(f"Response after connection: {response}")
+
+                logger.debug(f"Successfully connected to {self._device_name}.")
 
             except asyncio.TimeoutError as exc:
                 raise DeviceTimeoutError(
-                    self.device_name, f"Connection to {self.hostname}:{self.port} timed out"
+                    self._device_name, f"Connection to {self.hostname}:{self.port} timed out"
                 ) from exc
             except ConnectionRefusedError as exc:
                 raise DeviceConnectionError(
-                    self.device_name, f"Connection refused to {self.hostname}:{self.port}"
+                    self._device_name, f"Connection refused to {self.hostname}:{self.port}"
                 ) from exc
             except socket.gaierror as exc:
-                raise DeviceConnectionError(self.device_name, f"Address resolution error for {self.hostname}") from exc
+                raise DeviceConnectionError(self._device_name, f"Address resolution error for {self.hostname}") from exc
             except socket.herror as exc:
-                raise DeviceConnectionError(self.device_name, f"Host address error for {self.hostname}") from exc
+                raise DeviceConnectionError(self._device_name, f"Host address error for {self.hostname}") from exc
             except OSError as exc:
-                raise DeviceConnectionError(self.device_name, f"OS error: {exc}") from exc
+                raise DeviceConnectionError(self._device_name, f"OS error: {exc}") from exc
 
             # Validate device identity if requested
             if self.id_validation:
                 logger.debug("Validating connection..")
                 if not await self.is_connected():
                     await self.disconnect()
-                    raise DeviceConnectionError(self.device_name, "Device connected but failed identity verification")
+                    raise DeviceConnectionError(self._device_name, "Device connected but failed identity verification")
 
     async def disconnect(self) -> None:
         """Disconnect from the device asynchronously.
@@ -135,22 +205,20 @@ class AsyncSCPIInterface(AsyncDeviceTransport):
         async with self._connect_lock:
             try:
                 if self._is_connection_open and self._writer is not None:
-                    logger.debug(f"Disconnecting from {self.device_name} at {self.hostname}")
+                    logger.debug(f"Disconnecting from {self._device_name} at {self.hostname}")
                     self._writer.close()
                     await self._writer.wait_closed()
                     self._writer = None
                     self._reader = None
                     self._is_connection_open = False
             except Exception as exc:
-                raise DeviceConnectionError(self.device_name, f"Could not close connection: {exc}") from exc
+                raise DeviceConnectionError(self._device_name, f"Could not close connection: {exc}") from exc
 
     async def reconnect(self) -> None:
         """Reconnect to the device asynchronously."""
-        async with self._connect_lock:
-            if self._is_connection_open:
-                await self.disconnect()
-                await asyncio.sleep(0.1)
-            await self.connect()
+        await self.disconnect()
+        await asyncio.sleep(0.1)
+        await self.connect()
 
     async def is_connected(self) -> bool:
         """Check if the device is connected and responds correctly to identification.
@@ -168,7 +236,7 @@ class AsyncSCPIInterface(AsyncDeviceTransport):
             # Validate the response if validation string is provided
             if self.id_validation and self.id_validation not in id_response:
                 logger.error(
-                    f"{self.device_name}: Device did not respond correctly to identification query. "
+                    f"{self._device_name}: Device did not respond correctly to identification query. "
                     f'Expected "{self.id_validation}" in response, got: {id_response}'
                 )
                 await self.disconnect()
@@ -177,8 +245,7 @@ class AsyncSCPIInterface(AsyncDeviceTransport):
             return True
 
         except DeviceError as exc:
-            logger.exception(exc)
-            logger.error(f"{self.device_name}: Connection test failed")
+            logger.error(f"{self._device_name}: Connection test failed: {exc}", exc_info=True)
             await self.disconnect()
             return False
 
@@ -195,19 +262,20 @@ class AsyncSCPIInterface(AsyncDeviceTransport):
         async with self._io_lock:
             try:
                 if not self._is_connection_open or self._writer is None:
-                    raise DeviceConnectionError(self.device_name, "Device not connected, use connect() first")
+                    raise DeviceConnectionError(self._device_name, "Device not connected, use connect() first")
 
-                # Ensure command ends with newline
-                if not command.endswith("\n"):
-                    command += "\n"
+                # Ensure command ends with the proper separator or terminator
+                if not command.endswith(SEPARATOR_STR):
+                    command += SEPARATOR_STR
 
+                logger.info(f"-----> {command}")
                 self._writer.write(command.encode())
                 await self._writer.drain()
 
             except asyncio.TimeoutError as exc:
-                raise DeviceTimeoutError(self.device_name, "Write operation timed out") from exc
+                raise DeviceTimeoutError(self._device_name, "Write operation timed out") from exc
             except (ConnectionError, OSError) as exc:
-                raise DeviceConnectionError(self.device_name, f"Communication error: {exc}") from exc
+                raise DeviceConnectionError(self._device_name, f"Communication error: {exc}") from exc
 
     async def read(self) -> bytes:
         """
@@ -222,7 +290,7 @@ class AsyncSCPIInterface(AsyncDeviceTransport):
         """
         async with self._io_lock:
             if not self._is_connection_open or self._reader is None:
-                raise DeviceConnectionError(self.device_name, "Device not connected, use connect() first")
+                raise DeviceConnectionError(self._device_name, "Device not connected, use connect() first")
 
             try:
                 # First, small delay to allow device to prepare response
@@ -231,18 +299,19 @@ class AsyncSCPIInterface(AsyncDeviceTransport):
                 # Try to read until newline (common SCPI terminator)
                 try:
                     response = await asyncio.wait_for(
-                        self._reader.readuntil(separator=b"\n"), timeout=self.read_timeout
+                        self._reader.readuntil(separator=SEPARATOR), timeout=self.read_timeout
                     )
+                    logger.info(f"<----- {response}")
                     return response
 
                 except asyncio.IncompleteReadError as exc:
                     # Connection closed before receiving full response
-                    logger.warning(f"{self.device_name}: Incomplete read, got {len(exc.partial)} bytes")
-                    return exc.partial if exc.partial else b"\r\n"
+                    logger.warning(f"{self._device_name}: Incomplete read, got {len(exc.partial)} bytes")
+                    return exc.partial if exc.partial else SEPARATOR
 
                 except asyncio.LimitOverrunError:
                     # Response too large for buffer
-                    logger.warning(f"{self.device_name}: Response exceeded buffer limits")
+                    logger.warning(f"{self._device_name}: Response exceeded buffer limits")
                     # Fall back to reading a large chunk
                     return await asyncio.wait_for(
                         self._reader.read(8192),  # Larger buffer for exceptional cases
@@ -250,9 +319,9 @@ class AsyncSCPIInterface(AsyncDeviceTransport):
                     )
 
             except asyncio.TimeoutError as exc:
-                raise DeviceTimeoutError(self.device_name, "Read operation timed out") from exc
+                raise DeviceTimeoutError(self._device_name, "Read operation timed out") from exc
             except Exception as exc:
-                raise DeviceConnectionError(self.device_name, f"Read error: {exc}") from exc
+                raise DeviceConnectionError(self._device_name, f"Read error: {exc}") from exc
 
     async def trans(self, command: str) -> bytes:
         """
@@ -273,33 +342,35 @@ class AsyncSCPIInterface(AsyncDeviceTransport):
         async with self._io_lock:
             try:
                 if not self._is_connection_open or self._writer is None:
-                    raise DeviceConnectionError(self.device_name, "Device not connected, use connect() first")
+                    raise DeviceConnectionError(self._device_name, "Device not connected, use connect() first")
 
-                # Ensure command ends with newline
-                if not command.endswith("\n"):
-                    command += "\n"
+                # Ensure command ends with the required terminator
+                if not command.endswith(SEPARATOR_STR):
+                    command += SEPARATOR_STR
 
+                logger.info(f"-----> {command=}")
                 self._writer.write(command.encode())
                 await self._writer.drain()
 
-                # First, small delay to allow device to prepare response
+                # First, small delay to allow the device to prepare a response
                 await asyncio.sleep(0.01)
 
-                # Try to read until newline (common SCPI terminator)
+                # Try to read until the required separator (common SCPI terminator)
                 try:
                     response = await asyncio.wait_for(
-                        self._reader.readuntil(separator=b"\n"), timeout=self.read_timeout
+                        self._reader.readuntil(separator=SEPARATOR), timeout=self.read_timeout
                     )
+                    logger.info(f"<----- {response=}")
                     return response
 
                 except asyncio.IncompleteReadError as exc:
                     # Connection closed before receiving full response
-                    logger.warning(f"{self.device_name}: Incomplete read, got {len(exc.partial)} bytes")
-                    return exc.partial if exc.partial else b"\r\n"
+                    logger.warning(f"{self._device_name}: Incomplete read, got {len(exc.partial)} bytes")
+                    return exc.partial if exc.partial else SEPARATOR
 
                 except asyncio.LimitOverrunError:
                     # Response too large for buffer
-                    logger.warning(f"{self.device_name}: Response exceeded buffer limits")
+                    logger.warning(f"{self._device_name}: Response exceeded buffer limits")
                     # Fall back to reading a large chunk
                     return await asyncio.wait_for(
                         self._reader.read(8192),  # Larger buffer for exceptional cases
@@ -307,11 +378,11 @@ class AsyncSCPIInterface(AsyncDeviceTransport):
                     )
 
             except asyncio.TimeoutError as exc:
-                raise DeviceTimeoutError(self.device_name, "Communication timed out") from exc
+                raise DeviceTimeoutError(self._device_name, "Communication timed out") from exc
             except (ConnectionError, OSError) as exc:
-                raise DeviceConnectionError(self.device_name, f"Communication error: {exc}") from exc
+                raise DeviceConnectionError(self._device_name, f"Communication error: {exc}") from exc
             except Exception as exc:
-                raise DeviceConnectionError(self.device_name, f"Transaction error: {exc}") from exc
+                raise DeviceConnectionError(self._device_name, f"Transaction error: {exc}") from exc
 
     async def __aenter__(self):
         """Async context manager entry."""
