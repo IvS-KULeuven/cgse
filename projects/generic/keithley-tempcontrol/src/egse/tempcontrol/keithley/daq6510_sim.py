@@ -1,21 +1,32 @@
-from __future__ import annotations
-
 import contextlib
 import datetime
-import logging
 import re
 import socket
 import time
+from functools import partial
+from typing import Annotated
 
 import typer
+
+from egse.env import bool_env
+from egse.log import logging
 from egse.settings import Settings
 from egse.system import SignalCatcher
 
-logger = logging.getLogger("daq6510-sim")
+logger = logging.getLogger("egse.daq6510-sim")
 
+VERSION = "0.1.0"
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
 HOST = "localhost"
 DAQ_SETTINGS = Settings.load("Keithley DAQ6510")
 
+READ_TIMEOUT = 2.0
+"""The timeout set on the connection socket, applicable when reading from the socket with `recv`."""
+CONNECTION_TIMEOUT = 2.0
+"""The timeout set on the socket before accepting a connection."""
+
+SEPARATOR = b"\n"
+SEPARATOR_STR = SEPARATOR.decode()
 
 device_time = datetime.datetime.now(datetime.timezone.utc)
 reference_time = device_time
@@ -23,8 +34,8 @@ reference_time = device_time
 
 app = typer.Typer(help="DAQ6510 Simulator")
 
-error_msg: str | None = None
-"""Global error message, always contains the last error. Reset in the inner loop of run_simulator."""
+error_msg: str = ""
+"""Global error message, always contains the last error. Reset to an empty string in the inner loop of run_simulator."""
 
 
 def create_datetime(year, month, day, hour, minute, second):
@@ -62,8 +73,14 @@ def reset():
     logger.info("RESET")
 
 
+def log(level: int, msg: str):
+    logger.log(level, msg)
+
+
 COMMAND_ACTIONS_RESPONSES = {
-    "*IDN?": (None, "KEITHLEY INSTRUMENTS, MODEL DAQ6510, SIMULATOR"),
+    "*IDN?": (None, f"KEITHLEY INSTRUMENTS,DAQ6510,SIMULATOR,{VERSION}"),
+    "*ACTION-RESPONSE?": (partial(log, logging.INFO, "Requested action with response."), get_time),
+    "*ACTION-NO-RESPONSE": (partial(log, logging.INFO, "Requested action without response."), None),
 }
 
 # Check the regex at https://regex101.com
@@ -79,65 +96,105 @@ COMMAND_PATTERNS_ACTIONS_RESPONSES = {
 
 
 def write(conn, response: str):
-    response = f"{response}\n".encode()
-    logger.debug(f"write: {response = }")
+    response = f"{response}{SEPARATOR_STR}".encode()
+    if VERBOSE_DEBUG:
+        logger.debug(f"write: {response = }")
     conn.sendall(response)
+
+
+# Keep a receive buffer per connection
+_recv_buffers: dict[int, bytes] = {}
 
 
 def read(conn) -> str:
     """
-    Reads one command string from the socket, i.e. until a linefeed ('\n') is received.
-
-    Returns:
-        The command string with the linefeed stripped off.
+    Read bytes from `conn` until a `SEPARATOR` is found (or connection closed / timeout).
+    Returns the first chunk (separator stripped). Any bytes after the separator are kept
+    in a per-connection buffer for the next call.
     """
-
-    n_total = 0
-    buf_size = 1024 * 4
-    command_string = bytes()
+    fileno = conn.fileno()
+    buf = _recv_buffers.get(fileno, b"")
 
     try:
-        for _ in range(100):
-            data = conn.recv(buf_size)
-            n = len(data)
-            n_total += n
-            command_string += data
-            # if data.endswith(b'\n'):
-            if n < buf_size:
-                break
+        while True:
+            # If we already have a full line in the buffer, split and return it.
+            if SEPARATOR in buf:
+                line, rest = buf.split(SEPARATOR, 1)
+                _recv_buffers[fileno] = rest
+                logger.info(f"read: {line=}")
+                return line.decode().rstrip()
+
+            # Read more data
+            data = conn.recv(1024 * 4)
+            if not data:
+                # Connection closed by peer; return whatever we have (may be empty)
+                _recv_buffers.pop(fileno, None)
+                logger.info(f"read (connection closed): {buf=}")
+                return buf.decode().rstrip()
+            buf += data
+            _recv_buffers[fileno] = buf
+
     except socket.timeout:
-        # This timeout is caught at the caller, where the timeout is set.
+        # If we have accumulated data without a separator, return it (partial read),
+        # otherwise propagate the timeout so caller can handle/suppress it.
+        if buf:
+            _recv_buffers[fileno] = buf
+            logger.info(f"read (timeout, partial): {buf=}")
+            return buf.decode().rstrip()
         raise
 
-    logger.info(f"read: {command_string=}")
 
-    return command_string.decode().rstrip()
-
-
-def process_command(command_string: str) -> str:
+def process_command(command_string: str) -> str | None:
+    """Process the given command string and return a response."""
     global COMMAND_ACTIONS_RESPONSES
     global COMMAND_PATTERNS_ACTIONS_RESPONSES
     global error_msg
 
-    # LOGGER.debug(f"{command_string=}")
+    if VERBOSE_DEBUG:
+        logger.debug(f"{command_string=}")
 
     try:
         action, response = COMMAND_ACTIONS_RESPONSES[command_string]
-        action and action()
-        if error_msg:
-            return error_msg
+        if VERBOSE_DEBUG:
+            logger.debug(f"{action=}, {response=}")
+
+        if action:
+            action()
+
+        if response:
+            if error_msg:
+                return error_msg
+            else:
+                return response() if callable(response) else response
         else:
-            return response if isinstance(response, str) else response()
+            if error_msg:
+                logger.error(f"Error occurred during process command: {error_msg}")
+            return None
     except KeyError:
         # try to match with a value
         for key, value in COMMAND_PATTERNS_ACTIONS_RESPONSES.items():
             if match := re.match(key, command_string, flags=re.IGNORECASE):
-                # LOGGER.debug(f"{match=}, {match.groups()}")
+                if VERBOSE_DEBUG:
+                    logger.debug(f"{match=}, {match.groups()}")
                 action, response = value
-                # LOGGER.debug(f"{action=}, {response=}")
-                action and action(*match.groups())
-                return error_msg or (response if isinstance(response, str) or response is None else response())
-        return f"ERROR: unknown command string: {command_string}"
+                if VERBOSE_DEBUG:
+                    logger.debug(f"{action=}, {response=}")
+
+                if action:
+                    action(*match.groups())
+
+                if response:
+                    if error_msg:
+                        return error_msg
+                    else:
+                        return response() if callable(response) else response
+                else:
+                    if error_msg:
+                        logger.error(f"Error occurred during process command: {error_msg}")
+                    return None
+
+        logger.error(f"ERROR: unknown command string: {command_string}")
+        return None
 
 
 def run_simulator():
@@ -150,7 +207,7 @@ def run_simulator():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((HOST, DAQ_SETTINGS.PORT))
         s.listen()
-        s.settimeout(2.0)
+        s.settimeout(CONNECTION_TIMEOUT)
         while True:
             while True:
                 with contextlib.suppress(socket.timeout):
@@ -161,13 +218,17 @@ def run_simulator():
             with conn:
                 logger.info(f"Accepted connection from {addr}")
                 write(conn, "This is PLATO DAQ6510 X.X.sim")
-                conn.settimeout(2.0)
+                conn.settimeout(READ_TIMEOUT)
                 try:
                     while True:
                         error_msg = ""
                         with contextlib.suppress(socket.timeout):
                             data = read(conn)
-                            logger.info(f"{data = }")
+                            if VERBOSE_DEBUG:
+                                logger.debug(f"{data = }")
+                            if not data:
+                                logger.info("Client closed connection, accepting new connection...")
+                                break
                             if data.strip() == "STOP":
                                 logger.info("Client requested to terminate...")
                                 s.close()
@@ -176,9 +237,6 @@ def run_simulator():
                                 response = process_command(cmd.strip())
                                 if response is not None:
                                     write(conn, response)
-                            if not data:
-                                logger.info("Client closed connection, accepting new connection...")
-                                break
                         if killer.term_signal_received:
                             logger.info("Terminating...")
                             s.close()
@@ -196,20 +254,20 @@ def run_simulator():
                     logger.info(f"{exc.__class__.__name__} caught: {exc.args}")
 
 
-def send_request(cmd: str, type_: str = "query"):
-    from egse.tempcontrol.keithley.daq6510_dev import DAQ6510EthernetInterface
+def send_request(cmd: str, cmd_type: str = "query") -> str | None:
+    from egse.tempcontrol.keithley.daq6510_dev import DAQ6510
 
     response = None
 
-    daq_dev = DAQ6510EthernetInterface(hostname="localhost", port=5025)
+    daq_dev = DAQ6510(hostname="localhost", port=5025)
     daq_dev.connect()
 
-    if type_.lower().strip() == "query":
+    if cmd_type.lower().strip() == "query":
         response = daq_dev.query(cmd)
-    elif type_.lower().strip() == "write":
+    elif cmd_type.lower().strip() == "write":
         daq_dev.write(cmd)
     else:
-        logger.info(f"Unknown type {type_} for send_request.")
+        logger.info(f"Unknown command type {cmd_type} for send_request.")
 
     daq_dev.disconnect()
 
@@ -234,15 +292,14 @@ def stop():
 
 
 @app.command()
-def command(type_: str, cmd: str):
-    response = send_request(cmd, type_)
+def command(
+    cmd: str,
+    cmd_type: Annotated[str, typer.Argument(help="either 'write', 'query'")] = "query",
+):
+    """Send an SCPI command directly to the simulator. The response will be in the log info."""
+    response = send_request(cmd, cmd_type)
     logger.info(f"{response}")
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(asctime)s  %(threadName)-12s %(levelname)-8s %(name)-12s %(module)-20s %(message)s",
-    )
-
     app()

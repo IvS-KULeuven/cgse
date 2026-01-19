@@ -2,10 +2,10 @@ from egse.setup import load_setup
 
 
 def test_private_caching_functions(default_env):
+    from egse.confman import _add_setup_info_to_cache
     from egse.confman import _get_cached_setup_info
     from egse.confman import _populate_cached_setup_info
     from egse.confman import _print_cached_setup_info
-    from egse.confman import _add_setup_info_to_cache
 
     assert _get_cached_setup_info(0) is None
 

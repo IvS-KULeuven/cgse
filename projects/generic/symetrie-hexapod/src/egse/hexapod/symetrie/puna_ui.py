@@ -29,6 +29,8 @@ from PyQt5.QtWidgets import QFrame
 from PyQt5.QtWidgets import QHBoxLayout
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import QVBoxLayout
+from dotenv import find_dotenv
+from dotenv import load_dotenv
 
 from egse.gui import show_warning_message
 from egse.gui.led import Indic
@@ -48,11 +50,10 @@ from egse.process import ProcessStatus
 from egse.resource import get_resource
 from egse.settings import Settings
 from egse.system import do_every
-from dotenv import load_dotenv
 
 MODULE_LOGGER = logging.getLogger(__name__)
 
-load_dotenv(override=True)
+load_dotenv(find_dotenv(usecwd=True), override=True)
 
 
 class DeviceControllerType(IntEnum):

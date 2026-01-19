@@ -1,13 +1,22 @@
 import logging
+import time
 from pathlib import Path
+
+import pytest
 
 from egse.env import get_log_file_location
 from egse.logger import create_new_zmq_logger
 from egse.logger import egse_logger
 from egse.logger import get_log_file_name
+from egse.logger import send_request
+from egse.process import is_process_running
 from egse.system import read_last_lines
 
 
+@pytest.mark.skipif(
+    bool(is_process_running(items=["log_cs"])),
+    reason="This test starts its own logging server, log_cs can not be running.",
+)
 def test_logging_messages_of_different_levels(setup_log_service):
     # The egse logger doesn't propagate messages to parent loggers, so we
     # have to add the caplog handler in order to capture logging messages for this test.
@@ -20,20 +29,26 @@ def test_logging_messages_of_different_levels(setup_log_service):
     egse_logger.error("This is a ERROR message.")
     egse_logger.critical("This is a CRITICAL message.")
 
-    log_location = get_log_file_location()
+    time.sleep(1.0)  # give some time for the log messages to be written to file
 
-    lines = read_last_lines(filename=Path(log_location) / get_log_file_name(), num_lines=20)
+    status = send_request("status")
+
+    log_location = get_log_file_location() + "/" + get_log_file_name()
+    log_location = status.get("file_logger_location", log_location)
+
+    lines = read_last_lines(filename=Path(log_location), num_lines=10)
 
     # FIXME:
     #    In my setup, lines is [], so nothing has been read from the log file. When I inspect
     #    the log file after the test, the expected line is there!
     #    -> check if the log_cs service is running and writing to the expected location.
 
-    print(f"{log_location = }, {get_log_file_name()=}")
+    print(f"{log_location = }, {get_log_file_name()=}, {len(lines)=}")
     for line in lines:
         print(line)
 
-    # The DEBUG message should be in the log file that was created by the log_cs
+    # The DEBUG message should be in the log file that was created by the log_cs, because
+    # the log level is set to DEBUG for the log-file.
 
     assert any([True if "This is a DEBUG message." in x else False for x in lines])
 

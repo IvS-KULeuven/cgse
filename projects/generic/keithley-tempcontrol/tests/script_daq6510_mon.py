@@ -3,12 +3,13 @@ import logging
 import time
 
 from egse.tempcontrol.keithley.daq6510_mon import DAQMonitorClient
+from egse.tempcontrol.keithley.daq6510_mon import DAQ_MON_CMD_PORT
 
-logger = logging.getLogger("daq6510-client")
+logger = logging.getLogger("egse.daq6510-client")
 
 
 def daq6510_mon():
-    with DAQMonitorClient(server_address="localhost", port=5556) as client:
+    with DAQMonitorClient(server_address="localhost", port=DAQ_MON_CMD_PORT) as client:
         # Get current status
         status = client.get_status()
         logger.info(f"Service status: {json.dumps(status, indent=4)}")
@@ -61,9 +62,4 @@ def daq6510_mon():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-12s %(lineno)5d:%(module)-20s %(message)s",
-    )
-
     daq6510_mon()

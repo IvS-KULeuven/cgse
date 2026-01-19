@@ -339,6 +339,76 @@ class AsyncDeviceTransport:
         return await self.trans(command)
 
 
+class AsyncDeviceConnectionInterface(DeviceConnectionObservable):
+    """Generic connection interface for all Device classes and Controllers.
+
+    This interface shall be implemented in the Controllers that directly connect to the
+    hardware, but also in the simulators to guarantee an identical interface as the controllers.
+
+    This interface will be implemented in the Proxy classes through the
+    YAML definitions. Therefore, the YAML files shall define at least
+    the following commands: `connect`, `disconnect`, `reconnect`, `is_connected`.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def __enter__(self):
+        self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.disconnect()
+
+    async def connect(self) -> None:
+        """Connect to the device controller.
+
+        Raises:
+            ConnectionError: when the connection can not be opened.
+        """
+
+        raise NotImplementedError
+
+    async def disconnect(self) -> None:
+        """Disconnect from the device controller.
+
+        Raises:
+            ConnectionError: when the connection can not be closed.
+        """
+        raise NotImplementedError
+
+    async def reconnect(self):
+        """Reconnect the device controller.
+
+        Raises:
+            ConnectionError: when the device can not  be reconnected for some reason.
+        """
+        raise NotImplementedError
+
+    async def is_connected(self) -> bool:
+        """Check if the device is connected.
+
+        Returns:
+            True if the device is connected and responds to a command, False otherwise.
+        """
+        raise NotImplementedError
+
+
+class AsyncDeviceInterface(AsyncDeviceConnectionInterface):
+    """A generic interface for all device classes."""
+
+    def is_simulator(self) -> bool:
+        """Checks whether the device is a simulator rather than a real hardware controller.
+
+        This can be useful for testing purposes or when doing actual movement simulations.
+
+        Returns:
+            True if the Device is a Simulator; False if the Device is connected to real hardware.
+        """
+
+        raise NotImplementedError
+
+
 class DeviceFactoryInterface:
     """
     Base class for creating a device factory class to access devices.

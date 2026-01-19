@@ -2283,6 +2283,11 @@ def kebab_to_title(kebab_str: str) -> str:
     return kebab_str.replace("-", " ").title()
 
 
+def title_to_kebab(title_str: str) -> str:
+    """Convert Title Case (each word capitalized) to kebab-case"""
+    return title_str.replace(" ", "-").lower()
+
+
 def snake_to_title(snake_str: str) -> str:
     """Convert snake_case to Title Case (each word capitalized)"""
     return snake_str.replace("_", " ").title()

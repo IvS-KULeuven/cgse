@@ -1,23 +1,30 @@
-import logging
+__all__ = [
+    "DAQ6510",
+    "DAQ6510Command",
+]
 import socket
 import time
 
 from egse.command import ClientServerCommand
 from egse.device import DeviceConnectionError
-from egse.device import DeviceConnectionInterface
 from egse.device import DeviceError
+from egse.device import DeviceInterface
 from egse.device import DeviceTimeoutError
 from egse.device import DeviceTransport
+from egse.log import logger
 from egse.settings import Settings
-from egse.system import Timer
-
-logger = logging.getLogger(__name__)
 
 IDENTIFICATION_QUERY = "*IDN?"
 
-DEVICE_SETTINGS = Settings.load("Keithley DAQ6510")
-DEVICE_NAME = "DAQ6510"
-READ_TIMEOUT = DEVICE_SETTINGS.TIMEOUT  # [s], can be smaller than timeout (for DAQ6510Proxy) (e.g. 1s)
+dev_settings = Settings.load("Keithley DAQ6510")
+
+DEVICE_NAME = dev_settings.get("DEVICE_NAME", "DAQ6510")
+DEV_HOST = dev_settings.get("HOSTNAME")
+DEV_PORT = dev_settings.get("PORT")
+READ_TIMEOUT = dev_settings.get("TIMEOUT")  # [s], can be smaller than timeout (for DAQ6510Proxy) (e.g. 1s)
+
+SEPARATOR = b"\n"
+SEPARATOR_STR = SEPARATOR.decode()
 
 
 class DAQ6510Command(ClientServerCommand):
@@ -32,13 +39,13 @@ class DAQ6510Command(ClientServerCommand):
         """
 
         out = super().get_cmd_string(*args, **kwargs)
-        return out + "\n"
+        return out + SEPARATOR_STR
 
 
-class DAQ6510EthernetInterface(DeviceConnectionInterface, DeviceTransport):
+class DAQ6510(DeviceInterface, DeviceTransport):
     """Defines the low-level interface to the Keithley DAQ6510 Controller."""
 
-    def __init__(self, hostname: str = None, port: int = None):
+    def __init__(self, hostname: str = DEV_HOST, port: int = DEV_PORT):
         """Initialisation of an Ethernet interface for the DAQ6510.
 
         Args:
@@ -48,11 +55,65 @@ class DAQ6510EthernetInterface(DeviceConnectionInterface, DeviceTransport):
 
         super().__init__()
 
-        self.hostname = DEVICE_SETTINGS.HOSTNAME if hostname is None else hostname
-        self.port = DEVICE_SETTINGS.PORT if port is None else port
+        self.device_name = DEVICE_NAME
+        self.hostname = hostname
+        self.port = port
         self._sock = None
 
         self._is_connection_open = False
+
+    def initialize(self, commands: list[tuple[str, bool]] = None, reset_device: bool = False) -> list[str | None]:
+        """Initialize the device with optional reset and command sequence.
+
+        Performs device initialization by optionally resetting the device and then
+        executing a sequence of commands. Each command can optionally expect a
+        response that will be logged for debugging purposes.
+
+        Args:
+           commands: List of tuples containing (command_string, expects_response).
+               Each tuple specifies a command to send and whether to wait for and
+               log the response. Defaults to None (no commands executed).
+           reset_device: Whether to send a reset command (*RST) before executing
+               the command sequence. Defaults to False.
+
+        Returns:
+           Response for each of the commands, or None when no response was expected.
+
+        Raises:
+           Any exceptions raised by the underlying write() or trans() methods,
+           typically communication errors or device timeouts.
+
+        Example:
+            responses = device.initialize(
+                [
+                    ("*IDN?", True),           # Query device ID, expect response
+                    ("SYST:ERR?", True),       # Check for errors, expect response
+                    ("OUTP ON", False)         # Enable output, no response expected
+                ],
+                reset_device=True
+            )
+        """
+
+        commands = commands or []
+        responses = []
+
+        if reset_device:
+            logger.info(f"Resetting the {self.device_name}...")
+            self.write("*RST")  # this also resets the user-defined buffer
+
+        for cmd, expects_response in commands:
+            if expects_response:
+                logger.debug(f"Sending {cmd}...")
+                response = self.trans(cmd).decode().strip()
+                logger.debug(f"{response = }")
+            else:
+                logger.debug(f"Sending {cmd}...")
+                self.write(cmd)
+
+        return responses
+
+    def is_simulator(self) -> bool:
+        return False
 
     def connect(self) -> None:
         """Connects the device.
@@ -187,7 +248,7 @@ class DAQ6510EthernetInterface(DeviceConnectionInterface, DeviceTransport):
         """
 
         try:
-            command += "\n" if not command.endswith("\n") else ""
+            command += SEPARATOR_STR if not command.endswith(SEPARATOR_STR) else ""
 
             self._sock.sendall(command.encode())
 
@@ -202,7 +263,7 @@ class DAQ6510EthernetInterface(DeviceConnectionInterface, DeviceTransport):
                 raise DeviceConnectionError(DEVICE_NAME, msg)
             raise
 
-    def trans(self, command: str) -> str:
+    def trans(self, command: str) -> bytes:
         """Sends a single command to the device controller and block until a response from the controller.
 
         This is seen as a transaction.
@@ -221,7 +282,7 @@ class DAQ6510EthernetInterface(DeviceConnectionInterface, DeviceTransport):
         try:
             # Attempt to send the complete command
 
-            command += "\n" if not command.endswith("\n") else ""
+            command += SEPARATOR_STR if not command.endswith(SEPARATOR_STR) else ""
 
             self._sock.sendall(command.encode())
 
@@ -267,10 +328,7 @@ class DAQ6510EthernetInterface(DeviceConnectionInterface, DeviceTransport):
                     break
         except socket.timeout:
             logger.warning(f"Socket timeout error for {self.hostname}:{self.port}")
-            return b"\r\n"
-        except TimeoutError as exc:
-            logger.warning(f"Socket timeout error: {exc}")
-            return b"\r\n"
+            return SEPARATOR
         finally:
             self._sock.settimeout(saved_timeout)
 

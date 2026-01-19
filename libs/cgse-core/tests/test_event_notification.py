@@ -16,13 +16,14 @@ You can use the script 'script_subscribe_to_notifyhub.py' to follow the events.
 
 import threading
 import time
+
 import pytest
+
 from egse.log import logger
 from egse.notifyhub import is_notify_hub_active
 from egse.notifyhub.event import NotificationEvent
 from egse.notifyhub.services import EventPublisher
 from egse.notifyhub.services import EventSubscriber
-
 
 pytestmark = pytest.mark.skipif(
     not is_notify_hub_active(), reason="The notification hub shall be running for this test."
@@ -110,8 +111,9 @@ def test_event_retention_time_1():
         event_data = subscriber.handle_event(return_event_data=True)
         logger.info(f"{event_data=}")
         assert event_data["event_type"] == "retention-event"
+        pytest.fail("Didn't expected retention-event because we subscribed late.")
     else:
-        pytest.fail("Expected one retention-event...")
+        logger.info("As expected, no retention-event...")
 
     subscriber.disconnect()
 
@@ -174,6 +176,8 @@ def test_event_retention_time_2():
 
 def test_event_publisher(caplog):
     # NOTE: Make sure logging through the egse_logger is enabled for DEBUG
+
+    caplog.set_level("DEBUG", "egse")
 
     # This test is to check if the message
     with EventPublisher() as pub:

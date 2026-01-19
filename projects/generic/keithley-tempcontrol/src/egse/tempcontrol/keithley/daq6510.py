@@ -1,32 +1,39 @@
 import logging
 import re
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict
 from typing import List
 from typing import Tuple
 
+from egse.connect import get_endpoint
 from egse.decorators import dynamic_interface
 from egse.device import DeviceConnectionState
 from egse.device import DeviceInterface
-from egse.mixin import DynamicCommandMixin, CommandType
+from egse.log import logger
+from egse.mixin import CommandType
+from egse.mixin import DynamicCommandMixin
 from egse.mixin import add_lf
 from egse.mixin import dynamic_command
 from egse.proxy import Proxy
 from egse.settings import Settings
-from egse.tempcontrol.keithley.daq6510_dev import DAQ6510EthernetInterface
-from egse.zmq_ser import connect_address
-
-logger = logging.getLogger(__name__)
+from egse.tempcontrol.keithley.daq6510_dev import DAQ6510
 
 HERE = Path(__file__).parent
 
-CTRL_SETTINGS = Settings.load("Keithley Control Server")
-FW_SETTINGS = Settings.load("Keithley DAQ6510")
-DEVICE_SETTINGS = Settings.load(location=HERE, filename="daq6510.yaml")
+cs_settings = Settings.load("Keithley Control Server")
+dev_settings = Settings.load("Keithley DAQ6510")
 
+PROTOCOL = cs_settings.get("PROTOCOL", "tcp")
+HOSTNAME = cs_settings.get("HOSTNAME", "localhost")
+COMMANDING_PORT = cs_settings.get("COMMANDING_PORT", 0)
+TIMEOUT = cs_settings.get("TIMEOUT")
+SERVICE_TYPE = cs_settings.get("SERVICE_TYPE", "daq6510")
 
 DEFAULT_BUFFER_1 = "defbuffer1"
 DEFAULT_BUFFER_2 = "defbuffer2"
+
+DEV_HOST = dev_settings.get("HOSTNAME")
+DEV_PORT = dev_settings.get("PORT")
 
 
 class DAQ6510Interface(DeviceInterface):
@@ -35,7 +42,7 @@ class DAQ6510Interface(DeviceInterface):
     """
 
     @dynamic_interface
-    def send_command(self, command: str, response: bool) -> Union[None, str]:
+    def send_command(self, command: str, response: bool) -> str | None:
         """Sends the given SCPI command to the device.
 
         The valid commands are described in the DAQ6510 Reference Manual [DAQ6510-901-01 Rev. B / September 2019].
@@ -219,12 +226,12 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
     through an Ethernet interface.
     """
 
-    def __init__(self, hostname: str = FW_SETTINGS.HOSTNAME, port: int = FW_SETTINGS.PORT):
+    def __init__(self, hostname: str = DEV_HOST, port: int = DEV_PORT):
         """Opens a TCP/IP socket connection with the Keithley DAQ6510 Hardware.
 
         Args:
-            hostname (str): IP address or fully qualified hostname of the Hexapod hardware controller. The default is
-                            defined in the ``settings.yaml`` configuration file.
+            hostname (str): IP address or fully qualified hostname of the DAQ6510 hardware controller.
+                The default is defined in the ``settings.yaml`` configuration file.
             port (int): IP port number to connect to, by default set in the ``settings.yaml`` configuration file.
 
         Raises:
@@ -235,7 +242,7 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
 
         logger.debug(f"Initializing the DAQ6510 Controller with hostname={hostname} on port={port}")
 
-        self.daq = self.transport = DAQ6510EthernetInterface(hostname, port)
+        self.daq = self.transport = DAQ6510(hostname, port)
 
         # We set the default buffer here, this can be changed with the `create_buffer()` method.
 
@@ -277,7 +284,7 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
 
         return self.daq.is_connected()
 
-    def send_command(self, command: str, response: bool) -> Union[None, str]:
+    def send_command(self, command: str, response: bool) -> str | None:
         """Sends an SCPI command to the device.
 
         The valid commands are described in the DAQ6510 Reference Manual [DAQ6510-901-01 Rev. B / September 2019].
@@ -292,7 +299,7 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
 
         return self.daq.trans(command) if response else self.daq.write(command)
 
-    def read_buffer(self, start: int, end: int, buffer_name: str = DEFAULT_BUFFER_1, elements: List[str] = None):
+    def read_buffer(self, start: int, end: int, buffer_name: str = DEFAULT_BUFFER_1, elements: list[str] = None):
         """Reads specific data elements (measurements) from the given buffer.
 
         Elements that can be specified to read out:
@@ -566,10 +573,10 @@ class DAQ6510Proxy(Proxy, DAQ6510Interface):
 
     def __init__(
         self,
-        protocol: str = CTRL_SETTINGS.PROTOCOL,
-        hostname: str = CTRL_SETTINGS.HOSTNAME,
-        port: int = CTRL_SETTINGS.COMMANDING_PORT,
-        timeout: int = CTRL_SETTINGS.TIMEOUT * 1000,  # Timeout [ms]: > scan count * interval + (one scan duration)
+        protocol: str = PROTOCOL,
+        hostname: str = HOSTNAME,
+        port: int = COMMANDING_PORT,
+        timeout: float = TIMEOUT,  # Timeout [s]: > scan count * interval + (one scan duration)
     ):
         """Initialisation of a DAQ6510Proxy.
 
@@ -578,10 +585,12 @@ class DAQ6510Proxy(Proxy, DAQ6510Interface):
             hostname (str): Location of the Control Server (IP address) [default is taken from settings file]
             port (int): TCP port on which the Control Server is listening for commands [default is taken from settings
                         file]
-            timeout (int): Timeout by which to establish the connection [ms]
+            timeout (float): Timeout by which to establish the connection [s]
         """
 
-        super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
+        endpoint = get_endpoint(SERVICE_TYPE, protocol, hostname, port)
+
+        super().__init__(endpoint, timeout=timeout)
 
 
 def create_channel_list(*args) -> str:

@@ -1,19 +1,21 @@
+import asyncio
 import subprocess
 import sys
 import time
 from logging import warning
-from pathlib import Path
 
 import pytest
+import pytest_asyncio
+from fixtures.helpers import is_process_not_running
+from fixtures.helpers import is_service_registry_running
 
+from egse.log import logger
 from egse.logger import setup_logging
 from egse.logger import teardown_logging
 from egse.process import SubProcess
 from egse.process import is_process_running
+from egse.system import redirect_output_to_log
 from egse.system import waiting_for
-
-from fixtures.helpers import is_process_not_running
-
 
 # #### WARNING #####
 #
@@ -30,7 +32,7 @@ from fixtures.helpers import is_process_not_running
 
 
 @pytest.fixture(scope="module")
-def setup_log_service(default_env):
+def setup_log_service(default_env, tmp_path_factory):
     """This fixture starts the CGSE log service."""
 
     # FIXME: this needs to be looked at with respect to `setup_logging()`
@@ -43,10 +45,9 @@ def setup_log_service(default_env):
 
     # Starting the logging manager ------------------------------------------------------------------------------------
 
-    # log_cs = SubProcess("Logging Manager", ["log_cs", "start"])
-    # log_cs.execute()
-
-    out = open(Path("~/.log_cs.start.out").expanduser(), "w")
+    # Use pytest's temporary directory (automatically cleaned up)
+    out_path = tmp_path_factory.mktemp("logs") / "log_cs.start.out"
+    out = redirect_output_to_log(str(out_path), append=False, overwrite=True)
 
     log_cs = subprocess.Popen(
         [sys.executable, "-m", "egse.logger.log_cs", "start"],
@@ -63,7 +64,9 @@ def setup_log_service(default_env):
 
     time.sleep(2.0)  # give the process some time to startup
 
-    yield
+    yield {
+        "out_path": out_path,
+    }
 
     # Stopping the logging manager ------------------------------------------------------------------------------------
 
@@ -72,9 +75,61 @@ def setup_log_service(default_env):
 
     try:
         waiting_for(is_process_not_running, ["log_cs", "start"], interval=1.0, timeout=5.0)
-    except TimeoutError as exc:
+    except TimeoutError:
         warning("Couldn't stop the logging manager within the given time of 5s. Quiting...")
         log_cs.terminate()
+
+    out.close()
+
+
+@pytest_asyncio.fixture(scope="function")
+async def registry_service():
+    from egse.registry import DEFAULT_RS_DB_PATH
+    from egse.registry import DEFAULT_RS_HB_PORT
+    from egse.registry import DEFAULT_RS_PUB_PORT
+    from egse.registry import DEFAULT_RS_REQ_PORT
+    from egse.registry.server import AsyncRegistryServer
+
+    if is_service_registry_running():
+        logger.info("Service registry is already running. Will use the running service registry.")
+        yield None
+        logger.info("Service registry fixture done, service registry still running.")
+        return
+
+    logger.info("Starting service registry before test...")
+
+    server = AsyncRegistryServer(
+        req_port=DEFAULT_RS_REQ_PORT,
+        pub_port=DEFAULT_RS_PUB_PORT,
+        hb_port=DEFAULT_RS_HB_PORT,
+        db_path=DEFAULT_RS_DB_PATH,
+        cleanup_interval=10,
+    )
+
+    server_task = asyncio.create_task(server.start())
+
+    await asyncio.sleep(2.0)  # give the server some time to start
+
+    if not is_service_registry_running():
+        logger.info("Service registry is not running. Waiting one more second...")
+        await asyncio.sleep(1.0)
+
+    yield server
+
+    logger.info("Stopping service registry after test...")
+
+    server.stop()
+
+    try:
+        await asyncio.wait_for(server_task, timeout=2.0)
+    except asyncio.TimeoutError:
+        logger.warning("WARNING: Server task didn't complete in time during shutdown")
+
+    server_task.cancel()
+    try:
+        await server_task
+    except asyncio.CancelledError:
+        logger.info("Service registry server task was cancelled as expected.")
 
 
 @pytest.fixture(scope="module")
@@ -172,7 +227,7 @@ def setup_core_services():
 
     try:
         waiting_for(is_process_not_running, ["syn_cs", "start"], interval=1.0, timeout=5.0)
-    except TimeoutError as exc:
+    except TimeoutError:
         warning("Couldn't stop the synoptics manager within the given time of 5s. Quiting...")
         syn_cs.quit()
 
@@ -183,7 +238,7 @@ def setup_core_services():
 
     try:
         waiting_for(is_process_not_running, ["pm_cs", "start"], interval=1.0, timeout=5.0)
-    except TimeoutError as exc:
+    except TimeoutError:
         warning("Couldn't stop the process manager within the given time of 5s. Quiting...")
         pm_cs.quit()
 
@@ -194,7 +249,7 @@ def setup_core_services():
 
     try:
         waiting_for(is_process_not_running, ["cm_cs", "start"], interval=1.0, timeout=5.0)
-    except TimeoutError as exc:
+    except TimeoutError:
         warning("Couldn't stop the configuration manager within the given time of 5s. Quiting...")
         cm_cs.quit()
 
@@ -205,7 +260,7 @@ def setup_core_services():
 
     try:
         waiting_for(is_process_not_running, ["sm_cs", "start"], interval=1.0, timeout=5.0)
-    except TimeoutError as exc:
+    except TimeoutError:
         warning("Couldn't stop the storage manager within the given time of 5s. Quiting...")
         sm_cs.quit()
 
@@ -216,6 +271,6 @@ def setup_core_services():
 
     try:
         waiting_for(is_process_not_running, ["log_cs", "start"], interval=1.0, timeout=5.0)
-    except TimeoutError as exc:
+    except TimeoutError:
         warning("Couldn't stop the logging manager within the given time of 5s. Quiting...")
         log_cs.quit()

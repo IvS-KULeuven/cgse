@@ -9,13 +9,12 @@ import asyncio
 import json
 import time
 import uuid
-from unittest.mock import AsyncMock
-from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
 import zmq
 import zmq.asyncio
+from fixtures.helpers import is_service_registry_running
 
 from egse.log import logger
 from egse.registry import MessageType
@@ -23,7 +22,6 @@ from egse.registry.backend import AsyncInMemoryBackend
 from egse.registry.client import AsyncRegistryClient
 from egse.registry.server import AsyncRegistryServer
 from egse.system import type_name
-from fixtures.helpers import is_service_registry_running
 
 # Constants for testing
 TEST_REQ_PORT = 15556
@@ -41,7 +39,7 @@ pytestmark = pytest.mark.skipif(
 ################################################################################
 
 
-async def send_request(msg_type: MessageType, socket, request, timeout=5.0):
+async def send_request(msg_type: MessageType, socket, request, timeout=5.0) -> dict:
     """
     Send a request to the server and get response with proper timeout.
 
@@ -74,13 +72,13 @@ async def send_request(msg_type: MessageType, socket, request, timeout=5.0):
 
             if len(message_parts) >= 2:
                 message_type = MessageType(message_parts[0])
+                logger.debug(f"Received message type: {message_type}")
                 message_data = message_parts[1]
-
                 return json.loads(message_data)
             else:
                 return {
                     "success": False,
-                    "error": f"not enough parts received: {len(message_parts)}",
+                    "error": f"not enough message parts received: {len(message_parts)}",
                     "data": message_parts,
                 }
 
@@ -89,8 +87,9 @@ async def send_request(msg_type: MessageType, socket, request, timeout=5.0):
         except json.JSONDecodeError as exc:
             raise ValueError(f"Invalid JSON response: {exc}")
 
-    except KeyboardInterrupt as exc:
+    except KeyboardInterrupt:
         logger.info("Caught Keyboard Interrupt", exc_info=True)
+        raise
     except Exception as exc:
         # Add diagnostics to the error
         elapsed = time.time() - start_time
@@ -99,7 +98,7 @@ async def send_request(msg_type: MessageType, socket, request, timeout=5.0):
         raise RuntimeError(diagnostic_msg) from exc
 
 
-async def wait_for_event(socket, timeout=2.0):
+async def wait_for_event(socket, timeout=2.0) -> dict | None:
     """
     Wait for an event from the server with timeout.
 
@@ -506,6 +505,7 @@ async def test_server_deregister_service(server, req_socket, sub_socket):
     # Verify a de-registration event was published, the first event is the
     # registration which we will skip.
     event = await wait_for_event(sub_socket)
+    assert event is not None
     assert event["type"] == "register"
     event = await wait_for_event(sub_socket)
     assert event is not None
