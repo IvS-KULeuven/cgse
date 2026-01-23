@@ -2,20 +2,15 @@ import contextlib
 import logging
 import re
 import sys
-import time
 
 import pytest
 
 from egse.confman import is_configuration_manager_active
-from egse.dummy import DummyProxy
-from egse.dummy import is_dummy_cs_active
-from egse.dummy import is_dummy_dev_active
+from egse.dummy import DummyProxy, is_dummy_cs_active, is_dummy_dev_active
 from egse.process import SubProcess
 from egse.proxy import Proxy
 from egse.response import Failure
-from egse.system import Timer
-from egse.system import type_name
-from egse.system import waiting_for
+from egse.system import Timer, type_name, waiting_for
 
 logger = logging.getLogger("egse.tests")
 
@@ -122,7 +117,7 @@ def test_protocol_commands():
 
             assert dummy.has_commands() is True
 
-            for cmd in "info", "get_value", "handle_event":
+            for cmd in "info", "get_value", "division":
                 assert cmd in dummy.get_commands()
 
             assert is_valid_ip_address_format(dummy.get_ip_address())

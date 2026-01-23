@@ -150,6 +150,8 @@ nav:
     - user_guide/index.md
     - user_guide/cli.md
     - user_guide/env.md
+  - Administrator Guide:
+    - admin_guide/make-a-release.md
   - Libs:
     - libs/index.md
     - cgse-common:

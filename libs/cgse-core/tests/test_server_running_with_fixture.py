@@ -15,24 +15,26 @@ import pytest
 import pytest_asyncio
 import zmq
 import zmq.asyncio
+from fixtures.helpers import is_service_registry_running
 
 from egse.log import logger
 from egse.registry.backend import AsyncInMemoryBackend
 from egse.registry.server import AsyncRegistryServer
-from fixtures.helpers import is_service_registry_running
 
 TEST_REQ_PORT = 15556
 TEST_PUB_PORT = 15557
 
 SERVER_STARTUP_TIMEOUT = 5
 
-pytestmark = pytest.mark.skipif(is_service_registry_running, reason="this file is not ready for testing yet")
+pytestmark = pytest.mark.skipif(is_service_registry_running(), reason="this file is not ready for testing yet")
 
 
 async def server_health_check(zmq_context):
     # Verify server is ready by testing the health endpoint
     start_time = time.time()
-    test_socket = zmq_context.socket(zmq.REQ)
+    test_socket = zmq_context.socket(zmq.DEALER)
+    test_socket.setsockopt(zmq.LINGER, 0)  # Don't wait for unsent messages on close()
+    test_socket.setsockopt(zmq.IDENTITY, b"health-check-client")
     test_socket.connect(f"tcp://localhost:{TEST_REQ_PORT}")
 
     server_ready = False
@@ -46,14 +48,17 @@ async def server_health_check(zmq_context):
                 break
 
             # Send health check request
-            await test_socket.send_string(json.dumps(health_request))
+            await test_socket.send_multipart([b"REQ", json.dumps(health_request).encode()])
 
             # Wait for response
             if await test_socket.poll(timeout=1000):
-                response_json = await test_socket.recv_string()
-                response = json.loads(response_json)
+                response_parts = await test_socket.recv_multipart()
+                response_type = response_parts[0]
+                logger.info(f"Received response type: {response_type=}")
+                response_data = json.loads(response_parts[1].decode())
+                logger.info(f"Received response data: {response_data=}")
 
-                if response.get("success"):
+                if response_data.get("success"):
                     server_ready = True
                     logger.info(f"Server ready after {attempt} attempts")
                     break

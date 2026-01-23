@@ -6,13 +6,21 @@ import pytest
 
 from egse.device import DeviceConnectionError
 from egse.device import DeviceTimeoutError
+from egse.env import bool_env
+from egse.log import logger
+from egse.settings import Settings
 from egse.tempcontrol.keithley.daq6510_adev import DAQ6510
+from egse.tempcontrol.keithley.daq6510_mon import DAQMonitorClient
 
-SCPI_PORT = 5025
-HOSTNAME = "192.168.68.77"  # hostname at home with DHCP
+settings = Settings.load("Keithley DAQ6510")
+
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
+
+SCPI_PORT = settings.get("PORT")
+HOSTNAME = settings.get("HOSTNAME")
 
 
-@pytest.mark.sayncio
+@pytest.mark.asyncio
 async def is_daq6510_available():
     try:
         daq = DAQ6510(HOSTNAME, SCPI_PORT)
@@ -23,6 +31,25 @@ async def is_daq6510_available():
     return True
 
 
+def is_daq6510_monitor_active():
+    if VERBOSE_DEBUG:
+        logger.debug("Checking if monitor is active...")
+
+    client = DAQMonitorClient(timeout=0.5)
+
+    try:
+        client.connect()
+        status = client.get_status()
+        if status["status"] == "ok":
+            return True
+        else:
+            return False
+    finally:
+        client.disconnect()
+        if VERBOSE_DEBUG:
+            logger.debug("Finished with checking for an active monitor.")
+
+
 @pytest.mark.asyncio
 async def test_constructor():
     daq = DAQ6510(HOSTNAME, SCPI_PORT)
@@ -30,9 +57,24 @@ async def test_constructor():
 
     response = await daq.query("*IDN?\n")
 
-    assert response == "KEITHLEY INSTRUMENTS,MODEL DAQ6510,04569510,1.7.12b"
+    idn = response.decode().strip()
+    manufacturer, model, _, firmware = idn.split(",")
+
+    assert manufacturer == "KEITHLEY INSTRUMENTS"
+    assert "DAQ6510" in model
+    assert (firmware == "1.7.12b") or (firmware == "0.1.0")
 
     await daq.disconnect()
+
+
+@pytest.mark.asyncio
+async def test_action_response():
+    # Simulator only
+
+    async with DAQ6510(HOSTNAME, SCPI_PORT) as daq:
+        response = await daq.query("*ACTION-RESPONSE?\n")
+        logger.info(f"*ACTION-RESPONSE: {response=}")
+        await daq.write("*ACTION-NO-RESPONSE\n")
 
 
 @pytest.mark.asyncio
@@ -74,8 +116,19 @@ async def test_connection(caplog):
 
 @pytest.mark.asyncio
 async def test_context_manager():
+    logger.debug("Entering the actual test!")
+
     async with DAQ6510(HOSTNAME, SCPI_PORT) as daq:
         assert await daq.is_connected()
+
+        response = await daq.query("*IDN?\n")
+
+        idn = response.decode().strip()
+        manufacturer, model, _, firmware = idn.split(",")
+
+        assert manufacturer == "KEITHLEY INSTRUMENTS"
+        assert "DAQ6510" in model
+        assert (firmware == "1.7.12b") or (firmware == "0.1.0")
 
     assert not await daq.is_connected()
 
@@ -87,10 +140,16 @@ async def test_incorrect_construction():
     with pytest.raises(DeviceConnectionError, match="DAQ6510: Address resolution error for unknown"):
         await daq.connect()
 
+    if VERBOSE_DEBUG:
+        logger.debug(f"1 <{'-' * 200}")
+
     daq = DAQ6510(HOSTNAME)
     daq.hostname = None
     with pytest.raises(ValueError, match="DAQ6510: Hostname is not initialized"):
         await daq.connect()
+
+    if VERBOSE_DEBUG:
+        logger.debug(f"2 <{'-' * 200}")
 
     daq = DAQ6510(HOSTNAME)
     daq.port = None
@@ -98,21 +157,73 @@ async def test_incorrect_construction():
     with pytest.raises(ValueError, match="DAQ6510: Port number is not initialized"):
         await daq.connect()
 
-    daq = DAQ6510(HOSTNAME, 3000)  # pass an incorrect port number
+    if VERBOSE_DEBUG:
+        logger.debug(f"3 <{'-' * 200}")
 
-    with pytest.raises(DeviceConnectionError, match="DAQ6510: Connection refused"):
+    daq = DAQ6510(HOSTNAME, 3456)  # pass an incorrect port number, check with `lsof -i -n -P |grep 3456`
+
+    with pytest.raises(DeviceConnectionError, match="refused|failed"):
         await daq.connect()
+
+    if VERBOSE_DEBUG:
+        logger.debug(f"4 <{'-' * 200}")
 
 
 @pytest.mark.asyncio
-async def test_write_read():
+async def test_initialize():
+    init_commands = [
+        ('TRAC:MAKE "test1", 1000', False),  # create a new buffer
+        # settings for channel 1 and 2 of slot 1
+        ('SENS:FUNC "TEMP", (@101:102)', False),  # set the function to temperature
+        ("SENS:TEMP:TRAN FRTD, (@101)", False),  # set the transducer to 4-wire RTD
+        ("SENS:TEMP:RTD:FOUR PT100, (@101)", False),  # set the type of the 4-wire RTD
+        ("SENS:TEMP:TRAN RTD, (@102)", False),  # set the transducer to 2-wire RTD
+        ("SENS:TEMP:RTD:TWO PT100, (@102)", False),  # set the type of the 2-wire RTD
+        ('ROUT:SCAN:BUFF "test1"', False),
+        ("ROUT:SCAN:CRE (@101:102)", False),
+        ("ROUT:CHAN:OPEN (@101:102)", False),
+        ("ROUT:STAT? (@101:102)", True),
+        ("ROUT:SCAN:STAR:STIM NONE", False),
+        # ("ROUT:SCAN:ADD:SING (@101, 102)", False),  # not sure what this does, not really needed
+        ("ROUT:SCAN:COUN:SCAN 1", False),  # not sure if this is needed in this setting
+        # ("ROUT:SCAN:INT 1", False),
+    ]
+
     async with DAQ6510(HOSTNAME, SCPI_PORT) as daq:
-        await daq.write(':SYST:COMM:LAN:CONF "AUTO"')
+        await daq.initialize(reset_device=True)
+
+    async with DAQ6510(HOSTNAME, SCPI_PORT) as daq:
+        await daq.initialize(commands=init_commands, reset_device=False)
+        response = (await daq.query("ROUT:SCAN:BUFF?")).decode().strip()
+        assert response == "test1"
+
+    async with DAQ6510(HOSTNAME, SCPI_PORT) as daq:
+        await daq.initialize(reset_device=True)
+
+
+@pytest.mark.asyncio
+async def test_timeout_on_device():
+    # This is something that can not be tested since both the `query/trans()` and `write()` command
+    # append the required separator to the command string if it is missing.
+    ...
+
+
+@pytest.mark.asyncio
+async def test_check_lan_configuration():
+    async with DAQ6510(HOSTNAME, SCPI_PORT) as daq:
+        # DON'T change the LAN configuration, because you might not be able to reconnect.
+        # await daq.write(':SYST:COMM:LAN:CONF "AUTO"')
+        # await asyncio.sleep(0.1)
+
         await daq.write(":SYST:COMM:LAN:CONF?")
 
-        response = (await daq.read()).decode()
+        response = (await daq.read()).decode().strip()
 
-        assert response.startswith("auto")
+        logger.info(f"{response=}")
+
+        mode, ip, subnet, gateway = response.split(",")
+        assert mode in ("auto", "manual")
+        assert ip == HOSTNAME
 
 
 @pytest.mark.asyncio
@@ -168,7 +279,7 @@ async def test_a_scan():
 
             response = await daq.trans('TRAC:DATA? 1, 2, "test1", CHAN, TST, READ')
             print(f"{response = }")
-            ch1, tst1, val1, ch2, tst2, val2 = response.split(",")
+            ch1, tst1, val1, ch2, tst2, val2 = response.decode().split(",")
             print(f"Channel: {ch1} Time: {tst1} Value: {float(val1):.4f}\t", end="")
             print(f"Channel: {ch2} Time: {tst2} Value: {float(val2):.4f}")
             await asyncio.sleep(0.1)
@@ -223,11 +334,16 @@ async def test_another_scan():
             await asyncio.sleep(0.1)
 
 
+@pytest.mark.skipif(
+    not is_daq6510_monitor_active(), reason="The DAQ6510 Monitoring service needs to be running for this test."
+)
 @pytest.mark.asyncio
 async def test_daq6510_mon():
     from egse.tempcontrol.keithley.daq6510_mon import DAQMonitorClient
+    from egse.tempcontrol.keithley.daq6510_mon import DAQ_MON_CMD_PORT
 
-    client = DAQMonitorClient(server_address="localhost", port=5556)
+    client = DAQMonitorClient(server_address="localhost", port=DAQ_MON_CMD_PORT)
+    client.connect()
 
     try:
         # Get current status
@@ -253,4 +369,25 @@ async def test_daq6510_mon():
         print(f"Stop polling response: {response}")
 
     finally:
-        client.close()
+        client.disconnect()
+
+
+if __name__ == "__main__":
+    from egse.log import logging
+
+    # The statement logging.captureWarnings(True) redirects Python's warnings module output
+    # (such as warnings.warn(...)) to the logging system, so warnings appear in your logs
+    # instead of just printing to stderr. This is useful for unified logging and easier
+    # debugging, especially in larger applications.
+    logging.captureWarnings(True)
+
+    try:
+        # main_task = asyncio.run(test_action_response())
+        main_task = asyncio.run(test_a_scan())
+        # main_task = asyncio.run(test_constructor())
+        # main_task = asyncio.run(test_context_manager())
+        # main_task = asyncio.run(test_incorrect_construction())
+        # main_task = asyncio.run(test_initialize())
+        # main_task = asyncio.run(test_timeout_on_device())  # will do nothing, cannot be tested
+    except KeyboardInterrupt:
+        print("Caught KeyboardInterrupt, terminating.")

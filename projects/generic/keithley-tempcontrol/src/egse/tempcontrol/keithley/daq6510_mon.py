@@ -1,22 +1,31 @@
 import asyncio
 import datetime
 import json
-import logging
 import signal
 import time
 from asyncio import Task
 from pathlib import Path
 from typing import Any
+from typing import Callable
 from typing import Optional
 
+import typer
 import zmq
 import zmq.asyncio
 
 from egse.device import DeviceConnectionError
 from egse.device import DeviceTimeoutError
+from egse.log import logger
+from egse.settings import Settings
+from egse.system import TyperAsyncCommand
 from egse.tempcontrol.keithley.daq6510_adev import DAQ6510
 
-logger = logging.getLogger("daq6510-mon")
+settings = Settings.load("Keithley DAQ6510")
+
+DAQ_DEV_HOST = settings.get("HOSTNAME")
+DAQ_DEV_PORT = settings.get("PORT")
+
+DAQ_MON_CMD_PORT = 5556
 
 
 class DAQ6510Monitor:
@@ -28,8 +37,8 @@ class DAQ6510Monitor:
     def __init__(
         self,
         daq_hostname: str,
-        daq_port: int = 5025,
-        zmq_port: int = 5556,
+        daq_port: int = DAQ_DEV_PORT,
+        zmq_port: int = DAQ_MON_CMD_PORT,
         log_file: str = "temperature_readings.log",
         channels: list[str] = None,
         poll_interval: float = 60.0,
@@ -60,7 +69,7 @@ class DAQ6510Monitor:
         self.running = False
         self.polling_active = False
         self.daq_interface = None
-        self.command_handlers = {
+        self.command_handlers: dict[str, Callable] = {
             "START_POLLING": self._handle_start_polling,
             "STOP_POLLING": self._handle_stop_polling,
             "SET_INTERVAL": self._handle_set_interval,
@@ -78,6 +87,8 @@ class DAQ6510Monitor:
         self.log_file.parent.mkdir(exist_ok=True, parents=True)
 
         # Create DAQ interface
+        # In this case we use the device itself, no control server. That means
+        # the monitoring must be the only service connecting to the device.
         self.daq_interface = DAQ6510(hostname=daq_hostname, port=daq_port)
 
     async def start(self):
@@ -85,9 +96,12 @@ class DAQ6510Monitor:
         logger.info(f"Starting DAQ6510 Monitoring Service on ZMQ port {self.zmq_port}")
         self.running = True
 
+        def handle_shutdown():
+            asyncio.create_task(self.shutdown())
+
         # Register signal handlers for graceful shutdown
         for sig in (signal.SIGINT, signal.SIGTERM):
-            asyncio.get_event_loop().add_signal_handler(sig, lambda: asyncio.create_task(self.shutdown()))
+            asyncio.get_event_loop().add_signal_handler(sig, handle_shutdown)
 
         # Start the main service tasks
         await asyncio.gather(self.command_listener(), self.connect_daq(), return_exceptions=True)
@@ -101,11 +115,29 @@ class DAQ6510Monitor:
     async def connect_daq(self):
         """Establish connection to the DAQ6510."""
         while self.running:
+            init_commands = [
+                ('TRAC:MAKE "test1", 1000', False),  # create a new buffer
+                # settings for channel 1 and 2 of slot 1
+                ('SENS:FUNC "TEMP", (@101:102)', False),  # set the function to temperature
+                ("SENS:TEMP:TRAN FRTD, (@101)", False),  # set the transducer to 4-wire RTD
+                ("SENS:TEMP:RTD:FOUR PT100, (@101)", False),  # set the type of the 4-wire RTD
+                ("SENS:TEMP:TRAN RTD, (@102)", False),  # set the transducer to 2-wire RTD
+                ("SENS:TEMP:RTD:TWO PT100, (@102)", False),  # set the type of the 2-wire RTD
+                ('ROUT:SCAN:BUFF "test1"', False),
+                ("ROUT:SCAN:CRE (@101:102)", False),
+                ("ROUT:CHAN:OPEN (@101:102)", False),
+                ("ROUT:STAT? (@101:102)", True),
+                ("ROUT:SCAN:STAR:STIM NONE", False),
+                # ("ROUT:SCAN:ADD:SING (@101, 102)", False),  # not sure what this does, not really needed
+                ("ROUT:SCAN:COUN:SCAN 1", False),  # not sure if this is needed in this setting
+                # ("ROUT:SCAN:INT 1", False),
+            ]
+
             try:
                 logger.info(f"Connecting to DAQ6510 at {self.daq_hostname}:{self.daq_port}")
                 await self.daq_interface.connect()
                 logger.info("Successfully connected to DAQ6510.")
-                await self.daq_interface.initialize()
+                await self.daq_interface.initialize(commands=init_commands, reset_device=True)
                 logger.info("Successfully initialized DAQ6510 for measurements.")
 
                 # If we were polling before, restart it.
@@ -367,9 +399,9 @@ class DAQ6510Monitor:
 
 
 class DAQMonitorClient:
-    """Simple client for interacting with the DAQ Monitor Service."""
+    """A simple client for interacting with the DAQ Monitor Service."""
 
-    def __init__(self, server_address: str = "localhost", port: int = 5556, timeout: float = 5.0):
+    def __init__(self, server_address: str = "localhost", port: int = DAQ_MON_CMD_PORT, timeout: float = 5.0):
         """Initialize the client.
 
         Args:
@@ -412,7 +444,7 @@ class DAQMonitorClient:
             params: Optional command parameters
 
         Returns:
-            Response from the service
+            Response from the service as a dictionary.
         """
         params = params or {}
         message = {"command": command, "params": params}
@@ -488,8 +520,10 @@ class DAQMonitorClient:
     def get_status(self) -> dict[str, Any]:
         """Get current service status.
 
+        To confirm the status is 'ok', check the response for the key 'status'.
+
         Returns:
-            Status information
+            Status information as dictionary.
         """
         return self._send_command("GET_STATUS")
 
@@ -502,12 +536,19 @@ class DAQMonitorClient:
         return self._send_command("SHUTDOWN")
 
 
-async def main():
+app = typer.Typer(name="daq6510_mon")
+
+
+@app.command(cls=TyperAsyncCommand, name="monitor")
+async def main(log_file: str = "temperature_readings.log"):
+    """
+    Start the DAQ6510 monitoring app in the background.
+    """
     monitor = DAQ6510Monitor(
-        daq_hostname="192.168.68.77",
-        daq_port=5025,
-        zmq_port=5556,
-        log_file="temperature_readings.log",
+        daq_hostname=DAQ_DEV_HOST,
+        daq_port=DAQ_DEV_PORT,
+        zmq_port=DAQ_MON_CMD_PORT,
+        log_file=log_file,
         channels=["101", "102"],
         poll_interval=10.0,
     )
@@ -516,9 +557,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="[%(asctime)s] %(threadName)-12s %(levelname)-8s %(name)-12s %(lineno)5d:%(module)-20s %(message)s",
-    )
-
-    asyncio.run(main())
+    asyncio.run(app())
