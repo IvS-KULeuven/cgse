@@ -3,11 +3,11 @@ from pathlib import Path
 from egse.settings import Settings
 
 HERE = Path(__file__).parent
-settings = Settings.load("Digilent MEASURPOINT DT8874 Control Server")
+settings = Settings.load("Digilent MEASURpoint DT8874 Control Server")
 
-# General information about the Digilent MEASURPOINT DT8874 Control Server
+# General information about the Digilent MEASURpoint DT8874 Control Server
 
-PROCESS_NAME = settings.get("PROCESS_NAME", "tcu_cs")  # Name under which it is registered in the service registry
+PROCESS_NAME = settings.get("PROCESS_NAME", "dt8874_cs")  # Name under which it is registered in the service registry
 SERVICE_TYPE = settings.get(
     "SERVICE_TYPE", "dt8874_cs"
 )  # Service type under which it is registered in the service registry

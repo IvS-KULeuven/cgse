@@ -83,6 +83,7 @@ class Dt8874ControlServer(ControlServer):
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
+        print(f"Register {SERVICE_TYPE}")
         self.register_service(SERVICE_TYPE)
 
     def get_communication_protocol(self) -> str:

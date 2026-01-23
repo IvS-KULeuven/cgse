@@ -7,7 +7,7 @@ Digilent MEASURpoint DT8874:
     DEVICE_NAME:               DT8874
     HOSTNAME:           10.33.179.128
     PORT:                        5025
-#    TIMEOUT:                       60
+    TIMEOUT:                       60
 
 Digilent MEASURpoint DT8874 Control Server:
 

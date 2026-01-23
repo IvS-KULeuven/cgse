@@ -20,10 +20,7 @@ keywords = [
 ]
 dependencies = [
     "cgse-common",
-#    "cgse-core",
-#    "cgse-gui",
-#    "cgse-gui",
-#    "PyQt5>=5.15.11"
+    "cgse-core",
 ]
 
 [project.optional-dependencies]

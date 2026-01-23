@@ -22,20 +22,20 @@ Commands:
         returns: bool | True if the far end is a simulator instead of the real hardware
 
     is_connected:
-        description: Check if the Hexapod hardware controller is connected.
+        description: Check if the Digilent MEASURpoint DT8874 hardware controller is connected.
 
     connect:
-        description: Connect the Hexapod hardware controller
+        description: Connect the Digilent MEASURpoint DT8874 hardware controller
 
     reconnect:
-        description: Reconnect the Hexapod hardware controller.
+        description: Reconnect the Digilent MEASURpoint DT8874 hardware controller.
             
             This command will force a disconnect and then try to re-connect to the controller.
 
     disconnect:
-        description: Disconnect from the TCU controller.
+        description: Disconnect from the Digilent MEASURpoint DT8874 hardware controller.
             
-            This command will be send to the TCU Control Server which will then
+            This command will be send to the DT8874 Control Server which will then
             disconnect from the hardware controller.
             
             This command does not affect the ZeroMQ connection of the Proxy to the
