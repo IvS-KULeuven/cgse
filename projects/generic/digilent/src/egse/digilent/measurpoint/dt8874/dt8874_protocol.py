@@ -6,11 +6,12 @@ from pathlib import Path
 from egse.command import ClientServerCommand
 from egse.control import ControlServer
 from egse.device import DeviceConnectionState
+from egse.digilent.digilent import DigilentInterface
 from egse.protocol import DynamicCommandProtocol
 from egse.settings import Settings
 from egse.system import format_datetime
 from egse.zmq_ser import bind_address
-from egse.digilent.measurpoint.dt8874.dt8874 import Dt8874Simulator, Dt8874Interface
+from egse.digilent.measurpoint.dt8874.dt8874 import Dt8874Simulator, Dt8874Controller
 
 _HERE = Path(__file__).parent
 DEVICE_SETTINGS = Settings.load(filename="dt8874.yaml", location=_HERE)
@@ -41,7 +42,7 @@ class Dt8874Protocol(DynamicCommandProtocol):
         if self.simulator:
             self.dt8874 = Dt8874Simulator()
         else:
-            self.dt8874 = Dt8874Simulator()
+            self.dt8874 = Dt8874Controller()
 
         try:
             self.dt8874.connect()
@@ -59,7 +60,7 @@ class Dt8874Protocol(DynamicCommandProtocol):
 
         return bind_address(self.control_server.get_communication_protocol(), self.control_server.get_commanding_port())
 
-    def get_device(self) -> Dt8874Interface:
+    def get_device(self) -> DigilentInterface:
         """Returns the Digilent MEASURpoint DT8874 interface.
 
         Returns:
