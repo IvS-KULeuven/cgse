@@ -31,6 +31,14 @@ class Dt8874Simulator(Dt8874Interface):
 
         super().__init__()
 
+        self._is_pwd_protected_cmds_enabled = True
+
+    def enable_pwd_protected_cmds(self, password: str):
+        self._is_pwd_protected_cmds_enabled = True
+
+    def disable_pwd_protected_cmds(self, password: str):
+        self._is_pwd_protected_cmds_enabled = False
+
 
 class Dt8874Proxy(DynamicProxy, Dt8874Interface):
     """
