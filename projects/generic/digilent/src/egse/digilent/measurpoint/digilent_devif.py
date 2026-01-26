@@ -146,6 +146,7 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
 
         try:
             print(f"Result from identification query: {self.query(IDENTIFICATION_QUERY)}")
+            #noinspection PyTypeChecker
             manufacturer, model, _, _ = self.query(IDENTIFICATION_QUERY).split(",")
 
         except DeviceError as exc:
@@ -220,8 +221,8 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
             return return_string.decode().rstrip()
 
         except UnicodeError:
+            #noinspection PyUnboundLocalVariable
             return return_string
-
         except socket.timeout as e_timeout:
             raise DeviceTimeoutError(self.device_name, "Socket timeout error") from e_timeout
         except socket.error as e_socket:
@@ -265,6 +266,7 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         finally:
             self._sock.settimeout(saved_timeout)
 
+        # noinspection PyUnboundLocalVariable
         return data
 
 

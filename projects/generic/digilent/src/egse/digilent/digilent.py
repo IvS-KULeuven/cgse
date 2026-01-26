@@ -412,6 +412,13 @@ def parse_scan_records(response: bytes) -> ScanRecords:
 class DigilentInterface(DeviceInterface):
     """Base class for Digilent TEMPpoint, VOLTpoint, and MEASURpoint instruments."""
 
+    def __init__(self):
+        super().__init__()
+
+        self.channel_lists = navdict()
+        self.channels = navdict()
+
+
     @dynamic_command(
         cmd_type=CommandType.WRITE,
         cmd_string="*CLS",

@@ -2,12 +2,14 @@
 
 import logging
 import multiprocessing
+import re
 from typing import Annotated
 
 import rich
 import sys
 import typer
 import zmq
+from navdict import navdict
 
 
 from egse.control import is_control_server_active, ControlServer
@@ -17,7 +19,7 @@ from egse.digilent.measurpoint.dt8874 import (
     COMMANDING_PORT,
     SERVICE_PORT,
     MONITORING_PORT,
-    STORAGE_MNEMONIC,
+    ORIGIN,
     PROTOCOL,
     HOSTNAME,
 )
@@ -25,10 +27,13 @@ from egse.digilent.measurpoint.dt8874.dt8874 import Dt8874Proxy
 from egse.digilent.measurpoint.dt8874.dt8874_protocol import Dt8874Protocol
 from egse.registry.client import RegistryClient
 from egse.services import ServiceProxy
+from egse.settings import Settings
+from egse.setup import load_setup
 from egse.storage import store_housekeeping_information
 from egse.zmq_ser import connect_address, get_port_number
 
 logger = logging.getLogger("egse.digilent.measurpoint.dt8874")
+DEVICE_SETTINGS = Settings.load("Digilent MEASURpoint DT8874")
 
 
 def is_dt8874_cs_active(timeout: float = 0.5) -> bool:
@@ -83,7 +88,6 @@ class Dt8874ControlServer(ControlServer):
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
-        print(f"Register {SERVICE_TYPE}")
         self.register_service(SERVICE_TYPE)
 
     def get_communication_protocol(self) -> str:
@@ -129,10 +133,11 @@ class Dt8874ControlServer(ControlServer):
             Storage mnemonic used by the Digilent MEASURpoint DT8874 Control Server, as specified in the settings.
         """
 
-        return STORAGE_MNEMONIC
+        return ORIGIN
 
     def is_storage_manager_active(self):
         """Checks whether the Storage Manager is active."""
+
         from egse.storage import is_storage_manager_active
 
         return is_storage_manager_active()
@@ -144,6 +149,8 @@ class Dt8874ControlServer(ControlServer):
         store_housekeeping_information(origin, data)
 
     def register_to_storage_manager(self):
+        """Registers the Control Server to the Storage Manager."""
+
         from egse.storage import register_to_storage_manager
         from egse.storage.persistence import TYPES
 
@@ -157,11 +164,88 @@ class Dt8874ControlServer(ControlServer):
         )
 
     def unregister_from_storage_manager(self):
+        """Unregisters the Control Server from the Storage Manager."""
+
         from egse.storage import unregister_from_storage_manager
 
         unregister_from_storage_manager(origin=self.get_storage_mnemonic())
 
-    # def before_serve(self):
+    def before_serve(self):
+        """Enables password-protected commands and applies the channel configuration.
+
+        Quite a lot of commands (e.g. configuring the channels and requesting measurement results) are
+        password-protected, so we need to enable those, before we can get going.
+
+        In the setup, we specify (under `setup.gse.dt8874`), which channels should be configured and how.  It's also
+        those channels for which we request measurement results to populate the housekeeping and metrics.
+        """
+
+        try:
+            # Enable password-protected commands
+
+            password = DEVICE_SETTINGS.PASSWORD
+            self.device_protocol.dt8874.enable_pwd_protected_cmds(password=password)
+
+            # Read the channel configuration from the setup + apply it to the device
+
+            setup = load_setup()
+
+            channel_config = setup.gse.dt8874
+
+            if "RTD" in channel_config:
+                self.device_protocol.dt8874.channels["RTD"] = navdict()
+                self.device_protocol.dt8874.channel_lists["RTD"] = navdict()
+
+                for rtd_type in channel_config.RTD:
+                    if rtd_type != "channels":
+                        channels = channel_config.RTD[rtd_type].channels
+
+                        self.device_protocol.dt8874.channels.RTD[rtd_type] = channels
+                        self.device_protocol.dt8874.channel_lists.RTD[rtd_type] = get_channel_list(channels)
+
+                        self.device_protocol.dt8874.set_rtd_temperature_channels(rtd_type=rtd_type, channels=channels)
+
+            if "THERMOCOUPLE" in channel_config:
+                self.device_protocol.dt8874.channels["THERMOCOUPLE"] = navdict()
+                self.device_protocol.dt8874.channel_lists["THERMOCOUPLE"] = navdict()
+
+                for tc_type in channel_config.THERMOCOUPLE:
+                    if tc_type != "channels":
+                        channels = channel_config.THERMOCOUPLE[tc_type].channels
+
+                        self.device_protocol.dt8874.channels.RTD[tc_type] = channels
+                        self.device_protocol.dt8874.channel_lists.RTD[tc_type] = get_channel_list(channels)
+
+                        self.device_protocol.dt8874.set_thermocouple_temperature_channels(
+                            rtd_type=tc_type, channels=channels
+                        )
+
+            if "RESISTANCE" in channel_config:
+                channels = channel_config.RESISTANCE.channels
+
+                self.device_protocol.dt8874.channels["RESISTANCE"] = channels
+                self.device_protocol.dt8874.channel_lists["RESISTANCE"] = get_channel_list(channels)
+
+                self.device_protocol.dt8874.set_resistance_channels(channels=channels)
+
+            if "VOLTAGE" in channel_config:
+                channels = channel_config.VOLTAGE.channels
+
+                self.device_protocol.dt8874.channels["VOLTAGE"] = channels
+                self.device_protocol.dt8874.channel_lists["VOLTAGE"] = get_channel_list(channels)
+
+                self.device_protocol.dt8874.set_voltage_channels(channels=channels)
+
+            if "VOLTAGE_RANGE" in channel_config:
+                channels = channel_config.VOLTAGE_RANGE.channels
+
+                self.device_protocol.dt8874.channels["VOLTAGE_RANGE"] = channels
+                self.device_protocol.dt8874.channel_lists["VOLTAGE_RANGE"] = get_channel_list(channels)
+
+                self.device_protocol.dt8874.set_voltage_range_channels(channels=channels)
+        except AttributeError:
+            logger.warning("Couldn't enable password protected commands, check the log messages.")
+
     #     start_http_server(CTRL_SETTINGS.METRICS_PORT)
 
     def after_serve(self):
@@ -264,6 +348,32 @@ def status():
             rich.print(f"monitoring port: {monitoring_port}")
     else:
         rich.print("Digilent MEASURpoint DT8874: [red]not active")
+
+
+def get_channel_list(channel_list: str) -> list[str]:
+    """
+    Generate a list of channel names from a given channel list.
+
+    Args:
+        channel_list: a channel list as understood by the SCPI commands of DAQ6510.
+
+    Returns:
+        A list of channel names.
+    """
+
+    match = re.match(r"\(@(.*)\)", channel_list)
+    group = match.groups()[0]
+
+    parts = group.replace(" ", "").split(",")
+    names = []
+    for part in parts:
+        if ":" in part:
+            channels = part.split(":")
+            names.extend(str(ch) for ch in range(int(channels[0]), int(channels[1]) + 1))
+        else:
+            names.append(part)
+
+    return names
 
 
 if __name__ == "__main__":
