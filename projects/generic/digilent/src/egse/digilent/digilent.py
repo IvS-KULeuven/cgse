@@ -3,6 +3,7 @@ import struct
 
 from egse.device import DeviceInterface
 from egse.mixin import dynamic_command, CommandType, add_lf, DynamicCommandMixin
+from navdict import navdict
 
 
 class ScanRecord:
@@ -384,15 +385,6 @@ def parse_scan_records(response: bytes) -> ScanRecords:
         header = struct.unpack_from(f">IIII", binary_data, offset)
         timestamp_s, timestamp_ms, scan_index, num_values = header
 
-        # Try to interpret timestamp
-
-        # if timestamp_s < 2**31:  # Reasonable Unix timestamp check
-        #     try:
-        #         dt = datetime.datetime.fromtimestamp(timestamp_s)
-        #         print(f"  As Unix time:      {dt}")
-        #     except:
-        #         print("  As Unix time:      Invalid")
-
         offset += 16
 
         # Unpack float values
@@ -400,19 +392,13 @@ def parse_scan_records(response: bytes) -> ScanRecords:
         values = []
 
         if 0 < num_values < 100:  # Sanity check
-            # print("  Temperature values:")
             for i in range(num_values):
                 if offset + 4 <= len(binary_data):
                     value = struct.unpack_from(f"{endian_char}f", binary_data, offset)[0]
-                    # print(f"    Channel {i}: {value:.4f} °C")
                     offset += 4
 
                     values.append(value)
-                # else:
-                #     print(f"    Channel {i}: Not enough data")
-                #     break
         else:
-            # print(f"  ERROR: numValues={num_values} seems unreasonable")
             break
 
         scan_record = ScanRecord(timestamp_s, timestamp_ms, scan_index, num_values, values)
@@ -1645,7 +1631,7 @@ class DigilentInterface(DeviceInterface):
         cmd_type=CommandType.WRITE,
         process_cmd_string=add_lf,
     )
-    def set_voltage_channel(self, channels: str = "(@0:47)"):
+    def set_voltage_channels(self, channels: str = "(@0:47)"):
         """Configures specified RTD and thermocouple channels on the instrument for voltage measurements.
 
         This commands affects the configuration of the specified channels only.
@@ -1678,7 +1664,7 @@ class DigilentInterface(DeviceInterface):
         cmd_type=CommandType.WRITE,
         process_cmd_string=add_lf,
     )
-    def set_voltage_range_channel(self, voltage_range: str = "DEFault", channels: str = "(@0:47)"):
+    def set_voltage_range_channels(self, voltage_range: str = "DEFault", channels: str = "(@0:47)"):
         """Configures  the voltages range for specified channels on the instrument.
 
         Allowed voltage ranges are:
@@ -2201,7 +2187,7 @@ class DigilentInterface(DeviceInterface):
         process_cmd_string=add_lf,
         process_response=parse_single_measurement,
     )
-    def get_resistance(self, channels: str = "(@0:47)") -> float:
+    def get_resistance(self, channels: str = "(@0:47)") -> tuple[float, ...]:
         """Configures and returns the resistance measurement values for the specified channels.
 
         This is a password-protected command.
@@ -2214,9 +2200,9 @@ class DigilentInterface(DeviceInterface):
                 < 2331344488fe4f0a
 
             where:
-                - 23 = ’#’ denotes the start of the block response
-                - 31 = ’1’ is the length of the decimal number for the block length
-                - 34 = ’4’ is the block length (that is 4-bytes per channel)
+                - 23 = '#' denotes the start of the block response
+                - 31 = '1' is the length of the decimal number for the block length
+                - 34 = '4' is the block length (that is 4-bytes per channel)
                 - 4488fe4f = 1095.947 ohms; this is the resistance measurement value from channel 0
                 - 0a = carriage return; this is the standard ASCII terminator
 
@@ -2236,7 +2222,7 @@ class DigilentInterface(DeviceInterface):
         process_cmd_string=add_lf,
         process_response=parse_single_measurement,
     )
-    def get_rtd_temperature(self, rtd_type: str, channels: str = "(@0:47)") -> float:
+    def get_rtd_temperature(self, rtd_type: str, channels: str = "(@0:47)") -> tuple[float, ...]:
         """Configures and returns the RTD temperature measurement values for the specified channels.
 
         This is a password-protected command.
@@ -2273,12 +2259,12 @@ class DigilentInterface(DeviceInterface):
             for the instrument and then reads the temperature from these channels:
 
                 > :MEAS:TEMP:RTD? DEF,(@0,1,7)
-                < 23 32 3132 c7ad9c0041bd99b647c34f800a
+                < 23323132c7ad9c0041bd99b647c34f800a
 
             where:
-                - 23 = ’#’ denotes the start of the block response
-                - 32 = ’2’ is the length of the decimal number for the block length
-                - 3132 = ’12’ is the block length (that is 4-bytes per channel times 3)
+                - 23 = '#' denotes the start of the block response
+                - 32 = '2' is the length of the decimal number for the block length
+                - 3132 = '12' is the block length (that is 4-bytes per channel times 3)
                 - c7ad9c00 = –88888° C; this is the measurement value from channel 0, indicating that the value is too
                   low and out of range
                 - 41bd99b6 = 27.7° C; this is the measurement value from channel 1
@@ -2294,7 +2280,7 @@ class DigilentInterface(DeviceInterface):
         process_cmd_string=add_lf,
         process_response=parse_single_measurement,
     )
-    def get_thermocouple_temperature(self, tc_type: str, channels: str = "(@0:47)") -> float:
+    def get_thermocouple_temperature(self, tc_type: str, channels: str = "(@0:47)") -> tuple[float, ...]:
         """Configures and returns the RTD temperature measurement values for the specified channels.
 
         This is a password-protected command.
@@ -2326,9 +2312,9 @@ class DigilentInterface(DeviceInterface):
                 < 23323132c7ad9c0041bd99b647c34f800a
 
             where:
-                - 23 = ’#’ denotes the start of the block response
-                - 32 = ’2’ is the length of the decimal number for the block length
-                - 3132 = ’12’ is the block length (that is 4-bytes per channel times 3)
+                - 23 = '#' denotes the start of the block response
+                - 32 = '2' is the length of the decimal number for the block length
+                - 3132 = '12' is the block length (that is 4-bytes per channel times 3)
                 - c7ad9c00 = –88888° C; this is the measurement value from channel 0, indicating that the value is too
                   low and out of range
                 - 41bd99b6 = 27.7° C; this is the measurement value from channel 1
@@ -2345,7 +2331,7 @@ class DigilentInterface(DeviceInterface):
         process_cmd_string=add_lf,
         process_response=parse_single_measurement,
     )
-    def get_voltage(self, channels: str = "(@0:47)") -> float:
+    def get_voltage(self, channels: str = "(@0:47)") -> tuple[float, ...]:
         """Configures and returns the voltage measurement values for the specified channels.
 
         This is a password-protected command.
@@ -2365,9 +2351,9 @@ class DigilentInterface(DeviceInterface):
                 < 233231323f0f8aec3edefa51bf2844b80a
 
             where:
-                - 23 = ’#’ denotes the start of the block response
-                - 32 = ’2’ is the length of the decimal number for the block length
-                - 3132 = ’12’ is the block length (that is 4-bytes per channel times 3)
+                - 23 = '#' denotes the start of the block response
+                - 32 = '2' is the length of the decimal number for the block length
+                - 3132 = '12' is the block length (that is 4-bytes per channel times 3)
                 - 3f0f8aec = 0.56071 V; this is the measurement value from channel 0
                 - 3edefa51 = 0.43550 V; this is the measurement value from channel 1
                 - bf2844b8 = –0.65729 V; this is the measurement value from channel 7

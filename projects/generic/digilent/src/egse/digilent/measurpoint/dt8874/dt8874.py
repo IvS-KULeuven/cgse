@@ -16,7 +16,7 @@ class Dt8874Interface(DigilentInterface):
     """Base class for Digilent MEASURpoint DT8874 instruments."""
 
 
-class Dt8874Controller(DigilentController, DigilentInterface):
+class Dt8874Controller(DigilentController, Dt8874Interface):
     def __init__(self):
         """Initialisation of an Ariel TCU controller."""
 
