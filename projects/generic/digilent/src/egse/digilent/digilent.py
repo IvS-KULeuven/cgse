@@ -326,7 +326,7 @@ def parse_error(response: str) -> tuple[int, str]:
     return int(code), description
 
 
-def parse_single_measurement(response: bytes) -> float:
+def parse_single_measurement(response: bytes) -> tuple[float, ...]:
     """Converts the given response bytes to a float.
 
     Args:
@@ -334,12 +334,25 @@ def parse_single_measurement(response: bytes) -> float:
 
     Returns:
         Depending on the configuration of the channel(s), the values are expressed in °C, Ω, or V.
+
     """
 
-    value_bytes = response[3:-1]
-    value = struct.unpack(">f", value_bytes)[0]
+    endian_char = ">"
+    offset = 0
 
-    return value
+    binary_data = response[3:-1]
+
+    values = []
+
+    while offset + 4 <= len(binary_data):
+        # Unpack float values
+
+        value = struct.unpack_from(f"{endian_char}f", binary_data, offset)[0]
+        offset += 4
+
+        values.append(value)
+
+    return tuple(values)
 
 
 def parse_scan_records(response: bytes) -> ScanRecords:
