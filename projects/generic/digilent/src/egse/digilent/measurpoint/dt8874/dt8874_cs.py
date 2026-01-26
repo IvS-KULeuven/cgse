@@ -246,6 +246,9 @@ class Dt8874ControlServer(ControlServer):
         except AttributeError:
             logger.warning("Couldn't enable password protected commands, check the log messages.")
 
+        if len(self.device_protocol.dt8874.channel_lists):
+            logger.warning("No channels configured, check the log messages.")
+
     #     start_http_server(CTRL_SETTINGS.METRICS_PORT)
 
     def after_serve(self):
