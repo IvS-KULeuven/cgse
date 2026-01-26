@@ -16,6 +16,6 @@ HOSTNAME = settings.get("HOSTNAME", "localhost")  # Hostname
 COMMANDING_PORT = settings.get("COMMANDING_PORT", 0)  # Commanding port (as per settings or dynamically assigned)
 SERVICE_PORT = settings.get("SERVICE_PORT", 0)  # Service port (as per settings or dynamically assigned)
 MONITORING_PORT = settings.get("MONITORING_PORT", 0)  # Monitoring port (as per settings or dynamically assigned)
-STORAGE_MNEMONIC = settings.get("STORAGE_MNEMONIC", "DT8874")  # Storage mnemonic (used in the HK filenames)
+ORIGIN = settings.get("STORAGE_MNEMONIC", "DT8874")  # Storage mnemonic (used in the HK filenames)
 
 PROXY_TIMEOUT = 10
