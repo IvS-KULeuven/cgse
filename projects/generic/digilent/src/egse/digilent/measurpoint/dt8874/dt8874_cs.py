@@ -9,7 +9,6 @@ import sys
 import typer
 import zmq
 
-
 from egse.control import is_control_server_active, ControlServer
 from egse.digilent.measurpoint.dt8874 import (
     PROCESS_NAME,

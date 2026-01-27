@@ -7,13 +7,13 @@ from egse.command import ClientServerCommand
 from egse.control import ControlServer
 from egse.device import DeviceConnectionState
 from egse.digilent.digilent import DigilentInterface
+from egse.digilent.measurpoint.dt8874.dt8874 import Dt8874Simulator, Dt8874Controller
+from egse.digilent.measurpoint.dt8874.dt8874_cs import ORIGIN
 from egse.hk import read_conversion_dict, convert_hk_names
 from egse.protocol import DynamicCommandProtocol
 from egse.settings import Settings
 from egse.system import format_datetime
 from egse.zmq_ser import bind_address
-from egse.digilent.measurpoint.dt8874.dt8874 import Dt8874Simulator, Dt8874Controller
-from egse.digilent.measurpoint.dt8874.dt8874_cs import ORIGIN
 
 _HERE = Path(__file__).parent
 DEVICE_SETTINGS = Settings.load(filename="dt8874.yaml", location=_HERE)

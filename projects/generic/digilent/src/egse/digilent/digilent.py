@@ -3,12 +3,12 @@ import logging
 import re
 import struct
 
+from navdict import navdict
+
 from egse.device import DeviceInterface
 from egse.digilent.measurpoint.digilent_devif import DigilentEthernetInterface
 from egse.mixin import dynamic_command, CommandType, add_lf, DynamicCommandMixin
-from navdict import navdict
 from egse.setup import load_setup, Setup
-
 
 logger = logging.getLogger("egse.digilent.digilent")
 
