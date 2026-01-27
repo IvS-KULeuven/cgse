@@ -57,7 +57,6 @@ class Dt8874Protocol(DynamicCommandProtocol):
         except ConnectionError:
             LOGGER.warning("Couldn't establish connection to the Digilent MEASURpoint DT8874, check the log messages.")
 
-
         # self.metrics = define_metrics("DT8874")
 
     def get_bind_address(self) -> str:
