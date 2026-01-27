@@ -5,10 +5,8 @@ import struct
 
 from egse.device import DeviceInterface
 from egse.digilent.measurpoint.digilent_devif import DigilentEthernetInterface
-from egse.listener import EventInterface
 from egse.mixin import dynamic_command, CommandType, add_lf, DynamicCommandMixin
 from navdict import navdict
-from egse.notifyhub.event import NotificationEvent
 from egse.setup import load_setup, Setup
 
 

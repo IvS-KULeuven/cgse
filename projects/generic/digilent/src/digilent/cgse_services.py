@@ -4,7 +4,6 @@ import subprocess
 from typing import Annotated
 
 import sys
-from pathlib import Path
 
 import rich
 import typer

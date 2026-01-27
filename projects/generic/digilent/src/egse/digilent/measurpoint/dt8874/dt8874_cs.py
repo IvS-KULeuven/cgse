@@ -226,6 +226,7 @@ class Dt8874ControlServer(ControlServer):
 
         return ["new_setup"]
 
+
 app = typer.Typer()
 
 
