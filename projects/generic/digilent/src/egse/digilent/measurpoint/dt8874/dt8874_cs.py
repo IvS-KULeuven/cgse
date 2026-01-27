@@ -185,62 +185,19 @@ class Dt8874ControlServer(ControlServer):
 
             password = DEVICE_SETTINGS.PASSWORD
             self.device_protocol.dt8874.enable_pwd_protected_cmds(password=password)
+        except AttributeError as ae:
+            logger.warning(f"Couldn't enable password protected commands, check the log messages: {ae}.")
 
+        if self.device_protocol.dt8874.is_pwd_protected_cmds_enabled():
             # Read the channel configuration from the setup + apply it to the device
 
-            setup = load_setup()
+            self.device_protocol.dt8874.config_channels()
 
-            channel_config = setup.gse.dt8874
+        #     start_http_server(CTRL_SETTINGS.METRICS_PORT)
 
-            if "RTD" in channel_config:
-                self.device_protocol.dt8874.channels["RTD"] = navdict()
-                self.device_protocol.dt8874.channel_lists["RTD"] = navdict()
+    def after_serve(self):
+        self.deregister_service()
 
-                for rtd_type in channel_config.RTD:
-                    if rtd_type != "channels":
-                        channels = channel_config.RTD[rtd_type].channels
-
-                        self.device_protocol.dt8874.channels.RTD[rtd_type] = channels
-                        self.device_protocol.dt8874.channel_lists.RTD[rtd_type] = get_channel_list(channels)
-
-                        self.device_protocol.dt8874.set_rtd_temperature_channels(rtd_type=rtd_type, channels=channels)
-
-            if "THERMOCOUPLE" in channel_config:
-                self.device_protocol.dt8874.channels["THERMOCOUPLE"] = navdict()
-                self.device_protocol.dt8874.channel_lists["THERMOCOUPLE"] = navdict()
-
-                for tc_type in channel_config.THERMOCOUPLE:
-                    if tc_type != "channels":
-                        channels = channel_config.THERMOCOUPLE[tc_type].channels
-
-                        self.device_protocol.dt8874.channels.RTD[tc_type] = channels
-                        self.device_protocol.dt8874.channel_lists.RTD[tc_type] = get_channel_list(channels)
-
-                        self.device_protocol.dt8874.set_thermocouple_temperature_channels(
-                            rtd_type=tc_type, channels=channels
-                        )
-
-            if "RESISTANCE" in channel_config:
-                channels = channel_config.RESISTANCE.channels
-
-                self.device_protocol.dt8874.channels["RESISTANCE"] = channels
-                self.device_protocol.dt8874.channel_lists["RESISTANCE"] = get_channel_list(channels)
-
-                self.device_protocol.dt8874.set_resistance_channels(channels=channels)
-
-            if "VOLTAGE" in channel_config:
-                channels = channel_config.VOLTAGE.channels
-
-                self.device_protocol.dt8874.channels["VOLTAGE"] = channels
-                self.device_protocol.dt8874.channel_lists["VOLTAGE"] = get_channel_list(channels)
-
-                self.device_protocol.dt8874.set_voltage_channels(channels=channels)
-
-            if "VOLTAGE_RANGE" in channel_config:
-                channels = channel_config.VOLTAGE_RANGE.channels
-
-                self.device_protocol.dt8874.channels["VOLTAGE_RANGE"] = channels
-                self.device_protocol.dt8874.channel_lists["VOLTAGE_RANGE"] = get_channel_list(channels)
 
                 self.device_protocol.dt8874.set_voltage_range_channels(channels=channels)
         except AttributeError:
@@ -353,30 +310,30 @@ def status():
         rich.print("Digilent MEASURpoint DT8874: [red]not active")
 
 
-def get_channel_list(channel_list: str) -> list[str]:
-    """
-    Generate a list of channel names from a given channel list.
-
-    Args:
-        channel_list: a channel list as understood by the SCPI commands of DAQ6510.
-
-    Returns:
-        A list of channel names.
-    """
-
-    match = re.match(r"\(@(.*)\)", channel_list)
-    group = match.groups()[0]
-
-    parts = group.replace(" ", "").split(",")
-    names = []
-    for part in parts:
-        if ":" in part:
-            channels = part.split(":")
-            names.extend(str(ch) for ch in range(int(channels[0]), int(channels[1]) + 1))
-        else:
-            names.append(part)
-
-    return names
+# def get_channel_list(channel_list: str) -> list[str]:
+#     """
+#     Generate a list of channel names from a given channel list.
+#
+#     Args:
+#         channel_list: a channel list as understood by the SCPI commands of DAQ6510.
+#
+#     Returns:
+#         A list of channel names.
+#     """
+#
+#     match = re.match(r"\(@(.*)\)", channel_list)
+#     group = match.groups()[0]
+#
+#     parts = group.replace(" ", "").split(",")
+#     names = []
+#     for part in parts:
+#         if ":" in part:
+#             channels = part.split(":")
+#             names.extend(str(ch) for ch in range(int(channels[0]), int(channels[1]) + 1))
+#         else:
+#             names.append(part)
+#
+#     return names
 
 
 if __name__ == "__main__":

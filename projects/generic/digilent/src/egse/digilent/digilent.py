@@ -1,9 +1,18 @@
 import datetime
+import logging
+import re
 import struct
 
 from egse.device import DeviceInterface
+from egse.digilent.measurpoint.digilent_devif import DigilentEthernetInterface
+from egse.listener import EventInterface
 from egse.mixin import dynamic_command, CommandType, add_lf, DynamicCommandMixin
 from navdict import navdict
+from egse.notifyhub.event import NotificationEvent
+from egse.setup import load_setup, Setup
+
+
+logger = logging.getLogger("egse.digilent.digilent")
 
 
 class ScanRecord:
@@ -409,6 +418,33 @@ def parse_scan_records(response: bytes) -> ScanRecords:
     return ScanRecords(scan_records)
 
 
+def get_channel_list(channel_list: str) -> list[str]:
+    """Generates a list of channel names from a given channel list.
+
+    The "names" of the channels are the indices of the channels, as strings.
+
+    Args:
+        channel_list: a channel list as understood by the SCPI commands of DAQ6510.
+
+    Returns:
+        List of channel names.
+    """
+
+    match = re.match(r"\(@(.*)\)", channel_list)
+    group = match.groups()[0]
+
+    parts = group.replace(" ", "").split(",")
+    names = []
+    for part in parts:
+        if ":" in part:
+            channels = part.split(":")
+            names.extend(str(ch) for ch in range(int(channels[0]), int(channels[1]) + 1))
+        else:
+            names.append(part)
+
+    return names
+
+
 class DigilentInterface(DeviceInterface):
     """Base class for Digilent TEMPpoint, VOLTpoint, and MEASURpoint instruments."""
 
@@ -418,6 +454,75 @@ class DigilentInterface(DeviceInterface):
         self.channel_lists = navdict()
         self.channels = navdict()
 
+    def config_channels(self, setup: Setup = None):
+        """Reads the channel configuration from the setup + apply it to the device.
+
+        Args
+            setup (Setup): Setup from which load read the channel configuration.
+        """
+
+        self.channel_lists = navdict()
+        self.channels = navdict()
+
+        setup = setup or load_setup()
+
+        try:
+            channel_config = setup.gse.dt8874
+
+            if "RTD" in channel_config:
+                self.channels["RTD"] = navdict()
+                self.channel_lists["RTD"] = navdict()
+
+                for rtd_type in channel_config.RTD:
+                    if rtd_type != "channels":
+                        channels = channel_config.RTD[rtd_type].channels
+
+                        self.channels.RTD[rtd_type] = channels
+                        self.channel_lists.RTD[rtd_type] = get_channel_list(channels)
+
+                        self.set_rtd_temperature_channels(rtd_type=rtd_type, channels=channels)
+
+            if "THERMOCOUPLE" in channel_config:
+                self.channels["THERMOCOUPLE"] = navdict()
+                self.channel_lists["THERMOCOUPLE"] = navdict()
+
+                for tc_type in channel_config.THERMOCOUPLE:
+                    if tc_type != "channels":
+                        channels = channel_config.THERMOCOUPLE[tc_type].channels
+
+                        self.channels.RTD[tc_type] = channels
+                        self.channel_lists.RTD[tc_type] = get_channel_list(channels)
+
+                        self.set_thermocouple_temperature_channels(rtd_type=tc_type, channels=channels)
+
+            if "RESISTANCE" in channel_config:
+                channels = channel_config.RESISTANCE.channels
+
+                self.channels["RESISTANCE"] = channels
+                self.channel_lists["RESISTANCE"] = get_channel_list(channels)
+
+                self.set_resistance_channels(channels=channels)
+
+            if "VOLTAGE" in channel_config:
+                channels = channel_config.VOLTAGE.channels
+
+                self.channels["VOLTAGE"] = channels
+                self.channel_lists["VOLTAGE"] = get_channel_list(channels)
+
+                self.set_voltage_channels(channels=channels)
+
+            if "VOLTAGE_RANGE" in channel_config:
+                channels = channel_config.VOLTAGE_RANGE.channels
+
+                self.channels["VOLTAGE_RANGE"] = channels
+                self.channel_lists["VOLTAGE_RANGE"] = get_channel_list(channels)
+
+                self.set_voltage_range_channels(channels=channels)
+
+            if len(self.channel_lists) == 0:
+                logger.warning("No channels configured, check the log messages.")
+        except AttributeError:
+            logger.warning(f"Couldn't configure the channels, check the log messages.")
 
     @dynamic_command(
         cmd_type=CommandType.WRITE,
@@ -2639,8 +2744,9 @@ class DigilentController(DigilentInterface, DynamicCommandMixin):
 
         super().__init__()
 
-        # TODO Define device interface in the sub-class
-        self.transport = None
+        # Define device interface in the sub-class
+
+        self.transport: DigilentEthernetInterface | None = None
 
     # noinspection PyMethodMayBeStatic
     def is_simulator(self):
