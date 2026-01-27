@@ -154,7 +154,7 @@ def stop():
 
     if COMMANDING_PORT == 0:
         with RegistryClient() as reg:
-            service = reg.discover_service(settings.SERVICE_TYPE)
+            service = reg.discover_service(SERVICE_TYPE)
             rich.print("service = ", service)
             if service:
                 hostname = service["host"]
