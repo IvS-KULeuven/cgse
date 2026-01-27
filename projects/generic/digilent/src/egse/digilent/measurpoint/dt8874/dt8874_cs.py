@@ -22,7 +22,6 @@ from egse.digilent.measurpoint.dt8874 import (
     HOSTNAME,
 )
 from egse.digilent.measurpoint.dt8874.dt8874 import Dt8874Proxy
-from egse.digilent.measurpoint.dt8874.dt8874_protocol import Dt8874Protocol
 from egse.registry.client import RegistryClient
 from egse.services import ServiceProxy
 from egse.settings import Settings
@@ -77,6 +76,8 @@ class Dt8874ControlServer(ControlServer):
         self.logger = logger
         self.service_name = PROCESS_NAME
         self.service_type = SERVICE_TYPE
+
+        from egse.digilent.measurpoint.dt8874.dt8874_protocol import Dt8874Protocol
 
         self.device_protocol = Dt8874Protocol(self, simulator=simulator)
 
