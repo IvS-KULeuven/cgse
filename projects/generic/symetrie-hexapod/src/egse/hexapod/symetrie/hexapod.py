@@ -29,7 +29,7 @@ class HexapodSimulator:
         self.rot_config = "sxyz"
 
         # Configure the Master Reference Frame
-        self.cs_master = ReferenceFrame.createMaster()
+        self.cs_master = ReferenceFrame.create_master()
 
         # Configure the Machine Coordinate System, i.e. cs_mec [ref:cs_master]
         self.cs_machine = ReferenceFrame(
@@ -69,7 +69,7 @@ class HexapodSimulator:
         # and we define this
         # from the transformation user -> object.
 
-        tf_user_to_object = self.cs_user.getActiveTransformationTo(self.cs_object)
+        tf_user_to_object = self.cs_user.get_active_transformation_to(self.cs_object)
         self.cs_object_in_user = ReferenceFrame(
             tf_user_to_object, rot_config=self.rot_config, ref=self.cs_user, name="Object[User]"
         )
@@ -81,15 +81,15 @@ class HexapodSimulator:
         # We link this cs_object_in_user to cs_object with the identity transformation,
         # which connects them together
 
-        self.cs_object_in_user.addLink(self.cs_object, transformation=identity)
+        self.cs_object_in_user.add_link(self.cs_object, transformation=identity)
 
         # The User Coordinate System is linked to the Machine Coordinate System
 
-        self.cs_machine.addLink(self.cs_user, transformation=self.cs_user.transformation)
+        self.cs_machine.add_link(self.cs_user, transformation=self.cs_user.transformation)
 
         # The Object Coordinate System is linked to the Platform Coordinate System
 
-        self.cs_platform.addLink(self.cs_object, transformation=self.cs_object.transformation)
+        self.cs_platform.add_link(self.cs_object, transformation=self.cs_object.transformation)
 
         # Keep a record if the homing() command has been executed.
 
@@ -104,10 +104,10 @@ class HexapodSimulator:
 
         # Print out some debugging information
 
-        logger.debug(f"Linked to cs_object_in_user  {[i.name for i in self.cs_object_in_user.linkedTo]}")
-        logger.debug(f"Linked to cs_object          {[i.name for i in self.cs_object.linkedTo]}")
-        logger.debug(f"Linked to cs_platform        {[i.name for i in self.cs_platform.linkedTo]}")
-        logger.debug(f"Linked to cs_machine         {[i.name for i in self.cs_machine.linkedTo or {}]}")
+        logger.debug(f"Linked to cs_object_in_user  {[i.name for i in self.cs_object_in_user.linked_to]}")
+        logger.debug(f"Linked to cs_object          {[i.name for i in self.cs_object.linked_to]}")
+        logger.debug(f"Linked to cs_platform        {[i.name for i in self.cs_platform.linked_to]}")
+        logger.debug(f"Linked to cs_machine         {[i.name for i in self.cs_machine.linked_to or {}]}")
 
     def is_simulator(self):
         return True
@@ -177,23 +177,23 @@ class HexapodSimulator:
 
         # Remove the old links between user and machine CS, and between Object in User and Object CS
 
-        self.cs_machine.removeLink(self.cs_user)
-        self.cs_object_in_user.removeLink(self.cs_object)
+        self.cs_machine.remove_link(self.cs_user)
+        self.cs_object_in_user.remove_link(self.cs_object)
 
         # Redefine the User Coordinate System
 
-        self.cs_user = ReferenceFrame.fromTranslationRotation(
+        self.cs_user = ReferenceFrame.from_translation_rotation(
             translation,
             rotation,
-            rot_config=self.rot_config,
-            ref=self.cs_machine,
+            rotation_config=self.rot_config,
+            reference_frame=self.cs_machine,
             name="User[Machine]",
             degrees=degrees,
         )
 
         # Redefine the Object in User Coordinate System
 
-        tf_user_to_object = self.cs_user.getActiveTransformationTo(self.cs_object)
+        tf_user_to_object = self.cs_user.get_active_transformation_to(self.cs_object)
         self.cs_object_in_user = ReferenceFrame(
             tf_user_to_object, rot_config=self.rot_config, ref=self.cs_user, name="Object[User]"
         )
@@ -205,8 +205,8 @@ class HexapodSimulator:
         # User and Machine CS are invariant, reset the transformation. User in Object is
         # identical to Object
 
-        self.cs_machine.addLink(self.cs_user, transformation=self.cs_user.transformation)
-        self.cs_object_in_user.addLink(self.cs_object, transformation=identity)
+        self.cs_machine.add_link(self.cs_user, transformation=self.cs_user.transformation)
+        self.cs_object_in_user.add_link(self.cs_object, transformation=identity)
 
         # Redefine the Object Coordinates System
 
@@ -216,21 +216,21 @@ class HexapodSimulator:
 
         # Remove the old links between user and machine CS, and between Object in User and Object CS
 
-        self.cs_platform.removeLink(self.cs_object)
-        self.cs_object_in_user.removeLink(self.cs_object)
+        self.cs_platform.remove_link(self.cs_object)
+        self.cs_object_in_user.remove_link(self.cs_object)
 
-        self.cs_object = ReferenceFrame.fromTranslationRotation(
+        self.cs_object = ReferenceFrame.from_translation_rotation(
             translation,
             rotation,
-            rot_config=self.rot_config,
-            ref=self.cs_platform,
+            rotation_config=self.rot_config,
+            reference_frame=self.cs_platform,
             name="Object[Platform]",
             degrees=degrees,
         )
 
         # Redefine the Object in User Coordinate System
 
-        tf_user_to_object = self.cs_user.getActiveTransformationTo(self.cs_object)
+        tf_user_to_object = self.cs_user.get_active_transformation_to(self.cs_object)
         self.cs_object_in_user = ReferenceFrame(
             tf_user_to_object, rot_config=self.rot_config, ref=self.cs_user, name="Object[User]"
         )
@@ -238,16 +238,16 @@ class HexapodSimulator:
         # Object CS and Platform CS are invariant, reset the transformation. User in Object is
         # identical to Object
 
-        self.cs_platform.addLink(self.cs_object, transformation=self.cs_object.transformation)
-        self.cs_object_in_user.addLink(self.cs_object, transformation=identity)
+        self.cs_platform.add_link(self.cs_object, transformation=self.cs_object.transformation)
+        self.cs_object_in_user.add_link(self.cs_object, transformation=identity)
 
         return 0
 
     def get_coordinates_systems(self):
         degrees = True
 
-        t_user, r_user = self.cs_user.getTranslationRotationVectors(degrees=degrees)
-        t_object, r_object = self.cs_object.getTranslationRotationVectors(degrees=degrees)
+        t_user, r_user = self.cs_user.get_translation_rotation_vectors(degrees=degrees)
+        t_object, r_object = self.cs_object.get_translation_rotation_vectors(degrees=degrees)
 
         return list(np.concatenate((t_user, r_user, t_object, r_object)))
 
@@ -264,13 +264,13 @@ class HexapodSimulator:
         # We set a new transformation for cs_object_in_user which will update our model,
         # because cs_object and cs_object_in_user are linked.
 
-        self.cs_object_in_user.setTranslationRotation(
+        self.cs_object_in_user.set_translation_rotation(
             translation,
             rotation,
-            rot_config=self.rot_config,
+            rotation_config=self.rot_config,
             active=True,
             degrees=True,
-            preserveLinks=True,
+            preserve_links=True,
         )
 
         return 0
@@ -279,13 +279,13 @@ class HexapodSimulator:
         tr_rel = np.array([tx, ty, tz])
         rot_rel = np.array([rx, ry, rz])
 
-        self.cs_object.applyTranslationRotation(
+        self.cs_object.apply_translation_rotation(
             tr_rel,
             rot_rel,
-            rot_config=self.rot_config,
+            rotation_config=self.rot_config,
             active=True,
             degrees=True,
-            preserveLinks=True,
+            preserve_links=True,
         )
 
     def move_relative_user(self, tx, ty, tz, rx, ry, rz):
@@ -306,7 +306,7 @@ class HexapodSimulator:
 
         # Derotation of cs_object --> cs_user
 
-        derotation = self.cs_object.getActiveTransformationTo(self.cs_user)
+        derotation = self.cs_object.get_active_transformation_to(self.cs_user)
         derotation[:3, 3] = [0, 0, 0]
 
         # Reverse rotation
@@ -322,13 +322,15 @@ class HexapodSimulator:
 
         import egse.coordinates.transform3d_addon as t3add
 
-        rotation = t3add.translationRotationToTransformation([0, 0, 0], [rx, ry, rz], rot_config=self.rot_config)
+        rotation = t3add.translation_rotation_to_transformation(
+            [0, 0, 0], [rx, ry, rz], rotation_config=self.rot_config
+        )
 
         transformation = derotation @ translation @ rerotation @ rotation
 
         # Adapt our model
 
-        self.cs_object.applyTransformation(transformation)
+        self.cs_object.apply_transformation(transformation)
 
     def check_absolute_movement(self, tx, ty, tz, rx, ry, rz):
         rc = 0
@@ -360,15 +362,15 @@ class HexapodSimulator:
         return 0, {}
 
     def get_user_positions(self):
-        t, r = self.cs_user.getActiveTranslationRotationVectorsTo(self.cs_object_in_user)
+        t, r = self.cs_user.get_active_translation_rotation_vectors_to(self.cs_object_in_user)
 
         pos = list(np.concatenate((t, r)))
 
         return pos
 
     def get_machine_positions(self):
-        t, r = self.cs_platform.getTranslationRotationVectors()
-        t, r = self.cs_machine.getActiveTranslationRotationVectorsTo(self.cs_platform)
+        t, r = self.cs_platform.get_translation_rotation_vectors()
+        t, r = self.cs_machine.get_active_translation_rotation_vectors_to(self.cs_platform)
 
         pos = list(np.concatenate((t, r)))
 
@@ -398,13 +400,13 @@ class HexapodSimulator:
         translation = np.array([0, 0, -20])
         rotation = np.array([0, 0, 0])
 
-        self.cs_platform.setTranslationRotation(
+        self.cs_platform.set_translation_rotation(
             translation,
             rotation,
-            rot_config=self.rot_config,
+            rotation_config=self.rot_config,
             active=True,
             degrees=True,
-            preserveLinks=True,
+            preserve_links=True,
         )
 
         return 0
@@ -418,13 +420,13 @@ class HexapodSimulator:
         translation = np.array([0, 0, 0])
         rotation = np.array([0, 0, 0])
 
-        self.cs_platform.setTranslationRotation(
+        self.cs_platform.set_translation_rotation(
             translation,
             rotation,
-            rot_config=self.rot_config,
+            rotation_config=self.rot_config,
             active=True,
             degrees=True,
-            preserveLinks=True,
+            preserve_links=True,
         )
 
         # As a work around for the bug in issue #58, we determine the transformation from

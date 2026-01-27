@@ -1,28 +1,15 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Oct  3 11:53:23 2020
-
-@author: pierre
-"""
-
 import sys
 import pandas
 
 from egse.setup import Setup
 
 
-def laser_tracker_to_dict(filexls, setup: Setup):
-    """
-    laser_tracker_to_dict(filexls)
+def laser_tracker_to_dict(file_xls: str, setup: Setup):
+    """Reads the laser tracker file and returns a dictionary of reference frames.
 
-    INPUT
-
-    filexls : CSL - provided excell file (from a laser tracker)
-
-    OUTPUT
-
-    dictionary compatible with egse.coordinates.dict_to_ref_model
+    Args:
+        file_xls (str): Path to the laser tracker file.  This is an excell sheet provided by CSL.
+        setup (Setup): Setup object containing the default reference frames.
 
     Known Features:
         - no link can be included:
@@ -37,6 +24,8 @@ def laser_tracker_to_dict(filexls, setup: Setup):
         - the names of the reference frames are returned lowercase, without '_'
           ("Master" is an exception)
 
+    Returns:
+        Dictionary of reference frames compatible with egse.coordinates.dict_to_ref_model.
     """
 
     # Predefined model -- gliso ~ master
@@ -72,22 +61,24 @@ def laser_tracker_to_dict(filexls, setup: Setup):
 
     # Read input file
 
-    pan = pandas.read_excel(filexls, sheet_name="Data", usecols="A:D", names=["desc", "x", "y", "z"])
+    pan = pandas.read_excel(file_xls, sheet_name="Data", usecols="A:D", names=["desc", "x", "y", "z"])
 
-    nrows = pan.shape[0]
+    num_rows = pan.shape[0]
 
     desc = pan["desc"].values
     colx = pan["x"].values
     coly = pan["y"].values
     colz = pan["z"].values
 
-    refFrames = dict()
-    refFrames["Master"] = "ReferenceFrame//([0.0000,0.0000,0.0000 | [0.0000,0.0000,0.0000 | Master | Master | [])"
+    reference_frames = dict()
+    reference_frames["Master"] = (
+        "ReferenceFrame//([0.0000,0.0000,0.0000 | [0.0000,0.0000,0.0000 | Master | Master | [])"
+    )
 
     links = "[]"
 
     i, frame = -1, -1
-    while i < nrows:
+    while i < num_rows:
         i += 1
 
         try:
@@ -111,10 +102,10 @@ def laser_tracker_to_dict(filexls, setup: Setup):
                 else:
                     ref = "None"
 
-                refFrames[name] = f"ReferenceFrame//({translation} | {rotation} | {name} | {ref} | {links})"
+                reference_frames[name] = f"ReferenceFrame//({translation} | {rotation} | {name} | {ref} | {links})"
 
             except:
                 print(f"Frame extraction issue after row {i} : {desc[i]}")
                 print(sys.exc_info())
 
-    return refFrames
+    return reference_frames

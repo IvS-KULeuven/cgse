@@ -34,7 +34,6 @@ Functionality:
 import logging
 from typing import Dict
 from typing import List
-from typing import Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -44,7 +43,6 @@ from mpl_toolkits.mplot3d import Axes3D
 import egse.coordinates.transform3d_addon as t3add
 from egse.coordinates import dict_to_ref_model
 from egse.coordinates import ref_model_to_dict
-from egse.coordinates.referenceFrame import ReferenceFrame
 from egse.setup import NavigableDict
 
 LOGGER = logging.getLogger(__name__)
@@ -73,22 +71,26 @@ class ReferenceFrameModel:
 
     def __init__(
         self,
-        model: Union[Dict, List[ReferenceFrame]] = None,
-        rot_config: str = _ROT_CONFIG_DEFAULT,
+        model: Dict | List = None,
+        rotation_config: str = _ROT_CONFIG_DEFAULT,
         use_degrees: bool = _DEGREES_DEFAULT,
         use_active_movements: bool = _ACTIVE_DEFAULT,
     ):
-        """
-        When the model_dict is empty or None, a new model is created with a master reference frame.
+        """Initialisation of a reference frame model.
 
         Args:
-            model: a list or a dictionary of reference frames that make up the model
-            use_degrees: use degrees throughout this model unless explicitly specified in the
-                function call.
+            model (Dict | List[ReferenceFrame]): List or a dictionary of reference frames that make up the model.
+            rotation_config (str): Order in which the rotation about the three axes are chained.
+            use_degrees (bool): Indicates whether the rotation angles are specified in degrees, rather than radians.
+            use_active_movements (bool): Indicates if the rotation is active (object rotates IN a fixed coordinate
+                                         system) or passive (coordinate system rotates AROUND a fixed object).  Even if
+                                         two angles are zero, the match between angle orders and rot_config is still
+                                         critical.
         """
+
         self._use_degrees = use_degrees
         self._use_active_movements = use_active_movements
-        self._rot_config = rot_config
+        self._rot_config = rotation_config
 
         # Keep a dictionary with all reference frames that are part of the model. The keys shall
         # be the name of the reference frame. When the model passed is empty, create only a
@@ -99,155 +101,185 @@ class ReferenceFrameModel:
         else:
             self._model = NavigableDict({})
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Returns a printable string representation of the reference frame.
+
+        Returns:
+            Printable string representation of the reference frame.
+        """
+
         return self._model.pretty_str()
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """Returns the number of reference frames in the model."""
+
         return len(self._model)
 
-    def __contains__(self, item):
+    def __contains__(self, item) -> bool:
+        """Checks whether the given item is present in the model.
+
+        Args:
+            item: Item for which to check whether it's present in the model.
+
+        Returns:
+            True if the given item is present in the model; False otherwise.
+        """
+
         return item in self._model
 
     def __iter__(self):
+        """Returns an iterator over the reference frames in the model."""
+
         return iter(self._model.values())
 
-    def summary(self):
-        result = f"Nb of frames: {len(self)}\n"
+    def summary(self) -> str:
+        """Returns a summary of the model.
 
-        for ref in self:
-            result += f"{ref.name:>10}[{ref.ref.name}]  ---  {[link.name for link in ref.linkedTo]}\n"
+        Returns:
+            String summary of the model.
+        """
+
+        result = f"Number of frames: {len(self)}\n"
+
+        for reference_frame in self:
+            result += f"{reference_frame.name:>10}[{reference_frame.reference_frame.name}]  ---  {[link.name for link in reference_frame.linked_to]}\n"
+
         return result
 
     @staticmethod
     def deserialize(model_dict: dict) -> NavigableDict:
-        """
-        Deserialize means you take a serialized representation of a reference frames model and
-        turn it into a dictionary containing all the reference frames with their links and
-        references.
+        """De-serialisation of the model.
+
+        De-serialisation means you take a serialised representation of a reference frames model and turn it into a
+        dictionary containing all the reference frames with their links and references.
 
         Args:
-            model_dict: a dictionary of serialized reference frames
+            model_dict (dict): Dictionary of serialised reference frames.
 
         Returns:
-            A dictionary of ReferenceFrames that make up a model.
+            Dictionary of reference frames that make up a model.
 
         """
         return dict_to_ref_model(model_dict)
 
     def serialize(self) -> NavigableDict:
-        """
-        Serialize the model by serializing each of the reference frames into an object that can
-        easily be saved to a YAML or a JSON file. Return a dictionary with the serialized frames.
+        """Serialisation of the model.
+
+
+        Serialisation of the model by serialising each of the reference frames into an object that can easily be saved
+        to a YAML or a JSON file.
 
         Returns:
-            A dictionary with all the reference framed serialized.
+            Dictionary with all the serialised reference framed.
         """
 
         return ref_model_to_dict(self._model)
 
-    def add_master_frame(self):
+    def add_master_frame(self) -> None:
+        """Adds the master reference frame to the model."""
+
         # TODO: First check if there is not already a Master frame in the model
 
-        self._model["Master"] = ReferenceFrame.createMaster()
+        from egse.coordinates.reference_frame import ReferenceFrame
+
+        self._model["Master"] = ReferenceFrame.create_master()
 
     def add_frame(
         self,
         name: str,
         *,
-        translation: List[float] = None,
-        rotation: List[float] = None,
-        transformation=None,
-        ref: str,
-    ):
-        """
-        Add a reference frame to the model.
-
-        .. note::
-            Only the `name` parameter can be positional, all the other arguments (translation,
-            rotation, transformation, and ref) must be given as keyword arguments.
+        translation: np.ndarray = None,
+        rotation: np.ndarray = None,
+        transformation: np.ndarray = None,
+        reference: str,
+    ) -> None:
+        """Adds a reference frame to the model.
 
         Args:
-            name: the name for the reference frame. This name is it's identifier within the model.
-            translation: the translation vector
-            rotation: the rotation vector
-            transformation: the transformation vector, if `transformation` is given,
-                both `translation` and `rotation` are ignored.
-            ref: the reference frame that is a reference for 'name', i.e. 'name' is defined with
-                respect to 'ref'.
+            name (str): Name of the reference frame to add to the model.  Only this parameter can be positional.  This
+                        will serve as the identifier for the reference frame in the model.
+            translation (np.ndarray): Translation vector. Ignored when `transformation` is given.
+            rotation (np.ndarray: Rotation vector. Ignored when `transformation` is given.
+            transformation (np.ndarray): Transformation matrix.
+            reference (str): Name of the reference frame that is a reference for the new reference frame, i.e. the new
+                             reference frame is defined w.r.t. this one.
         """
+
+        from egse.coordinates.reference_frame import ReferenceFrame
 
         if name in self._model:
             raise KeyError("A reference frame with the name '{name} already exists in the model.")
 
-        ref = self._model[ref]
+        reference = self._model[reference]
 
-        if transformation is not None:
+        if transformation:
             self._model[name] = ReferenceFrame(
                 transformation,
-                ref=ref,
+                reference_frame=reference,
                 name=name,
-                rot_config=self._rot_config,
+                rotation_config=self._rot_config,
             )
         else:
-            self._model[name] = ReferenceFrame.fromTranslationRotation(
+            self._model[name] = ReferenceFrame.from_translation_rotation(
                 translation,
                 rotation,
                 name=name,
-                ref=ref,
-                rot_config=self._rot_config,
+                reference_frame=reference,
+                rotation_config=self._rot_config,
                 degrees=self._use_degrees,
                 active=self._use_active_movements,
             )
 
     def remove_frame(self, name: str):
-        """
-        Deletes the reference frame from the model. If the reference frame doesn't exist in the
-        model, a warning message is logged.
+        """Deletes the given reference frame from the model.
+
+        If the reference frame doesn't exist in the model, a warning message is logged.
 
         Args:
-            name: the name of the reference frame to remove
+            name (str): Name of the reference frame to remove.
         """
 
         if name in self._model:
+            from egse.coordinates.reference_frame import ReferenceFrame
+
             frame: ReferenceFrame = self._model[name]
 
-            # We need to get the links out in a list because the frame.removeLink() method deletes
-            # frames from the linkedTo dictionary and that is not allowed in a for loop.
+            # We need to get the links out in a list because the frame.remove_link() method deletes
+            # frames from the linked_to dictionary and that is not allowed in a for loop.
 
-            links = [linked_frame for linked_frame in frame.linkedTo]
+            links = [linked_frame for linked_frame in frame.linked_to]
             for link in links:
-                frame.removeLink(link)
+                frame.remove_link(link)
 
             del self._model[name]
         else:
             LOGGER.warning(f"You tried to remove a non-existing reference frame '{name}' from the model.")
 
-    def get_frame(self, name: str) -> ReferenceFrame:
+    def get_frame(self, name: str):
+        """Returns the reference frame with the given name.
+
+        Use this function with care since this breaks encapsulation and may lead to an inconsistent model when the frame
+        is changed outside the scope of the reference model.
+
+         Args:
+             name (str): Name of the requested reference frame.
+
+         Returns:
+             Reference frame with the given name.
         """
-        Returns a frame with the given name.
 
-        .. note::
-            Use this function with care since this breaks encapsulation and may lead to an
-            inconsistent model when the frame is changed outside of the scope of the reference
-            model.
-
-        Args:
-            name: the name of the requested reference frame
-
-        Returns:
-            The reference frame with the given name.
-        """
         return self._model[name]
 
     def add_link(self, source: str, target: str):
-        """
-        Add a link between two reference frames. All links are bi-directional.
+        """Adds a link between the two given reference frames of the model.
+
+        All links are bi-directional.
 
         Args:
-            source: the source reference frame
-            target: the target reference frame
-
+            source (args): Name of the source reference frame.
+            target (args): Name of the target reference frame.
         """
+
         if source not in self._model:
             raise KeyError(f"There is no reference frame with the name '{source} in the model.")
         if target not in self._model:
@@ -256,18 +288,18 @@ class ReferenceFrameModel:
         source = self._model[source]
         target = self._model[target]
 
-        source.addLink(target)
+        source.add_link(target)
 
     def remove_link(self, source: str, target: str):
-        """
-        Remove a link between two reference frames. All links are bi-directional and this method
-        removes both links.
+        """Removes a link between two reference frames.
+
+        All links are bi-directional and this method removes both links.
 
         Args:
-            source: the source reference frame
-            target: the target reference frame
-
+            source (args): Name of the source reference frame.
+            target (args): Name of the target reference frame.
         """
+
         if source not in self._model:
             raise KeyError(f"There is no reference frame with the name '{source} in the model.")
         if target not in self._model:
@@ -276,39 +308,54 @@ class ReferenceFrameModel:
         source = self._model[source]
         target = self._model[target]
 
-        source.removeLink(target)
+        source.remove_link(target)
 
-    def move_absolute_self(self, frame: str, translation, rotation, degrees=_DEGREES_DEFAULT):
-        """
-        Apply an absolute movement to the given ReferenceFrame such that it occupies a given
-        absolute position wrt "frame_ref" after the movement.
+    def move_absolute_self(
+        self, name: str, translation: np.ndarray, rotation: np.ndarray, degrees: bool = _DEGREES_DEFAULT
+    ) -> None:
+        """Applies an absolute movement to the given reference frame.
 
-        NO Hexapod equivalent.
+        Applies an absolute movement to the given reference frame such that it occupies a given absolute position w.r.t.
+        "frame_ref" after the movement.
+
+        There is no hexapod equivalent.
 
         Args:
-            frame (str): the name of the reference frame to move
+            name (str): Name of the reference frame to move.
+            translation (np.ndarray): Translation vector.
+            rotation (np.ndarray): Rotation vector.
+            degrees (bool): Indicates whether the rotation angles are specified in degrees, rather than radians.
+
+        Args:
+            name (str): the name of the reference frame to move
         """
 
-        frame = self._model[frame]
-        frame.setTranslationRotation(
+        name = self._model[name]
+        name.set_translation_rotation(
             translation,
             rotation,
-            rot_config=self._rot_config,
+            rotation_config=self._rot_config,
             active=self._use_active_movements,
             degrees=degrees,
-            preserveLinks=True,
+            preserve_links=True,
         )
 
-    def move_absolute_in_other(self, frame: str, other: str, translation, rotation, degrees=_DEGREES_DEFAULT):
-        """
-        Apply an absolute movement to the ReferenceFrame "frame", such that it occupies
-        a given absolute position with respect to "other" after the movement.
+    def move_absolute_in_other(
+        self, frame: str, other: str, translation: np.ndarray, rotation: np.ndarray, degrees: bool = _DEGREES_DEFAULT
+    ):
+        """Applies an absolute movement to the given reference frame in another reference frame.
 
-        EQUIVALENT PunaSimulator.move_absolute, setting hexobj wrt hexusr.
+        Apply an absolute movement to the ReferenceFrame "frame", such that it occupies a given absolute position
+        w.r.t. "other" after the movement.
+
+        Hexapod equivalent: PunaSimulator.move_absolute, setting `hexobj` w.r.t. `hexusr`.
 
         Args:
-            frame (str): the name (id) of the reference frame to move
-            other (str): the name (id) of the reference frame
+            frame (str): Name of the reference frame to move.
+            other (str): Name of the other reference frame.
+            translation (np.ndarray): Translation vector.
+            rotation (np.ndarray): Rotation vector.
+            degrees (bool): Indicates whether the rotation angles are specified in degrees, rather than radians.
         """
 
         # TODO:
@@ -318,58 +365,71 @@ class ReferenceFrameModel:
         frame = self._model[frame]
         other = self._model[other]
 
-        transformation = other.getActiveTransformationTo(frame)
+        transformation = other.get_active_transformation_to(frame)
 
-        moving_in_other = ReferenceFrame(transformation, rot_config=self._rot_config, ref=other, name="moving_in_other")
+        from egse.coordinates.reference_frame import ReferenceFrame
 
-        moving_in_other.addLink(frame)
-
-        moving_in_other.setTranslationRotation(
-            translation,
-            rotation,
-            rot_config=self._rot_config,
-            active=self._use_active_movements,
-            degrees=degrees,
-            preserveLinks=True,
+        moving_in_other = ReferenceFrame(
+            transformation, rotation_config=self._rot_config, reference_frame=other, name="moving_in_other"
         )
 
-        moving_in_other.removeLink(frame)
+        moving_in_other.add_link(frame)
+
+        moving_in_other.set_translation_rotation(
+            translation,
+            rotation,
+            rotation_config=self._rot_config,
+            active=self._use_active_movements,
+            degrees=degrees,
+            preserve_links=True,
+        )
+
+        moving_in_other.remove_link(frame)
 
         del moving_in_other
 
-    def move_relative_self(self, frame: str, translation, rotation, degrees=_DEGREES_DEFAULT):
-        """
-        Apply a relative movement to the given ReferenceFrame assuming the movement is expressed
-        in that same frame.
+    def move_relative_self(
+        self, frame: str, translation: np.ndarray, rotation: np.ndarray, degrees: bool = _DEGREES_DEFAULT
+    ):
+        """Applies a relative movement to the given reference frame.
 
-        EQUIVALENT PunaSimulator.move_relative_object
+        It is assumed that the movement is expressed in that same reference frame.
+
+        Hexapod equivalent: PunaSimulator.move_relative_object
 
         Args:
-            frame (str): the name of the reference frame to move
+            frame (str): Name of the reference frame to move.
+            translation (np.ndarray): Translation vector.
+            rotation (np.ndarray): Rotation vector.
+            degrees (bool): Indicates whether the rotation angles are specified in degrees, rather than radians.
         """
 
         frame = self._model[frame]
-        frame.applyTranslationRotation(
+        frame.apply_translation_rotation(
             translation,
             rotation,
-            rot_config=self._rot_config,
+            rotation_config=self._rot_config,
             active=self._use_active_movements,
             degrees=degrees,
-            preserveLinks=True,
+            preserve_links=True,
         )
 
-    def move_relative_other(self, frame: str, other: str, translation, rotation, degrees=_DEGREES_DEFAULT):
-        """
-        Apply a relative movement to the ReferenceFrame "frame". The movement is expressed wrt
-        the axes of another frame, "other".
+    def move_relative_other(
+        self, frame: str, other: str, translation: np.ndarray, rotation: np.ndarray, degrees: bool = _DEGREES_DEFAULT
+    ):
+        """Applies a relative movement to the given reference frame.
 
-        The center of rotation is the origin of the reference frame 'other'.
+        The movement is expressed w.r.t. the axes of another frame.  The centre of rotation is the origin of the
+        that other reference frame.
 
-        NO Hexapod equivalent.
+        There is no hexapod equivalent.
 
         Args:
-            frame (str): the name (id) of the reference frame to move
-            other (str): the name (id) of the reference frame
+            frame (str): Name of the reference frame to move.
+            other (str): Name of the reference frame in which the movements have been defined.
+            translation (np.ndarray): Translation vector.
+            rotation (np.ndarray): Rotation vector.
+            degrees (bool): Indicates whether the rotation angles are specified in degrees, rather than radians.
         """
 
         # TODO:
@@ -379,35 +439,45 @@ class ReferenceFrameModel:
         frame = self._model[frame]
         other = self._model[other]
 
-        transformation = frame.getActiveTransformationTo(other)
+        transformation = frame.get_active_transformation_to(other)
 
-        moving_in_other = ReferenceFrame(transformation, rot_config=self._rot_config, ref=other, name="moving_in_other")
+        from egse.coordinates.reference_frame import ReferenceFrame
 
-        moving_in_other.addLink(frame)
-
-        moving_in_other.applyTranslationRotation(
-            translation,
-            rotation,
-            rot_config=self._rot_config,
-            active=self._use_active_movements,
-            degrees=degrees,
-            preserveLinks=True,
+        moving_in_other = ReferenceFrame(
+            transformation, rotation_config=self._rot_config, reference_frame=other, name="moving_in_other"
         )
 
-        moving_in_other.removeLink(frame)
+        moving_in_other.add_link(frame)
+
+        moving_in_other.apply_translation_rotation(
+            translation,
+            rotation,
+            rotation_config=self._rot_config,
+            active=self._use_active_movements,
+            degrees=degrees,
+            preserve_links=True,
+        )
+
+        moving_in_other.remove_link(frame)
 
         del moving_in_other  # not need as local scope
 
-    def move_relative_other_local(self, frame: str, other: str, translation, rotation, degrees=_DEGREES_DEFAULT):
-        """
-        Apply a relative movement to the ReferenceFrame "frame".
+    def move_relative_other_local(
+        self, frame: str, other: str, translation: np.ndarray, rotation: np.ndarray, degrees: bool = _DEGREES_DEFAULT
+    ):
+        """Applies a relative movement to the given reference frame.
 
-        The movement is expressed wrt the axes of an external frame "other"
+        The movement is expressed w.r.t. the axes of another reference frame.  The centre of rotation is the origin of
+        that other reference frame.
 
-        The center of rotation is the origin of the reference frame 'frame'.
+        Hexapod equivalent: PunaSimulator.move_relative_user
 
-        EQUIVALENT PunaSimulator.move_relative_user
-
+        Args:
+            frame (str): Name of the reference frame to move.
+            other (str): Name of the reference frame in which the movements have been defined.
+            translation (np.ndarray): Translation vector.
+            rotation (np.ndarray): Rotation vector.
+            degrees (bool): Indicates whether the rotation angles are specified in degrees, rather than radians.
         """
 
         # TODO:
@@ -418,10 +488,9 @@ class ReferenceFrameModel:
         other = self._model[other]
 
         # Represent the requested movement
+        # De-rotation of MOVING -> REF  (align frame_moving axes on those of frame_ref)
 
-        # Derotation of MOVING --> REF  (align frame_moving axes on those of frame_ref)
-
-        derotation = frame.getActiveTransformationTo(other)
+        derotation = frame.get_active_transformation_to(other)
         derotation[:3, 3] = [0, 0, 0]
 
         # Reverse rotation (record inverse rotation, to restore the frame in the end)
@@ -436,24 +505,28 @@ class ReferenceFrameModel:
         # Requested rotation matrix (already expressed wrt frame_ref)
 
         zeros = [0, 0, 0]
-        rotation_ = t3add.translationRotationToTransformation(zeros, rotation, rot_config=self._rot_config)
+        rotation_ = t3add.translation_rotation_to_transformation(
+            zeros, rotation, rotation_config=self._rot_config, degrees=degrees
+        )
 
         # All translations and rotations are applied to frame_moving
-        # ==> a. need for "derotation" before applying the translation
-        #     b. the center or rotation is always the origin of frame_moving
-        # 1. rotate frame_moving to align it with frame_ref (i.e. render their axes parallel)
-        # 2. apply the translation in this frame
-        # 3. restore the original orientation of the moving frame
-        # 4. apply the requested rotation
+        # -> a. Need for "de-rotation" before applying the translation
+        #    b. The centre of rotation is always the origin of frame_moving
+        # 1. Rotate frame_moving to align it with frame_ref (i.e. render their axes parallel)
+        # 2. Apply the translation in this frame
+        # 3. Restore the original orientation of the moving frame
+        # 4. Apply the requested rotation
 
         transformation = derotation @ translation_ @ rerotation @ rotation_
 
         # Apply the requested movement
 
-        frame.applyTransformation(transformation, preserveLinks=True)
+        frame.apply_transformation(transformation, preserve_links=True)
 
 
-def plot_ref_model(model: ReferenceFrameModel):
+def plot_ref_model(model: ReferenceFrameModel) -> None:
+    """Plots the xz-plane of the given reference frame model."""
+
     # figsize is in inch, 6 inch = 15.24 cm, 5 inch = 12.7 cm
 
     fig = plt.figure(figsize=(6, 5), dpi=100)
@@ -474,7 +547,9 @@ def plot_ref_model(model: ReferenceFrameModel):
     plt.show()
 
 
-def plot_ref_model_3d(model: ReferenceFrameModel):
+def plot_ref_model_3d(model: ReferenceFrameModel) -> None:
+    """Plots the given reference frame model in 3D."""
+
     fig = plt.figure(figsize=(8, 8), dpi=100)
     ax = Axes3D(fig)
     # ax.set_box_aspect([1, 1, 1])
@@ -521,17 +596,16 @@ def plot_ref_model_3d(model: ReferenceFrameModel):
     plt.show()
 
 
-# The aspect ration of the plots is not equal by default.
-# This solution was given in SO: https://stackoverflow.com/a/63625222/4609203
+def set_axes_equal(ax: plt.Axes) -> None:
+    """Sets 3D plot axes to equal scale.
 
+    Make axes of 3D plot have equal scale so that spheres appear as spheres and cubes as cubes.  Required since
+    `ax.axis('equal')` and `ax.set_aspect('equal')` don't work on 3D.
 
-def set_axes_equal(ax: plt.Axes):
-    """Set 3D plot axes to equal scale.
-
-    Make axes of 3D plot have equal scale so that spheres appear as
-    spheres and cubes as cubes.  Required since `ax.axis('equal')`
-    and `ax.set_aspect('equal')` don't work on 3D.
+    The aspect rati0 of the plots is not equal by default.  This solution was given in Stack Overflow:
+    https://stackoverflow.com/a/63625222/4609203
     """
+
     limits = np.array([ax.get_xlim3d(), ax.get_ylim3d(), ax.get_zlim3d()])
     origin = np.mean(limits, axis=1)
     radius = 0.5 * np.max(np.abs(limits[:, 1] - limits[:, 0]))
@@ -541,23 +615,33 @@ def set_axes_equal(ax: plt.Axes):
     ax.set_zlim3d([z - radius, z + radius])
 
 
-def draw_frame_3d(ax: Axes3D, frame: ReferenceFrame, DEFAULT_AXIS_LENGTH=100, **kwargs):
+def draw_frame_3d(ax: Axes3D, frame, **kwargs) -> None:
+    """Draws the given frame in 3D.
+
+    Args:
+        ax (Axes3D): Axis to draw the frame in.
+        frame (ReferenceFrame): Reference frame to draw.
+        **kwargs: Keyword arguments to pass to the quiver function.
+    """
+
     master = frame.find_master()
 
-    f0 = frame.getOrigin()
-    fx = frame.getAxis("x", name="fx")
-    fy = frame.getAxis("y", name="fy")
-    fz = frame.getAxis("z", name="fz")
-    f0m = f0.expressIn(master)[:3]
-    fxm = fx.expressIn(master)[:3]
-    fym = fy.expressIn(master)[:3]
-    fzm = fz.expressIn(master)[:3]
+    f0 = frame.get_origin()
+    fx = frame.get_axis("x", name="fx")
+    fy = frame.get_axis("y", name="fy")
+    fz = frame.get_axis("z", name="fz")
+    f0m = f0.express_in(master)[:3]
+    fxm = fx.express_in(master)[:3]
+    fym = fy.express_in(master)[:3]
+    fzm = fz.express_in(master)[:3]
 
-    # Origin of the X,Y and Z vectors (x = the 'x' coordinates of the origin of all 3 vectors)
-    # Every vector independently (--> plot in diff. colors)
+    # Origin of the x, y. and z vectors (x = the 'x' coordinates of the origin of all 3 vectors)
+    # Every vector independently (-> plot in different colours)
+
     x, y, z = np.array([f0m[0]]), np.array([f0m[1]]), np.array([f0m[2]])
 
-    # Orientation of the X,Y and Z vectors
+    # Orientation of the x, y, and z vectors
+
     vecxx, vecyx, veczx = (
         np.array([fxm[0] - f0m[0]]),
         np.array([fym[0] - f0m[0]]),
@@ -585,7 +669,16 @@ def draw_frame_3d(ax: Axes3D, frame: ReferenceFrame, DEFAULT_AXIS_LENGTH=100, **
     ax.text(f0m[0] + offset, f0m[1] + offset, f0m[2] + offset, frame.name)
 
 
-def draw_frame(ax, frame: ReferenceFrame, plane="xz", DEFAULT_AXIS_LENGTH=100):
+def draw_frame(ax: plt.Axes, reference_frame, plane="xz", default_axis_length: int = 100) -> None:
+    """Draws the given plane from the given reference frame in the given axis.
+
+    Args:
+        ax (plt.Axes): Axis to draw the plane in.
+        reference_frame (ReferenceFrame): Reference frame to draw.
+        plane (str, optional): Kind of plane to draw.  Must be in ["xy", "yz", "zx"].
+        default_axis_length (int): Axis length.
+    """
+
     fig = ax.get_figure()
 
     # FC : Figure coordinates (pixels)
@@ -604,8 +697,8 @@ def draw_frame(ax, frame: ReferenceFrame, plane="xz", DEFAULT_AXIS_LENGTH=100):
 
     # Draw the origin
 
-    origin = frame.getOrigin()
-    origin_in_master = origin.expressIn(frame.find_master())
+    origin = reference_frame.get_origin()
+    origin_in_master = origin.express_in(reference_frame.find_master())
 
     ax.scatter([origin_in_master[x_idx]], [origin_in_master[y_idx]], color="k")
 
@@ -614,13 +707,13 @@ def draw_frame(ax, frame: ReferenceFrame, plane="xz", DEFAULT_AXIS_LENGTH=100):
     origin_dc = np.array([[origin_in_master[x_idx], origin_in_master[y_idx]]])
 
     point = dc2fc(origin_dc[0])
-    point[0] += DEFAULT_AXIS_LENGTH
+    point[0] += default_axis_length
     target_dc = np.append(origin_dc, [fc2dc(point)], axis=0)
 
     ax.plot(target_dc[:, 0], target_dc[:, 1], color="k")
 
     point = dc2fc(origin_dc[0])
-    point[1] += DEFAULT_AXIS_LENGTH
+    point[1] += default_axis_length
     target_dc = np.append(origin_dc, [fc2dc(point)], axis=0)
 
     ax.plot(target_dc[:, 0], target_dc[:, 1], color="k")
@@ -630,17 +723,23 @@ def draw_frame(ax, frame: ReferenceFrame, plane="xz", DEFAULT_AXIS_LENGTH=100):
     dx, dy = 10 / fig.dpi, 10 / fig.dpi
     offset = ScaledTranslation(dx, dy, fig.dpi_scale_trans)
     point = dc2ndc(origin_dc[0])
-    plt.text(point[0], point[1], frame.name, transform=ax.transAxes + offset)
+    plt.text(point[0], point[1], reference_frame.name, transform=ax.transAxes + offset)
 
 
-def define_the_initial_setup():
+def define_the_initial_setup() -> ReferenceFrameModel:
+    """Defines the initial setup of the reference frame model.
+
+    Returns:
+        Reference frame model with the initial setup.
+    """
+
     model = ReferenceFrameModel()
 
     model.add_master_frame()
-    model.add_frame("A", translation=[2, 2, 2], rotation=[0, 0, 0], ref="Master")
-    model.add_frame("B", translation=[-2, 2, 2], rotation=[0, 0, 0], ref="Master")
-    model.add_frame("C", translation=[2, 2, 5], rotation=[0, 0, 0], ref="A")
-    model.add_frame("D", translation=[2, 2, 2], rotation=[0, 0, 0], ref="B")
+    model.add_frame("A", translation=[2, 2, 2], rotation=[0, 0, 0], reference="Master")
+    model.add_frame("B", translation=[-2, 2, 2], rotation=[0, 0, 0], reference="Master")
+    model.add_frame("C", translation=[2, 2, 5], rotation=[0, 0, 0], reference="A")
+    model.add_frame("D", translation=[2, 2, 2], rotation=[0, 0, 0], reference="B")
 
     model.add_link("A", "B")
     model.add_link("B", "C")
@@ -651,28 +750,37 @@ def define_the_initial_setup():
     return model
 
 
-def get_vectors(rf1, rf2, model):
+def get_vectors(reference_frame_1, reference_frame_2, model: ReferenceFrameModel) -> tuple[np.ndarray, np.ndarray]:
+    """Returns the translation and rotation vectors for the active transformation for the 1st reference frame to the 2nd.
+
+    Args:
+        reference_frame_1 (str): Name of the reference frame to get the active transformation from.
+        reference_frame_2 (str): Name of the reference frame to get the active transformation to.
+        model (ReferenceFrameModel): Model containing the reference frames with the given names.
+
+    Returns:
+        Translation and rotation vectors from the active transformation from the 1st reference frame to the 2nd.
     """
-    get_vectors(rf1,rf2, model)
-    :param rf1: string : name of ref. frame "from"
-    :param rf2: string : name of ref. frame "to"
-    :param model: CSLReferenceFrameModel containing rf1 and rf2
-    :return: translation and rotation vectors from rf1 to rf2
-    """
-    return model.get_frame(rf1).getActiveTranslationRotationVectorsTo(model.get_frame(rf2))
+
+    return model.get_frame(reference_frame_1).get_active_translation_rotation_vectors_to(
+        model.get_frame(reference_frame_2)
+    )
 
 
-def print_vectors(rf1, rf2, model):
+def print_vectors(reference_frame_1: str, reference_frame_2: str, model: ReferenceFrameModel) -> None:
+    """Prints the translation and rotation vectors for the active transformation for the 1st reference frame to the 2nd.
+
+    Args:
+        reference_frame_1 (str): Name of the reference frame to get the active transformation from.
+        reference_frame_2 (str): Name of the reference frame to get the active transformation to.
+        model (ReferenceFrameModel): Model containing the reference frames with the given names.
     """
-    :param rf1: string : name of ref. frame "from"
-    :param rf2: string : name of ref. frame "to"
-    :param model: CSLReferenceFrameModel containing rf1 and rf2
-    :return: N.A.
-    Prints the translation and rotation vectors from rf1 to rf2
-    """
-    trans, rot = model.get_frame(rf1).getActiveTranslationRotationVectorsTo(model.get_frame(rf2))
+
+    trans, rot = model.get_frame(reference_frame_1).get_active_translation_rotation_vectors_to(
+        model.get_frame(reference_frame_2)
+    )
     print(
-        f"{rf1:8s} -> {rf2:8s} : Trans [{trans[0]:11.4e}, {trans[1]:11.4e}, {trans[2]:11.4e}]    Rot [{rot[0]:11.4e}, {rot[1]:11.4e}, {rot[2]:11.4e}]"
+        f"{reference_frame_1:8s} -> {reference_frame_2:8s} : Trans [{trans[0]:11.4e}, {trans[1]:11.4e}, {trans[2]:11.4e}]    Rot [{rot[0]:11.4e}, {rot[1]:11.4e}, {rot[2]:11.4e}]"
     )
     return
 
