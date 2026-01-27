@@ -44,6 +44,9 @@ from egse.zmq_ser import set_address_port
 
 MAX_SLEEP = 10
 
+DEVICE_CMD_ENTRY_POINT = "cgse.service.device_command"
+GUI_SCRIPTS_ENTRY_POINT = "gui_scripts"
+
 
 class ControlServerStatus(Enum):
     """Status of the Control Server of a device."""
@@ -78,7 +81,7 @@ def get_cgse_cmd(device_proxy: str) -> str:
 
     module_name = device_proxy[7:].rsplit(".", 1)[0]
     entry_point_values = []
-    for ep in sorted(entry_points("cgse.service.device_command"), key=lambda x: x.name):
+    for ep in sorted(entry_points(DEVICE_CMD_ENTRY_POINT), key=lambda x: x.name):
         entry_point_values.append(ep.value)
 
     similarity_scores = [
@@ -108,7 +111,7 @@ def get_cgse_ui(device_proxy: str) -> Union[str, None]:
 
     module_name = device_proxy[7:].rsplit(".", 1)[0]
     entry_point_values = []
-    for ep in sorted(entry_points("gui_scripts"), key=lambda x: x.name):
+    for ep in sorted(entry_points(GUI_SCRIPTS_ENTRY_POINT), key=lambda x: x.name):
         entry_point_values.append(ep.name)
 
     similarity_scores = [
