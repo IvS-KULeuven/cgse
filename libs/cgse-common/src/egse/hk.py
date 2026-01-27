@@ -51,8 +51,8 @@ class TmDictionaryColumns(str, Enum):
     """  # noqa
 
     STORAGE_MNEMONIC = "Storage mnemonic"
-    CORRECT_HK_NAMES = "CAM EGSE mnemonic"
-    ORIGINAL_EGSE_HK_NAMES = "Original name in EGSE"
+    CORRECT_HK_NAMES = "CGSE mnemonic"
+    ORIGINAL_EGSE_HK_NAMES = "Original name in CGSE"
     SYNOPTICS_ORIGIN = f"Origin of synoptics at {get_site_id()}"
     TIMESTAMP_NAMES = "Name of corresponding timestamp"
     DESCRIPTION = "Description"

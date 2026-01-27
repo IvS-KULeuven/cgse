@@ -28,8 +28,8 @@ dependencies = [
 [project.entry-points."cgse.version"]
 cgse-coordinates = 'egse.version:get_version_installed'
 
-[project.entry-points."cgse.settings"]
-cgse-coordinates = "cgse_coordinates:settings.yaml"
+#[project.entry-points."cgse.settings"]
+#cgse-coordinates = "cgse_coordinates:settings.yaml"
 
 [tool.pytest.ini_options]
 pythonpath = "src"

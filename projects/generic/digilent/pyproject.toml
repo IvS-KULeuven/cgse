@@ -1,0 +1,81 @@
+[project]
+name = "digilent"
+version = "0.17.3"
+description = "Digilent temperature and voltage monitoring for CGSE"
+authors = [
+    {name = "IvS KU Leuven"}
+]
+maintainers = [
+    {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
+    {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"}
+]
+readme = {"file" = "README.md", "content-type" = "text/markdown"}
+requires-python = ">=3.10"
+license = "MIT"
+keywords = [
+    "CGSE",
+    "Common-EGSE",
+    "hardware testing",
+    "software framework",
+]
+dependencies = [
+    "cgse-common",
+    "cgse-core",
+]
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-mock", "pytest-cov"]
+
+[project.scripts]
+dt8874_cs = 'egse.digilent.measurpoint.dt8874.dt8874_cs:app'
+dt8874_sim = 'egse.digilent.measurpoint.dt8874.dt8874_sim:app'
+
+#[project.gui-scripts]
+#dt8874_ui = "egse.digilent.measurpoint.dt8874.dt8874_ui:main"
+
+[project.entry-points."cgse.version"]
+digilent = 'egse.version:get_version_installed'
+
+[project.entry-points."cgse.settings"]
+digilent = "digilent:settings.yaml"
+
+[project.entry-points."cgse.service.device_command"]
+dt8874 = 'digilent.cgse_services:dt8874'
+
+[project.entry-points."cgse.explore"]
+explore = "digilent.cgse_explore"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/tests",
+    "/pytest.ini",
+    "/.gitignore",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/egse", "src/digilent"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+extend-select = ["E501"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "setuptools", # needed by PyCharm
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "ruff>=0.9.0",
+    "nox>=2025.2.9",
+    "setuptools>=75.8.2", # needed by PyCharm
+    "pytest-asyncio>=0.26.0",
+]
