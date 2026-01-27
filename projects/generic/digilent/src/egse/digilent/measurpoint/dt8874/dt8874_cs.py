@@ -2,7 +2,7 @@
 
 import logging
 import multiprocessing
-from typing import Annotated
+from typing import Annotated, Callable
 
 import rich
 import sys
@@ -196,10 +196,35 @@ class Dt8874ControlServer(ControlServer):
     def after_serve(self):
         self.deregister_service()
 
-    def config_channels(self, setup_id: int):
-        setup = load_setup(setup_id)
-        self.device_protocol.dt8874.config_channels(setup)
+    def config_channels(self, event_data: dict):
+        """Configures the channels of the Digilent MEASURpoint DT8874 after a new setup has been loaded.
 
+        Args:
+            event_data (dict): Event data, containing the setup ID.
+        """
+
+        if data := event_data.get("data"):
+            if setup_id := data.get("setup_id"):
+                setup = load_setup(int(setup_id))
+                self.device_protocol.dt8874.config_channels(setup)
+
+    def get_event_handlers(self) -> dict[str, Callable]:
+        """Provides methods to handle the events the Control Server is subscribed to.
+
+        Returns:
+            Dictionary of event handlers.
+        """
+
+        return {"new_setup": self.config_channels}
+
+    def get_event_subscriptions(self) -> list[str]:
+        """Returns the list of events the Control Server is subscribed to.
+
+        Returns:
+            List of events the Control Server is subscribed to.
+        """
+
+        return ["new_setup"]
 
 app = typer.Typer()
 
