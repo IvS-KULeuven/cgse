@@ -1,5 +1,3 @@
-# An example plugin for the `cgse {start,stop,status} service` command from `cgse-core`.
-#
 import subprocess
 from typing import Annotated
 
