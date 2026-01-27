@@ -2,14 +2,12 @@
 
 import logging
 import multiprocessing
-import re
 from typing import Annotated
 
 import rich
 import sys
 import typer
 import zmq
-from navdict import navdict
 
 
 from egse.control import is_control_server_active, ControlServer
@@ -198,18 +196,9 @@ class Dt8874ControlServer(ControlServer):
     def after_serve(self):
         self.deregister_service()
 
-
-                self.device_protocol.dt8874.set_voltage_range_channels(channels=channels)
-        except AttributeError:
-            logger.warning("Couldn't enable password protected commands, check the log messages.")
-
-        if len(self.device_protocol.dt8874.channel_lists):
-            logger.warning("No channels configured, check the log messages.")
-
-    #     start_http_server(CTRL_SETTINGS.METRICS_PORT)
-
-    def after_serve(self):
-        self.deregister_service()
+    def config_channels(self, setup_id: int):
+        setup = load_setup(setup_id)
+        self.device_protocol.dt8874.config_channels(setup)
 
 
 app = typer.Typer()
@@ -308,32 +297,6 @@ def status():
             rich.print(f"monitoring port: {monitoring_port}")
     else:
         rich.print("Digilent MEASURpoint DT8874: [red]not active")
-
-
-# def get_channel_list(channel_list: str) -> list[str]:
-#     """
-#     Generate a list of channel names from a given channel list.
-#
-#     Args:
-#         channel_list: a channel list as understood by the SCPI commands of DAQ6510.
-#
-#     Returns:
-#         A list of channel names.
-#     """
-#
-#     match = re.match(r"\(@(.*)\)", channel_list)
-#     group = match.groups()[0]
-#
-#     parts = group.replace(" ", "").split(",")
-#     names = []
-#     for part in parts:
-#         if ":" in part:
-#             channels = part.split(":")
-#             names.extend(str(ch) for ch in range(int(channels[0]), int(channels[1]) + 1))
-#         else:
-#             names.append(part)
-#
-#     return names
 
 
 if __name__ == "__main__":
