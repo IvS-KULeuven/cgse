@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.17.4] - 2026-01-27
+
+- Extracting HK from Ariel facility database
+- Re-shuffled hexapod settings
+- Cleaned up cgse-coordinates
+- Maintenance on cgse-core
+- Implementation of Digilent MEASURpoint DT8874
+
 
 ## [0.17.3] - 2025-11-29
 
