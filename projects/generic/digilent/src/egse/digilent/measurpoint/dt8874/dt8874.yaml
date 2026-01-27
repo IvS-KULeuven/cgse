@@ -10,8 +10,8 @@ ControlServerClass:
 ControlServer:
     egse.digilent.measurpoint.dt8874.dt8874_cs
 
-UserInterface:
-    egse.digilent.measurpoint.dt8874.dt8874_ui
+#UserInterface:
+#    egse.digilent.measurpoint.dt8874.dt8874_ui
 
 Commands:
 
