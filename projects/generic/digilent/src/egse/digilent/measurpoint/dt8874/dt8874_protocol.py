@@ -39,11 +39,9 @@ class Dt8874Protocol(DynamicCommandProtocol):
 
         super().__init__(control_server)
 
-        try:
-            self.hk_conversion_table = read_conversion_dict(
-                self.get_control_server().get_storage_mnemonic(), use_site=False)
-        except KeyError:
-            self.hk_conversion_table = None
+        self.hk_conversion_table = read_conversion_dict(
+            self.get_control_server().get_storage_mnemonic(), use_site=False
+        )
 
         self.simulator = simulator
 
