@@ -1,9 +1,8 @@
 import logging
 import subprocess
-import sys
-from pathlib import Path
 
 import rich
+import sys
 
 from egse.log import logger
 from egse.process import is_process_running
