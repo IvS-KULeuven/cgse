@@ -28,7 +28,7 @@ def test_constructor():
 
     response = daq.trans("*IDN?\n")
 
-    assert response == "KEITHLEY INSTRUMENTS,MODEL DAQ6510,04569510,1.7.12b"
+    assert response.decode().strip() == "KEITHLEY INSTRUMENTS,MODEL DAQ6510,04569510,1.7.12b"
 
     daq.disconnect()
 
@@ -78,24 +78,24 @@ def test_context_manager():
 
 def test_incorrect_construction():
     daq = DAQ6510()
-    daq.hostname = "unknown"  # set this explicitly because the local_settings might define he HOSTNAME
-    with pytest.raises(DeviceConnectionError, match="DAQ6510: Socket address info error for unknown"):
+    daq.hostname = "unknown"  # set this explicitly because the local_settings might define the HOSTNAME
+    with pytest.raises(ConnectionError, match="DAQ6510: Socket address info error for unknown"):
         daq.connect()
 
     daq = DAQ6510()
-    daq.hostname = None
+    daq.hostname = None  # noqa
     with pytest.raises(ValueError, match="hostname is not initialized"):
         daq.connect()
 
     daq = DAQ6510(HOSTNAME)
-    daq.port = None
+    daq.port = None  # noqa
 
     with pytest.raises(ValueError, match="port number is not initialized"):
         daq.connect()
 
     daq = DAQ6510(HOSTNAME, 3000)  # pass an incorrect port number
 
-    with pytest.raises(DeviceConnectionError, match="DAQ6510: Connection refused"):
+    with pytest.raises(ConnectionError, match="DAQ6510: Connection refused"):
         daq.connect()
 
 
@@ -162,8 +162,8 @@ def test_a_scan():
 
             response = daq.trans('TRAC:DATA? 1, 2, "test1", CHAN, TST, READ')
             print(f"{response = }")
-            ch1, tst1, val1, ch2, tst2, val2 = response.split(",")
-            print(f"Channel: {ch1} Time: {tst1} Value: {float(val1):.4f}\t", end="")
+            ch1, tst1, val1, ch2, tst2, val2 = response.decode().split(",")
+            print(f"Channel: {ch1} Time: {tst1} Value: {float(val1):.4f}")
             print(f"Channel: {ch2} Time: {tst2} Value: {float(val2):.4f}")
             time.sleep(0.1)
 
@@ -174,28 +174,23 @@ def test_another_scan():
 
         n_readings = 50
 
-        daq.write("*RST")  # This also clears the default buffers
-
-        for cmd, response in [
-            ('SENS:FUNC "TEMP", (@101,102)', False),
-            ("SENS:TEMP:UNIT CELS, (@101,102)", False),
-            ("SENS:TEMP:TRAN FRTD, (@101)", False),  # set the transducer to 4-wire RTD
-            ("SENS:TEMP:RTD:FOUR PT100, (@101)", False),  # set the type of the 4-wire RTD
-            ("SENS:TEMP:TRAN RTD, (@102)", False),  # set the transducer to 2-wire RTD
-            ("SENS:TEMP:RTD:TWO PT100, (@102)", False),  # set the type of the 2-wire RTD
-            # Set the amount of time that the input signal is measured.
-            ("SENS:TEMP:NPLC 0.1, (@101,102)", False),
-            ('TRIG:LOAD "Empty"', False),
-            ('TRIG:BLOC:BUFF:CLEAR 1, "defbuffer1"', False),
-            ('TRIG:BLOC:MDIG 2, "defbuffer1"', False),
-            (f"TRIG:BLOC:BRAN:COUN 3, {n_readings}, 2", False),
-        ]:
-            if response:
-                print(f"Sending {cmd}... response=", end="")
-                print(daq.trans(cmd))
-            else:
-                print(f"Sending {cmd}...")
-                daq.write(cmd)
+        daq.initialize(
+            [
+                ('SENS:FUNC "TEMP", (@101,102)', False),
+                ("SENS:TEMP:UNIT CELS, (@101,102)", False),
+                ("SENS:TEMP:TRAN FRTD, (@101)", False),  # set the transducer to 4-wire RTD
+                ("SENS:TEMP:RTD:FOUR PT100, (@101)", False),  # set the type of the 4-wire RTD
+                ("SENS:TEMP:TRAN RTD, (@102)", False),  # set the transducer to 2-wire RTD
+                ("SENS:TEMP:RTD:TWO PT100, (@102)", False),  # set the type of the 2-wire RTD
+                # Set the amount of time that the input signal is measured.
+                ("SENS:TEMP:NPLC 0.1, (@101,102)", False),
+                ('TRIG:LOAD "Empty"', False),
+                ('TRIG:BLOC:BUFF:CLEAR 1, "defbuffer1"', False),
+                ('TRIG:BLOC:MDIG 2, "defbuffer1"', False),
+                (f"TRIG:BLOC:BRAN:COUN 3, {n_readings}, 2", False),
+            ],
+            reset_device=True,
+        )
 
         # Read out the channels
 
@@ -207,7 +202,8 @@ def test_another_scan():
 
             response = daq.trans(f'TRAC:DATA? 1, {n_readings}, "defbuffer1", CHAN, TST, READ')
             print(f"{response = }")
-            # ch1, tst1, val1, ch2, tst2, val2 = response.split(",")
-            # print(f"Channel: {ch1} Time: {tst1} Value: {float(val1):.4f}\t", end="")
+            # FIXME: Need to rewrite this because n_readings are returned instead of 2
+            # ch1, tst1, val1, ch2, tst2, val2 = response.decode().split(",")
+            # print(f"Channel: {ch1} Time: {tst1} Value: {float(val1):.4f}")
             # print(f"Channel: {ch2} Time: {tst2} Value: {float(val2):.4f}")
             time.sleep(0.1)
