@@ -96,10 +96,10 @@ COMMAND_PATTERNS_ACTIONS_RESPONSES = {
 
 
 def write(conn, response: str):
-    response = f"{response}{SEPARATOR_STR}".encode()
+    response_b = f"{response}{SEPARATOR_STR}".encode()
     if VERBOSE_DEBUG:
-        logger.debug(f"write: {response = }")
-    conn.sendall(response)
+        logger.debug(f"write: {response_b = }")
+    conn.sendall(response_b)
 
 
 # Keep a receive buffer per connection
@@ -217,7 +217,7 @@ def run_simulator():
                     return
             with conn:
                 logger.info(f"Accepted connection from {addr}")
-                write(conn, "This is PLATO DAQ6510 X.X.sim")
+                # write(conn, "This is PLATO DAQ6510 X.X.sim")  # The DAQ6510 doesn't send a string after connection
                 conn.settimeout(READ_TIMEOUT)
                 try:
                     while True:
