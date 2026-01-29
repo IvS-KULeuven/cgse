@@ -72,6 +72,7 @@ class Dt8874Protocol(DynamicCommandProtocol):
         Returns:
             Digilent MEASURpoint DT8874 interface.
         """
+
         return self.dt8874
 
     def get_status(self) -> dict:

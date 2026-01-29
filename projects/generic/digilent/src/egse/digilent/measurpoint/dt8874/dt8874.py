@@ -47,7 +47,7 @@ class Dt8874Proxy(DynamicProxy, Dt8874Interface):
     """
 
     def __init__(self):
-        """Initialisation of a Dt8874Proxy."""
+        """Initialisation of a Digilent MEASURpoint DT8874 proxy."""
 
         # Fixed ports -> Use information from settings
 

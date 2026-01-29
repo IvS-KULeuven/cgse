@@ -465,7 +465,7 @@ class DigilentInterface(DeviceInterface):
         setup = setup or load_setup()
 
         try:
-            channel_config = setup.gse.dt8874
+            channel_config = setup.gse.pmx_a
 
             if "RTD" in channel_config:
                 self.channels["RTD"] = navdict()
@@ -538,10 +538,10 @@ class DigilentInterface(DeviceInterface):
 
     @dynamic_command(
         cmd_type=CommandType.WRITE,
-        cmd_string="*ESE",
+        cmd_string="*ESE ${bits}",
         process_cmd_string=add_lf,
     )
-    def std_event_status_enable_register(self, bits: int) -> None:
+    def set_std_event_status_enable_register(self, bits: int) -> None:
         """Enables specified bits in the Standard Event Status Enable register.
 
         The bits in the Standard Event Status Enable register are:
@@ -637,7 +637,6 @@ class DigilentInterface(DeviceInterface):
         Status Enable register.  On power-up, the Standard Event Status Enable register is zero; therefore, all bits in
         the Standard Event Status register are masked.
 
-
         Returns:
             Integer value expressed in base 2 (binary) that represents the weighted bit value of the Standard Event
             Status register and the binary-weighted decimal value for each bit.  Values range from 0 to 255.
@@ -720,7 +719,7 @@ class DigilentInterface(DeviceInterface):
     def get_status_byte_register(self) -> int:
         """Returns the current value of the Status Byte register.
 
-        The weighted sum of the bit values of hte Status Byte register is returned, ranging from 0 to 255.  The
+        The weighted sum of the bit values of the Status Byte register is returned, ranging from 0 to 255.  The
         following bits, described in 1999 SCPI Syntax & Stype, Sect. 9, are supported:
 
             | Bit | Binary weight | Description |
@@ -731,6 +730,9 @@ class DigilentInterface(DeviceInterface):
             | 2 | 4 | Error/Event Queue Summary; "1" = error queue not empty |
 
         Refer to IEE 388.2-1992, Sect. 10.36, for more information.
+
+        Returns:
+            Weighted sum of the bit values of the Status Byte register, ranging from 0 to 255.
 
         Examples:
             The following example shows a query that is correct and causes no errors:

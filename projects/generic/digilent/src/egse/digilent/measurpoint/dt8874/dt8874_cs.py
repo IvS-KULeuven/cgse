@@ -68,6 +68,12 @@ def is_dt8874_cs_active(timeout: float = 0.5) -> bool:
 
 class Dt8874ControlServer(ControlServer):
     def __init__(self, simulator: bool = False):
+        """Initialisation of a Digilent MEASURpoint DT8874 Control Server.
+
+        Args:
+            simulator (bool): Indicates whether to operate in simulator mode.
+        """
+
         super().__init__()
 
         multiprocessing.current_process().name = PROCESS_NAME
