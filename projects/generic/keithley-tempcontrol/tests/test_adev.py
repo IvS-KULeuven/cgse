@@ -16,8 +16,8 @@ settings = Settings.load("Keithley DAQ6510")
 
 VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
 
-SCPI_PORT = settings.get("PORT")
-HOSTNAME = settings.get("HOSTNAME")
+SCPI_PORT = settings.get("PORT", 5025)
+HOSTNAME = settings.get("HOSTNAME", "localhost")
 
 
 @pytest.mark.asyncio
@@ -69,12 +69,16 @@ async def test_constructor():
 
 @pytest.mark.asyncio
 async def test_action_response():
-    # Simulator only
+    # This test is for the simulator only
 
     async with DAQ6510(HOSTNAME, SCPI_PORT) as daq:
-        response = await daq.query("*ACTION-RESPONSE?\n")
-        logger.info(f"*ACTION-RESPONSE: {response=}")
-        await daq.write("*ACTION-NO-RESPONSE\n")
+        manufacturer, model, serial_number, firmware_version = await daq.get_idn_parts()
+        assert manufacturer == "KEITHLEY INSTRUMENTS"
+        assert "DAQ6510" in model
+        if serial_number == "SIMULATOR":
+            response = await daq.query("*ACTION-RESPONSE?\n")
+            logger.info(f"*ACTION-RESPONSE: {response=}")
+            await daq.write("*ACTION-NO-RESPONSE\n")
 
 
 @pytest.mark.asyncio

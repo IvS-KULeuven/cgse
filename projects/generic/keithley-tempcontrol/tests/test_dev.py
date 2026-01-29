@@ -4,13 +4,12 @@ import pytest
 from egse.device import DeviceConnectionError
 from egse.device import DeviceTimeoutError
 from egse.settings import Settings
-from egse.system import Timer
 from egse.tempcontrol.keithley.daq6510_dev import DAQ6510
 
 settings = Settings.load("Keithley DAQ6510")
 
-SCPI_PORT = settings.get("PORT")
-HOSTNAME = settings.get("HOSTNAME")
+SCPI_PORT = settings.get("PORT", 5025)
+HOSTNAME = settings.get("HOSTNAME", "localhost")
 
 
 def is_daq6510_available():
