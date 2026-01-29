@@ -1,3 +1,14 @@
+"""
+Keithley DAQ6510 device implementation as an SCPI interface.
+
+This module provides an asynchronous interface to communicate with
+the Keithley DAQ6510 data acquisition unit using SCPI commands.
+
+Classes:
+    DAQ6510: An asynchronous SCPI interface for the Keithley DAQ6510 device.
+
+"""
+
 __all__ = [
     "DAQ6510",
 ]
@@ -14,7 +25,7 @@ from egse.settings import Settings
 dev_settings = Settings.load("Keithley DAQ6510")
 
 DEV_HOST = dev_settings.get("HOSTNAME", "localhost")
-DEV_PORT = dev_settings.get("PORT", 0)
+DEV_PORT = dev_settings.get("PORT", 5025)
 DEVICE_NAME = dev_settings.get("DEVICE_NAME", "DAQ6510")
 DEV_ID_VALIDATION = "DAQ6510"
 
@@ -36,6 +47,7 @@ class DAQ6510(AsyncSCPIInterface):
             port=port,
             settings=settings,
             id_validation=DEV_ID_VALIDATION,  # String that must appear in IDN? response
+            read_timeout=5.0,
         )
 
         self._measurement_lock = asyncio.Lock()

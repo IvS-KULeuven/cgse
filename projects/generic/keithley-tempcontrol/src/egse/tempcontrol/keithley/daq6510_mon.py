@@ -22,8 +22,8 @@ from egse.tempcontrol.keithley.daq6510_adev import DAQ6510
 
 settings = Settings.load("Keithley DAQ6510")
 
-DAQ_DEV_HOST = settings.get("HOSTNAME")
-DAQ_DEV_PORT = settings.get("PORT")
+DAQ_DEV_HOST = settings.get("HOSTNAME", "localhost")
+DAQ_DEV_PORT = settings.get("PORT", 5025)
 
 DAQ_MON_CMD_PORT = 5556
 
@@ -115,6 +115,8 @@ class DAQ6510Monitor:
     async def connect_daq(self):
         """Establish connection to the DAQ6510."""
         while self.running:
+            assert self.daq_interface is not None  # extra check and make mypy happy
+
             init_commands = [
                 ('TRAC:MAKE "test1", 1000', False),  # create a new buffer
                 # settings for channel 1 and 2 of slot 1
