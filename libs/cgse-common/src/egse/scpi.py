@@ -14,6 +14,7 @@ from egse.log import logger
 
 DEFAULT_READ_TIMEOUT = 1.0  # seconds
 DEFAULT_CONNECT_TIMEOUT = 3.0  # seconds
+DEFAULT_READ_AFTER_CONNECT = False
 IDENTIFICATION_QUERY = "*IDN?"
 
 VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
@@ -49,6 +50,7 @@ class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
         settings: Optional[Dict[str, Any]] = None,
         connect_timeout: float = DEFAULT_CONNECT_TIMEOUT,
         read_timeout: float = DEFAULT_READ_TIMEOUT,
+        read_after_connect: bool = DEFAULT_READ_AFTER_CONNECT,
         id_validation: Optional[str] = None,
     ):
         """Initialize an asynchronous Ethernet interface for SCPI communication.
@@ -60,6 +62,7 @@ class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
             settings: Additional device-specific settings
             connect_timeout: Timeout for connection attempts in seconds
             read_timeout: Timeout for read operations in seconds
+            read_after_connect: Whether to perform a read operation immediately after connecting
             id_validation: String that should appear in the device's identification response
         """
         super().__init__()
@@ -70,6 +73,7 @@ class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
         self.settings = settings or {}
         self.connect_timeout = connect_timeout
         self.read_timeout = read_timeout
+        self.read_after_connect = read_after_connect
         self.id_validation = id_validation
 
         self._reader = None
@@ -86,6 +90,26 @@ class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
     @property
     def device_name(self) -> str:
         return self._device_name
+
+    async def get_idn_parts(self) -> list[str, str, str, str]:
+        """Get the device identification string and return its parts.
+
+        The *IDN? command is sent to the device, and the response is split into its
+        components: Manufacturer, Model, Serial Number, Firmware Version.
+
+        Returns:
+            A list containing Manufacturer, Model, Serial Number, Firmware Version.
+
+        Raises:
+            DeviceError: When the device is not connected or communication fails.
+        """
+        if not self._is_connection_open:
+            raise DeviceError(self._device_name, "Device not connected, use connect() first")
+
+        idn_str = (await self.query(IDENTIFICATION_QUERY)).decode().strip()
+        if VERBOSE_DEBUG:
+            logger.debug(f"{self._device_name} IDN response: {idn_str}")
+        return idn_str.split(",")
 
     async def initialize(self, commands: list[tuple[str, bool]] = None, reset_device: bool = False) -> list[str | None]:
         """Initialize the device with optional reset and command sequence.
@@ -168,10 +192,6 @@ class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
 
                 self._is_connection_open = True
 
-                response = await self.read_string()
-                if VERBOSE_DEBUG:
-                    logger.debug(f"Response after connection: {response}")
-
                 logger.debug(f"Successfully connected to {self._device_name}.")
 
             except asyncio.TimeoutError as exc:
@@ -188,6 +208,13 @@ class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
                 raise DeviceConnectionError(self._device_name, f"Host address error for {self.hostname}") from exc
             except OSError as exc:
                 raise DeviceConnectionError(self._device_name, f"OS error: {exc}") from exc
+
+            # Some devices require an initial read after connection.
+            # We have to read this message from the buffer and can do some version checking if needed.
+            if self.read_after_connect:
+                response = await self.read_string()
+                if VERBOSE_DEBUG:
+                    logger.debug(f"Response after connection: {response}")
 
             # Validate device identity if requested
             if self.id_validation:
@@ -268,7 +295,8 @@ class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
                 if not command.endswith(SEPARATOR_STR):
                     command += SEPARATOR_STR
 
-                logger.info(f"-----> {command}")
+                if VERBOSE_DEBUG:
+                    logger.debug(f"-----> {command}")
                 self._writer.write(command.encode())
                 await self._writer.drain()
 
@@ -301,7 +329,8 @@ class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
                     response = await asyncio.wait_for(
                         self._reader.readuntil(separator=SEPARATOR), timeout=self.read_timeout
                     )
-                    logger.info(f"<----- {response}")
+                    if VERBOSE_DEBUG:
+                        logger.debug(f"<----- {response}")
                     return response
 
                 except asyncio.IncompleteReadError as exc:
@@ -348,7 +377,9 @@ class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
                 if not command.endswith(SEPARATOR_STR):
                     command += SEPARATOR_STR
 
-                logger.info(f"-----> {command=}")
+                if VERBOSE_DEBUG:
+                    logger.debug(f"-----> {command=}")
+
                 self._writer.write(command.encode())
                 await self._writer.drain()
 
@@ -360,7 +391,8 @@ class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
                     response = await asyncio.wait_for(
                         self._reader.readuntil(separator=SEPARATOR), timeout=self.read_timeout
                     )
-                    logger.info(f"<----- {response=}")
+                    if VERBOSE_DEBUG:
+                        logger.debug(f"<----- {response=}")
                     return response
 
                 except asyncio.IncompleteReadError as exc:
