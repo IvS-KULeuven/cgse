@@ -100,7 +100,7 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         self._is_connection_open = True
 
         # Check that we are connected to the controller by issuing the "VERSION" or
-        # "*ISDN?" query. If we don't get the right response, then disconnect automatically.
+        # "*IDN?" query. If we don't get the right response, then disconnect automatically.
 
         if not self.is_connected():
             raise DeviceConnectionError(
@@ -187,7 +187,7 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
             raise DeviceConnectionError(self.device_name, "Socket communication error.") from e_socket
         except AttributeError:
             if not self._is_connection_open:
-                msg = "The DAQ6510 is not connected, use the connect() method."
+                msg = "The DT8874 is not connected, use the connect() method."
                 raise DeviceConnectionError(self.device_name, msg)
             raise
 
@@ -214,7 +214,7 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
 
             self._sock.sendall(command.encode())
 
-            # wait for, read and return the response from HUBER (will be at most TBD chars)
+            # wait for, read and return the response from Digilent (will be at most TBD chars)
 
             return_string = self.read()
 
