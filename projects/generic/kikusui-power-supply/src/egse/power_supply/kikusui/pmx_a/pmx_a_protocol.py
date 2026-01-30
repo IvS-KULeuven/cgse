@@ -100,11 +100,11 @@ class PmxAProtocol(DynamicCommandProtocol):
         result = dict()
         result["timestamp"] = format_datetime()
 
-        # result["CURRENT"] = self.pmx_a.get_current()  # Current [A]
-        # result["VOLTAGE"] = self.pmx_a.get_voltage()  # Voltage [V]
-        #
-        # if self.hk_conversion_table:
-        #     return convert_hk_names(result, self.hk_conversion_table)
+        result["CURRENT"] = self.pmx_a.get_current()  # Current [A]
+        result["VOLTAGE"] = self.pmx_a.get_voltage()  # Voltage [V]
+
+        if self.hk_conversion_table:
+            return convert_hk_names(result, self.hk_conversion_table)
         return result
 
     def is_device_connected(self) -> bool:
