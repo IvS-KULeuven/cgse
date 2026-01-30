@@ -4,32 +4,11 @@ from egse.device import DeviceInterface
 from egse.mixin import dynamic_command, CommandType, add_lf
 
 
-def unpack_response(response: bytes) -> None | list:
-    """Unpacks the comma-separated strings from the given bytestring.
-
-    The unpacking consists of the following steps:
-
-        - Decode the bytestring to a string;
-        - Remove the terminator(s);
-        - Split the coma-separated strings into a list of strings.
+def parse_psu_instrument_id(response: str) -> tuple[str, ...]:
+    """Parse the given device response to PSU instrument identification.
 
     Args:
-        response (bytes): Bytestring representing the response from an AEU device.
-
-    Returns: List of strings, returned by the PMX.
-    """
-
-    if len(response) == 0:
-        return None
-    else:
-        return response.decode(encoding="latin1", errors="ignore").replace("\r", "").replace("\n", "").split(", ")
-
-
-def parse_psu_instrument_id(response: bytes) -> tuple[str, str, str, str]:
-    """Parse the given AEU device response to PSU instrument identification.
-
-    Args:
-        - response: Bytestring representing the response from an AEU device.
+        response (str): Response string to convert.
 
     Returns:
         - Manufacturer.
@@ -39,85 +18,93 @@ def parse_psu_instrument_id(response: bytes) -> tuple[str, str, str, str]:
         - IOC version and build number
     """
 
-    response = unpack_response(response)[0].split(",")
+    response = response.split(",")
 
     return tuple(response[:3]) + tuple(response[3].split(" "))
 
 
-def parse_strings(response: bytes) -> tuple | str:
-    """Parses the given AEU device response to a list of floats.
+def split_result_on_comma(response: str) -> tuple[str, ...]:
+    """Splits the given response string on commas.
 
     Args:
-        response (bytes): Bytestring representing the response from an AEU device.
+        response (str): Response string to split.
 
     Returns:
-        List of floats.
+        Tuple of strings split on commas.
     """
 
-    response = unpack_response(response)
-
-    if len(response) == 1:
-        return response[0]
-    else:
-        return tuple(response)
+    return tuple(response.split(","))
 
 
-def parse_floats(response: bytes) -> tuple | float:
-    """Parses the given AEU device response to a list of floats.
+def to_int(response: str) -> int:
+    """Converts the given response string to an integer.
 
     Args:
-        response (bytes): Bytestring representing the response from an AEU device.
+        response (str): Response string to convert.
 
     Returns:
-        List of floats.
+        Integer value converted from the response string.
     """
 
-    response = unpack_response(response)
-
-    for index, item in enumerate(response):
-        response[index] = float(item)
-
-    if len(response) == 1:
-        return response[0]
-    else:
-        return tuple(response)
+    return int(response)
 
 
-def parse_ints(response: bytes) -> tuple | int:
-    """Parses the given AEU device response to a list of integers.
+def to_float(response: str) -> float:
+    """Converts the given response string to a float.
 
     Args:
-        response (bytes): Bytestring representing the response from an AEU device.
+        response (str): Response string to convert.
 
     Returns:
-        List of integers.
+        Float value converted from the response string.
     """
 
-    response = unpack_response(response)
-
-    for index, item in enumerate(response):
-        response[index] = int(item)
-
-    if len(response) == 1:
-        return response[0]
-    else:
-        return tuple(response)
+    return float(response)
 
 
-def parse_psu_error_info(response: bytes) -> tuple[str, ...] | None:
-    """Parses the given AEU device response to PSU error info.
+def split_on_comma_to_int(response: str) -> tuple[int, ...]:
+    """Splits the given response string on commas.
 
     Args:
-        response (bytes): Bytestring representing the response from an AEU device.
+        response (str): Response string to split.
 
     Returns:
-        Identifier and description of the oldest error in the error queue.
+         Tuple of integers split on commas.
     """
 
-    if len(response) == 0:
-        return None
-    else:
-        return tuple(response.decode(encoding="latin1", errors="ignore").replace("\r", "").replace("\n", "").split(","))
+    response = split_result_on_comma(response)
+
+    return tuple(int(x) for x in response)
+
+
+def split_on_comma_to_float(response: str) -> tuple[float, ...]:
+    """Splits the given response string on commas.
+
+    Args:
+        response (str): Response string to split.
+
+    Returns:
+         Tuple of integers split on commas.
+    """
+
+    response = split_result_on_comma(response)
+
+    return tuple(float(x) for x in response)
+
+
+def parse_error(response: str) -> tuple[int, str]:
+    """Converts the given response string of a tuple of an error code and the corresponding error message.
+
+    Args:
+        response (str): Response string to convert
+
+    Returns:
+        Tuple of an error code and the corresponding error message.
+    """
+
+    code, description = split_result_on_comma(response)
+
+    return int(code), description
 
 
 class IntSwitch(IntEnum):
@@ -198,17 +185,17 @@ class PmxInterface(DeviceInterface):
     def reset(self) -> None:
         """Resets the PMX settings.
 
-        Resets the panel settings, clear alarms, abort the trigger sub-system operation, clear the OPC bit (bit0) of
+        Resets the panel settings, clear alarms, abort the trigger sub-system operation, clear the OPC bit (bit 0) of
         the status event register.
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string="*TST?",
         process_cmd_string=add_lf,
-        process_response=parse_ints,
+        process_response=to_int,
     )
     def selftest(self) -> int:
         """Executes a self-test.
@@ -217,13 +204,13 @@ class PmxInterface(DeviceInterface):
             Result of the self-test.
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string="SYST:ERR?",
         process_cmd_string=add_lf,
-        process_response=parse_psu_error_info,
+        process_response=parse_error,
     )
     def get_error_info(self) -> tuple[int, str]:
         """Reads the oldest error information the error queue.
@@ -247,7 +234,7 @@ class PmxInterface(DeviceInterface):
         This includes the status byte, event status, and error queue.
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_type=CommandType.WRITE,
@@ -269,7 +256,7 @@ class PmxInterface(DeviceInterface):
         cmd_type=CommandType.TRANSACTION,
         cmd_string="INST?",
         process_cmd_string=add_lf,
-        process_response=parse_ints,
+        process_response=to_int,
     )
     def get_channel(self) -> int:
         """Returns the channel to configure.
@@ -286,7 +273,7 @@ class PmxInterface(DeviceInterface):
         cmd_type=CommandType.TRANSACTION,
         cmd_string="INST:CAT?",
         process_cmd_string=add_lf,
-        process_response=parse_ints,
+        process_response=split_on_comma_to_int,
     )
     def get_channel_list(self) -> tuple[int, ...]:
         """Returns the list of channels that can be configured with the sset_channels command.
@@ -306,9 +293,9 @@ class PmxInterface(DeviceInterface):
         cmd_type=CommandType.TRANSACTION,
         cmd_string="INST:INFO?",
         process_cmd_string=add_lf,
-        process_response=parse_floats,
+        process_response=split_on_comma_to_float,
     )
-    def get_channel_info(self) -> tuple[int, int]:
+    def get_channel_info(self) -> tuple[float, float]:
         """Returns the information of the channel currently being controlled.
 
         Returns:
@@ -326,7 +313,7 @@ class PmxInterface(DeviceInterface):
         cmd_type=CommandType.TRANSACTION,
         cmd_string="MEAS:CURR?",
         process_cmd_string=add_lf,
-        process_response=parse_floats,
+        process_response=to_float,
     )
     def get_current(self) -> float:
         """Returns the measured value of the current [A].
@@ -341,7 +328,7 @@ class PmxInterface(DeviceInterface):
         cmd_type=CommandType.TRANSACTION,
         cmd_string="MEAS:VOLT?",
         process_cmd_string=add_lf,
-        process_response=parse_floats,
+        process_response=to_float,
     )
     def get_voltage(self) -> float:
         """Returns the measured value of the voltage [V].
@@ -396,7 +383,7 @@ class PmxInterface(DeviceInterface):
         cmd_type=CommandType.TRANSACTION,
         cmd_string="MEM:REC:CONF?",
         process_cmd_string=add_lf,
-        process_response=parse_ints,
+        process_response=to_int,
     )
     def get_memory_config(self) -> IntSwitch:
         """Returns whether to check the content saved in the pre-set memory when recalling them from the control panel.
@@ -411,10 +398,10 @@ class PmxInterface(DeviceInterface):
         cmd_type=CommandType.TRANSACTION,
         cmd_string="MEM:REC:PREV? ${memory}",
         process_cmd_string=add_lf,
-        process_response=parse_floats,
+        process_response=split_on_comma_to_float,
     )
     def get_memory_setting(self, memory: Memory) -> tuple[float, float, float, float]:
-        """Return the settings stored in the given pre-set memory.
+        """Returns the settings stored in the given pre-set memory.
 
         Args:
             memory: Pre-set memory identifier (1 for memory A, 2 for memory B, 3 for memory C).
@@ -467,7 +454,7 @@ class PmxInterface(DeviceInterface):
         cmd_type=CommandType.TRANSACTION,
         cmd_string="OUTP?",
         process_cmd_string=add_lf,
-        process_response=parse_ints,
+        process_response=to_int,
     )
     def get_output_status(self) -> IntSwitch:
         """Returns the output status.
@@ -499,7 +486,7 @@ class PmxInterface(DeviceInterface):
         cmd_type=CommandType.TRANSACTION,
         cmd_string="CURR?",
         process_cmd_string=add_lf,
-        process_response=parse_floats,
+        process_response=to_float,
     )
     def get_current_config(self) -> float:
         """Returns the actual current configuration [A].
@@ -528,7 +515,7 @@ class PmxInterface(DeviceInterface):
         cmd_type=CommandType.TRANSACTION,
         cmd_string="CURR:PROT?",
         process_cmd_string=add_lf,
-        process_response=parse_floats,
+        process_response=to_float,
     )
     def get_ocp(self) -> float:
         """Returns the Over-Current Protection (OCP) value [A].
@@ -560,7 +547,7 @@ class PmxInterface(DeviceInterface):
         cmd_type=CommandType.TRANSACTION,
         cmd_string="VOLT?",
         process_cmd_string=add_lf,
-        process_response=parse_floats,
+        process_response=to_float,
     )
     def get_voltage_config(self) -> float:
         """Returns the actual voltage configuration [V].
@@ -569,7 +556,7 @@ class PmxInterface(DeviceInterface):
             Actual voltage configuration [V].
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_type=CommandType.WRITE,
@@ -583,13 +570,13 @@ class PmxInterface(DeviceInterface):
             ovp (float): Over-Voltage Protection (OVP) [V] to configure.
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string="VOLT:PROT?",
         process_cmd_string=add_lf,
-        process_response=parse_floats,
+        process_response=to_float,
     )
     def get_ovp(self) -> float:
         """Returns the Over-Voltage Protection (OVP) value [V].
@@ -598,7 +585,7 @@ class PmxInterface(DeviceInterface):
             Actual Over-Voltage Protection configuration [V].
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_type=CommandType.WRITE,
@@ -614,13 +601,13 @@ class PmxInterface(DeviceInterface):
                                           Voltage.
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string="SYST:CONF:STAR:PRI?",
         process_cmd_string=add_lf,
-        process_response=parse_strings,
+        # process_response=parse_strings,
     )
     def get_priority_mode(self) -> PriorityMode:
         """Returns the operation mode to be prioritised when the output is turned on.
@@ -633,7 +620,7 @@ class PmxInterface(DeviceInterface):
             Configured priority mode.
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_type=CommandType.WRITE,
@@ -643,13 +630,13 @@ class PmxInterface(DeviceInterface):
     def clear_alarms(self) -> None:
         """Clears all alarms."""
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_type="query",
         cmd_string="STAT:QUES:COND?",
         process_cmd_string=add_lf,
-        process_response=parse_ints,
+        process_response=to_int,
     )
     def questionable_status_register(self) -> int:
         """Queries the status of the questionable status register.
@@ -668,4 +655,4 @@ class PmxInterface(DeviceInterface):
                 - bit 5..15: Not used.
         """
 
-        pass
+        raise NotImplementedError
