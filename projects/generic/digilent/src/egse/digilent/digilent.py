@@ -534,7 +534,7 @@ class DigilentInterface(DeviceInterface):
         device is forced into the operation complete idle state.
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_type=CommandType.WRITE,
@@ -570,7 +570,7 @@ class DigilentInterface(DeviceInterface):
             > *ESE 189
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
@@ -609,7 +609,7 @@ class DigilentInterface(DeviceInterface):
             This value indicates that bits 0, 2, 3, 4, 5, and 7 of the Standard Event Status Enable register are enabled.
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
@@ -662,7 +662,7 @@ class DigilentInterface(DeviceInterface):
                 < 16
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
@@ -691,7 +691,7 @@ class DigilentInterface(DeviceInterface):
             firmware.
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string="*RST",
@@ -708,7 +708,7 @@ class DigilentInterface(DeviceInterface):
         Refer to IEE 388.2-1992, Sect. 10.32, for more information.
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
@@ -772,7 +772,7 @@ class DigilentInterface(DeviceInterface):
                 < 0
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string="STATus:OPERation:CONDition?",
@@ -829,7 +829,8 @@ class DigilentInterface(DeviceInterface):
                 < 0
                 > *STB?
         """
-        pass
+
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":STATus:SCAn?",
@@ -855,7 +856,7 @@ class DigilentInterface(DeviceInterface):
                 < 1001,1050
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:CALibrate",
@@ -873,7 +874,7 @@ class DigilentInterface(DeviceInterface):
                 > :SYST:CAL
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:DATE?",
@@ -898,7 +899,7 @@ class DigilentInterface(DeviceInterface):
                 < 2008,1,15
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:ERRor?",
@@ -969,7 +970,7 @@ class DigilentInterface(DeviceInterface):
                 < 0,"No error"
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:ERRor:COUNt?",
@@ -995,7 +996,7 @@ class DigilentInterface(DeviceInterface):
                 < 0
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:PRESet",
@@ -1008,7 +1009,7 @@ class DigilentInterface(DeviceInterface):
         The effect of this command is the same as pushing the LAN reset switch on the rear panel of the instrument.
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:COMMunicate:NETwork:IPADdress?",
@@ -1024,7 +1025,7 @@ class DigilentInterface(DeviceInterface):
 
         # FIXME This actually returns the IP address of my laptop, rather than the instrument
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:COMMunicate:NETwork:MASk?",
@@ -1042,7 +1043,7 @@ class DigilentInterface(DeviceInterface):
             < 255.255.255.0
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:PASSword:CDISable ${password}",
@@ -1063,7 +1064,7 @@ class DigilentInterface(DeviceInterface):
             password (str): Password that is stored in permanent memory on the instrument.
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:PASSword:CENable ${password}",
@@ -1084,7 +1085,7 @@ class DigilentInterface(DeviceInterface):
             password (str): Password that is stored in permanent memory on the instrument.
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:PASSword:CENable:STATe?",
@@ -1105,7 +1106,7 @@ class DigilentInterface(DeviceInterface):
                 < 1
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:PASSword:NEW ${old_password},${new_password}",
@@ -1127,7 +1128,7 @@ class DigilentInterface(DeviceInterface):
                                 on the instrument.
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:VERSion?",
@@ -1147,7 +1148,7 @@ class DigilentInterface(DeviceInterface):
                 < 1999.0
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:BOArd?",
@@ -1168,7 +1169,7 @@ class DigilentInterface(DeviceInterface):
                 < 6
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:BOArd:MOdel? ${board_number}",
@@ -1202,7 +1203,7 @@ class DigilentInterface(DeviceInterface):
                 < 5
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:BOArd:MOdel:NAMe? ${board_number}",
@@ -1226,7 +1227,7 @@ class DigilentInterface(DeviceInterface):
                 < DT8872
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:BOArd:RANGe? ${board_number}",
@@ -1256,7 +1257,7 @@ class DigilentInterface(DeviceInterface):
                 < -1.250, 1.250
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:CHANnel?",
@@ -1279,7 +1280,7 @@ class DigilentInterface(DeviceInterface):
                 < @0:23
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:CHANnel:RTD?",
@@ -1311,7 +1312,7 @@ class DigilentInterface(DeviceInterface):
                 < @8:15
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:CHANnel:TCouple?",
@@ -1343,7 +1344,7 @@ class DigilentInterface(DeviceInterface):
                 < @0:15
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:CHANnel:VOLTage:RANGe?",
@@ -1374,7 +1375,7 @@ class DigilentInterface(DeviceInterface):
                 < (@16:23)
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:DINput?",
@@ -1395,7 +1396,7 @@ class DigilentInterface(DeviceInterface):
                 < 8
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:DINput?",
@@ -1416,7 +1417,7 @@ class DigilentInterface(DeviceInterface):
                 < 8
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:SCAn:RATe:MAXimum:SEC?",
@@ -1437,7 +1438,7 @@ class DigilentInterface(DeviceInterface):
                 < 0.10000
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:SCAn:RATe:MAXimum:HZ?",
@@ -1458,7 +1459,7 @@ class DigilentInterface(DeviceInterface):
                 < 10.00000
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:SCAn:RATe:MINimum:SEC?",
@@ -1479,7 +1480,7 @@ class DigilentInterface(DeviceInterface):
                 < 6553.5
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:SCAn:RATe:MINimum:HZ?",
@@ -1500,7 +1501,7 @@ class DigilentInterface(DeviceInterface):
                 < 1.525e-4
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:TIME?",
@@ -1524,7 +1525,7 @@ class DigilentInterface(DeviceInterface):
                 < 15:31:45
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:TZONe?",
@@ -1546,9 +1547,7 @@ class DigilentInterface(DeviceInterface):
                 < 4, -45
         """
 
-        # TODO
-
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":SYSTem:TZONe ${hour},${minute}",
@@ -1572,7 +1571,7 @@ class DigilentInterface(DeviceInterface):
                 > :SYST:TZON 4,-45
         """
 
-        pass
+        raise NotImplementedError
 
     # CONFigure Sub-System Commands
 
@@ -1613,7 +1612,7 @@ class DigilentInterface(DeviceInterface):
                 > :CONF:RES (@1,2,8:46)
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":CONFigure:TEMPerature:RTD ${rtd_type},${channels}",
@@ -1679,7 +1678,7 @@ class DigilentInterface(DeviceInterface):
                 < 0
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":CONFigure:TEMPerature:TCouple ${tc_type}, ${channels}",
@@ -1736,7 +1735,7 @@ class DigilentInterface(DeviceInterface):
                 < 0
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":CONFigure:VOLTage ${channels}",
@@ -1769,7 +1768,7 @@ class DigilentInterface(DeviceInterface):
                 > :CONF:VOLT (@1,2,8:46)
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":CONFigure:VOLTage:RANGe ${voltage_range},${channels}",
@@ -1840,7 +1839,8 @@ class DigilentInterface(DeviceInterface):
         """
 
         # TODO Only for VOLTpoint + MEASURpoint
-        pass
+
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":CONFigure? ${channels}",
@@ -1876,7 +1876,7 @@ class DigilentInterface(DeviceInterface):
                 < RAW
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":CONFigure:FILTer ${filter_type}",
@@ -1896,7 +1896,7 @@ class DigilentInterface(DeviceInterface):
             filter_type (str): Filter type to be used for the analogue input operations.
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":CONFigure:FILTer?",
@@ -1929,7 +1929,7 @@ class DigilentInterface(DeviceInterface):
                 < RAW
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":CONFigure:SCAn:BUFfer?",
@@ -1957,7 +1957,7 @@ class DigilentInterface(DeviceInterface):
                 < 1048576
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":CONFigure:SCAn:CJC ${cjc}",
@@ -1995,7 +1995,7 @@ class DigilentInterface(DeviceInterface):
                 < 1
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":CONFigure:SCAn:CJC?",
@@ -2036,7 +2036,7 @@ class DigilentInterface(DeviceInterface):
                 < 1
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":CONFigure:SCAn:LISt ${channels}",
@@ -2076,7 +2076,7 @@ class DigilentInterface(DeviceInterface):
                 < (@0,4:7)
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":CONFigure:SCAn:LISt?",
@@ -2111,7 +2111,7 @@ class DigilentInterface(DeviceInterface):
                 < (@0,4:7)
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":CONFigure:SCAn:RATe:SEC ${rate}",
@@ -2181,7 +2181,7 @@ class DigilentInterface(DeviceInterface):
                 < 0
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":CONFigure:SCAn:RATe:SEC?",
@@ -2191,7 +2191,8 @@ class DigilentInterface(DeviceInterface):
     )
     def get_scan_rate(self) -> float:
         """Returns the time period of each scan [s]."""
-        pass
+
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":CONFigure:SCAn:RATe:HZ?",
@@ -2239,7 +2240,7 @@ class DigilentInterface(DeviceInterface):
                 < 0
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":CONFigure:TRIGger:SOURce ${source}",
@@ -2264,7 +2265,7 @@ class DigilentInterface(DeviceInterface):
                 > :CONF:TRIG DIN0
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":CONFigure:TRIGger:SOURce?",
@@ -2289,7 +2290,7 @@ class DigilentInterface(DeviceInterface):
                 < DIN0
         """
 
-        pass
+        raise NotImplementedError
 
     # MEASure Sub-System Commands
 
@@ -2326,7 +2327,7 @@ class DigilentInterface(DeviceInterface):
             in the given list of channels [Ohm].
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
@@ -2384,7 +2385,7 @@ class DigilentInterface(DeviceInterface):
                 - 0a = carriage return; this is the standard ASCII terminator
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
@@ -2435,7 +2436,7 @@ class DigilentInterface(DeviceInterface):
                 - 0a = carriage return; this is the standard ASCII terminator
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
@@ -2471,6 +2472,8 @@ class DigilentInterface(DeviceInterface):
                 - bf2844b8 = –0.65729 V; this is the measurement value from channel 7
                 - 0a = carriage return; this is the standard ASCII terminator
         """
+
+        raise NotImplementedError
 
     # INITiate Sub-System Command
 
@@ -2527,7 +2530,7 @@ class DigilentInterface(DeviceInterface):
                < 0
         """
 
-        pass
+        raise NotImplementedError
 
     # ABORt Sub-System Command
 
@@ -2575,7 +2578,7 @@ class DigilentInterface(DeviceInterface):
                 < 0
         """
 
-        pass
+        raise NotImplementedError
 
     # FETCh Sub-System Command
 
@@ -2654,7 +2657,7 @@ class DigilentInterface(DeviceInterface):
                 0a Carriage Return. This is the standard SCPI Terminator.
         """
 
-        pass
+        raise NotImplementedError
 
     # Digital INPut Sub-System Command
 
@@ -2681,7 +2684,7 @@ class DigilentInterface(DeviceInterface):
                 < 130
         """
 
-        pass
+        raise NotImplementedError
 
     # Digital OUTPut Sub-System Commands
 
@@ -2708,7 +2711,7 @@ class DigilentInterface(DeviceInterface):
                 < 130
         """
 
-        pass
+        raise NotImplementedError
 
     @dynamic_command(
         cmd_string=":OUTPut:STATe ${state}",
@@ -2735,7 +2738,7 @@ class DigilentInterface(DeviceInterface):
                 > :OUTPut:STATe 129
         """
 
-        pass
+        raise NotImplementedError
 
 
 class DigilentController(DigilentInterface, DynamicCommandMixin):
