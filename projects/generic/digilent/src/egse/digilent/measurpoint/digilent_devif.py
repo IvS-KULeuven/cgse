@@ -157,7 +157,7 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
 
         if "Data Translation" not in manufacturer or "DT" not in model:
             logger.error(
-                f'Device did not respond correctly to a "IDN?" command, manufacturer={manufacturer}, model={model}. Disconnecting...'
+                f"Device did not respond correctly to a {IDENTIFICATION_QUERY} command, manufacturer={manufacturer}, model={model}. Disconnecting..."
             )
             self.disconnect()
             return False
