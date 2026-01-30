@@ -54,7 +54,7 @@ class DeviceControllerError(DeviceError):
         super().__init__(device_name, message)
 
 
-class DeviceConnectionError(DeviceError):
+class DeviceConnectionError(DeviceError, ConnectionError):
     """A generic error for all connection type of problems.
 
     Args:
