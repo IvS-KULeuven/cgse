@@ -1,3 +1,4 @@
+from egse.mixin import DynamicCommandMixin
 from egse.power_supply.kikusui import PROXY_TIMEOUT
 from egse.power_supply.kikusui.pmx import PmxInterface
 from egse.power_supply.kikusui.pmx_a import CS_SETTINGS
@@ -16,7 +17,7 @@ class PmxAInterface(PmxInterface):
         super().__init__(device_id)
 
 
-class PmxAController(PmxAInterface):
+class PmxAController(PmxAInterface, DynamicCommandMixin):
     def __init__(self, device_id: str):
         """Initialisation of a controller for the KIKUSUI PMX-A device with the given identifier.
 
