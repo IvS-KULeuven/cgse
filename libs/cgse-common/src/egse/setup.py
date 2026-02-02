@@ -936,9 +936,13 @@ class SetupManager:
     def set_default_source(self, source: str):
         self._default_source = source
 
-    def load_setup(self, setup_id: int = None, **kwargs):
-        source = kwargs.get("source") or self._default_source
+    def get_default_source(self):
+        # Trigger provider discovery because they can change the default source if they handle core-services
+        _ = self.providers
+        return self._default_source
 
+    def load_setup(self, setup_id: int = None, **kwargs):
+        source = kwargs.get("source") or self.get_default_source()
         for provider in self.providers:
             if provider.can_handle(source):
                 return provider.load_setup(setup_id, **kwargs)
@@ -947,7 +951,7 @@ class SetupManager:
         return LocalSetupProvider().load_setup(setup_id, **kwargs)
 
     def submit_setup(self, setup: Setup, description: str, **kwargs):
-        source = kwargs.get("source") or self._default_source
+        source = kwargs.get("source") or self.get_default_source()
         for provider in self.providers:
             if provider.can_handle(source):
                 return provider.submit_setup(setup, description, **kwargs)
@@ -956,7 +960,6 @@ class SetupManager:
 
 
 _setup_manager = SetupManager()
-
 
 if __name__ == "__main__":
     from egse.env import setup_env
