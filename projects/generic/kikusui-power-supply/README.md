@@ -1,5 +1,7 @@
 # KIKUSUI Regulated Power Supply 
 
+Implementation of the commanding and monitoring of the KIKUSUI PMX-A power supplies.  
+
 ## Reference Documents
 
 - User's Manual Regulated DC Power Supply - PMX Series (PMX18-2A, PMX18-5A, PMX35-1A, PMX35-3A, PMX70-1A, PMX110-0.6A, 
