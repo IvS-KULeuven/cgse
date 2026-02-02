@@ -26,7 +26,7 @@ dev_settings = Settings.load("Keithley DAQ6510")
 PROTOCOL = cs_settings.get("PROTOCOL", "tcp")
 HOSTNAME = cs_settings.get("HOSTNAME", "localhost")
 COMMANDING_PORT = cs_settings.get("COMMANDING_PORT", 0)
-TIMEOUT = cs_settings.get("TIMEOUT")
+TIMEOUT = cs_settings.get("TIMEOUT", 60)
 SERVICE_TYPE = cs_settings.get("SERVICE_TYPE", "daq6510")
 
 DEFAULT_BUFFER_1 = "defbuffer1"
