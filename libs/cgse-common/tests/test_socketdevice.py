@@ -219,7 +219,7 @@ def test_sync_connect_failures():
 
     # Check proper handling of address name errors, " " is an invalid hostname
     dev = SocketDevice(hostname=" ", port=81)
-    with pytest.raises(ConnectionError, match="socket address info error"):
+    with pytest.raises(ConnectionError, match="Socket address info error"):
         dev.connect()
 
 
