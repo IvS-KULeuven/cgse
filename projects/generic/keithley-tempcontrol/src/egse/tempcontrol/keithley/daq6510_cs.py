@@ -87,7 +87,7 @@ class DAQ6510ControlServer(ControlServer):
     """
 
     def __init__(self):
-        """Initialisation of a DAQ6510 Control Server."""
+        """Initialization of a DAQ6510 Control Server."""
 
         super().__init__()
 
