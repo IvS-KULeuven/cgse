@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+- Implementation of KIKUSUI PMX-A power supply
+
 ## [0.17.4] - 2026-01-27
 
 - Extracting HK from Ariel facility database
