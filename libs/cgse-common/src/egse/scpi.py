@@ -1,4 +1,5 @@
 import asyncio
+import re
 import socket
 from typing import Any
 from typing import Dict
@@ -91,7 +92,7 @@ class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
     def device_name(self) -> str:
         return self._device_name
 
-    async def get_idn_parts(self) -> list[str, str, str, str]:
+    async def get_idn_parts(self) -> list[str]:
         """Get the device identification string and return its parts.
 
         The *IDN? command is sent to the device, and the response is split into its
@@ -111,7 +112,9 @@ class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
             logger.debug(f"{self._device_name} IDN response: {idn_str}")
         return idn_str.split(",")
 
-    async def initialize(self, commands: list[tuple[str, bool]] = None, reset_device: bool = False) -> list[str | None]:
+    async def initialize(
+        self, commands: list[tuple[str, bool]] | None = None, reset_device: bool = False
+    ) -> list[str | None]:
         """Initialize the device with optional reset and command sequence.
 
         Performs device initialization by optionally resetting the device and then
@@ -370,7 +373,7 @@ class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
 
         async with self._io_lock:
             try:
-                if not self._is_connection_open or self._writer is None:
+                if not self._is_connection_open or self._writer is None or self._reader is None:
                     raise DeviceConnectionError(self._device_name, "Device not connected, use connect() first")
 
                 # Ensure command ends with the required terminator
@@ -424,3 +427,156 @@ class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
         await self.disconnect()
+
+
+def create_channel_list(*args) -> str:
+    """
+    Create a channel list that is understood by SCPI commands.
+
+    Channel names are device-specific.
+
+    For the DAQ6510: Channel names contain both the slot number and the channel number.
+    The slot number is the number of the slot where the card is installed at the back of
+    the device.
+
+    When addressing multiple individual channels, add each of them as a separate argument,
+    e.g. to include channels 1, 3, and 7 from slot 1, use the following command:
+
+        >>> create_channel_list(101, 103, 107)
+        '(@101, 103, 107)'
+
+    To designate a range of channels, only one argument should be given, i.e. a tuple containing
+    two channel representing the range. The following tuple `(101, 110)` will create the
+    following response: `"(@101:110)"`. The range is inclusive, so this will define a range of
+    10 channels in slot 1.
+
+        >>> create_channel_list((201, 205))
+        '(@201:205)'
+
+    See reference manual for the Keithley DAQ6510 [DAQ6510-901-01 Rev. B / September 2019],
+    chapter 11: Introduction to SCPI commands, SCPI command formatting, channel naming.
+
+    Args:
+        *args: a tuple or a list of channels
+
+    Returns:
+        A string containing the channel list as understood by the SCPI device.
+
+    """
+    if not args:
+        return ""
+
+    # If only one argument is given, I expect either a tuple defining a range
+    # or just one channel. When several arguments are given, I expect them all
+    # to be individual channels.
+
+    ch_list = []
+    for arg in args:
+        if isinstance(arg, (tuple, list)):
+            match len(arg):
+                case 2:
+                    ch_list.append(f"{arg[0]}:{arg[1]}")
+                case 1:
+                    ch_list.append(f"{arg[0]}")
+                case _:
+                    raise ValueError(
+                        "Invalid argument: when providing a tuple or list, it must contain one or two elements."
+                    )
+        else:
+            ch_list.append(f"{arg}")
+
+    # else:
+    # ch_list = "(@" + ",".join([str(arg) for arg in args]) + ")"
+
+    return "(@" + ",".join(x for x in ch_list if x.isdigit() or ":" in x) + ")"
+
+
+def count_number_of_channels(channel_list: str) -> int:
+    """
+    Given a proper channel list, this function counts the number of channels.
+    For ranges, it returns the actual number of channels that are included in the range.
+
+        >>> count_number_of_channels("(@1,2,3,4,5)")
+        5
+        >>> count_number_of_channels("(@1, 3, 5)")
+        3
+        >>> count_number_of_channels("(@2:7)")
+        6
+
+    Args:
+        channel_list: a channel list as understood by the SCPI commands of DAQ6510.
+
+    Returns:
+        The number of channels in the list.
+    """
+
+    match = re.match(r"\(@(.*)\)", channel_list)
+    if match is None:
+        logger.error(f"Invalid channel specification in '{channel_list}'")
+        return 0
+    group = match.groups()[0]
+
+    parts = group.replace(" ", "").split(",")
+
+    try:
+        count = 0
+        for part in parts:
+            if ":" in part:
+                channels = part.split(":")
+                if len(channels) != 2:
+                    raise ValueError()
+                count += int(channels[1]) - int(channels[0]) + 1
+            else:
+                if not part.isdigit():
+                    raise ValueError()
+                count += 1
+    except ValueError:
+        logger.error(f"Invalid channel specification in '{channel_list}'")
+        return 0
+
+    return count
+
+
+def get_channel_names(channel_list: str) -> list[str]:
+    """
+    Generate a list of channel names from a given channel list.
+
+    Args:
+        channel_list: a channel list as understood by the SCPI.
+
+    Returns:
+        A list of channel names.
+    """
+
+    match = re.match(r"\(@(.*)\)", channel_list)
+    if match is None:
+        logger.error(f"Invalid channel specification in '{channel_list}'")
+        return []
+
+    group = match.groups()[0]
+
+    parts = group.replace(" ", "").split(",")
+
+    try:
+        names: list[str] = []
+
+        for part in parts:
+            if ":" in part:
+                channels = part.split(":")
+                if len(channels) != 2:
+                    raise ValueError()
+                names.extend(str(ch) for ch in range(int(channels[0]), int(channels[1]) + 1))
+            else:
+                if not part.isdigit():
+                    raise ValueError()
+                names.append(part)
+
+        # If there are still any invalid names, raise an error
+        if not all(True if x and x.isdigit() else False for x in names):
+            raise ValueError()
+
+    except ValueError:
+        logger.error(f"Invalid channel specification in '{channel_list}'")
+        return []
+
+    return names
