@@ -40,7 +40,7 @@ class DAQ6510Monitor:
         daq_port: int = DAQ_DEV_PORT,
         zmq_port: int = DAQ_MON_CMD_PORT,
         log_file: str = "temperature_readings.log",
-        channels: list[str] = None,
+        channels: list[str] | None = None,
         poll_interval: float = 60.0,
     ):
         """Initialize the DAQ6510 monitoring service.
@@ -167,6 +167,8 @@ class DAQ6510Monitor:
     async def polling_loop(self):
         """Main polling loop for temperature measurements."""
         logger.info(f"Starting temperature polling loop (interval: {self.poll_interval}s, channels: {self.channels})")
+
+        assert self.daq_interface is not None  # extra check and make mypy happy
 
         # The next lines are a way to calculate the sleep time between two measurements, this takes the time of the
         # measurement itself into account.
@@ -331,6 +333,8 @@ class DAQ6510Monitor:
         """Get a reading for the given channel(s)."""
         logger.info(f"GET_READING – {params = }")
 
+        assert self.daq_interface is not None  # extra check and make mypy happy
+
         readings = {"status": "ok", "data": {}}
 
         for channel in params["channels"]:
@@ -426,7 +430,8 @@ class DAQMonitorClient:
 
     def disconnect(self):
         """Close the client connection."""
-        self.socket.close(linger=100)
+        if self.socket:
+            self.socket.close(linger=100)
         self.ctx.term()
 
     def __enter__(self):
@@ -438,7 +443,7 @@ class DAQMonitorClient:
         if exc_type:
             logger.error(f"Caught {exc_type}: {exc_val}")
 
-    def _send_command(self, command: str, params: dict[str, Any] = None) -> dict[str, Any]:
+    def _send_command(self, command: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         """Send a command to the monitoring service.
 
         Args:
@@ -450,6 +455,8 @@ class DAQMonitorClient:
         """
         params = params or {}
         message = {"command": command, "params": params}
+
+        assert self.socket is not None, "Client not connected. Call connect() first."
 
         try:
             self.socket.send_multipart([b"", json.dumps(message).encode("utf-8")])

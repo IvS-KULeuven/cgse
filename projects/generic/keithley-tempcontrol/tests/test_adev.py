@@ -10,7 +10,7 @@ from egse.env import bool_env
 from egse.log import logger
 from egse.settings import Settings
 from egse.tempcontrol.keithley.daq6510_adev import DAQ6510
-from egse.tempcontrol.keithley.daq6510_mon import DAQMonitorClient
+from egse.tempcontrol.keithley.daq6510_amon import DAQMonitorClient
 
 settings = Settings.load("Keithley DAQ6510")
 
@@ -148,7 +148,7 @@ async def test_incorrect_construction():
         logger.debug(f"1 <{'-' * 200}")
 
     daq = DAQ6510(HOSTNAME)
-    daq.hostname = None
+    daq.hostname = None  # noqa
     with pytest.raises(ValueError, match="DAQ6510: Hostname is not initialized"):
         await daq.connect()
 
@@ -156,7 +156,7 @@ async def test_incorrect_construction():
         logger.debug(f"2 <{'-' * 200}")
 
     daq = DAQ6510(HOSTNAME)
-    daq.port = None
+    daq.port = None  # noqa
 
     with pytest.raises(ValueError, match="DAQ6510: Port number is not initialized"):
         await daq.connect()
@@ -343,8 +343,8 @@ async def test_another_scan():
 )
 @pytest.mark.asyncio
 async def test_daq6510_mon():
-    from egse.tempcontrol.keithley.daq6510_mon import DAQMonitorClient
-    from egse.tempcontrol.keithley.daq6510_mon import DAQ_MON_CMD_PORT
+    from egse.tempcontrol.keithley.daq6510_amon import DAQMonitorClient
+    from egse.tempcontrol.keithley.daq6510_amon import DAQ_MON_CMD_PORT
 
     client = DAQMonitorClient(server_address="localhost", port=DAQ_MON_CMD_PORT)
     client.connect()

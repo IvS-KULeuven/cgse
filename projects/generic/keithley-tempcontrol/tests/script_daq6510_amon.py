@@ -22,8 +22,8 @@ import json
 import logging
 import time
 
-from egse.tempcontrol.keithley.daq6510_mon import DAQMonitorClient
-from egse.tempcontrol.keithley.daq6510_mon import DAQ_MON_CMD_PORT
+from egse.tempcontrol.keithley.daq6510_amon import DAQMonitorClient
+from egse.tempcontrol.keithley.daq6510_amon import DAQ_MON_CMD_PORT
 
 logger = logging.getLogger("egse.daq6510-client")
 
