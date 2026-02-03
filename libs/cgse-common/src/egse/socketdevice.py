@@ -218,7 +218,7 @@ class SocketDevice(DeviceConnectionInterface, DeviceTransport):
             raise DeviceConnectionError(self.device_name, "The device is not connected, connect before writing.")
 
         try:
-            command += self.separator_str if not command.endswith(SEPARATOR_STR) else ""
+            command += self.separator_str if not command.endswith(self.separator_str) else ""
             self.socket.sendall(command.encode())
         except socket.timeout as exc:
             raise DeviceTimeoutError(self.device_name, "Socket timeout error") from exc
