@@ -1,45 +1,65 @@
 import logging
-import socket
 
-import time
+from egse.power_supply.kikusui import DEVICE_SETTINGS
 
-from egse.device import DeviceConnectionError
-from egse.device import DeviceConnectionInterface
-from egse.device import DeviceError
-from egse.device import DeviceTimeoutError
-from egse.device import DeviceTransport
-
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 IDENTIFICATION_QUERY = "*IDN?"
 
 
-class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
-    """Defines the low-level interface to the Digilent Controller."""
+import logging
+import socket
+import time
+from string import digits
 
-    def __init__(self, hostname: str, port: int, device_name: str, read_timeout: float = 60):
-        """Initialisation of an Ethernet interface for a Digilent.
+
+from egse.device import (
+    DeviceConnectionError,
+    DeviceTimeoutError,
+    DeviceError,
+    DeviceConnectionInterface,
+    DeviceTransport,
+)
+
+logger = logging.getLogger(__name__)
+
+CONNECT_TIMEOUT = 3.0  # Timeout when connecting the socket [s]
+
+remove_digits = str.maketrans("", "", digits)
+time_in_s = time.time()
+
+
+class PmxError(Exception):
+    """A PMX-specific error."""
+
+    pass
+
+
+class PmxEthernetInterface(DeviceConnectionInterface, DeviceTransport):
+    """Ethernet Interface for the AEU devices (cRIO, PSUs, and AWGs)."""
+
+    def __init__(self, hostname: str = None, port: int = None, device_id: str = None, read_timeout: float = 60):
+        """Initialisation of an Ethernet interface for a PMX device.
 
         Args:
-            hostname(str): Hostname to which to open a socket.
+            hostname( str): Hostname to which to open a socket.
             port (int): Port to which to open a socket.
-            device_name (str): Device name to which to open a socket.
+            device_id (str): Identifier of the device to which to open a socket.
             read_timeout (float): Timeout for reading commands [s].
         """
 
         super().__init__()
 
-        self.hostname = hostname
-        self.port = port
+        self.hostname = DEVICE_SETTINGS[device_id]["HOSTNAME"] if hostname is None else hostname
+        self.port = DEVICE_SETTINGS[device_id]["PORT"] if port is None else port
+        self.device_id = device_id
         self._sock = None
 
         self._is_connection_open = False
-
-        self.device_name = device_name
         self.read_timeout = read_timeout
 
     def connect(self) -> None:
-        """Connects to the Digilent hardware.
+        """Connects to the KIKUSUI PMX hardware.
 
         Raises:
             DeviceConnectionError: When the connection could not be established. Check the logging messages for more
@@ -51,14 +71,14 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         # Sanity checks
 
         if self._is_connection_open:
-            logger.warning(f"{self.device_name}: trying to connect to an already connected socket.")
+            logger.warning(f"{self.device_id}: trying to connect to an already connected socket.")
             return
 
         if self.hostname in (None, ""):
-            raise ValueError(f"{self.device_name}: hostname is not initialised.")
+            raise ValueError(f"{self.device_id}: hostname is not initialised.")
 
         if self.port in (None, 0):
-            raise ValueError(f"{self.device_name}: port number is not initialised.")
+            raise ValueError(f"{self.device_id}: port number is not initialised.")
 
         # Create a new socket instance
 
@@ -68,7 +88,7 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
             # self._sock.setblocking(1)
             # self._sock.settimeout(3)
         except socket.error as e_socket:
-            raise DeviceConnectionError(self.device_name, "Failed to create socket.") from e_socket
+            raise DeviceConnectionError(self.device_id, "Failed to create socket.") from e_socket
 
         # Attempt to establish a connection to the remote host
 
@@ -85,17 +105,15 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
             self._sock.connect((self.hostname, self.port))
             self._sock.settimeout(None)
         except ConnectionRefusedError as exc:
-            raise DeviceConnectionError(
-                self.device_name, f"Connection refused to {self.hostname}:{self.port}."
-            ) from exc
+            raise DeviceConnectionError(self.device_id, f"Connection refused to {self.hostname}:{self.port}.") from exc
         except TimeoutError as exc:
-            raise DeviceTimeoutError(self.device_name, f"Connection to {self.hostname}:{self.port} timed out.") from exc
+            raise DeviceTimeoutError(self.device_id, f"Connection to {self.hostname}:{self.port} timed out.") from exc
         except socket.gaierror as exc:
-            raise DeviceConnectionError(self.device_name, f"Socket address info error for {self.hostname}") from exc
+            raise DeviceConnectionError(self.device_id, f"Socket address info error for {self.hostname}") from exc
         except socket.herror as exc:
-            raise DeviceConnectionError(self.device_name, f"Socket host address error for {self.hostname}") from exc
+            raise DeviceConnectionError(self.device_id, f"Socket host address error for {self.hostname}") from exc
         except OSError as exc:
-            raise DeviceConnectionError(self.device_name, f"OSError caught ({exc}).") from exc
+            raise DeviceConnectionError(self.device_id, f"OSError caught ({exc}).") from exc
 
         self._is_connection_open = True
 
@@ -104,11 +122,11 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
 
         if not self.is_connected():
             raise DeviceConnectionError(
-                self.device_name, "Device is not connected, check logging messages for the cause."
+                self.device_id, "Device is not connected, check logging messages for the cause."
             )
 
     def disconnect(self) -> None:
-        """Disconnects from the Digilent hardware.
+        """Disconnects from the KIKUSUI PMX hardware.
 
         Raises:
             DeviceConnectionError when the socket could not be closed.
@@ -120,10 +138,10 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
                 self._sock.close()
                 self._is_connection_open = False
         except Exception as e_exc:
-            raise DeviceConnectionError(self.device_name, f"Could not close socket to {self.hostname}") from e_exc
+            raise DeviceConnectionError(self.device_id, f"Could not close socket to {self.hostname}") from e_exc
 
     def reconnect(self):
-        """Reconnects to the Digilent hardware.
+        """Reconnects to the KIKUSUI PMX hardware.
 
         Raises:
             ConnectionError when the device cannot be reconnected for some reason.
@@ -134,7 +152,7 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         self.connect()
 
     def is_connected(self) -> bool:
-        """Checks if the Digilent hardware is connected.
+        """Checks if the KIKUSUI PMX hardware is connected.
 
         This will send a query for the device identification and validate the answer.
 
@@ -147,7 +165,7 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         try:
             print(f"Result from identification query: {self.query(IDENTIFICATION_QUERY)}")
             # noinspection PyTypeChecker
-            manufacturer, model, _, _ = self.query(IDENTIFICATION_QUERY).split(",")
+            manufacturer, model, *_ = self.query(IDENTIFICATION_QUERY).split(",")
 
         except DeviceError as exc:
             logger.exception(exc)
@@ -155,9 +173,10 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
             self.disconnect()
             return False
 
-        if "Data Translation" not in manufacturer or "DT" not in model:
+        if "KIKUSUI" not in manufacturer or "PMX" not in model:
             logger.error(
-                f"Device did not respond correctly to a {IDENTIFICATION_QUERY} command, manufacturer={manufacturer}, model={model}. Disconnecting..."
+                f"Device did not respond correctly to a {IDENTIFICATION_QUERY} command, manufacturer={manufacturer}, "
+                f"model={model}. Disconnecting..."
             )
             self.disconnect()
             return False
@@ -181,14 +200,14 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
             self._sock.sendall(command.encode())
 
         except socket.timeout as e_timeout:
-            raise DeviceTimeoutError(self.device_name, "Socket timeout error") from e_timeout
+            raise DeviceTimeoutError(self.device_id, "Socket timeout error") from e_timeout
         except socket.error as e_socket:
             # Interpret any socket-related error as a connection error
-            raise DeviceConnectionError(self.device_name, "Socket communication error.") from e_socket
+            raise DeviceConnectionError(self.device_id, "Socket communication error.") from e_socket
         except AttributeError:
             if not self._is_connection_open:
                 msg = "The DT8874 is not connected, use the connect() method."
-                raise DeviceConnectionError(self.device_name, msg)
+                raise DeviceConnectionError(self.device_id, msg)
             raise
 
     def trans(self, command: str) -> str | bytes:
@@ -214,7 +233,7 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
 
             self._sock.sendall(command.encode())
 
-            # wait for, read and return the response from Digilent (will be at most TBD chars)
+            # wait for, read and return the response from KIKUSUI PMX (will be at most TBD chars)
 
             return_string = self.read()
 
@@ -224,15 +243,15 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
             # noinspection PyUnboundLocalVariable
             return return_string
         except socket.timeout as e_timeout:
-            raise DeviceTimeoutError(self.device_name, "Socket timeout error") from e_timeout
+            raise DeviceTimeoutError(self.device_id, "Socket timeout error") from e_timeout
         except socket.error as e_socket:
             # Interpret any socket-related error as an I/O error
-            raise DeviceConnectionError(self.device_name, "Socket communication error.") from e_socket
+            raise DeviceConnectionError(self.device_id, "Socket communication error.") from e_socket
         except ConnectionError as exc:
-            raise DeviceConnectionError(self.device_name, "Connection error.") from exc
+            raise DeviceConnectionError(self.device_id, "Connection error.") from exc
         except AttributeError:
             if not self._is_connection_open:
-                raise DeviceConnectionError(self.device_name, "Device not connected, use the connect() method.")
+                raise DeviceConnectionError(self.device_id, "Device not connected, use the connect() method.")
             raise
 
     def read(self) -> bytes:

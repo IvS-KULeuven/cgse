@@ -1,0 +1,43 @@
+BaseClass:
+    egse.power_supply.kikusui.pmx_a.pmx_a.PmxAInterface
+
+ProxyClass:
+    egse.power_supply.kikusui.pmx_a.pmx_a.PmxAProxy
+
+ControlServerClass:
+    egse.power_supply.kikusui.pmx_a.pmx_a_cs.PmxAControlServer
+
+ControlServer:
+    egse.power_supply.kikusui.pmx_a.pmx_a_cs
+
+#UserInterface:
+#    egse.power_supply.kikusui.pmx_a.pmx_a_ui
+
+Commands:
+
+    # Definition of the DeviceInterface
+
+    is_simulator:
+        description: Ask if the connected class is a simulator instead of the real device Controller class.
+        returns: bool | True if the far end is a simulator instead of the real hardware
+
+    is_connected:
+        description: Check if the KIKUSUI PMX-A hardware controller is connected.
+
+    connect:
+        description: Connect the KIKUSUI PMX-A hardware controller
+
+    reconnect:
+        description: Reconnect the KIKUSUI PMX-A hardware controller.
+            
+            This command will force a disconnect and then try to re-connect to the controller.
+
+    disconnect:
+        description: Disconnect from the KIKUSUI PMX-A hardware controller.
+            
+            This command will be send to the KIKUSUI PMX-A Control Server which will then
+            disconnect from the hardware controller.
+            
+            This command does not affect the ZeroMQ connection of the Proxy to the
+            control server. Use the service command `disconnect_cs()` to disconnect
+            from the control server.

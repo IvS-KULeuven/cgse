@@ -65,6 +65,12 @@ def is_tcu_cs_active(timeout: float = 0.5) -> bool:
 
 class TcuControlServer(ControlServer):
     def __init__(self, simulator: bool = False):
+        """Initialisation of an Ariel TCU Control Server.
+
+        Args:
+            simulator (bool): Indicates whether to operate in simulator mode.
+        """
+
         super().__init__()
 
         multiprocessing.current_process().name = PROCESS_NAME
