@@ -131,12 +131,14 @@ for handler in root_logger.handlers:
         handler.addFilter(NonEGSEFilter())
         handler.addFilter(PackageFilter())
 
-try:
-    from textual.logging import TextualHandler
+# Optional: integrate with Textual logging if available
+#
+# try:
+#     from textual.logging import TextualHandler
 
-    root_logger.addHandler(TextualHandler())
-except ImportError:
-    pass
+#     root_logger.addHandler(TextualHandler())
+# except ImportError:
+#     pass
 
 
 logger = egse_logger

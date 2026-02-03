@@ -45,6 +45,7 @@ class SocketDevice(DeviceConnectionInterface, DeviceTransport):
         self.connect_timeout = connect_timeout
         self.read_timeout = read_timeout
         self.separator = separator
+        self.separator_str = separator.decode()
         self.socket = None
 
     @property
@@ -57,8 +58,8 @@ class SocketDevice(DeviceConnectionInterface, DeviceTransport):
         Connect the device.
 
         Raises:
-            ConnectionError: When the connection could not be established. Check the logging
-                messages for more detail.
+            ConnectionError: When the connection could not be established.
+                Check the logging messages for more detail.
             TimeoutError: When the connection timed out.
             ValueError: When hostname or port number are not provided.
         """
@@ -92,9 +93,9 @@ class SocketDevice(DeviceConnectionInterface, DeviceTransport):
         except TimeoutError as exc:
             raise TimeoutError(f"{self.device_name}: Connection to {self.hostname}:{self.port} timed out.") from exc
         except socket.gaierror as exc:
-            raise ConnectionError(f"{self.device_name}: socket address info error for {self.hostname}") from exc
+            raise ConnectionError(f"{self.device_name}: Socket address info error for {self.hostname}") from exc
         except socket.herror as exc:
-            raise ConnectionError(f"{self.device_name}: socket host address error for {self.hostname}") from exc
+            raise ConnectionError(f"{self.device_name}: Socket host address error for {self.hostname}") from exc
         except OSError as exc:
             raise ConnectionError(f"{self.device_name}: OSError caught ({exc}).") from exc
 
@@ -107,6 +108,8 @@ class SocketDevice(DeviceConnectionInterface, DeviceTransport):
         Raises:
             ConnectionError when the socket could not be closed.
         """
+
+        assert self.socket is not None  # extra check + for mypy type checking
 
         try:
             if self.is_connection_open:
@@ -143,12 +146,12 @@ class SocketDevice(DeviceConnectionInterface, DeviceTransport):
         If `self.read_timeout` was set to None in the constructor, this will block anyway.
         """
         if not self.socket:
-            raise DeviceConnectionError(self.device_name, "Not connected")
+            raise DeviceConnectionError(self.device_name, "The device is not connected, connect before reading.")
 
         buf_size = 1024 * 4
         response = bytearray()
 
-        # If read_timeout is None we preserve blocking behaviour; otherwise enforce overall timeout.
+        # If read_timeout is None we preserve blocking behavior; otherwise enforce overall timeout.
         if self.read_timeout is None:
             end_time = None
         else:
@@ -211,7 +214,11 @@ class SocketDevice(DeviceConnectionInterface, DeviceTransport):
             there was a socket related error.
         """
 
+        if not self.socket:
+            raise DeviceConnectionError(self.device_name, "The device is not connected, connect before writing.")
+
         try:
+            command += self.separator_str if not command.endswith(self.separator_str) else ""
             self.socket.sendall(command.encode())
         except socket.timeout as exc:
             raise DeviceTimeoutError(self.device_name, "Socket timeout error") from exc
@@ -237,22 +244,14 @@ class SocketDevice(DeviceConnectionInterface, DeviceTransport):
             there was a socket related error.
         """
 
-        try:
-            # Attempt to send the complete command
+        if not self.socket:
+            raise DeviceConnectionError(self.device_name, "The device is not connected, connect before writing.")
 
-            self.socket.sendall(command.encode())
+        self.write(command)
 
-            # wait for, read and return the response (will be at most TBD chars)
+        response = self.read()
 
-            return_string = self.read()
-
-            return return_string
-
-        except socket.timeout as exc:
-            raise DeviceTimeoutError(self.device_name, "Socket timeout error") from exc
-        except socket.error as exc:
-            # Interpret any socket-related error as an I/O error
-            raise DeviceConnectionError(self.device_name, "Socket communication error.") from exc
+        return response
 
 
 class AsyncSocketDevice(AsyncDeviceInterface, AsyncDeviceTransport):

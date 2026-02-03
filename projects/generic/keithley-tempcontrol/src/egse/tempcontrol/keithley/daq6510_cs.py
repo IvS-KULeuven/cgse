@@ -1,3 +1,26 @@
+"""
+Keithley DAQ6510 Synchronous Control Server.
+
+This module implements a Control Server to command and monitor a Keithley DAQ6510 Data Acquisition System.
+
+The control server can be started from the command line interface as follows:
+
+    $ daq6510_cs start
+
+It can also be stopped, queried for status information, etc.  Use the --help option to see all available commands:
+
+    $ daq6510_cs --help
+
+Functions:
+
+    is_daq6510_cs_active(timeout: float = 0.5) -> bool
+        Checks if the DAQ6510 Control Server is running.
+Classes:
+    DAQ6510ControlServer(ControlServer)
+        Keithley DAQ6510ControlServer - Command and monitor the Keithley Data Acquisition System.
+
+"""
+
 import multiprocessing
 import sys
 
