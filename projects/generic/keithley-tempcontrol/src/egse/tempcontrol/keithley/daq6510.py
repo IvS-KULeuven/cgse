@@ -5,12 +5,16 @@ from typing import Dict, List, Tuple
 from egse.connect import get_endpoint
 from egse.decorators import dynamic_interface
 from egse.device import DeviceConnectionState, DeviceInterface
+from egse.env import bool_env
+from egse.response import Failure
 from egse.log import logger
 from egse.mixin import CommandType, DynamicCommandMixin, add_lf, dynamic_command
-from egse.proxy import Proxy
+from egse.proxy import DynamicProxy
 from egse.scpi import count_number_of_channels, create_channel_list, get_channel_names
 from egse.settings import Settings
 from egse.tempcontrol.keithley.daq6510_dev import DAQ6510
+
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
 
 HERE = Path(__file__).parent
 
@@ -28,6 +32,18 @@ DEFAULT_BUFFER_2 = "defbuffer2"
 
 DEV_HOST = dev_settings.get("HOSTNAME", "localhost")
 DEV_PORT = dev_settings.get("PORT", 5025)
+
+
+def decode_response(response: bytes) -> str | Failure:
+    """Decodes the bytes object, strips off the trailing 'CRLF'."""
+
+    if VERBOSE_DEBUG:
+        logger.debug(f"{response = } <- decode_response")
+
+    if isinstance(response, Failure):
+        return response
+
+    return response.decode().rstrip()
 
 
 class DAQ6510Interface(DeviceInterface):
@@ -55,6 +71,23 @@ class DAQ6510Interface(DeviceInterface):
         cmd_type=CommandType.TRANSACTION,
         cmd_string="*IDN?",
         process_cmd_string=add_lf,
+        process_response=decode_response,
+    )
+    def get_idn(self) -> str:
+        """Returns basic information about the device, its name, firmware version, etc.
+
+        The string returned is subject to change without notice and can not be used for parsing information.
+
+        Returns: Identification string of the instrument.
+        """
+
+        raise NotImplementedError
+
+    @dynamic_command(
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="*IDN?",
+        process_cmd_string=add_lf,
+        process_response=decode_response,
     )
     def info(self) -> str:
         """Returns basic information about the device, its name, firmware version, etc.
@@ -99,7 +132,7 @@ class DAQ6510Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string=":SYST:TIME? 1")
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string=":SYST:TIME? 1", process_response=decode_response)
     def get_time(self) -> str:
         """Gets the date and time from the device in UTC.
 
@@ -501,7 +534,7 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
         return readings
 
 
-class DAQ6510Proxy(Proxy, DAQ6510Interface):
+class DAQ6510Proxy(DynamicProxy, DAQ6510Interface):
     """
     The DAQ6510Proxy class is used to connect to the Keithley Control Server and send commands
     to the Keithley Hardware Controller remotely.
