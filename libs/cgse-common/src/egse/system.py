@@ -379,7 +379,7 @@ def ignore_m_warning(modules=None):
         pass
 
 
-def now(utc: bool = True):
+def now(utc: bool = True) -> datetime.datetime:
     """Returns a datetime object for the current time in UTC or local time."""
     if utc:
         return datetime.datetime.now(tz=datetime.timezone.utc)
