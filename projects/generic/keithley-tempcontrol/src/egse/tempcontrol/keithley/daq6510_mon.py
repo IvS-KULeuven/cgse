@@ -36,7 +36,7 @@ from egse.setup import Setup, load_setup
 from egse.storage import StorageProxy, is_storage_manager_active
 from egse.storage.persistence import CSV
 from egse.system import SignalCatcher, flatten_dict, format_datetime, now
-from egse.tempcontrol.keithley.daq6510 import DAQ6510Proxy
+from egse.tempcontrol.keithley.daq6510 import DAQ6510Proxy, DEFAULT_BUFFER_1
 from egse.tempcontrol.keithley.daq6510_cs import is_daq6510_cs_active
 
 VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
@@ -155,6 +155,8 @@ def daq6510(count, interval, delay, channel_list, input_file: str):
 
         storage.register({"origin": origin, "persistence_class": persistence_class, "prep": prep})
 
+        # This will write a comment line to the CSV file with the column names. This might be useful when
+        # the sensors are reconfigured and the number or names of columns changes.
         storage.save({"origin": origin, "data": f"# columns: {column_names}"})
 
         for sensor in setup.gse.DAQ6510.sensors:  # type: ignore
@@ -174,11 +176,13 @@ def daq6510(count, interval, delay, channel_list, input_file: str):
 
         logger.info(f"global: {channel_list=}, {channel_count=}")
 
-        daq.setup_measurements(channel_list=channel_list)
+        daq.setup_measurements(buffer_name=DEFAULT_BUFFER_1, channel_list=channel_list)
 
         while True:
             try:
-                response = daq.perform_measurement(channel_list=channel_list, count=count, interval=interval)
+                response = daq.perform_measurement(
+                    buffer_name=DEFAULT_BUFFER_1, channel_list=channel_list, count=count, interval=interval
+                )
 
                 if killer.term_signal_received:
                     break
