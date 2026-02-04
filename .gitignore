@@ -22,9 +22,14 @@ dist
 .nox
 htmlcov
 
-# Virtual environments
+# dotenv, ignore all but the example file
 
 .env
+.env.*
+!.env.example
+
+# Virtual environments
+
 .venv
 venv
 
