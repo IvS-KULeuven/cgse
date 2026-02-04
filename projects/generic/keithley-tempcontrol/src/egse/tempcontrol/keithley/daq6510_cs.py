@@ -177,6 +177,9 @@ class DAQ6510ControlServer(ControlServer):
     def before_serve(self):
         """Steps to take before the Control Server is activated."""
 
+    def after_serve(self):
+        self.deregister_service()
+
 
 app = typer.Typer(name="daq6510_cs")
 
