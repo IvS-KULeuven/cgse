@@ -170,7 +170,7 @@ def setup_env():
         return
 
     if VERBOSE_DEBUG:
-        logger.debug(f"Initialising the environment...")
+        logger.debug("Initializing the environment...")
 
     load_dotenv()
 
