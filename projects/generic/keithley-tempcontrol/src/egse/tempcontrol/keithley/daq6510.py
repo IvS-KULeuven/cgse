@@ -1,22 +1,20 @@
 import logging
-import re
 from pathlib import Path
-from typing import Dict
-from typing import List
-from typing import Tuple
+from typing import Dict, List, Tuple
 
 from egse.connect import get_endpoint
 from egse.decorators import dynamic_interface
-from egse.device import DeviceConnectionState
-from egse.device import DeviceInterface
+from egse.device import DeviceConnectionState, DeviceInterface
+from egse.env import bool_env
+from egse.response import Failure
 from egse.log import logger
-from egse.mixin import CommandType
-from egse.mixin import DynamicCommandMixin
-from egse.mixin import add_lf
-from egse.mixin import dynamic_command
-from egse.proxy import Proxy
+from egse.mixin import CommandType, DynamicCommandMixin, add_lf, dynamic_command
+from egse.proxy import DynamicProxy
+from egse.scpi import count_number_of_channels, create_channel_list, get_channel_names
 from egse.settings import Settings
 from egse.tempcontrol.keithley.daq6510_dev import DAQ6510
+
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
 
 HERE = Path(__file__).parent
 
@@ -32,8 +30,20 @@ SERVICE_TYPE = cs_settings.get("SERVICE_TYPE", "daq6510")
 DEFAULT_BUFFER_1 = "defbuffer1"
 DEFAULT_BUFFER_2 = "defbuffer2"
 
-DEV_HOST = dev_settings.get("HOSTNAME")
-DEV_PORT = dev_settings.get("PORT")
+DEV_HOST = dev_settings.get("HOSTNAME", "localhost")
+DEV_PORT = dev_settings.get("PORT", 5025)
+
+
+def decode_response(response: bytes) -> str | Failure:
+    """Decodes the bytes object, strips off the trailing 'CRLF'."""
+
+    if VERBOSE_DEBUG:
+        logger.debug(f"{response = } <- decode_response")
+
+    if isinstance(response, Failure):
+        return response
+
+    return response.decode().rstrip()
 
 
 class DAQ6510Interface(DeviceInterface):
@@ -61,6 +71,23 @@ class DAQ6510Interface(DeviceInterface):
         cmd_type=CommandType.TRANSACTION,
         cmd_string="*IDN?",
         process_cmd_string=add_lf,
+        process_response=decode_response,
+    )
+    def get_idn(self) -> str:
+        """Returns basic information about the device, its name, firmware version, etc.
+
+        The string returned is subject to change without notice and can not be used for parsing information.
+
+        Returns: Identification string of the instrument.
+        """
+
+        raise NotImplementedError
+
+    @dynamic_command(
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="*IDN?",
+        process_cmd_string=add_lf,
+        process_response=decode_response,
     )
     def info(self) -> str:
         """Returns basic information about the device, its name, firmware version, etc.
@@ -105,7 +132,7 @@ class DAQ6510Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string=":SYST:TIME? 1")
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string=":SYST:TIME? 1", process_response=decode_response)
     def get_time(self) -> str:
         """Gets the date and time from the device in UTC.
 
@@ -297,9 +324,9 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
                  None will be returned.
         """
 
-        return self.daq.trans(command) if response else self.daq.write(command)
+        return self.daq.trans(command).decode() if response else self.daq.write(command)
 
-    def read_buffer(self, start: int, end: int, buffer_name: str = DEFAULT_BUFFER_1, elements: list[str] = None):
+    def read_buffer(self, start: int, end: int, buffer_name: str = DEFAULT_BUFFER_1, elements: list[str] | None = None):
         """Reads specific data elements (measurements) from the given buffer.
 
         Elements that can be specified to read out:
@@ -315,17 +342,17 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
             start: (int) First index of the buffer that should be returned (>= 1)
             end (int): Last index of the buffer that should be returned
             buffer_name (str): Name of the buffer to read out
-            elements (List[str]): List of elements from the buffer to include in the response
+            elements (list[str] | None): List of elements from the buffer to include in the response
 
         Returns: List of all the readings.
         """
 
         if elements is None:
-            elements = ["READING"]
+            elements_str = ["READING"]
         else:
-            elements = ", ".join(elements)
+            elements_str = ", ".join(elements)
 
-        return self.daq.trans(f'TRACE:DATA? {start}, {end}, "{buffer_name}", {elements}')
+        return self.daq.trans(f'TRACE:DATA? {start}, {end}, "{buffer_name}", {elements_str}')
 
     def clear_buffer(self, buffer_name: str = DEFAULT_BUFFER_1) -> None:
         """Clears the given buffer.
@@ -490,82 +517,24 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
             response = self.read_buffer(
                 idx, idx, buffer_name=buffer_name, elements=["CHANNEL", "TSTAMP", "READING", "UNIT"]
             )
-            if response != "" and response != str(count * num_sensors):
-                if "\n" in response:
-                    response = response.split("\n")
-                    for i in range(len(response)):
-                        readings.append(response[i].split(","))
+            response_str = response.decode().strip()
+
+            if response_str != "" and response_str != str(count * num_sensors):
+                if "\n" in response_str:
+                    response_str = response_str.split("\n")
+                    for i in range(len(response_str)):
+                        readings.append(response_str[i].split(","))
                 else:
-                    readings.append(response.split(","))
+                    readings.append(response_str.split(","))
+
+                # Remove incomplete readings
                 if len(readings[0]) < 4:
                     del readings[0]
 
         return readings
 
 
-class DAQ6510Simulator(DAQ6510Interface):
-    """
-    Simulator for the Keithley DAQ6510 system.
-    """
-
-    def read_buffer(self, start: int, end: int, buffer_name: str, elements: List[str]):
-        pass
-
-    def get_buffer_count(self, buffer_name: str = DEFAULT_BUFFER_1):
-        pass
-
-    def get_buffer_capacity(self, buffer_name: str):
-        pass
-
-    def delete_buffer(self, buffer_name: str):
-        pass
-
-    def clear_buffer(self, buffer_name: str):
-        pass
-
-    def create_buffer(self, buffer_name: str, size: int):
-        pass
-
-    def configure_sensors(self, channel_list: str, *, sense: Dict[str, List[Tuple]]):
-        pass
-
-    def setup_measurements(self, *, buffer_name: str, channel_list: str):
-        pass
-
-    def perform_measurement(self, *, buffer_name: str, channel_list: str, count: int, interval: int):
-        pass
-
-    def send_command(self, command: str, response: bool):
-        pass
-
-    def info(self) -> str:
-        pass
-
-    def reset(self):
-        pass
-
-    def is_simulator(self):
-        """Indicates that the device is a simulator.
-
-        Returns: True.
-        """
-
-        return True
-
-    def connect(self):
-        pass
-
-    def disconnect(self):
-        pass
-
-    def reconnect(self):
-        pass
-
-    def is_connected(self):
-        pass
-
-
-class DAQ6510Proxy(Proxy, DAQ6510Interface):
+class DAQ6510Proxy(DynamicProxy, DAQ6510Interface):
     """
     The DAQ6510Proxy class is used to connect to the Keithley Control Server and send commands
     to the Keithley Hardware Controller remotely.
@@ -578,7 +547,7 @@ class DAQ6510Proxy(Proxy, DAQ6510Interface):
         port: int = COMMANDING_PORT,
         timeout: float = TIMEOUT,  # Timeout [s]: > scan count * interval + (one scan duration)
     ):
-        """Initialisation of a DAQ6510Proxy.
+        """Initialization of a DAQ6510Proxy.
 
         Args:
             protocol (str): Transport protocol [default is taken from settings file]
@@ -591,110 +560,6 @@ class DAQ6510Proxy(Proxy, DAQ6510Interface):
         endpoint = get_endpoint(SERVICE_TYPE, protocol, hostname, port)
 
         super().__init__(endpoint, timeout=timeout)
-
-
-def create_channel_list(*args) -> str:
-    """Createa a channel list that is understood by the SCPI commands of the DAQ6510.
-
-    Channel names contain both the slot number and the channel number. The slot number is the number of the slot where
-    the card is installed at the back of the device.
-
-    When addressing multiple individual channels, add each of them as a separate argument, e.g. to include channels 1,
-    3, and 7 from slot 1, use the following command:
-
-        >>> create_channel_list(101, 103, 107)
-        '(@101, 103, 107)'
-
-    To designate a range of channels, only one argument should be given, i.e. a tuple containing two channels
-    representing the range. The following tuple `(101, 110)` will create the following response: `"(@101:110)"`. The
-    range is inclusive, so this will define a range of 10 channels in slot 1.
-
-        >>> create_channel_list((201, 205))
-        '(@201:205)'
-
-    See reference manual for the Keithley DAQ6510 [DAQ6510-901-01 Rev. B / September 2019], chapter 11: Introduction to
-    SCPI commands, SCPI command formatting, channel naming.
-
-    Args:
-        *args: Tuple or a list of channels
-
-    Returns: String containing the channel list as understood by the device.
-    """
-
-    if not args:
-        return ""
-
-    # If only one argument is given, I expect either a tuple defining a range or just one channel. When several
-    # arguments are given, I expect them all to be individual channels.
-
-    if len(args) == 1:
-        arg = args[0]
-        if isinstance(arg, tuple):
-            ch_list = f"(@{arg[0]}:{arg[1]})"
-        else:
-            ch_list = f"(@{arg})"
-
-    else:
-        ch_list = "(@" + ", ".join([str(arg) for arg in args]) + ")"
-
-    return ch_list
-
-
-def count_number_of_channels(channel_list: str) -> int:
-    """Given a proper channel list, this function counts the number of channels.
-
-    For ranges, it returns the actual number of channels that are included in the range.
-
-        >>> count_number_of_channels("(@1,2,3,4,5)")
-        5
-        >>> count_number_of_channels("(@1, 3, 5)")
-        3
-        >>> count_number_of_channels("(@2:7)")
-        6
-
-    Args:
-        channel_list (str): Channel list as understood by the SCPI commands of DAQ6510
-
-    Returns: Number of channels in the list.
-    """
-
-    match = re.match(r"\(@(.*)\)", channel_list)
-    group = match.groups()[0]
-
-    parts = group.replace(" ", "").split(",")
-    count = 0
-    for part in parts:
-        if ":" in part:
-            split_part = part.split(":")
-            count += int(split_part[1]) - int(split_part[0]) + 1
-        else:
-            count += 1
-
-    return count
-
-
-def get_channel_names(channel_list: str) -> List[str]:
-    """Generates a list of channel names from a given channel list.
-
-    Args:
-        channel_list (str): Channel list as understood by the SCPI commands of DAQ6510
-
-    Returns: List of channel names.
-    """
-
-    match = re.match(r"\(@(.*)\)", channel_list)
-    group = match.groups()[0]
-
-    parts = group.replace(" ", "").split(",")
-    names = []
-    for part in parts:
-        if ":" in part:
-            split_part = part.split(":")
-            names.extend(str(ch) for ch in range(int(split_part[0]), int(split_part[1]) + 1))
-        else:
-            names.append(part)
-
-    return names
 
 
 if __name__ == "__main__":

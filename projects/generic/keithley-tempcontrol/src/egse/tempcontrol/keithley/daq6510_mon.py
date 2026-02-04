@@ -1,562 +1,274 @@
-import asyncio
+"""
+The synchronous monitoring service is a small application that performs measurements on
+the DAQ6510.
+
+The service reads the configuration for the Keithley DAQ6510 from the
+Configuration Manager and then configures the device. When no Configuration Manager is
+available, the service can also be started with a filename to read the configuration from. The file
+should have the YAML format.
+
+```
+insert an excerpt of a sample YAML configuration file here...
+```
+
+The monitoring service can be started as follows:
+
+
+"""
+
 import datetime
-import json
-import signal
+import multiprocessing
+import sys
 import time
-from asyncio import Task
 from pathlib import Path
 from typing import Any
-from typing import Callable
-from typing import Optional
 
+import rich
 import typer
-import zmq
-import zmq.asyncio
 
-from egse.device import DeviceConnectionError
-from egse.device import DeviceTimeoutError
+from egse.env import bool_env
+from egse.hk import read_conversion_dict
 from egse.log import logger
-from egse.settings import Settings
-from egse.system import TyperAsyncCommand
-from egse.tempcontrol.keithley.daq6510_adev import DAQ6510
+from egse.logger import remote_logging
+from egse.response import Failure
+from egse.scpi import count_number_of_channels, get_channel_names
+from egse.setup import Setup, load_setup
+from egse.storage import StorageProxy, is_storage_manager_active
+from egse.storage.persistence import CSV
+from egse.system import SignalCatcher, flatten_dict, format_datetime, now
+from egse.tempcontrol.keithley.daq6510 import DAQ6510Proxy, DEFAULT_BUFFER_1
+from egse.tempcontrol.keithley.daq6510_cs import is_daq6510_cs_active
 
-settings = Settings.load("Keithley DAQ6510")
-
-DAQ_DEV_HOST = settings.get("HOSTNAME", "localhost")
-DAQ_DEV_PORT = settings.get("PORT", 5025)
-
-DAQ_MON_CMD_PORT = 5556
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
 
 
-class DAQ6510Monitor:
+def load_setup_from_input_file(input_file: str | Path) -> Setup | None:
+    """Loads a Setup YAML file from disk."""
+    input_file = Path(input_file).resolve()
+
+    if not input_file.exists():
+        logger.error(f"ERROR: Input file ({input_file}) doesn't exists.")
+        return None
+
+    return Setup.from_yaml_file(input_file)
+
+
+def daq6510(count, interval, delay, channel_list, input_file: str):
     """
-    DAQ6510 temperature monitoring service with ZeroMQ command interface.
+    Run the monitoring service for the DAQ6510.
+
+    Args:
+        count: Number of measurements to perform per acquisition [optional]
+        interval: Time interval between measurements in seconds [optional]
+        delay: Delay between acquisitions in seconds [optional]
+        channel_list: Comma-separated list of channels to acquire data from [optional]
+        input_file: YAML file containing the Setup for the DAQ6510 [optional]
 
     """
 
-    def __init__(
-        self,
-        daq_hostname: str,
-        daq_port: int = DAQ_DEV_PORT,
-        zmq_port: int = DAQ_MON_CMD_PORT,
-        log_file: str = "temperature_readings.log",
-        channels: list[str] = None,
-        poll_interval: float = 60.0,
-    ):
-        """Initialize the DAQ6510 monitoring service.
+    multiprocessing.current_process().name = "egse.daq6510.monitor"
 
-        Args:
-            daq_hostname: Hostname or IP of the DAQ6510
-            daq_port: TCP port for DAQ6510 SCPI interface
-            zmq_port: Port for ZeroMQ command interface
-            log_file: Path to log file for temperature readings
-            channels: List of channels to monitor (e.g. ["101", "102"])
-            poll_interval: Initial polling interval in seconds
-        """
-        self.daq_hostname = daq_hostname
-        self.daq_port = daq_port
-        self.zmq_port = zmq_port
-        self.log_file = Path(log_file)
-        self.channels = channels or ["101", "102", "103", "104"]
-        self.poll_interval = poll_interval
+    if input_file:
+        setup = load_setup_from_input_file(input_file)
+    else:
+        setup = load_setup()
 
-        # Setup ZeroMQ context
-        self.ctx = zmq.asyncio.Context()
-        self.socket = self.ctx.socket(zmq.ROUTER)
-        self.socket.bind(f"tcp://*:{zmq_port}")
+    if setup is None:
+        logger.error("ERROR: Could not load setup.")
+        sys.exit(1)
 
-        # Service state
-        self.running = False
-        self.polling_active = False
-        self.daq_interface = None
-        self.command_handlers: dict[str, Callable] = {
-            "START_POLLING": self._handle_start_polling,
-            "STOP_POLLING": self._handle_stop_polling,
-            "SET_INTERVAL": self._handle_set_interval,
-            "SET_CHANNELS": self._handle_set_channels,
-            "GET_STATUS": self._handle_get_status,
-            "GET_READING": self._handle_get_reading,
-            "GET_LAST_READING": self._handle_get_last_reading,
-            "SHUTDOWN": self._handle_shutdown,
-        }
+    if not hasattr(setup, "gse"):
+        logger.error("ERROR: No GSE section in the loaded Setup.")
+        sys.exit(1)
 
-        # Keep a record of the last measurement
-        self._last_reading: dict = {}
+    try:
+        hk_conversion_table = read_conversion_dict("DAQ6510-MON", use_site=True, setup=setup)
+        column_names = list(hk_conversion_table.values())
+    except Exception as exc:
+        logger.warning(f"WARNING: Failed to read telemetry dictionary: {exc}")
+        hk_conversion_table = {}
+        column_names = []
 
-        # Make sure the log directory exists
-        self.log_file.parent.mkdir(exist_ok=True, parents=True)
+    if not is_daq6510_cs_active():
+        logger.error(
+            "The DAQ6510 Control Server is not running, start the 'daq6510_cs' command "
+            "before running the data acquisition."
+        )
+        return
 
-        # Create DAQ interface
-        # In this case we use the device itself, no control server. That means
-        # the monitoring must be the only service connecting to the device.
-        self.daq_interface = DAQ6510(hostname=daq_hostname, port=daq_port)
+    if not is_storage_manager_active():
+        logger.error("The storage manager is not running, start the core services before running the data acquisition.")
+        return
 
-    async def start(self):
-        """Start the monitoring service."""
-        logger.info(f"Starting DAQ6510 Monitoring Service on ZMQ port {self.zmq_port}")
-        self.running = True
+    if "DAQ6510" not in setup.gse:  # type: ignore
+        logger.error("ERROR: no DAQ6510 entry in the loaded Setup.")
+        sys.exit(1)
 
-        def handle_shutdown():
-            asyncio.create_task(self.shutdown())
+    if not channel_list:
+        channel_list = setup.gse.DAQ6510.channels  # type: ignore
 
-        # Register signal handlers for graceful shutdown
-        for sig in (signal.SIGINT, signal.SIGTERM):
-            asyncio.get_event_loop().add_signal_handler(sig, handle_shutdown)
+    if not count:
+        count = setup.gse.DAQ6510.route.scan.count.scan  # type: ignore
 
-        # Start the main service tasks
-        await asyncio.gather(self.command_listener(), self.connect_daq(), return_exceptions=True)
+    if not interval:
+        interval = setup.gse.DAQ6510.route.scan.interval  # type: ignore
 
-    def done_polling(self, task: Task):
-        if task.exception():
-            logger.error(f"Polling loop ended unexpectedly: {task.exception()}")
-        logger.info(f"Done polling ({task.get_name()}).")
-        self.polling_active = False
+    if not delay:
+        delay = setup.gse.DAQ6510.route.delay  # type: ignore
 
-    async def connect_daq(self):
-        """Establish connection to the DAQ6510."""
-        while self.running:
-            assert self.daq_interface is not None  # extra check and make mypy happy
+    count, interval, delay = int(count), int(interval), int(delay)
 
-            init_commands = [
-                ('TRAC:MAKE "test1", 1000', False),  # create a new buffer
-                # settings for channel 1 and 2 of slot 1
-                ('SENS:FUNC "TEMP", (@101:102)', False),  # set the function to temperature
-                ("SENS:TEMP:TRAN FRTD, (@101)", False),  # set the transducer to 4-wire RTD
-                ("SENS:TEMP:RTD:FOUR PT100, (@101)", False),  # set the type of the 4-wire RTD
-                ("SENS:TEMP:TRAN RTD, (@102)", False),  # set the transducer to 2-wire RTD
-                ("SENS:TEMP:RTD:TWO PT100, (@102)", False),  # set the type of the 2-wire RTD
-                ('ROUT:SCAN:BUFF "test1"', False),
-                ("ROUT:SCAN:CRE (@101:102)", False),
-                ("ROUT:CHAN:OPEN (@101:102)", False),
-                ("ROUT:STAT? (@101:102)", True),
-                ("ROUT:SCAN:STAR:STIM NONE", False),
-                # ("ROUT:SCAN:ADD:SING (@101, 102)", False),  # not sure what this does, not really needed
-                ("ROUT:SCAN:COUN:SCAN 1", False),  # not sure if this is needed in this setting
-                # ("ROUT:SCAN:INT 1", False),
-            ]
+    channel_count = count_number_of_channels(channel_list)
+    channel_names = get_channel_names(channel_list)
 
+    # FIXME:
+    #     Metrics shall be ingested in InfluxDB
+
+    # DAQ_METRICS = {}
+    # for channel in channel_names:
+    #     metrics_name = hk_conversion_table[channel]
+    #     DAQ_METRICS[metrics_name] = Gauge(
+    #         f"{metrics_name}",
+    #         f"The current measure for the sensor connected to channel {channel} ({metrics_name}) on the DAQ6510",
+    #     )
+
+    # start_http_server(DAS.METRICS_PORT_DAQ6510)
+
+    # Initialize some variables that will be used for registration to the Storage Manager
+
+    origin = "DAQ6510-MON"
+    persistence_class = CSV
+    prep = {
+        "mode": "a",
+        "ending": "\n",
+        "column_names": ["timestamp", *column_names],
+    }
+
+    killer = SignalCatcher()
+
+    with DAQ6510Proxy() as daq, StorageProxy() as storage:
+        daq.reset()
+
+        dt = now()
+        daq.set_time(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
+        logger.info(f"DAQ6510 date and time set: {daq.get_time()}")
+
+        storage.register({"origin": origin, "persistence_class": persistence_class, "prep": prep})
+
+        # This will write a comment line to the CSV file with the column names. This might be useful when
+        # the sensors are reconfigured and the number or names of columns changes.
+        storage.save({"origin": origin, "data": f"# columns: {column_names}"})
+
+        for sensor in setup.gse.DAQ6510.sensors:  # type: ignore
+            for function in setup.gse.DAQ6510.sensors[sensor]:  # type: ignore
+                sense = {
+                    function.upper(): [
+                        (key, value)
+                        for key, value in flatten_dict(setup.gse.DAQ6510.sensors[sensor][function]).items()  # type: ignore
+                        if key != "channels"
+                    ]
+                }
+                function_channel_list = setup.gse.DAQ6510.sensors[sensor][function].channels  # type: ignore
+                if VERBOSE_DEBUG:
+                    logger.debug(f"{sense=}")
+                    logger.debug(f"{function_channel_list=}")
+                daq.configure_sensors(channel_list=function_channel_list, sense=sense)
+
+        logger.info(f"global: {channel_list=}, {channel_count=}")
+
+        daq.setup_measurements(buffer_name=DEFAULT_BUFFER_1, channel_list=channel_list)
+
+        while True:
             try:
-                logger.info(f"Connecting to DAQ6510 at {self.daq_hostname}:{self.daq_port}")
-                await self.daq_interface.connect()
-                logger.info("Successfully connected to DAQ6510.")
-                await self.daq_interface.initialize(commands=init_commands, reset_device=True)
-                logger.info("Successfully initialized DAQ6510 for measurements.")
+                response = daq.perform_measurement(
+                    buffer_name=DEFAULT_BUFFER_1, channel_list=channel_list, count=count, interval=interval
+                )
 
-                # If we were polling before, restart it.
-                # The first time we enter this loop, we are not polling.
-                if self.polling_active:
-                    # QUESTION: Do we need to await here?
-                    polling_task = asyncio.create_task(self.polling_loop())
+                if killer.term_signal_received:
+                    break
 
-                    # But we can add error handling for the task
-                    polling_task.add_done_callback(self.done_polling)
-
-                # Keep checking connection status periodically
-                while self.running and await self.daq_interface.is_connected():
-                    logger.info("Checking DAQ6510 connection...")
-                    await asyncio.sleep(10)
-
-                if self.running:
-                    logger.warning("Lost connection to DAQ6510")
-                    await self.daq_interface.disconnect()
-
-            except (DeviceConnectionError, DeviceTimeoutError) as exc:
-                logger.error(f"Failed to connect to DAQ6510: {exc}")
-                await asyncio.sleep(5)  # Wait before retrying
-
-    async def polling_loop(self):
-        """Main polling loop for temperature measurements."""
-        logger.info(f"Starting temperature polling loop (interval: {self.poll_interval}s, channels: {self.channels})")
-
-        # The next lines are a way to calculate the sleep time between two measurements, this takes the time of the
-        # measurement itself into account.
-        def interval():
-            next_time = time.perf_counter()
-            while True:
-                next_time += self.poll_interval
-                yield max(next_time - time.perf_counter(), 0)
-
-        g_interval = interval()
-
-        while self.running and self.polling_active:
-            try:
-                if not await self.daq_interface.is_connected():
-                    logger.warning("DAQ6510 not connected, skipping temperature reading")
-                    await asyncio.sleep(5)
+                if not response:
+                    logger.warning("Received an empty response from the DAQ6510, check the connection with the device.")
+                    logger.warning(f"Response: {response=}")
+                    time.sleep(1.0)
                     continue
 
-                timestamp = datetime.datetime.now().isoformat()
-                readings = {}
-
-                # Read temperature from each channel
-                for channel in self.channels:
-                    try:
-                        # temp = random.random()
-                        temp = await self.daq_interface.get_measurement(channel)
-                        readings[channel] = temp
-                    except (DeviceConnectionError, DeviceTimeoutError, ValueError) as exc:
-                        logger.error(f"Error reading channel {channel}: {exc}")
-                        readings[channel] = None
-
-                # Log the readings
-                log_entry = {"timestamp": timestamp, "readings": readings}
-
-                # Append to log file
-                with open(self.log_file, "a") as fd:
-                    fd.write(json.dumps(log_entry) + "\n")
-
-                self._last_reading.update({"timestamp": timestamp, "readings": readings})
-
-                logger.info(f"Temperature readings: {readings}")
-
-            except Exception as exc:
-                logger.exception(f"Error in polling loop: {exc}")
-
-            finally:
-                # Wait for next polling interval, we account for the time needed to perform the measurement.
-                await asyncio.sleep(next(g_interval))
-
-        logger.info("Temperature polling loop stopped")
-
-    async def command_listener(self):
-        """ZeroMQ command interface listener."""
-        logger.info("Command listener started")
-
-        while self.running:
-            try:
-                # Wait for next message
-                message = await self.socket.recv_multipart()
-
-                # Parse the message
-                if len(message) < 3:
-                    logger.warning(f"Received malformed message: {message}")
+                if isinstance(response, Failure):
+                    logger.warning("Received a Failure from the DAQ6510 Control Server:")
+                    logger.warning(f"Response: {response}")
+                    time.sleep(1.0)
                     continue
 
-                identity, empty, *payload = message
+                # Process and save the response
 
-                try:
-                    # Parse the command and parameters
-                    command_data = json.loads(payload[0].decode("utf-8"))
-                    command = command_data.get("command")
-                    params = command_data.get("params", {})
+                if VERBOSE_DEBUG:
+                    logger.debug(f"{response=}")
 
-                    logger.info(f"Received command: {command} from {identity}")
+                dts = response[0][1].strip()
+                dt = datetime.datetime.strptime(dts[:-3], "%m/%d/%Y %H:%M:%S.%f")
+                datetime_string = format_datetime(dt.replace(tzinfo=datetime.timezone.utc))
 
-                    # Handle the command
-                    if command in self.command_handlers:
-                        response = await self.command_handlers[command](params)
-                    else:
-                        response = {"status": "error", "message": f"Unknown command: {command}"}
+                data: dict[str, Any] = {hk_conversion_table[measure[0]]: float(measure[2]) for measure in response}
+                data.update({"timestamp": datetime_string})
 
-                except json.JSONDecodeError:
-                    response = {"status": "error", "message": "Invalid JSON format"}
-                except Exception as exc:
-                    logger.exception(f"Error processing command: {exc}")
-                    response = {"status": "error", "message": str(exc)}
+                # FIXME: we probably need to do something with the units...
 
-                # Send response
-                await self.socket.send_multipart([identity, b"", json.dumps(response).encode("utf-8")])
+                units = [measure[3] for measure in response]
 
+                if VERBOSE_DEBUG:
+                    logger.debug(f"{data=}")
+
+                storage.save({"origin": origin, "data": data})
+
+                # Now extract channels from the response to update the metrics
+
+                for channel in [measure[0] for measure in response]:
+                    if channel in hk_conversion_table:
+                        metrics_name = hk_conversion_table[channel]
+                        # DAQ_METRICS[metrics_name].set(data[metrics_name])
+
+                # wait for the next measurement to be done (delay)
+
+                time.sleep(delay)
+
+            except KeyboardInterrupt:
+                logger.debug("Interrupt received, terminating...")
+                break
             except Exception as exc:
-                logger.exception(f"Error in command listener: {exc}")
-                await asyncio.sleep(1)
+                logger.warning(f"DAS Exception: {exc}", exc_info=True)
+                logger.warning("Got a corrupt response from the DAQ6510. Check log messages for 'DAS Exception'.")
+                time.sleep(1.0)
+                continue
 
-    async def _handle_start_polling(self, params: dict[str, Any]) -> dict[str, Any]:
-        """Start temperature polling."""
-        if not self.polling_active:
-            self.polling_active = True
+        storage.unregister({"origin": origin})
 
-            # If channels provided, update them
-            if "channels" in params:
-                self.channels = params["channels"]
+    logger.info("DAQ6510 Data Acquisition System terminated.")
 
-            # If interval provided, update it
-            if "interval" in params:
-                self.poll_interval = float(params["interval"])
 
-            # Start polling loop
-            polling_task = asyncio.create_task(self.polling_loop())
+app = typer.Typer(
+    name="daq6510_mon", help="DAQ6510 Data Acquisition Unit, Keithley, temperature monitoring (monitoring)"
+)
 
-            # But we can add error handling for the task
-            polling_task.add_done_callback(
-                lambda t: logger.error(f"Polling loop ended unexpectedly: {t.exception()}") if t.exception() else None
-            )
 
-            return {
-                "status": "ok",
-                "message": f"Polling started with interval {self.poll_interval}s and channels {self.channels}",
-            }
-        else:
-            return {"status": "ok", "message": "Polling already active"}
+@app.command()
+def start(input_file: str = typer.Option("", help="YAML file containing the Setup for the DAQ6510")):
+    """Starts the Keithley DAQ6510 Monitoring Service."""
 
-    async def _handle_stop_polling(self, params: dict[str, Any]) -> dict[str, Any]:
-        """Stop temperature polling."""
-        if self.polling_active:
-            self.polling_active = False
-            return {"status": "ok", "message": "Polling stopped"}
-        else:
-            return {"status": "ok", "message": "Polling already stopped"}
+    multiprocessing.current_process().name = "daq6510_mon (start)"
 
-    async def _handle_set_interval(self, params: dict[str, Any]) -> dict[str, Any]:
-        """Set polling interval."""
-        if "interval" not in params:
-            return {"status": "error", "message": "Missing required parameter: interval"}
+    with remote_logging():
+        from egse.env import setup_env
+
+        setup_env()
 
         try:
-            interval = float(params["interval"])
-            if interval <= 0:
-                return {"status": "error", "message": "Interval must be positive"}
-
-            old_interval = self.poll_interval
-            self.poll_interval = interval
-
-            return {"status": "ok", "message": f"Polling interval changed from {old_interval}s to {interval}s"}
-        except ValueError:
-            return {"status": "error", "message": "Invalid interval format"}
-
-    async def _handle_set_channels(self, params: dict[str, Any]) -> dict[str, Any]:
-        """Set channels to monitor."""
-        if "channels" not in params or not isinstance(params["channels"], list):
-            return {"status": "error", "message": "Missing or invalid parameter: channels (should be a list)"}
-
-        old_channels = self.channels.copy()
-        self.channels = params["channels"]
-
-        return {"status": "ok", "message": f"Monitoring channels changed from {old_channels} to {self.channels}"}
-
-    async def _handle_get_last_reading(self, params: dict[str, Any]):
-        return self._last_reading
-
-    async def _handle_get_reading(self, params: dict[str, Any]):
-        """Get a reading for the given channel(s)."""
-        logger.info(f"GET_READING – {params = }")
-
-        readings = {"status": "ok", "data": {}}
-
-        for channel in params["channels"]:
-            try:
-                temp = await self.daq_interface.get_measurement(channel)
-                readings["data"][channel] = temp
-            except (DeviceConnectionError, DeviceTimeoutError, ValueError, RuntimeError) as exc:
-                logger.error(f"Error reading channel {channel}: {exc}")
-                readings["data"][channel] = None
-                readings.update({"status": "error", "message": f"Error reading channel {channel}"})
-
-        return readings
-
-    async def _handle_get_status(self, params: dict[str, Any]) -> dict[str, Any]:
-        """Get current service status."""
-        connected = False
-        try:
-            if self.daq_interface:
-                connected = await self.daq_interface.is_connected()
+            daq6510(count=None, interval=None, delay=None, channel_list=None, input_file=input_file)
+        except KeyboardInterrupt:
+            logger.debug("Shutdown requested...exiting")
+        except SystemExit as exit_code:
+            logger.debug("System Exit with code {}.".format(exit_code))
+            sys.exit(exit_code.code)
         except Exception:
-            connected = False
-
-        return {
-            "status": "ok",
-            "data": {
-                "service_running": self.running,
-                "polling_active": self.polling_active,
-                "poll_interval": self.poll_interval,
-                "channels": self.channels,
-                "daq_connected": connected,
-                "daq_hostname": self.daq_hostname,
-                "daq_port": self.daq_port,
-            },
-        }
-
-    async def _handle_shutdown(self, params: dict[str, Any]) -> dict[str, Any]:
-        """Shutdown the service."""
-        # Schedule shutdown after sending response
-        _ = asyncio.create_task(self.shutdown())
-
-        return {"status": "ok", "message": "Service shutting down"}
-
-    async def shutdown(self):
-        """Gracefully shut down the service."""
-        logger.info("Shutting down DAQ Monitoring Service...")
-
-        # Stop the main loops
-        self.running = False
-        self.polling_active = False
-
-        # Disconnect DAQ
-        try:
-            logger.info("Disconnecting the DAQ6510...")
-            if self.daq_interface and await self.daq_interface.is_connected():
-                await self.daq_interface.disconnect()
-        except Exception as exc:
-            logger.error(f"Error disconnecting from DAQ: {exc}")
-
-        # Close ZeroMQ socket
-        try:
-            logger.info("Closing ZeroMQ socket and terminate context...")
-            self.socket.close()
-            self.ctx.term()
-        except Exception as exc:
-            logger.error(f"Error closing ZeroMQ socket: {exc}")
-
-        logger.info("Service shutdown complete")
-
-
-class DAQMonitorClient:
-    """A simple client for interacting with the DAQ Monitor Service."""
-
-    def __init__(self, server_address: str = "localhost", port: int = DAQ_MON_CMD_PORT, timeout: float = 5.0):
-        """Initialize the client.
-
-        Args:
-            server_address: Address of the monitoring service
-            port: ZeroMQ port
-            timeout: Command timeout in seconds
-        """
-        self.server_address = server_address
-        self.port = port
-        self.timeout = timeout
-
-        self.ctx = zmq.Context().instance()
-        self.socket = None
-
-    def connect(self):
-        """Connect to the DAQ Monitoring service."""
-        self.socket = self.ctx.socket(zmq.DEALER)
-        self.socket.connect(f"tcp://{self.server_address}:{self.port}")
-        self.socket.setsockopt(zmq.RCVTIMEO, int(self.timeout * 1000))
-
-    def disconnect(self):
-        """Close the client connection."""
-        self.socket.close(linger=100)
-        self.ctx.term()
-
-    def __enter__(self):
-        self.connect()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.disconnect()
-        if exc_type:
-            logger.error(f"Caught {exc_type}: {exc_val}")
-
-    def _send_command(self, command: str, params: dict[str, Any] = None) -> dict[str, Any]:
-        """Send a command to the monitoring service.
-
-        Args:
-            command: Command name
-            params: Optional command parameters
-
-        Returns:
-            Response from the service as a dictionary.
-        """
-        params = params or {}
-        message = {"command": command, "params": params}
-
-        try:
-            self.socket.send_multipart([b"", json.dumps(message).encode("utf-8")])
-            _, response_data = self.socket.recv_multipart()
-            return json.loads(response_data.decode("utf-8"))
-        except zmq.ZMQError as exc:
-            return {"status": "error", "message": f"ZMQ error: {exc}"}
-        except Exception as exc:
-            return {"status": "error", "message": f"Error: {exc}"}
-
-    def start_polling(self, channels: Optional[list[str]] = None, interval: Optional[float] = None) -> dict[str, Any]:
-        """Start polling on specified channels.
-
-        Args:
-            channels: List of channels to monitor
-            interval: Polling interval in seconds
-
-        Returns:
-            Response from the service
-        """
-        params = {}
-        if channels is not None:
-            params["channels"] = channels
-        if interval is not None:
-            params["interval"] = interval
-
-        return self._send_command("START_POLLING", params)
-
-    def stop_polling(self) -> dict[str, Any]:
-        """Stop polling.
-
-        Returns:
-            Response from the service
-        """
-        return self._send_command("STOP_POLLING")
-
-    def set_interval(self, interval: float) -> dict[str, Any]:
-        """Set polling interval.
-
-        Args:
-            interval: New polling interval in seconds
-
-        Returns:
-            Response from the service
-        """
-        return self._send_command("SET_INTERVAL", {"interval": interval})
-
-    def set_channels(self, channels: list[str]) -> dict[str, Any]:
-        """Set channels to monitor.
-
-        Args:
-            channels: List of channel identifiers
-
-        Returns:
-            Response from the service
-        """
-        return self._send_command("SET_CHANNELS", {"channels": channels})
-
-    def get_reading(self, channels: list[str]) -> dict[str, float]:
-        """Get a reading from the given channel.
-
-        Returns:
-            A dictionary with the value of the measurement for the given channel.
-        """
-        return self._send_command("GET_READING", {"channels": channels})
-
-    def get_last_reading(self) -> dict:
-        return self._send_command("GET_LAST_READING")
-
-    def get_status(self) -> dict[str, Any]:
-        """Get current service status.
-
-        To confirm the status is 'ok', check the response for the key 'status'.
-
-        Returns:
-            Status information as dictionary.
-        """
-        return self._send_command("GET_STATUS")
-
-    def shutdown(self) -> dict[str, Any]:
-        """Shutdown the service.
-
-        Returns:
-            Response from the service
-        """
-        return self._send_command("SHUTDOWN")
-
-
-app = typer.Typer(name="daq6510_mon")
-
-
-@app.command(cls=TyperAsyncCommand, name="monitor")
-async def main(log_file: str = "temperature_readings.log"):
-    """
-    Start the DAQ6510 monitoring app in the background.
-    """
-    monitor = DAQ6510Monitor(
-        daq_hostname=DAQ_DEV_HOST,
-        daq_port=DAQ_DEV_PORT,
-        zmq_port=DAQ_MON_CMD_PORT,
-        log_file=log_file,
-        channels=["101", "102"],
-        poll_interval=10.0,
-    )
-
-    await monitor.start()
-
-
-if __name__ == "__main__":
-    asyncio.run(app())
+            msg = "Cannot start the DAQ6510 Monitoring Service"
+            logger.exception(msg)
+            rich.print(f"[red]{msg}.")

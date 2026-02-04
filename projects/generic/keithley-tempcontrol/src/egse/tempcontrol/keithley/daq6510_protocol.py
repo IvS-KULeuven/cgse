@@ -3,12 +3,13 @@ from pathlib import Path
 
 from egse.control import ControlServer
 from egse.device import DeviceTimeoutError
+from egse.hk import convert_hk_names, read_conversion_dict
 from egse.protocol import CommandProtocol
+from egse.log import logger
 from egse.settings import Settings
 from egse.setup import load_setup
 from egse.system import format_datetime
-from egse.tempcontrol.keithley.daq6510 import DAQ6510Controller
-from egse.tempcontrol.keithley.daq6510 import DAQ6510Interface
+from egse.tempcontrol.keithley.daq6510 import DAQ6510Controller, DAQ6510Interface
 from egse.tempcontrol.keithley.daq6510_dev import DAQ6510Command
 from egse.zmq_ser import bind_address
 
@@ -16,12 +17,10 @@ HERE = Path(__file__).parent
 
 COMMAND_SETTINGS = Settings.load(location=HERE, filename="daq6510.yaml")
 
-MODULE_LOGGER = logging.getLogger(__name__)
-
 
 class DAQ6510Protocol(CommandProtocol):
     def __init__(self, control_server: ControlServer):
-        """Initialisation of a new Protocol for DAQ6510 Management.
+        """Initialization of a new Protocol for DAQ6510 Management.
 
         Args:
             control_server: Control Server for which to send out status and monitoring information
@@ -34,13 +33,31 @@ class DAQ6510Protocol(CommandProtocol):
         try:
             self.daq.connect()
         except (ConnectionError, DeviceTimeoutError):
-            MODULE_LOGGER.warning("Couldn't establish a connection to the DAQ6510, check the log messages.")
+            logger.warning("Couldn't establish a connection to the DAQ6510, check the log messages.")
+
+        try:
+            self.hk_conversion_table = read_conversion_dict(
+                self.get_control_server().get_storage_mnemonic(), use_site=False
+            )
+        except Exception as exc:
+            logger.warning(f"Failed to read housekeeping conversion dictionary: {exc}")
+            self.hk_conversion_table = None
 
         self.load_commands(COMMAND_SETTINGS.Commands, DAQ6510Command, DAQ6510Interface)
         self.build_device_method_lookup_table(self.daq)
 
         setup = load_setup()
-        self.channels = setup.gse.DAQ6510.channels
+        self.channels = setup.gse.DAQ6510.channels  # type: ignore[attr-defined]
+
+    def get_device(self) -> DAQ6510Controller:
+        """
+        Returns the DAQ6510Controller device.
+
+        Returns:
+            The DAQ6510Controller device.
+        """
+
+        return self.daq
 
     def get_bind_address(self) -> str:
         """
@@ -75,6 +92,11 @@ class DAQ6510Protocol(CommandProtocol):
 
         hk_dict = dict()
         hk_dict["timestamp"] = format_datetime()
+
+        # logger.warning("DAQ6510Protocol.get_housekeeping() not implemented yet.")
+
+        if self.hk_conversion_table:
+            return convert_hk_names(hk_dict, self.hk_conversion_table)
 
         return hk_dict
 

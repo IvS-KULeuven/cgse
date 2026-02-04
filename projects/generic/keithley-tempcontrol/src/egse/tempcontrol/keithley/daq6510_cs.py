@@ -87,7 +87,7 @@ class DAQ6510ControlServer(ControlServer):
     """
 
     def __init__(self):
-        """Initialisation of a DAQ6510 Control Server."""
+        """Initialization of a DAQ6510 Control Server."""
 
         super().__init__()
 
@@ -176,6 +176,9 @@ class DAQ6510ControlServer(ControlServer):
 
     def before_serve(self):
         """Steps to take before the Control Server is activated."""
+
+    def after_serve(self):
+        self.deregister_service()
 
 
 app = typer.Typer(name="daq6510_cs")

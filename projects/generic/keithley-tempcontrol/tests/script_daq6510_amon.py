@@ -1,15 +1,15 @@
 """
-Script to test the DAQ6510 monitor client functionality.
+Script to test the DAQ6510 asynchronous monitor client functionality.
 
 Run the script as follows:
-    $ uv run py tests/script_daq6510_mon.py
+    $ uv run py tests/script_daq6510_amon.py
 
-This script connects to the DAQ6510 monitor service, retrieves the current status,
+This script connects to the DAQ6510 asynchronous monitor service, retrieves the current status,
 starts polling for temperature readings on channels 101 and 102, and logs the readings.
 
-Please ensure that the DAQ6510 monitor service is running before executing this script.
+Please ensure that the DAQ6510 asynchronous monitor service is running before executing this script.
 
-    $ uv run py -m egse.tempcontrol.keithley.daq6510_mon
+    $ uv run py -m egse.tempcontrol.keithley.daq6510_amon
 
 The script assumes that the DAQ6510 is configured to read temperatures from the following channels:
 - Channel 101: Temperature sensor 4-wire RTD
@@ -22,8 +22,8 @@ import json
 import logging
 import time
 
-from egse.tempcontrol.keithley.daq6510_mon import DAQMonitorClient
-from egse.tempcontrol.keithley.daq6510_mon import DAQ_MON_CMD_PORT
+from egse.tempcontrol.keithley.daq6510_amon import DAQMonitorClient
+from egse.tempcontrol.keithley.daq6510_amon import DAQ_MON_CMD_PORT
 
 logger = logging.getLogger("egse.daq6510-client")
 
