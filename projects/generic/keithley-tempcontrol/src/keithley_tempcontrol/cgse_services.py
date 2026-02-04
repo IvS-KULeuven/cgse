@@ -109,5 +109,21 @@ def start_daq6510_mon():
     )
 
 
+@daq6510.command(name="stop-mon")
+def stop_daq6510_mon():
+    """Stop the daq6510 monitoring service."""
+    rich.print("Stopping monitoring service daq6510_mon")
+
+    out = redirect_output_to_log("daq6510_mon.stop.log")
+
+    subprocess.Popen(
+        [sys.executable, "-m", "egse.tempcontrol.keithley.daq6510_mon", "stop"],
+        stdout=out,
+        stderr=out,
+        stdin=subprocess.DEVNULL,
+        close_fds=True,
+    )
+
+
 if __name__ == "__main__":
     daq6510()
