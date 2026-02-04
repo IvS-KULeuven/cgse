@@ -8,7 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-02-04
+
 - Implementation of KIKUSUI PMX-A power supply
+- Refactoring Keithley DAQ6510
 
 ## [0.17.4] - 2026-01-27
 
@@ -212,7 +215,9 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.17.3...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.17.4...v0.18.0
+[0.17.4]: https://github.com/IvS-KULeuven/cgse/compare/v0.17.3...v0.17.4
 [0.17.3]: https://github.com/IvS-KULeuven/cgse/compare/v0.17.2...v0.17.3
 [0.17.2]: https://github.com/IvS-KULeuven/cgse/compare/v0.17.1...v0.17.2
 [0.17.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.17.0...v0.17.1
