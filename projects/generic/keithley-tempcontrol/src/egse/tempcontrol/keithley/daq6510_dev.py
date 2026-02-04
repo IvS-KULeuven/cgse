@@ -2,13 +2,11 @@ __all__ = [
     "DAQ6510",
     "DAQ6510Command",
 ]
-import socket
-import time
 
 from egse.command import ClientServerCommand
-from egse.device import DeviceConnectionError, DeviceError, DeviceTimeoutError
-from egse.log import logger
+from egse.device import DeviceError
 from egse.env import bool_env
+from egse.log import logger
 from egse.settings import Settings
 from egse.socketdevice import SocketDevice
 
