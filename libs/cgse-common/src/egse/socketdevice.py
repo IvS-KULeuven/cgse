@@ -14,8 +14,11 @@ from egse.device import DeviceConnectionError
 from egse.device import DeviceConnectionInterface
 from egse.device import DeviceTimeoutError
 from egse.device import DeviceTransport
+from egse.env import bool_env
 from egse.log import logger
 from egse.system import type_name
+
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG", default=False)
 
 SEPARATOR = b"\x03"
 SEPARATOR_STR = SEPARATOR.decode()
@@ -219,6 +222,8 @@ class SocketDevice(DeviceConnectionInterface, DeviceTransport):
 
         try:
             command += self.separator_str if not command.endswith(self.separator_str) else ""
+            if VERBOSE_DEBUG:
+                logger.debug(f"Writing to {self.device_name}: {command!r}")
             self.socket.sendall(command.encode())
         except socket.timeout as exc:
             raise DeviceTimeoutError(self.device_name, "Socket timeout error") from exc
@@ -248,8 +253,10 @@ class SocketDevice(DeviceConnectionInterface, DeviceTransport):
             raise DeviceConnectionError(self.device_name, "The device is not connected, connect before writing.")
 
         self.write(command)
-
         response = self.read()
+
+        if VERBOSE_DEBUG:
+            logger.debug(f"Read from {self.device_name}: {response!r}")
 
         return response
 
