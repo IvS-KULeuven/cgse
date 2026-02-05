@@ -18,6 +18,7 @@ The monitoring service can be started as follows:
 
 import datetime
 import multiprocessing
+import os
 import sys
 import time
 from pathlib import Path
@@ -25,21 +26,25 @@ from typing import Any
 
 import rich
 import typer
+from urllib3.exceptions import NewConnectionError
 
 from egse.env import bool_env
 from egse.hk import read_conversion_dict
 from egse.log import logger
 from egse.logger import remote_logging
+from egse.metrics import get_metrics_repo
 from egse.response import Failure
 from egse.scpi import count_number_of_channels, get_channel_names
+from egse.settings import get_site_id
 from egse.setup import Setup, load_setup
 from egse.storage import StorageProxy, is_storage_manager_active
 from egse.storage.persistence import CSV
-from egse.system import SignalCatcher, flatten_dict, format_datetime, now, type_name
+from egse.system import SignalCatcher, flatten_dict, format_datetime, now, str_to_datetime, type_name
 from egse.tempcontrol.keithley.daq6510 import DAQ6510Proxy
 from egse.tempcontrol.keithley.daq6510_cs import is_daq6510_cs_active
 
 VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
+SITE_ID = get_site_id()
 
 
 def load_setup_from_input_file(input_file: str | Path) -> Setup | None:
@@ -122,18 +127,7 @@ def daq6510(count, interval, delay, channel_list, input_file: str):
     channel_count = count_number_of_channels(channel_list)
     channel_names = get_channel_names(channel_list)
 
-    # FIXME:
-    #     Metrics shall be ingested in InfluxDB
-
-    # DAQ_METRICS = {}
-    # for channel in channel_names:
-    #     metrics_name = hk_conversion_table[channel]
-    #     DAQ_METRICS[metrics_name] = Gauge(
-    #         f"{metrics_name}",
-    #         f"The current measure for the sensor connected to channel {channel} ({metrics_name}) on the DAQ6510",
-    #     )
-
-    # start_http_server(DAS.METRICS_PORT_DAQ6510)
+    metrics_client = setup_metrics_client()
 
     # Initialize some variables that will be used for registration to the Storage Manager
 
@@ -224,7 +218,7 @@ def daq6510(count, interval, delay, channel_list, input_file: str):
                 for channel in [measure[0] for measure in response]:
                     if channel in hk_conversion_table:
                         metrics_name = hk_conversion_table[channel]
-                        # DAQ_METRICS[metrics_name].set(data[metrics_name])
+                        save_metrics(metrics_client, origin, data)
 
                 # wait for the next measurement to be done (delay)
 
@@ -242,6 +236,46 @@ def daq6510(count, interval, delay, channel_list, input_file: str):
         storage.unregister({"origin": origin})
 
     logger.info("DAQ6510 Data Acquisition System terminated.")
+
+
+def setup_metrics_client():
+    token = os.getenv("INFLUXDB3_AUTH_TOKEN")
+    project = os.getenv("PROJECT")
+
+    if project and token:
+        metrics_client = get_metrics_repo(
+            "influxdb", {"host": "http://localhost:8181", "database": project, "token": token}
+        )
+        metrics_client.connect()
+    else:
+        metrics_client = None
+        logger.warning(
+            "INFLUXDB3_AUTH_TOKEN and/or PROJECT environment variable is not set. "
+            "Metrics will not be propagated to InfluxDB."
+        )
+
+    return metrics_client
+
+
+def save_metrics(metrics_client, origin, data):
+    try:
+        if metrics_client:
+            point = {
+                "measurement": origin.lower(),
+                "tags": {"site_id": SITE_ID, "origin": origin},
+                "fields": {hk_name.lower(): data[hk_name] for hk_name in data if hk_name != "timestamp"},
+                "time": str_to_datetime(data["timestamp"]),
+            }
+            metrics_client.write(point)
+        else:
+            logger.warning(
+                f"Could not write {origin} metrics to the time series database (self.metrics_client is None)."
+            )
+    except NewConnectionError:
+        logger.warning(
+            f"No connection to the time series database could be established to propagate {origin} metrics.  Check "
+            f"whether this service is (still) running."
+        )
 
 
 app = typer.Typer(
