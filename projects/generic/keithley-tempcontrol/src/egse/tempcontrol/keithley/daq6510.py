@@ -160,7 +160,7 @@ class DAQ6510Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string="TRAC:ACTUAL? ${buffer_name}")
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string='TRAC:ACTUAL? "${buffer_name}"')
     def get_buffer_count(self, buffer_name: str = DEFAULT_BUFFER_1):
         """Returns the number of data points in the specified buffer.
 
@@ -170,8 +170,12 @@ class DAQ6510Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string="TRACE:POINTS? ${buffer_name}")
-    def get_buffer_capacity(self, buffer_name: str):
+    @dynamic_command(
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string='TRACE:POINTS? "${buffer_name}"',
+        process_cmd_string=add_lf,
+    )
+    def get_buffer_capacity(self, buffer_name: str = DEFAULT_BUFFER_1):
         """Returns the capacity of the specified buffer.
 
         Args:
@@ -180,7 +184,7 @@ class DAQ6510Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="TRACE:DELETE ${buffer_name}")
+    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string='TRACE:DELETE "${buffer_name}"')
     def delete_buffer(self, buffer_name: str) -> None:
         """Deletes the specified buffer.
 
@@ -223,7 +227,7 @@ class DAQ6510Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_interface
-    def setup_measurements(self, *, buffer_name: str, channel_list: str):
+    def setup_measurements(self, *, buffer_name: str = DEFAULT_BUFFER_1, channel_list: str):
         """Sets up the measurements for the given channel list.
 
         Args:
@@ -234,11 +238,13 @@ class DAQ6510Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_interface
-    def perform_measurement(self, *, buffer_name: str, channel_list: str, count: int, interval: int) -> list:
+    def perform_measurement(
+        self, *, buffer_name: str = DEFAULT_BUFFER_1, channel_list: str, count: int, interval: int
+    ) -> list:
         """Performs the actual measurements.
 
         Args:
-            buffer_name (str): Name of the buffer
+            buffer_name (str): Name of the buffer [default: defbuffer1]
             channel_list (str): List of channels, as understood by the device
             count (int): Number of measurements to perform
             interval (int): Interval between measurements [s]
@@ -507,7 +513,7 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
 
         # Read out the buffer
 
-        logger.debug("Buffer count = ", self.get_buffer_count())
+        logger.debug(f"Buffer count = {self.get_buffer_count()}")
 
         num_sensors = count_number_of_channels(channel_list)
 
