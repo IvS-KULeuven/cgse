@@ -35,8 +35,8 @@ from egse.scpi import count_number_of_channels, get_channel_names
 from egse.setup import Setup, load_setup
 from egse.storage import StorageProxy, is_storage_manager_active
 from egse.storage.persistence import CSV
-from egse.system import SignalCatcher, flatten_dict, format_datetime, now
-from egse.tempcontrol.keithley.daq6510 import DAQ6510Proxy, DEFAULT_BUFFER_1
+from egse.system import SignalCatcher, flatten_dict, format_datetime, now, type_name
+from egse.tempcontrol.keithley.daq6510 import DAQ6510Proxy
 from egse.tempcontrol.keithley.daq6510_cs import is_daq6510_cs_active
 
 VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
@@ -66,8 +66,6 @@ def daq6510(count, interval, delay, channel_list, input_file: str):
 
     """
 
-    multiprocessing.current_process().name = "egse.daq6510.monitor"
-
     if input_file:
         setup = load_setup_from_input_file(input_file)
     else:
@@ -76,6 +74,9 @@ def daq6510(count, interval, delay, channel_list, input_file: str):
     if setup is None:
         logger.error("ERROR: Could not load setup.")
         sys.exit(1)
+
+    if VERBOSE_DEBUG:
+        logger.debug(f"Loaded setup: {setup}")
 
     if not hasattr(setup, "gse"):
         logger.error("ERROR: No GSE section in the loaded Setup.")
@@ -86,8 +87,8 @@ def daq6510(count, interval, delay, channel_list, input_file: str):
         column_names = list(hk_conversion_table.values())
     except Exception as exc:
         logger.warning(f"WARNING: Failed to read telemetry dictionary: {exc}")
-        hk_conversion_table = {}
-        column_names = []
+        hk_conversion_table = {"101": "PT100-4", "102": "PT100-2"}
+        column_names = list(hk_conversion_table.values())
 
     if not is_daq6510_cs_active():
         logger.error(
@@ -233,7 +234,7 @@ def daq6510(count, interval, delay, channel_list, input_file: str):
                 logger.debug("Interrupt received, terminating...")
                 break
             except Exception as exc:
-                logger.warning(f"DAS Exception: {exc}", exc_info=True)
+                logger.warning(f"{type_name(exc)}: {exc}", exc_info=True)
                 logger.warning("Got a corrupt response from the DAQ6510. Check log messages for 'DAS Exception'.")
                 time.sleep(1.0)
                 continue
@@ -244,7 +245,9 @@ def daq6510(count, interval, delay, channel_list, input_file: str):
 
 
 app = typer.Typer(
-    name="daq6510_mon", help="DAQ6510 Data Acquisition Unit, Keithley, temperature monitoring (monitoring)"
+    name="daq6510_mon",
+    help="DAQ6510 Data Acquisition Unit, Keithley, temperature monitoring (monitoring)",
+    no_args_is_help=True,
 )
 
 
@@ -270,3 +273,7 @@ def start(input_file: str = typer.Option("", help="YAML file containing the Setu
             msg = "Cannot start the DAQ6510 Monitoring Service"
             logger.exception(msg)
             rich.print(f"[red]{msg}.")
+
+
+if __name__ == "__main__":
+    sys.exit(app())
