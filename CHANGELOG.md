@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.18.1] - 2026-02-05
+
+This is a minor update of the DAQ6510:
+- Enhanced the DAQ6510 interface with default buffer usage, improved command formatting, and better response handling. 
+- Introduced verbose logging for socket operations in `SocketDevice`.
+- Updated sensor configuration to support multiple sensing types. 
+- Added unit tests for the DAQ6510 controller and proxy functionality to ensure reliability. 
+- Refactored the DAQ6510 monitoring script for better readability and structure.
+
 ## [0.18.0] - 2026-02-04
 
 ### Added
@@ -249,7 +258,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.0...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.1...HEAD
+[0.18.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.0...v0.18.1
 [0.18.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.17.4...v0.18.0
 [0.17.4]: https://github.com/IvS-KULeuven/cgse/compare/v0.17.3...v0.17.4
 [0.17.3]: https://github.com/IvS-KULeuven/cgse/compare/v0.17.2...v0.17.3
