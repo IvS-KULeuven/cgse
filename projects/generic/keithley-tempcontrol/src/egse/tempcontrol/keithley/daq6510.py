@@ -592,13 +592,14 @@ if __name__ == "__main__":
     buffer_count = daq.get_buffer_count()
     print(f"buffer {DEFAULT_BUFFER_1} holds {buffer_count} readings")
 
+    for sense, channels in [
+        ({"TEMPERATURE": [("TRANSDUCER", "FRTD"), ("RTD:FOUR", "PT100"), ("UNIT", "CELSIUS")]}, "(@101)"),
+        ({"TEMPERATURE": [("TRANSDUCER", "RTD"), ("RTD:TWO", "PT100"), ("UNIT", "CELSIUS")]}, "(@102)"),
+    ]:
+        daq.configure_sensors(channels, sense=sense)
+
     channels = create_channel_list((101, 102))
-
     print(channels)
-
-    sense_dict = {"TEMPERATURE": [("TRANSDUCER", "FRTD"), ("RTD:FOUR", "PT100"), ("UNIT", "KELVIN")]}
-
-    daq.configure_sensors(channels, sense=sense_dict)
 
     daq.setup_measurements(channel_list=channels)
 
