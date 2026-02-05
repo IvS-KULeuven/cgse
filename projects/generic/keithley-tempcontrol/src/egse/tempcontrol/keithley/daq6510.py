@@ -43,6 +43,9 @@ def decode_response(response: bytes) -> str | Failure:
     if isinstance(response, Failure):
         return response
 
+    if isinstance(response, memoryview):
+        response = response.tobytes()
+
     return response.decode().rstrip()
 
 
@@ -332,7 +335,9 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
 
         return self.daq.trans(command).decode() if response else self.daq.write(command)
 
-    def read_buffer(self, start: int, end: int, buffer_name: str = DEFAULT_BUFFER_1, elements: list[str] | None = None):
+    def read_buffer(
+        self, start: int, end: int, buffer_name: str = DEFAULT_BUFFER_1, elements: list[str] | None = None
+    ) -> bytes:
         """Reads specific data elements (measurements) from the given buffer.
 
         Elements that can be specified to read out:
