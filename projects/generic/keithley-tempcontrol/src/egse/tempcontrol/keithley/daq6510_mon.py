@@ -18,6 +18,7 @@ The monitoring service can be started as follows:
 
 import datetime
 import multiprocessing
+import os
 import sys
 import time
 from pathlib import Path
@@ -25,21 +26,25 @@ from typing import Any
 
 import rich
 import typer
+from urllib3.exceptions import NewConnectionError
 
 from egse.env import bool_env
 from egse.hk import read_conversion_dict
 from egse.log import logger
 from egse.logger import remote_logging
+from egse.metrics import get_metrics_repo
 from egse.response import Failure
 from egse.scpi import count_number_of_channels, get_channel_names
+from egse.settings import get_site_id
 from egse.setup import Setup, load_setup
 from egse.storage import StorageProxy, is_storage_manager_active
 from egse.storage.persistence import CSV
-from egse.system import SignalCatcher, flatten_dict, format_datetime, now
-from egse.tempcontrol.keithley.daq6510 import DAQ6510Proxy, DEFAULT_BUFFER_1
+from egse.system import SignalCatcher, flatten_dict, format_datetime, now, str_to_datetime, type_name
+from egse.tempcontrol.keithley.daq6510 import DAQ6510Proxy
 from egse.tempcontrol.keithley.daq6510_cs import is_daq6510_cs_active
 
 VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
+SITE_ID = get_site_id()
 
 
 def load_setup_from_input_file(input_file: str | Path) -> Setup | None:
@@ -66,8 +71,6 @@ def daq6510(count, interval, delay, channel_list, input_file: str):
 
     """
 
-    multiprocessing.current_process().name = "egse.daq6510.monitor"
-
     if input_file:
         setup = load_setup_from_input_file(input_file)
     else:
@@ -76,6 +79,9 @@ def daq6510(count, interval, delay, channel_list, input_file: str):
     if setup is None:
         logger.error("ERROR: Could not load setup.")
         sys.exit(1)
+
+    if VERBOSE_DEBUG:
+        logger.debug(f"Loaded setup: {setup}")
 
     if not hasattr(setup, "gse"):
         logger.error("ERROR: No GSE section in the loaded Setup.")
@@ -86,8 +92,8 @@ def daq6510(count, interval, delay, channel_list, input_file: str):
         column_names = list(hk_conversion_table.values())
     except Exception as exc:
         logger.warning(f"WARNING: Failed to read telemetry dictionary: {exc}")
-        hk_conversion_table = {}
-        column_names = []
+        hk_conversion_table = {"101": "PT100-4", "102": "PT100-2"}
+        column_names = list(hk_conversion_table.values())
 
     if not is_daq6510_cs_active():
         logger.error(
@@ -121,18 +127,7 @@ def daq6510(count, interval, delay, channel_list, input_file: str):
     channel_count = count_number_of_channels(channel_list)
     channel_names = get_channel_names(channel_list)
 
-    # FIXME:
-    #     Metrics shall be ingested in InfluxDB
-
-    # DAQ_METRICS = {}
-    # for channel in channel_names:
-    #     metrics_name = hk_conversion_table[channel]
-    #     DAQ_METRICS[metrics_name] = Gauge(
-    #         f"{metrics_name}",
-    #         f"The current measure for the sensor connected to channel {channel} ({metrics_name}) on the DAQ6510",
-    #     )
-
-    # start_http_server(DAS.METRICS_PORT_DAQ6510)
+    metrics_client = setup_metrics_client()
 
     # Initialize some variables that will be used for registration to the Storage Manager
 
@@ -176,13 +171,11 @@ def daq6510(count, interval, delay, channel_list, input_file: str):
 
         logger.info(f"global: {channel_list=}, {channel_count=}")
 
-        daq.setup_measurements(buffer_name=DEFAULT_BUFFER_1, channel_list=channel_list)
+        daq.setup_measurements(channel_list=channel_list)
 
         while True:
             try:
-                response = daq.perform_measurement(
-                    buffer_name=DEFAULT_BUFFER_1, channel_list=channel_list, count=count, interval=interval
-                )
+                response = daq.perform_measurement(channel_list=channel_list, count=count, interval=interval)
 
                 if killer.term_signal_received:
                     break
@@ -225,7 +218,7 @@ def daq6510(count, interval, delay, channel_list, input_file: str):
                 for channel in [measure[0] for measure in response]:
                     if channel in hk_conversion_table:
                         metrics_name = hk_conversion_table[channel]
-                        # DAQ_METRICS[metrics_name].set(data[metrics_name])
+                        save_metrics(metrics_client, origin, data)
 
                 # wait for the next measurement to be done (delay)
 
@@ -235,7 +228,7 @@ def daq6510(count, interval, delay, channel_list, input_file: str):
                 logger.debug("Interrupt received, terminating...")
                 break
             except Exception as exc:
-                logger.warning(f"DAS Exception: {exc}", exc_info=True)
+                logger.warning(f"{type_name(exc)}: {exc}", exc_info=True)
                 logger.warning("Got a corrupt response from the DAQ6510. Check log messages for 'DAS Exception'.")
                 time.sleep(1.0)
                 continue
@@ -245,8 +238,50 @@ def daq6510(count, interval, delay, channel_list, input_file: str):
     logger.info("DAQ6510 Data Acquisition System terminated.")
 
 
+def setup_metrics_client():
+    token = os.getenv("INFLUXDB3_AUTH_TOKEN")
+    project = os.getenv("PROJECT")
+
+    if project and token:
+        metrics_client = get_metrics_repo(
+            "influxdb", {"host": "http://localhost:8181", "database": project, "token": token}
+        )
+        metrics_client.connect()
+    else:
+        metrics_client = None
+        logger.warning(
+            "INFLUXDB3_AUTH_TOKEN and/or PROJECT environment variable is not set. "
+            "Metrics will not be propagated to InfluxDB."
+        )
+
+    return metrics_client
+
+
+def save_metrics(metrics_client, origin, data):
+    try:
+        if metrics_client:
+            point = {
+                "measurement": origin.lower(),
+                "tags": {"site_id": SITE_ID, "origin": origin},
+                "fields": {hk_name.lower(): data[hk_name] for hk_name in data if hk_name != "timestamp"},
+                "time": str_to_datetime(data["timestamp"]),
+            }
+            metrics_client.write(point)
+        else:
+            logger.warning(
+                f"Could not write {origin} metrics to the time series database (self.metrics_client is None)."
+            )
+    except NewConnectionError:
+        logger.warning(
+            f"No connection to the time series database could be established to propagate {origin} metrics.  Check "
+            f"whether this service is (still) running."
+        )
+
+
 app = typer.Typer(
-    name="daq6510_mon", help="DAQ6510 Data Acquisition Unit, Keithley, temperature monitoring (monitoring)"
+    name="daq6510_mon",
+    help="DAQ6510 Data Acquisition Unit, Keithley, temperature monitoring (monitoring)",
+    no_args_is_help=True,
 )
 
 
@@ -272,3 +307,7 @@ def start(input_file: str = typer.Option("", help="YAML file containing the Setu
             msg = "Cannot start the DAQ6510 Monitoring Service"
             logger.exception(msg)
             rich.print(f"[red]{msg}.")
+
+
+if __name__ == "__main__":
+    sys.exit(app())

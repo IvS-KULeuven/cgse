@@ -43,6 +43,9 @@ def decode_response(response: bytes) -> str | Failure:
     if isinstance(response, Failure):
         return response
 
+    if isinstance(response, memoryview):
+        response = response.tobytes()
+
     return response.decode().rstrip()
 
 
@@ -160,7 +163,7 @@ class DAQ6510Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string="TRAC:ACTUAL? ${buffer_name}")
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string='TRAC:ACTUAL? "${buffer_name}"')
     def get_buffer_count(self, buffer_name: str = DEFAULT_BUFFER_1):
         """Returns the number of data points in the specified buffer.
 
@@ -170,8 +173,12 @@ class DAQ6510Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string="TRACE:POINTS? ${buffer_name}")
-    def get_buffer_capacity(self, buffer_name: str):
+    @dynamic_command(
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string='TRACE:POINTS? "${buffer_name}"',
+        process_cmd_string=add_lf,
+    )
+    def get_buffer_capacity(self, buffer_name: str = DEFAULT_BUFFER_1):
         """Returns the capacity of the specified buffer.
 
         Args:
@@ -180,7 +187,7 @@ class DAQ6510Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="TRACE:DELETE ${buffer_name}")
+    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string='TRACE:DELETE "${buffer_name}"')
     def delete_buffer(self, buffer_name: str) -> None:
         """Deletes the specified buffer.
 
@@ -223,7 +230,7 @@ class DAQ6510Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_interface
-    def setup_measurements(self, *, buffer_name: str, channel_list: str):
+    def setup_measurements(self, *, buffer_name: str = DEFAULT_BUFFER_1, channel_list: str):
         """Sets up the measurements for the given channel list.
 
         Args:
@@ -234,11 +241,13 @@ class DAQ6510Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_interface
-    def perform_measurement(self, *, buffer_name: str, channel_list: str, count: int, interval: int) -> list:
+    def perform_measurement(
+        self, *, buffer_name: str = DEFAULT_BUFFER_1, channel_list: str, count: int, interval: int
+    ) -> list:
         """Performs the actual measurements.
 
         Args:
-            buffer_name (str): Name of the buffer
+            buffer_name (str): Name of the buffer [default: defbuffer1]
             channel_list (str): List of channels, as understood by the device
             count (int): Number of measurements to perform
             interval (int): Interval between measurements [s]
@@ -326,7 +335,9 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
 
         return self.daq.trans(command).decode() if response else self.daq.write(command)
 
-    def read_buffer(self, start: int, end: int, buffer_name: str = DEFAULT_BUFFER_1, elements: list[str] | None = None):
+    def read_buffer(
+        self, start: int, end: int, buffer_name: str = DEFAULT_BUFFER_1, elements: list[str] | None = None
+    ) -> bytes:
         """Reads specific data elements (measurements) from the given buffer.
 
         Elements that can be specified to read out:
@@ -507,7 +518,7 @@ class DAQ6510Controller(DAQ6510Interface, DynamicCommandMixin):
 
         # Read out the buffer
 
-        logger.debug("Buffer count = ", self.get_buffer_count())
+        logger.debug(f"Buffer count = {self.get_buffer_count()}")
 
         num_sensors = count_number_of_channels(channel_list)
 
@@ -560,42 +571,3 @@ class DAQ6510Proxy(DynamicProxy, DAQ6510Interface):
         endpoint = get_endpoint(SERVICE_TYPE, protocol, hostname, port)
 
         super().__init__(endpoint, timeout=timeout)
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=20)
-
-    print(f'{get_channel_names("(@101:105)")=}')
-    print(f'{get_channel_names("(@101, 102, 103, 105)")=}')
-    # sys.exit(0)
-
-    daq = DAQ6510Controller()
-    daq.connect()
-    daq.reset()
-
-    print(daq.info())
-
-    buffer_capacity = daq.get_buffer_capacity()
-    print(f"buffer {DEFAULT_BUFFER_1} can still hold {buffer_capacity} readings")
-
-    buffer_count = daq.get_buffer_count()
-    print(f"buffer {DEFAULT_BUFFER_1} holds {buffer_count} readings")
-
-    channels = create_channel_list((101, 102))
-
-    print(channels)
-
-    sense_dict = {"TEMPERATURE": [("TRANSDUCER", "FRTD"), ("RTD:FOUR", "PT100"), ("UNIT", "KELVIN")]}
-
-    daq.configure_sensors(channels, sense=sense_dict)
-
-    daq.setup_measurements(channel_list=channels)
-
-    meas_response = daq.perform_measurement(channel_list=channels, count=5, interval=1)
-
-    print(meas_response)
-
-    buffer_count = daq.get_buffer_count()
-    print(f"buffer {DEFAULT_BUFFER_1} holds {buffer_count} readings")
-
-    daq.disconnect()
