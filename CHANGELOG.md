@@ -10,16 +10,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [0.18.0] - 2026-02-04
 
+### Added
+
 - Implementation of KIKUSUI PMX-A power supply
+- The project is now licensed under the MIT license.
+
+### Changed
+
 - Refactoring Keithley DAQ6510
+  - Synchronous device, controller, control server and monitoring needed an update. 
+  - Asynchronous device and monitoring have been tested, but need an update to use the Setup for configuration.
+  - set default timeout value for Keithley DAQ6510 configuration
+  - set default port number of the DAQ6510 device to 5025
+  - the DAQ6510 synchronous device implementation is now a `SocketDevice`
+
+- on `cgse-common`
+  - improvements to the asynchronous SCPI interface
+  - some devices write an identification to the socket after connection, some devices don't. The read-after-connect can now be disabled/enabled.
+  - functions to create and inspect channel lists have been added to `scpi.py`
+  - `DeviceConnectionError` now also inherits from `ConnectionError`
+  - `SocketDevice` has been improved and now takes into account the separator that was passed into the constructor.
+
+### Fixed
+
+- The SetupManager implements a lazy initialization to prevent circular imports by plugins. The default source for the Setups was not properly updated after lazy initialization. That is now fixed.
 
 ## [0.17.4] - 2026-01-27
 
+### Added
+
 - Extracting HK from Ariel facility database
-- Re-shuffled hexapod settings
-- Cleaned up cgse-coordinates
-- Maintenance on cgse-core
 - Implementation of Digilent MEASURpoint DT8874
+- Preliminary 1st version of the TCU UI
+- Added synchronous and asynchronous service connectors for robust service connection management with retry, backoff, and circuit breaker logic. These classes is intended to be subclassed for managing persistent connections to external services (such as devices, databases, or remote APIs) that may be unreliable or temporarily unavailable.
+- Added SocketDevice and AsyncSocketDevice implementations. Devices that connect through Ethernet can inherit from these classes to handle their basic `read()`, `write()`, `trans()`, and `query()` methods.
+
+### Changed
+
+- Re-shuffled hexapod settings
+- Enable TCU CS to run without core services
+- Maintenance on cgse-core
+
+### Fixed
+- Cleaned up cgse-coordinates, removed obsolete settings
+- Fixed timeouts and signals for Dummy device code
 
 
 ## [0.17.3] - 2025-11-29
