@@ -176,13 +176,11 @@ def daq6510(count, interval, delay, channel_list, input_file: str):
 
         logger.info(f"global: {channel_list=}, {channel_count=}")
 
-        daq.setup_measurements(buffer_name=DEFAULT_BUFFER_1, channel_list=channel_list)
+        daq.setup_measurements(channel_list=channel_list)
 
         while True:
             try:
-                response = daq.perform_measurement(
-                    buffer_name=DEFAULT_BUFFER_1, channel_list=channel_list, count=count, interval=interval
-                )
+                response = daq.perform_measurement(channel_list=channel_list, count=count, interval=interval)
 
                 if killer.term_signal_received:
                     break
