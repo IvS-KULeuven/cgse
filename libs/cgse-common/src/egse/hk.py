@@ -650,9 +650,9 @@ def read_conversion_dict(storage_mnemonic: str, use_site: bool = False, setup: O
     except AttributeError:
         raise SetupError("Version of the telemetry dictionary not specified in the current setup")
 
-    storage_mnemonic_col = hk_info_table[TmDictionaryColumns.STORAGE_MNEMONIC].values
-    correct_name_col = hk_info_table[TmDictionaryColumns.CORRECT_HK_NAMES].values
-    original_name_col = hk_info_table[TmDictionaryColumns.ORIGINAL_EGSE_HK_NAMES].values
+    storage_mnemonic_col = np.array(hk_info_table[TmDictionaryColumns.STORAGE_MNEMONIC].values)
+    correct_name_col = np.array(hk_info_table[TmDictionaryColumns.CORRECT_HK_NAMES].values)
+    original_name_col = np.array(hk_info_table[TmDictionaryColumns.ORIGINAL_EGSE_HK_NAMES].values)
 
     selection = np.where(storage_mnemonic_col == storage_mnemonic)
 
