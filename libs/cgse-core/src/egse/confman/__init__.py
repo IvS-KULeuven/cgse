@@ -289,7 +289,7 @@ _cached_setup_info = {}
 class SetupInfo(NamedTuple):
     path: Path
     site_id: str
-    cam_id: str
+    sut_id: str
     description: str
 
 
@@ -321,9 +321,9 @@ def _populate_cached_setup_info():
         if id := setup.get_id():
             id = int(id)
             site_id = _get_site_id_for_setup(setup)
-            cam_id = _get_sut_id_for_setup(setup)
+            sut_id = _get_sut_id_for_setup(setup)
             description = _get_description_for_setup(setup)
-            setup_info[id] = SetupInfo(fn, site_id, cam_id, description)
+            setup_info[id] = SetupInfo(fn, site_id, sut_id, description)
         else:
             raise InternalError(f"Setup loaded without an ID, {fn=}")
 
@@ -347,10 +347,10 @@ def _add_setup_info_to_cache(setup: Setup):
     _fn = Path(_fn)
 
     site_id = _get_site_id_for_setup(setup)
-    cam_id = _get_sut_id_for_setup(setup)
+    sut_id = _get_sut_id_for_setup(setup)
     description = _get_description_for_setup(setup)
 
-    _cached_setup_info[_id] = SetupInfo(_fn, site_id, cam_id, description)
+    _cached_setup_info[_id] = SetupInfo(_fn, site_id, sut_id, description)
 
 
 def _print_cached_setup_info():
@@ -427,18 +427,18 @@ def _get_description_for_setup(setup: Setup, setup_id: int = None) -> str:
     return description or f"no description found for Setup {setup_id}"
 
 
-def _get_sut_id_for_setup(setup: Setup) -> str:
+def _get_sut_id_for_setup(setup: Setup) -> str | None:
     try:
         if "id" in setup.sut:
-            sut_id = setup.sut.id
+            sut_id = setup.sut.id.lower()
         elif "ID" in setup.sut:
-            sut_id = setup.sut.ID
+            sut_id = setup.sut.ID.lower()
         else:
             sut_id = None
     except AttributeError:
         sut_id = None
 
-    return sut_id or "no sut_id"
+    return sut_id
 
 
 def _get_site_id_for_setup(setup: Setup) -> str:
@@ -565,7 +565,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         self._obsid_start_dt: str | None = None
         self._setup: Setup | None = None
         self._setup_id: int | None = None
-        self._sut_name: str | None = None
+        self._sut_id: str | None = None
         self._control_server: ControlServer | None = control_server
 
         self.register_to_storage()
@@ -619,7 +619,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         self._obsid_start_dt = format_datetime()
 
         if self._storage:
-            response = self._storage.start_observation(self._obsid, self._sut_name)
+            response = self._storage.start_observation(self._obsid, self._sut_id)
         else:
             return Failure("Couldn't send start observation to Storage Manager, no Storage Manager available.")
 
@@ -756,7 +756,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         try:
             self._setup = Setup.from_yaml_file(setup_file)
             self._setup_id = setup_id
-            self._sut_name = _get_sut_id_for_setup(self._setup)
+            self._sut_id = _get_sut_id_for_setup(self._setup)
             logger.info(f"New Setup loaded from {setup_file}")
             save_last_setup_id(self._setup_id)
 
@@ -768,12 +768,6 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
             return self._setup
         except SettingsError as exc:
             return Failure(f"The Setup file can not be loaded from {setup_file}.", exc)
-        except AttributeError as exc:
-            msg = f"The Setup [id={setup_id}] has no camera.ID entry."
-            logger.error(msg, exc_info=True)
-            # FIXME: if we come here, shouldn't we load the zero Setup so that the problem of the
-            #        missing camera ID gets solved?
-            return Failure(msg)
 
     def get_setup(self, setup_id: int = None) -> Union[Setup, Failure]:
         """
@@ -870,8 +864,8 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
             # FIXME: are we sure setup.get_filename() returns a Path?
             setup_site, setup_id = disentangle_filename(str(setup.get_filename()))
             description = _get_description_for_setup(setup, int(setup_id))
-            cam_id = _get_sut_id_for_setup(setup)
-            setup_list.append((setup_id, setup_site, description, cam_id))
+            sut_id = _get_sut_id_for_setup(setup)
+            setup_list.append((setup_id, setup_site, description, sut_id))
 
         # Sort by site, then by id
 
@@ -940,7 +934,7 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
             self._setup = setup
             self._setup_id = setup_id
             logger.info(f"New Setup was submitted and loaded: {setup_id=}")
-            self._sut_name = self._setup.camera.ID.lower()
+            self._sut_id = _get_sut_id_for_setup(setup)
             save_last_setup_id(setup_id)
 
             with EventPublisher() as pub:

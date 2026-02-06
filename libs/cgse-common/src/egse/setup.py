@@ -118,7 +118,7 @@ __all__ = [
     "Setup",
     "setup_ctx",
     "disentangle_filename",
-    "navdict",  # noqa: ignore typo
+    "navdict",
     "list_setups",
     "load_setup_from_disk",
     "load_setup",
@@ -160,7 +160,6 @@ from egse.log import logger
 from egse.plugin import HierarchicalEntryPoints
 from egse.system import format_datetime
 from egse.system import sanity_check
-
 
 setup_ctx: ContextVar[Setup | None] = ContextVar("setup", default=None)
 
@@ -323,7 +322,7 @@ register_directive("pandas", _load_pandas)
 
 class Setup(NavigableDict):
     """The Setup class represents a version of the configuration of the test facility, the
-    test setup and the Camera Under Test (CUT)."""
+    test setup and the System Under Test (SUT)."""
 
     def __init__(self, nav_dict: NavigableDict | dict = None, label: str = None):
         try:
@@ -419,8 +418,9 @@ class Setup(NavigableDict):
 
     @staticmethod
     def compare(setup_1: NavigableDict, setup_2: NavigableDict):
-        from egse.device import DeviceInterface
         from deepdiff import DeepDiff
+
+        from egse.device import DeviceInterface
 
         return DeepDiff(setup_1, setup_2, exclude_types=[DeviceInterface])
 
@@ -823,7 +823,9 @@ def submit_setup(setup: Setup, description: str, **kwargs) -> str | None:
 
 def main(args: list = None):  # pragma: no cover
     import argparse
+
     from rich import print
+
     from egse.config import find_files
     from egse.env import setup_env
 
