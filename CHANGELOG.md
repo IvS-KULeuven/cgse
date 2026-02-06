@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.18.2] - 2026-02-06
+
+- Allowing for "sut" instead of "camera" in setup, when submitting setup
+- Bug fix in reading the HK conversion dictionary
+
 ## [0.18.1] - 2026-02-05
 
 This is a minor update of the DAQ6510:
