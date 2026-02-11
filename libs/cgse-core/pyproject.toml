@@ -67,7 +67,7 @@ setup_provider = "egse._setup_core:CoreSetupProvider"
 "Storage Manager" = "SM_CS"
 "Configuration Manager" = "CM_CS"
 "Process Manager" = "PM_CS"
-"Logger" = "LOGGER"
+"Logger" = "LOG_CS"
 
 [tool.pytest.ini_options]
 pythonpath = "src"
