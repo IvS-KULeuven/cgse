@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+- Update core services entrypoint for Logger in pyproject.toml of cgse-core
+
 ## [0.18.2] - 2026-02-06
 
 - Allowing for "sut" instead of "camera" in setup, when submitting setup
