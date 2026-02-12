@@ -97,7 +97,8 @@ class RegistryClient:
         self.disconnect()
 
     def connect(self):
-        # self.logger.debug("Connecting to service registry...")
+        if VERBOSE_DEBUG:
+            self.logger.debug("Connecting to service registry...")
 
         # REQ socket for request-reply pattern
         self.req_socket = self.context.socket(zmq.DEALER)
@@ -121,7 +122,8 @@ class RegistryClient:
         self.hb_socket.connect(self.registry_hb_endpoint)
 
     def disconnect(self):
-        # self.logger.debug("Disconnecting from service registry...")
+        if VERBOSE_DEBUG:
+            self.logger.debug("Disconnecting from service registry...")
 
         if self.req_socket:
             self.poller.unregister(self.req_socket)
@@ -154,7 +156,9 @@ class RegistryClient:
         timeout_ms = int(timeout * 1000) if timeout else self.timeout_ms
 
         try:
-            self.logger.debug(f"Sending request: {request}")
+            if VERBOSE_DEBUG:
+                self.logger.debug(f"Sending request: {request}")
+
             self.req_socket.send_multipart([msg_type.value, json.dumps(request).encode()])
 
             if msg_type == MessageType.REQUEST_NO_REPLY:
@@ -169,7 +173,8 @@ class RegistryClient:
 
                     if message_type == MessageType.RESPONSE:
                         response = json.loads(message_data)
-                        self.logger.debug(f"Received response: {response}")
+                        if VERBOSE_DEBUG:
+                            self.logger.debug(f"Received response: {response}")
                         return response
                     else:
                         return {
@@ -204,7 +209,9 @@ class RegistryClient:
         """
 
         try:
-            self.logger.debug(f"Sending heartbeat request: {request}")
+            if VERBOSE_DEBUG:
+                self.logger.debug(f"Sending heartbeat request: {request}")
+
             self.hb_socket.send_string(json.dumps(request))
 
             ready_sockets, _, _ = zmq.select([self.hb_socket], [], [], timeout=HEART_BEAT_TIMEOUT)
@@ -212,7 +219,8 @@ class RegistryClient:
             if ready_sockets:
                 response_json = self.hb_socket.recv_string()
                 response = json.loads(response_json)
-                self.logger.debug(f"Received response: {response}")
+                if VERBOSE_DEBUG:
+                    self.logger.debug(f"Received response: {response}")
                 return response
             else:
                 self.logger.error(f"Request timed out after {HEART_BEAT_TIMEOUT:.2f}s")
@@ -348,7 +356,8 @@ class RegistryClient:
 
         response = self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
-        # self.logger.debug(f"{response = }")
+        if VERBOSE_DEBUG:
+            self.logger.debug(f"{response = }")
 
         if response.get("success"):
             service = response.get("service")
@@ -479,7 +488,8 @@ class RegistryClient:
                         self.reregister()
 
                 else:
-                    self.logger.debug(f"Heartbeat succeeded: {response.get('message')}")
+                    if VERBOSE_DEBUG:
+                        self.logger.debug(f"Heartbeat succeeded: {response.get('message')}")
 
             except Exception as exc:
                 self.logger.error(f"Error sending heartbeat: {exc}")
@@ -587,7 +597,8 @@ class AsyncRegistryClient:
         self.disconnect()
 
     def connect(self):
-        self.logger.debug("Connecting to service registry...")
+        if VERBOSE_DEBUG:
+            self.logger.debug("Connecting to service registry...")
 
         # REQ socket for request-reply pattern
         self.req_socket = self.context.socket(zmq.DEALER)
@@ -608,7 +619,8 @@ class AsyncRegistryClient:
         self.hb_socket.connect(self.registry_hb_endpoint)
 
     def disconnect(self):
-        self.logger.debug("Disconnecting from service registry...")
+        if VERBOSE_DEBUG:
+            self.logger.debug("Disconnecting from service registry...")
 
         if self.req_socket:
             self.req_socket.close(linger=0)
@@ -643,7 +655,9 @@ class AsyncRegistryClient:
 
         timeout = timeout or self.timeout
         try:
-            self.logger.debug(f"Sending request: {request}")
+            if VERBOSE_DEBUG:
+                self.logger.debug(f"Sending request: {request}")
+
             await self.req_socket.send_multipart([msg_type.value, json.dumps(request).encode()])
 
             try:
@@ -655,7 +669,8 @@ class AsyncRegistryClient:
 
                     if message_type == MessageType.RESPONSE:
                         response = json.loads(message_data)
-                        self.logger.debug(f"Received response: {response}")
+                        if VERBOSE_DEBUG:
+                            self.logger.debug(f"Received response: {response}")
                         return response
                     else:
                         return {
@@ -692,13 +707,16 @@ class AsyncRegistryClient:
         assert self.hb_socket is not None, "HB socket is not connected, cannot send heartbeat request."
 
         try:
-            self.logger.debug(f"Sending heartbeat request: {request}")
+            if VERBOSE_DEBUG:
+                self.logger.debug(f"Sending heartbeat request: {request}")
+
             await self.hb_socket.send_string(json.dumps(request))
 
             try:
                 response_json = await asyncio.wait_for(self.hb_socket.recv_string(), timeout=HEART_BEAT_TIMEOUT)
                 response = json.loads(response_json)
-                self.logger.debug(f"Received heartbeat response: {response = }")
+                if VERBOSE_DEBUG:
+                    self.logger.debug(f"Received heartbeat response: {response = }")
                 return response
             except asyncio.TimeoutError:
                 self.logger.error(f"Heartbeat request timed out after {HEART_BEAT_TIMEOUT:.2f}s")
@@ -1152,8 +1170,9 @@ class AsyncRegistryClient:
             # We can not terminate the context, because we use a global instance, i.e. a singleton context.
             # When we try to terminate it, even after checking if it was closed, it raises an exception.
             if hasattr(self, "context") and self.context:
-                self.logger.info(f"{self.context = !r}")
-                self.logger.info(f"{self.context._sockets = !r}")
+                if VERBOSE_DEBUG:
+                    self.logger.debug(f"{self.context = !r}")
+                    self.logger.debug(f"{self.context._sockets = !r}")
                 # The zmq context instance is the global singleton instance.
                 # Terminating it here would affect other parts of the application using zmq.
                 # if not self.context.closed:
