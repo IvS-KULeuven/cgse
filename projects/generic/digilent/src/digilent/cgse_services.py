@@ -35,11 +35,11 @@ def start_dt8874(
 
 
 @dt8874.command(name="stop")
-def stop_tcu():
+def stop_dt8874():
     """Stops the Digilent MEASURpoint DT8874 Control Server."""
 
     rich.print("Stopping the Digilent MEASURpoint DT8874 Control Server")
-    out = redirect_output_to_log("tcu_cs.stop.log")
+    out = redirect_output_to_log("dt8874_cs.stop.log")
 
     cmd = [sys.executable, "-m", "egse.digilent.measurpoint.dt8874.dt8874_cs", "stop"]
     subprocess.Popen(cmd, stdout=out, stderr=out, stdin=subprocess.DEVNULL, close_fds=True)

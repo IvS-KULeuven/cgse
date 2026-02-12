@@ -12,7 +12,7 @@ Digilent MEASURpoint DT8874:
 Digilent MEASURpoint DT8874 Control Server:
 
     SERVICE_TYPE:              DT8874
-    PROCESS_NAME:           dt8874_cs
+    PROCESS_NAME:              DT8874
     PROTOCOL:                     tcp
     HOSTNAME:               localhost          # The hostname that client shall connect to, e.g. pleiad01 @ KU Leuven
     COMMANDING_PORT:                0          # The port on which the controller listens to commands - REQ-REP
