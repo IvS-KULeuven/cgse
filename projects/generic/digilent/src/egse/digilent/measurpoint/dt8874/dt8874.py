@@ -32,6 +32,28 @@ class Dt8874Simulator(Dt8874Interface):
         super().__init__()
 
         self._is_pwd_protected_cmds_enabled = True
+        self._is_connected = True
+        self._is_pwd_protected_cmds_enabled = False
+
+    # noinspection PyMethodMayBeStatic
+    def is_simulator(self):
+        return True
+
+    # noinspection PyMethodMayBeStatic
+    def is_connected(self):
+        return self._is_connected
+
+    def connect(self):
+        self._is_connected = True
+
+    def disconnect(self):
+        self._is_connected = False
+
+    def reconnect(self):
+        self._is_connected = True
+
+    def is_pwd_protected_cmds_enabled(self):
+        return self._is_pwd_protected_cmds_enabled
 
     def enable_pwd_protected_cmds(self, password: str):
         self._is_pwd_protected_cmds_enabled = True
