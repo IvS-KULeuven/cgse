@@ -174,11 +174,11 @@ class ControlServer(metaclass=abc.ABCMeta):
         self.poller.register(self.event_subscription.socket, zmq.POLLIN)
 
         token = os.getenv("INFLUXDB3_AUTH_TOKEN")
-        project = os.getenv("PROJECT")
+        database_name = os.getenv("INFLUXDB3_DATABASE_NAME")
 
-        if project and token:
+        if database_name and token:
             self.metrics_client = get_metrics_repo(
-                "influxdb", {"host": "http://localhost:8181", "database": project, "token": token}
+                "influxdb", {"host": "http://localhost:8181", "database": database_name, "token": token}
             )
             # self.metrics_client = get_metrics_repo("duckdb", {"db_path": "duckdb_metrics.db", "table_name": "cs_timeseries"})
             self.metrics_client.connect()
