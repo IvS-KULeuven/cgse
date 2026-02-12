@@ -180,12 +180,16 @@ class AsyncRegistryServer:
         await self.backend.close()
 
         # Close ZeroMQ sockets
-        self.req_socket.close()
-        self.pub_socket.close()
-        self.hb_socket.close()
+        if self.req_socket:
+            self.req_socket.close()
+        if self.pub_socket:
+            self.pub_socket.close()
+        if self.hb_socket:
+            self.hb_socket.close()
 
         # Close context
-        self.context.term()
+        if self.context:
+            self.context.term()
 
         self.logger.info("Async registry server shutdown complete")
 
@@ -263,12 +267,16 @@ class AsyncRegistryServer:
             event_type: Type of event (register, deregister, expire, etc.)
             data: Event payload
         """
+        assert self.pub_socket is not None, "PUB socket is not connected, cannot publish events."
+
         event = {"type": event_type, "timestamp": int(time.time()), "data": data}
 
         try:
             # Prefix with event type for subscribers that filter by type
             await self.pub_socket.send_multipart([event_type.encode("utf-8"), json.dumps(event).encode("utf-8")])
-            self.logger.debug(f"Published {event_type} event: {data}")
+
+            if VERBOSE_DEBUG:
+                self.logger.debug(f"Published {event_type} event: {data}")
         except Exception as exc:
             self.logger.error(f"Failed to publish event: {exc}")
 
@@ -320,12 +328,15 @@ class AsyncRegistryServer:
             response: a dictionary with the status and response
 
         """
+        assert self.req_socket is not None, "REQ socket is not connected, cannot send response."
+
         if msg_type == MessageType.REQUEST_WITH_REPLY:
             await self.req_socket.send_multipart([client_id, MessageType.RESPONSE.value, json.dumps(response).encode()])
 
     async def _handle_register(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle a service registration request."""
-        self.logger.info(f"Handle registration request: {request}")
+        if VERBOSE_DEBUG:
+            self.logger.debug(f"Handle registration request: {request}")
 
         if "service_info" not in request:
             return {"success": False, "error": "Missing required field: service_info"}
@@ -362,7 +373,8 @@ class AsyncRegistryServer:
         """Handle a service de-registration request."""
         service_id = request.get("service_id")
 
-        self.logger.info(f"Handle de-registration request: {request}")
+        if VERBOSE_DEBUG:
+            self.logger.debug(f"Handle de-registration request: {request}")
 
         if not service_id:
             return {"success": False, "error": "Missing required field: service_id"}
@@ -385,7 +397,8 @@ class AsyncRegistryServer:
         """Handle a service heartbeat request."""
         service_id = request.get("service_id")
 
-        self.logger.debug(f"Handle renew request: {request}")
+        if VERBOSE_DEBUG:
+            self.logger.debug(f"Handle renew request: {request}")
 
         if not service_id:
             return {"success": False, "error": "Missing required field: service_id"}
@@ -411,7 +424,8 @@ class AsyncRegistryServer:
                     # Receive heartbeat (non-blocking with timeout)
                     message_parts = await asyncio.wait_for(self.hb_socket.recv_multipart(), timeout=1.0)
 
-                    self.logger.debug(f"{message_parts=}")
+                    if VERBOSE_DEBUG:
+                        self.logger.debug(f"{message_parts=}")
 
                     if len(message_parts) == 2:
                         client_id = message_parts[0]
@@ -419,7 +433,7 @@ class AsyncRegistryServer:
 
                         # Parse the request
                         request = json.loads(request)
-                        self.logger.info(f"Received heartbeat request: {request}")
+                        self.logger.debug(f"Received heartbeat request: {request}")
 
                         response = await self._handle_renew(request)
                         if VERBOSE_DEBUG:
@@ -451,7 +465,8 @@ class AsyncRegistryServer:
 
         service_id = request.get("service_id")
 
-        self.logger.debug(f"Handle get request: {request}")
+        if VERBOSE_DEBUG:
+            self.logger.debug(f"Handle get request: {request}")
 
         if not service_id:
             return {"success": False, "error": "Missing required field: service_id"}
@@ -468,7 +483,8 @@ class AsyncRegistryServer:
         """Handle a request to list services."""
         service_type = request.get("service_type")
 
-        self.logger.debug(f"Handle list request: {request}")
+        if VERBOSE_DEBUG:
+            self.logger.debug(f"Handle list request: {request}")
 
         # List the services
         services = await self.backend.list_services(service_type)
@@ -482,7 +498,8 @@ class AsyncRegistryServer:
         """Handle a service discovery request."""
         service_type = request.get("service_type")
 
-        self.logger.debug(f"Handle discover request for service type: {service_type}")
+        if VERBOSE_DEBUG:
+            self.logger.debug(f"Handle discover request for service type: {service_type}")
 
         if not service_type:
             return {"success": False, "error": "Missing required field: service_type"}
@@ -498,7 +515,8 @@ class AsyncRegistryServer:
     async def _handle_info(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle the info request and send information about the registry server."""
 
-        self.logger.debug(f"Handle info request: {request}")
+        if VERBOSE_DEBUG:
+            self.logger.debug(f"Handle info request: {request}")
 
         # List the services
         services = await self.backend.list_services()
@@ -515,14 +533,16 @@ class AsyncRegistryServer:
     async def _handle_health(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle a health check request."""
 
-        self.logger.debug(f"Handle health request: {request}")
+        if VERBOSE_DEBUG:
+            self.logger.debug(f"Handle health request: {request}")
 
         return {"success": True, "status": "ok", "timestamp": int(time.time())}
 
     async def _handle_terminate(self, request: dict[str, Any]) -> dict[str, Any]:
         """Handle a termination request."""
 
-        self.logger.debug(f"Handle termination request: {request}")
+        if VERBOSE_DEBUG:
+            self.logger.debug(f"Handle termination request: {request}")
 
         self.stop()
 
