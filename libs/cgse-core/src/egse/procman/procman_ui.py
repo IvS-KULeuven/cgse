@@ -2,14 +2,16 @@ import multiprocessing
 import pickle
 import subprocess
 import threading
-import time
 from difflib import SequenceMatcher
 from enum import Enum
 from pathlib import Path
 from typing import Union
 
 import sys
+import time
 import zmq
+from PyQt5.QtGui import QFont
+from distutils.spawn import find_executable
 from qtpy.QtCore import QLockFile
 from qtpy.QtCore import QObject
 from qtpy.QtCore import QThread
@@ -26,6 +28,7 @@ from qtpy.QtWidgets import QMainWindow
 from qtpy.QtWidgets import QMessageBox
 from qtpy.QtWidgets import QScrollArea
 from qtpy.QtWidgets import QVBoxLayout, QGroupBox
+from zmq.backend.cython._zmq import ZMQError
 
 from egse.confman import ConfigurationManagerProxy, is_configuration_manager_active
 from egse.gui import show_info_message
@@ -42,7 +45,7 @@ from egse.setup import Setup
 from egse.system import do_every
 from egse.zmq_ser import set_address_port
 
-MAX_SLEEP = 10
+UPDATE_INTERVAL = 30
 
 DEVICE_CMD_ENTRY_POINT = "cgse.service.device_command"
 GUI_SCRIPTS_ENTRY_POINT = "gui_scripts"
@@ -111,19 +114,32 @@ def get_cgse_ui(device_proxy: str) -> Union[str, None]:
 
     module_name = device_proxy[7:].rsplit(".", 1)[0]
     entry_point_values = []
-    for ep in sorted(entry_points(GUI_SCRIPTS_ENTRY_POINT), key=lambda x: x.name):
-        entry_point_values.append(ep.name)
+    for ep in sorted(entry_points(DEVICE_CMD_ENTRY_POINT), key=lambda x: x.name):
+        entry_point_values.append(ep.value)
 
     similarity_scores = [
         SequenceMatcher(None, entry_point_value, module_name).ratio() for entry_point_value in entry_point_values
     ]
     best_match_index = similarity_scores.index(max(similarity_scores))
+    best_match = entry_point_values[best_match_index].split(":")[-1]
 
-    if similarity_scores[best_match_index] > 1 / len(similarity_scores):
-        best_match = entry_point_values[best_match_index].split(":")[-1]
-        return best_match
-    else:
-        return None
+    return f"{best_match}_ui"
+
+    # module_name = device_proxy[7:].rsplit(".", 1)[0]
+    # entry_point_values = []
+    # for ep in sorted(entry_points(GUI_SCRIPTS_ENTRY_POINT), key=lambda x: x.name):
+    #     entry_point_values.append(ep.name)
+    #
+    # similarity_scores = [
+    #     SequenceMatcher(None, entry_point_value, module_name).ratio() for entry_point_value in entry_point_values
+    # ]
+    # best_match_index = similarity_scores.index(max(similarity_scores))
+    #
+    # if similarity_scores[best_match_index] > 1 / len(similarity_scores):
+    #     best_match = entry_point_values[best_match_index].split(":")[-1]
+    #     return best_match
+    # else:
+    #     return None
 
 
 class UiCommand:
@@ -219,6 +235,8 @@ class ConfigurationManagerMonitoringWorker(QObject):
             self.check_for_setup_changes()
             self.check_for_obsid_changes()
 
+            time.sleep(UPDATE_INTERVAL)
+
     def check_for_setup_changes(self) -> None:
         """Checks the incoming monitoring information from the Configuration Manager for changes in the setup.
 
@@ -302,15 +320,20 @@ class CoreServiceMonitoringWorker(QObject):
         """
 
         while self.active:
-            services = self.registry_client.list_services(service_type=self.service_type)
+            try:
+                services = self.registry_client.list_services(service_type=self.service_type)
 
-            # Due to static type checking the IDE doesn't recognise the `emit` method on a `Signal` object.
-            # This happens because `Signal` is a special descriptor in `PyQt` and doesn't expose `emit` in a
-            # way that static analysers can easily detect.
-            # noinspection PyUnresolvedReferences
-            self.core_service_status_signal.emit(
-                {"core_service_name": self.core_service_name, "core_service_is_active": len(services) > 0}
-            )
+                # Due to static type checking the IDE doesn't recognise the `emit` method on a `Signal` object.
+                # This happens because `Signal` is a special descriptor in `PyQt` and doesn't expose `emit` in a
+                # way that static analysers can easily detect.
+                # noinspection PyUnresolvedReferences
+                self.core_service_status_signal.emit(
+                    {"core_service_name": self.core_service_name, "core_service_is_active": len(services) > 0}
+                )
+
+                time.sleep(UPDATE_INTERVAL)
+            except ZMQError:
+                pass
 
 
 class DeviceMonitoringWorker(QObject):
@@ -318,29 +341,29 @@ class DeviceMonitoringWorker(QObject):
 
     process_status_signal = Signal(dict)
 
-    def __init__(self, device_id: str, device_proxy: str, parent=None):
+    def __init__(self, device_id: str, device_args: list, device_proxy: str, parent=None):
         """Initialisation of a monitoring worker for a device.
 
         Args:
-            device_id (str): Identifier of the device to monitor
-            device_proxy (str): Device proxy
+            device_id (str): Identifier of the device to monitor.
+            device_args (list): Arguments for the device.
+            device_proxy (str): Device proxy.
         """
 
         super().__init__(parent)
 
         self.device_id = device_id
+        self.device_args = device_args
         self.device_proxy = device_proxy
         self.process_manager: ProcessManagerProxy = ProcessManagerProxy()
         self.active = False
         self.registry_client = RegistryClient()
 
-        self.total_sleep = 0
-
         self.cs_is_active = False
         self.cs_status = ControlServerStatus.INACTIVE
 
         self.cgse_cmd = get_cgse_cmd(self.device_proxy)
-        self.status_cmd = StatusCommand(device_id=self.device_id, cgse_cmd=self.cgse_cmd)
+        self.status_cmd = StatusCommand(device_id=self.device_id, device_args=self.device_args, cgse_cmd=self.cgse_cmd)
 
     def start_listening(self) -> None:
         """Start listening to the output of the CGSE status command."""
@@ -369,36 +392,31 @@ class DeviceMonitoringWorker(QObject):
         """
 
         while self.active:
-            if self.cs_status == ControlServerStatus.UNKNOWN:
-                time.sleep(0.5)
-                self.total_sleep += 0.5
+            try:
+                services = self.registry_client.list_services(service_type=self.device_id.upper())
 
-            services = self.registry_client.discover_service(self.device_id)
-
-            cs_is_active_new = not services is None
-
-            if cs_is_active_new != self.cs_is_active or self.total_sleep > MAX_SLEEP:
-                self.cs_is_active = cs_is_active_new
-
-                if self.cs_is_active:
-                    self.cs_status = ControlServerStatus.ACTIVE
-                    status_output = self.process_manager.get_device_process_status(self.status_cmd)
-
-                    # Due to static type checking the IDE doesn't recognise the `emit` method on a `Signal` object.
-                    # This happens because `Signal` is a special descriptor in `PyQt` and doesn't expose `emit` in a
-                    # way that static analysers can easily detect.
-                    # noinspection PyUnresolvedReferences
-                    self.process_status_signal.emit(status_output)
+                if len(services) == 0:
+                    cs_is_active_new = False
+                    if cs_is_active_new != self.cs_is_active:
+                        self.cs_is_active = cs_is_active_new
+                        self.process_status_signal.emit({"device_id": self.device_id, "cs_is_active": False})
 
                 else:
-                    self.cs_status = ControlServerStatus.INACTIVE
-                    # Due to static type checking the IDE doesn't recognise the `emit` method on a `Signal` object.
-                    # This happens because `Signal` is a special descriptor in `PyQt` and doesn't expose `emit` in a
-                    # way that static analysers can easily detect.
-                    # noinspection PyUnresolvedReferences
-                    self.process_status_signal.emit({"device_id": self.device_id, "cs_is_active": False})
+                    cs_is_active_new = not services is None
+                    if cs_is_active_new != self.cs_is_active:
+                        self.cs_is_active = cs_is_active_new
 
-                self.total_sleep = 0
+                        if self.cs_is_active:
+                            self.cs_status = ControlServerStatus.ACTIVE
+                            status_output = self.process_manager.get_device_process_status(self.status_cmd)
+
+                            # Due to static type checking the IDE doesn't recognise the `emit` method on a `Signal` object.
+                            # This happens because `Signal` is a special descriptor in `PyQt` and doesn't expose `emit` in a
+                            # way that static analysers can easily detect.
+                            # noinspection PyUnresolvedReferences
+                            self.process_status_signal.emit(status_output)
+            except ZMQError:
+                pass
 
 
 class LedColor(Enum):
@@ -566,7 +584,12 @@ class DeviceWidget(QGroupBox, Observable):
         Returns: True if the Control Server has a corresponding UI.
         """
 
-        return self.ui_cmd is not None
+        if not self.ui_cmd:
+            return False
+        else:
+            return find_executable(self.ui_cmd) is not None
+
+        # return self.ui_cmd is not None and
 
     def open_ui(self) -> None:
         """Open the UI."""
@@ -579,14 +602,16 @@ class DeviceWidget(QGroupBox, Observable):
         self.start_stop_button.disable()
 
         if self.start_stop_button.is_selected():
-            self.notify_observers(StopCommand(device_id=self.device_id, cgse_cmd=self.cgse_cmd))
+            self.notify_observers(
+                StopCommand(device_id=self.device_id, device_args=self.device_args, cgse_cmd=self.cgse_cmd)
+            )
         else:
             self.notify_observers(
                 StartCommand(
                     device_id=self.device_id,
                     cgse_cmd=self.cgse_cmd,
                     device_args=self.device_args,
-                    simulator_mode=self.is_simulator_mode,
+                    is_simulator_mode=self.is_simulator_mode,
                 )
             )
 
@@ -687,15 +712,24 @@ class ProcessManagerUIView(QMainWindow, Observable):
         self.setGeometry(300, 300, 1000, 1000)
         self.setWindowTitle("Process Manager")
 
+        self.setup_id = QLabel("No setup loaded")
+        self.setup_id.setStyleSheet("QGroupBox { font-size: 18px;}")
+        self.obsid = QLabel("No observation is running")
+        self.sut_id = QLabel("SUT ID unknown")
+
         self.core_services: dict = core_services
         self.overview_core_services_widget_layout = QVBoxLayout()
         self.overview_core_services_widget = QGroupBox("Core Services", self)
+
+        self.overview_core_services_widget.setStyleSheet("QGroupBox { font-size: 18px;}")
 
         self.core_service_widgets = {}  # Widgets for the core services
         self.device_widgets = {}  # Widgets for the devices
 
         self.overview_devices_widget_layout = QVBoxLayout()
         self.overview_devices_widget = QGroupBox("Devices", self)
+        self.overview_devices_widget.setStyleSheet("QGroupBox { font-size: 18px;}")
+
         self.init_ui()
 
     def init_ui(self) -> None:
@@ -717,6 +751,32 @@ class ProcessManagerUIView(QMainWindow, Observable):
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setWidgetResizable(True)
+
+        # Obsid, setup ID, SUT
+
+        info_gridbox = QGridLayout()
+
+        self.obsid = QLabel("No observation is running")
+        self.setStyleSheet("QMainWindow{border: 3px solid green;}")
+        obsid_label = QLabel("Obsid:")
+        obsid_label.setFont(QFont("Arial", 16))
+        info_gridbox.addWidget(obsid_label, 0, 0)
+        info_gridbox.addWidget(self.obsid, 0, 1)
+
+        self.setup_id = QLabel("No setup loaded")
+        setup_id_label = QLabel("Setup ID:")
+        setup_id_label.setFont(QFont("Arial", 16))
+        info_gridbox.addWidget(setup_id_label, 1, 0)
+        info_gridbox.addWidget(self.setup_id, 1, 1)
+
+        self.sut_id = QLabel("SUT ID unknown")
+        sut_id_label = QLabel("SUT ID:")
+        sut_id_label.setFont(QFont("Arial", 16))
+        info_gridbox.addWidget(sut_id_label, 2, 0)
+        info_gridbox.addWidget(self.sut_id, 2, 1)
+
+        vbox_left.addLayout(info_gridbox)
+        vbox_left.addWidget(QLabel())
 
         # Core Services
 
@@ -836,6 +896,9 @@ class ProcessManagerUIController(Observer):
         # Start monitoring the new devices -> based on the new setup
         self.start_device_monitoring()
 
+        self.view.setup_id.setText(f"{setup.get_id()}")
+        self.view.sut_id.setText(setup.sut.id)
+
     def on_device_status_signal(self, device_info: dict) -> None:
         """Reaction to a change in the status of a device.
 
@@ -941,7 +1004,7 @@ class ProcessManagerUIController(Observer):
 
         for device_id, (device_name, device_proxy, device_args) in self.device_ids.items():
             device_monitoring_thread = QThread(self.view)  # TODO
-            device_monitoring_worker = DeviceMonitoringWorker(device_id, device_proxy)
+            device_monitoring_worker = DeviceMonitoringWorker(device_id, device_args, device_proxy)
             device_monitoring_worker.moveToThread(device_monitoring_thread)
             # Due to static type checking the IDE doesn't recognise the `connect` method on a `Signal` object.  This
             # happens because `Signal` is a special descriptor in `PyQt` and doesn't expose `emit` in a way that static
