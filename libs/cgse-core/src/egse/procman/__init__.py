@@ -81,23 +81,19 @@ def get_status() -> str:
         return f"Process Manager Status: [red]not active[/] ({exc})"
 
 
-class StartCommand:
-    """Command to start the Control Server for a device."""
-
-    def __init__(self, device_id: str, cgse_cmd: str, device_args: Union[list, None], simulator_mode: bool = False):
-        """Initialisation of a start command for a device Control Server.
+class ProcessCommand:
+    def __init__(self, device_id: str, device_args: Union[list, None], cgse_cmd: str):
+        """Initialisation of a process command for a device Control Server.
 
         Args:
-            device_id (str): Device identifier
-            cgse_cmd (str): CGSE command to start/stop the Control Server or to query its status
-            device_args (Union[list, None]): Device arguments
-            simulator_mode (bool): Whether to start the Control Server in simulator mode rather than operational mode
+            device_id (str): Device identifier.
+            device_args (list): Device arguments.
+            cgse_cmd (str): CGSE command to start/stop the Control Server or to query its status.
         """
 
         self._device_id = device_id
         self._cgse_cmd = cgse_cmd
         self._device_args = device_args
-        self._simulator_mode = simulator_mode
 
     @property
     def device_id(self) -> str:
@@ -118,16 +114,38 @@ class StartCommand:
         return self._device_args
 
     @property
+    def cmd(self):
+        raise NotImplementedError
+
+
+class StartCommand(ProcessCommand):
+    """Command to start the Control Server for a device."""
+
+    def __init__(self, device_id: str, cgse_cmd: str, device_args: Union[list, None], is_simulator_mode: bool = False):
+        """Initialisation of a start command for a device Control Server.
+
+        Args:
+            device_id (str): Device identifier.
+            cgse_cmd (str): CGSE command to start/stop the Control Server or to query its status.
+            device_args (Union[list, None]): Device arguments.
+            is_simulator_mode (bool): Whether to start the Control Server in simulator mode rather than operational mode.
+        """
+
+        super().__init__(device_id, device_args, cgse_cmd)
+
+        self._is_simulator_mode = is_simulator_mode
+
+    @property
     def cmd(self) -> str:
         """Returns the full CGSE command to start the Control Server.
 
         Returns: Full CGSE command to start the Control Server.
         """
 
-        cmd = f"{self._cgse_cmd} start {self.device_id}"
+        cmd = f"{self._cgse_cmd} start"
 
         if self.device_args:
-            cmd = f"{cmd} {self.device_args}"
+            cmd = f"{cmd} {self.device_args[0]}"
         if self.simulator_mode:
             cmd = f"{cmd} --sim"
 
@@ -140,31 +158,22 @@ class StartCommand:
         Returns: True if the Control Server should be started in simulator mode; False otherwise.
         """
 
-        return self._simulator_mode
+        return self._is_simulator_mode
 
 
-class StopCommand:
+class StopCommand(ProcessCommand):
     """Command to stop the Control Server for a device."""
 
-    def __init__(self, device_id: str, cgse_cmd: str):
+    def __init__(self, device_id: str, device_args: list, cgse_cmd: str):
         """Initialisation of a stop command for a device Control Server.
 
         Args:
-            device_id (str): Device identifier
-            cgse_cmd (str): CGSE command to start/stop the Control Server or to query its status
+            device_id (str): Device identifier.
+            device_args (list): Device arguments.
+            cgse_cmd (str): CGSE command to start/stop the Control Server or to query its status.
         """
 
-        self._device_id = device_id
-        self._cgse_cmd = cgse_cmd
-
-    @property
-    def device_id(self) -> str:
-        """Returns the device identifier.
-
-        Returns: Device identifier
-        """
-
-        return self._device_id
+        super().__init__(device_id, device_args, cgse_cmd)
 
     @property
     def cmd(self) -> str:
@@ -173,31 +182,27 @@ class StopCommand:
         Returns: Full CGSE command to stop the Control Server.
         """
 
-        return f"{self._cgse_cmd} stop {self.device_id}"
+        cmd = f"{self._cgse_cmd} stop"
+
+        if self.device_args:
+            cmd = f"{cmd} {self.device_args[0]}"
+
+        return cmd
 
 
-class StatusCommand:
+class StatusCommand(ProcessCommand):
     """Command to query the status of a Control Server for a device."""
 
-    def __init__(self, device_id: str = None, cgse_cmd: str = None):
+    def __init__(self, device_id: str, device_args: list = None, cgse_cmd: str = None):
         """Initialisation of a status command for a device Control Server.
 
         Args:
-            device_id (str): Device identifier
-            cgse_cmd (str): CGSE command to start/stop the Control Server or to query its status
+            device_id (str): Device identifier.
+            device_args (list): Device arguments.
+            cgse_cmd (str): CGSE command to start/stop the Control Server or to query its status.
         """
 
-        self._device_id = device_id
-        self._cgse_cmd = cgse_cmd
-
-    @property
-    def device_id(self) -> str:
-        """Returns the device identifier.
-
-        Returns: Device identifier
-        """
-
-        return self._device_id
+        super().__init__(device_id, device_args, cgse_cmd)
 
     @property
     def cmd(self) -> str:
@@ -205,7 +210,11 @@ class StatusCommand:
 
         Returns: Full CGSE command to query the status of the Control Server.
         """
-        return f"{self._cgse_cmd} status {self.device_id}"
+
+        if len(self.device_args) > 0:
+            return f"{self._cgse_cmd} status {self.device_args}"
+        else:
+            return f"{self._cgse_cmd} status"
 
 
 class ProcessManagerCommand(ClientServerCommand):
@@ -363,6 +372,7 @@ class ProcessManagerController(ProcessManagerInterface):
             return {}
 
     def start_process(self, start_cmd: StartCommand):
+
         # subprocess.call(start_cmd.cmd, shell=True) -> PM hangs
         process = SubProcess("MyApp", [start_cmd.cmd], shell=True)
         process.execute()

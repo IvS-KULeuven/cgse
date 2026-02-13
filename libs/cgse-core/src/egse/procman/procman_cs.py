@@ -7,9 +7,9 @@ The Process Manager Control Server is implemented as a standard control server.
 """
 
 import multiprocessing
-import sys
 
 import rich
+import sys
 import typer
 import zmq
 from rich.console import Console
@@ -18,9 +18,6 @@ from egse.control import ControlServer
 from egse.log import logging
 from egse.logger import remote_logging
 from egse.process import SubProcess
-from egse.procman.procman_protocol import ProcessManagerProtocol
-from egse.registry.client import RegistryClient
-from egse.services import ServiceProxy
 from egse.procman import (
     PROCESS_NAME,
     SERVICE_TYPE,
@@ -31,6 +28,9 @@ from egse.procman import (
     HOSTNAME,
     STORAGE_MNEMONIC,
 )
+from egse.procman.procman_protocol import ProcessManagerProtocol
+from egse.registry.client import RegistryClient
+from egse.services import ServiceProxy
 from egse.storage import store_housekeeping_information
 from egse.zmq_ser import get_port_number
 
