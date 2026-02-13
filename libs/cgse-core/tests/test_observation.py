@@ -183,7 +183,7 @@ def test_execute_runs_building_block_missing_kwargs(mock_obs_ctx):
         # This should fail since all kwargs are mandatory for the building block
         _ = execute(bb, "desc")
 
-    end_observation()
+    assert not ObservationContext().is_active()  # Ensure context is not active after failure
 
 
 @patch("egse.observation.request_obsid", return_value=111)
@@ -217,6 +217,8 @@ def test_execute_calls_end_observation_on_exception(mock_start, mock_end, mock_o
         execute(failing_func, "desc")
 
     mock_end.assert_called_once()
+
+    assert not ObservationContext().is_active()  # Ensure context is not active after exception
 
 
 @patch("egse.observation.request_obsid", return_value=999)
