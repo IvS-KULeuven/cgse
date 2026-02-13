@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Update core services entrypoint for Logger in pyproject.toml of cgse-core
 - Configurable name for the InfluxDB database
+- Conditionally log debug messages based on VERBOSE_DEBUG flag in registry client/server
+- Fixed problems in the PM UI
 
 ## [0.18.2] - 2026-02-06
 

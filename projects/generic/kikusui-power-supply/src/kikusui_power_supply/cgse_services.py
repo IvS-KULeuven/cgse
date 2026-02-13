@@ -8,12 +8,15 @@ import typer
 
 from egse.system import redirect_output_to_log
 
-pmx_a = typer.Typer(name="pmx_a", help="KIKUSUI PMX, Regulated DC Power Supply")
+pmx_a = typer.Typer(name="pmx_a", help="KIKUSUI PMX, Regulated DC Power Supply", no_args_is_help=True)
 
 
 @pmx_a.command(name="start")
 def start_pmx_a(
     device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")],
+    simulator: Annotated[
+        bool, typer.Option("--simulator", "--sim", help="use a device simulator as the backend")
+    ] = False,
 ):
     """Starts the PMX-A service.
 
@@ -22,11 +25,13 @@ def start_pmx_a(
     """
 
     rich.print("Starting service pmx_a")
-
     out = redirect_output_to_log("pmx_a.start.log")
 
+    cmd = [sys.executable, "-m", "egse.power_supply.kikusui.pmx_a.pmx_a_cs", "start", device_id]
+    if simulator:
+        cmd.append("--simulator")
     subprocess.Popen(
-        [sys.executable, "-m", "egse.power_supply.kikusui.pmx_a.pmx_a_cs", "start", device_id],
+        cmd,
         stdout=out,
         stderr=out,
         stdin=subprocess.DEVNULL,
