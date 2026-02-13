@@ -171,14 +171,17 @@ def test_execute_runs_building_block(mock_obs_ctx, mock_cm, mock_obsid):
     result = execute(bb_func, "desc", x=3)
     assert result == 6
 
+
+@patch("egse.observation.ObservationContext")
+def test_execute_runs_building_block_missing_kwargs(mock_obs_ctx):
     with pytest.raises(ValueError, match="Expected 2 keyword parameters"):
 
         @building_block
         def bb(x: int = 1, y: int = 2) -> int:
             return x * y
 
-        result = execute(bb, "desc")
-        assert result == 3
+        # This should fail since all kwargs are mandatory for the building block
+        _ = execute(bb, "desc")
 
     end_observation()
 
