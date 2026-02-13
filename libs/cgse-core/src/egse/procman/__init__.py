@@ -372,7 +372,6 @@ class ProcessManagerController(ProcessManagerInterface):
             return {}
 
     def start_process(self, start_cmd: StartCommand):
-
         # subprocess.call(start_cmd.cmd, shell=True) -> PM hangs
         process = SubProcess("MyApp", [start_cmd.cmd], shell=True)
         process.execute()
