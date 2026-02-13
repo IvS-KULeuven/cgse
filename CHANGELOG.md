@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.18.4] - 2026-02-13
+
+- Updated discovery method for UI commands in the PM UI 
+
 ## [0.18.3] - 2026-02-13
 
 - Update core services entrypoint for Logger in pyproject.toml of cgse-core
