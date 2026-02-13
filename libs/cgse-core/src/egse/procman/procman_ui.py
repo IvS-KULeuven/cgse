@@ -1,5 +1,6 @@
 import multiprocessing
 import pickle
+import shutil
 import subprocess
 import threading
 from difflib import SequenceMatcher
@@ -11,7 +12,6 @@ import sys
 import time
 import zmq
 from PyQt5.QtGui import QFont
-from distutils.spawn import find_executable
 from qtpy.QtCore import QLockFile
 from qtpy.QtCore import QObject
 from qtpy.QtCore import QThread
@@ -587,7 +587,7 @@ class DeviceWidget(QGroupBox, Observable):
         if not self.ui_cmd:
             return False
         else:
-            return find_executable(self.ui_cmd) is not None
+            return shutil.which(self.ui_cmd) is not None
 
         # return self.ui_cmd is not None and
 
