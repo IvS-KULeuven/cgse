@@ -12,6 +12,7 @@ from egse.power_supply.kikusui.pmx_a.pmx_a import PmxASimulator, PmxAController
 from egse.power_supply.kikusui.pmx_a.pmx_a_cs import PmxAControlServer
 from egse.protocol import DynamicCommandProtocol
 from egse.settings import Settings
+from egse.setup import SetupError
 from egse.system import format_datetime
 from egse.zmq_ser import bind_address
 
@@ -40,9 +41,12 @@ class PmxAProtocol(DynamicCommandProtocol):
 
         super().__init__(control_server)
 
-        self.hk_conversion_table = read_conversion_dict(
-            self.get_control_server().get_storage_mnemonic(), use_site=False
-        )
+        try:
+            self.hk_conversion_table = read_conversion_dict(
+                self.get_control_server().get_storage_mnemonic(), use_site=False
+            )
+        except SetupError:
+            self.hk_conversion_table = None
 
         self.simulator = simulator
 

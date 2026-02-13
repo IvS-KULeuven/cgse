@@ -12,6 +12,7 @@ from egse.digilent.measurpoint.dt8874.dt8874_cs import ORIGIN
 from egse.hk import read_conversion_dict, convert_hk_names
 from egse.protocol import DynamicCommandProtocol
 from egse.settings import Settings
+from egse.setup import SetupError
 from egse.system import format_datetime
 from egse.zmq_ser import bind_address
 
@@ -39,9 +40,12 @@ class Dt8874Protocol(DynamicCommandProtocol):
 
         super().__init__(control_server)
 
-        self.hk_conversion_table = read_conversion_dict(
-            self.get_control_server().get_storage_mnemonic(), use_site=False
-        )
+        try:
+            self.hk_conversion_table = read_conversion_dict(
+                self.get_control_server().get_storage_mnemonic(), use_site=False
+            )
+        except SetupError:
+            self.hk_conversion_table = None
 
         self.simulator = simulator
 
