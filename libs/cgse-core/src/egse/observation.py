@@ -85,6 +85,9 @@ class ObservationContext:
             if not rc.successful:
                 raise rc
 
+    def is_active(self):
+        return self.level >= 0
+
 
 def request_obsid():
     """Requests an `obsid` from the configuration manager.
