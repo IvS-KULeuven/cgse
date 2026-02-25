@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.18.6] - 2026-02-25
+
+- Fixed use of control settings for the hexapods, only the first level in Settings can be addressed with dot-notation, second level is further is pure dictionary.
+
 ## [0.18.5] - 2026-02-25
 
 - Moved some log messages to DEBUG and even VERBOSE_DEBUG to reduce log noise.
@@ -278,7 +282,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.5...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.6...HEAD
+[0.18.6]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.5...v0.18.6
 [0.18.5]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.4...v0.18.5
 [0.18.4]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.3...v0.18.4
 [0.18.3]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.2...v0.18.3
