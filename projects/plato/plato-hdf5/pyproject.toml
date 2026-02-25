@@ -1,6 +1,6 @@
 [project]
 name = "plato-hdf5"
-version = "0.18.5"
+version = "0.18.6"
 description = "HDF5 Persistence sub-class for CGSE"
 authors = [
     {name = "IvS KU Leuven"}

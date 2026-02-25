@@ -1,6 +1,6 @@
 [project]
 name = "digilent"
-version = "0.18.5"
+version = "0.18.6"
 description = "Digilent temperature and voltage monitoring for CGSE"
 authors = [
     {name = "IvS KU Leuven"}
