@@ -89,9 +89,7 @@ def plot_reference_frame(
     return ax
 
 
-def plot_points(
-    points: Points | list[Point], master=None, fig_name: str | None = None, **kwargs
-):
+def plot_points(points: Points | list[Point], master=None, fig_name: str | None = None, **kwargs):
     """Plots the given collection of points.
 
     Use ax.set_xlim3d(min, max) to properly set the ranges of the display.
