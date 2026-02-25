@@ -10,7 +10,7 @@ from egse.coordinates.point import Point, Points
 
 def plot_reference_frame(
     frame: ReferenceFrame, master: ReferenceFrame | None = None, fig_name: str | None = None, **kwargs
-) -> matplotlib.axes._subplots.Axes3DSubplot:
+):
     """Plots a reference frame.
 
     Use ax.set_xlim3d(min, max) to properly set the ranges of the display.
@@ -91,7 +91,7 @@ def plot_reference_frame(
 
 def plot_points(
     points: Points | list[Point], master=None, fig_name: str | None = None, **kwargs
-) -> matplotlib.axes._subplots.Axes3DSubplot:
+):
     """Plots the given collection of points.
 
     Use ax.set_xlim3d(min, max) to properly set the ranges of the display.
@@ -138,7 +138,7 @@ def plot_points(
 
 def plot_vectors(
     points: Points | list[Point], master=None, fig_name: str | None = None, from_origin: bool = True, **kwargs
-) -> matplotlib.axes._subplots.Axes3DSubplot:
+):
     """Plots the given collection of vectors.
 
     Use ax.set_xlim3d(min, max) to properly set the ranges of the display.
