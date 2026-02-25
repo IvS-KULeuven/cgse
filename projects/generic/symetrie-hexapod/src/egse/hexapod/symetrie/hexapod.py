@@ -1,9 +1,8 @@
 import math
-
 import numpy as np
 
 from egse.bits import set_bit
-from egse.coordinates import ReferenceFrame
+from egse.coordinates.reference_frame import ReferenceFrame
 from egse.hexapod.symetrie import logger
 from egse.hexapod.symetrie.pmac import decode_Q36
 
