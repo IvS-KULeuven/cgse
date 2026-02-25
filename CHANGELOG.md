@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.18.5] - 2026-02-25
+
+- Moved some log messages to DEBUG and even VERBOSE_DEBUG to reduce log noise.
+- Added the Observation concept and Building blocks to `cgse-core`. 
+
 ## [0.18.4] - 2026-02-13
 
 - Updated discovery method for UI commands in the PM UI 
@@ -273,7 +278,11 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.1...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.5...HEAD
+[0.18.5]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.4...v0.18.5
+[0.18.4]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.3...v0.18.4
+[0.18.3]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.2...v0.18.3
+[0.18.2]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.1...v0.18.2
 [0.18.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.0...v0.18.1
 [0.18.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.17.4...v0.18.0
 [0.17.4]: https://github.com/IvS-KULeuven/cgse/compare/v0.17.3...v0.17.4
