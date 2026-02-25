@@ -1,6 +1,6 @@
 [project]
 name = "kikusui_power_supply"
-version = "0.18.4"
+version = "0.18.5"
 description = "KIKUSUI PMX power supplies for cd "
 authors = [
     {name = "IvS KU Leuven"}

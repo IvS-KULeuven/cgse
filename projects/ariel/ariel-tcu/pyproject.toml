@@ -1,6 +1,6 @@
 [project]
 name = "ariel-tcu"
-version = "0.18.4"
+version = "0.18.5"
 description = "Telescope Control Unit (TCU) for Ariel"
 authors = [
     {name = "IVS KU Leuven"}

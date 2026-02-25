@@ -1,6 +1,6 @@
 [project]
 name = "cgse-gui"
-version = "0.18.4"
+version = "0.18.5"
 description = "GUI components for CGSE"
 authors = [
     {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},

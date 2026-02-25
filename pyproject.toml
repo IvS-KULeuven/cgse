@@ -1,6 +1,6 @@
 [project]
 name = "cgse"
-version = "0.18.4"
+version = "0.18.5"
 description = "Generic Common-EGSE: Commanding and monitoring lab equipment"
 authors = [
     {name = "IvS KU Leuven"}
