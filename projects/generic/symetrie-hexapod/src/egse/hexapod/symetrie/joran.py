@@ -161,9 +161,9 @@ class JoranProxy(DynamicProxy, JoranInterface):
 
     def __init__(
         self,
-        protocol=CTRL_SETTINGS.PROTOCOL,
-        hostname=CTRL_SETTINGS.HOSTNAME,
-        port=CTRL_SETTINGS.COMMANDING_PORT,
+        protocol=CTRL_SETTINGS["PROTOCOL"],
+        hostname=CTRL_SETTINGS["HOSTNAME"],
+        port=CTRL_SETTINGS["COMMANDING_PORT"],
     ):
         """
         Args:

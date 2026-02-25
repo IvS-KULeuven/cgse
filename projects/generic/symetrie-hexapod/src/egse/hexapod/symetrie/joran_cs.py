@@ -73,25 +73,25 @@ class JoranControlServer(ControlServer):
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
     def get_communication_protocol(self):
-        return CTRL_SETTINGS.PROTOCOL
+        return CTRL_SETTINGS["PROTOCOL"]
 
     def get_commanding_port(self):
-        return CTRL_SETTINGS.COMMANDING_PORT
+        return CTRL_SETTINGS["COMMANDING_PORT"]
 
     def get_service_port(self):
-        return CTRL_SETTINGS.SERVICE_PORT
+        return CTRL_SETTINGS["SERVICE_PORT"]
 
     def get_monitoring_port(self):
-        return CTRL_SETTINGS.MONITORING_PORT
+        return CTRL_SETTINGS["MONITORING_PORT"]
 
     def get_storage_mnemonic(self):
         try:
-            return CTRL_SETTINGS.STORAGE_MNEMONIC
+            return CTRL_SETTINGS["STORAGE_MNEMONIC"]
         except AttributeError:
             return "JORAN"
 
     def before_serve(self):
-        start_http_server(CTRL_SETTINGS.METRICS_PORT)
+        start_http_server(CTRL_SETTINGS["METRICS_PORT"])
 
 
 @click.group()
@@ -153,9 +153,9 @@ def stop():
 def status():
     """Request status information from the Control Server."""
 
-    protocol = CTRL_SETTINGS.PROTOCOL
-    hostname = CTRL_SETTINGS.HOSTNAME
-    port = CTRL_SETTINGS.COMMANDING_PORT
+    protocol = CTRL_SETTINGS["PROTOCOL"]
+    hostname = CTRL_SETTINGS["HOSTNAME"]
+    port = CTRL_SETTINGS["COMMANDING_PORT"]
 
     endpoint = connect_address(protocol, hostname, port)
 
