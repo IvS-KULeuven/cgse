@@ -27,7 +27,7 @@ class Point:
 
     """Representation of a point in 3D space, defined w.r.t. a given reference frame."""
 
-    def __init__(self, coordinates: np.ndarray | list, reference_frame: ReferenceFrame, name: str = None):
+    def __init__(self, coordinates: np.ndarray | list, ref: ReferenceFrame, name: str = None):
         """Initialisation of a point in 3D space, defined w.r.t. a given reference frame.
 
         In order to work with 4x4 transformation matrices, the 3D [x, y, z] coordinates are automatically converted to a
@@ -36,7 +36,7 @@ class Point:
         Args:
             coordinates (np.ndarray, list): 1x3 or 1x4 matrix defining this system in the given reference frame
                                             (1x3 being x, y, z + an additional 1 for the affine operations).
-            reference_frame (ReferenceFrame): Reference system in which this point object will be defined.
+            ref (ReferenceFrame): Reference system in which this point object will be defined.
             name (str): Name of the point. If not given, a random name will be generated. Note that there is no check
                         that the randomly generated name is unique, so two `Point` objects can be different but have
                         the same name.
@@ -56,10 +56,10 @@ class Point:
 
         # Reference frame
 
-        if reference_frame is None:
+        if ref is None:
             raise ValueError("The reference frame must not be None.")
         else:
-            self.reference_frame = reference_frame
+            self.ref = ref
 
         # Name
 
@@ -68,7 +68,7 @@ class Point:
 
         # Definition
 
-        self.definition = [self.coordinates[:-1], self.reference_frame, self.name]
+        self.definition = [self.coordinates[:-1], self.ref, self.name]
 
     def __repr__(self) -> str:
         """Returns a representation the point.
@@ -77,7 +77,7 @@ class Point:
             Representation of the point.
         """
 
-        return f"{self.coordinates[:-1]} (ref {self.reference_frame.name})"
+        return f"{self.coordinates[:-1]} (ref {self.ref.name})"
 
     def __str__(self) -> str:
         """Returns a printable string representation of the point.
@@ -86,7 +86,7 @@ class Point:
             Printable string representation of the point.
         """
 
-        return f"{self.coordinates[:-1]} (ref {self.reference_frame.name}), name {self.name}"
+        return f"{self.coordinates[:-1]} (ref {self.ref.name}), name {self.name}"
 
     def __eq__(self, other) -> bool:
         """Implements the == operator.
@@ -110,7 +110,7 @@ class Point:
         if isinstance(other, Point):
             if not np.array_equal(self.coordinates, other.coordinates):
                 return False
-            if self.reference_frame != other.reference_frame:
+            if self.ref != other.ref:
                 return False
             return True
 
@@ -138,7 +138,7 @@ class Point:
         if isinstance(other, Point):
             if self == other:
                 return True
-            if np.array_equal(self.coordinates, other.express_in(self.reference_frame)):
+            if np.array_equal(self.coordinates, other.express_in(self.ref)):
                 return True
 
         return False
@@ -195,20 +195,20 @@ class Point:
         self.y = self.coordinates[1]
         self.z = self.coordinates[2]
 
-    def get_coordinates(self, reference_frame: ReferenceFrame | None = None) -> np.ndarray:
+    def get_coordinates(self, ref: ReferenceFrame | None = None) -> np.ndarray:
         """Returns the coordinates of the point.
 
         Args:
-            reference_frame (ReferenceFrame | None): Reference frame in which the point coordinates are returned.
+            ref (ReferenceFrame | None): Reference frame in which the point coordinates are returned.
 
         Returns:
             Coordinates of the point in the given reference frame.
         """
 
-        if reference_frame is None:
+        if ref is None:
             return self.coordinates
         else:
-            return self.express_in(reference_frame)
+            return self.express_in(ref)
 
     def distance_to(self, target) -> floating[Any]:
         """Returns the distance from this point to the target.
@@ -226,7 +226,7 @@ class Point:
         from egse.coordinates.reference_frame import ReferenceFrame
 
         if isinstance(target, Point):
-            target_coordinates = target.express_in(self.reference_frame)[:3]
+            target_coordinates = target.express_in(self.ref)[:3]
         elif isinstance(target, ReferenceFrame):
             return np.linalg.norm(self.express_in(target)[:3])
         elif isinstance(target, (np.ndarray, list)):
@@ -257,7 +257,7 @@ class Point:
         from egse.coordinates.reference_frame import ReferenceFrame
 
         if isinstance(target, Point):
-            target_coordinates = target.express_in(self.reference_frame)
+            target_coordinates = target.express_in(self.ref)
         elif isinstance(target, ReferenceFrame):
             target_coordinates = target.get_origin().express_in(self)
         elif isinstance(target, (np.ndarray, list)):
@@ -277,21 +277,21 @@ class Point:
 
         return np.linalg.norm(self.coordinates[plane_selection[plane]] - target_coordinates[plane_selection[plane]])
 
-    def distance_to_plane(self, plane: str = "xy", reference_frame: ReferenceFrame | None = None) -> float:
+    def distance_to_plane(self, plane: str = "xy", ref: ReferenceFrame | None = None) -> float:
         """Calculates the distance from the point to a plane in a given reference frame.
 
         Args:
             plane (str): Target plane, must be in ["xy", "xz", "yz"]
-            reference_frame (ReferenceFrame | None, optional): Reference frame in which the distance is calculated.
+            ref (ReferenceFrame | None, optional): Reference frame in which the distance is calculated.
 
         Returns:
             Distance from the point to the plane.
         """
 
-        if (reference_frame is None) or (self.reference_frame == reference_frame):
+        if (ref is None) or (self.ref == ref):
             coordinates = self.coordinates[:-1]
         else:
-            coordinates = self.express_in(reference_frame)
+            coordinates = self.express_in(ref)
 
         out_of_plane_index = {"xy": 2, "xz": 1, "yz": 0}
 
@@ -308,7 +308,7 @@ class Point:
         """
 
         if isinstance(point, Point):
-            if point.reference_frame != self.reference_frame:
+            if point.ref != self.ref:
                 raise NotImplementedError("The points have different reference frames")
 
             new_coordinates = self.coordinates - point.coordinates
@@ -323,7 +323,7 @@ class Point:
 
         new_coordinates[-1] = 1
 
-        return Point(coordinates=new_coordinates, reference_frame=self.reference_frame)
+        return Point(coordinates=new_coordinates, ref=self.ref)
 
     def __isub__(self, point):
         """Implements the subtraction assignment operator (-=).
@@ -339,7 +339,7 @@ class Point:
         """
 
         if isinstance(point, Point):
-            if point.reference_frame != self.reference_frame:
+            if point.ref != self.ref:
                 raise NotImplementedError("The points have different reference frames")
 
             new_coordinates = self.coordinates - point.coordinates
@@ -371,7 +371,7 @@ class Point:
         """
 
         if isinstance(point, Point):
-            if point.reference_frame != self.reference_frame:
+            if point.ref != self.ref:
                 raise NotImplementedError("The points have different reference frames")
 
             new_coordinates = self.coordinates + point.coordinates
@@ -386,7 +386,7 @@ class Point:
 
         new_coordinates[-1] = 1
 
-        return Point(coordinates=new_coordinates, reference_frame=self.reference_frame)
+        return Point(coordinates=new_coordinates, ref=self.ref)
 
     def __iadd__(self, point):
         """Implements the addition assignment operator (+=).
@@ -402,7 +402,7 @@ class Point:
         """
 
         if isinstance(point, Point):
-            if point.reference_frame != self.reference_frame:
+            if point.ref != self.ref:
                 raise NotImplementedError("The points have different reference frames")
 
             new_coordinates = self.coordinates + point.coordinates
@@ -430,19 +430,21 @@ class Point:
             Coordinates in the target reference frame.
         """
 
-        if target_frame == self.reference_frame:
+        if target_frame == self.ref:
             result = self.coordinates
 
         else:
-            # Apply coordinate transformation of self.coordinates from self.reference_frame to target_frame
-            transform = self.reference_frame.get_passive_transformation_to(target_frame)
+            # We're after the coordinates of self, i.e. the definition of self in targetFrame
+            # We know the coordinates in self.ref
+            # Apply coordinate transformation of self.coordinates from self.ref to target_frame
+            transform = self.ref.get_passive_transformation_to(target_frame)
             result = np.dot(transform, self.coordinates)
 
             LOGGER.debug(f"transform: \n{transform}")
 
         return result
 
-    def change_reference_frame(self, target_frame: ReferenceFrame):
+    def change_ref(self, target_frame: ReferenceFrame):
         """Re-defines `self` as attached to another reference frame.
 
         This is done by:
@@ -457,7 +459,7 @@ class Point:
         new_coordinates = self.express_in(target_frame)
         self.set_coordinates(new_coordinates)
 
-        self.reference_frame = target_frame
+        self.ref = target_frame
 
 
 class Points:
@@ -467,16 +469,18 @@ class Points:
 
     debug = 0
 
-    def __init__(self, coordinates: numpy.ndarray | list, reference_frame: ReferenceFrame, name: str = None):
+    def __init__(self, coordinates: numpy.ndarray | list, ref: ReferenceFrame, name: str = None):
         """Initialisation of a new set of points.
 
         Args:
             coordinates (numpy.ndarray | list): Either a 4xn matrix (3 being x, y, z + an additional 1 for the affine
                                                 operations), defining n coordinates in the given reference frame, or a
                                                 list of Point(s) objects.
-            reference_frame (ReferenceFrame): Reference frame in which the coordinates are defined.
+            ref (ReferenceFrame): Reference frame in which the coordinates are defined.
             name (str | None): Name of the Points object.  When None, a name will be generated automatically, consisting
                                of a capital "P" followed by three lower case letters.
+
+        TODO : TEST. THIS METHOD WAS HEAVILY MODIFIED IN THE REFACTORING FROM PLATO.
         """
 
         # Coordinates
@@ -491,9 +495,10 @@ class Points:
 
             for item in coordinates:
                 if isinstance(item, Point):
-                    coordinate_list.append(item.express_in(reference_frame))
+                    coordinate_list.append(item.express_in(ref))
                 elif isinstance(item, Points):
-                    coordinate_list.extend(item.express_in(reference_frame))
+                    # TODO : TEST. WASN'T IN PLATO CODE. Does it contain all points in the Points object ?
+                    coordinate_list.extend(item.express_in(ref))
                 else:
                     raise ValueError("If the input is a list, all items in it must be Point(s) objects")
             self.set_coordinates(np.array(coordinate_list).T)
@@ -504,10 +509,10 @@ class Points:
 
         # Reference frame
 
-        if reference_frame is None:
+        if ref is None:
             raise ValueError("The reference frame must not be None.")
         else:
-            self.reference_frame = reference_frame
+            self.ref = ref
 
         # Name
 
@@ -521,7 +526,7 @@ class Points:
             Representation of the points.
         """
 
-        return "{0} (ref {1})".format(self.coordinates[:-1], self.reference_frame.name)
+        return "{0} (ref {1})".format(self.coordinates[:-1], self.ref.name)
 
     def __str__(self) -> str:
         """Returns a printable string representation of the point.
@@ -530,7 +535,7 @@ class Points:
             Printable string representation of the point.
         """
 
-        return "{1} (ref {2}), name {0}".format(self.name, self.coordinates[:-1], self.reference_frame.name)
+        return "{1} (ref {2}), name {0}".format(self.name, self.coordinates[:-1], self.ref.name)
 
     @staticmethod
     def __coords__(coordinates):
@@ -589,20 +594,20 @@ class Points:
         self.y = self.coordinates[1, :]
         self.z = self.coordinates[2, :]
 
-    def get_coordinates(self, reference_frame: ReferenceFrame | None = None) -> numpy.ndarray:
+    def get_coordinates(self, ref: ReferenceFrame | None = None) -> numpy.ndarray:
         """Returns the coordinates of the point.
 
         Args:
-            reference_frame (ReferenceFrame | None): Reference frame in which the point coordinates are returned.
+            ref (ReferenceFrame | None): Reference frame in which the point coordinates are returned.
 
         Returns:
             Coordinates of the point in the given reference frame.
         """
 
-        if reference_frame is None:
+        if ref is None:
             return self.coordinates
         else:
-            return self.express_in(reference_frame)
+            return self.express_in(ref)
 
     def express_in(self, target_frame: ReferenceFrame) -> np.ndarray:
         """Expresses the coordinates in another reference frame.
@@ -614,17 +619,17 @@ class Points:
             Coordinates in the target reference frame.
         """
 
-        if target_frame == self.reference_frame:
+        if target_frame == self.ref:
             result = self.coordinates
         else:
-            # Apply coordinate transformation of self.coordinates from self.reference_frame to target_frame
-            transform = self.reference_frame.get_passive_transformation_to(target_frame)
+            # Apply coordinate transformation of self.coordinates from self.ref to target_frame
+            transform = self.ref.get_passive_transformation_to(target_frame)
             if self.debug:
                 print("transform \n{0}".format(transform))
             result = np.dot(transform, self.coordinates)
         return result
 
-    def change_reference_frame(self, target_frame: ReferenceFrame):
+    def change_ref(self, target_frame: ReferenceFrame):
         """Re-defines `self` as attached to another reference frame.
 
         This is done by:
@@ -639,7 +644,7 @@ class Points:
         new_coordinates = self.express_in(target_frame)
         self.set_coordinates(new_coordinates)
 
-        self.reference_frame = target_frame
+        self.ref = target_frame
 
     def get_num_points(self) -> int:
         """Returns the number of points in the set of points.
@@ -661,7 +666,7 @@ class Points:
             Point with the given index.
         """
 
-        return Point(self.coordinates[:, index], reference_frame=self.reference_frame, name=name)
+        return Point(self.coordinates[:, index], ref=self.ref, name=name)
 
     get = get_point
 
@@ -686,7 +691,7 @@ class Points:
 
         a, b, c = self.fit_plane(plane=plane, verbose=verbose)
 
-        unit_axes = Points.from_plane_parameters(a, b, c, reference_frame=self.reference_frame, plane=plane)
+        unit_axes = Points.from_plane_parameters(a, b, c, ref=self.ref, plane=plane)
         # print(f"Unit axes coordinates \n{np.round(unit_axes.coordinates,3)}")
 
         # unit_axes contain 3 unit axes and an origin
@@ -696,11 +701,11 @@ class Points:
         for ax in range(3):
             unit_coordinates[:3, ax] += unit_coordinates[:3, 3]
 
-        new_axes = Points(unit_coordinates, reference_frame=self.reference_frame)
+        new_axes = Points(unit_coordinates, ref=self.ref)
 
         # print(f"new_axes {np.round(new_axes.coordinates,3)}")
 
-        self_axes = Points(np.identity(4), reference_frame=self.reference_frame)
+        self_axes = Points(np.identity(4), ref=self.ref)
 
         transform = t3add.affine_matrix_from_points(
             self_axes.coordinates[:3, :], new_axes.coordinates[:3, :], shear=False, scale=False, use_svd=use_svd
@@ -715,7 +720,7 @@ class Points:
                 print(f"Transform2 \n{np.round(transform2, 3)}")
                 print(f"Both methods consistent ? {np.allclose(transform, transform2)}")
 
-        return ReferenceFrame(transformation=transform, reference_frame=self.reference_frame)
+        return ReferenceFrame(transformation=transform, ref=self.ref)
 
     def fit_plane(self, plane: str = "xy", verbose: bool = True) -> tuple[float, float, float]:
         """Fits the plane best fitting the points.
@@ -754,7 +759,7 @@ class Points:
 
     @classmethod
     def from_plane_parameters(
-        cls, a: float, b: float, c: float, reference_frame: ReferenceFrame, plane: str = "xy", verbose: bool = False
+        cls, a: float, b: float, c: float, ref: ReferenceFrame, plane: str = "xy", verbose: bool = False
     ):
         """Returns the unit axes and the origin of the given reference frame.
 
@@ -762,7 +767,7 @@ class Points:
             a (float): Coefficient `a` in the equation of the target plane (z = ax + by + c)
             b (float): Coefficient `b` in the equation of the target plane (z = ax = by + c)
             c (float): Coefficient `c` in the equation of the target plane (z = ax + by + c)
-            reference_frame (ReferenceFrame): Reference frame.
+            ref (ReferenceFrame): Reference frame.
             plane (str): Plane to fit. Must be in ["xy", "yz", "zx"].
             verbose (bool): If True, print the results on screen.
 
@@ -819,10 +824,10 @@ class Points:
         y_unit_coords = np.cross(z_unit_coords, x_unit_coords)
         y_unit_coords /= np.linalg.norm(y_unit_coords)  # Normalise
 
-        x_unit_point = Point(x_unit_coords, reference_frame=reference_frame)
-        y_unit_point = Point(y_unit_coords, reference_frame=reference_frame)
-        z_unit_point = Point(z_unit_coords, reference_frame=reference_frame)
-        origin = Point(origin_coords, reference_frame=reference_frame)
+        x_unit_point = Point(x_unit_coords, ref=ref)
+        y_unit_point = Point(y_unit_coords, ref=ref)
+        z_unit_point = Point(z_unit_coords, ref=ref)
+        origin = Point(origin_coords, ref=ref)
 
         if verbose:
             print(f"x_unit_coords  {x_unit_coords}")
@@ -830,4 +835,4 @@ class Points:
             print(f"z_unit_coords  {z_unit_coords}")
             print(f"origin_coords {origin_coords}")
 
-        return cls([x_unit_point, y_unit_point, z_unit_point, origin], reference_frame=reference_frame)
+        return cls([x_unit_point, y_unit_point, z_unit_point, origin], ref=ref)
