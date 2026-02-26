@@ -18,7 +18,7 @@ from egse.settings import Settings
 from egse.storage import store_housekeeping_information
 from egse.zmq_ser import connect_address, get_port_number
 
-logger = logging.getLogger("egse.power_supply.kikusui.pmx_a.pmx_z")
+logger = logging.getLogger("egse.power_supply.kikusui.pmx_a.pmx_a")
 DEVICE_SETTINGS = Settings.load("KIKUSUI PMX")
 
 
