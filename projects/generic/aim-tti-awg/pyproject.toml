@@ -1,0 +1,82 @@
+[project]
+name = "aim_tti_awg"
+version = "0.18.4"
+description = "Aim-TTi TGF4000 Arbitrary Wave Generator"
+authors = [
+    {name = "IvS KU Leuven"}
+]
+maintainers = [
+    {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
+    {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"}
+]
+readme = {"file" = "README.md", "content-type" = "text/markdown"}
+requires-python = ">=3.10"
+license = "MIT"
+keywords = [
+    "CGSE",
+    "Common-EGSE",
+    "hardware testing",
+    "software framework",
+]
+dependencies = [
+    "cgse-common",
+    "cgse-core",
+]
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-mock", "pytest-cov"]
+
+[project.scripts]
+tgf4000_cs = 'egse.arbitrary_wave_generator.aim_tti.tgf4000_cs:app'
+#tgf4000_sim = 'egse.arbitrary_wave_generator.aim_tti.tgf4000_sim:app'
+
+#[project.gui-scripts]
+#tgf4000_ui = "egse.arbitrary_wave_generator.aim_tti.tgf4000_ui:main"
+
+[project.entry-points."cgse.version"]
+aim-tti-awg = 'egse.version:get_version_installed'
+
+[project.entry-points."cgse.settings"]
+aim-tti-awg = "aim_tti_awg:settings.yaml"
+
+[project.entry-points."cgse.service.device_command"]
+tgf4000 = 'aim_tti_awg.cgse_services:tgf4000'
+
+[project.entry-points."cgse.explore"]
+explore = "aim_tti_awg.cgse_explore"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/tests",
+    "/pytest.ini",
+    "/.gitignore",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/egse", "src/aim_tti_awg"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+extend-select = ["E501"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "setuptools", # needed by PyCharm
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "ruff>=0.9.0",
+    "nox>=2025.2.9",
+    "setuptools>=75.8.2", # needed by PyCharm
+    "pytest-asyncio>=0.26.0",
+    "ipython",
+]

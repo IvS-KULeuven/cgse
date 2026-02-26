@@ -1,0 +1,43 @@
+BaseClass:
+    egse.arbitrary_wave_generator.aim_tti.tgf4000.Tgf4000Interface
+
+ProxyClass:
+    egse.arbitrary_wave_generator.aim_tti.tgf4000.Tgf4000Proxy
+
+ControlServerClass:
+    egse.arbitrary_wave_generator.aim_tti.tgf4000_cs.Tgf4000ControlServer
+
+ControlServer:
+    egse.arbitrary_wave_generator.aim_tti.tgf4000_cs
+
+#UserInterface:
+#    egse.arbitrary_wave_generator.aim_tti.tgf4000_ui
+
+Commands:
+
+    # Definition of the DeviceInterface
+
+    is_simulator:
+        description: Ask if the connected class is a simulator instead of the real device Controller class.
+        returns: bool | True if the far end is a simulator instead of the real hardware
+
+    is_connected:
+        description: Check if the Aim-TTi TGF4000 hardware controller is connected.
+
+    connect:
+        description: Connect the Aim-TTi TGF4000 hardware controller
+
+    reconnect:
+        description: Reconnect the Aim-TTi TGF4000 hardware controller.
+            
+            This command will force a disconnect and then try to re-connect to the controller.
+
+    disconnect:
+        description: Disconnect from the Aim-TTi TGF4000 hardware controller.
+            
+            This command will be send to the Aim-TTi TGF4000 Control Server which will then
+            disconnect from the hardware controller.
+            
+            This command does not affect the ZeroMQ connection of the Proxy to the
+            control server. Use the service command `disconnect_cs()` to disconnect
+            from the control server.
