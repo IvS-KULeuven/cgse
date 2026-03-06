@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-03-06
+
+- Added implementation of, and, integrated the commanding of the Aim-TTi TGF4000 into the CGSE framework.
+- Tested on real H/W
+
 ## [0.18.6] - 2026-02-25
 
 - Fixed use of control settings for the hexapods, only the first level in Settings can be addressed with dot-notation, second level is further is pure dictionary.
@@ -282,7 +287,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.6...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.0...HEAD
+[0.19.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.6...v0.19.0
 [0.18.6]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.5...v0.18.6
 [0.18.5]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.4...v0.18.5
 [0.18.4]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.3...v0.18.4
