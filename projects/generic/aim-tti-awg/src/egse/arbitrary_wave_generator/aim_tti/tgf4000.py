@@ -1,13 +1,10 @@
 from egse.arbitrary_wave_generator.aim_tti import (
     Version,
-    Waveform,
     Output,
     CounterSource,
     CounterType,
     PROXY_TIMEOUT,
     CS_SETTINGS,
-    ArbDataFile,
-    ArbData,
     AmplitudeRange,
     SyncOutput,
     SyncType,
@@ -30,6 +27,7 @@ from egse.arbitrary_wave_generator.aim_tti import (
     ChannelTracking,
     BeepMode,
     NetworkConfig,
+    WaveformShape,
 )
 from egse.arbitrary_wave_generator.aim_tti.tgf4000_devif import Tgf4000EthernetInterface
 from egse.device import DeviceInterface
@@ -45,8 +43,8 @@ class Tgf4000Error(Exception):
     pass
 
 
-def unpack_response(response: bytes) -> None | list:
-    """Unpack the comma-separated strings from the given bytestring.
+def unpack_response(response: bytes) -> None | tuple:
+    """Unpacks the comma-separated strings from the given bytestring.
 
     The unpacking consists of the following steps:
 
@@ -55,7 +53,7 @@ def unpack_response(response: bytes) -> None | list:
         - Split the coma-separated strings into a list of strings.
 
     Args:
-        response (bytes): Bytestring representing the response from an AEU device.
+        response (bytes): Bytestring representing the response from the Aim-TTi TGF4000 device.
 
     Returns:
         List of strings, returned by an Aim-TTi TGF4000 device.
@@ -65,23 +63,25 @@ def unpack_response(response: bytes) -> None | list:
         return None
 
     else:
-        return response.decode(encoding="latin1", errors="ignore").replace("\r", "").replace("\n", "").split(", ")
-        # return response.decode().replace("\r\n", "").split(", ")
+        return tuple(response.split(", "))
 
 
-def parse_ints(response: bytes) -> tuple | int:
-    """Parse the given AEU device response to a list of integers.
+def parse_ints(response: bytes) -> tuple[int, ...] | int | None:
+    """Parses the given Aim-TTi TGF4000 device response to a list of integers.
 
     Args:
-        - response: Bytestring representing the response from an AEU device.
+        response (bytes): Bytestring representing the response from the Aim-TTi TGF4000 device.
 
-    Returns: List of integers.
+    Returns:
+        List of integers or a single integer.
     """
+
+    if response is None:
+        return None
 
     response = unpack_response(response)
 
-    for index, item in enumerate(response):
-        response[index] = int(item)
+    response = tuple([int(_) for _ in response])
 
     if len(response) == 1:
         return response[0]
@@ -90,19 +90,21 @@ def parse_ints(response: bytes) -> tuple | int:
         return tuple(response)
 
 
-def parse_floats(response: bytes) -> tuple | float:
-    """Parse the given AEU device response to a list of floats.
+def parse_floats(response: bytes) -> tuple[float, ...] | float | None:
+    """Parses the given Aim-TTi TGF4000 device response to a list of floats.
 
     Args:
-        - response: Bytestring representing the response from an AEU device.
+        response (bytes): Bytestring representing the response from the Aim-TTi TGF4000 device.
 
-    Returns: List of floats.
+    Returns:
+        List of floats or a single float.
     """
 
-    response = unpack_response(response)
+    if response is None:
+        return None
 
-    for index, item in enumerate(response):
-        response[index] = float(item)
+    response = unpack_response(response)
+    response = tuple([float(_) for _ in response])
 
     if len(response) == 1:
         return response[0]
@@ -111,14 +113,18 @@ def parse_floats(response: bytes) -> tuple | float:
         return tuple(response)
 
 
-def parse_strings(response: bytes) -> tuple | str:
-    """Parse the given AEU device response to a list of floats.
+def parse_strings(response: bytes) -> tuple[str, ...] | str | None:
+    """Parses the given Aim-TTi TGF4000 device response to a list of floats.
 
     Args:
-        - response: Bytestring representing the response from an AEU device.
+        response (bytes): Bytestring representing the response from the Aim-TTi TGF4000 device.
 
-    Returns: List of floats.
+    Returns:
+        List of strings or a single string.
     """
+
+    if response is None:
+        return None
 
     response = unpack_response(response)
 
@@ -130,17 +136,18 @@ def parse_strings(response: bytes) -> tuple | str:
 
 
 def parse_awg_instrument_id(response: bytes) -> tuple[str, str, str, float, float, float]:
-    """Parse the given AEU device response to AWG instrument identification.
+    """Parses the given Aim-TTi TGF4000 device response to AWG instrument identification.
 
     Args:
-        - response: Bytestring representing the response from an AEU device.
+        response (bytes): Bytestring representing the response from the Aim-TTi TGF4000 device.
 
     Returns:
-        - Manufacturer.
-        - Model.
-        - Serial number.
-        - Revision of the main firmware (XX.xx).
-        - Revision of the remote interface firmware (YY.yy).
+        Tuple with:
+        - Manufacturer,
+        - Model,
+        - Serial number,
+        - Revision of the main firmware (XX.xx),
+        - Revision of the remote interface firmware (YY.yy),
         - Revision of the USB flash drive firmware (ZZ.zz).
     """
 
@@ -155,14 +162,32 @@ def parse_awg_instrument_id(response: bytes) -> tuple[str, str, str, float, floa
     return (response[0], response[1]) + tuple(versions)
 
 
+def parse_output_load(response: bytes) -> float | str:
+    """Parses the given Aim-TTi TGF4000 device response to an output load.
+
+    Args:
+        response (bytes): Bytestring representing the response from the Aim-TTi TGF4000 device.
+
+    Returns:
+        Output load, ranging from 1 to 100000 Ohm, or "OPEN"
+    """
+
+    output_load = unpack_response(response)[0]
+
+    try:
+        return float(output_load)
+    except ValueError:
+        return output_load
+
+
 def parse_arb_data(cmd_string: str):
-    """Parse the data from the given file into a string that can be used as ARB data.
+    """Parses the data from the given file into a string that can be used as ARB data.
 
     The command string is of the format: ARB[1:4] filename.  The file with the given name must be read and the content
     must be converted to a string that can be sent to the AWG with the ARB[1:4] command.
 
     Args:
-        - cmd_string: Command string of the format: ARB[1:4] filename.
+        cmd_string (str): Command string of the format: ARB[1:4] filename.
     """
 
     cmd, filename = cmd_string.split(" ")
@@ -177,14 +202,15 @@ def parse_arb_data(cmd_string: str):
 
 
 def parse_arb_def(response: bytes) -> tuple[str, str, int] | None:
-    """Parse the given AEU device response to PSU error info.
+    """Parse the given Aim-TTi TGF4000 device response to PSU error info.
 
     Args:
-        - response: Bytestring representing the response from an AEU device.
+        - response: Bytestring representing the response from an Aim-TTi TGF4000 device.
 
     Returns:
-        - Waveform name.
-        - Waveform point interpolation state.
+        Tuple with:
+        - Waveform name,
+        - Waveform point interpolation state,
         - Waveform length.
     """
 
@@ -204,12 +230,13 @@ def parse_arb_def(response: bytes) -> tuple[str, str, int] | None:
 
 
 def parse_arb_data_response(response: bytes) -> str:
-    """Parse the given AEU device response to ARB data.
+    """Parse the given Aim-TTi TGF4000 device response to ARB data.
 
     Args:
-        - response: Bytestring representing the response from an AEU device.
+        response (bytes): Bytestring representing the response from the Aim-TTi TGF4000 device.
 
-    Returns: String representing the ARB data.
+    Returns:
+        String representing the ARB data.
     """
 
     # TODO For some reason, the result is still returned as a bytestring, in despite of the decoding.  Not sure what
@@ -240,7 +267,11 @@ class Tgf4000Interface(DeviceInterface):
 
     # Channel selection
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="CHN ${channel}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="CHN ${channel}",
+        process_cmd_string=add_lf,
+    )
     def set_channel(self, channel: int) -> None:
         """Selects the given channel as the destination for subsequent commands.
 
@@ -251,7 +282,10 @@ class Tgf4000Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.TRANSACTION, cmd_string="CHN?", process_cmd_string=add_lf, process_response=parse_ints
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="CHN?",
+        process_cmd_string=add_lf,
+        process_response=parse_ints,
     )
     def get_channel(self) -> int:
         """Returns the currently selected channel number.
@@ -264,49 +298,63 @@ class Tgf4000Interface(DeviceInterface):
 
     # Continuous carrier wave commands
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="WAVE ${waveform_type}", process_cmd_string=add_lf)
-    def set_waveform_type(self, waveform_type: Waveform) -> None:
-        """Sets the output waveform type.
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="WAVE ${waveform_shape}",
+        process_cmd_string=add_lf,
+    )
+    def set_waveform_shape(
+        self,
+        waveform_shape: WaveformShape | str,
+    ) -> None:
+        """Sets the output waveform shape.
 
         Possible values are:
 
-            - Waveform.SINE or "SINE" for sinusoidal
-            - Waveform.SQUARE or "SQUARE" for square
-            - Waveform.RAMP or "RAMP" for ramp
-            - Waveform.RAMPUP, Waveform.RAMP_UP, or "RAMPUP" for ramp up
-            - Waveform.RAMPDOWN, Waveform.RAMP_DOWN, or "RAMPDOWN" for ramp down
-            - Waveform.TRIANGULAR or "TRAING" for triangular
-            - Waveform.PULSE or "PULSE" for pulse
-            - Waveform.NOISE or "NOISE" for Gaussian white noise
-            - Waveform.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
-            - Waveform.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
-            - Waveform.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
-            - Waveform.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
-            - Waveform.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
-            - Waveform.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
-            - Waveform.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
-            - Waveform.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
-            - Waveform.ARBITRARY/Waveform.ARB or "ARB" for arbitrary
+            - WaveformShape.SINE or "SINE" for sinusoidal
+            - WaveformShape.SQUARE or "SQUARE" for square
+            - WaveformShape.RAMP or "RAMP" for ramp
+            - WaveformShape.RAMPUP, WaveformShape.RAMP_UP, or "RAMPUP" for ramp up
+            - WaveformShape.RAMPDOWN, WaveformShape.RAMP_DOWN, or "RAMPDOWN" for ramp down
+            - WaveformShape.TRIANGULAR, WaveformShape.TRIANGLE, WaveformShape.TRIANG or "TRIANG" for triangular
+            - WaveformShape.PULSE or "PULSE" for pulse
+            - WaveformShape.NOISE or "NOISE" for Gaussian white noise
+            - WaveformShape.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
+            - WaveformShape.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
+            - WaveformShape.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
+            - WaveformShape.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
+            - WaveformShape.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
+            - WaveformShape.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
+            - WaveformShape.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
+            - WaveformShape.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
+            - WaveformShape.ARBITRARY/Waveform.ARB or "ARB" for arbitrary
 
         Args:
-            waveform_type: Waveform type.
+            waveform_shape (WaveformShape | str): Waveform shape.
         """
 
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.TRANSACTION, cmd_string="WAVE?", process_cmd_string=add_lf, process_response=parse_ints
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="WAVE?",
+        process_cmd_string=add_lf,
+        process_response=parse_ints,
     )
-    def get_waveform_type(self) -> Waveform:
-        """Returns the output waveform type.
+    def get_waveform_shape(self) -> WaveformShape:
+        """Returns the output waveform shape.
 
         Returns:
-            Waveform type.
+            Waveform shape.
         """
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="FREQ ${frequency}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="FREQ ${frequency}",
+        process_cmd_string=add_lf,
+    )
     def set_frequency(self, frequency: float) -> None:
         """Sets the waveform frequency.
 
@@ -317,7 +365,10 @@ class Tgf4000Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.TRANSACTION, cmd_string="FREQ?", process_cmd_string=add_lf, process_response=parse_floats
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="FREQ?",
+        process_cmd_string=add_lf,
+        process_response=parse_floats,
     )
     def get_frequency(self) -> float:
         """Returns the waveform frequency.
@@ -328,7 +379,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="PER ${period}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="PER ${period}",
+        process_cmd_string=add_lf,
+    )
     def set_period(self, period: float) -> None:
         """Sets the waveform period.
 
@@ -339,7 +394,10 @@ class Tgf4000Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.TRANSACTION, cmd_string="PER?", process_cmd_string=add_lf, process_response=parse_floats
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="PER?",
+        process_cmd_string=add_lf,
+        process_response=parse_floats,
     )
     def get_period(self) -> float:
         """Returns the waveform period.
@@ -350,7 +408,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="AMPLRNG ${amplitude_range}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="AMPLRNG ${amplitude_range}",
+        process_cmd_string=add_lf,
+    )
     def set_amplitude_range(self, amplitude_range: AmplitudeRange) -> None:
         """Sets the amplitude range.
 
@@ -380,7 +442,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="AMPL ${amplitude}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="AMPL ${amplitude}",
+        process_cmd_string=add_lf,
+    )
     def set_amplitude(self, amplitude: float) -> None:
         """Sets the amplitude to the given value.
 
@@ -391,7 +457,10 @@ class Tgf4000Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.TRANSACTION, cmd_string="AMPL?", process_cmd_string=add_lf, process_response=parse_floats
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="AMPL?",
+        process_cmd_string=add_lf,
+        process_response=parse_floats,
     )
     def get_amplitude(self) -> float:
         """Return the amplitude.
@@ -402,7 +471,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="HILVL ${high_level}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="HILVL ${high_level}",
+        process_cmd_string=add_lf,
+    )
     def set_amplitude_high_level(self, high_level: float) -> None:
         """Sets the amplitude high-level to the given value.
 
@@ -413,10 +486,13 @@ class Tgf4000Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.TRANSACTION, cmd_string="HILVL?", process_cmd_string=add_lf, process_response=parse_floats
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="HILVL?",
+        process_cmd_string=add_lf,
+        process_response=parse_floats,
     )
     def get_amplitude_high_level(self) -> float:
-        """Return the amplitude high-level.
+        """Returns the amplitude high-level.
 
         Returns:
             Amplitude high-level [V].
@@ -424,7 +500,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="LOLVL ${low_level}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="LOLVL ${low_level}",
+        process_cmd_string=add_lf,
+    )
     def set_amplitude_low_level(self, low_level: float) -> None:
         """Sets the amplitude low-level to the given value.
 
@@ -435,10 +515,13 @@ class Tgf4000Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.TRANSACTION, cmd_string="LOLVL?", process_cmd_string=add_lf, process_response=parse_floats
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="LOLVL?",
+        process_cmd_string=add_lf,
+        process_response=parse_floats,
     )
     def get_amplitude_low_level(self) -> float:
-        """Return the amplitude low-level.
+        """Returns the amplitude low-level.
 
         Returns:
             Amplitude low-level [V].
@@ -446,7 +529,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="DCOFFS ${offset}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="DCOFFS ${offset}",
+        process_cmd_string=add_lf,
+    )
     def set_dc_offset(self, offset: float) -> None:
         """Sets the DC offset to the given value.
 
@@ -457,7 +544,10 @@ class Tgf4000Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.TRANSACTION, cmd_string="DCOFFS?", process_cmd_string=add_lf, process_response=parse_floats
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="DCOFFS?",
+        process_cmd_string=add_lf,
+        process_response=parse_floats,
     )
     def get_dc_offset(self) -> float:
         """Returns the DC offset.
@@ -468,8 +558,12 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="OUTPUT ${output_status}", process_cmd_string=add_lf)
-    def set_output_status(self, output_status: Output) -> None:
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="OUTPUT ${output}",
+        process_cmd_string=add_lf,
+    )
+    def set_output(self, output: Output) -> None:
         """Sets the output.
 
         Possible values are:
@@ -481,24 +575,31 @@ class Tgf4000Interface(DeviceInterface):
 
 
         Args:
-            output_status (Output): Output status
+            output (Output): Output.
         """
 
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.TRANSACTION, cmd_string="OUTPUT?", process_cmd_string=add_lf, process_response=parse_ints
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="OUTPUT?",
+        process_cmd_string=add_lf,
+        process_response=parse_ints,
     )
-    def get_output_status(self) -> Output:
+    def get_output(self) -> Output:
         """Returns the output status and type.
 
         Returns:
-             Whether the output has been enabled (Output.ON or Output.OFF).
+             Output status and type.
         """
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="ZLOAD ${load}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="ZLOAD ${load}",
+        process_cmd_string=add_lf,
+    )
     def set_output_load(self, load: float | str) -> None:
         """Sets the output load, which the generator is to assume for amplitude and DC offset entries.
 
@@ -512,18 +613,23 @@ class Tgf4000Interface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string="ZLOAD?",
-        process_cmd_string=add_lf,  # , process_response=parse_floats
+        process_cmd_string=add_lf,
+        process_response=parse_output_load,
     )
     def get_output_load(self) -> float | str:
         """Returns the output load.
 
         Returns:
-            Output load, ranging from 1 to 100000 Ohm, or "OPEN"
+            Output load, ranging from 1 to 100000 Ohm, or "OPEN".
         """
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="SQRSYMM ${duty_cycle}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="SQRSYMM ${duty_cycle}",
+        process_cmd_string=add_lf,
+    )
     def set_square_waveform_symmetry(self, duty_cycle: float):
         """Sets the square waveform symmetry.
 
@@ -534,7 +640,10 @@ class Tgf4000Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.WRITE, cmd_string="SQRSYMM?", process_cmd_string=add_lf, process_response=parse_floats
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="SQRSYMM?",
+        process_cmd_string=add_lf,
+        process_response=parse_floats,
     )
     def get_square_waveform_symmetry(self) -> float:
         """Returns the square waveform symmetry.
@@ -545,7 +654,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="RMPSYMM ${duty_cycle}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="RMPSYMM ${duty_cycle}",
+        process_cmd_string=add_lf,
+    )
     def set_ramp_waveform_symmetry(self, duty_cycle: float):
         """Sets the square waveform symmetry.
 
@@ -556,7 +669,10 @@ class Tgf4000Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.WRITE, cmd_string="RMPSYMM?", process_cmd_string=add_lf, process_response=parse_floats
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="RMPSYMM?",
+        process_cmd_string=add_lf,
+        process_response=parse_floats,
     )
     def get_ramp_waveform_symmetry(self) -> float:
         """Returns the square waveform symmetry.
@@ -567,7 +683,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="SYNCOUT ${sync_output}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="SYNCOUT ${sync_output}",
+        process_cmd_string=add_lf,
+    )
     def set_sync_output(self, sync_output: SyncOutput):
         """Sets the synchronisation output state.
 
@@ -578,7 +698,10 @@ class Tgf4000Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.WRITE, cmd_string="SYNCOUT?", process_cmd_string=add_lf, process_response=parse_strings
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="SYNCOUT?",
+        process_cmd_string=add_lf,
+        process_response=parse_strings,
     )
     def get_sync_output(self) -> SyncOutput:
         """Returns the synchronisation output state.
@@ -589,7 +712,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="SYNCTYPE ${sync_output}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="SYNCTYPE ${sync_output}",
+        process_cmd_string=add_lf,
+    )
     def set_sync_type(self, sync_type: SyncType):
         """Sets the synchronisation type.
 
@@ -600,7 +727,10 @@ class Tgf4000Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.WRITE, cmd_string="SYNCTYPE?", process_cmd_string=add_lf, process_response=parse_strings
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="SYNCTYPE?",
+        process_cmd_string=add_lf,
+        process_response=parse_strings,
     )
     def get_sync_type(self) -> SyncType:
         """Returns the synchronisation type.
@@ -611,7 +741,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="CHN2CONFIG ${config}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="CHN2CONFIG ${config}",
+        process_cmd_string=add_lf,
+    )
     def set_channel2_config(self, config: Channel2Config):
         """Sets the configuration for channel 2.
 
@@ -622,7 +756,10 @@ class Tgf4000Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.WRITE, cmd_string="CHN2CONFIG?", process_cmd_string=add_lf, process_response=parse_strings
+        cmd_type=CommandType.WRITE,
+        cmd_string="CHN2CONFIG?",
+        process_cmd_string=add_lf,
+        process_response=parse_strings,
     )
     def get_channel2_config(self) -> Channel2Config:
         """Returns the configuration for channel 2.
@@ -633,7 +770,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="PHASE ${phase}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="PHASE ${phase}",
+        process_cmd_string=add_lf,
+    )
     def set_phase(self, phase: float) -> None:
         """Sets the waveform phase offset.
 
@@ -644,7 +785,10 @@ class Tgf4000Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.TRANSACTION, cmd_string="PHASE?", process_cmd_string=add_lf, process_response=parse_floats
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="PHASE?",
+        process_cmd_string=add_lf,
+        process_response=parse_floats,
     )
     def get_phase(self) -> float:
         """Returns the waveform phase offset.
@@ -655,7 +799,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="ALIGN", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="ALIGN",
+        process_cmd_string=add_lf,
+    )
     def align(self) -> None:
         """Sends signal to align the zero phase reference of both channels."""
 
@@ -663,7 +811,11 @@ class Tgf4000Interface(DeviceInterface):
 
     # Pulse generator commands
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="PULSFREQ ${frequency}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="PULSFREQ ${frequency}",
+        process_cmd_string=add_lf,
+    )
     def set_pulse_frequency(self, frequency: float) -> None:
         """Sets the pulse waveform frequency.
 
@@ -688,7 +840,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="PULSPER ${period}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="PULSPER ${period}",
+        process_cmd_string=add_lf,
+    )
     def set_pulse_period(self, period: float) -> None:
         """Sets the pulse waveform period.
 
@@ -713,7 +869,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="PULSWID ${width}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="PULSWID ${width}",
+        process_cmd_string=add_lf,
+    )
     def set_pulse_period(self, width: float) -> None:
         """Sets the pulse waveform width.
 
@@ -738,7 +898,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="PULSSYMM ${symmetry}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="PULSSYMM ${symmetry}",
+        process_cmd_string=add_lf,
+    )
     def set_pulse_symmetry(self, symmetry: float) -> None:
         """Sets the pulse waveform symmetry.
 
@@ -763,7 +927,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="PULSEDGE ${edges}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="PULSEDGE ${edges}",
+        process_cmd_string=add_lf,
+    )
     def set_pulse_edges(self, edges: float) -> None:
         """Sets the pulse waveform edges (positive/negative).
 
@@ -788,7 +956,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="PULSRISE ${rise}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="PULSRISE ${rise}",
+        process_cmd_string=add_lf,
+    )
     def set_pulse_rise(self, rise: float) -> None:
         """Sets the pulse waveform positive edge.
 
@@ -813,7 +985,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="PULSFALL ${fall}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="PULSFALL ${fall}",
+        process_cmd_string=add_lf,
+    )
     def set_pulse_fall(self, fall: float) -> None:
         """Sets the pulse waveform negative edge.
 
@@ -838,7 +1014,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="PULSDLY ${delay}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="PULSDLY ${delay}",
+        process_cmd_string=add_lf,
+    )
     def set_pulse_delay(self, delay: float) -> None:
         """Sets the pulse waveform delay.
 
@@ -865,7 +1045,11 @@ class Tgf4000Interface(DeviceInterface):
 
     # PRBS generator commands
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="PRBSBITRATE ${bitrate}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="PRBSBITRATE ${bitrate}",
+        process_cmd_string=add_lf,
+    )
     def set_prbs_bitrate(self, bitrate: float) -> None:
         """Sets the PRBS waveform bitrate.
 
@@ -892,7 +1076,11 @@ class Tgf4000Interface(DeviceInterface):
 
     # Arbitrary waveform commands
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="ARBDCOFFS ${dc_offset}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="ARBDCOFFS ${dc_offset}",
+        process_cmd_string=add_lf,
+    )
     def set_arb_dc_offset(self, dc_offset: float) -> None:
         """Sets the arbitrary DC waveform offset.
 
@@ -917,7 +1105,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="ARBFILTER ${filter_shape}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="ARBFILTER ${filter_shape}",
+        process_cmd_string=add_lf,
+    )
     def set_arb_filter(self, filter_shape: FilterShape) -> None:
         """Sets the arbitrary waveform filter shape.
 
@@ -947,7 +1139,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="ARBLOAD ${output_type}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="ARBLOAD ${output_type}",
+        process_cmd_string=add_lf,
+    )
     def set_arb_waveform(self, output_type: OutputWaveformType):
         """Sets the given arbitrary output waveform type.
 
@@ -976,7 +1172,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string="ARBLOAD?", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="ARBLOAD?",
+        process_cmd_string=add_lf,
+    )
     def get_arb_waveform(self) -> OutputWaveformType:
         """Returns the arbitrary output waveform type.
 
@@ -1006,7 +1206,9 @@ class Tgf4000Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.WRITE, cmd_string="ARBRESIZE ${output_type} ${size}", process_cmd_string=add_lf
+        cmd_type=CommandType.WRITE,
+        cmd_string="ARBRESIZE ${output_type} ${size}",
+        process_cmd_string=add_lf,
     )
     def set_arb_size(self, output_type: OutputWaveformType, size: float) -> None:
         """Sets the size of the arbitrary waveform.
@@ -1037,112 +1239,46 @@ class Tgf4000Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.WRITE, cmd_string="ARBDEF ${arb}, ${name}, ${interpolation}", process_cmd_string=add_lf
+        cmd_type=CommandType.WRITE,
+        cmd_string="ARBDEF ${arb}, ${name}, ${interpolation}",
+        process_cmd_string=add_lf,
     )
     def define_arb_waveform(self, arb: OutputWaveformType, name: str, interpolation: Output):
         """Defines an arbitrary waveform with the given name and waveform point interpolation state.
 
         Args:
-            arb (ARB): Arbitrary waveform type (ARB1/ARB2/ARB3/ARB4).
+            arb (OutputWaveformType): Arbitrary waveform type (ARB1/ARB2/ARB3/ARB4).
             name (str): Name (capitalised, no numbers).
             interpolation (Output): Indicates whether to use waveform point interpolation.
         """
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="ARB1 ${binary}", process_cmd_string=parse_arb_data)
-    def load_arb1_data(self, binary: ArbDataFile) -> None:
-        """Loads data to an existing arbitrary waveform memory location ARB1.
-
-        This command does not need the command terminator code 0x0A (Line Feed).
-
-        The waveform memory size is 8192 points, with a vertical resolution of 16 bits.
-
-        Args:
-            binary (ArbDataFile): Data consisting of two bytes per point with no characters between bytes or points.
-                                  The point data is sent high byte first. The data block has a header which consists of
-                                  the # character followed by several ascii coded numeric characters. The first of
-                                  these defines the number of ascii characters to follow and these following characters
-                                  define the length of the binary data in bytes. The instrument will wait for data
-                                  indefinitely If less data is sent. If more data is sent the extra is processed by the
-                                  command parser which results in a command error.
-        """
-
-        raise NotImplementedError
-
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="ARB2 ${binary}", process_cmd_string=parse_arb_data)
-    def load_arb2_data(self, binary: ArbDataFile) -> None:
-        """Loads data to an existing arbitrary waveform memory location ARB2.
-
-        This command does not need the command terminator code 0x0A (Line Feed).
-
-        The waveform memory size is 8192 points, with a vertical resolution of 16 bits.
-
-        Args:
-            binary (ArbDataFile): Data consisting of two bytes per point with no characters between bytes or points.
-                                  The point data is sent high byte first. The data block has a header which consists of
-                                  the # character followed by several ascii coded numeric characters. The first of
-                                  these defines the number of ascii characters to follow and these following characters
-                                  define the length of the binary data in bytes. The instrument will wait for data
-                                  indefinitely If less data is sent. If more data is sent the extra is processed by the
-                                  command parser which results in a command error.
-        """
-
-        raise NotImplementedError
-
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="ARB3 ${binary}", process_cmd_string=parse_arb_data)
-    def load_arb3_data(self, binary: ArbDataFile) -> None:
-        """Loads data to an existing arbitrary waveform memory location ARB3.
-
-        This command does not need the command terminator code 0x0A (Line Feed).
-
-        The waveform memory size is 8192 points, with a vertical resolution of 16 bits.
-
-        Args:
-            binary (ArbDataFile): Data consisting of two bytes per point with no characters between bytes or points.
-                                  The point data is sent high byte first. The data block has a header which consists of
-                                  the # character followed by several ascii coded numeric characters. The first of
-                                  these defines the number of ascii characters to follow and these following characters
-                                  define the length of the binary data in bytes. The instrument will wait for data
-                                  indefinitely If less data is sent. If more data is sent the extra is processed by the
-                                  command parser which results in a command error.
-        """
-
-        raise NotImplementedError
-
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="ARB4 ${binary}", process_cmd_string=parse_arb_data)
-    def load_arb4_data(self, binary: ArbDataFile) -> None:
-        """Loads data to an existing arbitrary waveform memory location ARB4.
-
-        This command does not need the command terminator code 0x0A (Line Feed).
-
-        The waveform memory size is 8192 points, with a vertical resolution of 16 bits.
-
-        Args:
-            binary (ArbDataFile): Data consisting of two bytes per point with no characters between bytes or points.
-                                  The point data is sent high byte first. The data block has a header which consists of
-                                  the # character followed by several ascii coded numeric characters. The first of
-                                  these defines the number of ascii characters to follow and these following characters
-                                  define the length of the binary data in bytes. The instrument will wait for data
-                                  indefinitely If less data is sent. If more data is sent the extra is processed by the
-                                  command parser which results in a command error.
-        """
-
-        raise NotImplementedError
-
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="ARB1 ${binary}")
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="ARB1 ${binary}",
+    )
     def load_arb1_ascii(self, binary: str) -> None:
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="ARB2 ${binary}")
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="ARB2 ${binary}",
+    )
     def load_arb2_ascii(self, binary: str) -> None:
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="ARB3 ${binary}")
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="ARB3 ${binary}",
+    )
     def load_arb3_ascii(self, binary: str) -> None:
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="ARB4 ${binary}")
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="ARB4 ${binary}",
+    )
     def load_arb4_ascii(self, binary: str) -> None:
         raise NotImplementedError
 
@@ -1218,7 +1354,7 @@ class Tgf4000Interface(DeviceInterface):
         cmd_type=CommandType.TRANSACTION,
         cmd_string="ARB1?",
         process_cmd_string=add_lf,
-        process_response=parse_arb_data_response,
+        # process_response=parse_arb_data_response,
     )
     def get_arb1(self) -> str:
         """Returns the data from the existing arbitrary waveform location ARB1.
@@ -1241,7 +1377,7 @@ class Tgf4000Interface(DeviceInterface):
         cmd_type=CommandType.TRANSACTION,
         cmd_string="ARB2?",
         process_cmd_string=add_lf,
-        process_response=parse_arb_data_response,
+        # process_response=parse_arb_data_response,
     )
     def get_arb2(self) -> str:
         """Returns the data from the existing arbitrary waveform location ARB2.
@@ -1264,7 +1400,7 @@ class Tgf4000Interface(DeviceInterface):
         cmd_type=CommandType.TRANSACTION,
         cmd_string="ARB3?",
         process_cmd_string=add_lf,
-        process_response=parse_arb_data_response,
+        # process_response=parse_arb_data_response,
     )
     def get_arb3(self) -> str:
         """Returns the data from the existing arbitrary waveform location ARB3.
@@ -1287,7 +1423,7 @@ class Tgf4000Interface(DeviceInterface):
         cmd_type=CommandType.TRANSACTION,
         cmd_string="ARB4?",
         process_cmd_string=add_lf,
-        process_response=parse_arb_data_response,
+        # process_response=parse_arb_data_response,
     )
     def get_arb4(self) -> str:
         """Returns the data from the existing arbitrary waveform location ARB4.
@@ -1368,31 +1504,31 @@ class Tgf4000Interface(DeviceInterface):
         cmd_string="MODAMSHAPE ${shape}",
         process_cmd_string=add_lf,
     )
-    def set_am_waveform_shape(self, shape: Waveform) -> None:
+    def set_am_waveform_shape(self, shape: WaveformShape) -> None:
         """Sets the waveform shape for AM modulation.
 
         Possible values are:
 
-            - Waveform.SINE or "SINE" for sinusoidal
-            - Waveform.SQUARE or "SQUARE" for square
-            - Waveform.RAMP or "RAMP" for ramp
-            - Waveform.RAMPUP, Waveform.RAMP_UP, or "RAMPUP" for ramp up
-            - Waveform.RAMPDOWN, Waveform.RAMP_DOWN, or "RAMPDOWN" for ramp down
-            - Waveform.TRIANGULAR or "TRAING" for triangular
-            - Waveform.PULSE or "PULSE" for pulse
-            - Waveform.NOISE or "NOISE" for Gaussian white noise
-            - Waveform.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
-            - Waveform.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
-            - Waveform.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
-            - Waveform.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
-            - Waveform.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
-            - Waveform.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
-            - Waveform.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
-            - Waveform.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
-            - Waveform.ARBITRARY/Waveform.ARB or "ARB" for arbitrary
+            - WaveformShape.SINE or "SINE" for sinusoidal
+            - WaveformShape.SQUARE or "SQUARE" for square
+            - WaveformShape.RAMP or "RAMP" for ramp
+            - WaveformShape.RAMPUP, WaveformShape.RAMP_UP, or "RAMPUP" for ramp up
+            - WaveformShape.RAMPDOWN, WaveformShape.RAMP_DOWN, or "RAMPDOWN" for ramp down
+            - WaveformShape.TRIANGULAR or "TRAING" for triangular
+            - WaveformShape.PULSE or "PULSE" for pulse
+            - WaveformShape.NOISE or "NOISE" for Gaussian white noise
+            - WaveformShape.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
+            - WaveformShape.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
+            - WaveformShape.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
+            - WaveformShape.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
+            - WaveformShape.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
+            - WaveformShape.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
+            - WaveformShape.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
+            - WaveformShape.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
+            - WaveformShape.ARBITRARY/WaveformShape.ARB or "ARB" for arbitrary
 
         Args:
-            shape (Waveform): Waveform shape.
+            shape (WaveformShape): Waveform shape.
         """
 
         raise NotImplementedError
@@ -1402,28 +1538,28 @@ class Tgf4000Interface(DeviceInterface):
         cmd_string="MODAMSHAPE?",
         process_cmd_string=add_lf,
     )
-    def get_am_waveform_shape(self) -> Waveform:
+    def get_am_waveform_shape(self) -> WaveformShape:
         """Returns the waveform shape for AM modulation.
 
         Possible values are:
 
-            - Waveform.SINE or "SINE" for sinusoidal
-            - Waveform.SQUARE or "SQUARE" for square
-            - Waveform.RAMP or "RAMP" for ramp
-            - Waveform.RAMPUP, Waveform.RAMP_UP, or "RAMPUP" for ramp up
-            - Waveform.RAMPDOWN, Waveform.RAMP_DOWN, or "RAMPDOWN" for ramp down
-            - Waveform.TRIANGULAR or "TRAING" for triangular
-            - Waveform.PULSE or "PULSE" for pulse
-            - Waveform.NOISE or "NOISE" for Gaussian white noise
-            - Waveform.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
-            - Waveform.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
-            - Waveform.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
-            - Waveform.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
-            - Waveform.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
-            - Waveform.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
-            - Waveform.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
-            - Waveform.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
-            - Waveform.ARBITRARY/Waveform.ARB or "ARB" for arbitrary
+            - WaveformShape.SINE or "SINE" for sinusoidal
+            - WaveformShape.SQUARE or "SQUARE" for square
+            - WaveformShape.RAMP or "RAMP" for ramp
+            - WaveformShape.RAMPUP, WaveformShape.RAMP_UP, or "RAMPUP" for ramp up
+            - WaveformShape.RAMPDOWN, WaveformShape.RAMP_DOWN, or "RAMPDOWN" for ramp down
+            - WaveformShape.TRIANGULAR or "TRAING" for triangular
+            - WaveformShape.PULSE or "PULSE" for pulse
+            - WaveformShape.NOISE or "NOISE" for Gaussian white noise
+            - WaveformShape.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
+            - WaveformShape.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
+            - WaveformShape.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
+            - WaveformShape.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
+            - WaveformShape.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
+            - WaveformShape.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
+            - WaveformShape.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
+            - WaveformShape.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
+            - WaveformShape.ARBITRARY/Waveform.ARB or "ARB" for arbitrary
 
         Returns:
             Waveform shape for AM modulation.
@@ -1436,31 +1572,31 @@ class Tgf4000Interface(DeviceInterface):
         cmd_string="MODFMSHAPE ${shape}",
         process_cmd_string=add_lf,
     )
-    def set_fm_waveform_shape(self, shape: Waveform) -> None:
+    def set_fm_waveform_shape(self, shape: WaveformShape) -> None:
         """Sets the waveform shape for FM modulation.
 
         Possible values are:
 
-            - Waveform.SINE or "SINE" for sinusoidal
-            - Waveform.SQUARE or "SQUARE" for square
-            - Waveform.RAMP or "RAMP" for ramp
-            - Waveform.RAMPUP, Waveform.RAMP_UP, or "RAMPUP" for ramp up
-            - Waveform.RAMPDOWN, Waveform.RAMP_DOWN, or "RAMPDOWN" for ramp down
-            - Waveform.TRIANGULAR or "TRAING" for triangular
-            - Waveform.PULSE or "PULSE" for pulse
-            - Waveform.NOISE or "NOISE" for Gaussian white noise
-            - Waveform.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
-            - Waveform.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
-            - Waveform.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
-            - Waveform.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
-            - Waveform.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
-            - Waveform.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
-            - Waveform.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
-            - Waveform.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
-            - Waveform.ARBITRARY/Waveform.ARB or "ARB" for arbitrary
+            - WaveformShape.SINE or "SINE" for sinusoidal
+            - WaveformShape.SQUARE or "SQUARE" for square
+            - WaveformShape.RAMP or "RAMP" for ramp
+            - WaveformShape.RAMPUP, WaveformShape.RAMP_UP, or "RAMPUP" for ramp up
+            - WaveformShape.RAMPDOWN, WaveformShape.RAMP_DOWN, or "RAMPDOWN" for ramp down
+            - WaveformShape.TRIANGULAR or "TRAING" for triangular
+            - WaveformShape.PULSE or "PULSE" for pulse
+            - WaveformShape.NOISE or "NOISE" for Gaussian white noise
+            - WaveformShape.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
+            - WaveformShape.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
+            - WaveformShape.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
+            - WaveformShape.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
+            - WaveformShape.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
+            - WaveformShape.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
+            - WaveformShape.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
+            - WaveformShape.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
+            - WaveformShape.ARBITRARY/Waveform.ARB or "ARB" for arbitrary
 
         Args:
-            shape (Waveform): Waveform shape.
+            shape (WaveformShape): Waveform shape.
         """
 
         raise NotImplementedError
@@ -1470,28 +1606,28 @@ class Tgf4000Interface(DeviceInterface):
         cmd_string="MODFMSHAPE?",
         process_cmd_string=add_lf,
     )
-    def get_fm_waveform_shape(self) -> Waveform:
+    def get_fm_waveform_shape(self) -> WaveformShape:
         """Returns the waveform shape for FM modulation.
 
         Possible values are:
 
-            - Waveform.SINE or "SINE" for sinusoidal
-            - Waveform.SQUARE or "SQUARE" for square
-            - Waveform.RAMP or "RAMP" for ramp
-            - Waveform.RAMPUP, Waveform.RAMP_UP, or "RAMPUP" for ramp up
-            - Waveform.RAMPDOWN, Waveform.RAMP_DOWN, or "RAMPDOWN" for ramp down
-            - Waveform.TRIANGULAR or "TRAING" for triangular
-            - Waveform.PULSE or "PULSE" for pulse
-            - Waveform.NOISE or "NOISE" for Gaussian white noise
-            - Waveform.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
-            - Waveform.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
-            - Waveform.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
-            - Waveform.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
-            - Waveform.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
-            - Waveform.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
-            - Waveform.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
-            - Waveform.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
-            - Waveform.ARBITRARY/Waveform.ARB or "ARB" for arbitrary
+            - WaveformShape.SINE or "SINE" for sinusoidal
+            - WaveformShape.SQUARE or "SQUARE" for square
+            - WaveformShape.RAMP or "RAMP" for ramp
+            - WaveformShape.RAMPUP, WaveformShape.RAMP_UP, or "RAMPUP" for ramp up
+            - WaveformShape.RAMPDOWN, WaveformShape.RAMP_DOWN, or "RAMPDOWN" for ramp down
+            - WaveformShape.TRIANGULAR or "TRAING" for triangular
+            - WaveformShape.PULSE or "PULSE" for pulse
+            - WaveformShape.NOISE or "NOISE" for Gaussian white noise
+            - WaveformShape.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
+            - WaveformShape.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
+            - WaveformShape.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
+            - WaveformShape.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
+            - WaveformShape.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
+            - WaveformShape.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
+            - WaveformShape.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
+            - WaveformShape.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
+            - WaveformShape.ARBITRARY/Waveform.ARB or "ARB" for arbitrary
 
         Returns:
             Waveform shape for FM modulation.
@@ -1504,31 +1640,31 @@ class Tgf4000Interface(DeviceInterface):
         cmd_string="MODPMSHAPE ${shape}",
         process_cmd_string=add_lf,
     )
-    def set_pm_waveform_shape(self, shape: Waveform) -> None:
+    def set_pm_waveform_shape(self, shape: WaveformShape) -> None:
         """Sets the waveform shape for PM modulation.
 
         Possible values are:
 
-            - Waveform.SINE or "SINE" for sinusoidal
-            - Waveform.SQUARE or "SQUARE" for square
-            - Waveform.RAMP or "RAMP" for ramp
-            - Waveform.RAMPUP, Waveform.RAMP_UP, or "RAMPUP" for ramp up
-            - Waveform.RAMPDOWN, Waveform.RAMP_DOWN, or "RAMPDOWN" for ramp down
-            - Waveform.TRIANGULAR or "TRAING" for triangular
-            - Waveform.PULSE or "PULSE" for pulse
-            - Waveform.NOISE or "NOISE" for Gaussian white noise
-            - Waveform.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
-            - Waveform.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
-            - Waveform.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
-            - Waveform.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
-            - Waveform.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
-            - Waveform.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
-            - Waveform.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
-            - Waveform.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
-            - Waveform.ARBITRARY/Waveform.ARB or "ARB" for arbitrary
+            - WaveformShape.SINE or "SINE" for sinusoidal
+            - WaveformShape.SQUARE or "SQUARE" for square
+            - WaveformShape.RAMP or "RAMP" for ramp
+            - WaveformShape.RAMPUP, Waveform.RAMP_UP, or "RAMPUP" for ramp up
+            - WaveformShape.RAMPDOWN, Waveform.RAMP_DOWN, or "RAMPDOWN" for ramp down
+            - WaveformShape.TRIANGULAR or "TRAING" for triangular
+            - WaveformShape.PULSE or "PULSE" for pulse
+            - WaveformShape.NOISE or "NOISE" for Gaussian white noise
+            - WaveformShape.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
+            - WaveformShape.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
+            - WaveformShape.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
+            - WaveformShape.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
+            - WaveformShape.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
+            - WaveformShape.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
+            - WaveformShape.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
+            - WaveformShape.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
+            - WaveformShape.ARBITRARY/Waveform.ARB or "ARB" for arbitrary
 
         Args:
-            shape (Waveform): Waveform shape.
+            shape (WaveformShape): Waveform shape.
         """
 
         raise NotImplementedError
@@ -1538,28 +1674,28 @@ class Tgf4000Interface(DeviceInterface):
         cmd_string="MODPMSHAPE?",
         process_cmd_string=add_lf,
     )
-    def get_pm_waveform_shape(self) -> Waveform:
+    def get_pm_waveform_shape(self) -> WaveformShape:
         """Returns the waveform shape for PM modulation.
 
         Possible values are:
 
-            - Waveform.SINE or "SINE" for sinusoidal
-            - Waveform.SQUARE or "SQUARE" for square
-            - Waveform.RAMP or "RAMP" for ramp
-            - Waveform.RAMPUP, Waveform.RAMP_UP, or "RAMPUP" for ramp up
-            - Waveform.RAMPDOWN, Waveform.RAMP_DOWN, or "RAMPDOWN" for ramp down
-            - Waveform.TRIANGULAR or "TRAING" for triangular
-            - Waveform.PULSE or "PULSE" for pulse
-            - Waveform.NOISE or "NOISE" for Gaussian white noise
-            - Waveform.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
-            - Waveform.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
-            - Waveform.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
-            - Waveform.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
-            - Waveform.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
-            - Waveform.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
-            - Waveform.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
-            - Waveform.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
-            - Waveform.ARBITRARY/Waveform.ARB or "ARB" for arbitrary
+            - WaveformShape.SINE or "SINE" for sinusoidal
+            - WaveformShape.SQUARE or "SQUARE" for square
+            - WaveformShape.RAMP or "RAMP" for ramp
+            - WaveformShape.RAMPUP, Waveform.RAMP_UP, or "RAMPUP" for ramp up
+            - WaveformShape.RAMPDOWN, Waveform.RAMP_DOWN, or "RAMPDOWN" for ramp down
+            - WaveformShape.TRIANGULAR or "TRAING" for triangular
+            - WaveformShape.PULSE or "PULSE" for pulse
+            - WaveformShape.NOISE or "NOISE" for Gaussian white noise
+            - WaveformShape.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
+            - WaveformShape.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
+            - WaveformShape.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
+            - WaveformShape.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
+            - WaveformShape.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
+            - WaveformShape.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
+            - WaveformShape.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
+            - WaveformShape.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
+            - WaveformShape.ARBITRARY/Waveform.ARB or "ARB" for arbitrary
 
         Returns:
             Waveform shape for PM modulation.
@@ -1572,28 +1708,28 @@ class Tgf4000Interface(DeviceInterface):
         cmd_string="MODPWMSHAPE ${shape}",
         process_cmd_string=add_lf,
     )
-    def set_pwm_waveform_shape(self, shape: Waveform) -> None:
+    def set_pwm_waveform_shape(self, shape: WaveformShape) -> None:
         """Sets the waveform shape for PWM modulation.
 
         Possible values are:
 
-            - Waveform.SINE or "SINE" for sinusoidal
-            - Waveform.SQUARE or "SQUARE" for square
-            - Waveform.RAMP or "RAMP" for ramp
-            - Waveform.RAMPUP, Waveform.RAMP_UP, or "RAMPUP" for ramp up
-            - Waveform.RAMPDOWN, Waveform.RAMP_DOWN, or "RAMPDOWN" for ramp down
-            - Waveform.TRIANGULAR or "TRAING" for triangular
-            - Waveform.PULSE or "PULSE" for pulse
-            - Waveform.NOISE or "NOISE" for Gaussian white noise
-            - Waveform.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
-            - Waveform.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
-            - Waveform.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
-            - Waveform.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
-            - Waveform.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
-            - Waveform.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
-            - Waveform.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
-            - Waveform.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
-            - Waveform.ARBITRARY/Waveform.ARB or "ARB" for arbitrary
+            - WaveformShape.SINE or "SINE" for sinusoidal
+            - WaveformShape.SQUARE or "SQUARE" for square
+            - WaveformShape.RAMP or "RAMP" for ramp
+            - WaveformShape.RAMPUP, Waveform.RAMP_UP, or "RAMPUP" for ramp up
+            - WaveformShape.RAMPDOWN, Waveform.RAMP_DOWN, or "RAMPDOWN" for ramp down
+            - WaveformShape.TRIANGULAR or "TRAING" for triangular
+            - WaveformShape.PULSE or "PULSE" for pulse
+            - WaveformShape.NOISE or "NOISE" for Gaussian white noise
+            - WaveformShape.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
+            - WaveformShape.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
+            - WaveformShape.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
+            - WaveformShape.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
+            - WaveformShape.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
+            - WaveformShape.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
+            - WaveformShape.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
+            - WaveformShape.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
+            - WaveformShape.ARBITRARY/Waveform.ARB or "ARB" for arbitrary
 
         Args:
             shape (Waveform): Waveform shape.
@@ -1606,7 +1742,7 @@ class Tgf4000Interface(DeviceInterface):
         cmd_string="MODPWMSHAPE?",
         process_cmd_string=add_lf,
     )
-    def get_pwm_waveform_shape(self) -> Waveform:
+    def get_pwm_waveform_shape(self) -> WaveformShape:
         """Returns the waveform shape for PWM modulation.
 
         Possible values are:
@@ -1640,31 +1776,31 @@ class Tgf4000Interface(DeviceInterface):
         cmd_string="MODSUMSHAPE ${shape}",
         process_cmd_string=add_lf,
     )
-    def set_sum_waveform_shape(self, shape: Waveform) -> None:
+    def set_sum_waveform_shape(self, shape: WaveformShape) -> None:
         """Sets the waveform shape for SUM modulation.
 
         Possible values are:
 
-            - Waveform.SINE or "SINE" for sinusoidal
-            - Waveform.SQUARE or "SQUARE" for square
-            - Waveform.RAMP or "RAMP" for ramp
-            - Waveform.RAMPUP, Waveform.RAMP_UP, or "RAMPUP" for ramp up
-            - Waveform.RAMPDOWN, Waveform.RAMP_DOWN, or "RAMPDOWN" for ramp down
-            - Waveform.TRIANGULAR or "TRAING" for triangular
-            - Waveform.PULSE or "PULSE" for pulse
-            - Waveform.NOISE or "NOISE" for Gaussian white noise
-            - Waveform.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
-            - Waveform.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
-            - Waveform.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
-            - Waveform.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
-            - Waveform.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
-            - Waveform.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
-            - Waveform.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
-            - Waveform.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
-            - Waveform.ARBITRARY/Waveform.ARB or "ARB" for arbitrary
+            - WaveformShape.SINE or "SINE" for sinusoidal
+            - WaveformShape.SQUARE or "SQUARE" for square
+            - WaveformShape.RAMP or "RAMP" for ramp
+            - WaveformShape.RAMPUP, Waveform.RAMP_UP, or "RAMPUP" for ramp up
+            - WaveformShape.RAMPDOWN, Waveform.RAMP_DOWN, or "RAMPDOWN" for ramp down
+            - WaveformShape.TRIANGULAR or "TRAING" for triangular
+            - WaveformShape.PULSE or "PULSE" for pulse
+            - WaveformShape.NOISE or "NOISE" for Gaussian white noise
+            - WaveformShape.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
+            - WaveformShape.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
+            - WaveformShape.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
+            - WaveformShape.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
+            - WaveformShape.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
+            - WaveformShape.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
+            - WaveformShape.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
+            - WaveformShape.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
+            - WaveformShape.ARBITRARY/Waveform.ARB or "ARB" for arbitrary
 
         Args:
-            shape (Waveform): Waveform shape.
+            shape (WaveformShape): Waveform shape.
         """
 
         raise NotImplementedError
@@ -1674,28 +1810,28 @@ class Tgf4000Interface(DeviceInterface):
         cmd_string="MODSUMSHAPE?",
         process_cmd_string=add_lf,
     )
-    def get_sum_waveform_shape(self) -> Waveform:
+    def get_sum_waveform_shape(self) -> WaveformShape:
         """Returns the waveform shape for SUM modulation.
 
         Possible values are:
 
-            - Waveform.SINE or "SINE" for sinusoidal
-            - Waveform.SQUARE or "SQUARE" for square
-            - Waveform.RAMP or "RAMP" for ramp
-            - Waveform.RAMPUP, Waveform.RAMP_UP, or "RAMPUP" for ramp up
-            - Waveform.RAMPDOWN, Waveform.RAMP_DOWN, or "RAMPDOWN" for ramp down
-            - Waveform.TRIANGULAR or "TRAING" for triangular
-            - Waveform.PULSE or "PULSE" for pulse
-            - Waveform.NOISE or "NOISE" for Gaussian white noise
-            - Waveform.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
-            - Waveform.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
-            - Waveform.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
-            - Waveform.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
-            - Waveform.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
-            - Waveform.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
-            - Waveform.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
-            - Waveform.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
-            - Waveform.ARBITRARY/Waveform.ARB or "ARB" for arbitrary
+            - WaveformShape.SINE or "SINE" for sinusoidal
+            - WaveformShape.SQUARE or "SQUARE" for square
+            - WaveformShape.RAMP or "RAMP" for ramp
+            - WaveformShape.RAMPUP, Waveform.RAMP_UP, or "RAMPUP" for ramp up
+            - WaveformShape.RAMPDOWN, Waveform.RAMP_DOWN, or "RAMPDOWN" for ramp down
+            - WaveformShape.TRIANGULAR or "TRAING" for triangular
+            - WaveformShape.PULSE or "PULSE" for pulse
+            - WaveformShape.NOISE or "NOISE" for Gaussian white noise
+            - WaveformShape.PRBSPN7 or "PRBSPN7" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 7 bits)
+            - WaveformShape.PRBSPN9 or "PRBSPN9" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 9 bits)
+            - WaveformShape.PRBSPN11 or "PRBSPN11" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 11 bits)
+            - WaveformShape.PRBSPN15 or "PRBSPN15" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 15 bits)
+            - WaveformShape.PRBSPN20 or "PRBSPN20" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 20 bits)
+            - WaveformShape.PRBSPN23 or "PRBSPN23" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 23 bits)
+            - WaveformShape.PRBSPN29 or "PRBSPN29" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 29 bits)
+            - WaveformShape.PRBSPN31 or "PRBSPN31" for Pseudo-Random Binary Sequence (PRBS) (LFSR length: 31 bits)
+            - WaveformShape.ARBITRARY/Waveform.ARB or "ARB" for arbitrary
 
         Returns:
             Waveform shape for PWM modulation.
@@ -3191,7 +3327,11 @@ class Tgf4000Interface(DeviceInterface):
 
     # External counter commands
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="CNTRSWT ${counter_status}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="CNTRSWT ${counter_status}",
+        process_cmd_string=add_lf,
+    )
     def set_counter_status(self, counter_status: Output) -> None:
         """Sets the external counter to ON or OFF.
 
@@ -3216,7 +3356,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="CNTRCPLNG ${counter_source}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="CNTRCPLNG ${counter_source}",
+        process_cmd_string=add_lf,
+    )
     def set_counter_source(self, counter_source: CounterSource):
         """Sets the counter source to AC (Alternating Current) or DC (Direct Current) coupled input.
 
@@ -3242,7 +3386,11 @@ class Tgf4000Interface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="CNTRTYPE ${counter_type}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="CNTRTYPE ${counter_type}",
+        process_cmd_string=add_lf,
+    )
     def set_counter_type(self, counter_type: CounterType) -> None:
         """Sets the counter type.
 
@@ -3533,7 +3681,11 @@ class Tgf4000Interface(DeviceInterface):
 
     # System and status commands
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="*CLS", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="*CLS",
+        process_cmd_string=add_lf,
+    )
     def clear_status(self) -> None:
         """Clears the status structure.
 
@@ -3617,7 +3769,10 @@ class Tgf4000Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.TRANSACTION, cmd_string="*IST?", process_cmd_string=add_lf, process_response=parse_ints
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="*IST?",
+        process_cmd_string=add_lf,
+        process_response=parse_ints,
     )
     def get_ist_local_message(self):
         """Returns the IST local message as defined by IEEE Std. 488.2.
@@ -3770,7 +3925,10 @@ class Tgf4000Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.TRANSACTION, cmd_string="EER?", process_cmd_string=add_lf, process_response=parse_ints
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="EER?",
+        process_cmd_string=add_lf,
+        process_response=parse_ints,
     )
     def execution_error_register(self) -> int:
         """Queries and clears the execution error register.
@@ -3784,7 +3942,10 @@ class Tgf4000Interface(DeviceInterface):
         raise NotImplementedError
 
     @dynamic_command(
-        cmd_type=CommandType.TRANSACTION, cmd_string="QER?", process_cmd_string=add_lf, process_response=parse_ints
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string="QER?",
+        process_cmd_string=add_lf,
+        process_response=parse_ints,
     )
     def query_error_register(self) -> int:
         """Query and clear the query error register.
@@ -3799,7 +3960,6 @@ class Tgf4000Interface(DeviceInterface):
         cmd_type=CommandType.TRANSACTION,
         cmd_string="*LRN?",
         process_cmd_string=add_lf,
-        process_response=unpack_response,
     )
     def get_setup(self) -> bytes:
         """Returns the complete setup of the instrument as a binary data block.
@@ -3865,7 +4025,7 @@ class Tgf4000Interface(DeviceInterface):
         cmd_string="*TRG",
         process_cmd_string=add_lf,
     )
-    def trigger(self):
+    def trigger(self) -> None:
         """This command is the same as pressing the TRIGGER key.
 
         Its effect will depend on the context in which it is asserted. If the trigger source is manual and the
@@ -3885,12 +4045,13 @@ class Tgf4000Interface(DeviceInterface):
         """Returns the instrument identification.
 
         Returns:
-            Manufacturer,
-            Model,
-            Serial number,
-            Revision of the main firmware (XX.xx),
-            Revision of the remote interface firmware (YY.yy),
-            Revision of the USB flash drive firmware (ZZ.zz).
+            Tuple with:
+                - Manufacturer,
+                - Model,
+                - Serial number,
+                - Revision of the main firmware (XX.xx),
+                - Revision of the remote interface firmware (YY.yy),
+                - Revision of the USB flash drive firmware (ZZ.zz).
         """
 
         raise NotImplementedError
@@ -3900,10 +4061,11 @@ class Tgf4000Interface(DeviceInterface):
         cmd_string="BEEPMODE ${beep_mode}",
         process_cmd_string=add_lf,
     )
-    def set_beep_mode(self, beep_mode: BeepMode):
+    def set_beep_mode(self, beep_mode: BeepMode) -> None:
         """Sets the beep mode.
 
         Possible values are:
+
             - BeepMode.ON or "ON",
             - BeepMode.OFF or "OFF".
             - BeepMode.WARN, BeepMode.WARNING, or "WARN".
@@ -3925,6 +4087,7 @@ class Tgf4000Interface(DeviceInterface):
         """Returns the beep mode.
 
         Possible values are:
+
             - BeepMode.ON or "ON",
             - BeepMode.OFF or "OFF".
             - BeepMode.WARN, BeepMode.WARNING, or "WARN".
@@ -4085,7 +4248,7 @@ class Tgf4000Interface(DeviceInterface):
 
 
 class Tgf4000Controller(Tgf4000Interface, DynamicCommandMixin):
-    """AWG device controller interface."""
+    """Aim-TTi TGF4000 device controller interface."""
 
     def __init__(self, device_id: str):
         """Initialisation of an Aim-TTi TGF4000 arbitrary wave generator with the given identifier.
@@ -4097,15 +4260,6 @@ class Tgf4000Controller(Tgf4000Interface, DynamicCommandMixin):
         super().__init__(device_id)
 
         self.transport = self.tgf4000 = Tgf4000EthernetInterface(device_id=device_id)
-
-        # self.transport = Tgf4000DeviceController(self.device_name, AEU_SETTINGS.HOSTNAME,
-        #                                      AEU_SETTINGS[self.device_name + "_PORT"])
-        # self.killer = SignalCatcher()
-
-    # def add_observer(self, observer: DeviceConnectionObserver):
-    #     # forward the observer to the generic AEUDeviceController class, i.e. self.transport
-    #     # notification of state changes will be done by this transport class.
-    #     self.transport.add_observer(observer)
 
     # noinspection PyMethodMayBeStatic
     def is_simulator(self) -> bool:
@@ -4157,12 +4311,12 @@ class Tgf4000Simulator(Tgf4000Interface):
         self._is_connected = True
         self.channel = -1
 
-        self.waveform_type = [None, None]
-        self.output_load = [None, None]
-        self.amplitude = [None, None]
-        self.dc_offset = [None, None]
-        self.duty_cycle = [None, None]
-        self.frequency = [None, None]
+        self.waveform_shape = [WaveformShape.SINE, WaveformShape.SINE]
+        self.output_load = [50, 50]
+        self.amplitude = [2.7, 2.7]
+        self.dc_offset = [1.35, 1.35]
+        self.duty_cycle = [50, 50]
+        self.frequency = [10000, 10000]
         self.output_status = [Output.OFF, Output.OFF]
         self.arb = [None, None]
 
@@ -4191,11 +4345,11 @@ class Tgf4000Simulator(Tgf4000Interface):
     def get_channel(self) -> int:
         return self.channel
 
-    def set_waveform_type(self, waveform_type: Waveform) -> None:
-        self.waveform_type[self.get_channel() - 1] = waveform_type
+    def set_waveform_shape(self, waveform_shape: WaveformShape) -> None:
+        self.waveform_shape[self.get_channel() - 1] = waveform_shape
 
-    def get_waveform_type(self) -> Waveform:
-        return self.waveform_type[self.get_channel() - 1]
+    def get_waveform_shape(self) -> WaveformShape:
+        return self.waveform_shape[self.get_channel() - 1]
 
     def set_output_load(self, load: float) -> None:
         self.output_load = load
