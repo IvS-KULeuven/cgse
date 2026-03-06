@@ -1,9 +1,8 @@
 import subprocess
 from typing import Annotated
 
-import sys
-
 import rich
+import sys
 import typer
 
 from egse.system import redirect_output_to_log

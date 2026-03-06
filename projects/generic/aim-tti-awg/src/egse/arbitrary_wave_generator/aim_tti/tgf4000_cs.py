@@ -9,8 +9,8 @@ import sys
 import typer
 import zmq
 
-from egse.control import is_control_server_active, ControlServer
 from egse.arbitrary_wave_generator.aim_tti import PROTOCOL, CS_SETTINGS
+from egse.control import is_control_server_active, ControlServer
 from egse.registry.client import RegistryClient
 from egse.services import ServiceProxy
 from egse.settings import Settings
