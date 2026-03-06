@@ -1,4 +1,4 @@
-"""Control Server for the KIKUSUI PMX-A."""
+"""Control Server for the Aim-TTi TGF4000."""
 
 import logging
 import multiprocessing
@@ -9,28 +9,27 @@ import sys
 import typer
 import zmq
 
+from egse.arbitrary_wave_generator.aim_tti import PROTOCOL, CS_SETTINGS
 from egse.control import is_control_server_active, ControlServer
-from egse.power_supply.kikusui.pmx_a import PROTOCOL, CS_SETTINGS
-from egse.power_supply.kikusui.pmx_a.pmx_a import PmxAProxy
 from egse.registry.client import RegistryClient
 from egse.services import ServiceProxy
 from egse.settings import Settings
 from egse.storage import store_housekeeping_information
 from egse.zmq_ser import connect_address, get_port_number
 
-logger = logging.getLogger("egse.power_supply.kikusui.pmx_a.pmx_a")
-DEVICE_SETTINGS = Settings.load("KIKUSUI PMX")
+logger = logging.getLogger("egse.arbitrary_wave_generator.aim_tti.tgf4000")
+DEVICE_SETTINGS = Settings.load("Aim-TTi TGF4000")
 
 
-def is_pmx_a_cs_active(device_id: str, timeout: float = 0.5) -> bool:
-    """Checks whether the KIKUSUI PMX-A Control Server is running.
+def is_tgf4000_cs_active(device_id: str, timeout: float = 0.5) -> bool:
+    """Checks whether the Aim-TTi TGF4000 Control Server is running.
 
     Args:
         device_id (str): Device identifier, as per (local) settings and setup.
         timeout (float): Timeout when waiting for a reply [s].
 
     Returns:
-        True if the KIKUSUI PMX-A Control Server is running and replied with the expected answer; False otherwise.
+        True if the Aim-TTi TGF4000 Control Server is running and replied with the expected answer; False otherwise.
     """
 
     commanding_port = CS_SETTINGS[device_id].get(
@@ -44,7 +43,7 @@ def is_pmx_a_cs_active(device_id: str, timeout: float = 0.5) -> bool:
 
     else:
         with RegistryClient() as reg:
-            service_type = CS_SETTINGS[device_id].get("SERVICE_TYPE", "pmx_a_cs")
+            service_type = CS_SETTINGS[device_id].get("SERVICE_TYPE", "tgf4000_cs")
             service = reg.discover_service(service_type)
 
             if service:
@@ -61,9 +60,9 @@ def is_pmx_a_cs_active(device_id: str, timeout: float = 0.5) -> bool:
     return is_control_server_active(endpoint, timeout)
 
 
-class PmxAControlServer(ControlServer):
+class Tgf4000ControlServer(ControlServer):
     def __init__(self, device_id: str, simulator: bool = False):
-        """Initialisation of a new KIKUSUI PMX-A Control Server.
+        """Initialisation of a new Aim-TTi TGF4000 Control Server.
 
         Args:
             device_id (str): Device identifier, as per (local) settings and setup.
@@ -73,8 +72,8 @@ class PmxAControlServer(ControlServer):
         super().__init__()
 
         self.device_id = device_id
-        process_name = CS_SETTINGS[device_id].get("PROCESS_NAME", "pmx_a_cs")
-        service_type = CS_SETTINGS[device_id].get("SERVICE_TYPE", "pmx_a_cs")
+        process_name = CS_SETTINGS[device_id].get("PROCESS_NAME", "tgf4000_cs")
+        service_type = CS_SETTINGS[device_id].get("SERVICE_TYPE", "tgf4000_cs")
 
         multiprocessing.current_process().name = (
             process_name  # Name under which it is registered in the service registry
@@ -84,9 +83,9 @@ class PmxAControlServer(ControlServer):
         self.service_name = process_name
         self.service_type = service_type
 
-        from egse.power_supply.kikusui.pmx_a.pmx_a_protocol import PmxAProtocol
+        from egse.arbitrary_wave_generator.aim_tti.tgf4000_protocol import Tgf4000Protocol
 
-        self.device_protocol = PmxAProtocol(self, device_id, simulator=simulator)
+        self.device_protocol = Tgf4000Protocol(self, device_id, simulator=simulator)
 
         self.logger.info(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()}")
 
@@ -97,49 +96,49 @@ class PmxAControlServer(ControlServer):
         self.register_service(service_type)
 
     def get_communication_protocol(self) -> str:
-        """Returns the communication protocol used KIKUSUI PMX-A Control Server.
+        """Returns the communication protocol used Aim-TTi TGF4000 Control Server.
 
         Returns:
-            Communication protocol used by the KIKUSUI PMX-A Control Server, as specified in the settings.
+            Communication protocol used by the Aim-TTi TGF4000 Control Server, as specified in the settings.
         """
 
         return PROTOCOL
 
     def get_commanding_port(self) -> int:
-        """Returns the commanding port used by the KIKUSUI PMX-A Control Server.
+        """Returns the commanding port used by the Aim-TTi TGF4000 Control Server.
 
         Returns:
-            Commanding port used by the KIKUSUI PMX-A Control Server, as specified in the settings.
+            Commanding port used by the Aim-TTi TGF4000 Control Server, as specified in the settings.
         """
 
         return get_port_number(self.dev_ctrl_cmd_sock) or self.cs_settings.get("COMMANDING_PORT", 0)
 
     def get_service_port(self) -> int:
-        """Returns the service port used by the KIKUSUI PMX-A Control Server.
+        """Returns the service port used by the Aim-TTi TGF4000 Control Server.
 
         Returns:
-            Service port used by the KIKUSUI PMX-A Control Server, as specified in the settings.
+            Service port used by the Aim-TTi TGF4000 Control Server, as specified in the settings.
         """
 
         return get_port_number(self.dev_ctrl_service_sock) or self.cs_settings.get("SERVICE_PORT", 0)
 
     def get_monitoring_port(self) -> int:
-        """Returns the monitoring port used by the KIKUSUI PMX-A Control Server.
+        """Returns the monitoring port used by the Aim-TTi TGF4000 Control Server.
 
         Returns:
-            Monitoring port used by the KIKUSUI PMX-A Control Server, as specified in the settings.
+            Monitoring port used by the Aim-TTi TGF4000 Control Server, as specified in the settings.
         """
 
         return get_port_number(self.dev_ctrl_mon_sock) or self.cs_settings.get("MONITORING_PORT", 0)
 
     def get_storage_mnemonic(self) -> str:
-        """Returns the storage mnemonic used by the KIKUSUI PMX-A Control Server.
+        """Returns the storage mnemonic used by the Aim-TTi TGF4000 Control Server.
 
         Returns:
-            Storage mnemonic used by the KIKUSUI PMX-A Control Server, as specified in the settings.
+            Storage mnemonic used by the Aim-TTi TGF4000 Control Server, as specified in the settings.
         """
 
-        return self.cs_settings.get("STORAGE_MNEMONIC", "PMX-A")
+        return self.cs_settings.get("STORAGE_MNEMONIC", "TGF4000")
 
     def is_storage_manager_active(self):
         """Checks whether the Storage Manager is active."""
@@ -149,7 +148,7 @@ class PmxAControlServer(ControlServer):
         return is_storage_manager_active()
 
     def store_housekeeping_information(self, data):
-        """Sends housekeeping information of the KIKUSUI PMX-A to the Storage Manager."""
+        """Sends housekeeping information of the Aim-TTi TGF4000 to the Storage Manager."""
 
         origin = self.get_storage_mnemonic()
         store_housekeeping_information(origin, data)
@@ -190,14 +189,14 @@ def start(
     ],
     simulator: Annotated[
         bool,
-        typer.Option("--simulator", "--sim", help="start the KIKUSUI PMX-A Control Server in simulator mode"),
+        typer.Option("--simulator", "--sim", help="start the Aim-TTi TGF4000 Control Server in simulator mode"),
     ] = False,
 ) -> int:
-    """Starts the KIKUSUI PMX-A Control Server with the given identifier."""
+    """Starts the Aim-TTi TGF4000 Control Server with the given identifier."""
 
     # noinspection PyBroadException
     try:
-        controller = PmxAControlServer(device_id, simulator)
+        controller = Tgf4000ControlServer(device_id, simulator)
         controller.serve()
     except KeyboardInterrupt:
         print("Shutdown requested...exiting")
@@ -206,7 +205,7 @@ def start(
         print(f"System Exit with code {exc.code}")
         sys.exit(exit_code)
     except Exception:
-        logger.exception(f"Cannot start the KIKUSUI PMX-A {device_id} Control Server")
+        logger.exception(f"Cannot start the Aim-TTi TGF4000 {device_id} Control Server")
 
     return 0
 
@@ -217,9 +216,9 @@ def stop(
         str, typer.Argument(help="Identifies the hardware controller (as per local settings and setup)")
     ],
 ) -> None:
-    """Sends a `quit_server` command to the KIKUSUI PMX-A Control Server."""
+    """Sends a `quit_server` command to the Aim-TTi TGF4000 Control Server."""
 
-    service_type = CS_SETTINGS[device_id].get("SERVICE_TYPE", "pmx_a_cs")
+    service_type = CS_SETTINGS[device_id].get("SERVICE_TYPE", "tgf4000_cs")
 
     with RegistryClient() as reg:
         service = reg.discover_service(service_type)
@@ -229,11 +228,11 @@ def stop(
             proxy.quit_server()
         else:
             try:
-                with PmxAProxy(device_id) as pmx_a_proxy:
-                    with pmx_a_proxy.get_service_proxy() as sp:
+                with Tgf4000Proxy(device_id) as tgf4000_proxy:
+                    with tgf4000_proxy.get_service_proxy() as sp:
                         sp.quit_server()
             except ConnectionError:
-                rich.print(f"[red]Couldn't connect to 'pmx_a_cs' {device_id}, process probably not running. ")
+                rich.print(f"[red]Couldn't connect to 'tgf4000_cs' {device_id}, process probably not running. ")
 
 
 @app.command()
@@ -242,13 +241,13 @@ def status(
         str, typer.Argument(help="Identifies the hardware controller (as per local settings and setup)")
     ],
 ) -> None:
-    """Requests the status information from the KIKUSUI PMX-A Control Server."""
+    """Requests the status information from the Aim-TTi TGF4000 Control Server."""
 
     hostname = CS_SETTINGS[device_id].get("HOSTNAME", "localhost")
     commanding_port = CS_SETTINGS[device_id].get("COMMANDING_PORT", 0)
     service_port = CS_SETTINGS[device_id].get("SERVICE_PORT", 0)
     monitoring_port = CS_SETTINGS[device_id].get("MONITORING_PORT", 0)
-    service_type = CS_SETTINGS[device_id].get("SERVICE_TYPE", "pmx_a_cs")
+    service_type = CS_SETTINGS[device_id].get("SERVICE_TYPE", "tgf4000_cs")
 
     if commanding_port != 0:
         endpoint = connect_address(PROTOCOL, hostname, commanding_port)
@@ -269,20 +268,20 @@ def status(
                 endpoint = connect_address(protocol, hostname, port)
             else:
                 rich.print(
-                    f"[red]The KIKUSUI PMX-A Control Server {device_id} isn't registered as a service. The Control "
+                    f"[red]The Aim-TTi TGF4000 Control Server {device_id} isn't registered as a service. The Control "
                     f"Server cannot be contacted without the required information from the service registry.[/]"
                 )
-                rich.print(f"KIKUSUI PMX-A {device_id}: [red]not active")
+                rich.print(f"Aim-TTi TGF4000 {device_id}: [red]not active")
                 return
 
     # noinspection PyUnboundLocalVariable
     if is_control_server_active(endpoint, timeout=2):
-        rich.print(f"KIKUSUI PMX-A {device_id}: [green]active -> {endpoint}")
+        rich.print(f"Aim-TTi TGF4000 {device_id}: [green]active -> {endpoint}")
 
-        with PmxAProxy(device_id) as pmx_a:
-            sim = pmx_a.is_simulator()
-            connected = pmx_a.is_connected()
-            ip = pmx_a.get_ip_address()
+        with Tgf4000Proxy(device_id) as tgf4000:
+            sim = tgf4000.is_simulator()
+            connected = tgf4000.is_connected()
+            ip = tgf4000.get_ip_address()
             rich.print(f"mode: {'simulator' if sim else 'device'}{'' if connected else ' not'} connected")
             rich.print(f"hostname: {ip}")
             # noinspection PyUnboundLocalVariable
@@ -292,7 +291,7 @@ def status(
             # noinspection PyUnboundLocalVariable
             rich.print(f"monitoring port: {monitoring_port}")
     else:
-        rich.print(f"KIKUSUI PMX-A {device_id}: [red]not active")
+        rich.print(f"Aim-TTi TGF4000 {device_id}: [red]not active")
 
 
 if __name__ == "__main__":

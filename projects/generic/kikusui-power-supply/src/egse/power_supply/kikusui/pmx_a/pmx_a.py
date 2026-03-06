@@ -12,7 +12,11 @@ class PmxAInterface(PmxInterface):
     """Base class for KIKUSUI PMX-A power supply units."""
 
     def __init__(self, device_id: str):
-        """Initialisation of a KIKUSUI PMX-A interface."""
+        """Initialisation of a KIKUSUI PMX-A interface.
+
+        Args:
+            device_id (str): Device identifier, as per (local) settings and setup.
+        """
 
         super().__init__(device_id)
 
