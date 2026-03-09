@@ -73,7 +73,7 @@ def affine_matrix_from_points(
 
     Returns affine transform matrix to register two point sets.
 
-    v0 and v1 are shape (ndims, \*) arrays of at least ndims non-homogeneous
+    v0 and v1 are shape (ndims, \\*) arrays of at least ndims non-homogeneous
     coordinates, where ndims is the dimensionality of the coordinate space.
 
     If shear is False, a similarity transformation matrix is returned.
