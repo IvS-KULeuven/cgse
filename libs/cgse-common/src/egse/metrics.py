@@ -8,10 +8,10 @@ __all__ = [
 from typing import Any
 from typing import Optional
 from typing import Protocol
-from typing import Self
 
 import numpy as np
 from prometheus_client import Gauge
+from typing_extensions import Self
 
 from egse.hk import TmDictionaryColumns
 from egse.log import logger

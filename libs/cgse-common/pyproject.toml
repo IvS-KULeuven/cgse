@@ -44,6 +44,7 @@ dependencies = [
     "requests>=2.32.4",
     "psycopg>=3.2.9",
     "python-dotenv>=1.1.1",
+    "typing-extensions>=4.14.0",
 ]
 
 [project.scripts]
