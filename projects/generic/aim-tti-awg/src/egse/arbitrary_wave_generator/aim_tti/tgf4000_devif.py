@@ -207,7 +207,7 @@ class Tgf4000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
         try:
             command += "\n" if not command.endswith("\n") else ""
 
-            self._sock.sendall(command.encode())
+            self._sock.sendall(command.encode("latin1"))
 
         except socket.timeout as e_timeout:
             raise DeviceTimeoutError(self.device_id, "Socket timeout error") from e_timeout
