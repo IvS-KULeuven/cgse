@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.19.2] - 2026-03-10
+
+- Fixed typo in docstring for affine_matrix_from_points function
+- Changed encoding in write command for the Aim-TTi TGF4000 device interface
+
 ## [0.19.1] - 2026-03-09
 
 - Fixed an import error where Self is only known as of Python 3.11. Added typing-extensions as a dependency.
