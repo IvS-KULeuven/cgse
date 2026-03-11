@@ -20,11 +20,13 @@ import crcmod
 try:
     from enum import StrEnum
 except ImportError:
+
     class StrEnum(str, Enum):
         """Python 3.10-compatible fallback for enum.StrEnum."""
 
         def __str__(self) -> str:
             return str(self.value)
+
 
 from egse.ariel.tcu import TcuMode
 from egse.decorators import static_vars
