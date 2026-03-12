@@ -1,0 +1,84 @@
+[project]
+name = "labjack_daq"
+version = "0.19.2"
+description = "LabJack Data Acquisition"
+authors = [
+    {name = "IvS KU Leuven"}
+]
+maintainers = [
+    {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
+    {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"},
+    {name = "Sibo Van Gool", email = "sibo.vangool@kuleuven.be"}
+]
+readme = {"file" = "README.md", "content-type" = "text/markdown"}
+requires-python = ">=3.10"
+license = "MIT"
+keywords = [
+    "CGSE",
+    "Common-EGSE",
+    "hardware testing",
+    "software framework",
+]
+dependencies = [
+    "cgse-common",
+    "cgse-core",
+]
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-mock", "pytest-cov"]
+
+[project.scripts]
+t7_cs = 'egse.daq.labjack.t7_cs:app'
+#t7_sim = 'egse.daq.labjack.t7_sim:app'
+
+#[project.gui-scripts]
+#t7_ui = "egse.daq.labjack.t7_ui:main"
+
+[project.entry-points."cgse.version"]
+labjack-daq = 'egse.version:get_version_installed'
+
+[project.entry-points."cgse.settings"]
+labjack-daq = "labjack_daq:settings.yaml"
+
+[project.entry-points."cgse.service.device_command"]
+tgf4000 = 'labjack_daq.cgse_services:t7'
+
+[project.entry-points."cgse.explore"]
+explore = "labjack_daq.cgse_explore"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/tests",
+    "/pytest.ini",
+    "/.gitignore",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/egse", "src/labjack_daq"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+extend-select = ["E501"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "setuptools", # needed by PyCharm
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "ruff>=0.9.0",
+    "nox>=2025.2.9",
+    "setuptools>=75.8.2", # needed by PyCharm
+    "pytest-asyncio>=0.26.0",
+    "labjack-ljm",
+    "ipython",
+]
