@@ -13,45 +13,47 @@ The application is completely written in Python/Qt5 and can therefore run on any
 platform that supports Python and Qt5.
 
 """
+
 import argparse
-import logging
 import multiprocessing
 import sys
 import threading
 from enum import IntEnum
 from pathlib import Path
 
+import typer
 from PyQt5.QtCore import QLockFile
-
-from egse.hexapod.symetrie import ControllerFactory
-from egse.hexapod.symetrie import ProxyFactory
-from egse.hexapod.symetrie import get_hexapod_controller_pars
-from egse.hexapod.symetrie.punaplus import PunaPlusController
-from egse.hexapod.symetrie.punaplus import PunaPlusProxy
-
-multiprocessing.current_process().name = "puna_ui"
-
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QMessageBox
+from PyQt5.QtWidgets import QApplication
 from PyQt5.QtWidgets import QFrame
 from PyQt5.QtWidgets import QHBoxLayout
+from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import QVBoxLayout
-from prometheus_client import start_http_server
+from dotenv import find_dotenv
+from dotenv import load_dotenv
 
 from egse.gui import show_warning_message
 from egse.gui.led import Indic
 from egse.gui.states import States
+from egse.hexapod.symetrie import ControllerFactory
+from egse.hexapod.symetrie import ProxyFactory
+from egse.hexapod.symetrie import get_hexapod_controller_pars
 from egse.hexapod.symetrie.hexapod_ui import ActuatorStates
 from egse.hexapod.symetrie.hexapod_ui import HexapodUIController
 from egse.hexapod.symetrie.hexapod_ui import HexapodUIModel
 from egse.hexapod.symetrie.hexapod_ui import HexapodUIView
 from egse.hexapod.symetrie.puna import PunaSimulator
+from egse.hexapod.symetrie.punaplus import PunaPlusController
+from egse.hexapod.symetrie.punaplus import PunaPlusProxy
+from egse.log import logging
 from egse.process import ProcessStatus
 from egse.resource import get_resource
 from egse.settings import Settings
 from egse.system import do_every
 
 MODULE_LOGGER = logging.getLogger(__name__)
+
+load_dotenv(find_dotenv(usecwd=True), override=True)
 
 
 class DeviceControllerType(IntEnum):
@@ -110,17 +112,11 @@ STATUS_LEDS_ALPHA_PLUS = [
     ["Emergency Stop", Indic.RED],  # bit 14
 ]
 
-STATUS_LEDS = {
-    DCT.ALPHA: STATUS_LEDS_ALPHA,
-    DCT.ALPHA_PLUS: STATUS_LEDS_ALPHA_PLUS
-}
+STATUS_LEDS = {DCT.ALPHA: STATUS_LEDS_ALPHA, DCT.ALPHA_PLUS: STATUS_LEDS_ALPHA_PLUS}
 
 # The index of the Control LED
 
-CONTROL_ONOFF = {
-    DCT.ALPHA: 3,
-    DCT.ALPHA_PLUS: 2
-}
+CONTROL_ONOFF = {DCT.ALPHA: 3, DCT.ALPHA_PLUS: 2}
 
 ACTUATOR_STATE_LABELS_ALPHA = [
     "In position",
@@ -156,12 +152,7 @@ ACTUATOR_STATE_LABELS_ALPHA_PLUS = [
     "Encoder error: ",
 ]
 
-ACTUATOR_STATE_LABELS = {
-    DCT.ALPHA: ACTUATOR_STATE_LABELS_ALPHA,
-    DCT.ALPHA_PLUS: ACTUATOR_STATE_LABELS_ALPHA_PLUS
-}
-
-GUI_SETTINGS = Settings.load("PUNA GUI")
+ACTUATOR_STATE_LABELS = {DCT.ALPHA: ACTUATOR_STATE_LABELS_ALPHA, DCT.ALPHA_PLUS: ACTUATOR_STATE_LABELS_ALPHA_PLUS}
 
 
 class PunaUIView(HexapodUIView):
@@ -181,7 +172,6 @@ class PunaUIView(HexapodUIView):
         self.init_gui()
 
     def init_gui(self):
-
         # The main frame in which all the other frames are located, the outer Application frame
 
         app_frame = QFrame()
@@ -211,14 +201,14 @@ class PunaUIView(HexapodUIView):
         vbox_left = QVBoxLayout()
         vbox_right = QVBoxLayout()
 
-        self.createToolbar()
-        self.createStatusBar()
+        self.create_toolbar()
+        self.create_status_bar()
 
         self.states = States(STATUS_LEDS[self.dct])
 
-        user_positions_widget = self.createUserPositionWidget()
-        mach_positions_widget = self.createMachinePositionWidget()
-        actuator_length_widget = self.createActuatorLengthWidget()
+        user_positions_widget = self.create_user_position_widget()
+        mach_positions_widget = self.create_machine_position_widget()
+        actuator_length_widget = self.create_actuator_length_widget()
 
         vbox_right.addWidget(user_positions_widget)
         vbox_right.addWidget(mach_positions_widget)
@@ -253,14 +243,11 @@ class PunaUIView(HexapodUIView):
         if message:
             self.statusBar().showMessage(message, msecs=timeout)
         if mode:
-            self.mode_label.setStyleSheet(
-                f"border: 0; " f"color: {'red' if 'Simulator' in mode else 'black'};"
-            )
+            self.mode_label.setStyleSheet(f"border: 0; color: {'red' if 'Simulator' in mode else 'black'};")
             self.mode_label.setText(f"mode: {mode}")
         self.statusBar().repaint()
 
     def updatePositions(self, userPositions, machinePositions, actuatorLengths):
-
         if userPositions is None:
             MODULE_LOGGER.warning("no userPositions passed into updatePositions(), returning.")
             return
@@ -286,7 +273,6 @@ class PunaUIView(HexapodUIView):
             alen[1].setText(f"{actuatorLengths[idx]:10.4f}")
 
     def updateStates(self, states):
-
         if states is None:
             return
 
@@ -294,14 +280,12 @@ class PunaUIView(HexapodUIView):
         self.states.set_states(states)
 
     def updateControlButton(self, flag):
-
         self.control.set_selected(on=flag)
 
 
 class PunaUIModel(HexapodUIModel):
-    def __init__(self, connection_type):
-
-        hostname, port, dev_id, dev_name, _ = get_hexapod_controller_pars()
+    def __init__(self, connection_type, device_id):
+        hostname, port, dev_id, dev_name, *_ = get_hexapod_controller_pars(device_id)
         if connection_type == "proxy":
             device = ProxyFactory().create(dev_name, device_id=dev_id)
         elif connection_type == "direct":
@@ -310,9 +294,7 @@ class PunaUIModel(HexapodUIModel):
         elif connection_type == "simulator":
             device = PunaSimulator()
         else:
-            raise ValueError(
-                f"Unknown type of Hexapod implementation passed into the model: {connection_type}"
-            )
+            raise ValueError(f"Unknown type of Hexapod implementation passed into the model: {connection_type}")
 
         super().__init__(connection_type, device)
 
@@ -338,7 +320,6 @@ class PunaUIController(HexapodUIController):
         super().__init__(model, view)
 
     def update_values(self):
-
         super().update_values()
 
         # Add here any updates to PUNA specific widgets
@@ -366,34 +347,33 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def main():
+app = typer.Typer()
+
+
+@app.command()
+def main(device_id: str, device_type: str = "proxy", profile: bool = False):
+    multiprocessing.current_process().name = "puna_ui"
+
     lock_file = QLockFile(str(Path("~/puna_ui.app.lock").expanduser()))
 
     styles_location = get_resource(":/styles/default.qss")
     app_logo = get_resource(":/icons/logo-puna.svg")
 
-    args = list(sys.argv)
-    args[1:1] = ["-stylesheet", str(styles_location)]
-    app = QApplication(args)
+    app = QApplication(["-stylesheet", str(styles_location)])
     app.setWindowIcon(QIcon(str(app_logo)))
 
     if lock_file.tryLock(100):
-
         process_status = ProcessStatus()
 
         timer_thread = threading.Thread(target=do_every, args=(10, process_status.update))
         timer_thread.daemon = True
         timer_thread.start()
 
-        start_http_server(GUI_SETTINGS.METRICS_PORT)
-
-        args = parse_arguments()
-
-        if args.profile:
+        if profile:
             Settings.set_profiling(True)
 
-        if args.type == "proxy":
-            *_, device_id, device_name, _ = get_hexapod_controller_pars()
+        if device_type == "proxy":
+            _, _, device_id, device_name, *_ = get_hexapod_controller_pars(device_id)
             factory = ProxyFactory()
             proxy = factory.create(device_name, device_id=device_id)
             if not proxy.ping():
@@ -408,7 +388,7 @@ def main():
 
                 show_warning_message(description, info_text)
 
-        model = PunaUIModel(args.type)
+        model = PunaUIModel(device_type, device_id)
         view = PunaUIView(model.get_device_controller_type(), model.device_id)
         PunaUIController(model, view)
 
@@ -426,7 +406,6 @@ def main():
 
 
 if __name__ == "__main__":
-
     logging.basicConfig(level=logging.DEBUG, format=Settings.LOG_FORMAT_FULL)
 
-    sys.exit(main())
+    sys.exit(app())

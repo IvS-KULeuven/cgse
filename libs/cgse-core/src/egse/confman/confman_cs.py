@@ -8,77 +8,113 @@ The following functionality is provided:
 * maintain proper Setups and distribute the latest Setup on demand
 
 """
+
 import logging
 import multiprocessing
 import sys
 from pathlib import Path
+from typing import Annotated
 
-import click
 import rich
+import typer
 import zmq
-from egse.control import ControlServer
-from egse.control import Response
-from egse.process import SubProcess
-from egse.settings import Settings
-from egse.system import replace_environment_variable
-from prometheus_client import start_http_server
+from rich.console import Console
 
+from egse.confman import COMMANDING_PORT
 from egse.confman import ConfigurationManagerProtocol
 from egse.confman import ConfigurationManagerProxy
+from egse.confman import HOSTNAME
+from egse.confman import MONITORING_PORT
+from egse.confman import PROCESS_NAME
+from egse.confman import PROTOCOL
+from egse.confman import SERVICE_PORT
+from egse.confman import SERVICE_TYPE
+from egse.confman import STORAGE_MNEMONIC
+from egse.control import ControlServer
+from egse.env import get_conf_data_location
+from egse.logger import remote_logging
+from egse.process import SubProcess
+from egse.registry.client import RegistryClient
+from egse.response import Failure
+from egse.response import Response
+from egse.services import ServiceProxy
+from egse.settings import Settings
+from egse.storage import store_housekeeping_information
+from egse.zmq_ser import get_port_number
 
 # Use explicit name here otherwise the logger will probably be called __main__
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("egse.confman")
 
-CTRL_SETTINGS = Settings.load("Configuration Manager Control Server")
+settings = Settings.load("Configuration Manager Control Server")
 
 
 class ConfigurationManagerControlServer(ControlServer):
     def __init__(self):
         super().__init__()
 
-        self.device_protocol = ConfigurationManagerProtocol(self)
+        multiprocessing.current_process().name = PROCESS_NAME
 
         self.logger = logger
+        self.service_name = PROCESS_NAME
+        self.service_type = settings.SERVICE_TYPE
+
+        self.device_protocol = ConfigurationManagerProtocol(self)
+
         self.logger.debug(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()}")
 
         self.device_protocol.bind(self.dev_ctrl_cmd_sock)
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
+        self.register_service(service_type=SERVICE_TYPE)
+
+        self.set_hk_delay(10.0)
+
+        self.logger.info(f"CM housekeeping saved every {self.hk_delay / 1000:.1f} seconds.")
+
     def get_communication_protocol(self):
-        return CTRL_SETTINGS.PROTOCOL
+        return PROTOCOL
 
     def get_commanding_port(self):
-        return CTRL_SETTINGS.COMMANDING_PORT
+        return get_port_number(self.dev_ctrl_cmd_sock) or COMMANDING_PORT
 
     def get_service_port(self):
-        return CTRL_SETTINGS.SERVICE_PORT
+        return get_port_number(self.dev_ctrl_service_sock) or SERVICE_PORT
 
     def get_monitoring_port(self):
-        return CTRL_SETTINGS.MONITORING_PORT
+        return get_port_number(self.dev_ctrl_mon_sock) or MONITORING_PORT
 
     def get_storage_mnemonic(self):
-        try:
-            return CTRL_SETTINGS.STORAGE_MNEMONIC
-        except AttributeError:
-            return "CM"
+        return STORAGE_MNEMONIC
 
     def is_storage_manager_active(self):
         from egse.storage import is_storage_manager_active
+
         return is_storage_manager_active()
+
+    def store_housekeeping_information(self, data):
+        """Send housekeeping information to the Storage manager."""
+
+        origin = self.get_storage_mnemonic()
+        store_housekeeping_information(origin, data)
 
     def register_to_storage_manager(self):
         from egse.storage import register_to_storage_manager
-        from egse.storage.persistence import CSV
+        from egse.storage import is_storage_manager_active
+        from egse.storage.persistence import TYPES
+
+        if not is_storage_manager_active():
+            self.logger.warning(f"Storage manager not active, couldn't register as {self.get_storage_mnemonic()}.")
+            return
 
         register_to_storage_manager(
             origin=self.get_storage_mnemonic(),
-            persistence_class=CSV,
+            persistence_class=TYPES["CSV"],
             prep={
                 "column_names": list(self.device_protocol.get_housekeeping().keys()),
                 "mode": "a",
-            }
+            },
         )
 
     def unregister_from_storage_manager(self):
@@ -86,16 +122,18 @@ class ConfigurationManagerControlServer(ControlServer):
 
         unregister_from_storage_manager(origin=self.get_storage_mnemonic())
 
-    def before_serve(self):
-        start_http_server(CTRL_SETTINGS.METRICS_PORT)
+    def before_serve(self): ...
+
+    def after_serve(self) -> None:
+        self.deregister_service()
 
 
-@click.group()
-def cli():
-    pass
+app = typer.Typer(name=PROCESS_NAME)
+
+console = Console(width=120)
 
 
-@cli.command()
+@app.command()
 def start():
     """
     Starts the Configuration Manager (cm_cs). The cm_cs is a server which handles the
@@ -104,73 +142,101 @@ def start():
     The cm_cs is normally started automatically on egse-server boot.
     """
 
-    multiprocessing.current_process().name = "confman_cs"
+    multiprocessing.current_process().name = PROCESS_NAME
 
-    try:
-        check_prerequisites()
-    except RuntimeError as exc:
-        logger.info(exc)
-        return 0
+    with remote_logging():
+        try:
+            check_prerequisites()
+        except RuntimeError as exc:
+            logger.info(exc)
+            return 0
 
-    try:
-        control_server = ConfigurationManagerControlServer()
-        control_server.serve()
-    except KeyboardInterrupt:
-        print("Shutdown requested...exiting")
-    except SystemExit as exit_code:
-        print("System Exit with code {}.".format(exit_code))
-        sys.exit(exit_code)
-    except Exception:
-        import traceback
+        try:
+            control_server = ConfigurationManagerControlServer()
+            control_server.serve()
+        except KeyboardInterrupt:
+            print("Shutdown requested...exiting")
+        except SystemExit as exit_code:
+            print(f"System Exit with code {exit_code}.")
+            sys.exit(exit_code.code)
+        except Exception:
+            import traceback
 
-        traceback.print_exc(file=sys.stdout)
+            traceback.print_exc(file=sys.stdout)
 
     return 0
 
 
-@cli.command()
+@app.command()
 def start_bg():
     """Start the Configuration Manager Control Server in the background."""
     proc = SubProcess("cm_cs", ["cm_cs", "start"])
     proc.execute()
 
 
-@cli.command()
+@app.command()
 def stop():
     """Send a 'quit_server' command to the Configuration Manager."""
+
+    if COMMANDING_PORT == 0:
+        with RegistryClient() as reg:
+            service = reg.discover_service(settings.SERVICE_TYPE)
+            rich.print("service = ", service)
+            if service:
+                hostname = service["host"]
+                port = service["metadata"]["service_port"]
+            else:
+                rich.print(
+                    "[red]ERROR: Couldn't determine how to connect to the configuration manager. No service defined.[/]"
+                )
+                return
+    else:
+        hostname = HOSTNAME
+        port = SERVICE_PORT
+
+    rich.print("[green]Sending 'quit' command to configuration manager..[/]")
     try:
-        with ConfigurationManagerProxy() as cm:
-            sp = cm.get_service_proxy()
-            sp.quit_server()
+        with ServiceProxy(hostname=hostname, port=port) as proxy:
+            proxy.quit_server()
     except ConnectionError as exc:
-        rich.print("[red]ERROR: Couldn't connect to the configuration manager.[/]")
+        console.print(f"[red]ERROR: Couldn't connect to configuration manager: {exc}[/]")
 
 
-@cli.command()
+@app.command()
 def status():
     """Print the status of the control server."""
 
     import rich
     from egse.confman import get_status
 
-    rich.print(get_status())
+    rich.print(get_status(), end="")
 
 
-@cli.command()
-def list_setups(**attr):
+@app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
+def list_setups(ctx: Annotated[typer.Context, typer.Option()] = None):
     """List available Setups."""
 
+    args = ctx.args if ctx else []
+
+    # These extra arguments need to be converted into a dictionary as expected by
+    # the function egse.system.filter_by_attr()
+    for extra_arg in args:
+        print(f"Got extra arg: {extra_arg}")
+
     with ConfigurationManagerProxy() as cm:
-        setups = cm.list_setups(**attr)
+        setups = cm.list_setups(**{})
+    if isinstance(setups, Failure):
+        rich.print(f"[red]ERROR: {setups}[/]")
+        rich.print("Check the log file for a more detailed error message.")
+        return
     if setups:
         # We want to have the most recent (highest id number) last, but keep the site together
         setups = sorted(setups, key=lambda x: (x[1], x[0]))
         print("\n".join(f"{setup}" for setup in setups))
 
 
-@cli.command()
-@click.argument('setup_id', type=int)
-def load_setup(setup_id):
+@app.command()
+def load_setup(setup_id: int):
     """Load the given Setup on the configuration manager."""
 
     with ConfigurationManagerProxy() as cm:
@@ -183,15 +249,36 @@ def load_setup(setup_id):
         print(f"{setup_id} loaded on configuration manager.")
 
 
-@cli.command()
+@app.command()
 def reload_setups():
-    """ Clears the cache and re-loads the available setups.
+    """Clears the cache and re-loads the available setups.
 
     Note that this does not affect the currently loaded setup.
     """
 
-    with ConfigurationManagerProxy() as pm:
-        pm.reload_setups()
+    with ConfigurationManagerProxy() as cm_proxy:
+        cm_proxy.reload_setups()
+
+
+@app.command()
+def register_to_storage():
+    with RegistryClient() as reg:
+        service = reg.discover_service(settings.SERVICE_TYPE)
+
+        # The service will register the control server to the storage, i.e. with the STORAGE_MNEMONIC from the Settings
+        # of that control server.
+
+        if service:
+            rich.print("Registering CM to the storage manager")
+            with ServiceProxy(hostname=service["host"], port=service["metadata"]["service_port"]) as service_proxy:
+                service_proxy.register_to_storage()  # register the control server
+        else:
+            rich.print("[red]ERROR: Couldn't connect to 'cm_cs', process probably not running.")
+
+        # The configuration manager controller will register the obsid table to the storage with the `obsid` name.
+
+        with ConfigurationManagerProxy() as cm_proxy:
+            cm_proxy.register_to_storage()  # register the obsid table
 
 
 def check_prerequisites():
@@ -205,22 +292,16 @@ def check_prerequisites():
 
     # We need a proper location for storing the configuration data.
 
-    location = CTRL_SETTINGS.FILE_STORAGE_LOCATION
-    location = replace_environment_variable(location)
+    location = get_conf_data_location()
 
     if not location:
-        raise RuntimeError(
-            "The environment variable referenced in the Settings.yaml file for the "
-            "FILE_STORAGE_LOCATION of the Configuration Manager does not exist, please set "
-            "the environment variable."
-        )
+        raise RuntimeError("The location for the configuration data is not defined. Please check your environment.")
 
-    location = Path(location)
+    location = Path(location).expanduser()
 
     if not location.exists():
         logger.error(
-            f"The directory {location} does not exist, provide a writable location for "
-            f"storing the configuration data."
+            f"The directory {location} does not exist, provide a writable location for storing the configuration data."
         )
         fails += 1
 
@@ -230,11 +311,9 @@ def check_prerequisites():
 
     if fails:
         raise RuntimeError(
-            "Some of the prerequisites for the Configuration Manager haven't met. "
-            "Please check the logs."
+            "Some of the prerequisites for the Configuration Manager haven't met. Please check the logs."
         )
 
 
 if __name__ == "__main__":
-
-    sys.exit(cli())
+    sys.exit(app())

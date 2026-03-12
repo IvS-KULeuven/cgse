@@ -14,13 +14,15 @@ _HERE = Path(__file__).parent.resolve()
 
 
 def test_find_first_occurrence_of_dir():
-
     assert str(find_first_occurrence_of_dir("conf", root=_HERE)).endswith("tests/data/conf")
-    assert str(find_first_occurrence_of_dir("CSL/conf", root=_HERE)).endswith("tests/data/CSL/conf")
+    assert str(find_first_occurrence_of_dir("dev1", root=_HERE)).endswith("tests/data/lib/dev1")
+    assert str(find_first_occurrence_of_dir("dev2", root=_HERE)).endswith("tests/data/lib/dev2")
 
     assert find_first_occurrence_of_dir("not-a-directory", root=_HERE) is None
 
-    assert str(find_first_occurrence_of_dir("/egse/images")).endswith("src/egse/images")
+    # Pass in a different root directory
+
+    assert str(find_first_occurrence_of_dir("dev1", root=_HERE / "data")).endswith("lib/dev1")
 
     folders = (
         _HERE / "x_data/01/kul",
@@ -45,56 +47,32 @@ def test_find_first_occurrence_of_dir():
 
     shutil.rmtree(_HERE / "x_data")
 
+    # Pass incorrect arguments
+
+    with pytest.raises(ValueError, match="The root argument is not a valid directory"):
+        assert find_first_occurrence_of_dir("data", "non-existing-folder")
+
+    with pytest.raises(TypeError, match="missing 1 required positional argument"):
+        find_first_occurrence_of_dir("data")
+
 
 def test_find_root():
-
     assert find_root(None) is None
     assert find_root("/") is None
     assert find_root("/", tests=("tmp",)) == Path("/")
     assert find_root("/", tests=("non-existing-tmp",)) is None
 
 
-def test_get_common_egse_root():
-
-    print()
-
-    # for the following test I assume that we are in the repository, but we can not test
-    # the value as it will be different for each installation
-    assert get_common_egse_root() is not None
-
-    print(f"{get_common_egse_root() = }")
-
-    # for the following test I assume that we are on a unix system (Linux or macOS)
-    assert get_common_egse_root(Path("/tmp")) is None
-
-
 def test_find_root_exceptions():
-
     assert find_root("/non-existing-path") is None
     assert find_root(None) is None
 
 
-def test_get_common_egse_root_with_env():
-
-    import os
-
-    os.environ["PLATO_COMMON_EGSE_PATH"] = "/Users/rik/git"
-
-    # I added lru_cache to speed up the get_common_egse_root() function, but this
-    # is of course fatal for test harnesses. T_HEREfore, clear the cache before and
-    # after this test.
-
-    get_common_egse_root.cache_clear()
-
-    assert get_common_egse_root() == Path("/Users/rik/git")
-
-    get_common_egse_root.cache_clear()
-
-    del os.environ["PLATO_COMMON_EGSE_PATH"]
-
-
 def test_find_files():
-    files = list(find_files("COPY*", root=get_common_egse_root()))
+    print()
+
+    files = list(find_files("COPY*", root=_HERE))
+    print(files)
     assert files
 
     for f in files:
@@ -102,14 +80,14 @@ def test_find_files():
 
     # no files named 'data', only folders that are named 'data', use find_dirs for this.
 
-    files = list(find_files("data", root=get_common_egse_root() / "src"))
+    files = list(find_files("data", root=_HERE / "src"))
+    print(files)
     assert not files
 
     # When I want to find a file in a specific directory, use the in_dir keyword
 
-    filename = Path("EtherSpaceLink_v*.dylib")
-    files = list(find_files(filename, in_dir="lib/CentOS-7"))
-    print()
+    filename_pattern = "shared-lib.so"
+    files = list(find_files(filename_pattern, root=_HERE, in_dir="lib/dev1"))
     print(files)
 
     # The expected file is in the src/egse/lib/CentOS-7 folder, but
@@ -119,37 +97,41 @@ def test_find_files():
 
 
 def test_find_dirs():
-    dir_name = "CentOS-[78]"
-    dirs = list(find_dirs(dir_name))
+    print()
+    dir_name = "dev[12]"
+    dirs = list(find_dirs(dir_name, _HERE))
+    print(dirs)
     assert dirs
 
-    dir_name = "CentOS-7"
-    dirs = list(find_dirs(dir_name))
+    dir_name = "dev1"
+    dirs = list(find_dirs(dir_name, _HERE))
+    print(dirs)
     assert dirs
 
-    dir_name = "egse/images"
-    dirs = list(find_dirs(dir_name))
+    dir_name = "lib/dev*"
+    dirs = list(find_dirs(dir_name, _HERE))
     print(dirs)
     # The third file could be in the build folder which doesn't always exists.
     # A fourth file could be in the virtual environment venv or venv38
     assert len(dirs) in (2, 3, 4)
 
-    # use the leading '/' to prevent that 'plato-common-egse/images' is matched.
+    # use the leading '/' to prevent that another 'lib/dev' is matched.
 
-    dir_name = "/egse/images"
-    dirs = list(find_dirs(dir_name))
+    dir_name = "/lib/dev*"
+    dirs = list(find_dirs(dir_name, _HERE))
     print(dirs)
     # The second file could be in the build folder which doesn't always exists.
     assert len(dirs) in (1, 2)
 
 
 def test_find_file():
+    project_root = _HERE.parent
 
-    assert find_file("pyproject.toml")
-    assert find_file("data-file.txt")
-    assert not find_file("non-existing-file.txt")
+    assert find_file("pyproject.toml", project_root)
+    assert find_file("data-file.txt", project_root)
+    assert not find_file("non-existing-file.txt", project_root)
 
-    assert find_file("config.py", in_dir="egse")
+    assert find_file("config.py", root=project_root, in_dir="egse")
 
 
 def test_working_directory():
@@ -167,7 +149,7 @@ def test_working_directory():
 
     with WorkingDirectory(_HERE.parent) as wdir:
         assert wdir.path / "tests" == _HERE
-        for file in wdir.path.glob('tests'):
+        for file in wdir.path.glob("tests"):
             assert str(file) == str(_HERE)
 
     assert cwd == os.getcwd()

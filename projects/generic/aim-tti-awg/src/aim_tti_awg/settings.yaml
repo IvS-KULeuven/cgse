@@ -1,0 +1,20 @@
+PACKAGES:
+    AIM_TTI_AWG
+
+Aim-TTi TGF4000:
+    CMD_DELAY:  0.5   # Time between subsequent commands [s]
+
+
+Aim-TTi TGF4000 Control Server:
+    PROTOCOL:     tcp
+    AWG1:
+        SERVICE_TYPE:   AWG1
+        PROCESS_NAME:   AWG1
+        PROTOCOL:       tcp
+        HOST:           localhost
+        COMMANDING_PORT: 0          # The port on which the controller listens to commands - REQ-REP
+        MONITORING_PORT: 0          # The port on which the controller sends periodic status information of the device - PUB-SUB
+        SERVICE_PORT: 0          # The port on which the controller listens for configuration and administration - REQ-REP
+        METRICS_PORT: 0          # The HTTP port where Prometheus will connect to for retrieving metrics
+        DELAY: 10          # The delay time between publishing status information [seconds]
+        STORAGE_MNEMONIC: AWG1          # The mnemonic to be used in the filename storing the housekeeping data

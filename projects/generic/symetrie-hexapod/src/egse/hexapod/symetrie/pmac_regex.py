@@ -1,7 +1,9 @@
-import logging
 import re
 
-logger = logging.getLogger(__name__)
+from egse.env import bool_env
+from egse.hexapod.symetrie import logger
+
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
 
 regex_response = {
     # Error message as ERRXXX
@@ -25,7 +27,8 @@ def match_regex_response(regex_prog, res):
 
     Return None if no match and the match object otherwise.
     """
-    logger.flash_flood(f"res = {res} with type {type(res)}")
+    if VERBOSE_DEBUG:
+        logger.debug(f"res = {res} with type {type(res)}")
     if isinstance(res, bytes):
         res = res.decode()
     match_obj = regex_prog.match(res)
@@ -33,11 +36,11 @@ def match_regex_response(regex_prog, res):
 
 
 def patter_n_int(nr):
-    return re.compile(fr"(-?\d+)\r((-?\d+)\r){{{nr}}}\x06")
+    return re.compile(rf"(-?\d+)\r((-?\d+)\r){{{nr}}}\x06")
 
 
 def patter_n_float(nr):
-    return re.compile(fr"(-?\d+)\r((-?(\d*\.)?\d+)\r){{{nr}}}\x06")
+    return re.compile(rf"(-?\d+)\r((-?(\d*\.)?\d+)\r){{{nr}}}\x06")
 
 
 def match_int_response(res):

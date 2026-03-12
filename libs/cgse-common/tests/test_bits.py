@@ -9,6 +9,7 @@ from egse.bits import bits_set
 from egse.bits import clear_bit
 from egse.bits import clear_bits
 from egse.bits import crc_calc
+from egse.bits import extract_bits
 from egse.bits import humanize_bytes
 from egse.bits import s16
 from egse.bits import s32
@@ -17,6 +18,14 @@ from egse.bits import set_bits
 from egse.bits import toggle_bit
 
 logger = logging.getLogger(__name__)
+
+
+def test_extract_bits():
+    bf = 0b0010_1110
+
+    assert extract_bits(bf, 0, 3) == 0b0110
+    assert extract_bits(0b1001_0101, 0, 1) == 0b0001
+    assert extract_bits(0b1111_0000, 3, 2) == 0b0010
 
 
 def test_clear_bit():
@@ -57,15 +66,14 @@ def test_set_bit():
     assert bit_set(bf, 7)
     logger.debug(f"bf = {bf:4}, 0b{bf:08b}")
     assert bits_set(bf, 0, 3, 7)
-    assert bits_set(bf, [0, 3, 7])
-    assert not bits_set(bf, [0, 1, 3, 7])
+    assert bits_set(bf, *[0, 3, 7])
+    assert not bits_set(bf, *[0, 1, 3, 7])
 
     assert bits_set(bf, 0)
-    assert bits_set(bf, [0])
+    assert bits_set(bf, *[0])
 
 
 def test_toggle_bit():
-
     bf = 0b0000_0000
 
     assert toggle_bit(bf, 0) == 0b0001
@@ -84,25 +92,29 @@ def test_toggle_bit():
 
 
 def test_beautify_binary():
-    assert beautify_binary(0b0010, group=4) == '0000 0010'
-    assert beautify_binary(0b1111_1111, group=4) == '1111 1111'
-    assert beautify_binary(0b0000_0001_1111_1111) == '00000001 11111111'
+    assert beautify_binary(0b0010, group=4) == "0000 0010"
+    assert beautify_binary(0b1111_1111, group=4) == "1111 1111"
+    assert beautify_binary(0b0000_0001_1111_1111) == "00000001 11111111"
 
-    assert beautify_binary(2 ** 7) == '10000000'
-    assert beautify_binary(2 ** 8) == '00000001 00000000'
-    assert beautify_binary(2 ** 9 - 1, group=4, sep='_') == '0000_0001_1111_1111'
-    assert beautify_binary(2 ** 14) == '01000000 00000000'
-    assert beautify_binary(2 ** 24) == '00000001 00000000 00000000 00000000'
-    assert beautify_binary(2 ** 27) == '00001000 00000000 00000000 00000000'
-    assert beautify_binary(2 ** 33) == '00000010 00000000 00000000 00000000 00000000'
+    assert beautify_binary(0b0010, group=4, size=4) == "0010"
+    assert beautify_binary(0b1111_1111, group=4, size=12) == "0000 1111 1111"
+    assert beautify_binary(0b0000_0001_1111_1111, group=12, size=12) == "000111111111"
 
-    assert beautify_binary(0b11111111000011110000111100000000, sep='_') == \
-        '11111111_00001111_00001111_00000000'
-    assert beautify_binary(0b11111111000011110000111100000000, sep='_', group=4) == \
-        '1111_1111_0000_1111_0000_1111_0000_0000'
+    assert beautify_binary(2**7) == "10000000"
+    assert beautify_binary(2**8) == "00000001 00000000"
+    assert beautify_binary(2**9 - 1, group=4, sep="_") == "0000_0001_1111_1111"
+    assert beautify_binary(2**14) == "01000000 00000000"
+    assert beautify_binary(2**24) == "00000001 00000000 00000000 00000000"
+    assert beautify_binary(2**27) == "00001000 00000000 00000000 00000000"
+    assert beautify_binary(2**33) == "00000010 00000000 00000000 00000000 00000000"
 
-    assert beautify_binary(0b0101_0101_0101_0011, sep='_', group=4, prefix='0b') == \
-        '0b0101_0101_0101_0011'
+    assert beautify_binary(0b11111111000011110000111100000000, sep="_") == "11111111_00001111_00001111_00000000"
+    assert (
+        beautify_binary(0b11111111000011110000111100000000, sep="_", group=4)
+        == "1111_1111_0000_1111_0000_1111_0000_0000"
+    )
+
+    assert beautify_binary(0b0101_0101_0101_0011, sep="_", group=4, prefix="0b") == "0b0101_0101_0101_0011"
 
 
 def test_set_bits():
@@ -114,14 +126,13 @@ def test_set_bits():
     assert set_bits(0b0001_1000, (3, 5)) == 0b0001_1000
     assert set_bits(0b0001_1000, (2, 6)) == 0b0011_1100
 
-    assert set_bits(0, (128, 129)) == 2 ** 128
-    assert set_bits(0, (0, 129)) == 2 ** 129 - 1
+    assert set_bits(0, (128, 129)) == 2**128
+    assert set_bits(0, (0, 129)) == 2**129 - 1
 
 
 def test_alternative_set_bits():
-
     for width in 1, 4, 8, 12, 15, 16, 32, 128, 129:
-        assert set_bits(0, (0, width)) == int('1'*width, 2)
+        assert set_bits(0, (0, width)) == int("1" * width, 2)
 
 
 def test_clear_bits():
@@ -135,15 +146,15 @@ def test_clear_bits():
 
 
 def test_crc_calc():
-    b = b'abcdefghijklmnopqrstuvwxyz'
+    b = b"abcdefghijklmnopqrstuvwxyz"
 
-    assert crc_calc(b, 0,  0) == 0x00
-    assert crc_calc(b, 0,  1) == 0xD9
+    assert crc_calc(b, 0, 0) == 0x00
+    assert crc_calc(b, 0, 1) == 0xD9
     assert crc_calc(b, 0, 16) == 0x8A
     assert crc_calc(b, 0, 26) == 0x63
 
-    assert crc_calc(b, 5,  0) == 0x00
-    assert crc_calc(b, 5,  1) == 0xAC
+    assert crc_calc(b, 5, 0) == 0x00
+    assert crc_calc(b, 5, 1) == 0xAC
     assert crc_calc(b, 5, 16) == 0x12
 
     with pytest.raises(IndexError):
@@ -152,15 +163,15 @@ def test_crc_calc():
     with pytest.raises(IndexError):
         assert crc_calc(b, 0, 27) == 0x63
 
-    b = ctypes.create_string_buffer(b'abcdefghijklmnopqrstuvwxyz')
+    b = ctypes.create_string_buffer(b"abcdefghijklmnopqrstuvwxyz")
 
-    assert crc_calc(b, 0,  0) == 0x00
-    assert crc_calc(b, 0,  1) == 0xD9
+    assert crc_calc(b, 0, 0) == 0x00
+    assert crc_calc(b, 0, 1) == 0xD9
     assert crc_calc(b, 0, 16) == 0x8A
     assert crc_calc(b, 0, 26) == 0x63
 
-    assert crc_calc(b, 5,  0) == 0x00
-    assert crc_calc(b, 5,  1) == 0xAC
+    assert crc_calc(b, 5, 0) == 0x00
+    assert crc_calc(b, 5, 1) == 0xAC
     assert crc_calc(b, 5, 16) == 0x12
 
     with pytest.raises(IndexError):
@@ -173,17 +184,19 @@ def test_crc_calc():
     with pytest.raises(IndexError):
         assert crc_calc(b, 0, 28) == 0x63
 
-def test_humanize_bytes():
+    assert crc_calc([0.0, 1.0, 2.0, 3.0], 0, 4) == 0
 
+
+def test_humanize_bytes():
     assert humanize_bytes(0) == "0 bytes"
     assert humanize_bytes(1) == "1 byte"
     assert humanize_bytes(60) == "60 bytes"
     assert humanize_bytes(1023) == "1023 bytes"
     assert humanize_bytes(1024) == "1.000 KiB"
     assert humanize_bytes(1025) == "1.001 KiB"
-    assert humanize_bytes(1024*2 - 1) == "1.999 KiB"
-    assert humanize_bytes(1024*2) == "2.000 KiB"
-    assert humanize_bytes(1024*2 + 1) == "2.001 KiB"
+    assert humanize_bytes(1024 * 2 - 1) == "1.999 KiB"
+    assert humanize_bytes(1024 * 2) == "2.000 KiB"
+    assert humanize_bytes(1024 * 2 + 1) == "2.001 KiB"
 
     assert humanize_bytes(1024**2 - 1) == "1023.999 KiB"
     assert humanize_bytes(1024**2) == "1.000 MiB"
@@ -207,9 +220,9 @@ def test_humanize_bytes():
     assert humanize_bytes(999, base=10) == "999 bytes"
     assert humanize_bytes(1000, base=10) == "1.000 kB"
     assert humanize_bytes(1024, base=10) == "1.024 kB"
-    assert humanize_bytes(1000*2 - 1, base=10) == "1.999 kB"
-    assert humanize_bytes(1000*2, base=10) == "2.000 kB"
-    assert humanize_bytes(1000*2 + 1, base=10) == "2.001 kB"
+    assert humanize_bytes(1000 * 2 - 1, base=10) == "1.999 kB"
+    assert humanize_bytes(1000 * 2, base=10) == "2.000 kB"
+    assert humanize_bytes(1000 * 2 + 1, base=10) == "2.001 kB"
 
     assert humanize_bytes(10**6 - 1, base=10) == "999.999 kB"
     assert humanize_bytes(10**6, base=10) == "1.000 MB"
@@ -246,12 +259,11 @@ def test_humanize_bytes():
     assert humanize_bytes(1024**3, base=2) == "1.000 GiB"
     assert humanize_bytes(1073741824, base=10) == "1.074 GB"
 
-    assert humanize_bytes(1024**3, base='binary') == "1.000 GiB"
-    assert humanize_bytes(1073741824, base='decimal') == "1.074 GB"
+    assert humanize_bytes(1024**3, base="binary") == "1.000 GiB"
+    assert humanize_bytes(1073741824, base="decimal") == "1.074 GB"
 
 
 def test_s16():
-
     assert s16(0b1000_0000_0001_0001) == -32751
     assert s16(0b1000_0000_0000_0001) == -32767
     assert s16(0b1111_1111_1111_1111) == -1
@@ -259,7 +271,6 @@ def test_s16():
 
 
 def test_s32():
-
     assert s32(0b1000_0000_0000_0000_0000_0000_0001_0001) == -2147483631
     assert s32(0b1000_0000_0000_0000_0000_0000_0000_0001) == -2147483647
     assert s32(0b1111_1111_1111_1111_1111_1111_1111_1111) == -1

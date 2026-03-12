@@ -1,24 +1,20 @@
 """
-This module provides convenience functions to properly configure the Common-EGSE
+This module provides convenience functions to properly configure the CGSE
 and to find paths and resources.
 """
-from __future__ import annotations
 
 import fnmatch
-import logging
 import os
 from pathlib import Path
 from pathlib import PurePath
-from typing import List
-from typing import Optional
+from typing import Generator
 from typing import Tuple
 from typing import Union
 
-_HERE = Path(__file__).parent.resolve()
-_LOGGER = logging.getLogger(__name__)
+from egse.log import logger
 
 
-def find_first_occurrence_of_dir(pattern: str, root: Path | str = None) -> Optional[Path]:
+def find_first_occurrence_of_dir(pattern: str, root: Path | str) -> Path | None:
     """
     Returns the full path of the directory that first matches the pattern. The directory hierarchy is
     traversed in alphabetical order. The pattern is matched first against all directories in the root
@@ -27,6 +23,9 @@ def find_first_occurrence_of_dir(pattern: str, root: Path | str = None) -> Optio
 
     Note that the pattern may contain parent directories, like `/egse/data/icons` or `egse/*/icons`,
     in which case the full pattern is matched.
+
+    In the case that you pass an empty string for the root argument, it will resolve into
+    the current working directory.
 
     Args:
         pattern: a filename pattern
@@ -37,9 +36,11 @@ def find_first_occurrence_of_dir(pattern: str, root: Path | str = None) -> Optio
     """
     import fnmatch
 
-    root = Path(root).resolve() if root else _HERE
+    root_arg = root
+
+    root = Path(root).resolve()
     if not root.is_dir():
-        root = root.parent
+        raise ValueError(f"The root argument is not a valid directory: {root_arg}.")
 
     parts = pattern.rsplit("/", maxsplit=1)
     if len(parts) == 2:
@@ -61,7 +62,7 @@ def find_first_occurrence_of_dir(pattern: str, root: Path | str = None) -> Optio
     return None
 
 
-def find_dir(pattern: str, root: str = None) -> Optional[Path]:
+def find_dir(pattern: str, root: Path | str) -> Path | None:
     """
     Find the first folder that matches the given pattern.
 
@@ -71,8 +72,8 @@ def find_dir(pattern: str, root: str = None) -> Optional[Path]:
     `find_dirs()` function and check if there is just one item returned in the list.
 
     Args:
-        pattern (str): pattern to match (use * for wildcard)
-        root (str): the top level folder to search [default=common-egse-root]
+        pattern: pattern to match (use * for wildcard)
+        root: the top level folder to search
 
     Returns:
         the first occurrence of the directory pattern or None when not found.
@@ -83,7 +84,7 @@ def find_dir(pattern: str, root: str = None) -> Optional[Path]:
     return None
 
 
-def find_dirs(pattern: str, root: str = None):
+def find_dirs(pattern: str, root: Path | str) -> Generator[Path, None, None]:
     """
     Generator for returning directory paths from a walk started at `root` and matching pattern.
 
@@ -92,23 +93,27 @@ def find_dirs(pattern: str, root: str = None):
     The pattern can contain a directory separator '/' which means
     the last part of the path needs to match these folders.
 
-    Examples:
+    Args:
+        pattern (str): pattern to match (use * for wildcard)
+        root (str): the top level folder to search
+
+    Returns:
+         Generator: Paths of folders matching pattern, from root.
+
+    Example:
+        ```python
         >>> for folder in find_dirs("/egse/images"):
         ...     assert folder.match('*/egse/images')
 
         >>> folders = list(find_dirs("/egse/images"))
         >>> assert len(folders)
+        ```
 
-    Args:
-        pattern (str): pattern to match (use * for wildcard)
-        root (str): the top level folder to search [default=common-egse-root]
-
-    Returns:
-         Paths of folders matching pattern, from root.
     """
-    root = Path(root).resolve() if root else get_common_egse_root()
+    root_arg = root
+    root = Path(root).resolve()
     if not root.is_dir():
-        root = root.parent
+        raise ValueError(f"The root argument is not a valid directory: {root_arg}.")
 
     parts = pattern.rsplit("/", maxsplit=1)
     if len(parts) == 2:
@@ -124,7 +129,7 @@ def find_dirs(pattern: str, root: str = None):
                 yield Path(path) / name
 
 
-def find_files(pattern: str, root: str = None, in_dir: str = None):
+def find_files(pattern: str, root: Path | str, in_dir: str = None) -> Generator[Path, None, None]:
     """
     Generator for returning file paths from a top folder, matching the pattern.
 
@@ -138,22 +143,25 @@ def find_files(pattern: str, root: str = None, in_dir: str = None):
 
         >>> file_pattern = 'EtherSpaceLink*.dylib'
         >>> in_dir = 'lib/CentOS-7'
-        >>> for file in find_files(file_pattern, in_dir=in_dir):
+        >>> for file in find_files(file_pattern, root='.', in_dir=in_dir):
         ...     assert file.match("*lib/CentOS-7/EtherSpaceLink*")
 
     Args:
         pattern (str) : sorting pattern (use * for wildcard)
-        root (str): the top level folder to search [default=common-egse-root]
+        root (Path | str): the top level folder to search
         in_dir (str): the 'leaf' directory in which the file shall be
 
     Returns:
         Paths of files matching pattern, from root.
     """
-    root = Path(root).resolve() if root else get_common_egse_root()
+    root = Path(root).expanduser().resolve()
     if not root.is_dir():
         root = root.parent
+    if not root.exists():
+        raise ValueError(f"The root argument didn't resolve into a valid directory: {root}.")
 
-    exclude_dirs = ("venv", "venv38", ".git", ".idea", ".DS_Store")
+    # FIXME: at some point we might want to make this configurable, through env?
+    exclude_dirs = ("venv", "venv38", ".venv", ".nox", ".git", ".idea", ".DS_Store", "__pycache__")
 
     for path, folders, files in os.walk(root):
         folders[:] = list(filter(lambda x: x not in exclude_dirs, folders))
@@ -163,7 +171,7 @@ def find_files(pattern: str, root: str = None, in_dir: str = None):
             yield Path(path) / name
 
 
-def find_file(name: str, root: str = None, in_dir: str = None) -> Optional[Path]:
+def find_file(name: str, root: Path | str, in_dir: str = None) -> Path | None:
     """
     Find the path to the given file starting from the root directory of the
     distribution.
@@ -178,12 +186,12 @@ def find_file(name: str, root: str = None, in_dir: str = None) -> Optional[Path]
 
         >>> file_pattern = 'EtherSpaceLink*.dylib'
         >>> in_dir = 'lib/CentOS-7'
-        >>> file = find_file(file_pattern, in_dir=in_dir)
+        >>> file = find_file(file_pattern, root='.', in_dir=in_dir)
         >>> assert file.match("*/lib/CentOS-7/EtherSpace*")
 
     Args:
         name (str): the name of the file
-        root (str): the top level folder to search [default=common-egse-root]
+        root (Path | str): the top level folder to search
         in_dir (str): the 'leaf' directory in which the file shall be
 
     Returns:
@@ -196,7 +204,7 @@ def find_file(name: str, root: str = None, in_dir: str = None) -> Optional[Path]
 
 
 def find_root(
-    path: Union[str, PurePath], tests: Tuple[str, ...] = (), default: str = None
+    path: Union[str, PurePath] | None, tests: Tuple[str, ...] = (), default: str = None
 ) -> Union[PurePath, None]:
     """
     Find the root folder based on the files in ``tests``.
@@ -233,18 +241,6 @@ def find_root(
     return Path(default) if default is not None else None
 
 
-def set_logger_levels(logger_levels: List[Tuple] = None):
-    """
-    Set the logging level for the given loggers.
-
-    """
-    logger_levels = logger_levels or []
-
-    for name, level in logger_levels:
-        a_logger = logging.getLogger(name)
-        a_logger.setLevel(level)
-
-
 class WorkingDirectory:
     """
     WorkingDirectory is a context manager to temporarily change the working directory while
@@ -253,20 +249,21 @@ class WorkingDirectory:
     This context manager has a property `path` which returns the absolute path of the
     current directory.
 
-    Examples:
-        >>> with WorkingDirectory(find_dir("/egse/images")) as wdir:
-        ...     for file in wdir.path.glob('*'):
-        ...         assert file.exists()  # do something with the image files
+    Args:
+        path (str, Path): the folder to change to within this context
 
+    Raises:
+        ValueError: when the given path doesn't exist.
+
+    Example:
+        ```python
+        with WorkingDirectory(find_dir("/egse/images")) as wdir:
+            for file in wdir.path.glob('*'):
+                assert file.exists()  # do something with the image files
+        ```
     """
 
     def __init__(self, path):
-        """
-        Args:
-            path (str, Path): the folder to change to within this context
-        Raises:
-            ValueError when the given path doesn't exist.
-        """
         self._temporary_path = Path(path)
         if not self._temporary_path.exists():
             raise ValueError(f"The given path ({path}) doesn't exist.")
@@ -281,7 +278,7 @@ class WorkingDirectory:
         try:
             os.chdir(self._current_dir)
         except OSError as exc:
-            _LOGGER.warning(f"Change back to previous directory failed: {exc}")
+            logger.warning(f"Change back to previous directory failed: {exc}")
 
     @property
     def path(self):

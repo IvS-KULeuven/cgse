@@ -1,0 +1,69 @@
+PACKAGES:
+    CGSE_CORE: The core services of the CGSE
+
+Service Registry:
+    
+    CLEANUP_INTERVAL:                30
+    REQUESTER_PORT:                6100
+    PUBLISHER_PORT:                6101
+    HEARTBEAT_PORT:                6102
+    DATABASE_PATH:  service_registry.db
+
+
+Logging Control Server:                          # LOG_CS
+
+    SERVICE_TYPE:                LOG_CS
+    PROCESS_NAME:                log_cs
+    MAX_NR_LOG_FILES:                20          # The maximum number of log files that will be maintained in a roll-over
+    MAX_SIZE_LOG_FILES:              20          # The maximum size one log file can become
+    RECEIVER_PORT:                 6105
+    COMMANDER_PORT:                6106
+    EXTERN_LOG_HOST:          127.0.0.1          # The IP address of the external logger
+    EXTERN_LOG_PORT:             19996          # The port number on which the external logger is listening
+
+Configuration Manager Control Server:            # CM_CS
+
+    SERVICE_TYPE:                 CM_CS
+    PROCESS_NAME:                 cm_cs
+    COMMANDING_PORT:               6110          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:               6111          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                  6112          # The port on which the controller listens for configuration and administration - REQ-REP
+    DELAY:                            1          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:                CM          # The mnemonic to be used in the filename storing the housekeeping data
+
+Storage Manager Control Server:                  # SM_CS
+
+    SERVICE_TYPE:                 SM_CS
+    PROCESS_NAME:                 sm_cs
+    COMMANDING_PORT:               6115          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:               6116          # The port on which the controller sends periodic status information of the device - PUB-SUB
+    SERVICE_PORT:                  6117          # The port on which the controller listens for configuration and administration - REQ-REP
+    DELAY:                            1          # The delay time between publishing status information [seconds]
+
+Process Manager Control Server:                  # PM_CS
+
+    SERVICE_TYPE:                 PM_CS
+    PROCESS_NAME:                 pm_cs
+    COMMANDING_PORT:               6120          # The port on which the controller listens to commands - REQ-REP
+    MONITORING_PORT:               6121          # The port on which the controller sends periodic status information of the devide - PUB-SUB
+    SERVICE_PORT:                  6122          # The port number on which the controller listens for configuration and administration - REQ-REP
+    DELAY:                            1          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:                PM          # The mnemonic to be used in the filename storing the housekeeping data
+
+Notify Hub:
+    
+    SERVICE_TYPE:                 NH_CS
+    SERVICE_ID:                 nh_cs_1
+    PROCESS_NAME:                 nh_cs
+    COLLECTOR_PORT:                6125
+    PUBLISHER_PORT:                6126
+    REQUESTS_PORT:                 6167
+    
+Metrics Hub:
+    
+    SERVICE_TYPE:                 MH_CS
+    SERVICE_ID:                 mh_cs_1
+    PROCESS_NAME:                 mh_cs
+    COLLECTOR_PORT:                6130
+    PUBLISHER_PORT:                6131
+    REQUESTS_PORT:                 6132

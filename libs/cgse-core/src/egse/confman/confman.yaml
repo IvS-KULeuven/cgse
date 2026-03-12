@@ -37,6 +37,9 @@ Commands:
                         When no test is running, i.e. we have not started an observation,
                         then a Message is returned.
 
+    register_to_storage:
+        description:    Register the configuration manager to the storage.
+    
     # Commands for handling Setups
 
     load_setup:
@@ -59,7 +62,7 @@ Commands:
         description:    Submit a (new) Setup to the configuration manager. The Setup will be
                         assigned a unique identifier and committed to the git repository.
         cmd:            "{setup} {description} {replace}"
-
+    
     # Commands that are mainly used by the ProcessManager
 
     get_setup_for_obsid:

@@ -75,25 +75,38 @@ their functionality is fully replaced by this `egse.resource` module.
 
 """
 
+from __future__ import annotations
+
+__all__ = [
+    "AmbiguityError",
+    "NoSuchFileError",
+    "ResourceError",
+    "add_resource_id",
+    "get_resource",
+    "get_resource_dirs",
+    "get_resource_locations",
+    "get_resource_path",
+    "initialise_resources",
+    "print_resources",
+]
+
+import contextlib
 import errno
-import logging
 import re
+from os.path import exists
+from os.path import join
 from pathlib import Path
 from pathlib import PurePath
 from typing import Dict
 from typing import List
 from typing import Union
 
-from os.path import exists
-from os.path import join
-
-from egse.config import find_first_occurrence_of_dir
 from egse.config import find_files
+from egse.config import find_first_occurrence_of_dir
 from egse.exceptions import InternalError
+from egse.log import logger
 from egse.plugin import entry_points
 from egse.system import get_package_location
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class ResourceError(Exception):
@@ -107,18 +120,6 @@ class AmbiguityError(ResourceError):
 class NoSuchFileError(ResourceError):
     """Raised when no file could be found for the given resource."""
 
-
-__all__ = [
-    "get_resource",
-    "get_resource_locations",
-    "get_resource_dirs",
-    "get_resource_path",
-    "add_resource_id",
-    "initialise_resources",
-    "ResourceError",
-    "AmbiguityError",
-    "NoSuchFileError",
-]
 
 # Testing regex: https://pythex.org
 
@@ -161,8 +162,7 @@ def check_if_file_exists(filename: Union[Path, str], resource_id: str = None) ->
         return filename
 
     if resource_id:
-        raise NoSuchFileError(
-            f"The file '{filename.name}' could not be found for the given resource '{resource_id}'")
+        raise NoSuchFileError(f"The file '{filename.name}' could not be found for the given resource '{resource_id}'")
     else:
         raise NoSuchFileError(f"The file '{filename.name}' doesn't exist.")
 
@@ -172,9 +172,9 @@ def contains_wildcard(filename: str):
     Returns True if the filename contains a wildcard, otherwise False.
     A wildcard is an asterisk '*' or a question mark '?' character.
     """
-    if '*' in filename:
+    if "*" in filename:
         return True
-    if '?' in filename:
+    if "?" in filename:
         return True
 
     return False
@@ -189,7 +189,7 @@ def get_resource_locations() -> Dict[str, List[Path]]:
     return resources.copy()
 
 
-def get_resource_dirs(root_dir: Union[str, PurePath]) -> List[Path]:
+def get_resource_dirs(root_dir: Path | str) -> List[Path]:
     """
     Define directories that contain resources like images, icons, and data files.
 
@@ -208,7 +208,7 @@ def get_resource_dirs(root_dir: Union[str, PurePath]) -> List[Path]:
     """
 
     if root_dir is None:
-        _LOGGER.warning("The argument root_dir can not be None, an empty list is returned.")
+        logger.warning("The argument root_dir can not be None, an empty list is returned.")
         return []
 
     root_dir = Path(root_dir).resolve()
@@ -223,18 +223,13 @@ def get_resource_dirs(root_dir: Union[str, PurePath]) -> List[Path]:
     return result
 
 
-def get_resource_path(name: str, resource_root_dir: Union[str, PurePath] = None) -> PurePath:
+def get_resource_path(name: str, resource_root_dir: Path | str) -> PurePath:
     """
     Searches for a data file (resource) with the given name.
 
-    When `resource_root_dir` is not given, the search for resources will start at the root
-    folder of the project (using the function `get_common_egse_root()`). Any other root
-    directory can be given, e.g. if you want to start the search from the location of your
-    source code file, use `Path(__file__).parent` as the `resource_root_dir` argument.
-
     Args:
         name (str): the name of the resource that is requested
-        resource_root_dir (str): the root directory w_HERE the search for resources should be started
+        resource_root_dir (str): the root directory where the search for resources should be started
 
     Returns:
         the absolute path of the data file with the given name. The first name that matches
@@ -248,7 +243,7 @@ def get_resource_path(name: str, resource_root_dir: Union[str, PurePath] = None)
     raise FileNotFoundError(errno.ENOENT, f"Could not locate resource '{name}'")
 
 
-def initialise_resources(root: Union[Path, str] = Path(__file__).parent):
+def initialise_resources(root: Path | str = Path(__file__).parent):
     """
     Initialise the default resources and any resource published by a package entry point.
 
@@ -283,7 +278,7 @@ def initialise_resources(root: Union[Path, str] = Path(__file__).parent):
             if location not in x:
                 x.append(location)
 
-    _LOGGER.debug(f"Resources have been initialised: {resources = }")
+    logger.debug(f"Resources have been initialised: {resources = }")
 
 
 def print_resources():
@@ -301,7 +296,7 @@ def print_resources():
             print(f"    {location}")
 
 
-def add_resource_id(resource_id: str, location: Union[Path, str]):
+def add_resource_id(resource_id: str, location: Path | str):
     """
     Adds a resource identifier with the given location. Resources can then be specified
     using this resource id.
@@ -341,7 +336,7 @@ def get_resource(resource_locator: str) -> Path:
         ':/<resource_id>/[*/]<filename>'
 
     If the resource_locator starts with a colon ':', the name will be interpreted as a resource_id
-    and filename combination and parsed as such
+    and filename combination and parsed as such.
 
     If the resource_locator doesn't start with a colon ':', then the string will be interpreted as a
     Path name and returned if that path exists, otherwise a ResourceError is raised.
@@ -363,8 +358,7 @@ def get_resource(resource_locator: str) -> Path:
     """
     # Try to match the special resource syntax `:/resource_id/` or `:/resource_id/*/`
 
-    if resource_locator.startswith(':'):
-
+    if resource_locator.startswith(":"):
         match = PATTERN.fullmatch(resource_locator)
         resource_id = match[1]
         filename = match[3]
@@ -373,51 +367,68 @@ def get_resource(resource_locator: str) -> Path:
         except KeyError:
             raise ResourceError(f"Resource not defined: {resource_id}")
 
-        # Match can be only three things
+        # match[2] can be only three things
         #   - None in which case the file must be in the resource location directly
         #   - '*/' in which case the file must be in a sub-folder of the resource
         #   - '**/' to find the file in any sub-folder below the given resource
 
         if match[2] is None:
-
             # This will return the first occurrence of the filename
 
             for resource_location in resource_locations:
                 if contains_wildcard(filename):
                     files = list(find_files(filename, root=resource_location))
 
-                    if len(files) == 1:
-                        filename = files[0]
-                    elif len(files) == 0:
-                        raise NoSuchFileError(f"No file found that matches {filename=} for the given "
-                                              f"resource '{resource_id}'.")
+                    if len(files) == 0:
+                        continue
+                    elif len(files) == 1:
+                        return files[0]
                     else:
-                        raise AmbiguityError(f"The {filename=} found {len(files)} matches for "
-                                             f"the given resource '{resource_id}'.")
+                        raise AmbiguityError(
+                            f"The {filename=} found {len(files)} matches for the given resource '{resource_id}'."
+                        )
 
-                return check_if_file_exists(resource_location / filename, resource_id)
+                with contextlib.suppress(NoSuchFileError):
+                    return check_if_file_exists(resource_location / filename, resource_id)
+            else:
+                raise NoSuchFileError(f"No file found that matches {filename=} for the given resource '{resource_id}'.")
 
         elif match[2] == "*/":
             # This will return the first occurrence of the filename
 
             for resource_location in resource_locations:
-
                 files = list(find_files(filename, root=resource_location))
 
-                if len(files) == 1:
+                if len(files) == 0:
+                    continue
+                elif len(files) == 1:
                     return files[0]
-                elif len(files) == 0:
-                    raise NoSuchFileError(
-                        f"The {filename=} could not be found for the given resource '{resource_id}'."
-                    )
                 else:
-                    raise AmbiguityError(f"The {filename=} was found {len(files)} times for "
-                                         f"the given resource location '{resource_location}'.")
-        elif match[2] == '**/':
-            raise NotImplementedError("The '**' to walk the tree is not yet implemented.")
+                    raise AmbiguityError(
+                        f"The {filename=} found {len(files)} matches for the given resource '{resource_id}'."
+                    )
+
+            else:
+                raise NoSuchFileError(f"No file found that matches {filename=} for the given resource '{resource_id}'.")
+
+        elif match[2] == "**/":
+            for resource_location in resource_locations:
+                files = list(find_files(filename, root=resource_location))
+
+                if len(files) == 0:
+                    continue
+                elif len(files) == 1:
+                    return files[0]
+                else:
+                    raise AmbiguityError(
+                        f"The {filename=} found {len(files)} matches for the given resource '{resource_id}'."
+                    )
+
+            else:
+                raise NoSuchFileError(f"No file found that matches {filename=} for the given resource '{resource_id}'.")
+
         else:
-            raise InternalError(
-                f"This shouldn't happen, the match is {match[2]=} for {resource_locator=}")
+            raise InternalError(f"This shouldn't happen, the match is {match[2]=} for {resource_locator=}")
     else:
         return check_if_file_exists(Path(resource_locator))
 
@@ -431,7 +442,6 @@ initialise_resources()
 
 
 if __name__ == "__main__":
-
     import rich
 
     rich.print("Default resources:")

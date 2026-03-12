@@ -1,3 +1,9 @@
+
+![PyPI - Version](https://img.shields.io/pypi/v/cgse-common)
+![Supported OS](https://img.shields.io/badge/Supported%20OS-Linux%20%7C%20macOS-blue)
+![Python Version from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FIvS-KULeuven%2Fcgse%2Frefs%2Fheads%2Fmain%2Fpyproject.toml)
+![PyPI - Wheel](https://img.shields.io/pypi/wheel/cgse-common)
+
 # Generic Functionality used in the Common-EGSE
 
 This package 'cgse-common' contains functionality that is used by all `cgse` sub-packages, but it is designed to be a stand-alone generic package that can be used also in any other project.

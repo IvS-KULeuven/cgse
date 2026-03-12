@@ -51,6 +51,6 @@ class QHLine(QFrame):
     """Presents a simple Horizontal Bar that can be used in e.g. the status bar."""
 
     def __init__(self):
-        super(QHLine, self). __init__()
+        super(QHLine, self).__init__()
         self.setFrameShape(QFrame.HLine)
         self.setFrameShadow(QFrame.Sunken)

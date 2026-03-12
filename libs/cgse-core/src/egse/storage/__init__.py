@@ -85,7 +85,7 @@ We have two sets of files:
 
 2. files that contain all the housekeeping for each of the data sources regardless of an
    observation is running or not. All data that is collected during a test day will be stored in
-   these files. Outside of an observation context there will be no CCD image data collected.
+   these files. Outside an observation context there will be no CCD image data collected.
    These files are located in the `daily` sub-folder of the main data store location. The filename
    is constructed from the date, the site id and the data source identifier. An example for the
    same PUNA Hexapod file: `20200701_CSL_PUNA.csv`.
@@ -93,12 +93,22 @@ We have two sets of files:
 The timestamp that is used is the time of file creation.
 
 """
+
 from __future__ import annotations
+
+__all__ = [
+    "is_storage_manager_active",
+    "get_status",
+    "PersistenceLayer",
+    "store_housekeeping_information",
+    "register_to_storage_manager",
+    "unregister_from_storage_manager",
+]
 
 import abc
 import datetime
-import logging
 import os
+import random
 import shutil
 import textwrap
 from pathlib import Path
@@ -111,40 +121,47 @@ from typing import Union
 from egse.bits import humanize_bytes
 from egse.command import ClientServerCommand
 from egse.config import find_files
+from egse.connect import get_endpoint
 from egse.control import ControlServer
-from egse.control import Failure
-from egse.control import Response
-from egse.control import Success
 from egse.control import is_control_server_active
 from egse.decorators import dynamic_interface
 from egse.env import get_data_storage_location
+from egse.env import get_site_id
 from egse.exceptions import Error
+from egse.log import logger
 from egse.obsid import ObservationIdentifier
 from egse.obsid import TEST_LAB
 from egse.persistence import PersistenceLayer
 from egse.protocol import CommandProtocol
 from egse.proxy import Proxy
 from egse.proxy import REQUEST_TIMEOUT
+from egse.registry.client import RegistryClient
+from egse.response import Failure
+from egse.response import Response
+from egse.response import Success
 from egse.settings import Settings
+from egse.setup import Setup
+from egse.setup import get_setup
+from egse.storage.persistence import TYPES
 from egse.system import format_datetime
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
 
-logger = logging.getLogger(__name__)
+HERE = Path(__file__).parent
 
-CTRL_SETTINGS = Settings.load("Storage Control Server")
-SITE = Settings.load("SITE")
-COMMAND_SETTINGS = Settings.load(filename="storage.yaml")
-DEVICE_SETTINGS = Settings.load(filename="storage.yaml")
-CCD_SETTINGS = Settings.load("CCD")
+settings = Settings.load("Storage Manager Control Server")
+SITE_ID = get_site_id()
+DEVICE_SETTINGS = COMMAND_SETTINGS = Settings.load(location=HERE, filename="storage.yaml")
 
-__all__ = [
-    "is_storage_manager_active",
-    "get_status",
-    "PersistenceLayer",
-    "register_to_storage_manager",
-    "unregister_from_storage_manager",
-]
+
+PROCESS_NAME = settings.get("PROCESS_NAME", "sm_cs")
+SERVICE_TYPE = settings.get("SERVICE_TYPE", "sm_cs")
+PROTOCOL = settings.get("PROTOCOL", "tcp")
+HOSTNAME = settings.get("HOSTNAME", "localhost")
+COMMANDING_PORT = settings.get("COMMANDING_PORT", 0)  # dynamically assigned by the system if 0
+SERVICE_PORT = settings.get("SERVICE_PORT", 0)
+MONITORING_PORT = settings.get("MONITORING_PORT", 0)
+STORAGE_MNEMONIC = settings.get("STORAGE_MNEMONIC", "SM")
 
 
 def is_storage_manager_active(timeout: float = 0.5):
@@ -154,9 +171,15 @@ def is_storage_manager_active(timeout: float = 0.5):
         True if the Storage Manager is running and replied with the expected answer.
     """
 
-    endpoint = connect_address(
-        CTRL_SETTINGS.PROTOCOL, CTRL_SETTINGS.HOSTNAME, CTRL_SETTINGS.COMMANDING_PORT
-    )
+    if COMMANDING_PORT == 0:
+        with RegistryClient() as client:
+            endpoint = client.get_endpoint(settings.SERVICE_TYPE)
+            if endpoint is None:
+                logger.debug(f"No endpoint for {settings.SERVICE_TYPE}")
+                return False
+
+    else:
+        endpoint = connect_address(PROTOCOL, HOSTNAME, COMMANDING_PORT)
 
     return is_control_server_active(endpoint, timeout)
 
@@ -179,17 +202,17 @@ def register_to_storage_manager(origin: str, persistence_class: PersistenceLayer
 
     try:
         with StorageProxy() as proxy:
-            rc = proxy.register(
+            response = proxy.register(
                 {
                     "origin": origin,
                     "persistence_class": persistence_class,
                     "prep": prep,
                 }
             )
-            if not rc.successful:
-                logger.warning(f"Couldn't register to the Storage manager: {rc}")
+            if not response.successful:
+                logger.warning(f"Couldn't register to the Storage manager: {response}")
             else:
-                logger.info(rc)
+                logger.info(response)
     except ConnectionError as exc:
         logger.warning(f"Couldn't connect to the Storage manager for registration: {exc}")
         raise
@@ -208,11 +231,11 @@ def unregister_from_storage_manager(origin: str):
 
     try:
         with StorageProxy() as proxy:
-            rc = proxy.unregister({"origin": origin})
-            if not rc.successful:
-                logger.warning(f"Couldn't unregister from the Storage manager: {rc}")
+            response = proxy.unregister({"origin": origin})
+            if not response.successful:
+                logger.warning(f"Couldn't unregister from the Storage manager: {response}")
             else:
-                logger.info(rc)
+                logger.info(response)
     except ConnectionError as exc:
         logger.warning(f"Couldn't connect to the Storage manager for de-registration: {exc}")
         raise
@@ -232,9 +255,9 @@ def store_housekeeping_information(origin: str, data: dict):
 
     try:
         with StorageProxy() as proxy:
-            rc = proxy.save({"origin": origin, "data": data})
-            if not rc.successful:
-                logger.warning(f"Couldn't save data to the Storage manager for {origin=}, cause: {rc}")
+            response = proxy.save({"origin": origin, "data": data})
+            if not response.successful:
+                logger.warning(f"Couldn't save data to the Storage manager for {origin=}, cause: {response}")
     except ConnectionError as exc:
         logger.warning(f"Couldn't connect to the Storage manager to store housekeeping: {exc}")
         raise
@@ -294,9 +317,7 @@ class Registry:
         if not isinstance(name, str):
             raise ValueError("The name of the item to register must be a string.")
         if name in self:
-            raise AlreadyRegisteredError(
-                f"An item with name '{name}' is already registered, please unregister first."
-            )
+            raise AlreadyRegisteredError(f"An item with name '{name}' is already registered, please unregister first.")
         self._register[name] = item
 
     def unregister(self, name: str):
@@ -479,12 +500,27 @@ class StorageInterface:
 
     @dynamic_interface
     def get_disk_usage(self):
-        """ Return the total, used, and free disk space [bytes].
+        """Return the total, used, and free disk space [bytes].
 
         Returns:
             - Total disk space [bytes].
             - Used disk space [bytes].
             - Free disk space [bytes].
+        """
+
+        pass
+
+    @dynamic_interface
+    def get_loaded_setup_id(self) -> str:
+        """
+        Returns the ID of the currently loaded Setup.
+
+        Note:
+            This is the Setup active on this control server. This command is mainly used to check that the Setup
+            loaded in this control server corresponds to the Setup loaded in the configuration manager.
+
+        Returns:
+            The ID of the Setup loaded in this control server.
         """
 
         pass
@@ -507,19 +543,24 @@ def _disentangle_filename(filename: Union[str, Path]) -> Tuple:
     filename = Path(filename).resolve()
     parts = filename.parts
 
-    if parts[-2] != 'obs':
+    if parts[-2] != "obs":
         name = parts[-1]
-        if not (name.rsplit('_', 3)[0].endswith('_SPW') or name.rsplit('_', 2)[0].endswith('_SPW')):
+        if not (name.rsplit("_", 3)[0].endswith("_SPW") or name.rsplit("_", 2)[0].endswith("_SPW")):
             return None, None, None
 
     name = parts[-1]
-    test_id, site_id, setup_id = name.split('_')[:3]
+    test_id, site_id, setup_id = name.split("_")[:3]
     return int(test_id), site_id, int(setup_id)
 
 
 def _construct_filename(
-        identifier: str, ext: str, obsid: ObservationIdentifier = None, use_counter=False,
-        location: str = None, site_id: str = None, camera_name: str = None
+    identifier: str,
+    ext: str,
+    obsid: ObservationIdentifier = None,
+    use_counter=False,
+    location: str = None,
+    site_id: str = None,
+    camera_name: str = None,
 ) -> PurePath:
     """Construct a filename for the data source.
 
@@ -543,11 +584,11 @@ def _construct_filename(
         The full path to the file as a `PurePath`.
     """
 
-    site_id = site_id or SITE.ID
+    site_id = site_id or SITE_ID
     location = location or get_data_storage_location(site_id=site_id)
+    location = Path(location).expanduser()
 
     if obsid:
-
         timestamp = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%d_%H%M%S")
 
         prefix = obsid.create_id(order=TEST_LAB, camera_name=camera_name)
@@ -568,7 +609,6 @@ def _construct_filename(
             name = f"{prefix}_{identifier}_{timestamp}.{ext}"
 
     else:
-
         timestamp = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%d")
 
         location = location / Path("daily") / timestamp
@@ -599,7 +639,7 @@ def _write_counter(counter: int, file_path: Path):
         counter: the counter to save
         file_path: the file to which the counter shall be saved
     """
-    with file_path.open('w') as fd:
+    with file_path.open("w") as fd:
         fd.write(f"{counter:d}")
 
 
@@ -615,7 +655,7 @@ def _read_counter(file_path: Path) -> int:
         The counter that is read from the file or 0 if file doesn't exist.
     """
     try:
-        with file_path.open('r') as fd:
+        with file_path.open("r") as fd:
             counter = fd.read().strip()
     except FileNotFoundError:
         counter = 0
@@ -666,7 +706,6 @@ def determine_counter_from_dir_list(location, pattern, index: int = -1):
     parts = last_file.name.split("_")
 
     try:
-
         # Observation files have the following pattern:
         #  <test ID>_<lab ID>_<setup ID>_<storage mnemonic>_<day YYYYmmdd>_<time HHMMSS>[_<counter>]
         # Daily files:
@@ -687,19 +726,24 @@ class StorageController(StorageInterface):
     observation/test and the dispatching of the persistence functions in save.
     """
 
-    def __init__(self):
+    def __init__(self, control_server):
         self._obsid: ObservationIdentifier | None = None
         self._camera_name: str | None = None
         self._registry = Registry()
+        self._cs: ControlServer = control_server
+        self._setup: Setup | None = None
 
     def start_observation(self, obsid: ObservationIdentifier, camera_name: str = None) -> Response:
         if self._obsid is not None:
-            return Failure(
-                "Can not start a new observation before the previous observation is ended."
-            )
+            return Failure("Can not start a new observation before the previous observation is ended.")
 
         self._obsid = obsid
         self._camera_name = camera_name
+        if camera_name != self._setup.camera.ID.lower():
+            logger.error(
+                f"Mismatch in camera name between Setup in Storage Manager {self._setup.camera.ID.lower()} "
+                f"and Setup in Configuration Manager {camera_name}!"
+            )
 
         # open a dedicated file for each registered item
 
@@ -725,8 +769,8 @@ class StorageController(StorageInterface):
                 registered_item["origin"],
                 registered_item["persistence_class"].extension,
                 obsid,
-                use_counter=issubclass(registered_item["persistence_class"], HDF5),
-                camera_name=camera_name
+                use_counter=issubclass(registered_item["persistence_class"], TYPES["HDF5"]),
+                camera_name=camera_name,
             )
 
             # logger.debug(f"{filename = }, {camera_name = }")
@@ -735,8 +779,8 @@ class StorageController(StorageInterface):
 
             # Special case for HDF5 files as they need to be copied instead of created
 
-            if issubclass(registered_item["persistence_class"], HDF5):
-                daily_file_object: HDF5 = registered_item["persistence_objects"][0]
+            if issubclass(registered_item["persistence_class"], TYPES["HDF5"]):
+                daily_file_object: PersistenceLayer = registered_item["persistence_objects"][0]
                 daily_file_path: Path = daily_file_object.get_filepath()
                 logger.debug(f"Copying {daily_file_path} to {filename}")
 
@@ -745,11 +789,9 @@ class StorageController(StorageInterface):
 
                 daily_file_object.close()
                 shutil.copy(daily_file_path, filename)
-                daily_file_object.open(mode='a')
+                daily_file_object.open(mode="a")
 
-            persistence_obj = registered_item["persistence_class"](
-                filename, prep=registered_item["prep"]
-            )
+            persistence_obj = registered_item["persistence_class"](filename, prep=registered_item["prep"])
 
             mode = "a" if persistence_obj.exists() else "w"
             persistence_obj.open(mode=mode)
@@ -804,9 +846,7 @@ class StorageController(StorageInterface):
         registered_item = self._registry.get(item["origin"])
 
         if not registered_item:
-            return Failure(
-                f"Storage could not find a registration for {item['origin']}, no data saved."
-            )
+            return Failure(f"Storage could not find a registration for {item['origin']}, no data saved.")
 
         for persistence_object in registered_item["persistence_objects"]:
             persistence_object.create(item["data"])
@@ -814,13 +854,10 @@ class StorageController(StorageInterface):
         return Success(f"Storage successfully saved the data for {item['origin']}.")
 
     def read(self, item: dict):
-
         registered_item = self._registry.get(item["origin"])
 
         if not registered_item:
-            return Failure(
-                f"Storage could not find a registration for {item['origin']}, no data saved."
-            )
+            return Failure(f"Storage could not find a registration for {item['origin']}, no data saved.")
 
         # FIXME:
         #   * wat als meerdere persistence_objects bestaan? alleen de eerste, alleen de laatste,
@@ -833,11 +870,8 @@ class StorageController(StorageInterface):
         return Success(f"Storage successfully read the data from {item['origin']}.", result)
 
     def register(self, item: dict, use_counter=False) -> Response:
-
         if not isinstance(item, dict):
-            return Failure(
-                f"Could not register item, item must be a dictionary (item={type(item)})."
-            )
+            return Failure(f"Could not register item, item must be a dictionary (item={type(item)}).")
 
         prep = item.get("prep", {})
 
@@ -854,11 +888,12 @@ class StorageController(StorageInterface):
             self._registry.register(item["origin"], item)
 
             if "filename" in item:
-                location = Path(get_data_storage_location(site_id=SITE.ID))
+                location = Path(get_data_storage_location(site_id=SITE_ID))
                 filename = location / item["filename"]
             else:
-                filename = _construct_filename(item["origin"], item["persistence_class"].extension,
-                                               use_counter=use_counter)
+                filename = _construct_filename(
+                    item["origin"], item["persistence_class"].extension, use_counter=use_counter
+                )
 
             persistence_obj = item["persistence_class"](filename, prep=prep)
             mode = "a" if persistence_obj.exists() else "w"
@@ -875,11 +910,14 @@ class StorageController(StorageInterface):
             if (
                 self._obsid
                 and "persistence_count" not in item
-                and not issubclass(item["persistence_class"], HDF5)
+                and not issubclass(item["persistence_class"], TYPES["HDF5"])
             ):
                 filename = _construct_filename(
-                    item["origin"], item["persistence_class"].extension, self._obsid,
-                    use_counter=use_counter, camera_name=self._camera_name
+                    item["origin"],
+                    item["persistence_class"].extension,
+                    self._obsid,
+                    use_counter=use_counter,
+                    camera_name=self._camera_name,
                 )
 
                 persistence_obj = item["persistence_class"](filename, prep=prep)
@@ -927,7 +965,6 @@ class StorageController(StorageInterface):
         return list(self._registry)
 
     def cycle_daily_files(self):
-
         logger.info("Cycling daily files for Storage Manager")
 
         for reg_name in self._registry:
@@ -946,16 +983,13 @@ class StorageController(StorageInterface):
                     daily_persist_obj = item["persistence_objects"][0]
                     daily_persist_obj.close()
                 except IndexError:
-                    logger.info(f"I'm ignoring that there is no persistence_object "
-                                f"for {item['origin']} at this time.")
+                    logger.info(f"I'm ignoring that there is no persistence_object for {item['origin']} at this time.")
                     continue
 
                 # Create folder for the day
-                filename = _construct_filename(item['origin'], item['persistence_class'].extension)
+                filename = _construct_filename(item["origin"], item["persistence_class"].extension)
 
-                persistence_obj: PersistenceLayer = item["persistence_class"](
-                    filename, prep=item.get("prep")
-                )
+                persistence_obj: PersistenceLayer = item["persistence_class"](filename, prep=item.get("prep"))
                 mode = "a" if persistence_obj.exists() else "w"
                 persistence_obj.open(mode=mode)
 
@@ -972,7 +1006,7 @@ class StorageController(StorageInterface):
                 )
 
     def get_storage_location(self):
-        return get_data_storage_location(site_id=SITE.ID)
+        return get_data_storage_location(site_id=SITE_ID)
 
     def get_filenames(self, item: dict) -> List[Path]:
         registered_item = self._registry.get(item["origin"])
@@ -980,10 +1014,7 @@ class StorageController(StorageInterface):
         if not registered_item:
             return []
 
-        return [
-            persistence_object.get_filepath()
-            for persistence_object in registered_item["persistence_objects"]
-        ]
+        return [persistence_object.get_filepath() for persistence_object in registered_item["persistence_objects"]]
 
     def new_registration(self, item: dict, use_counter=False) -> Response:
         if item["origin"] in self.get_registry_names():
@@ -994,10 +1025,36 @@ class StorageController(StorageInterface):
         return response
 
     def get_disk_usage(self):
-
-        location = Path(get_data_storage_location(site_id=SITE.ID))
+        location = Path(get_data_storage_location(site_id=SITE_ID)).expanduser()
         total, used, free = shutil.disk_usage(location)
         return total, used, free
+
+    def get_loaded_setup_id(self) -> str:
+        return self._setup.get_id() if self._setup is not None else "no setup loaded"
+
+    def load_setup(self, setup_id: int = 0):
+        # Use get_setup() here instead of load_setup() in order to prevent recursively notifying and loading Setups.
+        # That is because the load_setup() method will notify the listeners that a new Setup has been loaded.
+        try:
+            setup = get_setup()
+        except Exception as exc:
+            raise RuntimeError(f"Exception caught: {exc!r}")
+
+        if setup is None:
+            raise RuntimeError("Couldn't get Setup from the configuration manager.")
+
+        if isinstance(setup, Failure):
+            raise setup
+
+        # time.sleep(20.0)  # used as a test to check if this method is blocking the commanding... it is!
+
+        # logger.info(f"{setup_id = }, {setup.get_id() = }")
+
+        if 0 < setup_id != int(setup.get_id()):
+            raise RuntimeError(f"Setup IDs do not match: {setup.get_id()} != {setup_id}, no Setup loaded.")
+        else:
+            self._setup = setup
+            logger.info(f"Setup {setup.get_id()} loaded in the Storage manager.")
 
 
 class StorageCommand(ClientServerCommand):
@@ -1005,33 +1062,38 @@ class StorageCommand(ClientServerCommand):
 
 
 class StorageProxy(Proxy, StorageInterface):
-    """The StorageProxy class is used to connect to the Storage Manager (control server) and
-    send commands remotely."""
+    """
+    The StorageProxy class is used to connect to the Storage Manager (control server) and
+    send commands remotely.
+
+    When the port number is 0 (zero), the endpoint will be retrieved from the service registry.
+
+    Args:
+        protocol: the transport protocol [default is taken from settings file]
+        hostname: location of the control server (IP address)
+            [default is taken from settings file]
+        port: TCP port on which the control server is listening for commands
+            [default is taken from settings file]
+        timeout (float): number of fractional seconds before a timeout occurs
+    """
 
     def __init__(
         self,
-        protocol=CTRL_SETTINGS.PROTOCOL,
-        hostname=CTRL_SETTINGS.HOSTNAME,
-        port=CTRL_SETTINGS.COMMANDING_PORT,
-        timeout=REQUEST_TIMEOUT,
+        protocol: str = PROTOCOL,
+        hostname: str = HOSTNAME,
+        port: int = COMMANDING_PORT,
+        timeout: float = REQUEST_TIMEOUT,
     ):
-        """
-        Args:
-            protocol: the transport protocol [default is taken from settings file]
-            hostname: location of the control server (IP address)
-                [default is taken from settings file]
-            port: TCP port on which the control server is listening for commands
-                [default is taken from settings file]
-        """
-        super().__init__(connect_address(protocol, hostname, port), timeout=timeout)
+        endpoint = get_endpoint(settings.SERVICE_TYPE, protocol, hostname, port)
+
+        super().__init__(endpoint, timeout=timeout)
 
 
 class StorageProtocol(CommandProtocol):
     def __init__(self, control_server: ControlServer):
-        super().__init__()
-        self.control_server = control_server
+        super().__init__(control_server)
 
-        self.controller = StorageController()
+        self.controller = StorageController(control_server)
 
         self.load_commands(COMMAND_SETTINGS.Commands, StorageCommand, StorageController)
 
@@ -1049,14 +1111,14 @@ class StorageProtocol(CommandProtocol):
     def get_housekeeping(self) -> dict:
         return {
             "timestamp": format_datetime(),
+            "random": random.randint(0, 100),
         }
 
 
 def get_status(full: bool = False):
-
-    if is_storage_manager_active():
+    try:
         with StorageProxy() as sm:
-            text =  textwrap.dedent(
+            text = textwrap.dedent(
                 f"""\
                 Storage Manager:
                     Status: [green]active[/]
@@ -1065,6 +1127,7 @@ def get_status(full: bool = False):
                     Commanding port: {sm.get_commanding_port()}
                     Service port: {sm.get_service_port()}
                     Storage location: {sm.get_storage_location()}
+                    Loaded Setup: {sm.get_loaded_setup_id()}
                     Registrations: {sm.get_registry_names()}
                 """
             )
@@ -1083,7 +1146,7 @@ def get_status(full: bool = False):
                 text += f"Used disk space: {humanize_bytes(used)} ({(used / total * 100):.2f}%)\n"
                 text += f"Free disk space: {humanize_bytes(free)} ({(free / total * 100):.2f}%)\n"
 
-        return text
+            return text
 
-    else:
-        return "Storage Manager Status: [red]not active"
+    except ConnectionError as exc:
+        return f"Storage Manager Status: [red]not active[/] ({exc})"

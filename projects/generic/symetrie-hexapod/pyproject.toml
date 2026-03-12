@@ -1,36 +1,82 @@
-[build-system]
-requires = ["setuptools", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["egse", "egse.hexapod.symetrie"]
-namespaces = true
-
-[tool.setuptools.package-data]
-egse = ["*.yaml"]
-
 [project]
 name = "symetrie-hexapod"
-version = "2023.1.0"
+version = "0.19.2"
 description = "Symetrie Hexapod implementation for CGSE"
-license = { text = "Common-EGSE Software License Agreement" }
+authors = [
+    {name = "IvS KU Leuven"}
+]
+maintainers = [
+    {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
+    {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"}
+]
+readme = {"file" = "README.md", "content-type" = "text/markdown"}
+requires-python = ">=3.10"
+license = "MIT"
+keywords = [
+    "CGSE",
+    "Common-EGSE",
+    "hardware testing",
+    "software framework"
+]
 dependencies = [
     "cgse-common",
     "cgse-core",
+    "cgse-tools",
     "cgse-gui",
     "cgse-coordinates",
-    "PyQt5",
+    "PyQt5>=5.15.11",
+    "paramiko",
+    "invoke",
+    "pyqtgraph",
 ]
 
 [project.scripts]
-puna_cs = 'egse.hexapod.symetrie.puna_cs:cli'
+puna_cs = 'egse.hexapod.symetrie.puna_cs:app'
+zonda_cs = 'egse.hexapod.symetrie.zonda_cs:app'
+joran_cs = 'egse.hexapod.symetrie.joran_cs:app'
 
 [project.gui-scripts]
-puna_ui = "egse.hexapod.symetrie.puna_ui:main"
+puna_ui = "egse.hexapod.symetrie.puna_ui:app"
+zonda_ui = "egse.hexapod.symetrie.zonda_ui:main"
+joran_ui = "egse.hexapod.symetrie.joran_ui:main"
 
 [project.entry-points."cgse.version"]
-symetrie-hexapod = 'egse.plugins'
+symetrie-hexapod = 'egse.version:get_version_installed'
 
-[project.entry-points."cgse.service.plugins"]
-puna_cs = 'scripts.cgse_service_plugins:puna_cs'
+[project.entry-points."cgse.service.device_command"]
+puna = 'symetrie_hexapod.cgse_services:puna'
+zonda = 'symetrie_hexapod.cgse_services:zonda'
+joran = 'symetrie_hexapod.cgse_services:joran'
+
+[project.entry-points."cgse.settings"]
+symetrie-hexapod = "symetrie_hexapod:settings.yaml"
+
+[project.entry-points."cgse.explore"]
+explore = "symetrie_hexapod.cgse_explore"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/tests",
+    "/pytest.ini",
+    "/.gitignore",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/egse", "src/symetrie_hexapod"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+extend-select = ["E501"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.9.0",
+]

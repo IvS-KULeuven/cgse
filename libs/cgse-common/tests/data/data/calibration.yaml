@@ -1,0 +1,10 @@
+# A YAML file that is used in a test Setup to test the automatic loading of the content when
+# the field is accessed.
+
+cal_1:
+    function: polynomial
+    coefficients: [1.5, 2.1, 3.4, 4.7]
+
+cal_2:
+    function: linear
+    coefficients: [100.3, 24.5]

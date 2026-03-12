@@ -1,21 +1,23 @@
 """
-This module defines the device classes to be used to connect to and control the Hexapod ZONDA from
-Symétrie.
-
+This module defines the device classes to be used to connect to and control the Hexapod ZONDA from Symétrie.
 """
-import logging
+
 import math
+import random
 import time
 from typing import Dict
 
 from egse.device import DeviceInterface
 from egse.hexapod import HexapodError
+from egse.hexapod.symetrie import logger
 from egse.hexapod.symetrie.alpha import AlphaPlusControllerInterface
+from egse.hexapod.symetrie.hexapod import HexapodSimulator
 from egse.hexapod.symetrie.zonda_devif import RETURN_CODES
 from egse.hexapod.symetrie.zonda_devif import ZondaError
 from egse.hexapod.symetrie.zonda_devif import ZondaTelnetInterface
 from egse.hexapod.symetrie.zonda_devif import decode_command
 from egse.proxy import Proxy
+from egse.registry.client import RegistryClient
 from egse.settings import Settings
 from egse.system import Timer
 from egse.system import wait_until
@@ -23,10 +25,6 @@ from egse.zmq_ser import connect_address
 from numpy import loadtxt
 from time import sleep
 
-logger = logging.getLogger(__name__)
-
-ZONDA_SETTINGS = Settings.load("ZONDA Controller")
-CTRL_SETTINGS = Settings.load("Hexapod ZONDA Control Server")
 DEVICE_SETTINGS = Settings.load(filename="zonda.yaml")
 
 HOME_COMPLETE = 6
@@ -86,30 +84,23 @@ class ZondaInterface(AlphaPlusControllerInterface, DeviceInterface):
 
 
 class ZondaController(ZondaInterface):
-    def __init__(self):
-
+    def __init__(self, hostname: str, port: int):
         super().__init__()
 
-        logger.info(f"Initializing ZondaController with hostname={ZONDA_SETTINGS.IP} on port={ZONDA_SETTINGS.PORT}")
+        logger.info(f"Initializing ZondaController with {hostname=} on {port=}")
 
         self.v_pos = None
 
         self.cm = ["absolute", "object relative", "user relative"]
 
-        self.speed = {"vt": 0,
-                      "vr": 0,
-                      "vtmin": 0,
-                      "vrmin": 0,
-                      "vtmax": 0,
-                      "vrmax": 0}
+        self.speed = {"vt": 0, "vr": 0, "vtmin": 0, "vrmin": 0, "vtmax": 0, "vrmax": 0}
 
         try:
-            self.hexapod = ZondaTelnetInterface()
+            self.hexapod = ZondaTelnetInterface(hostname=hostname, port=port)
 
         except ZondaError as exc:
             logger.warning(
-                f"HexapodError: Couldn't establish connection with the Hexapod ZONDA Hardware "
-                f"Controller: ({exc})"
+                f"HexapodError: Couldn't establish connection with the Hexapod ZONDA Hardware Controller: ({exc})"
             )
 
     def is_simulator(self):
@@ -120,7 +111,7 @@ class ZondaController(ZondaInterface):
 
     def connect(self):
         try:
-            self.hexapod.connect(ZONDA_SETTINGS.IP)
+            self.hexapod.connect()
         except ZondaError as exc:
             logger.warning(f"ZondaError caught: Couldn't establish connection ({exc})")
             raise HexapodError("Couldn't establish a connection with the Hexapod.") from exc
@@ -142,9 +133,7 @@ class ZondaController(ZondaInterface):
             msg = "Info about the Hexapod ZONDA:\n"
             msg += f"version = {_version}\n"
         except ZondaError as exc:
-            raise HexapodError(
-                "Couldn't retrieve information from Hexapod ZONDA Hardware Controller."
-            ) from exc
+            raise HexapodError("Couldn't retrieve information from Hexapod ZONDA Hardware Controller.") from exc
 
         return msg
 
@@ -180,7 +169,7 @@ class ZondaController(ZondaInterface):
             # from int to bit list of 15 elements corresponding to the hexapod state bits
             # the bit list must be reversed to get lsb
 
-            s_hexa = [int(x) for x in f'{rc:015b}'[::-1]]
+            s_hexa = [int(x) for x in f"{rc:015b}"[::-1]]
             state = {k: v for k, v in zip(GENERAL_STATE, s_hexa)}
         except ZondaError as exc:
             raise HexapodError("Couldn't retrieve the state from Hexapod.") from exc
@@ -200,7 +189,7 @@ class ZondaController(ZondaInterface):
         try:
             print("Cleaning errors from buffer")
             sc = self.hexapod.trans("c_cmd=C_CLEARERROR")
-            number = self.hexapod.trans('s_err_nr')
+            number = self.hexapod.trans("s_err_nr")
             number = int(number[0])
 
             if number == 0:
@@ -215,7 +204,7 @@ class ZondaController(ZondaInterface):
     def reset(self, wait=True):
         try:
             print("Resetting the Hexapod Controller")
-            print("STOP and CONTROLOFF commands are sent to the controller before reseting...")
+            print("STOP and CONTROLOFF commands are sent to the controller before resetting...")
             self.stop()
             print("Hexapod is stopped")
             self.deactivate_control_loop()
@@ -353,8 +342,7 @@ class ZondaController(ZondaInterface):
 
         return rc
 
-    def machine_limit_set(
-            self, tx_n, ty_n, tz_n, rx_n, ry_n, rz_n, tx_p, ty_p, tz_p, rx_p, ry_p, rz_p):
+    def machine_limit_set(self, tx_n, ty_n, tz_n, rx_n, ry_n, rz_n, tx_p, ty_p, tz_p, rx_p, ry_p, rz_p):
         try:
             name = "CFG_LIMIT"
             arguments = [1, tx_n, ty_n, tz_n, rx_n, ry_n, rz_n, tx_p, ty_p, tz_p, rx_p, ry_p, rz_p]
@@ -379,8 +367,7 @@ class ZondaController(ZondaInterface):
 
         return None
 
-    def user_limit_set(
-            self, tx_n, ty_n, tz_n, rx_n, ry_n, rz_n, tx_p, ty_p, tz_p, rx_p, ry_p, rz_p):
+    def user_limit_set(self, tx_n, ty_n, tz_n, rx_n, ry_n, rz_n, tx_p, ty_p, tz_p, rx_p, ry_p, rz_p):
         try:
             name = "CFG_LIMIT"
             arguments = [2, tx_n, ty_n, tz_n, rx_n, ry_n, rz_n, tx_p, ty_p, tz_p, rx_p, ry_p, rz_p]
@@ -452,7 +439,7 @@ class ZondaController(ZondaInterface):
 
         command = decode_command(name, *arguments)
 
-        #print(f"Executing validate_position command: {command}")
+        # print(f"Executing validate_position command: {command}")
 
         self.hexapod.trans(command)
         rc = self.hexapod.check_command_status()
@@ -472,7 +459,6 @@ class ZondaController(ZondaInterface):
         logger.error(f"Validate position: error code={pc} - {msg}")
 
         return pc, {pc: msg}
-
 
     def move_absolute(self, tx, ty, tz, rx, ry, rz):
         try:
@@ -514,7 +500,7 @@ class ZondaController(ZondaInterface):
         return self.validate_position(1, 2, tx, ty, tz, rx, ry, rz)
 
     def get_temperature(self):
-        #TODO: to be tested with the real Hexapod (the emulator does not implement this and only returns zeros)
+        # TODO: to be tested with the real Hexapod (the emulator does not implement this and only returns zeros)
         try:
             temp = self.hexapod.trans("s_ai_1,6,1")
             temp = [float(x) for x in temp]
@@ -551,14 +537,13 @@ class ZondaController(ZondaInterface):
         return pos
 
     def get_actuator_state(self):
-
         response = []
         try:
             actuator_states = self.hexapod.trans("s_ax_1,6,1")
             actuator_states = [int(x) for x in actuator_states]
 
             for idx, state in enumerate(actuator_states):
-                state_bits = [int(x) for x in f'{state:015b}'[::-1]]
+                state_bits = [int(x) for x in f"{state:015b}"[::-1]]
                 state_dict = {k: v for k, v in zip(ACTUATOR_STATE, state_bits)}
                 response.append([state_dict, state_bits])
 
@@ -580,9 +565,7 @@ class ZondaController(ZondaInterface):
             raise HexapodError("Couldn't Execute command on Hexapod.") from exc
         return cs
 
-    def configure_coordinates_systems(
-        self, tx_u, ty_u, tz_u, rx_u, ry_u, rz_u, tx_o, ty_o, tz_o, rx_o, ry_o, rz_o
-    ):
+    def configure_coordinates_systems(self, tx_u, ty_u, tz_u, rx_u, ry_u, rz_u, tx_o, ty_o, tz_o, rx_o, ry_o, rz_o):
         try:
             name = "CFG_CS"
             arguments = [tx_u, ty_u, tz_u, rx_u, ry_u, rz_u, tx_o, ty_o, tz_o, rx_o, ry_o, rz_o]
@@ -668,7 +651,7 @@ class ZondaController(ZondaInterface):
         for step in SEQUENCE:
             state = self.check_absolute_movement(step[0], step[1], step[2], step[3], step[4], step[5])
             if state[0] != 0:
-                print('Error: Out of bounds! One pont is out of the workspace!')
+                print("Error: Out of bounds! One point is out of the workspace!")
                 return
         print("OK! The entire trajectory is reachable in the defined workspace.")
         step_number = 0
@@ -677,13 +660,14 @@ class ZondaController(ZondaInterface):
             print("\nExecuting step number ", step_number, "over ", len(SEQUENCE), ": ", step)
             self.move_absolute(step[0], step[1], step[2], step[3], step[4], step[5])
             in_pos = self.get_general_state()[1][3]
-            while not(in_pos):
+            while not (in_pos):
                 in_pos = self.get_general_state()[1][3]
             print("Step ", step_number, "done.\nWaiting for ", time_sleep, "seconds.")
             sleep(time_sleep)
         print('Sequence "' + file_path + '" done with success!')
 
-class ZondaSimulator(ZondaInterface):
+
+class ZondaSimulator(HexapodSimulator, DeviceInterface):
     """
     HexapodSimulator simulates the Symétrie Hexapod ZONDA. The class is heavily based on the
     ReferenceFrames in the `egse.coordinates` package.
@@ -696,78 +680,44 @@ class ZondaSimulator(ZondaInterface):
 
     This class simulates all the movements and status of the Hexapod.
     """
+
     def __init__(self):
-        # Keep a record if the homing() command has been executed.
+        super().__init__()
 
-        self.homing_done = False
-        self.control_loop = False
-        self._virtual_homing = False
-        self._virtual_homing_position = None
-
-    def is_simulator(self):
-        return True
-
-    def connect(self):
-        pass
-
-    def reconnect(self):
-        pass
-
-    def disconnect(self):
-        # TODO:
-        #   Should I keep state in this class to check if it has been disconnected?
-        #
-        # TODO:
-        #   What happens when I re-connect to this Simulator? Shall it be in Homing position or
-        #   do I have to keep state via a persistency mechanism?
-        pass
-
-    def is_connected(self):
-        return True
-
-    def clear_error(self):
-        return 0
-
-    def homing(self):
-        self.goto_zero_position()
-        self.homing_done = True
-        self._virtual_homing = False
-        self._virtual_homing_position = None
-        return 0
-
-    def is_homing_done(self):
-        return self.homing_done
-
-    def activate_control_loop(self):
-        self.control_loop = True
-        return self.control_loop
-
-    def deactivate_control_loop(self):
-        self.control_loop = False
-        return self.control_loop
-
-    pass
+    def get_temperature(self) -> list[float]:
+        return [random.random() for _ in range(6)]
 
 
 class ZondaProxy(Proxy, ZondaInterface):
     """The ZondaProxy class is used to connect to the control server and send commands to the
-    Hexapod ZONDA remotely."""
+    Hexapod ZONDA remotely.
 
-    def __init__(
-            self,
-            protocol=CTRL_SETTINGS.PROTOCOL,
-            hostname=CTRL_SETTINGS.HOSTNAME,
-            port=CTRL_SETTINGS.COMMANDING_PORT,
-    ):
-        """
-        Args:
-            protocol: the transport protocol [default is taken from settings file]
-            hostname: location of the control server (IP address) [default is taken from settings
-            file]
-            port: TCP port on which the control server is listening for commands [default is
-            taken from settings file]
-        """
+    Args:
+        protocol: the transport protocol
+        hostname: location of the control server (IP address)
+        port: TCP port on which the control server is listening for commands
+
+    """
+
+    def __init__(self, protocol: str, hostname: str, port: int):
         super().__init__(connect_address(protocol, hostname, port))
+
+    @classmethod
+    def from_identifier(cls, device_id: str):
+        with RegistryClient() as reg:
+            service = reg.discover_service(device_id)
+
+            if service:
+                protocol = service.get("protocol", "tcp")
+                hostname = service["host"]
+                port = service["port"]
+
+            else:
+                raise RuntimeError(f"No service registered as {device_id}")
+
+        logger.info(f"{protocol=}:{hostname=}:{port=}")
+
+        return cls(protocol, hostname, port)
 
 
 def decode_validation_error(value) -> Dict:
@@ -784,14 +734,12 @@ def decode_validation_error(value) -> Dict:
 
 
 if __name__ == "__main__":
-
     from rich import print as rp
 
     zonda = ZondaController()
     zonda.connect()
 
     with Timer("ZondaController"):
-
         rp(zonda.info())
         rp(zonda.is_homing_done())
         rp(zonda.is_in_position())
@@ -811,9 +759,9 @@ if __name__ == "__main__":
         time.sleep(0.5)  # if we do not sleep, the get_speed() will get the old values
         speed = zonda.get_speed()
 
-        if not math.isclose(speed['vt'], 2.0):
+        if not math.isclose(speed["vt"], 2.0):
             rp(f"[red]{speed['vt']} != 2.0[/red]")
-        if not math.isclose(speed['vr'], 1.0):
+        if not math.isclose(speed["vr"], 1.0):
             rp(f"[red]{speed['vr']} != 1.0[/red]")
 
         rp(zonda.get_actuator_length())
@@ -822,15 +770,41 @@ if __name__ == "__main__":
         # rp(zonda.machine_limit_enable(1))
         # rp(zonda.get_limits_state())
         rp(zonda.get_coordinates_systems())
-        rp(zonda.configure_coordinates_systems(
-            0.033000, -0.238000, 230.205000, 0.003282, 0.005671, 0.013930,
-            0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000))
+        rp(
+            zonda.configure_coordinates_systems(
+                0.033000,
+                -0.238000,
+                230.205000,
+                0.003282,
+                0.005671,
+                0.013930,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+            )
+        )
         rp(zonda.get_coordinates_systems())
         rp(zonda.get_machine_positions())
         rp(zonda.get_user_positions())
-        rp(zonda.configure_coordinates_systems(
-            0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-            0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000))
+        rp(
+            zonda.configure_coordinates_systems(
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+                0.000000,
+            )
+        )
         rp(zonda.validate_position(1, 0, 0, 0, 0, 0, 0, 0))
         rp(zonda.validate_position(1, 0, 0, 0, 50, 0, 0, 0))
 

@@ -19,11 +19,13 @@ from .led import ShapeEnum
 
 
 class States(QGroupBox):
-
-    def __init__(self, states: List[List],
-                 title: Optional[str] = "States",
-                 shape: ShapeEnum = ShapeEnum.CIRCLE,
-                 parent: QWidget = None):
+    def __init__(
+        self,
+        states: List[List],
+        title: Optional[str] = "States",
+        shape: ShapeEnum = ShapeEnum.CIRCLE,
+        parent: QWidget = None,
+    ):
         """
         Args:
             states (List[List]): description and default LED color for all states
@@ -65,7 +67,6 @@ class States(QGroupBox):
         return len(self.leds)
 
     def set_states(self, states: Union[List, int]):
-
         if isinstance(states, int):
             # States can take True or False in which case the default color will be used or
             # Indic.OFF
@@ -101,11 +102,14 @@ if __name__ == "__main__":
             main = QWidget()
             vbox = QVBoxLayout()
 
-            self.states = States([
-                ["Active [G]", Indic.GREEN],
-                ["Danger [O]", Indic.ORANGE],
-                ["Error  [R]", Indic.RED],
-            ], shape=ShapeEnum.CIRCLE)
+            self.states = States(
+                [
+                    ["Active [G]", Indic.GREEN],
+                    ["Danger [O]", Indic.ORANGE],
+                    ["Error  [R]", Indic.RED],
+                ],
+                shape=ShapeEnum.CIRCLE,
+            )
 
             update_button = QPushButton("Update States")
             update_button.clicked.connect(lambda: self.update_states())
@@ -114,8 +118,7 @@ if __name__ == "__main__":
             reset_button.clicked.connect(self.reset_states)
 
             set_button = QPushButton("Set States to random value")
-            set_button.clicked.connect(
-                lambda: self.update_states(random.choice(range(8))))
+            set_button.clicked.connect(lambda: self.update_states(random.choice(range(8))))
 
             hbox = QHBoxLayout()
             hbox.addWidget(update_button)
@@ -130,8 +133,9 @@ if __name__ == "__main__":
 
         def update_states(self, states: int = None):
             if states is None:
-                new_states = [random.choice([Indic.GREEN, Indic.BLACK, Indic.RED, Indic.ORANGE])
-                              for _ in range(len(self.states))]
+                new_states = [
+                    random.choice([Indic.GREEN, Indic.BLACK, Indic.RED, Indic.ORANGE]) for _ in range(len(self.states))
+                ]
                 print(new_states)
             else:
                 new_states = states

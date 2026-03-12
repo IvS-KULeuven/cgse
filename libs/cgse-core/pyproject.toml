@@ -1,13 +1,16 @@
 [project]
 name = "cgse-core"
-version = "2024.1.1"
+version = "0.19.2"
 description = "Core services for the CGSE framework"
 authors = [
+    {name = "IvS KU Leuven"}
+]
+maintainers = [
     {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
     {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"}
 ]
 readme = {"file" = "README.md", "content-type" = "text/markdown"}
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = "MIT"
 keywords = [
     "CGSE",
@@ -17,44 +20,107 @@ keywords = [
 ]
 dependencies = [
     "cgse-common",
-    "apscheduler",
-    "click",
-    "gitpython",
-    "prometheus-client",
-    "pyzmq == 23.2.1",
-    "rich",
+    "cgse-tools",
+    "apscheduler>=3.11.0",
+    "aiosqlite>=0.21.0",
+    "aiohttp>=3.11.16",
+    "qtpy",
 ]
 
-[project.optional-dependencies]
-dev = ["pytest", "pytest-mock", "pytest-cov", "pipdeptree"]
-
 [project.scripts]
-log_cs = 'egse.logger.log_cs:cli'
-sm_cs = 'egse.storage.storage_cs:cli'
-cm_cs = 'egse.confman.confman_cs:cli'
-pm_cs = 'egse.procman.procman_cs:cli'
+monitor = "egse.monitoring:app"
+log_cs = 'egse.logger.log_cs:app'
+reg_cs = 'egse.registry.server:app'
+nh_cs = 'egse.notifyhub.server:app'
+sm_cs = 'egse.storage.storage_cs:app'
+cm_cs = 'egse.confman.confman_cs:app'
+pm_cs = 'egse.procman.procman_cs:app'
 
-cgse = 'scripts.cgse:cli'
+[project.gui-scripts]
+pm_ui = "egse.procman.procman_ui:main"
 
 [project.entry-points."cgse.version"]
-cgse-core = 'egse'
+cgse-core = 'egse.version:get_version_installed'
+
+[project.entry-points."cgse.settings"]
+cgse-core = "cgse_core:settings.yaml"
+
+[project.entry-points."cgse.service.core_command"]
+core = 'cgse_core.services:core'
+reg = 'cgse_core.services:rm_cs'
+log = 'cgse_core.services:log_cs'
+cm = 'cgse_core.services:cm_cs'
+sm = 'cgse_core.services:sm_cs'
+pm = 'cgse_core.services:pm_cs'
+nh = 'cgse_core.services:notifyhub'
+
+[project.entry-points."cgse.explore"]
+explore = "cgse_core.cgse_explore"
+
+[project.entry-points."cgse.resource"]
+icons = 'egse.icons'
+
+[project.entry-points."cgse.extension.setup_provider"]
+setup_provider = "egse._setup_core:CoreSetupProvider"
+
+[project.entry-points."cgse.process_management.core_services"]
+"Storage Manager" = "SM_CS"
+"Configuration Manager" = "CM_CS"
+"Process Manager" = "PM_CS"
+"Logger" = "LOG_CS"
+
+[tool.pytest.ini_options]
+pythonpath = "src"
+testpaths = ["tests"]
+addopts = "-rA --cov --cov-branch --cov-report html"
+log_cli = true
+log_cli_level = "DEBUG"
+filterwarnings = [
+    "ignore::DeprecationWarning"
+]
+
+[tool.coverage.run]
+omit = [
+    "tests/*",
+    "*/cgse-common/*",
+    "conftest.py",
+]
 
 [tool.hatch.build.targets.sdist]
 exclude = [
-    "/tests",
-    "/pytest.ini",
-    "/.gitignore",
+    "tests",
+    "pytest.ini",
+    ".gitignore",
+]
+include = [
+    "src/",
+    "README.md",
+    "LICENSE",
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/egse", "src/scripts"]
+packages = ["src/egse", "src/cgse_core"]
 
 [tool.ruff]
 line-length = 120
 
 [tool.ruff.lint]
-extend-select = ["E501"]
+select = ["F", "I"]
+extend-select = ["E", "W"]
+
+[tool.ruff.lint.isort]
+force-single-line = true
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+    "pytest-asyncio>=0.26.0",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "pytest-timeout>=2.3.1",
+    "ruff>=0.9.0",
+]

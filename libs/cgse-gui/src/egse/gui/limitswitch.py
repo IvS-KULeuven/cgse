@@ -1,6 +1,7 @@
 """
 The LED class provides an easy way to use LEDs in your GUIs.
 """
+
 import sys
 from enum import IntEnum
 from typing import Dict
@@ -35,8 +36,11 @@ LIMIT_SWITCH = {
 
 class LimitSwitch(QLabel):
     """A LED Widget that can be used in your GUIs."""
+
     def __init__(
-            self, parent: Optional[QWidget] = None, size: QSize = QSize(20, 20),
+        self,
+        parent: Optional[QWidget] = None,
+        size: QSize = QSize(20, 20),
     ):
         """
         Args:
@@ -66,7 +70,6 @@ class LimitSwitch(QLabel):
 
 
 if __name__ == "__main__":
-
     from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QPushButton
 
     class Example(QWidget):
@@ -79,7 +82,6 @@ if __name__ == "__main__":
             self.initUI()
 
         def initUI(self):
-
             vbox = QVBoxLayout()
             hbox = QHBoxLayout()
 
@@ -119,7 +121,6 @@ if __name__ == "__main__":
             self.setLayout(vbox)
 
         def onClick(self):
-
             sender = self.sender()
             text = sender.text()
 

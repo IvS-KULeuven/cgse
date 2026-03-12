@@ -1,0 +1,97 @@
+h2.doc.doc-heading {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding-top: 48px;
+}
+
+h3 .doc-heading code {
+  font-size: 16px;
+}
+
+.doc-heading code {
+  font-weight: normal;
+  font-family: "Roboto Mono", "SFMono-Regular", Consolas, "Courier New", Courier,
+    monospace;
+}
+
+.doc-heading.doc-heading-parameter {
+  font-size: .65rem;
+}
+
+body[data-md-color-primary="black"] .excalidraw  svg  {
+  will-change: filter;
+  filter: invert(100%) hue-rotate(180deg);
+}
+
+body[data-md-color-primary="black"] .excalidraw svg rect {
+  fill: transparent;
+}
+
+.excalidraw {
+  text-align: center;
+}
+
+.video-wrapper {
+  position: relative;
+  display: block;
+  height: 0;
+  padding: 0;
+  overflow: hidden;
+  padding-bottom: 56.25%;
+}
+.video-wrapper > iframe {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.doc-object code {
+  font-family: "Fira Code", "SFMono-Regular", Consolas, "Courier New", Courier,
+    monospace;
+}
+
+
+/* Indentation. */
+div.doc-contents:not(.first) {
+  padding-left: 25px;
+  border-left: .05rem solid var(--md-typeset-table-color);
+}
+
+/* Avoid breaking parameters name, etc. in table cells. */
+td code {
+  word-break: normal !important;
+}
+
+
+.doc-label code {
+  background: transparent;
+  opacity: 0.8;
+  float: right;
+}
+
+
+.doc-function p strong {
+  opacity: 0.85;
+
+}
+
+:root {
+  --md-admonition-icon--cgse: url('/images/icons/cgse-logo.svg')
+}
+.md-typeset .admonition.cgse,
+.md-typeset details.cgse {
+  border-color: rgb(43, 155, 70);
+}
+.md-typeset .cgse > .admonition-title,
+.md-typeset .cgse > summary {
+  background-color: rgba(43, 155, 70, 0.1);
+}
+.md-typeset .cgse > .admonition-title::before,
+.md-typeset .cgse > summary::before {
+  background-color: rgb(43, 155, 70);
+  -webkit-mask-image: var(--md-admonition-icon--cgse);
+          mask-image: var(--md-admonition-icon--cgse);
+}

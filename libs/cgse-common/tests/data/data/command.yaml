@@ -1,0 +1,5 @@
+# This file is used in the `test_settings.py` unit test.
+
+Commands:
+    list_commands:
+        description:    Returns a list of the available commands.

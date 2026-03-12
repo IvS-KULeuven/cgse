@@ -1,6 +1,7 @@
 """
 This module handles the persistence storage for the Common-EGSE.
 """
+
 import csv
 import logging
 import re
@@ -10,7 +11,7 @@ from sqlite3 import Connection
 from typing import Optional
 from typing import Union
 
-from egse.plugin import load_plugins
+from egse.plugin import load_plugins_ep
 from egse.storage import PersistenceLayer
 from egse.system import read_last_line
 
@@ -19,21 +20,18 @@ logger = logging.getLogger(__name__)
 
 def parts(data, delimiter=",", quote_char='"', keep_quote_char=False):
     compos = []
-    part = ''
+    part = ""
     skip = False
     for character in data:
-        if (
-            character == delimiter
-            and skip
-            or character not in [delimiter, quote_char]
-        ):
+        if character == delimiter and skip or character not in [delimiter, quote_char]:
             part += character
         elif character == delimiter:
             compos.append(part)
-            part = ''
+            part = ""
         else:
             skip = not skip
-            if keep_quote_char: part += character
+            if keep_quote_char:
+                part += character
     if part:
         compos.append(part)
 
@@ -66,7 +64,7 @@ class CSV1(PersistenceLayer):
             prep (dict): preparation information to initialise the persistence layer
         """
         prep = prep or {}
-        self._filepath = Path(filename)
+        self._filepath = Path(filename).expanduser()
         self._column_names = prep.get("column_names") or []
         self._mode = prep.get("mode") or "r"
         self._quote_char = prep.get("quote_char") or "|"
@@ -129,11 +127,9 @@ class CSV1(PersistenceLayer):
 
         if self._fd:
             if isinstance(data, (list, tuple)):
-
                 data = self._delimiter.join([quote(str(x)) for x in data])
 
             elif isinstance(data, dict):
-
                 if not self._column_names:
                     logger.error("Cannot write ordered dictionary data, no column names provided.")
                     return
@@ -192,7 +188,7 @@ class CSV2(PersistenceLayer):
             prep (dict): preparation information to initialise the persistence layer
         """
         prep = prep or {}
-        self._filepath = Path(filename)
+        self._filepath = Path(filename).expanduser()
         self._column_names = prep.get("column_names") or []
         self._mode = prep.get("mode") or "r"
         self._quote_char = prep.get("quote_char") or "|"
@@ -254,7 +250,8 @@ class CSV2(PersistenceLayer):
             writer = csv.writer(
                 self._fd,
                 delimiter=self._delimiter,
-                quotechar=self._quote_char, quoting=csv.QUOTE_MINIMAL,
+                quotechar=self._quote_char,
+                quoting=csv.QUOTE_MINIMAL,
             )
             writer.writerow(data)
         elif isinstance(data, dict):
@@ -264,9 +261,11 @@ class CSV2(PersistenceLayer):
 
             writer = csv.DictWriter(
                 self._fd,
-                fieldnames=self._column_names, extrasaction="ignore",
+                fieldnames=self._column_names,
+                extrasaction="ignore",
                 delimiter=self._delimiter,
-                quotechar=self._quote_char, quoting=csv.QUOTE_MINIMAL,
+                quotechar=self._quote_char,
+                quoting=csv.QUOTE_MINIMAL,
             )
             writer.writerow(data)
         else:
@@ -298,7 +297,6 @@ class CSV2(PersistenceLayer):
 
 
 class TXT(PersistenceLayer):
-
     extension = "txt"
 
     def __init__(self, filename, prep: dict = None):
@@ -315,7 +313,7 @@ class TXT(PersistenceLayer):
             prep (dict): preparation information to initialise the persistence layer
         """
         prep = prep or {}
-        self._filepath = Path(filename)
+        self._filepath = Path(filename).expanduser()
         self._mode = prep.get("mode") or "r"
         self._ending = prep.get("ending") or ""
         self._header = prep.get("header") or ""
@@ -349,7 +347,7 @@ class TXT(PersistenceLayer):
 
     def create(self, data):
         data_str = str(data)
-        logger.log(5, f"Writing data: {data_str[:min(80, len(data_str))]}...")
+        logger.log(5, f"Writing data: {data_str[: min(80, len(data_str))]}...")
         if self._fd:
             self._fd.write(str(data))
             self._fd.write(self._ending)
@@ -408,11 +406,10 @@ class TXT(PersistenceLayer):
 
 
 class SQLite(PersistenceLayer):
-
     extension = "sqlite3"
 
     def __init__(self, filename: Union[str, Path], prep: dict = None):
-        self._filepath = Path(filename).with_suffix(f".{self.extension}")
+        self._filepath = Path(filename).expanduser().with_suffix(f".{self.extension}")
         self._prep = prep
         self._connection: Optional[Connection] = None
 
@@ -439,20 +436,15 @@ class SQLite(PersistenceLayer):
             return cursor
 
     def create_table(self, table_name, columns):
-        columns_with_types = [
-            f'{column_name} {data_type}'
-            for column_name, data_type in columns.items()
-        ]
-        self._execute(
-            f"""CREATE TABLE IF NOT EXISTS {table_name} ({', '.join(columns_with_types)});"""
-        )
+        columns_with_types = [f"{column_name} {data_type}" for column_name, data_type in columns.items()]
+        self._execute(f"""CREATE TABLE IF NOT EXISTS {table_name} ({", ".join(columns_with_types)});""")
 
     def drop_table(self, table_name):
         self._execute(f"DROP TABLE {table_name};")
 
     def add_to_table(self, table_name, data):
-        placeholders = ', '.join('?' * len(data))
-        column_names = ', '.join(data.keys())
+        placeholders = ", ".join("?" * len(data))
+        column_names = ", ".join(data.keys())
         column_values = tuple(data.values())
 
         self._execute(
@@ -466,12 +458,12 @@ class SQLite(PersistenceLayer):
         query = f"SELECT * FROM {table_name}"
 
         if criteria:
-            placeholders = [f'{column} = ?' for column in criteria.keys()]
-            select_criteria = ' AND '.join(placeholders)
-            query += f' WHERE {select_criteria}'
+            placeholders = [f"{column} = ?" for column in criteria.keys()]
+            select_criteria = " AND ".join(placeholders)
+            query += f" WHERE {select_criteria}"
 
         if order_by:
-            query += f' ORDER BY {order_by}'
+            query += f" ORDER BY {order_by}"
 
         return self._execute(
             query,
@@ -479,17 +471,18 @@ class SQLite(PersistenceLayer):
         )
 
     def delete_from_table(self, table_name, criteria):
-        placeholders = [f'{column} = ?' for column in criteria.keys()]
-        delete_criteria = ' AND '.join(placeholders)
+        placeholders = [f"{column} = ?" for column in criteria.keys()]
+        delete_criteria = " AND ".join(placeholders)
 
         self._execute(
-            f"""DELETE FROM {table_name} WHERE {delete_criteria}; """, tuple(criteria.values()),
+            f"""DELETE FROM {table_name} WHERE {delete_criteria}; """,
+            tuple(criteria.values()),
         )
 
     def update_table(self, table_name, criteria, data):
-        update_placeholders = [f'{column} = ?' for column in criteria.keys()]
-        update_criteria = ' AND '.join(update_placeholders)
-        data_placeholders = ', '.join(f'{key} = ?' for key in data.keys())
+        update_placeholders = [f"{column} = ?" for column in criteria.keys()]
+        update_criteria = " AND ".join(update_placeholders)
+        data_placeholders = ", ".join(f"{key} = ?" for key in data.keys())
 
         values = tuple(data.values()) + tuple(criteria.values())
 
@@ -525,13 +518,13 @@ CSV = CSV2
 # loaded from their entry points and added to TYPES.
 
 TYPES = {
-    'CSV': CSV2,
-    'CSV1': CSV1,
-    'CSV2': CSV2,
-    'SQL': SQLite,
-    'TXT': TXT,
+    "CSV": CSV2,
+    "CSV1": CSV1,
+    "CSV2": CSV2,
+    "SQL": SQLite,
+    "TXT": TXT,
 }
 
-for name, ep in load_plugins(entry_point="cgse.storage.persistence").items():
+for name, ep in load_plugins_ep(entry_point="cgse.storage.persistence").items():
     if ep is not None:
         TYPES[name] = ep

@@ -1,0 +1,7 @@
+# Example Setup configuration
+
+Setup:
+    site_id:    "KUL"
+
+    next:
+        array: csv//../data/cal_coeff_1234.csv

@@ -3,93 +3,89 @@ The Settings class handles user and configuration settings that are provided in
 a [`YAML`](http://yaml.org) file.
 
 The idea is that settings are grouped by components or any arbitrary grouping that makes sense for
-the application or for the user. The Settings class can read from different YAML files. By default,
-settings are loaded from a file called ``settings.yaml``. The default yaml configuration file is
-located in the same directory as this module.
+the application or for the user. Settings are also modular and provided by each package by means
+of entry-points. The Settings class can read from different YAML files.
+
+By default, settings are loaded from a file called `settings.yaml`, but this can be changed in the entry-point
+definition.
+
+The yaml configuration files are provided as entry points by the packages that specified an entry-point group
+'_cgse.settings_' in the `pyproject.toml`. The Settings dictionary (attrdict) is constructed from the configuration
+YAML files from each of the packages. Settings can be overwritten by the next package configuration file. So,
+make sure the group names in each package configuration file are unique.
 
 The YAML file is read and the configuration parameters for the given group are
-made available as instance variables of the returned class.
+available as instance variables of the returned class.
 
 The intended use is as follows:
 
-    from egse.settings import Settings
+```python
+from egse.settings import Settings
 
-    dsi_settings = Settings.load("DSI")
+dsi_settings = Settings.load("DSI")
 
-    if (dsi_settings.RMAP_BASE_ADDRESS
-        <= addr
-        < dsi_settings.RMAP_BASE_ADDRESS + dsi_settings.RMAP_MEMORY_SIZE):
-        # do something here
-    else:
-        raise RMAPError("Attempt to access outside the RMAP memory map.")
+if 0x000C <= dsi_settings.RMAP_BASE_ADDRESS <= 0x00FF:
+    ...  # do something here
+else:
+    raise RMAPError("Attempt to access outside the RMAP memory map.")
+```
 
-
-The above code reads the settings from the default YAML file for a group called ``DSI``.
+The above code reads the settings from the default YAML file for a group called `DSI`.
 The settings will then be available as variables of the returned class, in this case
-``dsi_settings``. The returned class is and behaves also like a dictionary, so you can check
-if a configuration parameter is defined like this:
+`dsi_settings`. The returned class is and behaves also like a dictionary, so you can
+check if a configuration parameter is defined like this:
 
-    if "DSI_FEE_IP_ADDRESS" not in dsi_settings:
-        # define the IP address of the DSI
-
+```python
+if "DSI_FEE_IP_ADDRESS" not in dsi_settings:
+    # define the IP address of the DSI
+```
 The YAML section for the above code looks like this:
 
-    DSI:
+```text
+DSI:
 
-        # DSI Specific Settings
+    # DSI Specific Settings
 
-        DSI_FEE_IP_ADDRESS  10.33.178.144   # IP address of the DSI EtherSpaceLink interface
-        LINK_SPEED:                   100   # SpW link speed used for both up- and downlink
+    DSI_FEE_IP_ADDRESS  10.33.178.144   # IP address of the DSI EtherSpaceLink interface
+    LINK_SPEED:                   100   # SpW link speed used for both up- and downlink
 
-        # RMAP Specific Settings
+    # RMAP Specific Settings
 
-        RMAP_BASE_ADDRESS:     0x00000000   # The start of the RMAP memory map managed by the FEE
-        RMAP_MEMORY_SIZE:            4096   # The size of the RMAP memory map managed by the FEE
+    RMAP_BASE_ADDRESS:     0x00000000   # The start of the RMAP memory map managed by the FEE
+    RMAP_MEMORY_SIZE:            4096   # The size of the RMAP memory map managed by the FEE
+```
 
-When you want to read settings from another YAML file, specify the ``filename=`` keyword.
-If that file is located at a specific location, also use the ``location=`` keyword.
+When you want to read settings from another YAML file, specify the `filename=` keyword.
+If that file is located at a specific location, also use the `location=` keyword.
 
     my_settings = Settings.load(filename="user.yaml", location="/Users/JohnDoe")
 
-The above code will read the complete YAML file, i.e. all the groups into a dictionary.
+The above code will read the YAML file from the given location and not from the entry-points.
+
+---
 
 """
 
-import logging
-import os
-import pathlib
 import re
+from pathlib import Path
+from typing import Any
 
 import yaml  # This module is provided by the pip package PyYaml - pip install pyyaml
 
-from egse.env import ENV_PLATO_LOCAL_SETTINGS
-from egse.exceptions import FileIsEmptyError
-from egse.system import AttributeDict
-from egse.system import get_caller_info
-from egse.system import ignore_m_warning
+from egse.env import bool_env
+from egse.env import get_local_settings_env_name
+from egse.env import get_local_settings_path
+from egse.log import logger
+from egse.system import attrdict
 from egse.system import recursive_dict_update
 
-logger = logging.getLogger(__name__)
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
 
 
 class SettingsError(Exception):
+    """A settings-specific error."""
+
     pass
-
-
-def is_defined(cls, name):
-    return hasattr(cls, name)
-
-
-def get_attr_value(cls, name, default=None):
-    try:
-        return getattr(cls, name)
-    except AttributeError:
-        return default
-
-
-def set_attr_value(cls, name, value):
-    if hasattr(cls, name):
-        raise KeyError(f"Overwriting setting {name} with {value}, was {hasattr(cls, name)}")
 
 
 # Fix the problem: YAML loads 5e-6 as string and not a number
@@ -97,15 +93,148 @@ def set_attr_value(cls, name, value):
 
 SAFE_LOADER = yaml.SafeLoader
 SAFE_LOADER.add_implicit_resolver(
-    u'tag:yaml.org,2002:float',
-    re.compile(u"""^(?:
-     [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
-    |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
-    |\\.[0-9_]+(?:[eE][-+][0-9]+)?
-    |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
-    |[-+]?\\.(?:inf|Inf|INF)
-    |\\.(?:nan|NaN|NAN))$""", re.X),
-    list(u'-+0123456789.'))
+    "tag:yaml.org,2002:float",
+    re.compile(
+        """^(?:
+             [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
+            |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
+            |\\.[0-9_]+(?:[eE][-+][0-9]+)?
+            |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
+            |[-+]?\\.(?:inf|Inf|INF)
+            |\\.(?:nan|NaN|NAN))$""",
+        re.X,
+    ),
+    list("-+0123456789."),
+)
+
+
+def load_settings_file(path: Path, filename: str, force: bool = False) -> attrdict:
+    """
+    Loads the YAML configuration file that is located at `path / filename`.
+
+    Args:
+        path (PATH): the folder where the YAML file is located
+        filename (str): the name of the YAML configuration file
+        force (bool): force reloading, i.e. don't use the cached information
+
+    Raises:
+        SettingsError: when the configuration file doesn't exist or cannot be found or \
+        when there was an error reading the configuration file.
+
+    Returns:
+         A dictionary (attrdict) with all the settings from the given file.
+
+    Note:
+        in case of an empty configuration file, and empty dictionary \
+        is returned and a warning message is issued.
+    """
+    try:
+        yaml_document = read_configuration_file(path / filename, force=force)
+        settings = attrdict({name: value for name, value in yaml_document.items()})
+    except FileNotFoundError as exc:
+        raise SettingsError(f"The Settings YAML file '{filename}' is not found at {path!s}. ") from exc
+
+    if not settings:
+        logger.warning(
+            f"The Settings YAML file '{filename}' at {path!s} is empty. "
+            f"No local settings were loaded, an empty dictionary is returned."
+        )
+
+    return settings
+
+
+def load_global_settings(entry_point: str = "cgse.settings", force: bool = False) -> attrdict:
+    """
+    Loads the settings that are defined by the given entry_point. The entry-points are defined in the
+    `pyproject.toml` files of the packages that export their global settings.
+
+    Args:
+         entry_point (str): the name of the entry-point group [default: 'cgse.settings']
+         force (bool): force reloading the settings, i.e. ignore the cache
+
+    Returns:
+        A dictionary (attrdict) containing a collection of all the settings exported by the packages \
+        through the given entry-point.
+
+    """
+    from egse.plugin import get_file_infos
+
+    ep_settings = get_file_infos(entry_point)
+
+    global_settings = attrdict(label="Settings")
+
+    for ep_name, (path, filename) in ep_settings.items():
+        settings = load_settings_file(path, filename, force)
+        recursive_dict_update(global_settings, settings)
+
+    return global_settings
+
+
+def load_local_settings(force: bool = False) -> attrdict:
+    """
+    Loads the local settings file that is defined from the environment variable *PROJECT*_LOCAL_SETTINGS (where
+    *PROJECT* is the name of your project, defined in the environment variable of the same name).
+
+    This function might return an empty dictionary when
+
+      - the local settings YAML file is empty
+      - the local settings environment variable is not defined.
+
+    in both cases a warning message is logged.
+
+    Raises:
+        SettingsError: when the local settings YAML file is not found. Check the *PROJECT*_LOCAL_SETTINGS \
+        environment variable.
+
+    Returns:
+        A dictionary (attrdict) with all local settings.
+
+    """
+    local_settings = attrdict()
+
+    local_settings_path = get_local_settings_path()
+    if VERBOSE_DEBUG:
+        logger.debug(f"{get_local_settings_env_name()=}")
+        logger.debug(f"{local_settings_path=}")
+
+    if local_settings_path:
+        path = Path(local_settings_path).expanduser()
+        local_settings = load_settings_file(path.parent, path.name, force)
+
+    return local_settings
+
+
+def read_configuration_file(filename: Path, *, force=False) -> dict:
+    """
+    Read the YAML input configuration file. The configuration file is only read
+    once and memoized as load optimization.
+
+    Args:
+        filename (Path): the fully qualified filename of the YAML file
+        force (bool): force reloading the file, even when it was memoized
+
+    Raises:
+        SettingsError: when there was an error reading the YAML file.
+
+    Returns:
+        a dictionary containing all the configuration settings from the YAML file.
+    """
+    filename = str(filename)
+
+    if force or not Settings.is_memoized(filename):
+        if VERBOSE_DEBUG:
+            logger.debug(f"Parsing YAML configuration file {filename}.")
+
+        with open(filename, "r") as stream:
+            try:
+                yaml_document = yaml.load(stream, Loader=SAFE_LOADER)
+            except yaml.YAMLError as exc:
+                logger.error(exc)
+                raise SettingsError(f"Error loading YAML document {filename}") from exc
+
+        Settings.add_memoized(filename, yaml_document)
+
+    return Settings.get_memoized(filename) or {}
 
 
 class Settings:
@@ -115,77 +244,106 @@ class Settings:
     """
 
     __memoized_yaml = {}  # Memoized settings yaml files
-
     __profile = False  # Used for profiling methods and functions
-    __simulation = False  # Use simulation mode where applicable and possible
 
     LOG_FORMAT_DEFAULT = "%(levelname)s:%(module)s:%(lineno)d:%(message)s"
     LOG_FORMAT_FULL = "%(asctime)23s:%(levelname)8s:%(lineno)5d:%(name)-20s: %(message)s"
-    LOG_FORMAT_THREAD = (
-        "%(asctime)23s:%(levelname)7s:%(lineno)5d:%(name)-20s(%(threadName)-15s): %(message)s"
-    )
+    LOG_FORMAT_THREAD = "%(asctime)23s:%(levelname)7s:%(lineno)5d:%(name)-20s(%(threadName)-15s): %(message)s"
     LOG_FORMAT_PROCESS = (
-        "%(asctime)23s:%(levelname)7s:%(lineno)5d:%(name)20s.%(funcName)-31s(%(processName)-20s): "
-        "%(message)s"
+        "%(asctime)23s:%(levelname)7s:%(lineno)5d:%(name)20s.%(funcName)-31s(%(processName)-20s): %(message)s"
     )
     LOG_FORMAT_DATE = "%d/%m/%Y %H:%M:%S"
 
     @classmethod
-    def read_configuration_file(cls, filename: str, *, force=False):
-        """
-        Read the YAML input configuration file. The configuration file is only read
-        once and memoized as load optimization.
-
-        Args:
-            filename (str): the fully qualified filename of the YAML file
-            force (bool): force reloading the file
-
-        Returns:
-            a dictionary containing all the configuration settings from the YAML file.
-        """
-        if force or filename not in cls.__memoized_yaml:
-
-            logger.debug(f"Parsing YAML configuration file {filename}.")
-
-            with open(filename, "r") as stream:
-                try:
-                    yaml_document = yaml.load(stream, Loader=SAFE_LOADER)
-                except yaml.YAMLError as exc:
-                    logger.error(exc)
-                    raise SettingsError(f"Error loading YAML document {filename}") from exc
-
-            cls.__memoized_yaml[filename] = yaml_document
-
-        return cls.__memoized_yaml[filename]
+    def get_memoized_locations(cls) -> list:
+        return list(cls.__memoized_yaml.keys())
 
     @classmethod
-    def get_memoized_locations(cls):
-        return cls.__memoized_yaml.keys()
+    def is_memoized(cls, filename: str) -> bool:
+        return filename in cls.__memoized_yaml
 
     @classmethod
-    def load(cls, group_name=None, filename="settings.yaml", location=None, *, force=False,
-             add_local_settings=True):
+    def add_memoized(cls, filename: str, yaml_document: Any):
+        cls.__memoized_yaml[filename] = yaml_document
+
+    @classmethod
+    def get_memoized(cls, filename: str):
+        return cls.__memoized_yaml.get(filename)
+
+    @classmethod
+    def clear_memoized(cls):
+        cls.__memoized_yaml.clear()
+
+    @classmethod
+    def set_profiling(cls, flag):
+        cls.__profile = flag
+
+    @classmethod
+    def profiling(cls):
+        return cls.__profile
+
+    @staticmethod
+    def _load_all(
+        entry_point: str = "cgse.settings", add_local_settings: bool = False, force: bool = False
+    ) -> attrdict:
         """
-        Load the settings for the given group from YAML configuration file.
-        When no group is provided, the complete configuration is returned.
+        Loads all settings from all package with the entry point 'cgse.settings'
+        """
+        global_settings = load_global_settings(entry_point, force)
 
-        The default YAML file is 'settings.yaml' and is located in the same directory
-        as the settings module.
+        # Load the LOCAL settings YAML file
 
-        About the ``location`` keyword several options are available.
+        if add_local_settings:
+            local_settings = load_local_settings(force)
+            recursive_dict_update(global_settings, local_settings)
 
-        * when no location is given, i.e. ``location=None``, the YAML settings file is searched for
-          at the same location as the settings module.
+        return global_settings
 
-        * when a relative location is given, the YAML settings file is searched for relative to the
-          current working directory.
+    @staticmethod
+    def _load_group(
+        group_name: str, entry_point: str = "cgse.settings", add_local_settings: bool = False, force: bool = False
+    ) -> attrdict:
+        global_settings = load_global_settings(entry_point, force)
 
-        * when an absolute location is given, that location is used 'as is'.
+        group_settings = attrdict(label=group_name)
+
+        if group_name in global_settings:
+            group_settings = attrdict(
+                {name: value for name, value in global_settings[group_name].items()}, label=group_name
+            )
+
+        if add_local_settings:
+            local_settings = load_local_settings(force)
+            if group_name in local_settings:
+                recursive_dict_update(group_settings, local_settings[group_name])
+
+        if not group_settings:
+            raise SettingsError(f"Group name '{group_name}' is not defined in the global nor in the local settings.")
+
+        return group_settings
+
+    @staticmethod
+    def _load_one(location: str, filename: str, force=False) -> attrdict:
+        return load_settings_file(Path(location).expanduser(), filename, force)
+
+    @classmethod
+    def load(
+        cls, group_name=None, filename="settings.yaml", location=None, *, add_local_settings=True, force=False
+    ) -> attrdict:
+        """
+        Load the settings for the given group. When no group is provided, the
+        complete configuration is returned.
+
+        The Settings are loaded from entry-points that are defined in each of the
+        packages that provide a Settings file.
+
+        If a location is explicitly provided, the Settings will be loaded from that
+        location, using the given filename or the default (which is settings.yaml).
 
         Args:
             group_name (str): the name of one of the main groups from the YAML file
-            filename (str): the name of the YAML file to read
-            location (str): the path to the location of the YAML file
+            filename (str): the name of the YAML file to read [default=settings.yaml]
+            location (str, Path): the path to the location of the YAML file
             force (bool): force reloading the file
             add_local_settings (bool): update the Settings with site specific local settings
 
@@ -193,104 +351,14 @@ class Settings:
             a dynamically created class with the configuration parameters as instance variables.
 
         Raises:
-            a SettingsError when the group is not defined in the YAML file.
+            SettingsError: when the group is not defined in the YAML file.
         """
-
-        _THIS_FILE_LOCATION = pathlib.Path(__file__).resolve().parent
-
-        if location is None:
-
-            # Check if the yaml file is located at the location of the caller,
-            # if not, use the file that is located where the Settings module is located.
-
-            caller_dir = get_caller_info(level=2).filename
-            caller_dir = pathlib.Path(caller_dir).resolve().parent
-
-            if (caller_dir / filename).is_file():
-                yaml_location = caller_dir
-            else:
-                yaml_location = _THIS_FILE_LOCATION
+        if group_name:
+            return cls._load_group(group_name, add_local_settings=add_local_settings, force=force)
+        elif location:
+            return cls._load_one(location=location, filename=filename, force=force)
         else:
-
-            # The location was given as an argument
-
-            yaml_location = pathlib.Path(location).resolve()
-
-        logger.log(5, f"yaml_location in Settings.load(location={location}) is {yaml_location}")
-
-        # Load the YAML global document
-
-        try:
-            yaml_document_global = cls.read_configuration_file(
-                yaml_location / filename, force=force
-            )
-        except FileNotFoundError as exc:
-            raise SettingsError(
-                f"Filename {filename} not found at location {yaml_location}."
-            ) from exc
-
-        # Check if there were any groups defined in the YAML document
-
-        if not yaml_document_global:
-            raise SettingsError(f"Empty YAML document {filename} at {yaml_location}.")
-
-        # Load the LOCAL settings YAML file
-
-        if add_local_settings:
-            try:
-                local_settings_location = os.environ[ENV_PLATO_LOCAL_SETTINGS]
-                logger.log(5, f"Using {ENV_PLATO_LOCAL_SETTINGS} to update global settings.")
-                try:
-                    yaml_document_local = cls.read_configuration_file(
-                        local_settings_location, force=force
-                    )
-                    if yaml_document_local is None:
-                        raise FileIsEmptyError()
-                    local_settings = AttributeDict(
-                        {name: value for name, value in yaml_document_local.items()}
-                    )
-                except FileNotFoundError as exc:
-                    raise SettingsError(
-                        f"Local settings YAML file '{local_settings_location}' not found. "
-                        f"Check your environment variable {ENV_PLATO_LOCAL_SETTINGS}."
-                    ) from exc
-                except FileIsEmptyError:
-                    logger.warning(f"Local settings YAML file '{local_settings_location}' is empty. "
-                                   f"No local settings were loaded.")
-                    local_settings = {}
-            except KeyError:
-                logger.debug(f"The environment variable {ENV_PLATO_LOCAL_SETTINGS} is not defined.")
-                local_settings = {}
-
-        if group_name in (None, ""):
-            global_settings = AttributeDict(
-                {name: value for name, value in yaml_document_global.items()}
-            )
-            if add_local_settings:
-                recursive_dict_update(global_settings, local_settings)
-            return global_settings
-
-        # Check if the requested group is defined in the YAML document
-
-        if group_name not in yaml_document_global:
-            raise SettingsError(
-                f"Group name '{group_name}' is not defined in the YAML "
-                f"document '{filename}' at '{yaml_location}."
-            )
-
-        # Check if the group has any settings
-
-        if not yaml_document_global[group_name]:
-            raise SettingsError(f"Empty group in YAML document {filename} at {yaml_location}.")
-
-        group_settings = AttributeDict(
-            {name: value for name, value in yaml_document_global[group_name].items()}
-        )
-
-        if add_local_settings and group_name in local_settings:
-            recursive_dict_update(group_settings, local_settings[group_name])
-
-        return group_settings
+            return cls._load_all(add_local_settings=add_local_settings, force=force)
 
     @classmethod
     def to_string(cls):
@@ -310,47 +378,65 @@ class Settings:
                     trunc += " ..."
                 msg += f"   {field}: {trunc}\n"
 
-        return msg
+        return msg.rstrip()
 
     @classmethod
-    def set_profiling(cls, flag):
-        cls.__profile = flag
+    def from_string(cls, yaml_string: str, group: str | None = None) -> attrdict:
+        """
+        Creates a Settings object from a YAML string.
 
-    @classmethod
-    def profiling(cls):
-        return cls.__profile
+        Args:
+            yaml_string (str): the YAML configuration as a string
 
-    @classmethod
-    def set_simulation_mode(cls, flag: bool) -> bool:
-        cls.__simulation = flag
+        Returns:
+            An attribute dictionary with all the settings from the given string.
+        """
+        try:
+            yaml_document = yaml.load(yaml_string, Loader=SAFE_LOADER)
+            settings = attrdict({name: value for name, value in yaml_document.items()}, label="Settings")
+        except yaml.YAMLError as exc:
+            logger.error(exc)
+            raise SettingsError("Error loading YAML document from string") from exc
 
-    @classmethod
-    def simulation_mode(cls) -> bool:
-        return cls.__simulation
+        if not settings:
+            logger.warning(
+                "The Settings YAML string is empty. No local settings were loaded, an empty dictionary is returned."
+            )
+
+        if group:
+            if group in settings:
+                settings = attrdict({name: value for name, value in settings[group].items()}, label=group)
+            else:
+                raise SettingsError(f"Group name '{group}' is not defined in the provided YAML string.")
+
+        return settings
 
 
-ignore_m_warning('egse.settings')
-
-if __name__ == "__main__":
-
+def main(args: list | None = None):  # pragma: no cover
     # We provide convenience to inspect the settings by calling this module directly from Python.
     #
     # python -m egse.settings
     #
-    # Use the '--help' option to see the what your choices are.
+    # Use the '--help' option to see what your choices are.
 
-    logging.basicConfig(level=20)
+    from egse.env import setup_env
+
+    setup_env()
 
     import argparse
 
     parser = argparse.ArgumentParser(
         description=(
             f"Print out the default Settings, updated with local settings if the "
-            f"{ENV_PLATO_LOCAL_SETTINGS} environment variable is set."
+            f"{get_local_settings_env_name()} environment variable is set."
         ),
     )
     parser.add_argument("--local", action="store_true", help="print only the local settings.")
-    args = parser.parse_args()
+    parser.add_argument(
+        "--global", action="store_true", help="print only the global settings, don't include local settings."
+    )
+    parser.add_argument("--group", help="print only settings for this group")
+    args = parser.parse_args(args or [])
 
     # The following import will activate the pretty printing of the AttributeDict
     # through the __rich__ method.
@@ -358,15 +444,22 @@ if __name__ == "__main__":
     from rich import print
 
     if args.local:
-        location = os.environ.get(ENV_PLATO_LOCAL_SETTINGS)
+        location = get_local_settings_path()
         if location:
+            location = str(Path(location).expanduser().resolve())
             settings = Settings.load(filename=location)
             print(settings)
             print(f"Loaded from [purple]{location}.")
         else:
             print("[red]No local settings defined.")
     else:
-        settings = Settings.load()
+        # if the global option is given we don't want to include local settings
+        add_local_settings = False if vars(args)["global"] else True
+
+        if args.group:
+            settings = Settings.load(args.group, add_local_settings=add_local_settings)
+        else:
+            settings = Settings.load(add_local_settings=add_local_settings)
         print(settings)
         print("[blue]Memoized locations:")
         locations = Settings.get_memoized_locations()
@@ -374,6 +467,11 @@ if __name__ == "__main__":
 
 
 def get_site_id() -> str:
-
     site = Settings.load("SITE")
     return site.ID
+
+
+# ignore_m_warning('egse.settings')
+
+if __name__ == "__main__":
+    main()

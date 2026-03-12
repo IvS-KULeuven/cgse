@@ -1,0 +1,62 @@
+BaseClass:
+    egse.hexapod.symetrie.alpha.AlphaPlusControllerInterface
+
+ProxyClass:
+    egse.hexapod.symetrie.joran.JoranProxy
+
+ControlServerClass:
+    egse.hexapod.symetrie.joran_cs.JoranControlServer
+
+ControlServer:
+    egse.hexapod.symetrie.joran_cs
+
+UserInterface:
+    egse.hexapod.symetrie.joran_ui
+
+Commands:
+
+    # Each of these groups is parsed and used on both the server and the client side.
+    #
+    # The group name (e.g. is_simulator) will be monkey patched in the Proxy class for the device
+    # or service.
+    #
+    # The other field are:
+    #   description:   Used by the doc_string method to generate a help string
+    #   cmd:           Command string that will eventually be sent to the hardware controller for
+    #                  the device. This cmd string is also used at the client side to parse and
+    #                  validate the arguments.
+    #   device_method: The name of the method to be called on the device class.
+    #                  These should all be defined by the interface class for the device, i.e.
+    #                  JoranInterface in this case.
+    #                  When the device_method is the same as the group name, it can be omitted.
+    #   response:      The name of the method to be called from the device protocol.
+    #                  This method should exist in the subclass of the CommandProtocol base class,
+    #                  i.e. in this case it will be the JoranProtocol class.
+    #                  The default (when no response is given) is 'handle_device_method'.
+
+    # Definition of the DeviceInterface
+
+    is_simulator:
+        description:    Ask if the connected class is a simulator instead of the real device Controller class.
+        returns:        bool | True if the far end is a simulator instead of the real hardware
+
+    is_connected:
+        description:    Check if the Hexapod hardware controller is connected.
+
+    connect:
+        description:    Connect the Hexapod hardware controller
+
+    reconnect:
+        description:    Reconnect the Hexapod hardware controller.
+
+                        This command will force a disconnect and then try to re-connect to the controller.
+
+    disconnect:
+        description:    Disconnect from the hexapod controller.
+
+                        This command will be send to the Hexapod Control Server which will then
+                        disconnect from the hardware controller.
+
+                        This command does not affect the ZeroMQ connection of the Proxy to the
+                        control server. Use the service command `disconnect_cs()` to disconnect
+                        from the control server.

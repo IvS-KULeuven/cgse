@@ -1,20 +1,51 @@
+# Python versions and environment
+
+__pycache__
 .python-version
 .envrc
 
+# Build systems
+
 build
 dist
+**/*.egg-info
+
+# Apple specific
 
 .DS_Store
 
-__pycache__
+# Unit testing
+
 .pytest_cache
+.coverage
+.coverage.*
+.nox
+htmlcov
+
+# dotenv, ignore all but the example file
 
 .env
+.env.*
+!.env.example
+
+# Virtual environments
+
 .venv
 venv
 
+# PyCharm IDE
+
 .idea
 
-**/*.egg-info
+# VSCode IDE
+
+.vscode
+*.code-workspace
+
+# MKDOCS documentation site
+
+/site
+
+# Packaging
 
 uv.lock

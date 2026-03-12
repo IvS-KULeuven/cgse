@@ -1,0 +1,24 @@
+Setup:
+    
+    site_id:        HOME
+    creation_date:  2025-01-14
+    
+    gse:
+        hexapod:
+            ID: 2
+            calibration:
+                legs:
+                    1: 1.24000E+01
+                    2: 1.23000E+01
+                    3: 1.21000E+01
+                    4: 1.26000E+01
+                    5: 1.25000E+01
+                    6: 1.20000E+01
+    
+    camera:
+        id: 4660
+        tou:
+            ID: 16829182
+        fee:
+            type: N-FEE
+            ID: 174057003

@@ -7,68 +7,122 @@ This module is loaded whenever an egse module is loaded, to ensure all log messa
 forwarded to the log control server.
 """
 
+__all__ = [
+    "SERVICE_TYPE",
+    "LOG_FORMAT_FULL",
+    "logger",
+    "root_logger",
+    "egse_logger",
+    "close_all_zmq_handlers",
+    "create_new_zmq_logger",
+    "get_log_file_name",
+    "print_all_handlers",
+    "replace_zmq_handler",
+    "send_request",
+    "set_all_logger_levels",
+    "setup_logging",
+    "teardown_logging",
+    "remote_logging",
+]
+
+import contextlib
 import logging
 import pickle
-import sys
 import traceback
 
 import zmq
 
+from egse.log import LOG_FORMAT_FULL
+from egse.log import PackageFilter
+from egse.log import egse_logger
+from egse.log import get_log_level_from_env
+from egse.log import logger
+from egse.log import root_logger
+from egse.registry.client import RegistryClient
 from egse.settings import Settings
-from egse.zmq_ser import connect_address
+from egse.system import is_in_ipython
+from egse.system import type_name
 
-CTRL_SETTINGS = Settings.load("Logging Control Server")
+settings = Settings.load("Logging Control Server")
 
-LOG_FORMAT_FULL = (
-    "%(asctime)23s:%(processName)20s:%(levelname)8s:%(lineno)5d:%(name)-20s:%(message)s"
-)
+SERVICE_TYPE = settings.get("SERVICE_TYPE", "log_cs")
+"""The logger id that is also used as service_type for service discovery."""
 
-# Configure the root logger
-
-logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT_FULL)
-
-__all__ = [
-    "egse_logger",
-    "set_all_logger_levels",
-    "close_all_zmq_handlers",
-    "replace_zmq_handler",
-    "get_log_file_name",
-]
+PROTOCOL = settings.get("PROTOCOL", "tcp")
+HOSTNAME = settings.get("HOSTNAME", "localhost")
+RECEIVER_PORT = settings.get("RECEIVER_PORT", 0)  # dynamically assigned by the system if 0
+COMMANDER_PORT = settings.get("COMMANDER_PORT", 0)  # dynamically assigned by the system if 0
 
 
-def get_log_file_name():
+_initialised = False  # will be set to True in the setup_logging() function
+
+
+def get_log_file_name() -> str:
     """
     Returns the filename of the log file as defined in the Settings or return the default name 'general.log'.
     """
-    return CTRL_SETTINGS.get("FILENAME", "general.log")
+    return settings.get("FILENAME", "general.log")
+
+
+def get_endpoint_from_registry(service_type: str, port_type: str = "commander"):
+    """Returns the endpoint that was constructed from information from the service registry."""
+
+    # logger.debug(f"Calling get_endpoint_from_registry(\"{port}\")")
+
+    try:
+        with RegistryClient() as reg:
+            if port_type == "commander":
+                endpoint = reg.get_endpoint(service_type)
+            elif port_type == "receiver":
+                service = reg.discover_service(service_type)
+                endpoint = (
+                    f"{service.get('protocol', 'tcp')}://{service['host']}:{service['metadata']['receiver_port']}"
+                )
+            else:
+                logger.error(f"Incorrect argument {port_type=}, no endpoint returned.")
+                endpoint = None
+    except Exception:  # noqa
+        logger.warning(f"Couldn't retrieve endpoint for {service_type}. Is the service registry process running?")
+        endpoint = None
+
+    return endpoint
 
 
 class ZeroMQHandler(logging.Handler):
-    def __init__(self, uri=None, socket_type=zmq.PUSH, ctx=None):
+    def __init__(self):
+        super().__init__()
 
-        from egse.settings import Settings
-        from egse.zmq_ser import connect_address
+        if RECEIVER_PORT == 0:
+            endpoint = get_endpoint_from_registry(service_type=SERVICE_TYPE, port_type="receiver")
+        else:
+            endpoint = f"{PROTOCOL}://{HOSTNAME}:{RECEIVER_PORT}"
 
-        ctrl_settings = Settings.load("Logging Control Server")
-        uri = uri or connect_address(ctrl_settings.PROTOCOL, ctrl_settings.HOSTNAME,
-                                     ctrl_settings.LOGGING_PORT)
+        if endpoint:
+            self.setLevel(logging.NOTSET)
 
-        logging.Handler.__init__(self)
+            self.ctx = zmq.Context.instance()
+            self.socket = zmq.Socket(self.ctx, zmq.PUSH)
+            self.socket.setsockopt(zmq.SNDHWM, 0)  # never block on sending msg
+            # self.socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second
+            # self.socket.setsockopt(zmq.SNDTIMEO, 1000)  # 1 second
+            self.socket.setsockopt(zmq.LINGER, 100)  # short wait for unsent messages on close()
+            self.socket.setsockopt(zmq.IMMEDIATE, 1)  # set immediate mode
+            self.socket.connect(endpoint)
 
-        # print(f"ZeroMQHandler.__init__({uri=}, {socket_type=}, {ctx=})")
+            logger.debug(f"All logging messages will be forwarded to the LOGGER at {endpoint}.")
+        else:
+            self.ctx = None
+            self.socket = None
 
-        self.setLevel(logging.NOTSET)
-
-        self.ctx = ctx or zmq.Context().instance()
-        self.socket = zmq.Socket(self.ctx, socket_type)
-        self.socket.setsockopt(zmq.SNDHWM, 0)  # never block on sending msg
-        self.socket.connect(uri)
+            logger.warning("No logging messages will be forwarded to the LOGGER")
 
     def __del__(self):
         self.close()
 
     def close(self):
-        self.socket.close(linger=100)
+        if self.socket:
+            self.socket.close(linger=100)
+            self.socket = None
 
     def emit(self, record):
         """
@@ -77,9 +131,8 @@ class ZeroMQHandler(logging.Handler):
         Writes the LogRecord to the queue, preparing it for pickling first.
         """
 
-        # print(f"ZeroMQHandler.emit({record})")
-
-        from egse.system import is_in_ipython
+        if not self.socket:
+            return
 
         try:
             if record.exc_info:
@@ -91,17 +144,36 @@ class ZeroMQHandler(logging.Handler):
             self.socket.send(data, flags=zmq.NOBLOCK)
         except (KeyboardInterrupt, SystemExit):
             raise
+        except zmq.Again:
+            # This exception occurs when e.g. the log_cs server has not yet started
+            # but logging was set up in another process. An example is the service
+            # registry which starts before the logger. When it calls `setup_logging()`
+            # the `log_cs` has not yet started.
+            pass
         except Exception as exc:
-            print(f"ZeroMQHandler: Exception - {exc}", file=sys.stderr)
+            logging.error(f"ZeroMQHandler: Caught {type_name(exc)} - {exc}", exc_info=True)
             self.handleError(record)
+
+
+def print_all_handlers():
+    """A debugging function to check which handlers are connected to loggers."""
+
+    print("=" * 80)
+    print("Root logger handlers:")
+    for i, handler in enumerate(logging.root.handlers):
+        print(f"  {i}: {type(handler).__name__} - {handler}")
+
+    print("\nAll loggers with handlers:")
+    for name, logger in logging.Logger.manager.loggerDict.items():
+        if hasattr(logger, "handlers") and logger.handlers:
+            print(f"  {name}: {[type(h).__name__ for h in logger.handlers]}")
+
+    print("\n" + "=" * 80)
 
 
 def close_all_zmq_handlers():
     """
-    Close all the ZeroMQHandlers that are connected to a logger.
-
-    This function is automatically called upon termination of the control servers. For your own
-    applications, call this function before exiting the App.
+    Close and remove all the ZeroMQHandlers that are connected to a logger.
     """
 
     loggers = logging.Logger.manager.loggerDict
@@ -111,32 +183,59 @@ def close_all_zmq_handlers():
             continue
         for handler in logger.handlers:
             if isinstance(handler, ZeroMQHandler):
-                logger.debug(f"Closing handler for logger {name}")
+                root_logger.debug(f"Close and remove ZeroMQHandler for logger {name}.")
                 handler.close()
+                logger.removeHandler(handler)
 
 
-# Initialize logging as we want it for the Common-EGSE
-#
-# * The ZeroMQHandler to send all logging messages, i.e. level=DEBUG to the Logging Server
-# * The (local) StreamingHandlers to print only INFO messages and higher
+def setup_logging():
+    # Initialize logging as we want it for the Common-EGSE
+    #
+    # * The ZeroMQHandler to send all logging messages, i.e. level=DEBUG to the Logging Server
+    # * The (local) StreamingHandlers to print only INFO messages and higher
 
-logging.disable(logging.NOTSET)
-root_logger = logging.getLogger()
+    global root_logger, egse_logger, _initialised
 
-for handler in root_logger.handlers:
-    handler.setLevel(logging.INFO)
+    if _initialised:
+        logger.info("Logging has already been set up for this process.")
+        return
+
+    logging.disable(logging.NOTSET)
+    for handler in root_logger.handlers:
+        handler.setLevel(get_log_level_from_env())
+
+    egse_logger.setLevel(logging.DEBUG)
+
+    # Add the ZeroMQHandler to the egse_logger
+
+    zmq_handler = ZeroMQHandler()
+    zmq_handler.setLevel(logging.NOTSET)
+    zmq_handler.addFilter(PackageFilter())
+    egse_logger.addHandler(zmq_handler)
+
+    _initialised = True
 
 
-# Define the `egse` logger and add the ZeroMQHandler to this logger
+def teardown_logging():
+    global _initialised
 
-egse_logger = logging.getLogger("egse")
-egse_logger.setLevel(logging.DEBUG)
+    close_all_zmq_handlers()
 
-zmq_handler = ZeroMQHandler()
-zmq_handler.setLevel(logging.NOTSET)
+    _initialised = False
 
-egse_logger.addHandler(zmq_handler)
-egse_logger.setLevel(logging.DEBUG)
+
+@contextlib.contextmanager
+def remote_logging():
+    """A context manager that can be used to activate remote logging."""
+    setup_logging()
+    yield
+    teardown_logging()
+
+
+# NOTE: This code is commented, you will have to set up and tear down the logging for
+#       each process individually.
+# setup_logging()
+# atexit.register(teardown_logging)
 
 
 def replace_zmq_handler():
@@ -144,8 +243,8 @@ def replace_zmq_handler():
     This function will replace the current ZeroMQ Handler with a new instance. Use this function
     in the run() method of a multiprocessing.Process:
 
-        import egse.logger
-        egse.logger.replace_zmq_handler()
+        >>> import egse.logger
+        >>> egse.logger.replace_zmq_handler()
 
     Don't use this function in the __init__() method as only the run() method will execute in
     the new Process and replace the handler in the proper environment. The reason for this is
@@ -163,7 +262,7 @@ def replace_zmq_handler():
     egse_logger.addHandler(ZeroMQHandler())
 
 
-def create_new_zmq_logger(name: str):
+def create_new_zmq_logger(name: str) -> logging.Logger:
     """
     Create a new logger with the given name and add a ZeroMQ Handler to this logger.
 
@@ -214,10 +313,17 @@ TIMEOUT_RECV = 1.0  # seconds
 
 def send_request(command_request: str):
     """Sends a request to the Logger Control Server and waits for a response."""
-    ctx = zmq.Context().instance()
-    endpoint = connect_address(
-        CTRL_SETTINGS.PROTOCOL, CTRL_SETTINGS.HOSTNAME, CTRL_SETTINGS.COMMANDING_PORT
-    )
+
+    if COMMANDER_PORT == 0:
+        endpoint = get_endpoint_from_registry(SERVICE_TYPE)
+    else:
+        endpoint = f"{PROTOCOL}://{HOSTNAME}:{COMMANDER_PORT}"
+
+    if endpoint is None:
+        return {"error": "Couldn't determine the endpoint for the logger."}
+
+    ctx = zmq.Context.instance()
+
     socket = ctx.socket(zmq.REQ)
     socket.connect(endpoint)
 
@@ -227,35 +333,7 @@ def send_request(command_request: str):
         response = socket.recv()
         response = pickle.loads(response)
     else:
-        response = {"error": "Receive from ZeroMQ socket timed out for Logger Control Server."}
+        response = {"error": "The ZeroMQ socket timed out for the Logger Control Server."}
     socket.close(linger=0)
 
     return response
-
-
-if __name__ == "__main__":
-
-    import egse.logger
-
-    LOGGER = logging.getLogger("egse.0mq-log-test")
-    LOGGER.debug("Hello, ZeroMQ logging: This is a DEBUG message.")
-    LOGGER.info("Hello, ZeroMQ logging: This is an INFO message.")
-    LOGGER.warning("Hello, ZeroMQ logging: This is a WARNING message.")
-    LOGGER.error("Hello, ZeroMQ logging: This is an ERROR message.")
-    LOGGER.critical("Hello, ZeroMQ logging: This is a CRITICAL message.")
-    try:
-        raise ValueError("A fake ValueError, raised for testing.")
-    except ValueError:
-        LOGGER.exception("Hello, ZeroMQ logging: This is an EXCEPTION message.")
-
-    LOGGER = logging.getLogger("plain-log-test")
-
-    LOGGER.debug("Vanilla logging: This is a DEBUG message.")
-    LOGGER.info("Vanilla logging: This is an INFO message.")
-    LOGGER.warning("Vanilla logging: This is a WARNING message.")
-    LOGGER.error("Vanilla logging: This is an ERROR message.")
-    LOGGER.critical("Vanilla logging: This is a CRITICAL message.")
-    try:
-        raise ValueError("A fake ValueError, raised for testing.")
-    except ValueError:
-        LOGGER.exception("Vanilla logging: This is an EXCEPTION message.")

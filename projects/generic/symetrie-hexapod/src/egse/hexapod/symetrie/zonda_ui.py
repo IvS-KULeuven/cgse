@@ -13,6 +13,7 @@ The application is completely written in Python/Qt5 and can therefore run on any
 platform that supports Python and Qt5.
 
 """
+
 import argparse
 import logging
 import multiprocessing
@@ -101,10 +102,10 @@ ACTUATOR_STATE_LABELS = [
 
 SPECIFIC_POSITIONS = ["Position ZERO", "Position RETRACTED"]
 
-GUI_SETTINGS = Settings.load("ZONDA GUI")
 
 class TemperatureLog(QWidget):
     """This Widget allows to view the temperature value of all six actuators."""
+
     def __init__(self, temp: List[str] = None):
         super().__init__()
 
@@ -153,9 +154,7 @@ class TemperatureLog(QWidget):
         return create_temperature_box
 
     def create_temperature_stripchart(self):
-        self.stripchart = StripChart(
-            labels={"left": ("measure", "C"), "bottom": ("Time", "d hh:mm:ss")}
-        )
+        self.stripchart = StripChart(labels={"left": ("measure", "C"), "bottom": ("Time", "d hh:mm:ss")})
         self.stripchart.setInterval(60 * 60 * 12)  # 12h of data
         self.stripchart.set_yrange(0, 40)
 
@@ -167,6 +166,7 @@ class TemperatureLog(QWidget):
         create_temperature_stripchart.setLayout(vbox)
 
         return create_temperature_stripchart
+
 
 class ZondaUIView(HexapodUIView):
     def __init__(self):
@@ -190,7 +190,6 @@ class ZondaUIView(HexapodUIView):
         self.init_gui()
 
     def init_gui(self):
-
         # The main frame in which all the other frames are located, the outer Application frame
 
         app_frame = QFrame()
@@ -220,14 +219,14 @@ class ZondaUIView(HexapodUIView):
         vbox_left = QVBoxLayout()
         vbox_right = QVBoxLayout()
 
-        self.createToolbar()
-        self.createStatusBar()
+        self.create_toolbar()
+        self.create_status_bar()
 
         self.states = States(STATUS_LEDS)
 
-        user_positions_widget = self.createUserPositionWidget()
-        mach_positions_widget = self.createMachinePositionWidget()
-        actuator_length_widget = self.createActuatorLengthWidget()
+        user_positions_widget = self.create_user_position_widget()
+        mach_positions_widget = self.create_machine_position_widget()
+        actuator_length_widget = self.create_actuator_length_widget()
 
         vbox_right.addWidget(user_positions_widget)
         vbox_right.addWidget(mach_positions_widget)
@@ -262,15 +261,12 @@ class ZondaUIView(HexapodUIView):
         if message:
             self.statusBar().showMessage(message, msecs=timeout)
         if mode:
-            self.mode_label.setStyleSheet(
-                f"border: 0; " f"color: {'red' if 'Simulator' in mode else 'black'};"
-            )
+            self.mode_label.setStyleSheet(f"border: 0; color: {'red' if 'Simulator' in mode else 'black'};")
 
             self.mode_label.setText(f"mode: {mode}")
         self.statusBar().repaint()
 
     def updatePositions(self, userPositions, machinePositions, actuatorLengths):
-
         if userPositions is None:
             MODULE_LOGGER.warning("no userPositions passed into updatePositions(), returning.")
             return
@@ -296,7 +292,6 @@ class ZondaUIView(HexapodUIView):
             alen[1].setText(f"{actuatorLengths[idx]:10.4f}")
 
     def updateStates(self, states):
-
         if states is None:
             return
 
@@ -304,7 +299,6 @@ class ZondaUIView(HexapodUIView):
         self.states.set_states(states)
 
     def updateControlButton(self, flag):
-
         self.control.set_selected(on=flag)
 
     def updateTemperature(self, temp):
@@ -312,7 +306,7 @@ class ZondaUIView(HexapodUIView):
             MODULE_LOGGER.warning("no temperature passed into updateTemperature(), returning.")
             return
         else:
-            #TODO: How to add the 6 temperature values to the stripchart?
+            # TODO: How to add the 6 temperature values to the stripchart?
             value = temp[0]
             self.temperature_stripchart.update(QDateTime.currentMSecsSinceEpoch(), value)
             for t in range(len(self.temperature_values)):
@@ -321,7 +315,6 @@ class ZondaUIView(HexapodUIView):
 
 class ZondaUIModel(HexapodUIModel):
     def __init__(self, connection_type):
-
         if connection_type == "proxy":
             device = ZondaProxy()
         elif connection_type == "direct":
@@ -330,9 +323,7 @@ class ZondaUIModel(HexapodUIModel):
         elif connection_type == "simulator":
             device = ZondaSimulator()
         else:
-            raise ValueError(
-                f"Unknown type of Hexapod implementation passed into the model: {connection_type}"
-            )
+            raise ValueError(f"Unknown type of Hexapod implementation passed into the model: {connection_type}")
 
         super().__init__(connection_type, device)
 
@@ -353,7 +344,6 @@ class ZondaUIController(HexapodUIController):
         super().__init__(model, view)
 
     def update_values(self):
-
         super().update_values()
 
         # Add here any updates to ZONDA specific widgets
@@ -396,14 +386,11 @@ def main():
     app.setWindowIcon(QIcon(str(app_logo)))
 
     if lock_file.tryLock(100):
-
         process_status = ProcessStatus()
 
         timer_thread = threading.Thread(target=do_every, args=(10, process_status.update))
         timer_thread.daemon = True
         timer_thread.start()
-
-        start_http_server(GUI_SETTINGS.METRICS_PORT)
 
         args = parse_arguments()
 
@@ -442,7 +429,6 @@ def main():
 
 
 if __name__ == "__main__":
-
     logging.basicConfig(level=logging.DEBUG, format=Settings.LOG_FORMAT_FULL)
 
     sys.exit(main())

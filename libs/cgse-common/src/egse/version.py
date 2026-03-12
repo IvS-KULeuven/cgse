@@ -9,18 +9,17 @@ number is then available as:
 The actual numbers are updated for each release in the `settings.yaml` configuration file.
 
 """
-from __future__ import annotations
 
-# WARNING: Make sure you are not importing any `egse` packages at the module level.
-# This module is magically loaded by pip to determine the VERSION number before the
-# package has been installed (see pyproject.py).
-# Any imports from an 'egse' package will result in a ModuleNotFound error.
+from __future__ import annotations
 
 import os
 import subprocess
 from pathlib import Path
 
-from egse.system import get_package_location
+# WARNING: Make sure you are not importing any `egse` packages at the module level.
+# This module is magically loaded by pip to determine the VERSION number before the
+# package has been installed (see pyproject.py).
+# Any imports from an 'egse' package will result in a ModuleNotFound error.
 
 HERE = Path(__file__).parent.resolve()
 
@@ -32,7 +31,7 @@ __all__ = [
 ]
 
 
-def get_version_from_settings_file_raw(group_name: str, location: Path | str = None) -> str:
+def get_version_from_settings_file_raw(group_name: str, location: Path | str | None = None) -> str:
     """
     Reads the VERSION field from the `settings.yaml` file in raw mode, meaning the file
     is not read using the PyYAML module, but using the `readline()` function of the file
@@ -67,7 +66,7 @@ def get_version_from_settings_file_raw(group_name: str, location: Path | str = N
     return version
 
 
-def get_version_from_settings(group_name: str, location: Path = None):
+def get_version_from_settings(group_name: str, location: Path | None = None, yaml_string: str | None = None) -> str:
     """
     Reads the VERSION field from the `settings.yaml` file. This function first tries to load the proper Settings
     and Group and if that fails uses the raw method.
@@ -75,6 +74,7 @@ def get_version_from_settings(group_name: str, location: Path = None):
     Args:
         group_name: major group name that contains the VERSION field, i.e. Common-EGSE or PLATO_TEST_SCRIPTS.
         location: the location of the `settings.yaml` file or None in which case the location of this file is used.
+        yaml_string: optional YAML string to read the settings from instead of a file.
 
     Raises:
         A RuntimeError when the group_name is incorrect and unknown or the VERSION field is not found.
@@ -82,10 +82,14 @@ def get_version_from_settings(group_name: str, location: Path = None):
     Returns:
         The version from the `settings.yaml` file as a string.
     """
-    from egse.settings import Settings, SettingsError
+    from egse.settings import Settings
+    from egse.settings import SettingsError
 
     try:
-        settings = Settings.load(group_name, location=location)
+        if location is None and yaml_string is not None:
+            settings = Settings.from_string(yaml_string, group=group_name)
+        else:
+            settings = Settings.load(group_name, location=location)
         version = settings.VERSION
     except (ModuleNotFoundError, SettingsError):
         version = get_version_from_settings_file_raw(group_name, location=location)
@@ -93,7 +97,7 @@ def get_version_from_settings(group_name: str, location: Path = None):
     return version
 
 
-def get_version_from_git(location: str = None):
+def get_version_from_git(location: str | Path | None = None) -> str:
     """
     Returns the Git version number for the repository at the given location.
 
@@ -119,14 +123,15 @@ def get_version_from_git(location: str = None):
 
     with chdir(location):
         try:
-            std_out = subprocess.check_output(
-                ["git", "describe", "--tags", "--long", "--always"], stderr=subprocess.PIPE
+            proc = subprocess.run(
+                ["git", "describe", "--tags", "--long", "--always"], stderr=subprocess.PIPE, stdout=subprocess.PIPE
             )
-            version = std_out.strip().decode("ascii")
-            if "cgse" not in version.lower() and "ts" not in version.lower():
-                version = None
-        except subprocess.CalledProcessError as exc:
-            version = None
+            if proc.stdout:
+                version = proc.stdout.strip().decode("ascii")
+            else:
+                version = "0.0.0"
+        except subprocess.CalledProcessError:
+            version = "0.0.0"
 
     return version
 
@@ -144,27 +149,31 @@ def get_version_installed(package_name: str) -> str:
     from egse.system import chdir
 
     with chdir(Path(__file__).parent):
-        from importlib.metadata import version, PackageNotFoundError
+        from importlib.metadata import PackageNotFoundError
+        from importlib.metadata import version as get_version
 
         try:
-            version = version(package_name)
-        except PackageNotFoundError as exc:
-            version = None
+            version = get_version(package_name)
+        except PackageNotFoundError:
+            version = "0.0.0"
 
     return version
 
 
-VERSION = get_version_from_settings_file_raw("Common-EGSE", location=HERE)
+# The version will be the installed version of the `egse.common`, because this is the package that is guaranteed
+# to be installed, and not necessarily `cgse`.
+
+VERSION = get_version_installed("cgse-common")
 
 # The __PYPI_VERSION__ is the version number that will be used for the installation.
 # The version will appear in PyPI and also as the `installed version`.
 
-__PYPI_VERSION__ = VERSION.split('+')[0]
+__PYPI_VERSION__ = VERSION.split("+")[0] if VERSION else "0.0.0"
 
 
-if __name__ == "__main__":
+def main():
     import rich
-    from egse.system import get_module_location
+
     from egse.plugin import entry_points
 
     if VERSION:
@@ -176,3 +185,7 @@ if __name__ == "__main__":
     for ep in entry_points("cgse.version"):
         if installed_version := get_version_installed(ep.name):
             rich.print(f"Installed version for {ep.name}= [bold default]{installed_version}[/]")
+
+
+if __name__ == "__main__":
+    main()

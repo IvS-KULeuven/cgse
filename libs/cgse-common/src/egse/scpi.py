@@ -1,0 +1,582 @@
+import asyncio
+import re
+import socket
+from typing import Any
+from typing import Dict
+from typing import Optional
+
+from egse.device import AsyncDeviceInterface
+from egse.device import AsyncDeviceTransport
+from egse.device import DeviceConnectionError
+from egse.device import DeviceError
+from egse.device import DeviceTimeoutError
+from egse.env import bool_env
+from egse.log import logger
+
+DEFAULT_READ_TIMEOUT = 1.0  # seconds
+DEFAULT_CONNECT_TIMEOUT = 3.0  # seconds
+DEFAULT_READ_AFTER_CONNECT = False
+IDENTIFICATION_QUERY = "*IDN?"
+
+VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
+
+SEPARATOR = b"\n"
+SEPARATOR_STR = SEPARATOR.decode()
+
+
+class SCPICommand:
+    """Base class for SCPI commands."""
+
+    def get_cmd_string(self, *args, **kwargs) -> str:
+        """Constructs the command string, based on the given arguments.
+
+        Args:
+            *args: Positional arguments for the command
+            **kwargs: Keyword arguments for the command
+
+        Returns:
+            Complete command string
+        """
+        raise NotImplementedError("Subclasses must implement get_cmd_string().")
+
+
+class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
+    """Generic asynchronous interface for devices that use SCPI commands over Ethernet."""
+
+    def __init__(
+        self,
+        device_name: str,
+        hostname: str,
+        port: int,
+        settings: Optional[Dict[str, Any]] = None,
+        connect_timeout: float = DEFAULT_CONNECT_TIMEOUT,
+        read_timeout: float = DEFAULT_READ_TIMEOUT,
+        read_after_connect: bool = DEFAULT_READ_AFTER_CONNECT,
+        id_validation: Optional[str] = None,
+    ):
+        """Initialize an asynchronous Ethernet interface for SCPI communication.
+
+        Args:
+            device_name: Name of the device (used in error messages)
+            hostname: Hostname or IP address of the device
+            port: TCP port number for communication
+            settings: Additional device-specific settings
+            connect_timeout: Timeout for connection attempts in seconds
+            read_timeout: Timeout for read operations in seconds
+            read_after_connect: Whether to perform a read operation immediately after connecting
+            id_validation: String that should appear in the device's identification response
+        """
+        super().__init__()
+
+        self._device_name = device_name
+        self.hostname = hostname
+        self.port = port
+        self.settings = settings or {}
+        self.connect_timeout = connect_timeout
+        self.read_timeout = read_timeout
+        self.read_after_connect = read_after_connect
+        self.id_validation = id_validation
+
+        self._reader = None
+        self._writer = None
+        self._is_connection_open = False
+        self._connect_lock = asyncio.Lock()
+        """Prevents multiple, simultaneous connect or disconnect attempts."""
+        self._io_lock = asyncio.Lock()
+        """Prevents multiple coroutines from attempting to read, write or query from the same stream at the same time."""
+
+    def is_simulator(self) -> bool:
+        return False
+
+    @property
+    def device_name(self) -> str:
+        return self._device_name
+
+    async def get_idn_parts(self) -> list[str]:
+        """Get the device identification string and return its parts.
+
+        The *IDN? command is sent to the device, and the response is split into its
+        components: Manufacturer, Model, Serial Number, Firmware Version.
+
+        Returns:
+            A list containing Manufacturer, Model, Serial Number, Firmware Version.
+
+        Raises:
+            DeviceError: When the device is not connected or communication fails.
+        """
+        if not self._is_connection_open:
+            raise DeviceError(self._device_name, "Device not connected, use connect() first")
+
+        idn_str = (await self.query(IDENTIFICATION_QUERY)).decode().strip()
+        if VERBOSE_DEBUG:
+            logger.debug(f"{self._device_name} IDN response: {idn_str}")
+        return idn_str.split(",")
+
+    async def initialize(
+        self, commands: list[tuple[str, bool]] | None = None, reset_device: bool = False
+    ) -> list[str | None]:
+        """Initialize the device with optional reset and command sequence.
+
+        Performs device initialization by optionally resetting the device and then
+        executing a sequence of commands. Each command can optionally expect a
+        response that will be logged for debugging purposes.
+
+        Args:
+            commands: List of tuples containing (command_string, expects_response).
+                Each tuple specifies a command to send and whether to wait for and
+                log the response. Defaults to None (no commands executed).
+            reset_device: Whether to send a reset command (*RST) before executing
+                the command sequence. Defaults to False.
+
+        Returns:
+           Response for each of the commands, or None when no response was expected.
+
+        Raises:
+            Any exceptions raised by the underlying write() or trans() methods,
+            typically communication errors or device timeouts.
+
+        Example:
+            await device.initialize(
+                [
+                    ("*IDN?", True),           # Query device ID, expect response
+                    ("SYST:ERR?", True),       # Check for errors, expect response
+                    ("OUTP ON", False),        # Enable output, no response expected
+                ],
+                reset_device=True
+            )
+        """
+
+        commands = commands or []
+        responses = []
+
+        if reset_device:
+            logger.info(f"Resetting the {self._device_name}...")
+            await self.write("*RST")  # this also resets the user-defined buffer
+
+        for cmd, expects_response in commands:
+            if expects_response:
+                logger.debug(f"Sending {cmd}...")
+                response = (await self.trans(cmd)).decode().strip()
+                responses.append(response)
+                logger.debug(f"{response = }")
+            else:
+                logger.debug(f"Sending {cmd}...")
+                await self.write(cmd)
+                responses.append(None)
+
+        return responses
+
+    async def connect(self) -> None:
+        """Connect to the device asynchronously.
+
+        Raises:
+            DeviceConnectionError: When the connection could not be established
+            DeviceTimeoutError: When the connection timed out
+            ValueError: When hostname or port are invalid
+        """
+        async with self._connect_lock:
+            # Sanity checks
+            if self._is_connection_open:
+                logger.warning(f"{self._device_name}: Trying to connect to an already connected device.")
+                return
+
+            if not self.hostname:
+                raise ValueError(f"{self._device_name}: Hostname is not initialized.")
+
+            if not self.port:
+                raise ValueError(f"{self._device_name}: Port number is not initialized.")
+
+            # Attempt to establish a connection
+            try:
+                logger.debug(f'Connecting to {self._device_name} at "{self.hostname}" using port {self.port}')
+
+                connect_task = asyncio.open_connection(self.hostname, self.port)
+                self._reader, self._writer = await asyncio.wait_for(connect_task, timeout=self.connect_timeout)
+
+                self._is_connection_open = True
+
+                logger.debug(f"Successfully connected to {self._device_name}.")
+
+            except asyncio.TimeoutError as exc:
+                raise DeviceTimeoutError(
+                    self._device_name, f"Connection to {self.hostname}:{self.port} timed out"
+                ) from exc
+            except ConnectionRefusedError as exc:
+                raise DeviceConnectionError(
+                    self._device_name, f"Connection refused to {self.hostname}:{self.port}"
+                ) from exc
+            except socket.gaierror as exc:
+                raise DeviceConnectionError(self._device_name, f"Address resolution error for {self.hostname}") from exc
+            except socket.herror as exc:
+                raise DeviceConnectionError(self._device_name, f"Host address error for {self.hostname}") from exc
+            except OSError as exc:
+                raise DeviceConnectionError(self._device_name, f"OS error: {exc}") from exc
+
+            # Some devices require an initial read after connection.
+            # We have to read this message from the buffer and can do some version checking if needed.
+            if self.read_after_connect:
+                response = await self.read_string()
+                if VERBOSE_DEBUG:
+                    logger.debug(f"Response after connection: {response}")
+
+            # Validate device identity if requested
+            if self.id_validation:
+                logger.debug("Validating connection..")
+                if not await self.is_connected():
+                    await self.disconnect()
+                    raise DeviceConnectionError(self._device_name, "Device connected but failed identity verification")
+
+    async def disconnect(self) -> None:
+        """Disconnect from the device asynchronously.
+
+        Raises:
+            DeviceConnectionError: When the connection could not be closed properly
+        """
+        async with self._connect_lock:
+            try:
+                if self._is_connection_open and self._writer is not None:
+                    logger.debug(f"Disconnecting from {self._device_name} at {self.hostname}")
+                    self._writer.close()
+                    await self._writer.wait_closed()
+                    self._writer = None
+                    self._reader = None
+                    self._is_connection_open = False
+            except Exception as exc:
+                raise DeviceConnectionError(self._device_name, f"Could not close connection: {exc}") from exc
+
+    async def reconnect(self) -> None:
+        """Reconnect to the device asynchronously."""
+        await self.disconnect()
+        await asyncio.sleep(0.1)
+        await self.connect()
+
+    async def is_connected(self) -> bool:
+        """Check if the device is connected and responds correctly to identification.
+
+        Returns:
+            True if the device is connected and validated, False otherwise
+        """
+        if not self._is_connection_open:
+            return False
+
+        try:
+            # Query device identification
+            id_response = (await self.query(IDENTIFICATION_QUERY)).decode().strip()
+
+            # Validate the response if validation string is provided
+            if self.id_validation and self.id_validation not in id_response:
+                logger.error(
+                    f"{self._device_name}: Device did not respond correctly to identification query. "
+                    f'Expected "{self.id_validation}" in response, got: {id_response}'
+                )
+                await self.disconnect()
+                return False
+
+            return True
+
+        except DeviceError as exc:
+            logger.error(f"{self._device_name}: Connection test failed: {exc}", exc_info=True)
+            await self.disconnect()
+            return False
+
+    async def write(self, command: str) -> None:
+        """Send a command to the device without waiting for a response, handle line termination, and write timeouts.
+
+        Args:
+            command: Command string to send
+
+        Raises:
+            DeviceConnectionError: When there's a communication problem
+            DeviceTimeoutError: When the operation times out
+        """
+        async with self._io_lock:
+            try:
+                if not self._is_connection_open or self._writer is None:
+                    raise DeviceConnectionError(self._device_name, "Device not connected, use connect() first")
+
+                # Ensure command ends with the proper separator or terminator
+                if not command.endswith(SEPARATOR_STR):
+                    command += SEPARATOR_STR
+
+                if VERBOSE_DEBUG:
+                    logger.debug(f"-----> {command}")
+                self._writer.write(command.encode())
+                await self._writer.drain()
+
+            except asyncio.TimeoutError as exc:
+                raise DeviceTimeoutError(self._device_name, "Write operation timed out") from exc
+            except (ConnectionError, OSError) as exc:
+                raise DeviceConnectionError(self._device_name, f"Communication error: {exc}") from exc
+
+    async def read(self) -> bytes:
+        """
+        Read response from the device asynchronously and return it unaltered.
+
+        Returns:
+            Response bytes from the device.
+
+        Raises:
+            DeviceConnectionError: When there's a communication problem
+            DeviceTimeoutError: When the read operation times out
+        """
+        async with self._io_lock:
+            if not self._is_connection_open or self._reader is None:
+                raise DeviceConnectionError(self._device_name, "Device not connected, use connect() first")
+
+            try:
+                # First, small delay to allow device to prepare response
+                await asyncio.sleep(0.01)
+
+                # Try to read until newline (common SCPI terminator)
+                try:
+                    response = await asyncio.wait_for(
+                        self._reader.readuntil(separator=SEPARATOR), timeout=self.read_timeout
+                    )
+                    if VERBOSE_DEBUG:
+                        logger.debug(f"<----- {response}")
+                    return response
+
+                except asyncio.IncompleteReadError as exc:
+                    # Connection closed before receiving full response
+                    logger.warning(f"{self._device_name}: Incomplete read, got {len(exc.partial)} bytes")
+                    return exc.partial if exc.partial else SEPARATOR
+
+                except asyncio.LimitOverrunError:
+                    # Response too large for buffer
+                    logger.warning(f"{self._device_name}: Response exceeded buffer limits")
+                    # Fall back to reading a large chunk
+                    return await asyncio.wait_for(
+                        self._reader.read(8192),  # Larger buffer for exceptional cases
+                        timeout=self.read_timeout,
+                    )
+
+            except asyncio.TimeoutError as exc:
+                raise DeviceTimeoutError(self._device_name, "Read operation timed out") from exc
+            except Exception as exc:
+                raise DeviceConnectionError(self._device_name, f"Read error: {exc}") from exc
+
+    async def trans(self, command: str) -> bytes:
+        """
+        Send a single command to the device controller and block until a response from the
+        controller.
+
+        Args:
+            command: command string
+
+        Returns:
+            Response bytes object from the device (including whitespace)
+
+        Raises:
+            DeviceConnectionError: When there's a communication problem.
+            DeviceTimeoutError: When the operation times out.
+        """
+
+        async with self._io_lock:
+            try:
+                if not self._is_connection_open or self._writer is None or self._reader is None:
+                    raise DeviceConnectionError(self._device_name, "Device not connected, use connect() first")
+
+                # Ensure command ends with the required terminator
+                if not command.endswith(SEPARATOR_STR):
+                    command += SEPARATOR_STR
+
+                if VERBOSE_DEBUG:
+                    logger.debug(f"-----> {command=}")
+
+                self._writer.write(command.encode())
+                await self._writer.drain()
+
+                # First, small delay to allow the device to prepare a response
+                await asyncio.sleep(0.01)
+
+                # Try to read until the required separator (common SCPI terminator)
+                try:
+                    response = await asyncio.wait_for(
+                        self._reader.readuntil(separator=SEPARATOR), timeout=self.read_timeout
+                    )
+                    if VERBOSE_DEBUG:
+                        logger.debug(f"<----- {response=}")
+                    return response
+
+                except asyncio.IncompleteReadError as exc:
+                    # Connection closed before receiving full response
+                    logger.warning(f"{self._device_name}: Incomplete read, got {len(exc.partial)} bytes")
+                    return exc.partial if exc.partial else SEPARATOR
+
+                except asyncio.LimitOverrunError:
+                    # Response too large for buffer
+                    logger.warning(f"{self._device_name}: Response exceeded buffer limits")
+                    # Fall back to reading a large chunk
+                    return await asyncio.wait_for(
+                        self._reader.read(8192),  # Larger buffer for exceptional cases
+                        timeout=self.read_timeout,
+                    )
+
+            except asyncio.TimeoutError as exc:
+                raise DeviceTimeoutError(self._device_name, "Communication timed out") from exc
+            except (ConnectionError, OSError) as exc:
+                raise DeviceConnectionError(self._device_name, f"Communication error: {exc}") from exc
+            except Exception as exc:
+                raise DeviceConnectionError(self._device_name, f"Transaction error: {exc}") from exc
+
+    async def __aenter__(self):
+        """Async context manager entry."""
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        await self.disconnect()
+
+
+def create_channel_list(*args) -> str:
+    """
+    Create a channel list that is understood by SCPI commands.
+
+    Channel names are device-specific.
+
+    For the DAQ6510: Channel names contain both the slot number and the channel number.
+    The slot number is the number of the slot where the card is installed at the back of
+    the device.
+
+    When addressing multiple individual channels, add each of them as a separate argument,
+    e.g. to include channels 1, 3, and 7 from slot 1, use the following command:
+
+        >>> create_channel_list(101, 103, 107)
+        '(@101, 103, 107)'
+
+    To designate a range of channels, only one argument should be given, i.e. a tuple containing
+    two channel representing the range. The following tuple `(101, 110)` will create the
+    following response: `"(@101:110)"`. The range is inclusive, so this will define a range of
+    10 channels in slot 1.
+
+        >>> create_channel_list((201, 205))
+        '(@201:205)'
+
+    See reference manual for the Keithley DAQ6510 [DAQ6510-901-01 Rev. B / September 2019],
+    chapter 11: Introduction to SCPI commands, SCPI command formatting, channel naming.
+
+    Args:
+        *args: a tuple or a list of channels
+
+    Returns:
+        A string containing the channel list as understood by the SCPI device.
+
+    """
+    if not args:
+        return ""
+
+    # If only one argument is given, I expect either a tuple defining a range
+    # or just one channel. When several arguments are given, I expect them all
+    # to be individual channels.
+
+    ch_list = []
+    for arg in args:
+        if isinstance(arg, (tuple, list)):
+            match len(arg):
+                case 2:
+                    ch_list.append(f"{arg[0]}:{arg[1]}")
+                case 1:
+                    ch_list.append(f"{arg[0]}")
+                case _:
+                    raise ValueError(
+                        "Invalid argument: when providing a tuple or list, it must contain one or two elements."
+                    )
+        else:
+            ch_list.append(f"{arg}")
+
+    # else:
+    # ch_list = "(@" + ",".join([str(arg) for arg in args]) + ")"
+
+    return "(@" + ",".join(x for x in ch_list if x.isdigit() or ":" in x) + ")"
+
+
+def count_number_of_channels(channel_list: str) -> int:
+    """
+    Given a proper channel list, this function counts the number of channels.
+    For ranges, it returns the actual number of channels that are included in the range.
+
+        >>> count_number_of_channels("(@1,2,3,4,5)")
+        5
+        >>> count_number_of_channels("(@1, 3, 5)")
+        3
+        >>> count_number_of_channels("(@2:7)")
+        6
+
+    Args:
+        channel_list: a channel list as understood by the SCPI commands of DAQ6510.
+
+    Returns:
+        The number of channels in the list.
+    """
+
+    match = re.match(r"\(@(.*)\)", channel_list)
+    if match is None:
+        logger.error(f"Invalid channel specification in '{channel_list}'")
+        return 0
+    group = match.groups()[0]
+
+    parts = group.replace(" ", "").split(",")
+
+    try:
+        count = 0
+        for part in parts:
+            if ":" in part:
+                channels = part.split(":")
+                if len(channels) != 2:
+                    raise ValueError()
+                count += int(channels[1]) - int(channels[0]) + 1
+            else:
+                if not part.isdigit():
+                    raise ValueError()
+                count += 1
+    except ValueError:
+        logger.error(f"Invalid channel specification in '{channel_list}'")
+        return 0
+
+    return count
+
+
+def get_channel_names(channel_list: str) -> list[str]:
+    """
+    Generate a list of channel names from a given channel list.
+
+    Args:
+        channel_list: a channel list as understood by the SCPI.
+
+    Returns:
+        A list of channel names.
+    """
+
+    match = re.match(r"\(@(.*)\)", channel_list)
+    if match is None:
+        logger.error(f"Invalid channel specification in '{channel_list}'")
+        return []
+
+    group = match.groups()[0]
+
+    parts = group.replace(" ", "").split(",")
+
+    try:
+        names: list[str] = []
+
+        for part in parts:
+            if ":" in part:
+                channels = part.split(":")
+                if len(channels) != 2:
+                    raise ValueError()
+                names.extend(str(ch) for ch in range(int(channels[0]), int(channels[1]) + 1))
+            else:
+                if not part.isdigit():
+                    raise ValueError()
+                names.append(part)
+
+        # If there are still any invalid names, raise an error
+        if not all(True if x and x.isdigit() else False for x in names):
+            raise ValueError()
+
+    except ValueError:
+        logger.error(f"Invalid channel specification in '{channel_list}'")
+        return []
+
+    return names

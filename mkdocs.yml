@@ -1,0 +1,203 @@
+
+# Project information
+
+site_name: CGSE
+site_url: https://ivs-kuleuven.github.io/cgse/
+site_author: Rik Huygen
+site_description: >-
+  Official documentation of the CGSE — Common-EGSE framework.
+
+# Repository
+
+repo_name: IvS-KULeuven/cgse
+repo_url: https://github.com/IvS-KULeuven/cgse
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      options:
+        custom_icons:
+          - overrides/.icons/
+  - pymdownx.superfences
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - def_list
+  - meta
+  - footnotes
+  - toc:
+      permalink: true
+      baselevel: 1
+
+theme:
+    name: material
+    custom_dir: docs/custom_theme
+    logo: images/icons/cgse-logo.svg
+    icon:
+        admonition:
+            note: fontawesome/solid/note-sticky
+            abstract: fontawesome/solid/book
+            info: fontawesome/solid/circle-info
+            tip: fontawesome/solid/bullhorn
+            success: fontawesome/solid/check
+            question: fontawesome/solid/circle-question
+            warning: fontawesome/solid/triangle-exclamation
+            failure: fontawesome/solid/bomb
+            danger: fontawesome/solid/skull
+            bug: fontawesome/solid/robot
+            example: fontawesome/solid/flask
+            quote: fontawesome/solid/quote-left
+    features:
+        - navigation.tabs
+        - navigation.indexes
+        - navigation.tabs.sticky
+        - navigation.footer
+        - content.code.annotate
+        - content.code.copy
+    palette:
+        - media: "(prefers-color-scheme: light)"
+          scheme: default
+          accent: purple
+          toggle:
+              icon: material/weather-sunny
+              name: Switch to dark mode
+        - media: "(prefers-color-scheme: dark)"
+          scheme: slate
+          primary: black
+          toggle:
+              icon: material/weather-night
+              name: Switch to light mode
+
+plugins:
+    search:
+    autorefs:
+    mkdocstrings:
+        default_handler: python
+        handlers:
+            python:
+                import:
+                    - https://docs.python.org/3/objects.inv
+                    - https://rich.readthedocs.io/en/stable/objects.inv
+                
+                options:
+                    modernize_annotations: false
+                    docstring_style: google
+                    docstring_section_style: table
+                    docstring_options:
+                        ignore_init_summary: true
+                    cross_reference_types: true
+                    inherited_members: true
+                    merge_init_into_class: true
+                    parameter_headings: false
+                    relative_crossrefs: true
+                    scoped_crossrefs: true
+                    separate_signature: true
+                    show_root_heading: true
+                    show_signature_annotations: false
+                    show_source: false
+                    show_submodules: true
+                    show_symbol_type_heading: true
+                    show_symbol_type_toc: true
+                    signature_crossrefs: true
+                    summary: true
+                    filters:
+                    - "!^_"
+                    - "^__init__$"
+                    - "!BrokenCommand"
+
+watch:
+  - libs/cgse-common/src/egse
+  - libs/cgse-core/src/egse
+
+extra_css:
+  - stylesheets/custom.css
+  - stylesheets/extra.css
+
+extra:
+  social:
+  - icon: fontawesome/brands/github
+    link: https://github.com/IvS-KULeuven/cgse/
+    name: CGSE on Github
+
+nav:
+  - index.md
+  - Introduction:
+    - getting_started.md
+    - package_list.md
+    - initialize.md
+    - tutorial.md
+    - help.md
+  - Developer Guide:
+    - dev_guide/index.md
+    - dev_guide/monorepo.md
+    - dev_guide/installation.md
+    - dev_guide/uv.md
+    - dev_guide/coding_style.md
+    - dev_guide/docs.md
+    - dev_guide/plugins.md
+    - dev_guide/dotenv.md
+    - dev_guide/unit_testing.md
+    - dev_guide/nox.md
+    - dev_guide/project-configuration.md
+    - dev_guide/versioning.md
+    - dev_guide/monitoring.md
+  - User Guide:
+    - user_guide/index.md
+    - user_guide/cli.md
+    - user_guide/env.md
+  - Administrator Guide:
+    - admin_guide/make-a-release.md
+  - Libs:
+    - libs/index.md
+    - cgse-common:
+      - libs/cgse-common/index.md
+      - libs/cgse-common/settings.md
+      - libs/cgse-common/setup.md
+    - cgse-core:
+      - libs/cgse-core/index.md
+      - libs/cgse-core/registry.md
+      - libs/cgse-core/notifyhub.md
+    - cgse-coordinates:
+      - libs/cgse-coordinates/index.md
+    - cgse-gui:
+      - libs/cgse-gui/index.md
+  - Projects:
+    - projects/index.md
+    - projects/cgse-tools.md
+    - projects/symetrie-hexapod.md
+  - API:
+      - api/index.md
+      - api/bits.md
+      - api/calibration.md
+      - api/command.md
+      - api/config.md
+      - api/control.md
+      - api/counter.md
+      - api/decorators.md
+      - api/device.md
+      - api/dicts.md
+      - api/dummy.md
+      - api/env.md
+      - api/exceptions.md
+      - api/heartbeat.md
+      - api/hk.md
+      - api/listener.md
+      - api/metrics.md
+      - api/mixin.md
+      - api/monitoring.md
+      - api/observer.md
+      - api/obsid.md
+      - api/persistence.md
+      - api/plugin.md
+      - api/process.md
+      - api/reload.md
+      - api/settings.md
+      - api/setup.md
+      - api/system.md
+  
+  - roadmap.md

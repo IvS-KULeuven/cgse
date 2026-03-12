@@ -1,0 +1,276 @@
+import asyncio
+import subprocess
+import sys
+import time
+from logging import warning
+
+import pytest
+import pytest_asyncio
+from fixtures.helpers import is_process_not_running
+from fixtures.helpers import is_service_registry_running
+
+from egse.log import logger
+from egse.logger import setup_logging
+from egse.logger import teardown_logging
+from egse.process import SubProcess
+from egse.process import is_process_running
+from egse.system import redirect_output_to_log
+from egse.system import waiting_for
+
+# #### WARNING #####
+#
+# The fixtures below test for specific process names if these processes are running. The test checks if
+# a process name like 'feesim' is present 'in' the cmdline of the process. Therefore, do not use these
+# names in your test functions because they will also show up in the cmdline of the pytest process if you
+# run that particular test function, e.g. 'pytest test_bla.py::test_feesim'.
+#
+# names tested are: dpu_cs, feesim, log_cs, sm_cs, cm_cs, pm_cs, syn_cs
+
+# ##### TIP #####
+#
+# If you want to see which fixtures are started, run the pytest with the option '--setup-show'.
+
+
+@pytest.fixture(scope="module")
+def setup_log_service(default_env, tmp_path_factory):
+    """This fixture starts the CGSE log service."""
+
+    # FIXME: this needs to be looked at with respect to `setup_logging()`
+
+    if is_process_running(items=["log_cs"]):
+        pytest.xfail("The logging manager is already running")
+
+    teardown_logging()
+    setup_logging()
+
+    # Starting the logging manager ------------------------------------------------------------------------------------
+
+    # Use pytest's temporary directory (automatically cleaned up)
+    out_path = tmp_path_factory.mktemp("logs") / "log_cs.start.out"
+    out = redirect_output_to_log(str(out_path), append=False, overwrite=True)
+
+    log_cs = subprocess.Popen(
+        [sys.executable, "-m", "egse.logger.log_cs", "start"],
+        stdout=out,
+        stderr=out,
+        stdin=subprocess.DEVNULL,
+        close_fds=True,
+    )
+
+    try:
+        waiting_for(is_process_running, ["log_cs"], interval=1.0, timeout=5.0)
+    except TimeoutError as exc:
+        raise RuntimeError("Couldn't start the logging manager within the given time of 5s.") from exc
+
+    time.sleep(2.0)  # give the process some time to startup
+
+    yield {
+        "out_path": out_path,
+    }
+
+    # Stopping the logging manager ------------------------------------------------------------------------------------
+
+    log_cs_stop = SubProcess("Logging Manager", ["log_cs", "stop"])
+    log_cs_stop.execute()
+
+    try:
+        waiting_for(is_process_not_running, ["log_cs", "start"], interval=1.0, timeout=5.0)
+    except TimeoutError:
+        warning("Couldn't stop the logging manager within the given time of 5s. Quiting...")
+        log_cs.terminate()
+
+    out.close()
+
+
+@pytest_asyncio.fixture(scope="function")
+async def registry_service():
+    from egse.registry import DEFAULT_RS_DB_PATH
+    from egse.registry import DEFAULT_RS_HB_PORT
+    from egse.registry import DEFAULT_RS_PUB_PORT
+    from egse.registry import DEFAULT_RS_REQ_PORT
+    from egse.registry.server import AsyncRegistryServer
+
+    if is_service_registry_running():
+        logger.info("Service registry is already running. Will use the running service registry.")
+        yield None
+        logger.info("Service registry fixture done, service registry still running.")
+        return
+
+    logger.info("Starting service registry before test...")
+
+    server = AsyncRegistryServer(
+        req_port=DEFAULT_RS_REQ_PORT,
+        pub_port=DEFAULT_RS_PUB_PORT,
+        hb_port=DEFAULT_RS_HB_PORT,
+        db_path=DEFAULT_RS_DB_PATH,
+        cleanup_interval=10,
+    )
+
+    server_task = asyncio.create_task(server.start())
+
+    await asyncio.sleep(2.0)  # give the server some time to start
+
+    if not is_service_registry_running():
+        logger.info("Service registry is not running. Waiting one more second...")
+        await asyncio.sleep(1.0)
+
+    yield server
+
+    logger.info("Stopping service registry after test...")
+
+    server.stop()
+
+    try:
+        await asyncio.wait_for(server_task, timeout=2.0)
+    except asyncio.TimeoutError:
+        logger.warning("WARNING: Server task didn't complete in time during shutdown")
+
+    server_task.cancel()
+    try:
+        await server_task
+    except asyncio.CancelledError:
+        logger.info("Service registry server task was cancelled as expected.")
+
+
+@pytest.fixture(scope="module")
+def setup_core_services():
+    """This fixture starts the CGSE core services."""
+
+    from egse.confman import is_configuration_manager_active
+    from egse.procman import is_process_manager_active
+
+    if is_process_running(items=["log_cs"]):
+        pytest.xfail("The logging manager is already running")
+
+    if is_process_running(items=["sm_cs"]):
+        pytest.xfail("The storage manager is already running")
+
+    if is_process_running(items=["cm_cs"]):
+        pytest.xfail("The configuration manager is already running")
+
+    if is_process_running(items=["pm_cs"]):
+        pytest.xfail("The process manager is already running")
+
+    if is_process_running(items=["syn_cs"]):
+        pytest.xfail("The synoptics manager is already running")
+
+    # Starting the logging manager ------------------------------------------------------------------------------------
+
+    log_cs = SubProcess("Logging Manager", ["log_cs", "start"])
+    log_cs.execute()
+
+    try:
+        waiting_for(is_process_running, ["log_cs"], interval=1.0, timeout=5.0)
+    except TimeoutError as exc:
+        raise RuntimeError("Couldn't start the logging manager within the given time of 5s.") from exc
+
+    # Starting the storage manager ------------------------------------------------------------------------------------
+
+    sm_cs = SubProcess("Storage Manager", ["sm_cs", "start"])
+    sm_cs.execute()
+
+    try:
+        waiting_for(is_process_running, ["sm_cs"], interval=1.0, timeout=5.0)
+    except TimeoutError as exc:
+        raise RuntimeError("Couldn't start the storage manager within the given time of 5s.") from exc
+
+    # Starting the configuration manager ------------------------------------------------------------------------------
+
+    cm_cs = SubProcess("Configuration Manager", ["cm_cs", "start"])
+    cm_cs.execute()
+
+    try:
+        waiting_for(is_process_running, ["cm_cs"], interval=1.0, timeout=5.0)
+    except TimeoutError as exc:
+        raise RuntimeError("Couldn't start the configuration manager within the given time of 5s.") from exc
+
+    # We know that the cm_cs will not respond to Proxy requests until it is fully initialised, so wait for that too!
+
+    try:
+        waiting_for(is_configuration_manager_active, timeout=30.0)
+    except TimeoutError as exc:
+        raise RuntimeError("Couldn't connect to configuration manager even after a timeout of 30s.") from exc
+
+    # Starting the process manager ------------------------------------------------------------------------------------
+
+    pm_cs = SubProcess("Process Manager", ["pm_cs", "start"])
+    pm_cs.execute()
+
+    try:
+        waiting_for(is_process_running, ["pm_cs"], interval=1.0, timeout=5.0)
+    except TimeoutError as exc:
+        raise RuntimeError("Couldn't start the process manager within the given time of 5s.") from exc
+
+    try:
+        waiting_for(is_process_manager_active, timeout=30.0)
+    except TimeoutError as exc:
+        raise RuntimeError("Couldn't connect to process manager even after a timeout of 30s.") from exc
+
+    # Starting the synoptics manager ----------------------------------------------------------------------------------
+
+    syn_cs = SubProcess("Synoptics Manager", ["syn_cs", "start"])
+    syn_cs.execute()
+
+    try:
+        waiting_for(is_process_running, ["syn_cs"], interval=1.0, timeout=5.0)
+    except TimeoutError as exc:
+        raise RuntimeError("Couldn't start the synoptics manager within the given time of 5s.") from exc
+
+    yield
+
+    # Stop the processes in reverse order as they were started
+
+    # Stopping the synoptics manager ----------------------------------------------------------------------------------
+
+    syn_cs_stop = SubProcess("Synoptics Manager", ["syn_cs", "stop"])
+    syn_cs_stop.execute()
+
+    try:
+        waiting_for(is_process_not_running, ["syn_cs", "start"], interval=1.0, timeout=5.0)
+    except TimeoutError:
+        warning("Couldn't stop the synoptics manager within the given time of 5s. Quiting...")
+        syn_cs.quit()
+
+    # Stopping the process manager ------------------------------------------------------------------------------------
+
+    pm_cs_stop = SubProcess("Process Manager", ["pm_cs", "stop"])
+    pm_cs_stop.execute()
+
+    try:
+        waiting_for(is_process_not_running, ["pm_cs", "start"], interval=1.0, timeout=5.0)
+    except TimeoutError:
+        warning("Couldn't stop the process manager within the given time of 5s. Quiting...")
+        pm_cs.quit()
+
+    # Stopping the configuration manager ------------------------------------------------------------------------------
+
+    cm_cs_stop = SubProcess("Configuration Manager", ["cm_cs", "stop"])
+    cm_cs_stop.execute()
+
+    try:
+        waiting_for(is_process_not_running, ["cm_cs", "start"], interval=1.0, timeout=5.0)
+    except TimeoutError:
+        warning("Couldn't stop the configuration manager within the given time of 5s. Quiting...")
+        cm_cs.quit()
+
+    # Stopping the storage manager ------------------------------------------------------------------------------------
+
+    sm_cs_stop = SubProcess("Storage Manager", ["sm_cs", "stop"])
+    sm_cs_stop.execute()
+
+    try:
+        waiting_for(is_process_not_running, ["sm_cs", "start"], interval=1.0, timeout=5.0)
+    except TimeoutError:
+        warning("Couldn't stop the storage manager within the given time of 5s. Quiting...")
+        sm_cs.quit()
+
+    # Stopping the logging manager ------------------------------------------------------------------------------------
+
+    log_cs_stop = SubProcess("Logging Manager", ["log_cs", "stop"])
+    log_cs_stop.execute()
+
+    try:
+        waiting_for(is_process_not_running, ["log_cs", "start"], interval=1.0, timeout=5.0)
+    except TimeoutError:
+        warning("Couldn't stop the logging manager within the given time of 5s. Quiting...")
+        log_cs.quit()

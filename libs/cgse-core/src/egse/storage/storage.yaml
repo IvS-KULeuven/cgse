@@ -60,6 +60,9 @@ Commands:
     get_storage_location:
         description:    Returns the path to the Storage location on the server.
 
+    get_loaded_setup_id:
+        description:    Returns the ID of the currently loaded Setup on this control server.
+
     new_registration:
         description:    Open a new data file to which the incoming data needs to be written.
         cmd:            "{item}, {use_counter}"

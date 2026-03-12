@@ -1,14 +1,13 @@
+__all__ = [
+    "GlobalState",
+]
+
 import abc
-import logging
 import textwrap
-from pathlib import Path
-from typing import Optional
 
-from egse.decorators import borg
-from egse.decorators import deprecate
 from egse.setup import Setup
-
-LOGGER = logging.getLogger(__name__)
+from egse.setup import load_setup
+from egse.setup import setup_ctx
 
 
 class StateError(Exception):
@@ -55,62 +54,35 @@ class ConnectionStateInterface(abc.ABC):
         pass
 
 
-@borg
 class _GlobalState:
     """
     This class implements global state that is shared between instances of this class.
     """
 
-    # TODO (rik): turn command sequence into a class and move add_, clear_ and get_ to that class
-
-    def __init__(self):
-        self._dry_run = False
-        self._command_sequence = []
-        self._setup: Optional[Setup] = None
-
     def __call__(self, *args, **kwargs):
         return self
 
     @property
-    def dry_run(self):
-        return self._dry_run
-
-    @dry_run.setter
-    def dry_run(self, flag: bool):
-        self._dry_run = flag
-
-    def add_command(self, cmd):
-        self._command_sequence.append(cmd)
-
-    def get_command_sequence(self):
-        return self._command_sequence
-
-    def clear_command_sequence(self):
-        self._command_sequence.clear()
-
-    @property
-    def setup(self) -> Optional[Setup]:
+    def setup(self) -> Setup | None:
         """
-        Returns the currently active Setup from the configuration manager. Please note that each call
-        to this property sends a request to the configuration manager to return its current Setup. If
-        you are accessing information from the Setup in a loop or function that is called often, save
-        the Setup into a local variable before proceeding.
+        Returns the currently active Setup for this process.
+
+        NOTE: The returned Setup is not necessarily the currently active Setup in the
+              configuration manager. That is only true of your process monitors the
+              notifications from the configuration manager and updates the Setup when this
+              is changed in/by the configuration manager. Use the `GlobalState.load_setup()`
+              method to force loading the Setup from the configuration manager.
 
         Returns:
-            The currently active Setup or None (when the configuration manager is not reachable).
+            The currently active Setup or None.
         """
-        return self.load_setup()
+        return setup_ctx.get()
 
-    # This function should be the standard function to reload a setup from the configuration manager
-    # Since we have no proper CM yet, the function loads from the default setup.yaml file.
-    # But what happens then in other parts of the system, where e.g. the PM has also the 'rights'
-    # to call load_setup() on the CM_CS?
-
-    def load_setup(self) -> Optional[Setup]:
+    def load_setup(self) -> Setup | None:
         """
-        Loads the currently active  Setup from the Configuration manager. The current Setup is the Setup
+        Loads the currently active Setup from the Configuration manager. The current Setup is the Setup
         that is defined and loaded in the Configuration manager. When the configuration manager is not
-        reachable, None will be returned and a warning will be logged.
+        reachable, None will be returned, a warning will be logged, and the global state setup will be cleared.
 
         Since the GlobalState should reflect the configuration of the test, it can only load the current
         Setup from the configuration manager. If you need to work with different Setups, work with the `Setup`
@@ -119,55 +91,19 @@ class _GlobalState:
         Returns:
             The currently active Setup or None.
         """
-        from egse.confman import ConfigurationManagerProxy
-        from egse.confman import is_configuration_manager_active
-
-        if is_configuration_manager_active():
-            with ConfigurationManagerProxy() as cm_proxy:
-                self._setup = cm_proxy.get_setup()
-        else:
-            LOGGER.warning(textwrap.dedent(
-                f"""\
-                    Could not reach the Configuration Manager to request the Setup, returning the current local Setup.
-                    
-                    Check if the Configuration Manager is running and why it can not be consulted. When it's 
-                    back on-line, do a 'load_setup()'. 
-                """
-            ))
-
-        return self._setup
-
-    # FIXME:
-    #  These two 'private' methods are still called in plato-test-scripts, so until that is fixed,
-    #  leave the methods here
-
-    @deprecate(reason="this is a private function", alternative="reload_setup()")
-    def _reload_setup(self):
-        self._setup = Setup.from_yaml_file()
-        return self._setup
-
-    @deprecate(reason="this is a private function", alternative="reload_setup_from()")
-    def _reload_setup_from(self, filename: Path):
-        """Used by the unit tests to load a predefined setup."""
-        self._setup = Setup.from_yaml_file(filename=filename)
-        return self.setup
+        return load_setup()
 
 
 GlobalState = _GlobalState()
 
-__all__ = [
-    "GlobalState",
-]
-
 if __name__ == "__main__":
+    import rich
 
-    from rich import print
-
-    print(textwrap.dedent(
-        f"""\
+    rich.print(
+        textwrap.dedent(
+            f"""\
             GlobalState info:
-              Setup loaded: {GlobalState.setup.get_id()}
-              Dry run: {'ON' if GlobalState.dry_run else 'OFF'}
-              Command Sequence: {GlobalState.get_command_sequence()} \
-        """)
+              Setup loaded: {GlobalState.setup.get_id() if GlobalState.setup else "[orange3]no Setup loaded[/]"}
+            """
+        )
     )
