@@ -717,6 +717,20 @@ def determine_counter_from_dir_list(location, pattern, index: int = -1):
         return 1
 
 
+def _get_sut_id_for_setup(setup: Setup) -> str | None:
+    try:
+        if "id" in setup.sut:
+            sut_id = setup.sut.id.lower()
+        elif "ID" in setup.sut:
+            sut_id = setup.sut.ID.lower()
+        else:
+            sut_id = None
+    except AttributeError:
+        sut_id = None
+
+    return sut_id
+
+
 class StorageController(StorageInterface):
     """
     The Storage Controller handles the registration of components, the start and end of an
@@ -736,10 +750,12 @@ class StorageController(StorageInterface):
 
         self._obsid = obsid
         self._sut_id = sut_id
-        if sut_id != self._setup.sut.ID.lower():
+        sut_id_for_setup = _get_sut_id_for_setup(self._setup) if self._setup else None
+        if sut_id != sut_id_for_setup:
             logger.error(
-                f"Mismatch in SUT ID between Setup in Storage Manager {self._setup.sut.ID.lower()} "
-                f"and Setup in Configuration Manager {sut_id}!"
+                f"Mismatch in SUT ID between Setup in Storage Manager {sut_id_for_setup} "
+                f"and Setup in Configuration Manager {sut_id}! Check that the same Setup is "
+                f"loaded in both control servers and that the SUT ID is the same in both Setups."
             )
 
         # open a dedicated file for each registered item
