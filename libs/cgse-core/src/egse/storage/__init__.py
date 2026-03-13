@@ -59,8 +59,7 @@ control server information in a separate set of files. The filenames will carry 
 
 * Housekeeping data from other control servers, e.g. device CS or the configuration manager
 * Status data from other control servers
-* SpaceWire packets from the N-FEE and the F-FEE, this includes housekeeping and CCD data
-* Image data from the camera, i.e. processed Spacewire data packets
+* SUT data from the SUT control server, e.g. temperature, voltage, current, image data, etc.
 
 ### How is data saved?
 
@@ -425,20 +424,18 @@ class StorageInterface:
         raise NotImplementedError
 
     @dynamic_interface
-    def start_observation(self, obsid: ObservationIdentifier, camera_name: str = None) -> Response:
+    def start_observation(self, obsid: ObservationIdentifier, sut_id: str = None) -> Response:
         """ "Start an observation for the given obsid.
 
-        When a new obsevation is started the following actions will be taken:
+        When a new observation is started the following actions will be taken:
 
         * Housekeeping and telemetry from registered components (mainly control servers)
           will be forked into a newly created file for that component.
-        * Camera data will be saved as follows:
-            * SpaceWire packets will go into an HDF5 file for this observation
-            * CCD data will be assembled into image data and saved in FITS format
+        * SUT data will be saved in separate files for that observation.
 
         Args:
-            camera_name: the name of the camera or None
             obsid: a unique observation identifier
+            sut_id: the ID of the SUT or None
 
         Returns:
             Success: when a new observation with the given obsid could be started properly.
@@ -560,7 +557,7 @@ def _construct_filename(
     use_counter=False,
     location: str = None,
     site_id: str = None,
-    camera_name: str = None,
+    sut_id: str = None,
 ) -> PurePath:
     """Construct a filename for the data source.
 
@@ -591,7 +588,7 @@ def _construct_filename(
     if obsid:
         timestamp = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%d_%H%M%S")
 
-        prefix = obsid.create_id(order=TEST_LAB, camera_name=camera_name)
+        prefix = obsid.create_id(order=TEST_LAB, sut_id=sut_id)
         location = location / Path("obs") / f"{prefix}"
         if not os.path.exists(location):
             os.makedirs(location)
@@ -728,21 +725,21 @@ class StorageController(StorageInterface):
 
     def __init__(self, control_server):
         self._obsid: ObservationIdentifier | None = None
-        self._camera_name: str | None = None
+        self._sut_id: str | None = None
         self._registry = Registry()
         self._cs: ControlServer = control_server
         self._setup: Setup | None = None
 
-    def start_observation(self, obsid: ObservationIdentifier, camera_name: str = None) -> Response:
+    def start_observation(self, obsid: ObservationIdentifier, sut_id: str = None) -> Response:
         if self._obsid is not None:
             return Failure("Can not start a new observation before the previous observation is ended.")
 
         self._obsid = obsid
-        self._camera_name = camera_name
-        if camera_name != self._setup.camera.ID.lower():
+        self._sut_id = sut_id
+        if sut_id != self._setup.sut.ID.lower():
             logger.error(
-                f"Mismatch in camera name between Setup in Storage Manager {self._setup.camera.ID.lower()} "
-                f"and Setup in Configuration Manager {camera_name}!"
+                f"Mismatch in SUT ID between Setup in Storage Manager {self._setup.sut.ID.lower()} "
+                f"and Setup in Configuration Manager {sut_id}!"
             )
 
         # open a dedicated file for each registered item
@@ -770,10 +767,10 @@ class StorageController(StorageInterface):
                 registered_item["persistence_class"].extension,
                 obsid,
                 use_counter=issubclass(registered_item["persistence_class"], TYPES["HDF5"]),
-                camera_name=camera_name,
+                sut_id=self._sut_id,
             )
 
-            # logger.debug(f"{filename = }, {camera_name = }")
+            # logger.debug(f"{filename = }, {sut_id = }")
 
             # we have more than one file open for this item DAILY and OBS.... take care of that
 
@@ -818,7 +815,7 @@ class StorageController(StorageInterface):
                 logger.warning(f"Trying to close a persistent object for {registered_name}, {exc=}")
 
         self._obsid = None
-        self._camera_name = None
+        self._sut_id = None
 
         return Success("Storage successfully ended observation.")
 
@@ -917,7 +914,7 @@ class StorageController(StorageInterface):
                     item["persistence_class"].extension,
                     self._obsid,
                     use_counter=use_counter,
-                    camera_name=self._camera_name,
+                    sut_id=self._sut_id,
                 )
 
                 persistence_obj = item["persistence_class"](filename, prep=prep)

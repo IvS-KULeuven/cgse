@@ -856,10 +856,10 @@ def main(args: list | None = None):  # pragma: no cover
 
 [bold]PROJECT_DATA_STORAGE_LOCATION[/bold]:
     This directory contains all the data files from the control servers and other
-    components. This folder is the root folder for all data from all cameras and
-    all sites. Below this folder shall be a folder for each of the cameras and in
-    there a sub-folder for each of the sites where that camera was tested. The
-    hierarchy is therefore: `$PLATO_DATA_STORAGE_LOCATION/<camera name>/<site id>.
+    components. This folder is the root folder for all data from all test campaigns.
+    Below this folder shall be a folder for each of the SUTs and in
+    there a sub-folder for each of the sites where that SUT was tested. The
+    hierarchy is therefore: `$PROJECT_DATA_STORAGE_LOCATION/<SUT id>/<site id>.
     Each of those folder shall contain at least the sub-folder [blue]daily[/blue], and [blue]obs[/blue].
 
     There is also a file called [blue]obsid-table-<site id>.txt[/blue] which is maintained by

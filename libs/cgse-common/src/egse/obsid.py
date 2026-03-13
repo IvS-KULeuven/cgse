@@ -74,29 +74,30 @@ class ObservationIdentifier:
     def __str__(self):
         return self._obsid
 
-    def create_id(self, *, order: int = LAB_SETUP_TEST, camera_name: str = None) -> str:
+    def create_id(self, *, order: int = LAB_SETUP_TEST, sut_id: str | None = None) -> str:
         """
         Creates a string representation of the observation identifier.
 
         Args:
             order: the order in which the parts are concatenated
-            camera_name: if a camera name is given, it will be appended in lower case
+            sut_id: if a SUT ID is given, it will be appended in lower case
 
         Returns:
-            A string representation of the obsid with or without camera name attached.
+            A string representation of the obsid with or without SUT ID attached.
         """
-        camera = f"{f'_{camera_name.lower()}' if camera_name else ''}"
+        sut = f"{f'_{sut_id.lower()}' if sut_id else ''}"
 
         if order == TEST_LAB_SETUP:
-            return f"{self._test_id:05d}_{self._lab_id}_{self._setup_id:05d}{camera}"
+            return f"{self._test_id:05d}_{self._lab_id}_{self._setup_id:05d}{sut}"
         if order == TEST_LAB:
-            return f"{self._test_id:05d}_{self._lab_id}{camera}"
-        if order == LAB_SETUP_TEST:
-            return f"{self._lab_id}_{self._setup_id:05d}_{self._test_id:05d}{camera}"
+            return f"{self._test_id:05d}_{self._lab_id}{sut}"
+
+        # We assume LAB_SETUP_TEST
+        return f"{self._lab_id}_{self._setup_id:05d}_{self._test_id:05d}{sut}"
 
 
 def obsid_from_storage(
-    obsid: Union[ObservationIdentifier, str, int], data_dir: str, site_id: str = None, camera_name: str = None
+    obsid: Union[ObservationIdentifier, str, int], data_dir: str, site_id: str | None = None, sut_id: str | None = None
 ) -> str:
     """
     Return the name of the folder for the given obsid in the 'obs' sub-folder of data_dir.
@@ -106,7 +107,7 @@ def obsid_from_storage(
     decided to change this to TEST_LAB, but we still need to be able to re-process the old data (with the setup ID in
     the names of the directories and files).
 
-    For newer observations (>= 2023.6.0+CGSE), the camera name is appended to the folder name and also included
+    For newer observations (>= 2023.6.0+CGSE), the SUT ID is appended to the folder name and also included
     in the filenames in that folder.
 
     Args:
@@ -115,7 +116,7 @@ def obsid_from_storage(
             Settings.
         data_dir: root folder in which the observations are stored. This folder shall have a sub-folder 'obs'.
         site_id: a site id like 'CSL1' or 'IAS', when `None`, the `SITE.ID` from the Settings will be used
-        camera_name: if not None, append the camera name to the result
+        sut_id: if not None, append the SUT ID to the result
 
     Returns:
         The name of the folder for the given obsid in the 'obs' sub-folder of data_dir.
@@ -123,7 +124,7 @@ def obsid_from_storage(
 
     obs_dir = f"{data_dir}/obs/"
     site_id = site_id or SITE.ID
-    camera = f"_{camera_name.lower()}" if camera_name else ""
+    sut = f"_{sut_id.lower()}" if sut_id else ""
 
     if isinstance(obsid, ObservationIdentifier):
         test, site = obsid.test_id, obsid.lab_id
@@ -134,27 +135,27 @@ def obsid_from_storage(
 
     test = int(test)
 
-    # Remember the camera name can be an empty string, so this will match both
+    # Remember the SUT ID can be an empty string, so this will match both
     # '00313_CSL' and '00313_CSL_achel'.
 
-    result_without_setup = Path(f"{obs_dir}/{test:05d}_{site}{camera}")
+    result_without_setup = Path(f"{obs_dir}/{test:05d}_{site}{sut}")
 
     if result_without_setup.exists():
         return result_without_setup.stem
 
-    # If a camera name was provided, but we try to find an old observation where the
-    # camera name was not appended to the folder name yet, the following will match
+    # If a SUT ID was provided, but we try to find an old observation where the
+    # SUT ID was not appended to the folder name yet, the following will match
     # that folder name.
 
-    result_without_camera = Path(f"{obs_dir}/{test:05d}_{site}")
+    result_without_sut = Path(f"{obs_dir}/{test:05d}_{site}")
 
-    if result_without_camera.exists():
-        return result_without_camera.stem
+    if result_without_sut.exists():
+        return result_without_sut.stem
 
     # When we come here, we can still match old observations that included the setup id in their
     # folder name.
 
-    pattern = f"{test:05d}_{site}_*{camera}"
+    pattern = f"{test:05d}_{site}_*{sut}"
 
     if (match := find_dir(pattern=pattern, root=obs_dir)) is None:
         raise ValueError(f"Could not find a folder matching '{pattern}' in '{obs_dir}'")

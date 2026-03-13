@@ -26,7 +26,7 @@ Commands:
 
     start_observation:
         description:    Start a new observation aka test.
-        cmd:            '{obsid}, {camera_name}'
+        cmd:            '{obsid}, {sut_id}'
 
     end_observation:
         description:    End the current observation.
