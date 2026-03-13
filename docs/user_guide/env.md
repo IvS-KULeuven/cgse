@@ -34,11 +34,25 @@ these variables are not set, they will be determined from defaults.
     By default, this directory is also located in the overall data storage folder, such
     that log files are kept per project and site id.
 
-**`{PROJECT}_LOCAL_SETTINGS`**: 
+**`{PROJECT}_LOCAL_SETTINGS`**:
 
 :   This file is used for local site-specific settings. When the environment
-    variable is not set, no local settings will be loaded. By default, the name 
+    variable is not set, no local settings will be loaded. By default, the name
     of this file is assumed to be 'local_settings.yaml'.
+
+**`INFLUXDB3_DATABASE_NAME`**:
+
+:   The name of the InfluxDB3 database to which metrics and monitoring data are written.
+    This variable is used by device control servers and monitoring components to route
+    time-series data to the correct database. When not set, metrics will not be
+    propagated to InfluxDB. This variable is set during `cgse init` and defaults to
+    `{project}_{site_id}` (lowercased), e.g. `ariel_vacuum_lab`.
+
+**`INFLUXDB3_AUTH_TOKEN`**:
+
+:   The authentication token for the InfluxDB3 instance. Both `INFLUXDB3_DATABASE_NAME`
+    and `INFLUXDB3_AUTH_TOKEN` must be set for metrics to be sent to InfluxDB. When either
+    is missing, a warning is logged and metrics collection is disabled.
 
 You can inspect your current environment with the command given below. The example is for 
 a project called ARIEL and a test setup in the vacuum lab.
