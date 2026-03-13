@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.19.4] - 2026-03-13
+
+- The 'ID' for the SUT (System Under Test) in the Setup can now be lower (sut.id) or upper (sut.ID) case.
+- Replacing the Python 3.11 bindings (enum.StrEnum) with Python 3.10 compatible ones.
+
 ## [0.19.3] - 2026-03-13
 
 - Replaced all occurrences of `camera` with `SUT`, `camera_name` with `sut_id`, ...  This was done in `cgse-common` and `cgse-core`. Project specific occurrences like `plato-fits` and `plato-spw` were left untouched. The main reason for the change was to bring the configuration manager and the storage manager in sync on this naming.
@@ -300,7 +305,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.3...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.4...HEAD
+[0.19.4]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.3...v0.19.4
 [0.19.3]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.2...v0.19.3
 [0.19.2]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.1...v0.19.2
 [0.19.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.0...v0.19.1
