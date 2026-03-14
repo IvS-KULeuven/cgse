@@ -79,6 +79,16 @@ def init(project: str = ""):
     if answer:
         local_settings_path = answer
 
+    influxdb_database_name = f"{project.lower()}_{site_id.lower()}"
+    answer = Prompt.ask(f"What is the InfluxDB3 database name [{influxdb_database_name}] ?")
+    if answer:
+        influxdb_database_name = answer
+
+    influxdb_auth_token = ""
+    answer = Prompt.ask("What is the InfluxDB3 authentication token (leave empty to skip) ?", default="")
+    if answer:
+        influxdb_auth_token = answer
+
     Path(data_storage_location).expanduser().mkdir(exist_ok=True, parents=True)
     (Path(data_storage_location).expanduser() / "daily").mkdir(exist_ok=True, parents=True)
     (Path(data_storage_location).expanduser() / "obs").mkdir(exist_ok=True, parents=True)
@@ -109,9 +119,13 @@ def init(project: str = ""):
                     export {project}_CONF_DATA_LOCATION={conf_data_location}
                     export {project}_LOG_FILE_LOCATION={log_file_location}
                     export {project}_LOCAL_SETTINGS={local_settings_path}
+                    export INFLUXDB3_DATABASE_NAME={influxdb_database_name}
                     """
                 )
             )
+        if influxdb_auth_token:
+            with open(Path("~/.bash_profile").expanduser(), "a") as fd:
+                fd.write(f"export INFLUXDB3_AUTH_TOKEN={influxdb_auth_token}\n")
     else:
         rich.print(
             textwrap.dedent(
@@ -124,9 +138,12 @@ def init(project: str = ""):
                 export {project}_CONF_DATA_LOCATION={conf_data_location}
                 export {project}_LOG_FILE_LOCATION={log_file_location}
                 export {project}_LOCAL_SETTINGS={local_settings_path}
+                export INFLUXDB3_DATABASE_NAME={influxdb_database_name}
             """
             )
         )
+        if influxdb_auth_token:
+            rich.print(f"export INFLUXDB3_AUTH_TOKEN={influxdb_auth_token}")
 
 
 show = typer.Typer(help="Show information about settings, environment, setup, ...")
