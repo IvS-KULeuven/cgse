@@ -19,6 +19,8 @@ from rich.traceback import Traceback
 from egse.env import bool_env
 from egse.exceptions import InitializationError
 from egse.log import logging
+
+# from egse.process import ProcessStatus
 from egse.registry.client import AsyncRegistryClient
 from egse.system import Periodic
 from egse.system import get_current_location
@@ -84,9 +86,12 @@ async def is_control_server_active(service_type: str, timeout: float = 0.5) -> b
 
     # 2. I can connect to the control server (by first contacting the service registry) and send a ping.
 
-    # async with AsyncControlClient(service_type=service_type) as client:
-    #     response = await client.ping()
-    # return response == 'pong'
+    # try:
+    #     async with AsyncControlClient(service_type=service_type) as client:
+    #         response = await client.ping()
+    #     return response == "pong"
+    # except InitializationError:
+    #     return False
 
 
 class AsyncControlServer:
@@ -759,7 +764,8 @@ class AsyncControlClient:
 
         """
         if self._post_init_is_done:
-            self.logger.warning("The post_init function is already called, returning.")
+            if VERBOSE_DEBUG:
+                self.logger.debug("The post_init function is already called, returning.")
             return True
 
         self._post_init_is_done = True
