@@ -11,6 +11,7 @@ from enum import Enum
 from enum import auto
 from typing import Any
 from typing import Callable
+from typing import Coroutine
 
 import zmq.asyncio
 from rich.traceback import Traceback
@@ -94,6 +95,7 @@ class AsyncControlServer:
     def __init__(self):
         self.interrupted: Event = asyncio.Event()
         self.logger = logging.getLogger("egse.async_control.server")
+        self._loop: asyncio.AbstractEventLoop | None = None
 
         self.mon_delay = 1000
         """Delay between publish status information [ms]."""
@@ -104,7 +106,7 @@ class AsyncControlServer:
 
         self._service_id = None
 
-        self._sequential_queue = asyncio.Queue()
+        self._sequential_queue: asyncio.Queue[Coroutine[Any, Any, Any]] = asyncio.Queue()
         """Queue for sequential operations that must preserve order of execution."""
 
         self.device_command_port = CONTROL_SERVER_DEVICE_COMMANDING_PORT
@@ -184,17 +186,14 @@ class AsyncControlServer:
         self.interrupted.set()
 
     async def start(self):
+        self._loop = asyncio.get_running_loop()
+
         self.connect_device_command_socket()
         self.connect_service_command_socket()
 
         await self.register_service()
 
-        self._tasks = [
-            asyncio.create_task(self.process_device_command(), name="process-device-commands"),
-            asyncio.create_task(self.process_service_command(), name="process-service-commands"),
-            asyncio.create_task(self.send_status_updates(), name="send-status-updates"),
-            asyncio.create_task(self.process_sequential_queue(), name="process-sequential-queue"),
-        ]
+        self._tasks = self._create_background_tasks()
 
         try:
             while not self.interrupted.is_set():
@@ -209,6 +208,19 @@ class AsyncControlServer:
 
         self.disconnect_device_command_socket()
         self.disconnect_service_command_socket()
+
+    def _create_background_tasks(self) -> list[Task]:
+        """Create top-level server tasks.
+
+        Subclasses can override this method and append extra tasks while keeping
+        the base command/service lifecycle unchanged.
+        """
+        return [
+            asyncio.create_task(self.process_device_command(), name="process-device-commands"),
+            asyncio.create_task(self.process_service_command(), name="process-service-commands"),
+            asyncio.create_task(self.send_status_updates(), name="send-status-updates"),
+            asyncio.create_task(self.process_sequential_queue(), name="process-sequential-queue"),
+        ]
 
     async def register_service(self):
         self.logger.info(f"Registering service {type(self).__name__} as type {self.service_type}")
@@ -505,16 +517,192 @@ class AsyncControlServer:
         except asyncio.CancelledError:
             self.logger.debug("Caught CancelledError on status updates keep-alive loop.")
 
-    async def enqueue_sequential_operation(self, coroutine_func):
+    async def enqueue_sequential_operation(self, operation: Coroutine[Any, Any, Any]):
         """
         Add an operation to the sequential queue.
 
         Args:
-            coroutine_func: A coroutine function (async function) to be executed sequentially
+            operation: A coroutine object to be executed sequentially.
         """
 
         if self._sequential_queue is not None:  # sanity check
-            self._sequential_queue.put_nowait(coroutine_func)
+            self._sequential_queue.put_nowait(operation)
+
+    async def _execute_sequential(self, operation: Coroutine[Any, Any, Any]) -> Any:
+        """Execute one coroutine through the sequential queue and await its result.
+
+        Use this helper from command handlers, service handlers, and internal tasks
+        when all hardware-facing work must be serialized through one lane.
+        """
+
+        loop = asyncio.get_running_loop()
+        result_future: asyncio.Future[Any] = loop.create_future()
+
+        async def wrapped_operation():
+            try:
+                result = await operation
+            except Exception as exc:
+                if not result_future.done():
+                    result_future.set_exception(exc)
+                return
+
+            if not result_future.done():
+                result_future.set_result(result)
+
+        try:
+            await self.enqueue_sequential_operation(wrapped_operation())
+        except Exception:
+            operation.close()
+            raise
+
+        return await result_future
+
+
+class AcquisitionAsyncControlServer(AsyncControlServer):
+    """Async control server variant with callback-based acquisition queueing support."""
+
+    def __init__(self):
+        super().__init__()
+
+        self.acquisition_queue_maxsize = 10_000
+        """Maximum number of acquisition records buffered in memory."""
+
+        self._acquisition_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=self.acquisition_queue_maxsize)
+        """Queue for acquisition records received through callback ingestion."""
+
+        self.acquisition_dropped_count = 0
+        """Number of acquisition records dropped because the queue was full."""
+
+        self.acquisition_batch_enabled = False
+        """Enable grouped acquisition processing for higher-rate producers."""
+
+        self.acquisition_batch_max_size = 100
+        """Maximum number of records grouped into one batch before sink dispatch."""
+
+        self.acquisition_batch_max_wait_s = 0.05
+        """Maximum wait time [s] to collect records into a batch."""
+
+    def get_service_info(self) -> dict[str, Any]:
+        """Service info payload including acquisition queue statistics."""
+        info = super().get_service_info()
+        info.update(
+            {
+                "acquisition queue size": self._acquisition_queue.qsize(),
+                "acquisition dropped": self.acquisition_dropped_count,
+                "acquisition batch enabled": self.acquisition_batch_enabled,
+                "acquisition batch size": self.acquisition_batch_max_size,
+            }
+        )
+        return info
+
+    def _create_background_tasks(self) -> list[Task]:
+        tasks = super()._create_background_tasks()
+        tasks.append(asyncio.create_task(self.process_acquisition_data(), name="process-acquisition-data"))
+        return tasks
+
+    def get_acquisition_callback(self) -> Callable[[Any], None]:
+        """Return a callback that device drivers can call to ingest acquisition samples."""
+        return self.on_acquisition_data
+
+    def on_acquisition_data(
+        self,
+        data: Any,
+        *,
+        source: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ):
+        """Ingest one acquisition record from any thread.
+
+        This function is intentionally sync/thread-safe so it can be used as a
+        device-driver callback.
+        """
+
+        record = {
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "source": source,
+            "data": data,
+            "metadata": metadata or {},
+        }
+
+        loop = self._loop
+        if loop is None or not loop.is_running():
+            self.logger.warning("Dropping acquisition record because event loop is not running yet.")
+            self.acquisition_dropped_count += 1
+            return
+
+        try:
+            running_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            running_loop = None
+
+        if running_loop is loop:
+            self._enqueue_acquisition_record(record)
+        else:
+            loop.call_soon_threadsafe(self._enqueue_acquisition_record, record)
+
+    def _enqueue_acquisition_record(self, record: dict[str, Any]):
+        try:
+            self._acquisition_queue.put_nowait(record)
+        except asyncio.QueueFull:
+            self.acquisition_dropped_count += 1
+            if self.acquisition_dropped_count % 1000 == 1:
+                self.logger.warning(
+                    "Acquisition queue full, dropping records "
+                    f"(dropped={self.acquisition_dropped_count}, maxsize={self.acquisition_queue_maxsize})."
+                )
+
+    async def process_acquisition_data(self):
+        """Drain acquisition records from the queue and dispatch them to sink hooks."""
+
+        self.logger.info("Starting acquisition data processing ...")
+
+        while not self.interrupted.is_set():
+            try:
+                if not self.acquisition_batch_enabled:
+                    try:
+                        record = await asyncio.wait_for(self._acquisition_queue.get(), timeout=0.1)
+                    except asyncio.TimeoutError:
+                        continue
+                    batch = [record]
+                else:
+                    try:
+                        first_record = await asyncio.wait_for(
+                            self._acquisition_queue.get(), timeout=self.acquisition_batch_max_wait_s
+                        )
+                    except asyncio.TimeoutError:
+                        continue
+
+                    batch = [first_record]
+
+                    # Drain additional records without blocking to create a compact, ordered batch.
+                    while len(batch) < self.acquisition_batch_max_size:
+                        try:
+                            batch.append(self._acquisition_queue.get_nowait())
+                        except asyncio.QueueEmpty:
+                            break
+
+                try:
+                    await self.handle_acquisition_batch(batch)
+                finally:
+                    for _ in batch:
+                        self._acquisition_queue.task_done()
+
+            except asyncio.CancelledError:
+                self.logger.debug("Acquisition data task cancelled.")
+                break
+            except Exception as exc:
+                self.logger.error(f"Error processing acquisition record: {exc}", exc_info=True)
+
+    async def handle_acquisition_batch(self, records: list[dict[str, Any]]):
+        """Hook for batch sinks; default keeps strict sequential per-record processing."""
+        for record in records:
+            await self.handle_acquisition_record(record)
+
+    async def handle_acquisition_record(self, record: dict[str, Any]):
+        """Hook for subclasses to forward acquisition data to DB, storage manager, or other services."""
+        self.logger.debug(
+            f"Acquisition record received (source={record.get('source')}, queue={self._acquisition_queue.qsize()})."
+        )
 
 
 DEFAULT_CLIENT_REQUEST_TIMEOUT = 5.0  # seconds
