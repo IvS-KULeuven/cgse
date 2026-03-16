@@ -22,7 +22,7 @@ from egse.log import logging
 
 # from egse.process import ProcessStatus
 from egse.registry.client import AsyncRegistryClient
-from egse.system import Periodic
+from egse.system import Periodic, humanize_seconds
 from egse.system import get_current_location
 from egse.system import get_host_ip
 from egse.system import log_rich_output
@@ -101,6 +101,7 @@ class AsyncControlServer:
         self.interrupted: Event = asyncio.Event()
         self.logger = logging.getLogger("egse.async_control.server")
         self._loop: asyncio.AbstractEventLoop | None = None
+        self._start_time = datetime.datetime.now()
 
         self.mon_delay = 1000
         """Delay between publish status information [ms]."""
@@ -171,6 +172,9 @@ class AsyncControlServer:
             "device commanding port": self.device_command_port,
             "service commanding port": self.service_command_port,
             "service type": self.service_type,
+            "uptime": humanize_seconds(
+                (datetime.datetime.now() - self._start_time).total_seconds(), include_micro_seconds=False
+            ),
         }
 
     @staticmethod
