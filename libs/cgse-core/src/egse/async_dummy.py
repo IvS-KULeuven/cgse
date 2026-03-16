@@ -3,13 +3,18 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
+import sys
 import threading
-import time
 from typing import Any
 from typing import Callable
 
+import typer
+
 from egse.async_control import AcquisitionAsyncControlServer
 from egse.async_control import TypedAsyncControlClient
+from egse.log import logger
+from egse.logger import remote_logging
+from egse.system import TyperAsyncCommand
 from egse.system import do_every
 from egse.zmq_ser import zmq_json_response
 from egse.zmq_ser import zmq_string_response
@@ -287,3 +292,37 @@ class DummyAsyncControlClient(TypedAsyncControlClient):
         """Stop simulator-backed acquisition and return final acquisition status."""
         response = await self.send_device_command({"command": "stop-acquisition"}, timeout=timeout)
         return self._success_message_as_dict(response, "stop-acquisition")
+
+
+app = typer.Typer()
+
+
+@app.command(cls=TyperAsyncCommand)
+async def start_cs():
+    """Start the dummy async control server on localhost."""
+
+    with remote_logging():
+        try:
+            control_server = DummyAsyncControlServer()
+            await control_server.start()
+        except KeyboardInterrupt:
+            print("Shutdown requested...exiting")
+        except SystemExit as exit_code:
+            print(f"System Exit with code {exit_code}.")
+            sys.exit(-1)
+        except Exception:  # noqa
+            import traceback
+
+            traceback.print_exc(file=sys.stdout)
+
+
+@app.command(cls=TyperAsyncCommand)
+async def stop_cs():
+    """Send a quit service command to the dummy async control server."""
+    async with DummyAsyncControlClient() as dummy:
+        logger.info("Sending a stop_server() to the async dummy control server.")
+        await dummy.stop_server()
+
+
+if __name__ == "__main__":
+    app()
