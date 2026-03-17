@@ -2,6 +2,17 @@ import asyncio
 from typing import Any
 from typing import cast
 
+try:
+    from typing import override
+except ImportError:
+    try:
+        from typing_extensions import override
+    except ImportError:
+
+        def override(method, /):
+            return method
+
+
 import pytest
 from fixtures.helpers import capture_log_records
 
@@ -32,11 +43,13 @@ class RecordingAsyncControlServer(AcquisitionAsyncControlServer):
         self.processed_event = asyncio.Event()
         self.expected_records = 0
 
+    @override
     async def handle_acquisition_batch(self, records: list[dict[str, Any]]):
         """Capture batch boundaries before delegating to per-record processing."""
         self.processed_batches.append(records.copy())
         await super().handle_acquisition_batch(records)
 
+    @override
     async def handle_acquisition_record(self, record: dict[str, Any]):
         """Capture records and signal when the expected test count is reached."""
         self.processed_records.append(record)

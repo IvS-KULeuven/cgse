@@ -8,6 +8,17 @@ import threading
 from typing import Any
 from typing import Callable
 
+try:
+    from typing import override
+except ImportError:
+    try:
+        from typing_extensions import override
+    except ImportError:
+
+        def override(method, /):
+            return method
+
+
 import typer
 
 from egse.async_control import AcquisitionAsyncControlServer
@@ -108,6 +119,7 @@ class DummyAsyncControlServer(AcquisitionAsyncControlServer):
         self._daq_simulator: DummyDAQSimulator | None = None
         super().__init__()
 
+    @override
     def register_custom_handlers(self):
         """Register dummy command handlers, including acquisition lifecycle commands."""
         self.add_device_command_handler("echo", self._do_echo)
@@ -116,6 +128,7 @@ class DummyAsyncControlServer(AcquisitionAsyncControlServer):
         self.add_device_command_handler("stop-acquisition", self._do_stop_acquisition)
         self.add_service_command_handler("health", self._handle_health)
 
+    @override
     def get_service_info(self) -> dict[str, Any]:
         """Return service metadata, including acquisition state and counters."""
         info = super().get_service_info()
@@ -226,6 +239,7 @@ class DummyAsyncControlServer(AcquisitionAsyncControlServer):
         await asyncio.to_thread(simulator.stop)
         return True
 
+    @override
     async def handle_acquisition_record(self, record: dict[str, Any]):
         """Receive one processed acquisition record and log it."""
         self._acquisition_logged_count += 1
@@ -246,6 +260,7 @@ class DummyAsyncControlServer(AcquisitionAsyncControlServer):
             }
         )
 
+    @override
     def stop(self):
         """Stop acquisition first, then stop the base server lifecycle."""
         if self._is_acquisition_running():
