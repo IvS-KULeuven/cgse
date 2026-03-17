@@ -778,11 +778,21 @@ class StorageController(StorageInterface):
             # while the above check disables HDF5 files in OBS. We leave the code in for now until
             # a definite decision is taken.
 
+            # FIXME: we should not have any special cases in the code for specific persistence classes.
+            # We should have a more generic way to determine if a special case is needed for a specific
+            # persistence class.
+            # For now, we use the fact that HDF5 is the only persistence class that is currently used
+            # in the system as a plugin persistence class, but this is not a good solution
+            # in the long run.
+
+            # TYPES["HDF5"] only exists when the `plato-hdf5` package is installed, so we need to
+            # use `get` to avoid a KeyError when it is not installed.
+
             filename = _construct_filename(
                 registered_item["origin"],
                 registered_item["persistence_class"].extension,
                 obsid,
-                use_counter=issubclass(registered_item["persistence_class"], TYPES["HDF5"]),
+                use_counter=issubclass(registered_item["persistence_class"], TYPES.get("HDF5", type(None))),
                 sut_id=self._sut_id,
             )
 
@@ -792,7 +802,7 @@ class StorageController(StorageInterface):
 
             # Special case for HDF5 files as they need to be copied instead of created
 
-            if issubclass(registered_item["persistence_class"], TYPES["HDF5"]):
+            if issubclass(registered_item["persistence_class"], TYPES.get("HDF5", type(None))):
                 daily_file_object: PersistenceLayer = registered_item["persistence_objects"][0]
                 daily_file_path: Path = daily_file_object.get_filepath()
                 logger.debug(f"Copying {daily_file_path} to {filename}")
@@ -923,7 +933,7 @@ class StorageController(StorageInterface):
             if (
                 self._obsid
                 and "persistence_count" not in item
-                and not issubclass(item["persistence_class"], TYPES["HDF5"])
+                and not issubclass(item["persistence_class"], TYPES.get("HDF5", type(None)))
             ):
                 filename = _construct_filename(
                     item["origin"],
