@@ -23,6 +23,7 @@ dependencies = [
     "cgse-common",
     "matplotlib>=3.8.4",
     "transforms3d>=0.4.2",
+    "openpyxl",
 ]
 
 [project.entry-points."cgse.version"]
