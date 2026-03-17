@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.19.5] - 2026-03-17
+
+- Fixed an issue in the Storage Manager where attempting to use the HDF5 persistence backend would fail if the HDF5 package was not listed as a dependency. The Storage Manager now handles this gracefully.
+- Query InfluxDB3 database name and authentication token when initializing the CGSE with `cgse init`.
+- Fixed ref_model and reference_frame in `egse.coordinates` where a bug was introduced after the refactoring of the package.
+
+
 ## [0.19.4] - 2026-03-13
 
 - The 'ID' for the SUT (System Under Test) in the Setup can now be lower (sut.id) or upper (sut.ID) case.
@@ -305,7 +312,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.4...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.5...HEAD
+[0.19.5]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.4...v0.19.5
 [0.19.4]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.3...v0.19.4
 [0.19.3]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.2...v0.19.3
 [0.19.2]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.1...v0.19.2
