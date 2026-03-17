@@ -107,9 +107,7 @@ class ReferenceFrame(object):
     _strict_naming = False
     _ACTIVE_DEFAULT = True
 
-    def __init__(
-        self, transformation: np.ndarray | None, ref, name=None, rotation_config=_ROT_CONFIG_DEFAULT
-    ):
+    def __init__(self, transformation: np.ndarray | None, ref, name=None, rotation_config=_ROT_CONFIG_DEFAULT):
         """Initialization of a new reference frame.
 
         Args:
@@ -273,9 +271,7 @@ class ReferenceFrame(object):
         return name
 
     @classmethod
-    def from_translation(
-        cls, translation_x: float, translation_y: float, translation_z: float, ref, name: str = None
-    ):
+    def from_translation(cls, translation_x: float, translation_y: float, translation_z: float, ref, name: str = None):
         """Creates a reference frame from a translation w.r.t. the given reference frame.
 
          Args:
@@ -294,9 +290,7 @@ class ReferenceFrame(object):
         affine_matrix[:3, 3] = [translation_x, translation_y, translation_z]
 
         if ref is None:
-            raise ValueError(
-                "The ref argument can not be None, provide a master or another reference frame."
-            )
+            raise ValueError("The ref argument can not be None, provide a master or another reference frame.")
 
         return cls(transformation=affine_matrix, ref=ref, name=name)
 
@@ -342,13 +336,9 @@ class ReferenceFrame(object):
         transformation = t3.affines.compose(T=translation, R=rotation_matrix.rotation_matrix, Z=zoom, S=shear)
 
         if ref is None:
-            raise ValueError(
-                "The ref argument can not be None, provide a master or another reference frame."
-            )
+            raise ValueError("The ref argument can not be None, provide a master or another reference frame.")
 
-        return cls(
-            transformation=transformation, ref=ref, name=name, rotation_config=rotation_config
-        )
+        return cls(transformation=transformation, ref=ref, name=name, rotation_config=rotation_config)
 
     @staticmethod
     def from_points(points, plane: str = "xy", use_svd: bool = True, verbose: bool = True):
@@ -405,13 +395,11 @@ class ReferenceFrame(object):
         )
 
         if ref is None:
-            raise ValueError(
-                "The ref argument can not be None, provide a master or another reference frame."
-            )
+            raise ValueError("The ref argument can not be None, provide a master or another reference frame.")
 
         return cls(
             transformation=t3.affines.compose(translation, rotation_matrix.rotation_matrix, Z=zoom, S=shear),
-            ref = ref,
+            ref=ref,
             name=name,
             rotation_config=rotation_config,
         )
@@ -1013,8 +1001,7 @@ class ReferenceFrame(object):
         if not relative:
             # virtual = what self should become after the (absolute) movement
             # it allows to compute the relative transformation to be applied and work in relative further down
-            virtual = ReferenceFrame(transformation, ref=self.ref, name="virtual",
-                                     rotation_config=self.rotation_config)
+            virtual = ReferenceFrame(transformation, ref=self.ref, name="virtual", rotation_config=self.rotation_config)
             request = self.get_active_transformation_to(virtual)
             del virtual
         else:
@@ -1056,8 +1043,12 @@ class ReferenceFrame(object):
         to_restore = {}
 
         for frame in impacted:
-            to_restore[frame] = ReferenceFrame(frame.get_active_transformation_from(temp_master), ref=temp_master,
-                                               name=frame.name + "to_restore", rotation_config=frame.rotation_config)
+            to_restore[frame] = ReferenceFrame(
+                frame.get_active_transformation_from(temp_master),
+                ref=temp_master,
+                name=frame.name + "to_restore",
+                rotation_config=frame.rotation_config,
+            )
 
         # BLOCK A. apply the right transformation to all "endFrames"
 
@@ -1069,8 +1060,12 @@ class ReferenceFrame(object):
         #     rotation_config=self.rotation_config,
         # )
 
-        self_untouched = ReferenceFrame(transformation=self.transformation, ref=self.ref,
-                                        name=self.name + "_fixed", rotation_config=self.rotation_config)
+        self_untouched = ReferenceFrame(
+            transformation=self.transformation,
+            ref=self.ref,
+            name=self.name + "_fixed",
+            rotation_config=self.rotation_config,
+        )
 
         for bottom in end_frames:
             up = bottom.get_active_transformation_to(self_untouched)
