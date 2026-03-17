@@ -22,9 +22,10 @@ from egse.log import logging
 
 # from egse.process import ProcessStatus
 from egse.registry.client import AsyncRegistryClient
-from egse.system import Periodic, humanize_seconds
+from egse.system import Periodic
 from egse.system import get_current_location
 from egse.system import get_host_ip
+from egse.system import humanize_seconds
 from egse.system import log_rich_output
 from egse.system import type_name
 from egse.zmq_ser import get_port_number
