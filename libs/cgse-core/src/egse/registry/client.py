@@ -1066,7 +1066,8 @@ class AsyncRegistryClient:
 
             return service
         else:
-            self.logger.warning(f"Service discovery failed: {response.get('error')}")
+            if VERBOSE_DEBUG:
+                self.logger.debug(f"Service discovery failed: {response.get('error')}")
             return None
 
     async def get_service(self, service_id: str | None = None) -> dict[str, Any] | None:

@@ -78,7 +78,7 @@ def dict_to_ref_model(model_def: Union[Dict, List]) -> navdict:
             deserialize_array(translation),
             deserialize_array(rotation),
             name=name,
-            reference_frame=ref_model[ref_name],
+            ref=ref_model[ref_name],
         )
 
         return ref_frame

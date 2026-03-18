@@ -3273,7 +3273,7 @@ class Tgf4000Interface(DeviceInterface):
         cmd_string="BSTPHASE ${phase}",
         process_cmd_string=add_lf,
     )
-    def set_burst_count(self, phase: float) -> None:
+    def set_burst_phase(self, phase: float) -> None:
         """Sets the burst phase.
         Args:
             phase (float): Burst phase [°].
@@ -3287,7 +3287,7 @@ class Tgf4000Interface(DeviceInterface):
         process_cmd_string=add_lf,
         process_response=parse_floats,
     )
-    def get_burst_count(self) -> float:
+    def get_burst_phase(self) -> float:
         """Returns the burst phase.
 
         Returns:

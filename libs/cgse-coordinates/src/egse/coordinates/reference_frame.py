@@ -63,8 +63,8 @@ class ReferenceFrame(object):
     :param transformation: 4x4 affine transformation matrix defining this system in "ref" system
     :type transformation: numpy array
 
-    :param reference_frame: reference system in which this new reference frame is defined
-    :type reference_frame: ReferenceFrame
+    :param ref: reference system in which this new reference frame is defined
+    :type ref: ReferenceFrame
 
     :param name: name the reference frame so it can be referenced, set to 'master' when None
     :type name: str
@@ -107,15 +107,13 @@ class ReferenceFrame(object):
     _strict_naming = False
     _ACTIVE_DEFAULT = True
 
-    def __init__(
-        self, transformation: np.ndarray | None, reference_frame, name=None, rotation_config=_ROT_CONFIG_DEFAULT
-    ):
+    def __init__(self, transformation: np.ndarray | None, ref, name=None, rotation_config=_ROT_CONFIG_DEFAULT):
         """Initialization of a new reference frame.
 
         Args:
             transformation (np.ndarray | None): 4x4 affine transformation matrix defining this system in the given
                                                 reference frame.
-            reference_frame:
+            ref:
             name (str | None): Name of the reference frame.
             rotation_config (str): Order in which the rotation about the three axes are chained.
         """
@@ -123,17 +121,17 @@ class ReferenceFrame(object):
         self.debug = False
 
         DEBUG and LOGGER.debug(
-            f"transformation={transformation_to_string(transformation)}, reference_frame={reference_frame!r}, name={name}, rot_config={rotation_config}"
+            f"transformation={transformation_to_string(transformation)}, ref={ref!r}, name={name}, rot_config={rotation_config}"
         )
 
         # All argument testing is done in the __new__() method and we should be save here.
 
-        self.reference_frame = reference_frame
+        self.ref = ref
         self.name = self.__create_name(name)
         self.transformation = transformation
         self.rotation_config = rotation_config
 
-        self.definition = [self.transformation, self.reference_frame, self.name]
+        self.definition = [self.transformation, self.ref, self.name]
 
         self.x = self.get_axis("x")
         self.y = self.get_axis("y")
@@ -142,7 +140,7 @@ class ReferenceFrame(object):
         self.linked_to = {}
         self.reference_for = []
 
-        reference_frame.reference_for.append(self)
+        ref.reference_for.append(self)
 
         return
 
@@ -204,7 +202,7 @@ class ReferenceFrame(object):
         frame = self
 
         while not frame.is_master():
-            frame = frame.reference_frame
+            frame = frame.ref
 
         return frame
 
@@ -219,7 +217,7 @@ class ReferenceFrame(object):
 
         master_frame = super(ReferenceFrame, cls).__new__(cls)
         master_frame.name = "Master"
-        master_frame.reference_frame = master_frame
+        master_frame.ref = master_frame
         master_frame.transformation = cls._I
         master_frame.rotation_config = cls._ROT_CONFIG_DEFAULT
         master_frame.initialized = True
@@ -228,7 +226,7 @@ class ReferenceFrame(object):
         master_frame.reference_for = []
 
         DEBUG and LOGGER.debug(
-            f"NEW MASTER CREATED: {id(master_frame)}, reference_frame = {id(master_frame.reference_frame)}, name = {master_frame.name}"
+            f"NEW MASTER CREATED: {id(master_frame)}, ref = {id(master_frame.ref)}, name = {master_frame.name}"
         )
 
         return master_frame
@@ -273,16 +271,14 @@ class ReferenceFrame(object):
         return name
 
     @classmethod
-    def from_translation(
-        cls, translation_x: float, translation_y: float, translation_z: float, reference_frame, name: str = None
-    ):
+    def from_translation(cls, translation_x: float, translation_y: float, translation_z: float, ref, name: str = None):
         """Creates a reference frame from a translation w.r.t. the given reference frame.
 
          Args:
              translation_x (float): Translation along the x-axis.
              translation_y (float): Translation along the y-axis.
              translation_z (float): Translation along the z-axis.
-             reference_frame (ReferenceFrame): Reference frame w.r.t. which the translation is performed.
+             ref (ReferenceFrame): Reference frame w.r.t. which the translation is performed.
              name (str): Simple, convenient name to identify the reference frame. If no name is provided, a random name
                          of  four characters starting with 'F' will be generated.
 
@@ -293,12 +289,10 @@ class ReferenceFrame(object):
         affine_matrix = np.identity(4)
         affine_matrix[:3, 3] = [translation_x, translation_y, translation_z]
 
-        if reference_frame is None:
-            raise ValueError(
-                "The reference_frame argument can not be None, provide a master or another reference frame."
-            )
+        if ref is None:
+            raise ValueError("The ref argument can not be None, provide a master or another reference frame.")
 
-        return cls(transformation=affine_matrix, reference_frame=reference_frame, name=name)
+        return cls(transformation=affine_matrix, ref=ref, name=name)
 
     @classmethod
     def from_rotation(
@@ -306,7 +300,7 @@ class ReferenceFrame(object):
         rotation_x: float,
         rotation_y: float,
         rotation_z: float,
-        reference_frame,
+        ref,
         name: str = None,
         rotation_config: str = _ROT_CONFIG_DEFAULT,
         active: bool = _ACTIVE_DEFAULT,
@@ -318,7 +312,7 @@ class ReferenceFrame(object):
             rotation_x (float): Rotation angle about the x-axis.
             rotation_y (float): Rotation angle about the y-axis.
             rotation_z (float): Rotation angle about the z-axis.
-            reference_frame (ReferenceFrame): Reference frame w.r.t. which the rotation is performed.
+            ref (ReferenceFrame): Reference frame w.r.t. which the rotation is performed.
             name (str): Simple, convenient name to identify the reference frame. If no name is provided, a random name
                         of  four characters starting with 'F' will be generated.
             rotation_config (str): Order in which the rotation about the three axes are chained.
@@ -341,14 +335,10 @@ class ReferenceFrame(object):
 
         transformation = t3.affines.compose(T=translation, R=rotation_matrix.rotation_matrix, Z=zoom, S=shear)
 
-        if reference_frame is None:
-            raise ValueError(
-                "The reference_frame argument can not be None, provide a master or another reference frame."
-            )
+        if ref is None:
+            raise ValueError("The ref argument can not be None, provide a master or another reference frame.")
 
-        return cls(
-            transformation=transformation, reference_frame=reference_frame, name=name, rotation_config=rotation_config
-        )
+        return cls(transformation=transformation, ref=ref, name=name, rotation_config=rotation_config)
 
     @staticmethod
     def from_points(points, plane: str = "xy", use_svd: bool = True, verbose: bool = True):
@@ -371,7 +361,7 @@ class ReferenceFrame(object):
         cls,
         translation: np.ndarray,
         rotation: np.ndarray,
-        reference_frame,
+        ref,
         name: str = None,
         rotation_config: str = _ROT_CONFIG_DEFAULT,
         active: bool = _ACTIVE_DEFAULT,
@@ -384,7 +374,7 @@ class ReferenceFrame(object):
             rotation (np.ndarray): Rotation vector: 3x1: rx, ry, rz.
 
 
-            reference_frame (ReferenceFrame): Reference frame w.r.t. which the rotation is performed.
+            ref (ReferenceFrame): Reference frame w.r.t. which the rotation is performed.
             name (str): Simple, convenient name to identify the reference frame. If no name is provided, a random name
                         of  four characters starting with 'F' will be generated.
             rotation_config (str): Order in which the rotation about the three axes are chained.
@@ -404,14 +394,12 @@ class ReferenceFrame(object):
             rotation_x, rotation_y, rotation_z, rotation_config=rotation_config, active=active
         )
 
-        if reference_frame is None:
-            raise ValueError(
-                "The reference_frame argument can not be None, provide a master or another reference frame."
-            )
+        if ref is None:
+            raise ValueError("The ref argument can not be None, provide a master or another reference frame.")
 
         return cls(
             transformation=t3.affines.compose(translation, rotation_matrix.rotation_matrix, Z=zoom, S=shear),
-            reference_frame=reference_frame,
+            ref=ref,
             name=name,
             rotation_config=rotation_config,
         )
@@ -479,7 +467,7 @@ class ReferenceFrame(object):
 
         return (
             f"ReferenceFrame(transformation={transformation_to_string(self.transformation)}, "
-            f"reference_frame={self.reference_frame.name}, name={self.name}, rotation_config={self.rotation_config})"
+            f"ref={self.ref.name}, name={self.name}, rotation_config={self.rotation_config})"
         )
 
     def __str__(self) -> str:
@@ -493,7 +481,7 @@ class ReferenceFrame(object):
             f"""\
                 ReferenceFrame
                 name          : {self.name}
-                reference     : {self.reference_frame.name}
+                reference     : {self.ref.name}
                 rotation_config    : {self.rotation_config}
                 links         : {[key.name for key in self.linked_to.keys()]}
                 transformation:
@@ -539,7 +527,7 @@ class ReferenceFrame(object):
         # TODO:
         #   remove the _stop keyword
 
-        # TODO: deprecate transformation as an input variable
+        # (TODO) / DONE: deprecate transformation as an input variable
         #       linkedTo can become a list of reference frames, with no transformation
         #       associated to the link. The tfo associated to a link is already
         #       checked in real time whenever the link is addressed
@@ -549,7 +537,7 @@ class ReferenceFrame(object):
             if DEBUG:
                 LOGGER.info(
                     "Deprecation warning: transformation will be automatically set to "
-                    "the current relation between {self.name} and {ref.name}"
+                    f"the current relation between {self.name} and {reference_frame.name}"
                 )
                 LOGGER.debug("Requested:")
                 LOGGER.debug(np.round(transformation, decimals=3))
@@ -562,7 +550,7 @@ class ReferenceFrame(object):
         self.linked_to[reference_frame] = transformation
 
         # TODO simplify this when transformation is deprecated
-        #      it becomes ref.linked_to[self] = ref.get_active_transformation_to(self)
+        #      it becomes reference_frame.linked_to[self] = reference_frame.get_active_transformation_to(self)
         reference_frame.linked_to[self] = t3add.affine_inverse(transformation)
 
     def remove_link(self, reference_frame) -> None:
@@ -603,27 +591,27 @@ class ReferenceFrame(object):
             DEBUG and LOGGER.debug("case 1")
             result = np.identity(4)
 
-        elif target_frame.reference_frame is self:
+        elif target_frame.ref is self:
             # The target frame is defined in self -> The requested transformation is the target frame definition
             DEBUG and LOGGER.debug("=== 2 start ===")
             result = t3add.affine_inverse(target_frame.transformation)
             DEBUG and LOGGER.debug("=== 2 end   ===")
-        elif target_frame.reference_frame is self.reference_frame:
+        elif target_frame.ref is self.ref:
             # target_frame and self are defined wrt the same reference frame
             # We want
             #   self --> target_frame
             # We know
-            #   target_frame.reference_frame --> target_frame (= target_frame.transformation)
-            #   self.reference_frame   --> self   (= self.transformation)
+            #   target_frame.ref --> target_frame (= target_frame.transformation)
+            #   self.ref   --> self   (= self.transformation)
             # That is
-            #   self --> self.reference_frame is target_frame.reference_frame --> target_frame
+            #   self --> self.ref is target_frame.ref --> target_frame
             #   inverse(definition)    target_frame definition
 
             # Both reference frames are defined w.r.t. the same reference frame
 
             if DEBUG:
                 LOGGER.debug("=== 3 start ===")
-                LOGGER.debug(" ref   \n{0}".format(self.reference_frame))
+                LOGGER.debug(" ref   \n{0}".format(self.ref))
                 LOGGER.debug("===")
                 LOGGER.debug("self   \n{0}".format(self))
                 LOGGER.debug("===")
@@ -642,19 +630,19 @@ class ReferenceFrame(object):
         else:
             # We are after the transformation from
             #   self --> target_frame
-            #   self --> self.reference_frame --> target_frame.reference_frame --> target_frame
+            #   self --> self.ref --> target_frame.ref --> target_frame
             #
             # We know
-            #   target_frame.reference_frame --> target_frame (target_frame.transformation)
-            #   self.reference_frame        --> self (self.transformation)
+            #   target_frame.ref --> target_frame (target_frame.transformation)
+            #   self.ref        --> self (self.transformation)
             # but
-            #   target_frame.reference_frame != self.reference_frame
+            #   target_frame.ref != self.ref
             # so we need
-            #   self.reference_frame --> target_frame.reference_frame
+            #   self.ref --> target_frame.ref
             # then we can compose
-            # self --> self.reference_frame --> target_frame.reference_frame --> target_frame
+            # self --> self.ref --> target_frame.ref --> target_frame
             #
-            # Note: the transformation self.reference_frame --> target_frame.reference_frame is acquired recursively
+            # Note: the transformation self.ref --> target_frame.ref is acquired recursively
             #       This relies on the underlying assumption that there exists
             #       one unique reference frame that source and self can be linked to
             #       (without constraints on the number of links necessary), i.e.
@@ -665,7 +653,7 @@ class ReferenceFrame(object):
 
             DEBUG and LOGGER.debug("=== 4 start ===")
             self_to_ref = self.transformation
-            self_ref_to_target_ref = self.reference_frame.get_passive_transformation_to(target_frame.reference_frame)
+            self_ref_to_target_ref = self.ref.get_passive_transformation_to(target_frame.ref)
             ref_to_target = t3add.affine_inverse(target_frame.transformation)
             result = np.dot(ref_to_target, np.dot(self_ref_to_target_ref, self_to_ref))
             DEBUG and LOGGER.debug("=== 4 end   ===")
@@ -927,7 +915,7 @@ class ReferenceFrame(object):
             if verbose and level:
                 level += 1
 
-            if frame.reference_frame not in frame.linked_to:
+            if frame.ref not in frame.linked_to:
                 ends.append(frame)
                 DEBUG and LOGGER.debug(f"{(10 + 2 * level) * ' '}{frame.name}: new end")
                 # if verbose: LOGGER.info(f"{(10+2*level)*' '}{frame.name}: new end")
@@ -935,11 +923,11 @@ class ReferenceFrame(object):
             for linked_frame in frame.linked_to:
                 ends, visited = self._find_ends(linked_frame, visited=visited, ends=ends, verbose=verbose, level=level)
 
-        # If frame.reference_frame was linked to frame via an indirect route, reject it
+        # If frame.ref was linked to frame via an indirect route, reject it
 
         final_ends = []
         for aframe in ends:
-            if aframe.reference_frame not in ends:
+            if aframe.ref not in ends:
                 final_ends.append(aframe)
 
         return final_ends, visited
@@ -1013,12 +1001,7 @@ class ReferenceFrame(object):
         if not relative:
             # virtual = what self should become after the (absolute) movement
             # it allows to compute the relative transformation to be applied and work in relative further down
-            virtual = ReferenceFrame(
-                transformation,
-                reference_frame=self.reference_frame,
-                name="virtual",
-                rotation_config=self.rotation_config,
-            )
+            virtual = ReferenceFrame(transformation, ref=self.ref, name="virtual", rotation_config=self.rotation_config)
             request = self.get_active_transformation_to(virtual)
             del virtual
         else:
@@ -1062,7 +1045,7 @@ class ReferenceFrame(object):
         for frame in impacted:
             to_restore[frame] = ReferenceFrame(
                 frame.get_active_transformation_from(temp_master),
-                reference_frame=temp_master,
+                ref=temp_master,
                 name=frame.name + "to_restore",
                 rotation_config=frame.rotation_config,
             )
@@ -1072,14 +1055,14 @@ class ReferenceFrame(object):
         # Ensure that `untouched` remains unaffected regardless of the update order of the end_frames
         # self_untouched = ReferenceFrame(
         #     transformation = self.get_active_transformation_from(temp_master),
-        #     reference_frame=temp_master,
+        #     ref=temp_master,
         #     name=self.name + "_fixed",
         #     rotation_config=self.rotation_config,
         # )
 
         self_untouched = ReferenceFrame(
             transformation=self.transformation,
-            reference_frame=self.reference_frame,
+            ref=self.ref,
             name=self.name + "_fixed",
             rotation_config=self.rotation_config,
         )
@@ -1123,7 +1106,7 @@ class ReferenceFrame(object):
         # Direct restoration or the impacted frames at their original location
 
         for frame in to_restore:
-            frame.transformation = frame.reference_frame.get_active_transformation_to(to_restore[frame])
+            frame.transformation = frame.ref.get_active_transformation_to(to_restore[frame])
 
         del to_restore
 
@@ -1249,7 +1232,7 @@ class ReferenceFrame(object):
             name = self.name + axis
         from egse.coordinates.point import Point
 
-        return Point(unit_vectors[axis], reference_frame=self, name=name)
+        return Point(unit_vectors[axis], ref=self, name=name)
 
     def get_normal(self, name: str | None = None):
         """Returns a unit vector, normal to the xy-plane.
@@ -1266,7 +1249,7 @@ class ReferenceFrame(object):
         """
         from egse.coordinates.point import Point
 
-        return Point([0, 0, 1], reference_frame=self, name=name)
+        return Point([0, 0, 1], ref=self, name=name)
 
     def get_origin(self, name: str | None = None):
         """Returns the origin in `self`.
@@ -1282,7 +1265,7 @@ class ReferenceFrame(object):
 
         from egse.coordinates.point import Point
 
-        return Point([0, 0, 0], reference_frame=self, name=name)
+        return Point([0, 0, 0], ref=self, name=name)
 
     def is_master(self) -> bool:
         """Checks whether this reference frame is a master reference frame.
@@ -1293,7 +1276,7 @@ class ReferenceFrame(object):
         transformation = self.transformation
 
         return (
-            (self.name == self.reference_frame.name)
+            (self.name == self.ref.name)
             and (transformation.shape[0] == transformation.shape[1])
             and np.allclose(transformation, np.eye(transformation.shape[0]))
         )
@@ -1330,13 +1313,13 @@ class ReferenceFrame(object):
                 return False
             # The following tests are here to prevent recursion to go infinite when self and other
             # point to itself
-            if self.reference_frame is self and other.reference_frame is other:
-                DEBUG and LOGGER.debug("both self.reference_frame and other.reference_frame point to themselves")
+            if self.ref is self and other.ref is other:
+                DEBUG and LOGGER.debug("both self.ref and other.ref point to themselves")
                 pass
             else:
-                DEBUG and LOGGER.debug("one of self.reference_frame or other.ref doesn't points to itself")
-                if self.reference_frame != other.reference_frame:
-                    DEBUG and LOGGER.debug("self.reference_frame not equals other.reference_frame")
+                DEBUG and LOGGER.debug("one of self.ref or other.ref doesn't points to itself")
+                if self.ref != other.ref:
+                    DEBUG and LOGGER.debug("self.ref not equals other.ref")
                     return False
             if self.name is not other.name:
                 DEBUG and LOGGER.debug(
@@ -1379,13 +1362,13 @@ class ReferenceFrame(object):
                 return False
             # The following tests are here to prevent recursion to go infinite when self and other
             # point to itself
-            if self.reference_frame is self and other.reference_frame is other:
-                DEBUG and LOGGER.debug("both self.reference_frame and other.reference_frame point to themselves")
+            if self.ref is self and other.ref is other:
+                DEBUG and LOGGER.debug("both self.ref and other.ref point to themselves")
                 pass
             else:
-                DEBUG and LOGGER.debug("one of self.reference_frame or other.ref doesn't points to itself")
-                if self.reference_frame != other.reference_frame:
-                    DEBUG and LOGGER.debug("self.ref not equals other.reference_frame")
+                DEBUG and LOGGER.debug("one of self.ref or other.ref doesn't points to itself")
+                if self.ref != other.ref:
+                    DEBUG and LOGGER.debug("self.ref not equals other.ref")
                     return False
             if self.name is not other.name:
                 DEBUG and LOGGER.debug(
@@ -1400,7 +1383,7 @@ class ReferenceFrame(object):
     def __hash__(self):
         """Overrides the default implementation."""
 
-        hash_number = (id(self.rotation_config) + id(self.reference_frame) + id(self.name)) // 16
+        hash_number = (id(self.rotation_config) + id(self.ref) + id(self.name)) // 16
         return hash_number
 
     def __copy__(self):
@@ -1414,4 +1397,4 @@ class ReferenceFrame(object):
             DEBUG and LOGGER.debug(f"Returning Master itself instead of a copy.")
             return self
 
-        return ReferenceFrame(self.transformation, self.reference_frame, self.name, self.rotation_config)
+        return ReferenceFrame(self.transformation, self.ref, self.name, self.rotation_config)

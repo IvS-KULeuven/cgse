@@ -142,7 +142,7 @@ class ReferenceFrameModel:
         result = f"Number of frames: {len(self)}\n"
 
         for reference_frame in self:
-            result += f"{reference_frame.name:>10}[{reference_frame.reference_frame.name}]  ---  {[link.name for link in reference_frame.linked_to]}\n"
+            result += f"{reference_frame.name:>10}[{reference_frame.ref.name}]  ---  {[link.name for link in reference_frame.linked_to]}\n"
 
         return result
 
@@ -191,7 +191,7 @@ class ReferenceFrameModel:
         translation: np.ndarray = None,
         rotation: np.ndarray = None,
         transformation: np.ndarray = None,
-        reference: str,
+        ref: str,
     ) -> None:
         """Adds a reference frame to the model.
 
@@ -201,7 +201,7 @@ class ReferenceFrameModel:
             translation (np.ndarray): Translation vector. Ignored when `transformation` is given.
             rotation (np.ndarray: Rotation vector. Ignored when `transformation` is given.
             transformation (np.ndarray): Transformation matrix.
-            reference (str): Name of the reference frame that is a reference for the new reference frame, i.e. the new
+            ref (str): Name of the reference frame that is a reference for the new reference frame, i.e. the new
                              reference frame is defined w.r.t. this one.
         """
 
@@ -210,21 +210,16 @@ class ReferenceFrameModel:
         if name in self._model:
             raise KeyError("A reference frame with the name '{name} already exists in the model.")
 
-        reference = self._model[reference]
+        ref = self._model[ref]
 
         if transformation:
-            self._model[name] = ReferenceFrame(
-                transformation,
-                reference_frame=reference,
-                name=name,
-                rotation_config=self._rot_config,
-            )
+            self._model[name] = ReferenceFrame(transformation, ref=ref, name=name, rotation_config=self._rot_config)
         else:
             self._model[name] = ReferenceFrame.from_translation_rotation(
                 translation,
                 rotation,
                 name=name,
-                reference_frame=reference,
+                ref=ref,
                 rotation_config=self._rot_config,
                 degrees=self._use_degrees,
                 active=self._use_active_movements,
@@ -370,7 +365,7 @@ class ReferenceFrameModel:
         from egse.coordinates.reference_frame import ReferenceFrame
 
         moving_in_other = ReferenceFrame(
-            transformation, rotation_config=self._rot_config, reference_frame=other, name="moving_in_other"
+            transformation, ref=other, name="moving_in_other", rotation_config=self._rot_config
         )
 
         moving_in_other.add_link(frame)
@@ -444,7 +439,7 @@ class ReferenceFrameModel:
         from egse.coordinates.reference_frame import ReferenceFrame
 
         moving_in_other = ReferenceFrame(
-            transformation, rotation_config=self._rot_config, reference_frame=other, name="moving_in_other"
+            transformation, ref=other, name="moving_in_other", rotation_config=self._rot_config
         )
 
         moving_in_other.add_link(frame)
@@ -736,10 +731,10 @@ def define_the_initial_setup() -> ReferenceFrameModel:
     model = ReferenceFrameModel()
 
     model.add_master_frame()
-    model.add_frame("A", translation=[2, 2, 2], rotation=[0, 0, 0], reference="Master")
-    model.add_frame("B", translation=[-2, 2, 2], rotation=[0, 0, 0], reference="Master")
-    model.add_frame("C", translation=[2, 2, 5], rotation=[0, 0, 0], reference="A")
-    model.add_frame("D", translation=[2, 2, 2], rotation=[0, 0, 0], reference="B")
+    model.add_frame("A", translation=[2, 2, 2], rotation=[0, 0, 0], ref="Master")
+    model.add_frame("B", translation=[-2, 2, 2], rotation=[0, 0, 0], ref="Master")
+    model.add_frame("C", translation=[2, 2, 5], rotation=[0, 0, 0], ref="A")
+    model.add_frame("D", translation=[2, 2, 2], rotation=[0, 0, 0], ref="B")
 
     model.add_link("A", "B")
     model.add_link("B", "C")

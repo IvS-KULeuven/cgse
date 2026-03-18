@@ -7,6 +7,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.19.5] - 2026-03-17
+
+- Fixed an issue in the Storage Manager where attempting to use the HDF5 persistence backend would fail if the HDF5 package was not listed as a dependency. The Storage Manager now handles this gracefully.
+- Query InfluxDB3 database name and authentication token when initializing the CGSE with `cgse init`.
+- Fixed ref_model and reference_frame in `egse.coordinates` where a bug was introduced after the refactoring of the package.
+
+
+## [0.19.4] - 2026-03-13
+
+- The 'ID' for the SUT (System Under Test) in the Setup can now be lower (sut.id) or upper (sut.ID) case.
+- Replacing the Python 3.11 bindings (enum.StrEnum) with Python 3.10 compatible ones.
+
+## [0.19.3] - 2026-03-13
+
+- Replaced all occurrences of `camera` with `SUT`, `camera_name` with `sut_id`, ...  This was done in `cgse-common` and `cgse-core`. Project specific occurrences like `plato-fits` and `plato-spw` were left untouched. The main reason for the change was to bring the configuration manager and the storage manager in sync on this naming.
+
 ## [0.19.2] - 2026-03-10
 
 - Fixed typo in docstring for affine_matrix_from_points function
@@ -28,11 +44,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [0.18.5] - 2026-02-25
 
 - Moved some log messages to DEBUG and even VERBOSE_DEBUG to reduce log noise.
-- Added the Observation concept and Building blocks to `cgse-core`. 
+- Added the Observation concept and Building blocks to `cgse-core`.
 
 ## [0.18.4] - 2026-02-13
 
-- Updated discovery method for UI commands in the PM UI 
+- Updated discovery method for UI commands in the PM UI
 
 ## [0.18.3] - 2026-02-13
 
@@ -49,10 +65,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [0.18.1] - 2026-02-05
 
 This is a minor update of the DAQ6510:
-- Enhanced the DAQ6510 interface with default buffer usage, improved command formatting, and better response handling. 
+- Enhanced the DAQ6510 interface with default buffer usage, improved command formatting, and better response handling.
 - Introduced verbose logging for socket operations in `SocketDevice`.
-- Updated sensor configuration to support multiple sensing types. 
-- Added unit tests for the DAQ6510 controller and proxy functionality to ensure reliability. 
+- Updated sensor configuration to support multiple sensing types.
+- Added unit tests for the DAQ6510 controller and proxy functionality to ensure reliability.
 - Refactored the DAQ6510 monitoring script for better readability and structure.
 
 ## [0.18.0] - 2026-02-04
@@ -65,7 +81,7 @@ This is a minor update of the DAQ6510:
 ### Changed
 
 - Refactoring Keithley DAQ6510
-  - Synchronous device, controller, control server and monitoring needed an update. 
+  - Synchronous device, controller, control server and monitoring needed an update.
   - Asynchronous device and monitoring have been tested, but need an update to use the Setup for configuration.
   - set default timeout value for Keithley DAQ6510 configuration
   - set default port number of the DAQ6510 device to 5025
@@ -110,36 +126,36 @@ In the previous release, uncommitted and untracked files were released by mistak
 
 ## [0.17.2] - 2025-11-28
 
-This release is mainly on maintenance and improvements to the `cgse-common` package. 
+This release is mainly on maintenance and improvements to the `cgse-common` package.
 
 ### Fixed
 - Nothing needed to be really fixed.
 
 ### Changed
-- To improve readability, the CHANGELOG file now contains all [link titles](https://github.github.com/gfm/#links) at 
+- To improve readability, the CHANGELOG file now contains all [link titles](https://github.github.com/gfm/#links) at
   the bottom, both for version comparison and for issue/pull request linking. [#215]
-- The args in the function `bits_set(value, *args)` should always be unpacked. Previously, the `args` could also be a 
-  list, but that made the function call needlessly confusing. This should not be a problem (not a breaking change) 
+- The args in the function `bits_set(value, *args)` should always be unpacked. Previously, the `args` could also be a
+  list, but that made the function call needlessly confusing. This should not be a problem (not a breaking change)
   since this function is apparently only used in the unit tests currently. [#215]
-- The `egse.log` module exports the logging module, so, when users import logging from egse.log, the specific CGSE 
+- The `egse.log` module exports the logging module, so, when users import logging from egse.log, the specific CGSE
   loggers will be configured. [#215]
 - Changed the type of the default argument in `get_log_level_from_env()` function (not a breaking change) [#215]
-- Changed the return value of the different `get_version_*()` functions to return "0.0.0" when the version cannot 
+- Changed the return value of the different `get_version_*()` functions to return "0.0.0" when the version cannot
   be determined. Previously, these functions returned None. [#215]
 - Improvements to `redirect_output_to_log()`: the file can be an absolute path, added a guard to overwrite [#217]
 - A warning message is now logged when you try to read the last few lines from a non-existing file [#218]
-- InitializationError = InitialisationError, to be conform to the styling guide promoting the use of standard 
+- InitializationError = InitialisationError, to be conform to the styling guide promoting the use of standard
   American English for code, comments  and docs [#218]
 
 ### Added
-- Added a `from_string()` class method to Settings. This is mainly for testing and when you need to load 
+- Added a `from_string()` class method to Settings. This is mainly for testing and when you need to load
   Settings from a specific file. [#215]
 - Added an example `.env` file [#215]
 
 ### Testing
 - Added a test for the `round_up()` function in `egse.system` [#215]
 - Added unit tests for `egse.version` and `egse.settings` [#215], [#216]
-- Fixed the test `test_quit_process()` temporarily as it is not clear on macOS what is the actual return value 
+- Fixed the test `test_quit_process()` temporarily as it is not clear on macOS what is the actual return value
   from a process when it is terminated or killed. [#215]
 - Added unit test for `redirect_output_to_log()` [#217]
 
@@ -148,7 +164,7 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 
 ### Fixed
 - Fixed a missing expanduser(). Apparently a `path.resolve()` doesn't handle the '`~`' character. [#210]
-- Fixed `env_var()` which is a context manager for temporarily setting an environment variable. It uses `setup_env()` 
+- Fixed `env_var()` which is a context manager for temporarily setting an environment variable. It uses `setup_env()`
   to update the environment before and after the `yield`, but `setup_env()` only initializes once. [#210]
 - Fixed unit tests for settings, setup, and env. [#210]
 
@@ -160,18 +176,18 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 
 ### Added
 - Added this CHANGELOG file. [#209]
-- Added an initial implementation of the ARIEL Telescope Control Unit (TCU). This is a separate package in this 
+- Added an initial implementation of the ARIEL Telescope Control Unit (TCU). This is a separate package in this
   monorepo that is located at `projects/ariel/ariel-tcu`. The package will be added to PyPI as `ariel-tcu`. [#178]
 - Added a `read_string()` method to the `DeviceTransport` and `AsyncDeviceTransport` classes. [#209]
 ### Fixed
 - Fixed the `sm_cs` for the missing `--full` cli argument. [#204]
-- Fixed the configuration of the InfluxDB client. The client can now be fully configured with environment variables 
+- Fixed the configuration of the InfluxDB client. The client can now be fully configured with environment variables
   if needed. [#206]
 ### Changed
 - Improved initialization of the process environment with `setup_env()`. [#208]
 - The configuration manager now also re-registers the obsid table to the storage. [#207]
 - The `cgse` subcommand to start the notification hub is changed from `not` to `nh`. Use `cgse nh [start|stop|status]`.  [#209]
-- The environment variables that contain a path can start with a tilde '`~`' which will be expanded to the user's 
+- The environment variables that contain a path can start with a tilde '`~`' which will be expanded to the user's
   home directory when used. [#204]
 ### Docs
 - Documentation updates for the Python version, the CLI `cgse` subcommands,  environment and the introduction of `dotenv`, ...
@@ -206,7 +222,7 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - The PUNA GUI script now starts as a Typer app.
 - The `get_port_number()` in `zmq_ser.py` now returns 0 (zero) on error.
 - Improved logging for the Symétrie hexapods.
-- Introduced the `VERBOSE_DEBUG` environment variable that can be used to restrict debug logging messages only when 
+- Introduced the `VERBOSE_DEBUG` environment variable that can be used to restrict debug logging messages only when
   this environment variable is set. Use this for very verbose debug logging.
 
 
@@ -258,7 +274,7 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - The listeners functionality has been transferred to the notification hub and services subscribe to this notification service.
 - Log messages to the `general.log` file now contain the logger name.
 ### Removed
-- Remove the listener notification from the configuration manager. 
+- Remove the listener notification from the configuration manager.
 - Remove listener registration from the storage manager and the process manager.
 
 
@@ -279,7 +295,7 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 ### Changed
 - Use the `get_endpoint()` function in Proxy subclasses.
 - Define constants from settings with proper defaults.
-- Cleanup port numbers for core services in Settings. All core services now have a fixed port number, which can be 
+- Cleanup port numbers for core services in Settings. All core services now have a fixed port number, which can be
   overwritten in the local settings file.
 - When `port == 0` use the service registry to get the endpoint.
 
@@ -296,7 +312,11 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.1...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.5...HEAD
+[0.19.5]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.4...v0.19.5
+[0.19.4]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.3...v0.19.4
+[0.19.3]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.2...v0.19.3
+[0.19.2]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.1...v0.19.2
 [0.19.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.0...v0.19.1
 [0.19.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.6...v0.19.0
 [0.18.6]: https://github.com/IvS-KULeuven/cgse/compare/v0.18.5...v0.18.6
