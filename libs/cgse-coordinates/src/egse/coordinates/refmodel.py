@@ -213,8 +213,7 @@ class ReferenceFrameModel:
         ref = self._model[ref]
 
         if transformation:
-            self._model[name] = ReferenceFrame(transformation, ref=ref, name=name,
-                                               rotation_config=self._rot_config)
+            self._model[name] = ReferenceFrame(transformation, ref=ref, name=name, rotation_config=self._rot_config)
         else:
             self._model[name] = ReferenceFrame.from_translation_rotation(
                 translation,
@@ -365,8 +364,9 @@ class ReferenceFrameModel:
 
         from egse.coordinates.reference_frame import ReferenceFrame
 
-        moving_in_other = ReferenceFrame(transformation, ref=other, name="moving_in_other",
-                                         rotation_config=self._rot_config)
+        moving_in_other = ReferenceFrame(
+            transformation, ref=other, name="moving_in_other", rotation_config=self._rot_config
+        )
 
         moving_in_other.add_link(frame)
 
@@ -438,8 +438,9 @@ class ReferenceFrameModel:
 
         from egse.coordinates.reference_frame import ReferenceFrame
 
-        moving_in_other = ReferenceFrame(transformation, ref=other, name="moving_in_other",
-                                         rotation_config=self._rot_config)
+        moving_in_other = ReferenceFrame(
+            transformation, ref=other, name="moving_in_other", rotation_config=self._rot_config
+        )
 
         moving_in_other.add_link(frame)
 

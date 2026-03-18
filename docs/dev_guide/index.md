@@ -17,3 +17,7 @@ Don't confuse a monorepo with microservices either. A microservice architecture 
 run independently and are developed, scaled and deployed without affecting the other units or
 services. You can set up a monorepo containing all of your microservices with ease, one does not
 need the other, but they can perfectly go together.
+
+## See also
+
+- [Async Control Authoring Checklist](async_control_authoring_checklist.md)
