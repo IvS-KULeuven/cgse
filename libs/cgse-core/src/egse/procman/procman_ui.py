@@ -415,6 +415,8 @@ class DeviceMonitoringWorker(QObject):
                             # way that static analysers can easily detect.
                             # noinspection PyUnresolvedReferences
                             self.process_status_signal.emit(status_output)
+
+                time.sleep(UPDATE_INTERVAL)
             except ZMQError:
                 pass
 
