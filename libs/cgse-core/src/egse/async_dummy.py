@@ -82,7 +82,18 @@ class DummyDAQSimulator:
         self._thread = None
 
     def _callback_wrapper(self):
-        """Invoke the acquisition callback and catch any exceptions to prevent thread crashes."""
+        """Invoke the acquisition callback and catch any exceptions to prevent thread crashes.
+
+        This simulates a device driver invoking a callback for each produced record of device information/data.
+        The callback is expected to be provided by the control server and can perform any processing or forwarding
+        of the produced record. Wrapping the callback in a try/except block allows us to log any exceptions that
+        occur without crashing the simulator thread, which can help with debugging issues in the control server's
+        acquisition handling.
+
+        The callback is expected to accept at least one argument which can be anything, but in this case we provide a
+        dictionary with a sequence number and random value to simulate produced records of device data.
+        The callback can also accept additional keyword arguments for metadata, source, etc. if desired.
+        """
         try:
             self._sequence += 1
             self._callback(
@@ -168,6 +179,22 @@ class DummyAsyncControlServer(AcquisitionAsyncControlServer):
         """Return True when the DAQ simulator is actively producing samples."""
         return self._daq_simulator is not None and self._daq_simulator.running
 
+    def custom_callback(self, data, *args, **kwargs):
+        # Do some custom processing of the device driver record here, this might be to extract data from the record, but
+        # the 'record' might also be a handle to a device driver object that can be queried for more information, or it
+        # could be any other data structure depending on how the acquisition callback is invoked by the device
+        # driver/simulator. In this example, we just log the record sequence and value for demonstration purposes,
+        # but in a real control server this is where you would implement the logic to handle incoming acquisition
+        # records, such as parsing the data, applying calibrations, checking for alerts, forwarding to other services,
+        # etc.
+
+        # The DummyDAQSimulator provides a dictionary as the record, but this could be any data structure.
+        record = data
+        logger.debug(f"Custom processing of record {record.get('sequence')} with value {record.get('value')}")
+
+        # Then pass it to the default callback for further processing and finally enqueuing in the acquisition queue.
+        self.on_acquisition_data(record, source="custom", metadata={"processed": True})
+
     async def _do_start_acquisition(self, cmd: dict[str, Any]) -> list:
         """Start the DAQ simulator and stream samples through the acquisition callback."""
         interval_s = float(cmd.get("interval", self._acquisition_interval_s))
@@ -194,7 +221,20 @@ class DummyAsyncControlServer(AcquisitionAsyncControlServer):
                 }
             )
 
+        # This will return the default acquisition callback function that is defined in the superclass.
+        # The default callback expects one positional argument for the acquisition record, which can be any data
+        # structure but in this case we provide a dictionary with a sequence number and random value to simulate
+        # produced records of device data. The default callback also accept optional keyword arguments,
+        # in this case, 'source' and 'metadata' are provided.
+
         callback = self.get_acquisition_callback()
+
+        # Alternatively, you could also define a custom callback function here in the control server subclass that
+        # performs additional processing or forwarding of the produced records, and pass that to the device
+        # acquisition method instead of the default callback from the superclass.
+        # For example:
+
+        # callback = self.custom_callback
 
         # The DummyDAQSimulator runs in a separate thread and invokes the callback for each produced record.
         self._daq_simulator = DummyDAQSimulator(callback=callback, interval_s=self._acquisition_interval_s)
