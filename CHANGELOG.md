@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.19.6] - 2026-03-18
+
+- Added tests for `ObservationContext` and enhance state management (#309)
+- PM UI checks status of device Control Servers less often (#311)
+
 ## [0.19.5] - 2026-03-17
 
 - Fixed an issue in the Storage Manager where attempting to use the HDF5 persistence backend would fail if the HDF5 package was not listed as a dependency. The Storage Manager now handles this gracefully.
