@@ -70,6 +70,34 @@ def test_start_observation_success(mock_cm, obs_context):
     assert obs_context.get_level() == 0
 
 
+def test_observation_context_init_does_not_reset_shared_state(obs_context):
+    obs_context.level = 5
+    obs_context.bbid_count = 12
+    obs_context.bbids.extend(["BBID-1"])
+
+    another = ObservationContext()
+
+    assert another.get_level() == 5
+    assert another.bbid_count == 12
+    assert list(another.bbids) == ["BBID-1"]
+
+
+@patch("egse.observation.ConfigurationManagerProxy")
+def test_start_observation_resets_stale_context_before_start(mock_cm, obs_context):
+    obs_context.level = -1
+    obs_context.bbid_count = 3
+    obs_context.bbids.extend(["BBID-OLD"])
+
+    mock_cm.return_value.__enter__.return_value.start_observation.return_value = Success("ok", 777)
+
+    rc = obs_context.start_observation({"description": "test"})
+
+    assert rc == 777
+    assert obs_context.get_level() == 0
+    assert obs_context.bbid_count == 0
+    assert list(obs_context.bbids) == []
+
+
 def test_start_observation_rejects_when_active(obs_context):
     obs_context.level = 0
 

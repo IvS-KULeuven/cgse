@@ -23,8 +23,18 @@ class ObservationContext:
           without having to pass around an instance of this class.
     """
 
+    INACTIVE_LEVEL = -1
+
     def __init__(self) -> None:
-        self.level = -1
+        # Borg classes share __dict__, so __init__ runs on every instantiation.
+        # Only initialize state once and use reset_state() for lifecycle resets.
+        if not getattr(self, "_state_initialized", False):
+            self.reset_state()
+            self._state_initialized = True
+
+    def reset_state(self):
+        """Reset observation context to an inactive, testable baseline."""
+        self.level = self.INACTIVE_LEVEL
         self.bbid_count = 0
         self.bbids = deque()
 
@@ -34,7 +44,8 @@ class ObservationContext:
             raise ValueError(
                 f"This building block ({bbid}) is already in execution, check dependencies between building blocks."
             )
-        if self.level == -1:
+
+        if self.level == self.INACTIVE_LEVEL:
             raise RuntimeError(f"This building block ({bbid}) is called outside the scope of an observation context.")
 
         self.bbids.append(bbid)
@@ -53,32 +64,36 @@ class ObservationContext:
         return self.level
 
     def start_observation(self, function_info: dict):
-        if self.level == -1:
-            self.level = 0
-        else:
+        if self.is_active():
             raise Failure(
                 "An observation can only be started when no observation is already running. "
                 "Only one Observation can be active at a time."
             )
 
+        # Starting a new observation always begins with a clean context.
+        self.reset_state()
+        self.level = 0
+
         try:
             with ConfigurationManagerProxy() as cm:
                 rc = cm.start_observation(function_info)
                 if not rc.successful:
-                    self.level = -1
+                    self.reset_state()
+                    logger.error(f"Failed to start observation: {rc.message}, level={self.level}")
                     raise rc
                 else:
+                    logger.info(
+                        f"Started observation with obsid={rc.return_code} and info={function_info}, level={self.level}"
+                    )
                     return rc.return_code
         except ConnectionError as exc:
-            self.level = -1
+            self.reset_state()
             raise Failure("Couldn't connect to the Configuration Manager Control Server", exc)
 
     def end_observation(self):
         if self.level > 0 or self.bbids:
             logger.warning(f"Observation contexts not empty at time of reset! (Level={self.level}, bbids={self.bbids})")
-        self.level = -1
-        self.bbid_count = 0
-        self.bbids.clear()
+        self.reset_state()
 
         with ConfigurationManagerProxy() as cm:
             rc = cm.end_observation()
@@ -86,7 +101,7 @@ class ObservationContext:
                 raise rc
 
     def is_active(self):
-        return self.level >= 0
+        return self.level > self.INACTIVE_LEVEL
 
 
 def request_obsid():
@@ -166,7 +181,7 @@ def start_observation(description: str):
         ObservationContext().start_observation({"description": description})
 
         obsid = request_obsid()
-        logger.info(f"Observation started with obsid={obsid}")
+        logger.info(f"Observation started with obsid={obsid}, level={ObservationContext().get_level()}")
 
     except Failure as exc:
         logger.error(f"Failed to start observation or test: {exc}")

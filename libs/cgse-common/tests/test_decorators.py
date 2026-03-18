@@ -239,6 +239,104 @@ def test_borg():
     assert BorgOne() is not BorgOne()  # it's not a singleton
 
 
+def test_borg_instances_share_instance_attributes():
+    """Instance attributes set on one instance are visible on all others."""
+
+    @borg
+    class Config:
+        def __init__(self):
+            pass
+
+    a = Config()
+    b = Config()
+
+    a.value = 42
+    assert b.value == 42
+
+    b.value = 99
+    assert a.value == 99
+
+
+def test_borg_init_with_arguments():
+    """@borg works correctly when __init__ accepts and stores arguments."""
+
+    @borg
+    class Connection:
+        def __init__(self, host: str = "localhost", port: int = 8080):
+            self.host = host
+            self.port = port
+
+    c1 = Connection("server-a", 5000)
+    c2 = Connection()
+
+    # c2.__init__ runs after c1 and overwrites shared state with its defaults
+    assert c1.host == "localhost"
+    assert c1.port == 8080
+    assert c1.host == c2.host
+    assert c1.port == c2.port
+
+
+def test_borg_undecorated_subclass_shares_parent_state():
+    """An undecorated subclass shares the parent Borg class's shared state."""
+
+    @borg
+    class Base:
+        def __init__(self):
+            pass
+
+    class Child(Base):
+        def __init__(self):
+            super().__init__()
+
+    base = Base()
+    child = Child()
+
+    base.tag = "from-base"
+    assert child.tag == "from-base"
+
+    child.tag = "from-child"
+    assert base.tag == "from-child"
+
+
+def test_borg_decorated_subclass_has_independent_state():
+    """A subclass also decorated with @borg gets its own independent shared state."""
+
+    @borg
+    class Parent:
+        def __init__(self):
+            pass
+
+    @borg
+    class Child(Parent):
+        def __init__(self):
+            pass
+
+    p = Parent()
+    c = Child()
+
+    p.marker = "parent-only"
+    assert not hasattr(c, "marker")
+
+    c.marker = "child-only"
+    assert p.marker == "parent-only"
+
+
+def test_borg_shared_state_dict_is_identical():
+    """All instances of a Borg class literally share the same __dict__ object."""
+
+    @borg
+    class State:
+        def __init__(self):
+            pass
+
+    a = State()
+    b = State()
+    c = State()
+
+    assert a.__dict__ is b.__dict__
+    assert b.__dict__ is c.__dict__
+
+
 def test_singleton():
     @singleton
     class Foo:
