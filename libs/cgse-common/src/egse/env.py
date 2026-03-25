@@ -45,6 +45,7 @@ __all__ = [
     "bool_env",
     "int_env",
     "str_env",
+    "float_env",
     "load_dotenv",
     "setup_env",
     "env_var",
@@ -130,7 +131,19 @@ def bool_env(var_name: str, default: bool = False) -> bool:
     return default
 
 
-def str_env(var_name: str, default: str | None = None) -> str:
+def float_env(var_name: str, default: float = 0.0) -> float:
+    """Return a float environment override, falling back to `default` on errors."""
+    raw = os.getenv(var_name)
+    if raw is None:
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        logger.warning(f"Ignoring invalid float for {var_name}: {raw!r}, returning {default=}")
+        return default
+
+
+def str_env(var_name: str, default: str = "") -> str:
     """Return the value of the environment variable or default if variable is not defined."""
     return os.getenv(var_name, default)
 
