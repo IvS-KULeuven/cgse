@@ -32,6 +32,7 @@ monitor = "egse.monitoring:app"
 log_cs = 'egse.logger.log_cs:app'
 reg_cs = 'egse.registry.server:app'
 nh_cs = 'egse.notifyhub.server:app'
+mh_cs = 'egse.metricshub.server:app'
 sm_cs = 'egse.storage.storage_cs:app'
 cm_cs = 'egse.confman.confman_cs:app'
 pm_cs = 'egse.procman.procman_cs:app'
@@ -53,6 +54,7 @@ cm = 'cgse_core.services:cm_cs'
 sm = 'cgse_core.services:sm_cs'
 pm = 'cgse_core.services:pm_cs'
 nh = 'cgse_core.services:notifyhub'
+mh = 'cgse_core.services:metricshub'
 
 [project.entry-points."cgse.explore"]
 explore = "cgse_core.cgse_explore"
