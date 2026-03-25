@@ -88,3 +88,17 @@ def start_notifyhub():
         stdin=subprocess.DEVNULL,
         close_fds=True,
     )
+
+
+def start_metricshub():
+    rich.print("Starting the metrics hub core service...")
+
+    out = redirect_output_to_log("mh_cs.start.log")
+
+    subprocess.Popen(
+        [sys.executable, "-m", "egse.metricshub.server", "start"],
+        stdout=out,
+        stderr=out,
+        stdin=subprocess.DEVNULL,
+        close_fds=True,
+    )

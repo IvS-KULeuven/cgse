@@ -32,14 +32,16 @@ __all__ = [
 ]
 
 import logging
+from datetime import datetime
+from datetime import timezone
 
 import pandas
 import pyarrow
 from influxdb_client_3 import InfluxDBClient3
 from influxdb_client_3 import Point
-from influxdb_client_3 import WriteType
 from influxdb_client_3 import write_client_options
-from influxdb_client_3.exceptions import InfluxDB3ClientError
+from influxdb_client_3.exceptions.exceptions import InfluxDB3ClientError
+from influxdb_client_3.write_client.client.write_api import WriteType
 from influxdb_client_3.write_client.domain.write_precision import WritePrecision
 
 from egse.env import bool_env
@@ -52,13 +54,20 @@ logger = logging.getLogger("egse.plugins")
 
 
 class InfluxDBRepository(TimeSeriesRepository):
+    """TimeSeriesRepository implementation for InfluxDB3.
+
+    Handles connection and interaction with an InfluxDB time series database, providing methods for writing points,
+    querying data, retrieving table and column names, and fetching values within specific time ranges.
+    Supports context management and configurable write options.
+    """
+
     def __init__(self, host: str, database: str, token: str):
         self.host = host
         self.database = database
         self.token = token
         self.metrics_time_precision = WritePrecision.NS
 
-        self.client = None
+        self.client: InfluxDBClient3 = None  # type: ignore
 
     def __enter__(self):
         self.connect()
@@ -74,7 +83,7 @@ class InfluxDBRepository(TimeSeriesRepository):
         self._max_retry_time = int_env("CGSE_INFLUX_RETRY_MAX_TIME_MS", 6_000, minimum=0)
         self._max_retries = int_env("CGSE_INFLUX_MAX_RETRIES", 5, minimum=0)
         self._no_sync = bool_env("CGSE_INFLUX_NO_SYNC", default=True)
-        self._write_type_env = str_env("CGSE_INFLUX_WRITE_TYPE")
+        self._write_type_env = str_env("CGSE_INFLUX_WRITE_TYPE", default="async")
         self._write_type = WriteType.asynchronous
         if self._write_type_env:
             match self._write_type_env.strip().lower():
@@ -85,7 +94,7 @@ class InfluxDBRepository(TimeSeriesRepository):
                 case "sync":
                     self._write_type = WriteType.synchronous
 
-    def connect(self):
+    def connect(self) -> None:
         self._load_client_options()
 
         wco = write_client_options(
@@ -101,8 +110,45 @@ class InfluxDBRepository(TimeSeriesRepository):
         )
         self.client = InfluxDBClient3(host=self.host, database=self.database, token=self.token, write_options=wco)
 
-    def write(self, points: Point | dict | list[Point | dict]):
-        self.client.write(record=points, write_precision=self.metrics_time_precision)
+    def ping(self) -> bool:
+        """Return True if the InfluxDB server is reachable, False otherwise."""
+        if self.client is None:
+            return False
+        try:
+            self.client.query("SHOW TABLES")
+            return True
+        except Exception as exc:
+            logger.warning(f"InfluxDB ping failed: {exc}")
+            return False
+
+    def _to_point(self, payload: Point | dict) -> Point:
+        if isinstance(payload, Point):
+            return payload
+
+        measurement = payload["measurement"]
+        point = Point(measurement)
+
+        for key, value in payload.get("tags", {}).items():
+            point.tag(key, value)
+
+        for key, value in payload.get("fields", {}).items():
+            point.field(key, value)
+
+        timestamp = payload.get("time")
+        if isinstance(timestamp, (int, float)):
+            point.time(datetime.fromtimestamp(timestamp, tz=timezone.utc))
+        elif isinstance(timestamp, str):
+            point.time(datetime.fromisoformat(timestamp.replace("Z", "+00:00")))
+
+        return point
+
+    def write(self, points: Point | dict | list[Point | dict]) -> None:
+        if isinstance(points, list):
+            records = [self._to_point(point) for point in points]
+        else:
+            records = self._to_point(points)
+
+        self.client.write(record=records, write_precision=self.metrics_time_precision)
 
     def query(self, query_str: str, mode: str = "all") -> pyarrow.Table | pandas.DataFrame:
         try:
@@ -142,7 +188,7 @@ class InfluxDBRepository(TimeSeriesRepository):
             logger.error(f"Caught {type_name(exc)} while getting column names: {exc}")
             return []
 
-    def close(self):
+    def close(self) -> None:
         if self.client:
             self.client.close()
 
@@ -170,7 +216,7 @@ class InfluxDBRepository(TimeSeriesRepository):
         query = f"""
             SELECT time, {column_name}
             FROM {table_name}
-            WHERE time >= '{start_time}' 
+            WHERE time >= '{start_time}'
               AND time < '{end_time}'
             ORDER BY time DESC
         """

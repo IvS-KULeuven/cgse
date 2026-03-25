@@ -26,7 +26,9 @@ from egse.system import str_to_datetime
 SITE_ID = Settings.load("SITE").ID
 
 
-def define_metrics(origin: str, dashboard: str = None, use_site: bool = False, setup: Optional[Setup] = None) -> dict:
+def define_metrics(
+    origin: str, dashboard: str | None = None, use_site: bool = False, setup: Optional[Setup] = None
+) -> dict:
     """Creates a metrics dictionary from the telemetry dictionary.
 
     Read the metric names and their descriptions from the telemetry dictionary, and create Prometheus gauges based on
@@ -49,7 +51,10 @@ def define_metrics(origin: str, dashboard: str = None, use_site: bool = False, s
     try:
         hk_info_table = setup.telemetry.dictionary
     except AttributeError:
-        raise SetupError("Version of the telemetry dictionary not specified in the current setup")
+        raise SetupError(
+            "Version of the telemetry dictionary not specified in the current setup, "
+            "expected to find it in setup.telemetry.dictionary. Cannot define metrics without telemetry dictionary."
+        )
 
     hk_info_table = hk_info_table.replace(np.nan, "")
 
@@ -132,7 +137,7 @@ class PointLike(Protocol):
 
 class DataPoint(PointLike):
     def __init__(self, measurement_name: str):
-        self.measurement: str = measurement_name
+        self.measurement_name: str = measurement_name
         self.tags: dict[str, str] = {}
         self.fields: dict[str, Any] = {}
         self.timestamp: int | str = format_datetime()
@@ -144,7 +149,7 @@ class DataPoint(PointLike):
             timestamp = self.timestamp
 
         return {
-            "measurement": self.measurement,
+            "measurement": self.measurement_name,
             "tags": self.tags,
             "fields": self.fields,
             "time": timestamp,
@@ -152,8 +157,8 @@ class DataPoint(PointLike):
 
     @staticmethod
     def measurement(measurement_name):
-        p = DataPoint(measurement_name)
-        return p
+        data_point = DataPoint(measurement_name)
+        return data_point
 
     def tag(self, key, value):
         self.tags[key] = value
@@ -170,6 +175,8 @@ class DataPoint(PointLike):
 
 class TimeSeriesRepository(Protocol):
     def connect(self) -> None: ...
+
+    def ping(self) -> bool: ...
 
     def write(self, points: PointLike | dict | list[PointLike | dict]) -> None: ...
 

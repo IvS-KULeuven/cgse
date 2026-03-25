@@ -12,8 +12,10 @@ from egse.signal import DEFAULT_SIGNAL_DIR
 from egse.signal import create_signal_command_file
 from egse.system import TyperAsyncCommand
 from egse.system import format_datetime
+
 from ._start import start_cm_cs
 from ._start import start_log_cs
+from ._start import start_metricshub
 from ._start import start_notifyhub
 from ._start import start_pm_cs
 from ._start import start_rm_cs
@@ -21,12 +23,14 @@ from ._start import start_sm_cs
 from ._status import run_all_status
 from ._status import status_cm_cs
 from ._status import status_log_cs
+from ._status import status_mh_cs
 from ._status import status_nh_cs
 from ._status import status_pm_cs
 from ._status import status_rm_cs
 from ._status import status_sm_cs
 from ._stop import stop_cm_cs
 from ._stop import stop_log_cs
+from ._stop import stop_metricshub
 from ._stop import stop_notifyhub
 from ._stop import stop_pm_cs
 from ._stop import stop_rm_cs
@@ -47,6 +51,7 @@ def start_core_services(log_level: str = "WARNING"):
     start_rm_cs(log_level)
     start_log_cs()
     start_notifyhub()
+    start_metricshub()
     start_sm_cs()
     start_cm_cs()
     start_pm_cs()
@@ -62,6 +67,7 @@ def stop_core_services():
     stop_cm_cs()
     stop_sm_cs()
     stop_notifyhub()
+    stop_metricshub()
 
     # We need the logger for logging the termination process for other services, so leave it running for a while
     time.sleep(1.0)
@@ -327,3 +333,27 @@ def notifyhub_stop():
 async def nh_cs_status(suppress_errors: bool = True):
     """Print the status of the Process Manager."""
     await status_nh_cs(suppress_errors)
+
+
+metricshub = typer.Typer(
+    name="metricshub",
+    help="handle metrics hub: start, stop, status",
+)
+
+
+@metricshub.command(name="start")
+def metricshub_start():
+    """Start the Metrics Hub."""
+    start_metricshub()
+
+
+@metricshub.command(name="stop")
+def metricshub_stop():
+    """Stop the Metrics Hub."""
+    stop_metricshub()
+
+
+@metricshub.command(cls=TyperAsyncCommand, name="status")
+async def mh_cs_status(suppress_errors: bool = True):
+    """Print the status of the Metrics Hub."""
+    await status_mh_cs(suppress_errors)

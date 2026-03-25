@@ -4,14 +4,16 @@ import os
 import pytest
 
 from egse.env import bool_env
+from egse.env import env_var
+from egse.env import float_env
+from egse.env import get_conf_data_location
 from egse.env import get_conf_repo_location
+from egse.env import get_data_storage_location
+from egse.env import get_local_settings_env_name
+from egse.env import get_local_settings_path
+from egse.env import get_log_file_location
 from egse.env import get_project_name
 from egse.env import get_site_id
-from egse.env import get_conf_data_location
-from egse.env import get_data_storage_location
-from egse.env import get_local_settings_path
-from egse.env import get_local_settings_env_name
-from egse.env import get_log_file_location
 from egse.env import int_env
 from egse.env import print_env
 from egse.env import set_conf_data_location
@@ -19,7 +21,6 @@ from egse.env import set_conf_repo_location
 from egse.env import set_data_storage_location
 from egse.env import set_local_settings
 from egse.env import set_log_file_location
-from egse.env import env_var
 
 _LOGGER = logging.getLogger("egse.test_env")
 
@@ -255,3 +256,17 @@ def test_int_env():
         else:
             with env_var(**{name: str(value)}):
                 assert int_env(name, default, minimum=minimum) == expected
+
+
+def test_float_env():
+    for name, value, default, expected in (
+        ("CGSE_VAR", 3.14, 1.0, 3.14),
+        ("CGSE_VAR", 2.71, 3.0, 2.71),  # value < minimum -> default
+        ("CGSE_VAR", None, 1.23, 1.23),  # var not defined -> default
+        ("CGSE_VAR", "xxx", 4.56, 4.56),  # invalid var -> default
+    ):
+        if value is None:
+            assert float_env(name, default) == expected
+        else:
+            with env_var(**{name: str(value)}):
+                assert float_env(name, default) == expected

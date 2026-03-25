@@ -8,6 +8,7 @@ async def run_all_status(full: bool = False, suppress_errors: bool = True):
     tasks = [
         asyncio.create_task(status_rm_cs(suppress_errors)),
         asyncio.create_task(status_nh_cs(suppress_errors)),
+        asyncio.create_task(status_mh_cs(suppress_errors)),
         asyncio.create_task(status_log_cs(suppress_errors)),
         asyncio.create_task(status_sm_cs(full, suppress_errors)),
         asyncio.create_task(status_cm_cs(suppress_errors)),
@@ -39,6 +40,23 @@ async def status_nh_cs(suppress_errors):
         sys.executable,
         "-m",
         "egse.notifyhub.server",
+        "status",
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+
+    stdout, stderr = await proc.communicate()
+
+    rich.print(stdout.decode().rstrip())
+    if stderr and not suppress_errors:
+        rich.print(f"[red]{stderr.decode()}[/]")
+
+
+async def status_mh_cs(suppress_errors):
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "egse.metricshub.server",
         "status",
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
