@@ -31,6 +31,7 @@ class DeviceError(Error):
     """
 
     def __init__(self, device_name: str, message: str):
+        super().__init__(device_name, message)
         self.device_name = device_name
         self.message = message
 
