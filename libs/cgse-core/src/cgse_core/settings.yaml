@@ -39,6 +39,7 @@ Storage Manager Control Server:                  # SM_CS
     MONITORING_PORT:               6116          # The port on which the controller sends periodic status information of the device - PUB-SUB
     SERVICE_PORT:                  6117          # The port on which the controller listens for configuration and administration - REQ-REP
     DELAY:                            1          # The delay time between publishing status information [seconds]
+    STORAGE_MNEMONIC:                SM          # The mnemonic to be used in the filename storing the housekeeping data
 
 Process Manager Control Server:                  # PM_CS
 

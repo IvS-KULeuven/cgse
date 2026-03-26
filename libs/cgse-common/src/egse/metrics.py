@@ -5,6 +5,7 @@ __all__ = [
     "get_metrics_repo",
 ]
 
+import datetime
 from typing import Any
 from typing import Optional
 from typing import Protocol
@@ -24,6 +25,8 @@ from egse.system import format_datetime
 from egse.system import str_to_datetime
 
 SITE_ID = Settings.load("SITE").ID
+
+TimestampLike = str | int | float | datetime.datetime
 
 
 def define_metrics(
@@ -130,9 +133,9 @@ class PointLike(Protocol):
 
     def field(self, field, value) -> Self: ...
 
-    def time(self, time) -> Self: ...
+    def time(self, time: TimestampLike) -> Self: ...
 
-    def as_dict(self) -> dict: ...
+    def as_dict(self) -> dict[str, Any]: ...
 
 
 class DataPoint(PointLike):
@@ -140,11 +143,13 @@ class DataPoint(PointLike):
         self.measurement_name: str = measurement_name
         self.tags: dict[str, str] = {}
         self.fields: dict[str, Any] = {}
-        self.timestamp: int | str = format_datetime()
+        self.timestamp: TimestampLike = format_datetime()
 
-    def as_dict(self):
+    def as_dict(self) -> dict[str, Any]:
         if isinstance(self.timestamp, str):
             timestamp = str_to_datetime(self.timestamp).timestamp()
+        elif isinstance(self.timestamp, datetime.datetime):
+            timestamp = self.timestamp.timestamp()
         else:
             timestamp = self.timestamp
 
@@ -156,7 +161,7 @@ class DataPoint(PointLike):
         }
 
     @staticmethod
-    def measurement(measurement_name):
+    def measurement(measurement_name: str) -> "DataPoint":
         data_point = DataPoint(measurement_name)
         return data_point
 
@@ -168,7 +173,7 @@ class DataPoint(PointLike):
         self.fields[field] = value
         return self
 
-    def time(self, time):
+    def time(self, time: TimestampLike) -> Self:
         self.timestamp = time
         return self
 

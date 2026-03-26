@@ -95,6 +95,22 @@ def test_normalize_payload_accepts_valid_datapoint():
     assert point == payload
 
 
+def test_normalize_payload_filters_none_fields_and_tags():
+    payload = {
+        "measurement": "camera_tm",
+        "tags": {"device_id": "cam_01", "mode": None},
+        "fields": {"temperature": 23.4, "pressure": None},
+        "time": "2026-03-23T12:34:56Z",
+    }
+
+    point, error = _normalize_payload(payload)
+
+    assert error is None
+    assert point is not None
+    assert point["fields"] == {"temperature": 23.4}
+    assert point["tags"] == {"device_id": "cam_01"}
+
+
 @pytest.mark.parametrize(
     ("payload", "error_fragment"),
     [
@@ -102,14 +118,10 @@ def test_normalize_payload_accepts_valid_datapoint():
         ({"measurement": "camera_tm", "fields": {}}, "missing/invalid 'fields'"),
         ({"measurement": "camera_tm", "fields": {"temperature": 1.0}, "tags": []}, "invalid 'tags'"),
         ({"measurement": "camera_tm", "fields": {"": 1.0}}, "field keys must be non-empty strings"),
-        ({"measurement": "camera_tm", "fields": {"temperature": None}}, "field values cannot be None"),
+        ({"measurement": "camera_tm", "fields": {"temperature": None}}, "all field values are None"),
         (
             {"measurement": "camera_tm", "fields": {"temperature": 1.0}, "tags": {"": "cam_01"}},
             "tag keys must be non-empty strings",
-        ),
-        (
-            {"measurement": "camera_tm", "fields": {"temperature": 1.0}, "tags": {"device_id": None}},
-            "tag values cannot be None",
         ),
         ({"measurement": "camera_tm", "fields": {"temperature": 1.0}, "time": {}}, "invalid timestamp/time"),
     ],
@@ -126,6 +138,54 @@ def test_normalize_payload_rejects_non_dict_payload():
 
     assert point is None
     assert error == "payload is not a dict"
+
+
+@pytest.mark.asyncio
+async def test_collector_tracks_none_filtering_debug_counters():
+    repository = RecordingRepository()
+    hub = AsyncMetricsHub(repository=repository)
+
+    endpoint = f"tcp://127.0.0.1:{hub.collector_socket.bind_to_random_port('tcp://127.0.0.1')}"
+    push = hub.context.socket(zmq.PUSH)
+    push.connect(endpoint)
+
+    hub.running = True
+    collector_task = asyncio.create_task(hub._collector())
+
+    try:
+        await push.send_json(
+            {
+                "measurement": "camera_tm",
+                "fields": {"temperature": 23.4, "pressure": None},
+                "tags": {"device_id": "cam_01", "mode": None},
+            }
+        )
+        await push.send_json(
+            {
+                "measurement": "camera_tm",
+                "fields": {"temperature": None},
+                "tags": {"device_id": "cam_01"},
+            }
+        )
+
+        for _ in range(50):
+            if hub.stats["received"] >= 1 and hub.stats["dropped"] >= 1:
+                break
+            await asyncio.sleep(0.02)
+
+        assert hub.stats["received"] == 1
+        assert hub.stats["dropped"] == 1
+        assert hub.stats["filtered_none_fields"] == 1
+        assert hub.stats["filtered_none_tags"] == 1
+        assert hub.stats["dropped_all_none_fields"] == 1
+    finally:
+        hub.running = False
+        collector_task.cancel()
+        await asyncio.gather(collector_task, return_exceptions=True)
+        push.close(linger=0)
+        hub.collector_socket.close(linger=0)
+        hub.requests_socket.close(linger=0)
+        hub.context.term()
 
 
 @pytest.mark.asyncio

@@ -7,7 +7,6 @@ from __future__ import annotations
 import abc
 import datetime
 import logging
-import os
 import pickle
 import textwrap
 import threading
@@ -21,7 +20,11 @@ from urllib3.exceptions import NewConnectionError
 from egse.listener import Listeners
 from egse.log import logger
 from egse.logger import close_all_zmq_handlers
-from egse.metrics import get_metrics_repo
+from egse.metrics import DataPoint
+from egse.metricshub import DEFAULT_COLLECTOR_PORT
+from egse.metricshub import SERVICE_TYPE as METRICS_HUB_SERVICE_TYPE
+from egse.metricshub.client import MetricsHubClient
+from egse.metricshub.client import MetricsHubSender
 from egse.notifyhub.services import EventSubscriber
 from egse.process import ProcessStatus
 from egse.registry.client import RegistryClient
@@ -104,7 +107,7 @@ class ControlServer(metaclass=abc.ABCMeta):
     """
 
     def __init__(self, device_id: str = None):
-        """Initialisation of a new Control Server."""
+        """Initialization of a new Control Server."""
 
         from egse.monitoring import MonitoringProtocol
         from egse.services import ServiceProtocol
@@ -173,21 +176,60 @@ class ControlServer(metaclass=abc.ABCMeta):
         self.poller.register(self.dev_ctrl_mon_sock, zmq.POLLIN)  # FIXME: I think this should not be registered
         self.poller.register(self.event_subscription.socket, zmq.POLLIN)
 
-        token = os.getenv("INFLUXDB3_AUTH_TOKEN")
-        database_name = os.getenv("INFLUXDB3_DATABASE_NAME")
+        collector_endpoint = self._resolve_metrics_hub_collector_endpoint()
 
-        if database_name and token:
-            self.metrics_client = get_metrics_repo(
-                "influxdb", {"host": "http://localhost:8181", "database": database_name, "token": token}
-            )
-            # self.metrics_client = get_metrics_repo("duckdb", {"db_path": "duckdb_metrics.db", "table_name": "cs_timeseries"})
-            self.metrics_client.connect()
+        if collector_endpoint:
+            self.metrics_sender = MetricsHubSender(hub_endpoint=collector_endpoint)
+            self.metrics_sender.connect()
+            self.logger.info(f"Metrics Hub sender connected to collector endpoint {collector_endpoint}")
         else:
-            self.metrics_client = None
+            self.metrics_sender = None
             logger.warning(
-                "INFLUXDB3_AUTH_TOKEN and/or PROJECT environment variable is not set. "
-                "Metrics will not be propagated to InfluxDB."
+                "Metrics Hub collector endpoint could not be resolved. "
+                "Metrics will not be propagated to the Metrics Hub."
             )
+
+    def _resolve_metrics_hub_collector_endpoint(self) -> str | None:
+        """Resolve the Metrics Hub collector endpoint.
+
+        When the collector port is configured explicitly, use it directly.
+        When it is configured as ``0`` (OS-assigned), discover the Metrics Hub
+        service in the registry and read ``metadata.collector_port``.
+        """
+        if DEFAULT_COLLECTOR_PORT:
+            return f"tcp://localhost:{DEFAULT_COLLECTOR_PORT}"
+
+        service = self.registry.discover_service(METRICS_HUB_SERVICE_TYPE)
+        if not service:
+            self.logger.warning("Metrics Hub service is not discoverable via Registry.")
+            return None
+
+        host = service.get("host") or "localhost"
+        metadata = service.get("metadata") or {}
+        collector_port = metadata.get("collector_port")
+
+        if collector_port:
+            return f"tcp://{host}:{collector_port}"
+
+        requests_port = service.get("port")
+        if not requests_port:
+            self.logger.warning("Metrics Hub service discovery did not return a requests port.")
+            return None
+
+        req_endpoint = f"tcp://{host}:{requests_port}"
+        try:
+            with MetricsHubClient(req_endpoint=req_endpoint, request_timeout=1.0) as client:
+                status = client.server_status()
+            collector_port = status.get("collector_port")
+            if collector_port:
+                return f"tcp://{host}:{collector_port}"
+        except Exception as exc:
+            self.logger.warning(
+                f"Failed to query Metrics Hub info via {req_endpoint} to resolve collector port: {exc!r}"
+            )
+
+        self.logger.warning("Unable to resolve Metrics Hub collector port from Registry or hub info.")
+        return None
 
     def get_event_subscriptions(self) -> list[str]:
         """Override this in the subclass to actually subscribe to events."""
@@ -567,7 +609,7 @@ class ControlServer(metaclass=abc.ABCMeta):
                             f"""{type_name(exc)}
                             An Exception occurred while collecting housekeeping from the device to be stored in {self.get_storage_mnemonic()}.
                             This might be a temporary problem, still needs to be looked into:
-        
+
                             {exc}
                             """
                         )
@@ -605,6 +647,9 @@ class ControlServer(metaclass=abc.ABCMeta):
         self.dev_ctrl_cmd_sock.close(linger=0)
 
         self.event_subscription.disconnect()
+
+        if self.metrics_sender:
+            self.metrics_sender.close()
 
         close_all_zmq_handlers()
 
@@ -666,10 +711,10 @@ class ControlServer(metaclass=abc.ABCMeta):
 
     def propagate_metrics(self, hk: dict) -> None:
         """
-        Propagates the given housekeeping information to the metrics database.
+        Propagates the given housekeeping information to the metrics hub.
 
-        Nothing will be written to the metrics database if the `hk` dict doesn't
-        contain any metrics (except for the timestamp).
+        Nothing will be written if the `hk` dict doesn't contain any metrics
+        (except for the timestamp), or if the metrics hub sender is not configured.
 
         Args:
             hk (dict): Dictionary containing parameter name and value of all device housekeeping. There is also
@@ -682,22 +727,27 @@ class ControlServer(metaclass=abc.ABCMeta):
             logger.debug(f"no metrics defined for {origin}")
             return
 
+        if not self.metrics_sender:
+            logger.warning(f"Could not send {origin} metrics to the Metrics Hub (metrics_sender is not configured).")
+            return
+
         try:
-            if self.metrics_client:
-                point = {
-                    "measurement": origin.lower(),
-                    "tags": {"site_id": SITE_ID, "origin": origin},
-                    "fields": {hk_name.lower(): hk[hk_name] for hk_name in hk if hk_name != "timestamp"},
-                    "time": str_to_datetime(hk["timestamp"]),
-                }
-                self.metrics_client.write(point)
-            else:
-                logger.warning(
-                    f"Could not write {origin} metrics to the time series database (self.metrics_client is None)."
-                )
+            point = (
+                DataPoint.measurement(origin.lower())
+                .tag("site_id", SITE_ID)
+                .tag("origin", origin)
+                .time(str_to_datetime(hk["timestamp"]))
+            )
+            for hk_name, hk_value in hk.items():
+                if hk_name != "timestamp":
+                    point.field(hk_name.lower(), hk_value)
+
+            logger.info(f"Sending data point to metrics hub: {point.as_dict()}")
+
+            self.metrics_sender.send(point)
         except NewConnectionError:
             logger.warning(
-                f"No connection to the time series database could be established to propagate {origin} metrics.  Check "
+                f"No connection to the Metrics Hub could be established to propagate {origin} metrics. Check "
                 f"whether this service is (still) running."
             )
 

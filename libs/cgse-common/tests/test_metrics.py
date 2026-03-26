@@ -1,6 +1,20 @@
+import datetime
 import os
 
+from egse.metrics import DataPoint
 from egse.metrics import get_metrics_repo
+
+
+def test_datapoint_as_dict_serializes_datetime_timestamp():
+    timestamp = datetime.datetime(2026, 3, 25, 15, 12, 52, tzinfo=datetime.timezone.utc)
+
+    point = DataPoint.measurement("camera_tm").field("temperature", 23.4).time(timestamp)
+
+    payload = point.as_dict()
+
+    assert payload["measurement"] == "camera_tm"
+    assert payload["fields"]["temperature"] == 23.4
+    assert payload["time"] == timestamp.timestamp()
 
 
 def test_get_metrics_repo():

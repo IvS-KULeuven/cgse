@@ -32,16 +32,15 @@ from egse.logger import remote_logging
 from egse.process import SubProcess
 from egse.registry.client import RegistryClient
 from egse.services import ServiceProxy
-from egse.storage import (
-    StorageProtocol,
-    PROCESS_NAME,
-    SERVICE_TYPE,
-    PROTOCOL,
-    COMMANDING_PORT,
-    SERVICE_PORT,
-    MONITORING_PORT,
-    HOSTNAME,
-)
+from egse.storage import COMMANDING_PORT
+from egse.storage import HOSTNAME
+from egse.storage import MONITORING_PORT
+from egse.storage import PROCESS_NAME
+from egse.storage import PROTOCOL
+from egse.storage import SERVICE_PORT
+from egse.storage import SERVICE_TYPE
+from egse.storage import STORAGE_MNEMONIC
+from egse.storage import StorageProtocol
 from egse.storage import StorageProxy
 from egse.storage import cycle_daily_files
 from egse.zmq_ser import get_port_number
@@ -98,6 +97,9 @@ class StorageControlServer(ControlServer):
 
     def get_monitoring_port(self):
         return get_port_number(self.dev_ctrl_mon_sock) or MONITORING_PORT
+
+    def get_storage_mnemonic(self):
+        return STORAGE_MNEMONIC
 
     def get_event_subscriptions(self) -> list[str]:
         return ["new_setup"]
@@ -200,6 +202,7 @@ def status(full: Annotated[bool, typer.Option(help="Give a full status report")]
     """Print the status of the control server."""
 
     import rich
+
     from egse.storage import get_status
 
     rich.print(get_status(full=full), end="")
