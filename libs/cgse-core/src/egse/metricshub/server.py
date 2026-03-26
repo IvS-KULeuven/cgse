@@ -1,14 +1,14 @@
 """Async Metrics Hub — core service for receiving and persisting telemetry/HK data.
 
-Clients send :class:`~egse.metrics.DataPoint` objects serialised as JSON to the
+Clients send `DataPoint` objects serialized as JSON to the
 PULL socket.  The hub batches the incoming points and flushes them to the
 configured storage backend (InfluxDB, DuckDB, …) via the plugin system in
 ``egse.plugins.metrics``.
 
-Backend selection is driven by the environment variable ``CGSE_METRICS_BACKEND``
-(default: ``"influxdb"``).  Backend-specific configuration is picked up from the
-environment inside the respective plugin (e.g. ``CGSE_INFLUX_*`` for InfluxDB).
-DuckDB additionally requires ``CGSE_DUCKDB_PATH``.
+Backend selection is driven by the environment variable `CGSE_METRICS_BACKEND`
+(default: `"influxdb"`).  Backend-specific configuration is picked up from the
+environment inside the respective plugin (e.g. `CGSE_INFLUX_*` for InfluxDB).
+DuckDB additionally requires `CGSE_DUCKDB_PATH`.
 """
 
 import asyncio
@@ -25,6 +25,7 @@ import typer
 import zmq
 import zmq.asyncio
 
+from egse.env import bool_env
 from egse.env import float_env
 from egse.env import int_env
 from egse.env import str_env
@@ -69,6 +70,10 @@ def _env_or_settings_float(env_name: str, setting_name: str, default: float) -> 
     return float_env(env_name, float(settings.get(setting_name, default)))
 
 
+def _env_or_settings_bool(env_name: str, setting_name: str, default: bool) -> bool:
+    return bool_env(env_name, bool(settings.get(setting_name, default)))
+
+
 def _get_backend_config() -> tuple[str, dict[str, Any], dict[str, Any]]:
     """Resolve backend name/config and return a safe public info dict.
 
@@ -106,7 +111,7 @@ def _get_backend_config() -> tuple[str, dict[str, Any], dict[str, Any]]:
 
 
 def _load_repository() -> tuple[TimeSeriesRepository, dict[str, Any]]:
-    """Build a :class:`~egse.metrics.TimeSeriesRepository` and safe backend metadata."""
+    """Build a `TimeSeriesRepository` and safe backend metadata."""
     backend, config, public_info = _get_backend_config()
     return get_metrics_repo(backend, config), public_info
 
@@ -118,7 +123,7 @@ class AsyncMetricsHub:
     Sockets
     -------
     collector_socket (PULL)
-        Receives serialised :class:`~egse.metrics.DataPoint` JSON from services.
+        Receives serialized `DataPoint` JSON from services.
     requests_socket (ROUTER)
         Handles control requests: health, info, terminate.
     """
@@ -159,6 +164,9 @@ class AsyncMetricsHub:
         # Batching configuration (from env, with sensible defaults)
         self.batch_size: int = _env_or_settings_int("CGSE_METRICS_BATCH_SIZE", "BATCH_SIZE", 500)
         self.flush_interval: float = _env_or_settings_float("CGSE_METRICS_FLUSH_INTERVAL", "FLUSH_INTERVAL", 2.0)
+        self.debug_counters_enabled: bool = _env_or_settings_bool(
+            "CGSE_METRICS_DEBUG_COUNTERS", "DEBUG_COUNTERS", True
+        )
 
         # Internal queue: raw dicts as received from ZMQ
         self.data_queue: asyncio.Queue = asyncio.Queue(maxsize=10_000)
@@ -168,6 +176,9 @@ class AsyncMetricsHub:
             "written": 0,
             "dropped": 0,
             "errors": 0,
+            "filtered_none_fields": 0,
+            "filtered_none_tags": 0,
+            "dropped_all_none_fields": 0,
             "start_time": time.time(),
         }
 
@@ -253,12 +264,15 @@ class AsyncMetricsHub:
     async def register_service(self):
         self._logger.info("Registering Metrics Hub with service registry...")
 
+        requests_port = get_port_number(self.requests_socket)
+        collector_port = get_port_number(self.collector_socket)
+
         self.service_id = await self.registry_client.register(
             name=self.service_name,
             host=get_host_ip() or "127.0.0.1",
-            port=DEFAULT_REQUESTS_PORT,
+            port=requests_port,
             service_type=self.service_type,
-            metadata={"collector_port": DEFAULT_COLLECTOR_PORT},
+            metadata={"collector_port": collector_port},
         )
 
         if not self.service_id:
@@ -305,9 +319,20 @@ class AsyncMetricsHub:
 
             point_dict, error = _normalize_payload(payload)
             if point_dict is None:
+                if self.debug_counters_enabled and error == "all field values are None":
+                    self.stats["dropped_all_none_fields"] += 1
                 self._logger.warning(f"Received malformed payload, discarding: {error}")
                 self.stats["dropped"] += 1
                 continue
+
+            if self.debug_counters_enabled and isinstance(payload, dict):
+                fields = payload.get("fields")
+                if isinstance(fields, dict):
+                    self.stats["filtered_none_fields"] += sum(1 for value in fields.values() if value is None)
+
+                tags = payload.get("tags")
+                if isinstance(tags, dict):
+                    self.stats["filtered_none_tags"] += sum(1 for value in tags.values() if value is None)
 
             try:
                 await asyncio.wait_for(self.data_queue.put(point_dict), timeout=0.1)
@@ -489,6 +514,7 @@ class AsyncMetricsHub:
         backend_info["reachable"] = await self._backend_reachable()
         statistics = self.stats.copy()
         statistics["queue"] = self.data_queue.qsize()
+        statistics["debug_counters_enabled"] = self.debug_counters_enabled
 
         return {
             "success": True,
@@ -535,25 +561,30 @@ def _normalize_payload(payload: Any) -> tuple[dict | None, str | None]:
         return None, "invalid 'tags'"
 
     # keep field values compatible with downstream backends
+    cleaned_fields: dict[str, Any] = {}
     for key, value in fields.items():
         if not isinstance(key, str) or not key:
             return None, "field keys must be non-empty strings"
-        if value is None:
-            return None, "field values cannot be None"
+        if value is not None:
+            cleaned_fields[key] = value
 
+    if not cleaned_fields:
+        return None, "all field values are None"
+
+    cleaned_tags: dict[str, Any] = {}
     for key, value in tags.items():
         if not isinstance(key, str) or not key:
             return None, "tag keys must be non-empty strings"
-        if value is None:
-            return None, "tag values cannot be None"
+        if value is not None:
+            cleaned_tags[key] = value
 
     if timestamp is not None and not isinstance(timestamp, (str, int, float)):
         return None, "invalid timestamp/time"
 
     point = {
         "measurement": measurement,
-        "fields": fields,
-        "tags": tags,
+        "fields": cleaned_fields,
+        "tags": cleaned_tags,
     }
     if timestamp is not None:
         point["time"] = timestamp
@@ -621,6 +652,10 @@ async def status():
                     Dropped:     {stats.get("dropped", 0)}
                     Errors:      {stats.get("errors", 0)}
                     Queue size:  {stats.get("queue", "?")}
+                    None fields: {stats.get("filtered_none_fields", 0)}
+                    None tags:   {stats.get("filtered_none_tags", 0)}
+                    All-None:    {stats.get("dropped_all_none_fields", 0)}
+                    Debug counters:  {stats.get("debug_counters_enabled", True)}
             """
         )
     else:
