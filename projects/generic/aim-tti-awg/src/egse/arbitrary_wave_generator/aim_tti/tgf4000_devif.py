@@ -211,7 +211,7 @@ class Tgf4000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
             self._sock.sendall(command.encode("latin1"))
 
         except BrokenPipeError:
-            logger.warning(f"{self.device_id}: Broken pipe detected, attempting to reconnect...")
+            logger.warning(f"{self.device_id}: Broken pipe detected, attempting to reconnect and resend...")
             self._is_connection_open = False
             try:
                 self.connect()
@@ -264,7 +264,7 @@ class Tgf4000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
             # noinspection PyUnboundLocalVariable
             return return_string
         except BrokenPipeError:
-            logger.warning(f"{self.device_id}: Broken pipe detected, attempting to reconnect...")
+            logger.warning(f"{self.device_id}: Broken pipe detected, attempting to reconnect and resend...")
             self._is_connection_open = False
             try:
                 self.connect()
