@@ -508,7 +508,7 @@ class StorageInterface:
         pass
 
     @dynamic_interface
-    def get_loaded_setup_id(self) -> str:
+    def get_loaded_setup_id(self) -> int:
         """
         Returns the ID of the currently loaded Setup.
 
@@ -1052,8 +1052,8 @@ class StorageController(StorageInterface):
         total, used, free = shutil.disk_usage(location)
         return total, used, free
 
-    def get_loaded_setup_id(self) -> str:
-        return self._setup.get_id() if self._setup is not None else "no setup loaded"
+    def get_loaded_setup_id(self) -> int:
+        return int(self._setup.get_id()) if self._setup is not None else 0
 
     def load_setup(self, setup_id: int = 0):
         # Use get_setup() here instead of load_setup() in order to prevent recursively notifying and loading Setups.
@@ -1132,9 +1132,12 @@ class StorageProtocol(CommandProtocol):
         return super().get_status()
 
     def get_housekeeping(self) -> dict:
+        setup_id = self.controller.get_loaded_setup_id()
+
         return {
             "timestamp": format_datetime(),
             "random": random.randint(0, 100),
+            "sm_setup_id": setup_id,
         }
 
 
