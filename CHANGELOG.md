@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-03-26
+
+- Added the Metrics Hub to the core services.
+- Core services now send metrics data points to the metrics hub instead of ingesting directly into influxdb
 - Send log messages of all Control Servers to central logger
 
 ## [0.19.6] - 2026-03-18
@@ -319,7 +323,9 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.5...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.20.0...HEAD
+[0.20.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.6...v0.20.0
+[0.19.6]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.5...v0.19.6
 [0.19.5]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.4...v0.19.5
 [0.19.4]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.3...v0.19.4
 [0.19.3]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.2...v0.19.3
