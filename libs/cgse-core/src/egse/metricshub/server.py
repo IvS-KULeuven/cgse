@@ -164,9 +164,7 @@ class AsyncMetricsHub:
         # Batching configuration (from env, with sensible defaults)
         self.batch_size: int = _env_or_settings_int("CGSE_METRICS_BATCH_SIZE", "BATCH_SIZE", 500)
         self.flush_interval: float = _env_or_settings_float("CGSE_METRICS_FLUSH_INTERVAL", "FLUSH_INTERVAL", 2.0)
-        self.debug_counters_enabled: bool = _env_or_settings_bool(
-            "CGSE_METRICS_DEBUG_COUNTERS", "DEBUG_COUNTERS", True
-        )
+        self.debug_counters_enabled: bool = _env_or_settings_bool("CGSE_METRICS_DEBUG_COUNTERS", "DEBUG_COUNTERS", True)
 
         # Internal queue: raw dicts as received from ZMQ
         self.data_queue: asyncio.Queue = asyncio.Queue(maxsize=10_000)
