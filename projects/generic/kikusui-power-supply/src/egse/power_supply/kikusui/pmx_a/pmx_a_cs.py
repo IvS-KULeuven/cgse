@@ -195,18 +195,24 @@ def start(
 ) -> int:
     """Starts the KIKUSUI PMX-A Control Server with the given identifier."""
 
-    # noinspection PyBroadException
-    try:
-        controller = PmxAControlServer(device_id, simulator)
-        controller.serve()
-    except KeyboardInterrupt:
-        print("Shutdown requested...exiting")
-    except SystemExit as exc:
-        exit_code = exc.code if hasattr(exc, "code") else 0
-        print(f"System Exit with code {exc.code}")
-        sys.exit(exit_code)
-    except Exception:
-        logger.exception(f"Cannot start the KIKUSUI PMX-A {device_id} Control Server")
+    with remote_logging():
+        from egse.env import setup_env
+
+        setup_env()
+
+        # noinspection PyBroadException
+        try:
+            control_server = PmxAControlServer(device_id, simulator)
+            control_server.serve()
+        except KeyboardInterrupt:
+            logger.debug("Shutdown requested...exiting")
+        except SystemExit as exit_code:
+            logger.debug("System Exit with code {}.".format(exit_code))
+            sys.exit(exit_code.code)
+        except Exception:
+            msg = "Cannot start the KIKUSUI PMX-A {device_id} Control Server"
+            logger.exception(msg)
+            rich.print(f"[red]{msg}.")
 
     return 0
 
@@ -298,7 +304,7 @@ def status(
 if __name__ == "__main__":
     import logging
 
-    from egse.logger import set_all_logger_levels
+    from egse.logger import set_all_logger_levels, remote_logging
 
     set_all_logger_levels(logging.DEBUG)
 

@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+- Send log messages of all Control Servers to central logger
+
 ## [0.19.6] - 2026-03-18
 
 - Added tests for `ObservationContext` and enhance state management (#309)
