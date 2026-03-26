@@ -1,11 +1,11 @@
 """Client for the Async Metrics Hub.
 
-Use :class:`AsyncMetricsHubClient` to send control requests (health, info,
-terminate) to a running ``mh_cs`` service.
+Use `AsyncMetricsHubClient` to send control requests (health, info,
+terminate) to a running metrics hub (`mh_cs`) service.
 
-For sending data points to the hub use :class:`AsyncMetricsHubSender` (async)
-or :class:`MetricsHubSender` (sync), both of which keep a ZMQ PUSH socket and
-serialise :class:`~egse.metrics.DataPoint` objects as JSON.
+For sending data points to the hub use `AsyncMetricsHubSender` (async)
+or `MetricsHubSender` (sync), both of which keep a ZMQ PUSH socket and
+serialize `DataPoint` objects as JSON.
 
 Canonical payload format (``DataPoint.as_dict()``)::
 
@@ -262,7 +262,7 @@ class MetricsHubClient:
 
 
 class AsyncMetricsHubSender:
-    """Lightweight sender for pushing :class:`~egse.metrics.DataPoint` objects to the hub.
+    """Lightweight sender for pushing `DataPoint` objects to the hub.
 
     Maintains a single ZMQ PUSH socket for the lifetime of the sender.
     Fire-and-forget: if the hub queue is full the point is silently dropped and
@@ -350,11 +350,10 @@ class MetricsHubSender:
         self.socket = None
 
     def send(self, point: DataPoint | dict[str, Any]) -> bool:
-        """Serialise *point* and push it to the hub.
+        """Serialize *point* and push it to the hub.
 
         Args:
-            point: a :class:`~egse.metrics.DataPoint` instance or a pre-serialized
-                dictionary matching ``DataPoint.as_dict()``.
+            point: a `DataPoint` instance or a pre-serialized dictionary matching `DataPoint.as_dict()`.
 
         Returns:
             True when successfully queued to ZMQ, False when local send buffer
