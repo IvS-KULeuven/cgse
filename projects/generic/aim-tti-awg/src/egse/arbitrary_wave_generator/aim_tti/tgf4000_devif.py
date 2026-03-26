@@ -209,6 +209,14 @@ class Tgf4000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
 
             self._sock.sendall(command.encode("latin1"))
 
+        except BrokenPipeError:
+            logger.warning(f"{self.device_id}: Broken pipe detected, attempting to reconnect...")
+            self._is_connection_open = False
+            try:
+                self.connect()
+                self._sock.sendall(command.encode("latin1"))
+            except Exception as exc:
+                raise DeviceConnectionError(self.device_id, "Socket communication error after reconnect attempt.") from exc
         except socket.timeout as e_timeout:
             raise DeviceTimeoutError(self.device_id, "Socket timeout error") from e_timeout
         except socket.error as e_socket:
@@ -252,6 +260,16 @@ class Tgf4000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
         except UnicodeError:
             # noinspection PyUnboundLocalVariable
             return return_string
+        except BrokenPipeError:
+            logger.warning(f"{self.device_id}: Broken pipe detected, attempting to reconnect...")
+            self._is_connection_open = False
+            try:
+                self.connect()
+                self._sock.sendall(command.encode("latin1"))
+                return_string = self.read()
+                return return_string.decode().rstrip()
+            except Exception as exc:
+                raise DeviceConnectionError(self.device_id, "Connection error after reconnect attempt.") from exc
         except socket.timeout as e_timeout:
             raise DeviceTimeoutError(self.device_id, "Socket timeout error") from e_timeout
         except socket.error as e_socket:
