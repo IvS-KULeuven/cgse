@@ -217,7 +217,9 @@ class Tgf4000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
                 self.connect()
                 self._sock.sendall(command.encode("latin1"))
             except Exception as exc:
-                raise DeviceConnectionError(self.device_id, "Socket communication error after reconnect attempt.") from exc
+                raise DeviceConnectionError(
+                    self.device_id, "Socket communication error after reconnect attempt."
+                ) from exc
         except socket.timeout as e_timeout:
             raise DeviceTimeoutError(self.device_id, "Socket timeout error") from e_timeout
         except socket.error as e_socket:
