@@ -90,6 +90,7 @@ class Tgf4000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
 
         try:
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
             # The following lines are to experiment with blocking and timeout, but there is no need.
             # self._sock.setblocking(1)
             # self._sock.settimeout(3)
