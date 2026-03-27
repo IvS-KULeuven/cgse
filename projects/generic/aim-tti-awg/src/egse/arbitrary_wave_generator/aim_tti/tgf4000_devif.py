@@ -1,6 +1,6 @@
 import logging
 
-from egse.arbitrary_wave_generator.aim_tti import DEVICE_SETTINGS
+from egse.arbitrary_wave_generator.aim_tti import DEVICE_SETTINGS, CMD_DELAY
 
 LOGGER = logging.getLogger(__name__)
 
@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 CONNECT_TIMEOUT = 3.0  # Timeout when connecting the socket [s]
 
 remove_digits = str.maketrans("", "", digits)
-time_in_s = time.time()
 
 
 class TgfError(Exception):
@@ -205,6 +204,8 @@ class Tgf4000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
             DeviceTimeoutError when the command could not be sent due to a timeout.
         """
 
+        start_time = time.monotonic()
+
         try:
             command += "\n" if not command.endswith("\n") else ""
 
@@ -230,6 +231,10 @@ class Tgf4000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
                 msg = "The TGF4000 is not connected, use the connect() method."
                 raise DeviceConnectionError(self.device_id, msg)
             raise
+
+        elapsed_time = time.monotonic() - start_time
+        wait_time = max(0, CMD_DELAY - elapsed_time)
+        time.sleep(wait_time)
 
     def trans(self, command: str) -> str | bytes:
         """Sends a single command to the device controller and block until a response from the controller.
