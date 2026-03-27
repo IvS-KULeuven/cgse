@@ -1,6 +1,7 @@
 import logging
 
-from egse.power_supply.kikusui import DEVICE_SETTINGS
+from egse.power_supply.kikusui import DEVICE_SETTINGS, CMD_DELAY
+from egse.control import time_in_s
 
 LOGGER = logging.getLogger(__name__)
 
@@ -194,6 +195,8 @@ class PmxEthernetInterface(DeviceConnectionInterface, DeviceTransport):
             DeviceTimeoutError when the command could not be sent due to a timeout.
         """
 
+        start_time = time_in_s()
+
         try:
             command += "\n" if not command.endswith("\n") else ""
 
@@ -209,6 +212,10 @@ class PmxEthernetInterface(DeviceConnectionInterface, DeviceTransport):
                 msg = "The DT8874 is not connected, use the connect() method."
                 raise DeviceConnectionError(self.device_id, msg)
             raise
+
+        elapsed_time = time_in_s() - start_time
+        wait_time = max(0, CMD_DELAY - elapsed_time)
+        time.sleep(wait_time)
 
     def trans(self, command: str) -> str | bytes:
         """Sends a single command to the device controller and block until a response from the controller.

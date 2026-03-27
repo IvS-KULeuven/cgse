@@ -10,6 +10,7 @@ import logging
 import pickle
 import textwrap
 import threading
+import time
 from functools import partial
 from typing import Callable
 from typing import Union
@@ -48,6 +49,12 @@ from egse.zmq_ser import get_port_number
 
 PROCESS_SETTINGS = Settings.load("PROCESS")
 SITE_ID = get_site_id()
+
+
+def time_in_s() -> float:
+    """Returns the current time in seconds since the Epoch."""
+
+    return time.time()
 
 
 def is_control_server_active(endpoint: str = None, timeout: float = 0.5) -> bool:
