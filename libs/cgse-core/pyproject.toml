@@ -25,6 +25,7 @@ dependencies = [
     "aiosqlite>=0.21.0",
     "aiohttp>=3.11.16",
     "qtpy",
+    "pytz",
 ]
 
 [project.scripts]
@@ -70,6 +71,8 @@ setup_provider = "egse._setup_core:CoreSetupProvider"
 "Configuration Manager" = "CM_CS"
 "Process Manager" = "PM_CS"
 "Logger" = "LOG_CS"
+"Metrics Hub" = "MH_CS"
+"Notification Hub" = "NH_CS"
 
 [tool.pytest.ini_options]
 pythonpath = ["tests", "src"]
