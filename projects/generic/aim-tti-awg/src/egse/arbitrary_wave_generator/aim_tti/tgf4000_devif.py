@@ -1,7 +1,6 @@
 import logging
 
 from egse.arbitrary_wave_generator.aim_tti import DEVICE_SETTINGS, CMD_DELAY
-from egse.control import time_in_s
 
 LOGGER = logging.getLogger(__name__)
 
@@ -204,7 +203,7 @@ class Tgf4000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
             DeviceTimeoutError when the command could not be sent due to a timeout.
         """
 
-        start_time = time_in_s()
+        start_time = time.monotonic()
 
         try:
             command += "\n" if not command.endswith("\n") else ""
@@ -222,7 +221,7 @@ class Tgf4000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
                 raise DeviceConnectionError(self.device_id, msg)
             raise
 
-        elapsed_time = time_in_s() - start_time
+        elapsed_time = time.monotonic() - start_time
         wait_time = max(0, CMD_DELAY - elapsed_time)
         time.sleep(wait_time)
 
