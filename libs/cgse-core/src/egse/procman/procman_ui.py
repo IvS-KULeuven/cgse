@@ -46,11 +46,13 @@ from egse.system import do_every
 from egse.zmq_ser import set_address_port
 
 UPDATE_INTERVAL_CORE = 30  # Status of the core services
-UPDATE_INTERVAL_CM = 5  # Change in setup and/or obsid
+# UPDATE_INTERVAL_CM = 5  # Change in setup and/or obsid
 UPDATE_INTERVAL_DEVICE = 10  # Status of the device Control Servers
 
 DEVICE_CMD_ENTRY_POINT = "cgse.service.device_command"
 GUI_SCRIPTS_ENTRY_POINT = "gui_scripts"
+
+STOP_EVENT = threading.Event()
 
 
 class ControlServerStatus(Enum):
@@ -333,7 +335,11 @@ class CoreServiceMonitoringWorker(QObject):
                     {"core_service_name": self.core_service_name, "core_service_is_active": len(services) > 0}
                 )
 
-                time.sleep(UPDATE_INTERVAL_CORE)
+                # Interruptible sleep
+
+                interrupted = STOP_EVENT.wait(UPDATE_INTERVAL_CORE)
+                if interrupted:
+                    self.active = False
             except ZMQError:
                 pass
 
@@ -416,7 +422,11 @@ class DeviceMonitoringWorker(QObject):
                             # noinspection PyUnresolvedReferences
                             self.process_status_signal.emit(status_output)
 
-                time.sleep(UPDATE_INTERVAL_DEVICE)
+                # Interruptible sleep
+
+                interrupted = STOP_EVENT.wait(UPDATE_INTERVAL_DEVICE)
+                if interrupted:
+                    self.active = False
             except ZMQError:
                 pass
 
@@ -816,6 +826,8 @@ class ProcessManagerUIView(QMainWindow, Observable):
 
     def closeEvent(self, close_event: QCloseEvent) -> None:
         """Takes action when the UI is closed."""
+
+        STOP_EVENT.set()
 
         self.notify_observers(close_event)
 
