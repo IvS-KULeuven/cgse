@@ -2850,17 +2850,17 @@ class Tgf4000Interface(DeviceInterface):
         cmd_string="SWPTRGSRC ${trigger_source}",
         process_cmd_string=add_lf,
     )
-    def set_sweep_trigger_source(self, trigger_source: SweepMode) -> None:
+    def set_sweep_trigger_source(self, trigger_source: TriggerSource) -> None:
         """Sets the sweep trigger source.
 
         Possible values are:
 
-            - SweepMode.INT, SweepMode.INTERNAL, or "INT",
-            - SweepMode.EXT, SweepMode.EXTERNAL, or "EXT",
-            - SweepMode.MAN, SweepMode.MANUAL, or "MAN".
+            - TriggerSource.INT, TriggerSource.INTERNAL, or "INT",
+            - TriggerSource.EXT, TriggerSource.EXTERNAL, or "EXT",
+            - TriggerSource.MAN, TriggerSource.MANUAL, or "MAN".
 
         Args:
-            trigger_source (SweepType): Sweep trigger source.
+            trigger_source (TriggerSource): Sweep trigger source.
         """
 
         raise NotImplementedError
@@ -2871,14 +2871,14 @@ class Tgf4000Interface(DeviceInterface):
         process_cmd_string=add_lf,
         process_response=parse_strings,
     )
-    def get_sweep_trigger_source(self) -> SweepMode:
+    def get_sweep_trigger_source(self) -> TriggerSource:
         """Returns the sweep trigger source.
 
         Possible values are:
 
-            - SweepMode.INT, SweepMode.INTERNAL, or "INT",
-            - SweepMode.EXT, SweepMode.EXTERNAL, or "EXT",
-            - SweepMode.MAN, SweepMode.MANUAL, or "MAN".
+            - TriggerSource.INT, TriggerSource.INTERNAL, or "INT",
+            - TriggerSource.EXT, TriggerSource.EXTERNAL, or "EXT",
+            - TriggerSource.MAN, TriggerSource.MANUAL, or "MAN".
 
         Returns:
             Sweep trigger source.
