@@ -398,10 +398,8 @@ class DeviceMonitoringWorker(QObject):
                 services = self.registry_client.list_services(service_type=self.device_id.upper())
 
                 if len(services) == 0:
-                    cs_is_active_new = False
-                    if cs_is_active_new != self.cs_is_active:
-                        self.cs_is_active = cs_is_active_new
-                        self.process_status_signal.emit({"device_id": self.device_id, "cs_is_active": False})
+                    self.cs_is_active = False
+                    self.process_status_signal.emit({"device_id": self.device_id, "cs_is_active": False})
 
                 else:
                     cs_is_active_new = not services is None
