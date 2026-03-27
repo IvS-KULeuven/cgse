@@ -45,7 +45,9 @@ from egse.setup import Setup
 from egse.system import do_every
 from egse.zmq_ser import set_address_port
 
-UPDATE_INTERVAL = 30
+UPDATE_INTERVAL_CORE = 30  # Status of the core services
+UPDATE_INTERVAL_CM = 10  # Change in setup and/or obsid
+UPDATE_INTERVAL_DEVICE = 10  # Status of the device Control Servers
 
 DEVICE_CMD_ENTRY_POINT = "cgse.service.device_command"
 GUI_SCRIPTS_ENTRY_POINT = "gui_scripts"
@@ -235,7 +237,7 @@ class ConfigurationManagerMonitoringWorker(QObject):
             self.check_for_setup_changes()
             self.check_for_obsid_changes()
 
-            time.sleep(UPDATE_INTERVAL)
+            time.sleep(UPDATE_INTERVAL_CM)
 
     def check_for_setup_changes(self) -> None:
         """Checks the incoming monitoring information from the Configuration Manager for changes in the setup.
@@ -331,7 +333,7 @@ class CoreServiceMonitoringWorker(QObject):
                     {"core_service_name": self.core_service_name, "core_service_is_active": len(services) > 0}
                 )
 
-                time.sleep(UPDATE_INTERVAL)
+                time.sleep(UPDATE_INTERVAL_CORE)
             except ZMQError:
                 pass
 
@@ -416,7 +418,7 @@ class DeviceMonitoringWorker(QObject):
                             # noinspection PyUnresolvedReferences
                             self.process_status_signal.emit(status_output)
 
-                time.sleep(UPDATE_INTERVAL)
+                time.sleep(UPDATE_INTERVAL_DEVICE)
             except ZMQError:
                 pass
 
