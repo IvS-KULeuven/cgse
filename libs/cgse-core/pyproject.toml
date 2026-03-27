@@ -25,6 +25,7 @@ dependencies = [
     "aiosqlite>=0.21.0",
     "aiohttp>=3.11.16",
     "qtpy",
+    "pytz",
 ]
 
 [project.scripts]
