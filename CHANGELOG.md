@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.20.1] - 2026-03-30
+
+- Fix exception pickling for DeviceError and subclasses
+- Check for broken pipe in TGF4000 and add socket keepalives 
+- Command delay for TGF4000 & PMX-A
+- Improvements for the PM UI
+- Refactor registry port configuration to load from settings
+
 ## [0.20.0] - 2026-03-26
 
 - Added the Metrics Hub to the core services.
