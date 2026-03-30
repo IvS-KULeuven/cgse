@@ -61,7 +61,7 @@ async def async_is_service_registry_active(timeout: float = 0.5) -> bool:
 
     from egse.registry.client import AsyncRegistryClient  # prevent circular import
 
-    with AsyncRegistryClient(timeout=timeout) as client:
+    async with AsyncRegistryClient(timeout=timeout) as client:
         if not await client.health_check():
             return False
         else:
