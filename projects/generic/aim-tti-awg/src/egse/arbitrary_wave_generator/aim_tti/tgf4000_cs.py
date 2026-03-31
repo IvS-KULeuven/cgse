@@ -16,6 +16,7 @@ from egse.services import ServiceProxy
 from egse.settings import Settings
 from egse.storage import store_housekeeping_information
 from egse.zmq_ser import connect_address, get_port_number
+from egse.logger import set_all_logger_levels, remote_logging
 
 logger = logging.getLogger("egse.arbitrary_wave_generator.aim_tti.tgf4000")
 DEVICE_SETTINGS = Settings.load("Aim-TTi TGF4000")
@@ -236,6 +237,8 @@ def stop(
             proxy.quit_server()
         else:
             try:
+                from egse.arbitrary_wave_generator.aim_tti.tgf4000 import Tgf4000Proxy
+
                 with Tgf4000Proxy(device_id) as tgf4000_proxy:
                     with tgf4000_proxy.get_service_proxy() as sp:
                         sp.quit_server()
@@ -286,6 +289,8 @@ def status(
     if is_control_server_active(endpoint, timeout=2):
         rich.print(f"Aim-TTi TGF4000 {device_id}: [green]active -> {endpoint}")
 
+        from egse.arbitrary_wave_generator.aim_tti.tgf4000 import Tgf4000Proxy
+
         with Tgf4000Proxy(device_id) as tgf4000:
             sim = tgf4000.is_simulator()
             connected = tgf4000.is_connected()
@@ -303,10 +308,6 @@ def status(
 
 
 if __name__ == "__main__":
-    import logging
-
-    from egse.logger import set_all_logger_levels, remote_logging
-
     set_all_logger_levels(logging.DEBUG)
 
     sys.exit(app())
