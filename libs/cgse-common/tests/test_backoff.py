@@ -1,0 +1,106 @@
+import pytest
+
+from egse.backoff import BackoffStrategy
+from egse.backoff import JitterStrategy
+from egse.backoff import calculate_retry_interval
+
+
+def test_calculate_retry_interval_exponential_without_jitter():
+    interval = calculate_retry_interval(
+        attempt_number=3,
+        base_interval=0.5,
+        max_interval=10.0,
+        backoff_strategy=BackoffStrategy.EXPONENTIAL,
+        jitter_strategy=JitterStrategy.NONE,
+    )
+
+    assert interval == 4.0
+
+
+def test_calculate_retry_interval_exponential_with_custom_factor():
+    interval = calculate_retry_interval(
+        attempt_number=3,
+        base_interval=0.5,
+        max_interval=10.0,
+        backoff_strategy=BackoffStrategy.EXPONENTIAL,
+        jitter_strategy=JitterStrategy.NONE,
+        exponential_factor=1.5,
+    )
+
+    assert interval == pytest.approx(1.6875)
+
+
+def test_calculate_retry_interval_linear_without_jitter():
+    interval = calculate_retry_interval(
+        attempt_number=3,
+        base_interval=0.5,
+        max_interval=10.0,
+        backoff_strategy=BackoffStrategy.LINEAR,
+        jitter_strategy=JitterStrategy.NONE,
+    )
+
+    assert interval == 3.5
+
+
+def test_calculate_retry_interval_fixed_without_jitter():
+    interval = calculate_retry_interval(
+        attempt_number=9,
+        base_interval=0.5,
+        max_interval=10.0,
+        backoff_strategy=BackoffStrategy.FIXED,
+        jitter_strategy=JitterStrategy.NONE,
+    )
+
+    assert interval == 0.5
+
+
+def test_calculate_retry_interval_caps_at_max_interval():
+    interval = calculate_retry_interval(
+        attempt_number=8,
+        base_interval=1.0,
+        max_interval=5.0,
+        backoff_strategy=BackoffStrategy.EXPONENTIAL,
+        jitter_strategy=JitterStrategy.NONE,
+    )
+
+    assert interval == 5.0
+
+
+def test_calculate_retry_interval_equal_jitter_uses_upper_half(monkeypatch):
+    monkeypatch.setattr("egse.backoff.random.uniform", lambda low, high: high)
+
+    interval = calculate_retry_interval(
+        attempt_number=2,
+        base_interval=1.0,
+        max_interval=10.0,
+        backoff_strategy=BackoffStrategy.EXPONENTIAL,
+        jitter_strategy=JitterStrategy.EQUAL,
+    )
+
+    assert interval == 4.0
+
+
+def test_calculate_retry_interval_percent10_jitter_boundaries(monkeypatch):
+    monkeypatch.setattr("egse.backoff.random.uniform", lambda low, high: low)
+
+    interval = calculate_retry_interval(
+        attempt_number=2,
+        base_interval=1.0,
+        max_interval=10.0,
+        backoff_strategy=BackoffStrategy.EXPONENTIAL,
+        jitter_strategy=JitterStrategy.PERCENT_10,
+    )
+
+    assert interval == pytest.approx(3.6)
+
+
+def test_calculate_retry_interval_rejects_non_positive_exponential_factor():
+    with pytest.raises(ValueError, match="exponential_factor"):
+        calculate_retry_interval(
+            attempt_number=1,
+            base_interval=1.0,
+            max_interval=5.0,
+            backoff_strategy=BackoffStrategy.EXPONENTIAL,
+            jitter_strategy=JitterStrategy.NONE,
+            exponential_factor=0.0,
+        )

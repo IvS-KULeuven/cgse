@@ -244,7 +244,7 @@ async def test_async_connect_write_trans_and_disconnect(async_echo_server):
     dev = AsyncSocketDevice(hostname=host, port=port, connect_timeout=1.0, read_timeout=1.0)
 
     await dev.connect()
-    assert dev.is_connected() is True
+    assert await dev.is_connected() is True
 
     # trans should return bytes that end with ETX and contain the echoed payload
     got = await dev.trans("CMD-ASYNC")
@@ -265,7 +265,7 @@ async def test_async_connect_write_trans_and_disconnect(async_echo_server):
 
     # disconnect
     await dev.disconnect()
-    assert dev.is_connected() is False
+    assert await dev.is_connected() is False
 
 
 @pytest.mark.asyncio
@@ -310,7 +310,7 @@ async def test_async_cleanup_on_broken_connection(async_echo_server):
 
     # connect and then shut down server to simulate connection drop
     await dev.connect()
-    assert dev.is_connected() is True
+    assert await dev.is_connected() is True
 
     logger.info("Before server close")
 
@@ -326,4 +326,4 @@ async def test_async_cleanup_on_broken_connection(async_echo_server):
     with pytest.raises(DeviceConnectionError):
         await dev.write("X")
 
-    assert dev.is_connected() is False
+    assert await dev.is_connected() is False
