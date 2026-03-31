@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.20.3] - 2026-03-31
+
+- Attempt to properly handle broken pipe errors in the TGF4000 device interface
+
 ## [0.20.2] - 2026-03-31
 
 - Fixed problems with imports in `tgf4000_cs.py`
