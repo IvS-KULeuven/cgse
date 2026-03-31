@@ -1,6 +1,6 @@
 [project]
 name = "ariel-facility"
-version = "0.20.1"
+version = "0.20.2"
 description = "Extract HK from MySQL Facility Database for Ariel"
 authors = [
     {name = "IVS KU Leuven"}
