@@ -24,6 +24,7 @@ from egse.device import (
 logger = logging.getLogger(__name__)
 
 CONNECT_TIMEOUT = 3.0  # Timeout when connecting the socket [s]
+BROKEN_PIPE_DELAY = 1.0
 
 remove_digits = str.maketrans("", "", digits)
 
@@ -215,6 +216,11 @@ class Tgf4000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
             logger.warning(f"{self.device_id}: Broken pipe detected, attempting to reconnect and resend...")
             self._is_connection_open = False
             try:
+                self._sock.close()
+                self._sock = None
+
+                time.sleep(BROKEN_PIPE_DELAY)
+
                 self.connect()
                 self._sock.sendall(command.encode("latin1"))
             except Exception as exc:
@@ -257,7 +263,7 @@ class Tgf4000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
 
             command += "\n" if not command.endswith("\n") else ""
 
-            self._sock.sendall(command.encode())
+            self._sock.sendall(command.encode("latin1"))
 
             # wait for, read and return the response from Aim-TTi TGF4000 (will be at most TBD chars)
 
@@ -272,6 +278,11 @@ class Tgf4000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
             logger.warning(f"{self.device_id}: Broken pipe detected, attempting to reconnect and resend...")
             self._is_connection_open = False
             try:
+                self._sock.close()
+                self._sock = None
+
+                time.sleep(BROKEN_PIPE_DELAY)
+
                 self.connect()
                 self._sock.sendall(command.encode("latin1"))
                 return_string = self.read()
