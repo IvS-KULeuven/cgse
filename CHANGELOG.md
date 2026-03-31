@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.20.2] - 2026-03-31
+
+- Fixed problems with imports in `tgf4000_cs.py`
+
 ## [0.20.1] - 2026-03-30
 
 - Fix exception pickling for DeviceError and subclasses
