@@ -6,6 +6,7 @@ import asyncio
 import select
 import socket
 import time
+from collections.abc import Awaitable
 from collections.abc import Callable
 from typing import Optional
 from typing import TypeVar
@@ -428,6 +429,11 @@ class AsyncSocketDevice(AsyncDeviceInterface, AsyncDeviceTransport):
             logger.warning(f"{self.device_name}: connect failed: {type_name(exc)} – {exc}")
             raise DeviceConnectionError(self.device_name, f"Failed to connect to {self.hostname}:{self.port}") from exc
 
+    async def reconnect(self) -> None:
+        if await self.is_connected():
+            await self.disconnect()
+        await self.connect()
+
     async def disconnect(self) -> None:
         logger.debug(f"{self.device_name}: disconnect() called; writer_exists={bool(self.writer)}")
         peer = None
@@ -452,6 +458,99 @@ class AsyncSocketDevice(AsyncDeviceInterface, AsyncDeviceTransport):
         self.reader = None
         self.writer = None
         self.is_connection_open = False
+
+    async def _reset_socket_state(self) -> None:
+        """Best-effort stream reset to recover from broken or half-open async connections."""
+
+        try:
+            if self.writer and not self.writer.is_closing():
+                self.writer.close()
+                try:
+                    await asyncio.wait_for(self.writer.wait_closed(), timeout=1.0)
+                except asyncio.TimeoutError:
+                    logger.debug(f"{self.device_name}: wait_closed() timed out during reset")
+        finally:
+            await self._cleanup()
+
+    async def connect_with_retry(
+        self,
+        attempts: int = 5,
+        initial_delay: float = 0.5,
+        backoff_factor: float = 2.0,
+        max_delay: float = 5.0,
+        backoff_strategy: BackoffStrategy | None = None,
+        jitter_strategy: JitterStrategy = JitterStrategy.NONE,
+    ) -> None:
+        """Try connecting multiple times with async backoff and optional jitter."""
+
+        if attempts < 1:
+            raise ValueError("attempts must be >= 1")
+
+        base_interval = max(0.0, initial_delay)
+        last_exc: Exception | None = None
+
+        for attempt in range(1, attempts + 1):
+            await self._reset_socket_state()
+            try:
+                await self.connect()
+                if attempt > 1:
+                    logger.info(f"{self.device_name}: reconnect succeeded on attempt {attempt}/{attempts}")
+                return
+            except (ConnectionError, TimeoutError, DeviceConnectionError, DeviceTimeoutError, OSError) as exc:
+                last_exc = exc
+                if attempt == attempts:
+                    break
+
+                strategy = backoff_strategy or (
+                    BackoffStrategy.FIXED if backoff_factor == 1.0 else BackoffStrategy.EXPONENTIAL
+                )
+                delay = calculate_retry_interval(
+                    attempt_number=attempt - 1,
+                    base_interval=base_interval,
+                    max_interval=max_delay,
+                    backoff_strategy=strategy,
+                    jitter_strategy=jitter_strategy,
+                    exponential_factor=backoff_factor,
+                )
+
+                logger.warning(
+                    f"{self.device_name}: connect attempt {attempt}/{attempts} failed "
+                    f"({type_name(exc)}: {exc}), retrying in {delay:.2f}s"
+                )
+                await asyncio.sleep(delay)
+
+        raise DeviceConnectionError(
+            self.device_name,
+            f"Failed to connect after {attempts} attempts to {self.hostname}:{self.port}",
+        ) from last_exc
+
+    async def execute_with_reconnect(
+        self,
+        operation_name: str,
+        func: Callable[[], Awaitable[_T]],
+        reconnect_attempts: int = 5,
+        reconnect_initial_delay: float = 0.5,
+        reconnect_backoff: float = 2.0,
+        reconnect_max_delay: float = 5.0,
+        reconnect_jitter: JitterStrategy = JitterStrategy.NONE,
+    ) -> _T:
+        """Execute an async operation once, reconnecting and retrying once on recoverable I/O failures."""
+
+        try:
+            return await func()
+        except (BrokenPipeError, ConnectionResetError, DeviceConnectionError, DeviceTimeoutError, OSError) as exc:
+            logger.warning(
+                f"{self.device_name}: {operation_name} failed ({type_name(exc)}: {exc}), attempting reconnect"
+            )
+            await self._reset_socket_state()
+            await self.connect_with_retry(
+                attempts=reconnect_attempts,
+                initial_delay=reconnect_initial_delay,
+                backoff_factor=reconnect_backoff,
+                max_delay=reconnect_max_delay,
+                jitter_strategy=reconnect_jitter,
+            )
+            return await func()
 
     async def read(self) -> bytes:
         if not self.reader:
