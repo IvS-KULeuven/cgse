@@ -158,8 +158,7 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
 
         if "Data Translation" not in manufacturer or "DT" not in model:
             logger.error(
-                "Device did not respond correctly to a %s command, "
-                "manufacturer=%s, model=%s. Disconnecting...",
+                "Device did not respond correctly to a %s command, manufacturer=%s, model=%s. Disconnecting...",
                 IDENTIFICATION_QUERY,
                 manufacturer,
                 model,
@@ -282,12 +281,9 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
                             payload_len = int(chunks[2:header_len].decode())
                             total_len = header_len + payload_len
 
-                            if len(chunks) >= total_len + 1 and chunks[total_len:total_len + 1] == b"\n":
+                            if len(chunks) >= total_len + 1 and chunks[total_len : total_len + 1] == b"\n":
                                 break
-                            if (
-                                len(chunks) >= total_len + 2
-                                and chunks[total_len:total_len + 2] == b"\r\n"
-                            ):
+                            if len(chunks) >= total_len + 2 and chunks[total_len : total_len + 2] == b"\r\n":
                                 break
 
         except socket.timeout:
