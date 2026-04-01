@@ -4539,7 +4539,7 @@ class Tgf4000Proxy(DynamicProxy, Tgf4000Interface):
         hostname = CS_SETTINGS[device_id].get("HOSTNAME", "localhost")
         protocol = CS_SETTINGS[device_id].get("PROTOCOL", "tcp")
         commanding_port = CS_SETTINGS[device_id].get("COMMANDING_PORT", 0)
-        service_type = CS_SETTINGS[device_id].get("SERVICE_TYPE", "pmx_a_cs")
+        service_type = CS_SETTINGS[device_id].get("SERVICE_TYPE", "tgf4000_cs")
 
         # Fixed ports -> Use information from settings
 

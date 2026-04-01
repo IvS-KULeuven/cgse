@@ -21,6 +21,7 @@ from egse.digilent.measurpoint.dt8874 import (
     HOSTNAME,
 )
 from egse.digilent.measurpoint.dt8874.dt8874 import Dt8874Proxy
+from egse.logger import set_all_logger_levels, remote_logging
 from egse.registry.client import RegistryClient
 from egse.services import ServiceProxy
 from egse.settings import Settings
@@ -338,9 +339,6 @@ def status():
 
 
 if __name__ == "__main__":
-    import logging
-
-    from egse.logger import set_all_logger_levels, remote_logging
 
     set_all_logger_levels(logging.DEBUG)
 
