@@ -1,3 +1,5 @@
+from contextlib import nullcontext
+
 import pytest
 
 from egse.backoff import BackoffStrategy
@@ -5,16 +7,31 @@ from egse.backoff import JitterStrategy
 from egse.backoff import calculate_retry_interval
 
 
-def test_calculate_retry_interval_exponential_without_jitter():
-    interval = calculate_retry_interval(
-        attempt_number=3,
-        base_interval=0.5,
-        max_interval=10.0,
-        backoff_strategy=BackoffStrategy.EXPONENTIAL,
-        jitter_strategy=JitterStrategy.NONE,
-    )
+@pytest.mark.parametrize(
+    "attempt_number,base_interval,max_interval,expected",
+    [
+        (-1, 0, 0, pytest.raises(ValueError, match="attempt_number shall be a non-negative integer")),
+        (0, 1.0, 10.0, nullcontext(1.0)),
+        (1, 1.0, 10.0, nullcontext(2.0)),
+        (2, 1.0, 10.0, nullcontext(4.0)),
+        (3, 1.0, 10.0, nullcontext(8.0)),
+        (4, 1.0, 10.0, nullcontext(10.0)),
+        (10, 1.0, 10.0, nullcontext(10.0)),
+        (11, 1.0, 10.0, nullcontext(10.0)),
+    ],
+)
+def test_calculate_retry_interval_exponential_without_jitter(attempt_number, base_interval, max_interval, expected):
 
-    assert interval == 4.0
+    with expected as expected_interval:
+        interval = calculate_retry_interval(
+            attempt_number=attempt_number,
+            base_interval=base_interval,
+            max_interval=max_interval,
+            backoff_strategy=BackoffStrategy.EXPONENTIAL,
+            jitter_strategy=JitterStrategy.NONE,
+        )
+
+        assert interval == expected_interval
 
 
 def test_calculate_retry_interval_exponential_with_custom_factor():
@@ -30,16 +47,29 @@ def test_calculate_retry_interval_exponential_with_custom_factor():
     assert interval == pytest.approx(1.6875)
 
 
-def test_calculate_retry_interval_linear_without_jitter():
-    interval = calculate_retry_interval(
-        attempt_number=3,
-        base_interval=0.5,
-        max_interval=10.0,
-        backoff_strategy=BackoffStrategy.LINEAR,
-        jitter_strategy=JitterStrategy.NONE,
-    )
+@pytest.mark.parametrize(
+    "attempt_number,base_interval,max_interval,expected",
+    [
+        (-1, 0, 0, pytest.raises(ValueError, match="attempt_number shall be a non-negative integer")),
+        (0, 1.0, 10.0, nullcontext(1.0)),
+        (1, 1.0, 10.0, nullcontext(2.0)),
+        (2, 1.0, 10.0, nullcontext(3.0)),
+        (10, 1.0, 10.0, nullcontext(10.0)),
+        (11, 1.0, 10.0, nullcontext(10.0)),
+    ],
+)
+def test_calculate_retry_interval_linear_without_jitter(attempt_number, base_interval, max_interval, expected):
 
-    assert interval == 3.5
+    with expected as expected_interval:
+        interval = calculate_retry_interval(
+            attempt_number=attempt_number,
+            base_interval=base_interval,
+            max_interval=max_interval,
+            backoff_strategy=BackoffStrategy.LINEAR,
+            jitter_strategy=JitterStrategy.NONE,
+        )
+        print(f"Calculated interval: {interval}, Expected interval: {expected_interval}")
+        assert interval == expected_interval
 
 
 def test_calculate_retry_interval_fixed_without_jitter():

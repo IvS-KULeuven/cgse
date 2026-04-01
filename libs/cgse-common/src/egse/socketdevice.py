@@ -186,23 +186,23 @@ class SocketDevice(DeviceConnectionInterface, DeviceTransport):
         base_interval = max(0.0, initial_delay)
         last_exc: Exception | None = None
 
-        for attempt in range(1, attempts + 1):
+        for attempt in range(attempts):
             self._reset_socket_state()
             try:
                 self.connect()
-                if attempt > 1:
-                    logger.info(f"{self.device_name}: reconnect succeeded on attempt {attempt}/{attempts}")
+                if attempt > 0:
+                    logger.info(f"{self.device_name}: reconnect succeeded on attempt {attempt + 1}/{attempts}")
                 return
             except (ConnectionError, TimeoutError, DeviceConnectionError, DeviceTimeoutError, OSError) as exc:
                 last_exc = exc
-                if attempt == attempts:
+                if attempt == attempts - 1:
                     break
 
                 strategy = backoff_strategy or (
                     BackoffStrategy.FIXED if backoff_factor == 1.0 else BackoffStrategy.EXPONENTIAL
                 )
                 delay = calculate_retry_interval(
-                    attempt_number=attempt - 1,
+                    attempt_number=attempt,
                     base_interval=base_interval,
                     max_interval=max_delay,
                     backoff_strategy=strategy,
@@ -211,7 +211,7 @@ class SocketDevice(DeviceConnectionInterface, DeviceTransport):
                 )
 
                 logger.warning(
-                    f"{self.device_name}: connect attempt {attempt}/{attempts} failed "
+                    f"{self.device_name}: connect attempt {attempt + 1}/{attempts} failed "
                     f"({type_name(exc)}: {exc}), retrying in {delay:.2f}s"
                 )
                 time.sleep(delay)
@@ -489,23 +489,23 @@ class AsyncSocketDevice(AsyncDeviceInterface, AsyncDeviceTransport):
         base_interval = max(0.0, initial_delay)
         last_exc: Exception | None = None
 
-        for attempt in range(1, attempts + 1):
+        for attempt in range(attempts):
             await self._reset_socket_state()
             try:
                 await self.connect()
-                if attempt > 1:
-                    logger.info(f"{self.device_name}: reconnect succeeded on attempt {attempt}/{attempts}")
+                if attempt > 0:
+                    logger.info(f"{self.device_name}: reconnect succeeded on attempt {attempt + 1}/{attempts}")
                 return
             except (ConnectionError, TimeoutError, DeviceConnectionError, DeviceTimeoutError, OSError) as exc:
                 last_exc = exc
-                if attempt == attempts:
+                if attempt == attempts - 1:
                     break
 
                 strategy = backoff_strategy or (
                     BackoffStrategy.FIXED if backoff_factor == 1.0 else BackoffStrategy.EXPONENTIAL
                 )
                 delay = calculate_retry_interval(
-                    attempt_number=attempt - 1,
+                    attempt_number=attempt,
                     base_interval=base_interval,
                     max_interval=max_delay,
                     backoff_strategy=strategy,
@@ -514,7 +514,7 @@ class AsyncSocketDevice(AsyncDeviceInterface, AsyncDeviceTransport):
                 )
 
                 logger.warning(
-                    f"{self.device_name}: connect attempt {attempt}/{attempts} failed "
+                    f"{self.device_name}: connect attempt {attempt + 1}/{attempts} failed "
                     f"({type_name(exc)}: {exc}), retrying in {delay:.2f}s"
                 )
                 await asyncio.sleep(delay)

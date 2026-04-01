@@ -208,7 +208,8 @@ def test_sync_connect_failures():
 
     # dev = SocketDevice(hostname="10.255.255.1", port=25)
     # dev = SocketDevice(hostname="10.255.255.0", port=20)
-    dev = SocketDevice(hostname="10.0.0.0", port=1)
+    # dev = SocketDevice(hostname="10.0.0.0", port=1)
+    dev = SocketDevice(hostname="192.0.0.0", port=1)
     with pytest.raises(TimeoutError):
         dev.connect()
 
