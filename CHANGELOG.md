@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.20.5] - 2026-04-01
+
+- Corrected retrieval of channel configuration for MEASURpoint DT8874
+
 ## [0.20.4] - 2026-04-01
 
 - Fixed problems with imports in `dt8874_cs.py`
