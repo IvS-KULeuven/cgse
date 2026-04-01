@@ -18,11 +18,15 @@ from typing import Annotated
 import rich
 import typer
 import zmq
+from egse.env import get_conf_data_location
+from egse.process import SubProcess
+from egse.response import Failure
+from egse.response import Response
+from egse.settings import Settings
+from egse.zmq_ser import get_port_number
 from rich.console import Console
 
 from egse.confman import COMMANDING_PORT
-from egse.confman import ConfigurationManagerProtocol
-from egse.confman import ConfigurationManagerProxy
 from egse.confman import HOSTNAME
 from egse.confman import MONITORING_PORT
 from egse.confman import PROCESS_NAME
@@ -30,17 +34,13 @@ from egse.confman import PROTOCOL
 from egse.confman import SERVICE_PORT
 from egse.confman import SERVICE_TYPE
 from egse.confman import STORAGE_MNEMONIC
+from egse.confman import ConfigurationManagerProtocol
+from egse.confman import ConfigurationManagerProxy
 from egse.control import ControlServer
-from egse.env import get_conf_data_location
 from egse.logger import remote_logging
-from egse.process import SubProcess
 from egse.registry.client import RegistryClient
-from egse.response import Failure
-from egse.response import Response
 from egse.services import ServiceProxy
-from egse.settings import Settings
 from egse.storage import store_housekeeping_information
-from egse.zmq_ser import get_port_number
 
 # Use explicit name here otherwise the logger will probably be called __main__
 
@@ -100,8 +100,8 @@ class ConfigurationManagerControlServer(ControlServer):
         store_housekeeping_information(origin, data)
 
     def register_to_storage_manager(self):
-        from egse.storage import register_to_storage_manager
         from egse.storage import is_storage_manager_active
+        from egse.storage import register_to_storage_manager
         from egse.storage.persistence import TYPES
 
         if not is_storage_manager_active():
@@ -207,6 +207,7 @@ def status():
     """Print the status of the control server."""
 
     import rich
+
     from egse.confman import get_status
 
     rich.print(get_status(), end="")
@@ -269,7 +270,9 @@ def register_to_storage():
         # of that control server.
 
         if service:
-            rich.print("Registering CM to the storage manager")
+            rich.print(
+                f"Registering CM to the storage manager on {service['host']}:{service['metadata']['service_port']}"
+            )
             with ServiceProxy(hostname=service["host"], port=service["metadata"]["service_port"]) as service_proxy:
                 service_proxy.register_to_storage()  # register the control server
         else:
