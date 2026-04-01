@@ -339,7 +339,6 @@ def status():
 
 
 if __name__ == "__main__":
-
     set_all_logger_levels(logging.DEBUG)
 
     sys.exit(app())
