@@ -208,7 +208,8 @@ def test_sync_connect_failures():
 
     # dev = SocketDevice(hostname="10.255.255.1", port=25)
     # dev = SocketDevice(hostname="10.255.255.0", port=20)
-    dev = SocketDevice(hostname="10.0.0.0", port=1)
+    # dev = SocketDevice(hostname="10.0.0.0", port=1)
+    dev = SocketDevice(hostname="192.0.0.0", port=1)
     with pytest.raises(TimeoutError):
         dev.connect()
 
@@ -244,7 +245,7 @@ async def test_async_connect_write_trans_and_disconnect(async_echo_server):
     dev = AsyncSocketDevice(hostname=host, port=port, connect_timeout=1.0, read_timeout=1.0)
 
     await dev.connect()
-    assert dev.is_connected() is True
+    assert await dev.is_connected() is True
 
     # trans should return bytes that end with ETX and contain the echoed payload
     got = await dev.trans("CMD-ASYNC")
@@ -265,7 +266,7 @@ async def test_async_connect_write_trans_and_disconnect(async_echo_server):
 
     # disconnect
     await dev.disconnect()
-    assert dev.is_connected() is False
+    assert await dev.is_connected() is False
 
 
 @pytest.mark.asyncio
@@ -310,7 +311,7 @@ async def test_async_cleanup_on_broken_connection(async_echo_server):
 
     # connect and then shut down server to simulate connection drop
     await dev.connect()
-    assert dev.is_connected() is True
+    assert await dev.is_connected() is True
 
     logger.info("Before server close")
 
@@ -326,4 +327,61 @@ async def test_async_cleanup_on_broken_connection(async_echo_server):
     with pytest.raises(DeviceConnectionError):
         await dev.write("X")
 
-    assert dev.is_connected() is False
+    assert await dev.is_connected() is False
+
+
+@pytest.mark.asyncio
+async def test_async_connect_with_retry_succeeds_after_transient_failures(async_echo_server):
+    host, port, _server, _active_writers = async_echo_server
+    dev = AsyncSocketDevice(hostname=host, port=port, connect_timeout=1.0, read_timeout=1.0)
+
+    original_connect = dev.connect
+    attempts = 0
+
+    async def flaky_connect():
+        nonlocal attempts
+        attempts += 1
+        if attempts < 3:
+            raise DeviceConnectionError(dev.device_name, "simulated transient connect failure")
+        await original_connect()
+
+    dev.connect = flaky_connect  # type: ignore[method-assign]
+
+    await dev.connect_with_retry(attempts=5, initial_delay=0.01, backoff_factor=1.0, max_delay=0.01)
+
+    assert attempts == 3
+    assert await dev.is_connected() is True
+
+    await dev.disconnect()
+
+
+@pytest.mark.asyncio
+async def test_async_execute_with_reconnect_retries_once(async_echo_server):
+    host, port, _server, _active_writers = async_echo_server
+    dev = AsyncSocketDevice(hostname=host, port=port, connect_timeout=1.0, read_timeout=1.0)
+
+    await dev.connect()
+    assert await dev.is_connected() is True
+
+    calls = 0
+
+    async def op() -> bytes:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise BrokenPipeError("simulated broken pipe")
+        return await dev.trans("AFTER-RECONNECT")
+
+    response = await dev.execute_with_reconnect(
+        operation_name="test-op",
+        func=op,
+        reconnect_attempts=3,
+        reconnect_initial_delay=0.01,
+        reconnect_backoff=1.0,
+        reconnect_max_delay=0.01,
+    )
+
+    assert calls == 2
+    assert b"RESP:AFTER-RECONNECT" in response
+
+    await dev.disconnect()
