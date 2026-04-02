@@ -767,18 +767,42 @@ def submit_setup_to_disk(setup: Setup, description: str, **kwargs) -> str | None
         The Setup ID of the newly created Setup or None.
     """
 
+    site_id = kwargs.get("site_id") or setup.get("site_id") or get_site_id()
+    setup_location = Path(get_conf_data_location(site_id)).expanduser()
+    setup_location.mkdir(parents=True, exist_ok=True)
+
+    setup_files = sorted(setup_location.glob(f"SETUP_{site_id}_*.yaml"))
+    existing_setup_ids = [
+        int(parsed_setup_id)
+        for file in setup_files
+        if (parsed_setup_id := _parse_filename_for_setup_id(file.name)) is not None
+    ]
+    setup_id = (max(existing_setup_ids) + 1) if existing_setup_ids else 0
+
+    filename = f"SETUP_{site_id}_{setup_id:05d}_{format_datetime(fmt='%y%m%d_%H%M%S')}.yaml"
+
+    history = setup.get("history")
+    if not isinstance(history, dict):
+        history = {}
+        setup["history"] = history
+
+    history.update({f"{setup_id}": description})
+    setup.set_private_attribute("_setup_id", setup_id)
+    setup.to_yaml_file(setup_location / filename)
+    save_last_setup_id(setup_id, site_id=site_id)
+
     rich.print(
         textwrap.dedent(
-            f"""\
-            Saving setup to disk, a new setup identifier will be assigned. 
-            To finalise the submit, reload the setup:
+            """\
+            Saving setup to disk, a new setup identifier has been assigned.
+            To finalize the submit, reload the setup:
 
-            setup = load_setup() 
+            setup = load_setup()
             """
         )
     )
 
-    return "00000"
+    return f"{setup_id:05d}"
 
 
 @runtime_checkable
@@ -944,7 +968,25 @@ class SetupManager:
         return self._default_source
 
     def load_setup(self, setup_id: int = None, **kwargs):
+        """Load a Setup.
+
+        Args:
+            setup_id: identifier for the requested Setup
+
+        Optional keyword arguments:
+            site_id: the name of the test site
+            from_disk: if True, load the Setup from disk instead of the configuration manager
+            source: the source to load the Setup from, e.g. 'core-services' or 'local' ('local'
+                is equivalent to using 'from_disk=True')
+
+        Returns:
+            The loaded Setup or None when the Setup could not be loaded.
+        """
+        if kwargs.get("from_disk", False):
+            return LocalSetupProvider().load_setup(setup_id, **kwargs)
+
         source = kwargs.get("source") or self.get_default_source()
+        logger.info(f"Loading Setup with source = {source}, setup_id = {setup_id}, kwargs = {kwargs}")
         for provider in self.providers:
             if provider.can_handle(source):
                 return provider.load_setup(setup_id, **kwargs)
