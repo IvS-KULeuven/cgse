@@ -122,15 +122,8 @@ from typing import Union
 
 import git
 import rich
-from git import GitCommandError
-
-from egse.command import ClientServerCommand
-from egse.command import stringify_function_call
 from egse.config import find_file
 from egse.config import find_files
-from egse.connect import get_endpoint
-from egse.control import ControlServer
-from egse.control import is_control_server_active
 from egse.decorators import dynamic_interface
 from egse.decorators import static_vars
 from egse.env import get_conf_data_location
@@ -139,13 +132,8 @@ from egse.env import get_project_name
 from egse.env import get_site_id
 from egse.exceptions import InternalError
 from egse.log import logger
-from egse.notifyhub.event import NotificationEvent
-from egse.notifyhub.services import EventPublisher
 from egse.obsid import ObservationIdentifier
 from egse.plugin import entry_points
-from egse.protocol import CommandProtocol
-from egse.proxy import Proxy
-from egse.registry.client import RegistryClient
 from egse.response import Failure
 from egse.response import Response
 from egse.response import Success
@@ -162,6 +150,18 @@ from egse.system import humanize_seconds
 from egse.version import get_version_installed
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import connect_address
+from git import GitCommandError
+
+from egse.command import ClientServerCommand
+from egse.command import stringify_function_call
+from egse.connect import get_endpoint
+from egse.control import ControlServer
+from egse.control import is_control_server_active
+from egse.notifyhub.event import NotificationEvent
+from egse.notifyhub.services import EventPublisher
+from egse.protocol import CommandProtocol
+from egse.proxy import Proxy
+from egse.registry.client import RegistryClient
 
 HERE = Path(__file__).parent
 
@@ -201,9 +201,9 @@ def _push_setup_to_repo(filename: str, commit_msg: str) -> Failure | Success:
     if repo_workdir is None:
         msg = textwrap.dedent(
             f"""\
-            Couldn't determine the repository location for configuration data. 
+            Couldn't determine the repository location for configuration data.
 
-            Check if the environment variable '{get_project_name()}_CONF_REPO_LOCATION' is set and valid 
+            Check if the environment variable '{get_project_name()}_CONF_REPO_LOCATION' is set and valid
             before starting the configuration manager.
             """
         )
@@ -220,10 +220,10 @@ def _push_setup_to_repo(filename: str, commit_msg: str) -> Failure | Success:
     if len(untracked) != 1:
         msg = textwrap.dedent(
             f"""\
-            The number of untracked files ({len(untracked)}) in the cgse-conf repository doesn't match 
-            the expected. Check the git status at '{repo_workdir}' on the egse-server. 
+            The number of untracked files ({len(untracked)}) in the cgse-conf repository doesn't match
+            the expected. Check the git status at '{repo_workdir}' on the egse-server.
             Only '{filename}' should be untracked.
-            
+
             Untracked files: {untracked}
             """
         )
@@ -1033,7 +1033,7 @@ class ConfigurationManagerProtocol(CommandProtocol):
             "CM_SITE_ID": site_id,
             "CM_SETUP_ID": setup_id,
             "CM_TEST_ID": test_id,
-            "CM_OBSID": obsid,
+            "CM_OBSID": str(obsid) if obsid else "",
         }
 
         hk.update(self.version_dict)
