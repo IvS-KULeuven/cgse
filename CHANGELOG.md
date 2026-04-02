@@ -7,6 +7,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-04-02
+
+- Refactor AsyncRegistryClient usage to support async context management and ensure proper connection handling
+- Enhance submit_setup_to_disk and load_setup methods to manage setup IDs and improve loading functionality
+- Add test for submit_setup_to_disk to verify new setup file creation and ID return
+- Implement backoff and jitter strategies for retry logic in socket connections
+- Add reconnect and retry logic to AsyncSocketDevice for improved connection stability
+- Fix a serialization problem with metrics when an observation is started
+  - ObservationIdentifier is converted to str before serialization
+- for Digilent MeasurePoint
+  - Read full SCPI TCP blocks before decoding RTD data
+
+
 ## [0.20.5] - 2026-04-01
 
 - Corrected retrieval of channel configuration for MEASURpoint DT8874
@@ -26,7 +39,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [0.20.1] - 2026-03-30
 
 - Fix exception pickling for DeviceError and subclasses
-- Check for broken pipe in TGF4000 and add socket keepalives 
+- Check for broken pipe in TGF4000 and add socket keepalives
 - Command delay for TGF4000 & PMX-A
 - Improvements for the PM UI
 - Refactor registry port configuration to load from settings
@@ -347,7 +360,13 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.20.0...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.21.0...HEAD
+[0.21.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.20.5...v0.21.0
+[0.20.5]: https://github.com/IvS-KULeuven/cgse/compare/v0.20.4...v0.20.5
+[0.20.4]: https://github.com/IvS-KULeuven/cgse/compare/v0.20.3...v0.20.4
+[0.20.3]: https://github.com/IvS-KULeuven/cgse/compare/v0.20.2...v0.20.3
+[0.20.2]: https://github.com/IvS-KULeuven/cgse/compare/v0.20.1...v0.20.2
+[0.20.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.20.0...v0.20.1
 [0.20.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.6...v0.20.0
 [0.19.6]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.5...v0.19.6
 [0.19.5]: https://github.com/IvS-KULeuven/cgse/compare/v0.19.4...v0.19.5
