@@ -590,16 +590,20 @@ class AsyncRegistryClient:
         self.sub_socket: zmq.asyncio.Socket | None = None
         self.hb_socket: zmq.asyncio.Socket | None = None
 
-    def __enter__(self):
-        self.connect()
+    async def __aenter__(self):
+        await self.connect()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.disconnect()
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.disconnect()
 
-    def connect(self):
+    async def connect(self) -> None:
         if VERBOSE_DEBUG:
             self.logger.debug("Connecting to service registry...")
+
+        if self.req_socket is not None and self.sub_socket is not None:
+            self.logger.warning("Already connected to service registry, skipping connection.")
+            return
 
         # REQ socket for request-reply pattern
         self.req_socket = self.context.socket(zmq.DEALER)
@@ -619,9 +623,13 @@ class AsyncRegistryClient:
         self.hb_socket.setsockopt(zmq.IDENTITY, self._client_id)
         self.hb_socket.connect(self.registry_hb_endpoint)
 
-    def disconnect(self):
+    async def disconnect(self) -> None:
         if VERBOSE_DEBUG:
             self.logger.debug("Disconnecting from service registry...")
+
+        self._running = False
+        await self.stop_all_tasks()
+        self._disconnect_hb_socket()
 
         if self.req_socket:
             self.req_socket.close(linger=0)
@@ -1159,28 +1167,8 @@ class AsyncRegistryClient:
         return response
 
     async def close(self) -> None:
-        """Clean up resources."""
-        await self.stop_heartbeat()  # This stops all tasks
-
-        try:
-            if hasattr(self, "req_socket") and self.req_socket:
-                self.req_socket.close()
-
-            if hasattr(self, "sub_socket") and self.sub_socket:
-                self.sub_socket.close()
-
-            # We can not terminate the context, because we use a global instance, i.e. a singleton context.
-            # When we try to terminate it, even after checking if it was closed, it raises an exception.
-            if hasattr(self, "context") and self.context:
-                if VERBOSE_DEBUG:
-                    self.logger.debug(f"{self.context = !r}")
-                    self.logger.debug(f"{self.context._sockets = !r}")
-                # The zmq context instance is the global singleton instance.
-                # Terminating it here would affect other parts of the application using zmq.
-                # if not self.context.closed:
-                #     self.context.term()
-        except Exception as exc:
-            self.logger.error(f"Error during cleanup: {exc}")
+        """Backward-compatible alias for disconnect()."""
+        await self.disconnect()
 
 
 def is_service_registered(service_type: str):

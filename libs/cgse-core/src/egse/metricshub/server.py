@@ -141,7 +141,6 @@ class AsyncMetricsHub:
 
         # Service registry
         self.registry_client = AsyncRegistryClient(timeout=REQUEST_TIMEOUT)
-        self.registry_client.connect()
 
         self.service_id = None
         self.service_name = PROCESS_NAME
@@ -228,6 +227,8 @@ class AsyncMetricsHub:
             asyncio.create_task(self._handle_requests()),
         ]
 
+        await self.registry_client.connect()
+
         await self.register_service()
 
         await self._shutdown_event.wait()
@@ -253,7 +254,7 @@ class AsyncMetricsHub:
         self.collector_socket.close()
         self.requests_socket.close()
 
-        self.registry_client.disconnect()
+        await self.registry_client.disconnect()
 
         self._logger.info("Async Metrics Hub shutdown complete.")
 
