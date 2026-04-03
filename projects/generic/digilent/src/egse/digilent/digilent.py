@@ -320,6 +320,17 @@ def to_date(response: str) -> datetime.datetime:
     return datetime.datetime.strptime(response, "%Y,%m,%d")
 
 
+def _extract_ieee_block_payload(response: bytes) -> bytes:
+    """Return the payload bytes of an IEEE 488.2 definite-length block."""
+    if response.startswith(b"#") and len(response) >= 2:
+        num_length_digits = int(chr(response[1]))
+        header_len = 2 + num_length_digits
+        payload_len = int(response[2:header_len].decode())
+        return response[header_len:header_len + payload_len]
+
+    return response.rstrip(b"\r\n")
+
+
 def parse_error(response: str) -> tuple[int, str]:
     """Converts the given response string of a tuple of an error code and the corresponding error message.
 
@@ -348,7 +359,7 @@ def parse_single_measurement(response: bytes) -> tuple[float, ...]:
     endian_char = ">"
     offset = 0
 
-    binary_data = response[3:-1]
+    binary_data = _extract_ieee_block_payload(response)
 
     values = []
 
@@ -375,11 +386,7 @@ def parse_scan_records(response: bytes) -> ScanRecords:
 
     # Skip the header
 
-    if response.startswith(b"#"):
-        header_end = 6
-        binary_data = response[header_end:-1]  # -1 to skip trailing newline
-    else:
-        binary_data = response
+    binary_data = _extract_ieee_block_payload(response)
 
     endian_char = ">"
     offset = 0
