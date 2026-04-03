@@ -83,7 +83,7 @@ plugins:
                 import:
                     - https://docs.python.org/3/objects.inv
                     - https://rich.readthedocs.io/en/stable/objects.inv
-                
+
                 options:
                     modernize_annotations: false
                     docstring_style: google
@@ -162,6 +162,11 @@ nav:
       - libs/cgse-core/index.md
       - libs/cgse-core/registry.md
       - libs/cgse-core/notifyhub.md
+      - libs/cgse-core/metricshub.md
+      - libs/cgse-core/logger.md
+      - libs/cgse-core/configuration-manager.md
+      - libs/cgse-core/storage-manager.md
+      - libs/cgse-core/process-manager.md
     - cgse-coordinates:
       - libs/cgse-coordinates/index.md
     - cgse-gui:
@@ -199,5 +204,5 @@ nav:
       - api/settings.md
       - api/setup.md
       - api/system.md
-  
+
   - roadmap.md
