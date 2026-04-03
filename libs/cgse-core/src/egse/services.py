@@ -181,7 +181,7 @@ class ServiceProtocol(CommandProtocol):
             self.send(("", exc))  # Why not sent back a Failure object?
 
     def handle_register_to_storage(self):
-        logger.debug("(re-)registering to the storage manager")
+        logger.debug(f"(re-)registering {self.control_server.get_storage_mnemonic()} to the storage manager")
         try:
             self.control_server.register_to_storage_manager()
             self.send(("ACK",))

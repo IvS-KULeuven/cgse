@@ -42,6 +42,11 @@ from egse.registry.client import RegistryClient
 from egse.services import ServiceProxy
 from egse.storage import store_housekeeping_information
 
+try:
+    from typing import override
+except ImportError:
+    from typing_extensions import override
+
 # Use explicit name here otherwise the logger will probably be called __main__
 
 logger = logging.getLogger("egse.confman")
@@ -73,57 +78,68 @@ class ConfigurationManagerControlServer(ControlServer):
 
         self.logger.info(f"CM housekeeping saved every {self.hk_delay / 1000:.1f} seconds.")
 
+    @override
     def get_communication_protocol(self):
         return PROTOCOL
 
+    @override
     def get_commanding_port(self):
         return get_port_number(self.dev_ctrl_cmd_sock) or COMMANDING_PORT
 
+    @override
     def get_service_port(self):
         return get_port_number(self.dev_ctrl_service_sock) or SERVICE_PORT
 
+    @override
     def get_monitoring_port(self):
         return get_port_number(self.dev_ctrl_mon_sock) or MONITORING_PORT
 
+    @override
     def get_storage_mnemonic(self):
         return STORAGE_MNEMONIC
 
+    @override
     def is_storage_manager_active(self):
         from egse.storage import is_storage_manager_active
 
         return is_storage_manager_active()
 
+    @override
     def store_housekeeping_information(self, data):
         """Send housekeeping information to the Storage manager."""
 
         origin = self.get_storage_mnemonic()
         store_housekeeping_information(origin, data)
 
+    @override
     def register_to_storage_manager(self):
-        from egse.storage import is_storage_manager_active
         from egse.storage import register_to_storage_manager
         from egse.storage.persistence import TYPES
 
-        if not is_storage_manager_active():
-            self.logger.warning(f"Storage manager not active, couldn't register as {self.get_storage_mnemonic()}.")
-            return
-
-        register_to_storage_manager(
+        if register_to_storage_manager(
             origin=self.get_storage_mnemonic(),
             persistence_class=TYPES["CSV"],
             prep={
                 "column_names": list(self.device_protocol.get_housekeeping().keys()),
                 "mode": "a",
             },
-        )
+        ):
+            self.storage_manager_active = True
+            logger.debug(
+                f"{self.get_storage_mnemonic()} registered, "
+                f"housekeeping information will be sent to the storage manager."
+            )
 
+    @override
     def unregister_from_storage_manager(self):
         from egse.storage import unregister_from_storage_manager
 
         unregister_from_storage_manager(origin=self.get_storage_mnemonic())
 
+    @override
     def before_serve(self): ...
 
+    @override
     def after_serve(self) -> None:
         self.deregister_service()
 

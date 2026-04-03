@@ -183,7 +183,7 @@ def is_storage_manager_active(timeout: float = 0.5):
     return is_control_server_active(endpoint, timeout)
 
 
-def register_to_storage_manager(origin: str, persistence_class: PersistenceLayer, prep: Dict):
+def register_to_storage_manager(origin: str, persistence_class: PersistenceLayer, prep: Dict) -> bool:
     """
     Register the component to the Storage manager.
 
@@ -194,6 +194,9 @@ def register_to_storage_manager(origin: str, persistence_class: PersistenceLayer
         origin (str): the name of the component, by which it will be registered
         persistence_class: a concrete class that will be used to store the  data
         prep (dict): preparation meta data for the persistence class
+
+    Returns:
+        True if the registration was successful, False otherwise.
 
     Raises:
         ConnectionError: when the storage manager can not be reached.
@@ -210,10 +213,12 @@ def register_to_storage_manager(origin: str, persistence_class: PersistenceLayer
             )
             if not response.successful:
                 logger.warning(f"Couldn't register to the Storage manager: {response}")
+                return False
             else:
                 logger.info(response)
+                return True
     except ConnectionError as exc:
-        logger.warning(f"Couldn't connect to the Storage manager for registration: {exc}")
+        logger.warning(f"Couldn't connect to the Storage manager for registration of {origin}: {exc}")
         raise
 
 
