@@ -126,6 +126,8 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         self.logger = logging.getLogger(get_full_classname(self))
 
+        self.storage_manager_active = False
+
         self.listeners = Listeners()
         self.scheduled_tasks = []
 
@@ -536,9 +538,18 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         # check if Storage Manager is available
 
-        storage_manager = self.is_storage_manager_active()
-
-        storage_manager and self.register_to_storage_manager()
+        if self.is_storage_manager_active():
+            self.storage_manager_active = True
+            self.logger.info(
+                f"Storage Manager is active, registering {self.get_storage_mnemonic()} to Storage Manager."
+            )
+            self.register_to_storage_manager()
+        else:
+            self.storage_manager_active = False
+            self.logger.warning(
+                f"Storage Manager is not active, housekeeping information will not be stored "
+                f"for {self.get_storage_mnemonic()}."
+            )
 
         # This approach is very simplistic and not time efficient
         # We probably want to use a Timer that executes the monitoring and saving actions at
@@ -595,14 +606,14 @@ class ControlServer(metaclass=abc.ABCMeta):
 
             if time_in_ms() - last_time_hk >= self.hk_delay:
                 last_time_hk = time_in_ms()
-                # if storage_manager:
-                # self.logger.debug("Sending housekeeping information to Storage.")
                 try:
                     hk_dict = save_average_execution_time(self.device_protocol.get_housekeeping)
 
-                    if storage_manager:
+                    if self.storage_manager_active:
                         self.store_housekeeping_information(hk_dict)
+
                     self.propagate_metrics(hk_dict)
+
                 except Exception as exc:
                     logger.error(
                         textwrap.dedent(
@@ -634,7 +645,8 @@ class ControlServer(metaclass=abc.ABCMeta):
                 self.logger.error("Some Thread or sub-process that was started by Protocol has died, terminating...")
                 break
 
-        storage_manager and self.unregister_from_storage_manager()
+        if self.storage_manager_active:
+            self.unregister_from_storage_manager()
 
         self.after_serve()
 
