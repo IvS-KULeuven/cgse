@@ -64,6 +64,7 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
 
         try:
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
             # The following lines are to experiment with blocking and timeout, but there is no need.
             # self._sock.setblocking(1)
             # self._sock.settimeout(3)
@@ -157,7 +158,8 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
 
         if "Data Translation" not in manufacturer or "DT" not in model:
             logger.error(
-                f"Device did not respond correctly to a {IDENTIFICATION_QUERY} command, manufacturer={manufacturer}, model={model}. Disconnecting..."
+                f"Device did not respond correctly to a {IDENTIFICATION_QUERY} command, "
+                f"manufacturer={manufacturer}, model={model}. Disconnecting..."
             )
             self.disconnect()
             return False
@@ -241,8 +243,8 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         Returns: Content of the device buffer.
         """
 
-        n_total = 0
         buf_size = 2048
+        chunks = bytearray()
 
         # Set a timeout of READ_TIMEOUT to the socket.recv
 
@@ -254,9 +256,34 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
                 time.sleep(0.001)  # Give the device time to fill the buffer
                 data = self._sock.recv(buf_size)
                 n = len(data)
-                n_total += n
-                if n < buf_size:
+                if n == 0:
                     break
+
+                chunks.extend(data)
+
+                # Text responses are line-terminated.
+                if chunks.endswith(b"\n"):
+                    break
+
+                # Binary measurement responses use an IEEE 488.2 definite-length
+                # block header: "#<ndigits><length><payload><LF>".
+                if chunks.startswith(b"#") and len(chunks) >= 2:
+                    try:
+                        num_length_digits = int(chr(chunks[1]))
+                    except ValueError:
+                        num_length_digits = None
+
+                    if num_length_digits is not None:
+                        header_len = 2 + num_length_digits
+                        if len(chunks) >= header_len:
+                            payload_len = int(chunks[2:header_len].decode())
+                            total_len = header_len + payload_len
+
+                            if len(chunks) >= total_len + 1 and chunks[total_len : total_len + 1] == b"\n":
+                                break
+                            if len(chunks) >= total_len + 2 and chunks[total_len : total_len + 2] == b"\r\n":
+                                break
+
         except socket.timeout:
             logger.warning(f"Socket timeout error for {self.hostname}:{self.port}")
             return b"\r\n"
@@ -266,8 +293,7 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         finally:
             self._sock.settimeout(saved_timeout)
 
-        # noinspection PyUnboundLocalVariable
-        return data
+        return bytes(chunks)
 
 
 def main():

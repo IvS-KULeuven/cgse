@@ -78,7 +78,7 @@ async def is_control_server_active(service_type: str, timeout: float = 0.5) -> b
     #
     # 1. I can connect to the ServiceRegistry, and analyse the 'health' field if it is 'passing', or
 
-    with AsyncRegistryClient() as registry:
+    async with AsyncRegistryClient() as registry:
         service = await registry.discover_service(service_type)
     if service:
         return True if service["health"] == "passing" else False
@@ -235,7 +235,7 @@ class AsyncControlServer:
     async def register_service(self):
         self.logger.info(f"Registering service {type(self).__name__} as type {self.service_type}")
 
-        self.registry.connect()
+        await self.registry.connect()
 
         self._service_id = await self.registry.register(
             name=type_name(self),
@@ -250,7 +250,7 @@ class AsyncControlServer:
         await self.registry.stop_heartbeat()
         await self.registry.deregister()
 
-        self.registry.disconnect()
+        await self.registry.disconnect()
 
     async def _check_tasks_health(self):
         """Check if any tasks unexpectedly terminated."""
@@ -775,7 +775,7 @@ class AsyncControlClient:
 
         self._post_init_is_done = True
         if self.service_type:
-            with AsyncRegistryClient() as registry:
+            async with AsyncRegistryClient() as registry:
                 service = await registry.discover_service(self.service_type)
             if service:
                 hostname = service["host"]

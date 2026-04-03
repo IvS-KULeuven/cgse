@@ -124,7 +124,7 @@ async def rm_cs_status(suppress_errors: bool = True):
 @rm_cs.command(cls=TyperAsyncCommand, name="list-services")
 async def reg_list_services():
     """Print the active services that are registered."""
-    with AsyncRegistryClient() as client:
+    async with AsyncRegistryClient() as client:
         services = await client.list_services()
 
         for service in services:
@@ -137,7 +137,7 @@ async def reg_list_services():
 @rm_cs.command(cls=TyperAsyncCommand, name="deregister")
 async def reg_deregister(service_type: str):
     """De-register the given service from the service registry."""
-    with AsyncRegistryClient() as client:
+    async with AsyncRegistryClient() as client:
         services = await client.list_services(service_type)
 
         if not services:

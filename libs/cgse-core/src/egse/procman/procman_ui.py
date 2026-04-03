@@ -45,10 +45,14 @@ from egse.setup import Setup
 from egse.system import do_every
 from egse.zmq_ser import set_address_port
 
-UPDATE_INTERVAL = 30
+UPDATE_INTERVAL_CORE = 30  # Status of the core services
+# UPDATE_INTERVAL_CM = 5  # Change in setup and/or obsid
+UPDATE_INTERVAL_DEVICE = 10  # Status of the device Control Servers
 
 DEVICE_CMD_ENTRY_POINT = "cgse.service.device_command"
 GUI_SCRIPTS_ENTRY_POINT = "gui_scripts"
+
+STOP_EVENT = threading.Event()
 
 
 class ControlServerStatus(Enum):
@@ -235,7 +239,7 @@ class ConfigurationManagerMonitoringWorker(QObject):
             self.check_for_setup_changes()
             self.check_for_obsid_changes()
 
-            time.sleep(UPDATE_INTERVAL)
+            # time.sleep(UPDATE_INTERVAL_CM)
 
     def check_for_setup_changes(self) -> None:
         """Checks the incoming monitoring information from the Configuration Manager for changes in the setup.
@@ -331,7 +335,11 @@ class CoreServiceMonitoringWorker(QObject):
                     {"core_service_name": self.core_service_name, "core_service_is_active": len(services) > 0}
                 )
 
-                time.sleep(UPDATE_INTERVAL)
+                # Interruptible sleep
+
+                interrupted = STOP_EVENT.wait(UPDATE_INTERVAL_CORE)
+                if interrupted:
+                    self.active = False
             except ZMQError:
                 pass
 
@@ -396,10 +404,8 @@ class DeviceMonitoringWorker(QObject):
                 services = self.registry_client.list_services(service_type=self.device_id.upper())
 
                 if len(services) == 0:
-                    cs_is_active_new = False
-                    if cs_is_active_new != self.cs_is_active:
-                        self.cs_is_active = cs_is_active_new
-                        self.process_status_signal.emit({"device_id": self.device_id, "cs_is_active": False})
+                    self.cs_is_active = False
+                    self.process_status_signal.emit({"device_id": self.device_id, "cs_is_active": False})
 
                 else:
                     cs_is_active_new = not services is None
@@ -416,7 +422,11 @@ class DeviceMonitoringWorker(QObject):
                             # noinspection PyUnresolvedReferences
                             self.process_status_signal.emit(status_output)
 
-                time.sleep(UPDATE_INTERVAL)
+                # Interruptible sleep
+
+                interrupted = STOP_EVENT.wait(UPDATE_INTERVAL_DEVICE)
+                if interrupted:
+                    self.active = False
             except ZMQError:
                 pass
 
@@ -816,6 +826,8 @@ class ProcessManagerUIView(QMainWindow, Observable):
 
     def closeEvent(self, close_event: QCloseEvent) -> None:
         """Takes action when the UI is closed."""
+
+        STOP_EVENT.set()
 
         self.notify_observers(close_event)
 

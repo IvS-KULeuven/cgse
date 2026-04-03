@@ -465,7 +465,7 @@ class DigilentInterface(DeviceInterface):
         setup = setup or load_setup()
 
         try:
-            channel_config = setup.gse.pmx_a
+            channel_config = setup.gse.dt8874
 
             if "RTD" in channel_config:
                 self.channels["RTD"] = navdict()

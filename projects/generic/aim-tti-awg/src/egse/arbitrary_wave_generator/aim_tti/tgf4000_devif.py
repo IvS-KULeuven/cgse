@@ -24,6 +24,7 @@ from egse.device import (
 logger = logging.getLogger(__name__)
 
 CONNECT_TIMEOUT = 3.0  # Timeout when connecting the socket [s]
+BROKEN_PIPE_DELAY = 1.0
 
 remove_digits = str.maketrans("", "", digits)
 
@@ -89,6 +90,7 @@ class Tgf4000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
 
         try:
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
             # The following lines are to experiment with blocking and timeout, but there is no need.
             # self._sock.setblocking(1)
             # self._sock.settimeout(3)
@@ -210,6 +212,21 @@ class Tgf4000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
 
             self._sock.sendall(command.encode("latin1"))
 
+        except BrokenPipeError:
+            logger.warning(f"{self.device_id}: Broken pipe detected, attempting to reconnect and resend...")
+            self._is_connection_open = False
+            try:
+                self._sock.close()
+                self._sock = None
+
+                time.sleep(BROKEN_PIPE_DELAY)
+
+                self.connect()
+                self._sock.sendall(command.encode("latin1"))
+            except Exception as exc:
+                raise DeviceConnectionError(
+                    self.device_id, "Socket communication error after reconnect attempt."
+                ) from exc
         except socket.timeout as e_timeout:
             raise DeviceTimeoutError(self.device_id, "Socket timeout error") from e_timeout
         except socket.error as e_socket:
@@ -246,7 +263,7 @@ class Tgf4000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
 
             command += "\n" if not command.endswith("\n") else ""
 
-            self._sock.sendall(command.encode())
+            self._sock.sendall(command.encode("latin1"))
 
             # wait for, read and return the response from Aim-TTi TGF4000 (will be at most TBD chars)
 
@@ -257,6 +274,21 @@ class Tgf4000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
         except UnicodeError:
             # noinspection PyUnboundLocalVariable
             return return_string
+        except BrokenPipeError:
+            logger.warning(f"{self.device_id}: Broken pipe detected, attempting to reconnect and resend...")
+            self._is_connection_open = False
+            try:
+                self._sock.close()
+                self._sock = None
+
+                time.sleep(BROKEN_PIPE_DELAY)
+
+                self.connect()
+                self._sock.sendall(command.encode("latin1"))
+                return_string = self.read()
+                return return_string.decode().rstrip()
+            except Exception as exc:
+                raise DeviceConnectionError(self.device_id, "Connection error after reconnect attempt.") from exc
         except socket.timeout as e_timeout:
             raise DeviceTimeoutError(self.device_id, "Socket timeout error") from e_timeout
         except socket.error as e_socket:

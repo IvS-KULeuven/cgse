@@ -195,7 +195,7 @@ def start(
 ) -> int:
     """Starts the Aim-TTi TGF4000 Control Server with the given identifier."""
 
-    multiprocessing.current_process().name = "daq6510_cs (start)"
+    multiprocessing.current_process().name = "tgf4000_cs (start)"
 
     with remote_logging():
         from egse.env import setup_env
