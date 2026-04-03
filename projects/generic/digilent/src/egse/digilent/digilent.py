@@ -326,7 +326,7 @@ def _extract_ieee_block_payload(response: bytes) -> bytes:
         num_length_digits = int(chr(response[1]))
         header_len = 2 + num_length_digits
         payload_len = int(response[2:header_len].decode())
-        return response[header_len:header_len + payload_len]
+        return response[header_len : header_len + payload_len]
 
     return response.rstrip(b"\r\n")
 
