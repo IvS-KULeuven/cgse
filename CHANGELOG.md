@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+
+## [0.21.1] - 2026-04-03
+
+- It can happen that the configuration manager is not registered to the storage manager and could also not connect to the storage manager during startup. When that happens, you can now use the `cgse cm register-to-storage` command to register the CM and obsid to the storage manager without having to restart the core services.
+- Fixed communication issues with the Digilent MeasurePoint.
+
 ## [0.21.0] - 2026-04-02
 
 - Refactor AsyncRegistryClient usage to support async context management and ensure proper connection handling
@@ -360,7 +366,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.21.0...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.21.1...HEAD
+[0.21.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.21.0...v0.21.1
 [0.21.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.20.5...v0.21.0
 [0.20.5]: https://github.com/IvS-KULeuven/cgse/compare/v0.20.4...v0.20.5
 [0.20.4]: https://github.com/IvS-KULeuven/cgse/compare/v0.20.3...v0.20.4
