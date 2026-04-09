@@ -179,6 +179,12 @@ class DataPoint(PointLike):
 
 
 class TimeSeriesRepository(Protocol):
+    def __enter__(self):
+        self.connect()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
     def connect(self) -> None: ...
 
     def ping(self) -> bool: ...

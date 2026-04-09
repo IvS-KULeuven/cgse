@@ -32,13 +32,14 @@ __all__ = [
 ]
 
 import logging
+import math
 from datetime import datetime
 from datetime import timezone
 
 import pandas
 import pyarrow
 from influxdb_client_3 import InfluxDBClient3
-from influxdb_client_3 import Point
+from influxdb_client_3 import Point  # still used for non-dict inputs
 from influxdb_client_3 import write_client_options
 from influxdb_client_3.exceptions.exceptions import InfluxDB3ClientError
 from influxdb_client_3.write_client.client.write_api import WriteType
@@ -47,10 +48,25 @@ from influxdb_client_3.write_client.domain.write_precision import WritePrecision
 from egse.env import bool_env
 from egse.env import int_env
 from egse.env import str_env
+from egse.metrics import PointLike
 from egse.metrics import TimeSeriesRepository
 from egse.system import type_name
 
 logger = logging.getLogger("egse.plugins")
+
+
+# Callback functions executed by the InfluxDB Client write API on success, error, and retry events.
+# These can be used for logging or custom handling of write outcomes.
+def success_callback(conf, data):
+    pass
+
+
+def error_callback(conf, data, exception):
+    logger.error(f"[INFLUX ERROR] {exception}")
+
+
+def retry_callback(conf, data, exception):
+    logger.warning(f"[INFLUX RETRY] {exception}")
 
 
 class InfluxDBRepository(TimeSeriesRepository):
@@ -68,12 +84,6 @@ class InfluxDBRepository(TimeSeriesRepository):
         self.metrics_time_precision = WritePrecision.NS
 
         self.client: InfluxDBClient3 = None  # type: ignore
-
-    def __enter__(self):
-        self.connect()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
 
     def _load_client_options(self):
         self._batch_size = int_env("CGSE_INFLUX_BATCH_SIZE", 1_000)
@@ -107,6 +117,9 @@ class InfluxDBRepository(TimeSeriesRepository):
             max_retry_time=self._max_retry_time,
             no_sync=self._no_sync,
             write_precision=self.metrics_time_precision,
+            success_handler=success_callback,
+            error_handler=error_callback,
+            retry_handler=retry_callback,
         )
         self.client = InfluxDBClient3(host=self.host, database=self.database, token=self.token, write_options=wco)
 
@@ -121,9 +134,27 @@ class InfluxDBRepository(TimeSeriesRepository):
             logger.warning(f"InfluxDB ping failed: {exc}")
             return False
 
-    def _to_point(self, payload: Point | dict) -> Point:
+    def _to_point(self, payload: PointLike | Point | dict) -> Point:
+        """Return an InfluxDB `Point` from either a `Point` or DataPoint-style dict.
+
+        Args:
+            payload: Either an existing `Point` instance or a dictionary with
+                `measurement`, optional `tags`, optional `fields`, and optional
+                `time` (Unix seconds or ISO-8601 string).
+
+        Returns:
+            A populated `Point` object ready for writing.
+
+        Notes:
+            This method is primarily a compatibility path. For dictionary payloads,
+            `write` prefers line-protocol conversion via `_to_line_protocol`
+            for lower per-point overhead.
+        """
         if isinstance(payload, Point):
             return payload
+
+        if not isinstance(payload, dict):
+            payload = payload.as_dict()
 
         measurement = payload["measurement"]
         point = Point(measurement)
@@ -142,13 +173,131 @@ class InfluxDBRepository(TimeSeriesRepository):
 
         return point
 
-    def write(self, points: Point | dict | list[Point | dict]) -> None:
-        if isinstance(points, list):
-            records = [self._to_point(point) for point in points]
-        else:
-            records = self._to_point(points)
+    def write(self, points: PointLike | dict | list[PointLike | dict]) -> None:
+        """Write one or many points to InfluxDB.
 
-        self.client.write(record=records, write_precision=self.metrics_time_precision)
+        Args:
+            points: A single `Point`, a DataPoint-style dictionary, or a mixed
+                list of both.
+
+        Behavior:
+            - `dict` payloads are converted to line protocol using `_to_line_protocol`
+                for performance.
+            - `Point` payloads are passed through as-is.
+            - Invalid `dict` payloads (e.g. missing measurement/fields) are skipped.
+            - If no valid records remain, no write call is issued.
+
+        Notes:
+            Records are written using `self.metrics_time_precision`.
+        """
+        if isinstance(points, list):
+            # Fast path: convert dicts directly to line protocol strings, avoiding
+            # the overhead of creating Point objects for every field/tag value.
+            lp: list[str] = []
+            point_objects: list[Point] = []
+            for p in points:
+                if isinstance(p, dict):
+                    line = self._to_line_protocol(p)
+                    if line:
+                        lp.append(line)
+                elif isinstance(p, Point):
+                    point_objects.append(p)
+                else:
+                    line = self._to_line_protocol(p.as_dict())
+                    if line:
+                        lp.append(line)
+            records: list = lp + point_objects  # type: ignore[assignment]
+        elif isinstance(points, dict):
+            line = self._to_line_protocol(points)
+            records = [line] if line else []
+        elif isinstance(points, Point):
+            records = [points]
+        else:
+            line = self._to_line_protocol(points.as_dict())
+            records = [line] if line else []
+
+        if records:
+            self.client.write(record=records, write_precision=self.metrics_time_precision)
+
+    @staticmethod
+    def _to_line_protocol(payload: dict) -> str | None:
+        """Convert a DataPoint-style dict to an InfluxDB line protocol string.
+
+        Args:
+            payload: Dictionary with `measurement`, optional `tags`, `fields`,
+                and optional `time`.
+
+        Returns:
+            A line-protocol string when conversion succeeds, otherwise `None`.
+
+        Rules:
+            - Missing/empty measurement returns `None`.
+            - `fields` must contain at least one supported non-`None` value,
+              otherwise `None` is returned.
+            - `tags` with `None` values are skipped.
+            - Float `NaN`/`Inf` values are skipped.
+            - `time` supports Unix seconds (int/float) or ISO-8601 string and is
+              emitted as nanoseconds.
+        """
+        measurement = payload.get("measurement", "")
+        if not measurement:
+            return None
+
+        fields = payload.get("fields") or {}
+        tags = payload.get("tags") or {}
+        timestamp = payload.get("time")
+
+        def _esc(s: str) -> str:
+            """Escape commas, equals signs, and spaces in tag/field keys and tag values."""
+            return s.replace(",", "\\,").replace("=", "\\=").replace(" ", "\\ ")
+
+        def _field_val(v: object) -> str | None:
+            if isinstance(v, bool):
+                return "true" if v else "false"
+            if isinstance(v, int):
+                return f"{v}i"
+            if isinstance(v, float):
+                if not math.isfinite(v):
+                    return None
+                return repr(v)
+            if isinstance(v, str):
+                return '"' + v.replace("\\", "\\\\").replace('"', '\\"') + '"'
+            return None
+
+        # measurement[,tag=val ...]
+        meas_escaped = measurement.replace(",", "\\,").replace(" ", "\\ ")
+        parts = [meas_escaped]
+        if tags:
+            tag_str = ",".join(f"{_esc(str(k))}={_esc(str(v))}" for k, v in sorted(tags.items()) if v is not None)
+            if tag_str:
+                parts.append("," + tag_str)
+
+        # field_key=field_val[,...]
+        field_parts = []
+        for k, v in fields.items():
+            if v is None:
+                continue
+            fv = _field_val(v)
+            if fv is not None:
+                field_parts.append(f"{_esc(str(k))}={fv}")
+
+        if not field_parts:
+            return None
+
+        lp = "".join(parts) + " " + ",".join(field_parts)
+
+        # Timestamp in nanoseconds
+        if timestamp is not None:
+            if isinstance(timestamp, (int, float)):
+                lp += f" {int(timestamp * 1_000_000_000)}"
+            elif isinstance(timestamp, str):
+                try:
+                    dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+                    lp += f" {int(dt.timestamp() * 1_000_000_000)}"
+                except ValueError:
+                    pass
+
+        return lp
 
     def query(self, query_str: str, mode: str = "all") -> pyarrow.Table | pandas.DataFrame:
         try:
@@ -262,6 +411,6 @@ def _safe_convert_to_datetime_lists(df, time_col, value_col):
 
 
 # This method is required when loading the plugin with `get_metrics_repo()`.
-def get_repository_class() -> TimeSeriesRepository:
+def get_repository_class() -> type[TimeSeriesRepository]:
     """Returns the class that implements the TimeSeriesRepository."""
     return InfluxDBRepository
