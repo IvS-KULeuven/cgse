@@ -8,6 +8,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 
+## [0.22.0] - 2026-04-09
+
+- Enhance InfluxDB and DuckDB repository implementations with context management and improved line protocol handling
+- Improve Metrics Hub performance with configurable high-water marks and load testing script
+  - `CGSE_METRICS_BATCH_SIZE` , (setting: `BATCH_SIZE`) now defaults to 1_000
+  - `CGSE_METRICS_MAX_BATCH_SIZE` (setting: `MAX_BATCH_SIZE`) is new and defaults to 5_000
+  - `CGSE_METRICS_BATCH_DRAIN_LIMIT` (settings: `BATCH_DRAIN_LIMIT`) is new and defaults to 1_000
+  - `CGSE_METRICS_FLUSH_CONCURRENCY` (setting: `FLUSH_CONCURRENCY`) is new and defaults to 8
+  - `CGSE_METRICS_QUEUE_MAXSIZE` (setting: `QUEUE_MAXSIZE`) is now configurable and defaults to 10_000
+  - `CGSE_METRICS_COLLECTOR_RCVHWM` (setting: `COLLECTOR_RCVHWM`) is new and defaults to 10_000
+  - `CGSE_METRICS_COLLECTOR_YIELD_EVERY` (settings: `COLLECTOR_YIELD_EVERY`) is new and defaults to 250
+
+- The `(async)MetricsHubSender` now accepts a new argument `sndhwm` (Send High-Water-Mark) to increase the ZeroMQ send buffer [defaults to 500]
+
+
 ## [0.21.1] - 2026-04-03
 
 - It can happen that the configuration manager is not registered to the storage manager and could also not connect to the storage manager during startup. When that happens, you can now use the `cgse cm register-to-storage` command to register the CM and obsid to the storage manager without having to restart the core services.
@@ -366,7 +381,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.21.1...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.0...HEAD
+[0.22.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.21.1...v0.22.0
 [0.21.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.21.0...v0.21.1
 [0.21.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.20.5...v0.21.0
 [0.20.5]: https://github.com/IvS-KULeuven/cgse/compare/v0.20.4...v0.20.5
