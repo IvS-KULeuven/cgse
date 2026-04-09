@@ -18,14 +18,14 @@ Canonical payload format (``DataPoint.as_dict()``)::
 
 Quick usage (async)::
 
-    sender = AsyncMetricsHubSender()
+    sender = AsyncMetricsHubSender(sndhwm=5000)
     sender.connect()
     await sender.send(DataPoint.measurement("camera_tm").field("temperature", 23.4))
     sender.close()
 
 Quick usage (sync)::
 
-    sender = MetricsHubSender()
+    sender = MetricsHubSender(sndhwm=5000)
     sender.connect()
     sender.send(DataPoint.measurement("camera_tm").field("temperature", 23.4))
     sender.close()
@@ -47,8 +47,8 @@ from typing import Any
 
 import zmq
 import zmq.asyncio
-
 from egse.metrics import DataPoint
+
 from egse.metricshub import DEFAULT_COLLECTOR_PORT
 from egse.metricshub import DEFAULT_REQUESTS_PORT
 from egse.registry import MessageType
@@ -282,8 +282,12 @@ class AsyncMetricsHubSender:
     def __init__(
         self,
         hub_endpoint: str | None = None,
+        sndhwm: int = 1000,
     ):
         self.hub_endpoint = hub_endpoint or f"tcp://localhost:{DEFAULT_COLLECTOR_PORT}"
+        if sndhwm <= 0:
+            raise ValueError("sndhwm must be > 0")
+        self.sndhwm = sndhwm
         self.logger = logging.getLogger("egse.metricshub.sender")
 
         self.context = zmq.asyncio.Context.instance()
@@ -292,9 +296,9 @@ class AsyncMetricsHubSender:
     def connect(self):
         self.socket = self.context.socket(zmq.PUSH)
         self.socket.setsockopt(zmq.LINGER, 0)
-        self.socket.setsockopt(zmq.SNDHWM, 1000)
+        self.socket.setsockopt(zmq.SNDHWM, self.sndhwm)
         self.socket.connect(self.hub_endpoint)
-        self.logger.debug(f"AsyncMetricsHubSender connected to {self.hub_endpoint}")
+        self.logger.debug(f"AsyncMetricsHubSender connected to {self.hub_endpoint} (SNDHWM={self.sndhwm})")
 
     def close(self):
         if self.socket:
@@ -329,8 +333,11 @@ class MetricsHubSender:
     returns ``False`` rather than blocking.
     """
 
-    def __init__(self, hub_endpoint: str | None = None):
+    def __init__(self, hub_endpoint: str | None = None, sndhwm: int = 1000):
         self.hub_endpoint = hub_endpoint or f"tcp://localhost:{DEFAULT_COLLECTOR_PORT}"
+        if sndhwm <= 0:
+            raise ValueError("sndhwm must be > 0")
+        self.sndhwm = sndhwm
         self.logger = logging.getLogger("egse.metricshub.sender")
 
         self.context = zmq.Context.instance()
@@ -339,10 +346,10 @@ class MetricsHubSender:
     def connect(self):
         socket = self.context.socket(zmq.PUSH)
         socket.setsockopt(zmq.LINGER, 0)
-        socket.setsockopt(zmq.SNDHWM, 1000)
+        socket.setsockopt(zmq.SNDHWM, self.sndhwm)
         socket.connect(self.hub_endpoint)
         self.socket = socket
-        self.logger.debug(f"MetricsHubSender connected to {self.hub_endpoint}")
+        self.logger.debug(f"MetricsHubSender connected to {self.hub_endpoint} (SNDHWM={self.sndhwm})")
 
     def close(self):
         if self.socket:
