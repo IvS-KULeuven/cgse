@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+- Enhance ServiceMessaging class with detailed documentation and examples; add tests for fake user, email, order, and analytics services. The ServiceMessaging class is a convenience wrapper for publishing and subscribing to events that can also be used as a context manager.
 
 ## [0.22.0] - 2026-04-09
 
