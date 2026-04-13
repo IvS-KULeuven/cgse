@@ -596,7 +596,7 @@ async def status(
     hb_port: int = DEFAULT_RS_HB_PORT,
     host: str = "localhost",
 ):
-    with AsyncRegistryClient(
+    async with AsyncRegistryClient(
         registry_req_endpoint=f"tcp://{host}:{req_port}",
         registry_sub_endpoint=f"tcp://{host}:{pub_port}",
         registry_hb_endpoint=f"tcp://{host}:{hb_port}",
@@ -627,7 +627,7 @@ async def stop(
     hb_port: int = DEFAULT_RS_HB_PORT,
     host: str = "localhost",
 ):
-    with AsyncRegistryClient(
+    async with AsyncRegistryClient(
         registry_req_endpoint=f"tcp://{host}:{req_port}",
         registry_sub_endpoint=f"tcp://{host}:{pub_port}",
         registry_hb_endpoint=f"tcp://{host}:{hb_port}",

@@ -55,7 +55,6 @@ class AsyncNotificationHub:
 
         # Register notification hub to the service registry
         self.registry_client = AsyncRegistryClient(timeout=REQUEST_TIMEOUT)
-        self.registry_client.connect()
 
         self.service_id = None
         self.service_name = PROCESS_NAME
@@ -97,6 +96,8 @@ class AsyncNotificationHub:
             asyncio.create_task(self._handle_requests()),
         ]
 
+        await self.registry_client.connect()
+
         await self.register_service()
 
         await self._shutdown_event.wait()
@@ -119,7 +120,7 @@ class AsyncNotificationHub:
         self.publisher_socket.close()
         self.requests_socket.close()
 
-        self.registry_client.disconnect()
+        await self.registry_client.disconnect()
 
         self.logger.info("Async Notification Hub shutdown complete")
 

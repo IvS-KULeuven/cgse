@@ -1,6 +1,6 @@
 [project]
 name = "aim_tti_awg"
-version = "0.20.3"
+version = "0.22.0"
 description = "Aim-TTi TGF4000 Arbitrary Wave Generator"
 authors = [
     {name = "IvS KU Leuven"}

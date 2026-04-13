@@ -11,9 +11,10 @@ from typing import List
 import duckdb
 
 from egse.metrics import DataPoint
+from egse.metrics import TimeSeriesRepository
 
 
-class DuckDBRepository:
+class DuckDBRepository(TimeSeriesRepository):
     """
     DuckDB TimeSeriesRepository implementation.
 
@@ -478,6 +479,6 @@ class DuckDBRepository:
             return []
 
 
-def get_repository_class():
+def get_repository_class() -> type[TimeSeriesRepository]:
     """Return the repository class for the plugin manager."""
     return DuckDBRepository

@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 import rich
 import yaml
+from fixtures.helpers import create_text_file
 from navdict import NavigableDict
 
 from egse.device import DeviceInterface
@@ -18,8 +19,8 @@ from egse.env import get_conf_data_location
 from egse.env import get_conf_data_location_env_name
 from egse.env import get_conf_repo_location_env_name
 from egse.env import print_env
-from egse.env import setup_env
 from egse.env import set_conf_repo_location
+from egse.env import setup_env
 from egse.setup import Setup
 from egse.setup import get_last_setup_id_file_path
 from egse.setup import get_path_of_setup_file
@@ -27,8 +28,8 @@ from egse.setup import load_last_setup_id
 from egse.setup import load_setup
 from egse.setup import navdict
 from egse.setup import save_last_setup_id
+from egse.setup import submit_setup_to_disk
 from egse.system import AttributeDict
-from fixtures.helpers import create_text_file
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -818,13 +819,11 @@ def test_get_path_of_last_setup_file():
 
 
 def test_load_setup():
-    from egse.setup import _setup_manager  # noqa
-
-    _setup_manager.set_default_source("local")
-
-    setup = load_setup(setup_id=28)
+    setup = load_setup(setup_id=28, source="local")
     rich.print(setup)
-    assert int(setup.get_id()) == 28
+    assert setup is not None
+    assert setup.get_id() == "00028"
+    assert int(setup.get_id() or "0") == 28
 
 
 # @pytest.mark.skip(reason="load_setup prefers the repo location over the conf data location.")
@@ -867,6 +866,24 @@ def test_load_setup_from_disk():
             assert setup.site_id == "CSL"
             assert 29 not in setup.history
             assert "SETUP_CSL_00028" in str(setup.get_private_attribute("_filename"))
+
+
+def test_submit_setup_to_disk_creates_new_setup_file_and_returns_new_id():
+    site_id = "LAB23"
+    setup_location = Path(get_conf_data_location(site_id))
+
+    before_files = sorted(setup_location.glob(f"SETUP_{site_id}_*.yaml"))
+    assert before_files
+
+    setup = Setup.from_dict({"site_id": site_id, "history": {}})
+
+    returned_setup_id = submit_setup_to_disk(setup, "regression test submit to disk", site_id=site_id)
+
+    after_files = sorted(setup_location.glob(f"SETUP_{site_id}_*.yaml"))
+
+    # A disk submit should persist a new setup and return that newly assigned setup ID.
+    assert len(after_files) == len(before_files) + 1
+    assert returned_setup_id != "00000"
 
 
 def test_last_setup_id():

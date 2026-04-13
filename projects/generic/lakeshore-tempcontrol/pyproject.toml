@@ -1,6 +1,6 @@
 [project]
 name = "lakeshore-tempcontrol"
-version = "0.20.3"
+version = "0.22.0"
 description = "Lakeshore Temperature Control for CGSE"
 authors = [
     {name = "IVS KU Leuven"}

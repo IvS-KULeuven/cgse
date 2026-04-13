@@ -94,7 +94,6 @@ class ZMQMicroservice:
         self.registry_client = AsyncRegistryClient(
             registry_req_endpoint=self.registry_req_endpoint, registry_sub_endpoint=self.registry_sub_endpoint
         )
-        self.registry_client.connect()
 
         self.command_handlers = {}
 
@@ -152,6 +151,8 @@ class ZMQMicroservice:
         - start the background task to handle requests
         """
         module_logger.info(f"Starting {self.service_name} ({self.service_type}) on {self.host_ip}:{self.rep_port}")
+
+        await self.registry_client.connect()
 
         # Register with the registry
         self.service_id = await self.registry_client.register(

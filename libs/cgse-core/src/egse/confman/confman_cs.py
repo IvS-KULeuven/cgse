@@ -18,11 +18,15 @@ from typing import Annotated
 import rich
 import typer
 import zmq
+from egse.env import get_conf_data_location
+from egse.process import SubProcess
+from egse.response import Failure
+from egse.response import Response
+from egse.settings import Settings
+from egse.zmq_ser import get_port_number
 from rich.console import Console
 
 from egse.confman import COMMANDING_PORT
-from egse.confman import ConfigurationManagerProtocol
-from egse.confman import ConfigurationManagerProxy
 from egse.confman import HOSTNAME
 from egse.confman import MONITORING_PORT
 from egse.confman import PROCESS_NAME
@@ -30,17 +34,18 @@ from egse.confman import PROTOCOL
 from egse.confman import SERVICE_PORT
 from egse.confman import SERVICE_TYPE
 from egse.confman import STORAGE_MNEMONIC
+from egse.confman import ConfigurationManagerProtocol
+from egse.confman import ConfigurationManagerProxy
 from egse.control import ControlServer
-from egse.env import get_conf_data_location
 from egse.logger import remote_logging
-from egse.process import SubProcess
 from egse.registry.client import RegistryClient
-from egse.response import Failure
-from egse.response import Response
 from egse.services import ServiceProxy
-from egse.settings import Settings
 from egse.storage import store_housekeeping_information
-from egse.zmq_ser import get_port_number
+
+try:
+    from typing import override
+except ImportError:
+    from typing_extensions import override
 
 # Use explicit name here otherwise the logger will probably be called __main__
 
@@ -73,57 +78,68 @@ class ConfigurationManagerControlServer(ControlServer):
 
         self.logger.info(f"CM housekeeping saved every {self.hk_delay / 1000:.1f} seconds.")
 
+    @override
     def get_communication_protocol(self):
         return PROTOCOL
 
+    @override
     def get_commanding_port(self):
         return get_port_number(self.dev_ctrl_cmd_sock) or COMMANDING_PORT
 
+    @override
     def get_service_port(self):
         return get_port_number(self.dev_ctrl_service_sock) or SERVICE_PORT
 
+    @override
     def get_monitoring_port(self):
         return get_port_number(self.dev_ctrl_mon_sock) or MONITORING_PORT
 
+    @override
     def get_storage_mnemonic(self):
         return STORAGE_MNEMONIC
 
+    @override
     def is_storage_manager_active(self):
         from egse.storage import is_storage_manager_active
 
         return is_storage_manager_active()
 
+    @override
     def store_housekeeping_information(self, data):
         """Send housekeeping information to the Storage manager."""
 
         origin = self.get_storage_mnemonic()
         store_housekeeping_information(origin, data)
 
+    @override
     def register_to_storage_manager(self):
         from egse.storage import register_to_storage_manager
-        from egse.storage import is_storage_manager_active
         from egse.storage.persistence import TYPES
 
-        if not is_storage_manager_active():
-            self.logger.warning(f"Storage manager not active, couldn't register as {self.get_storage_mnemonic()}.")
-            return
-
-        register_to_storage_manager(
+        if register_to_storage_manager(
             origin=self.get_storage_mnemonic(),
             persistence_class=TYPES["CSV"],
             prep={
                 "column_names": list(self.device_protocol.get_housekeeping().keys()),
                 "mode": "a",
             },
-        )
+        ):
+            self.storage_manager_active = True
+            logger.debug(
+                f"{self.get_storage_mnemonic()} registered, "
+                f"housekeeping information will be sent to the storage manager."
+            )
 
+    @override
     def unregister_from_storage_manager(self):
         from egse.storage import unregister_from_storage_manager
 
         unregister_from_storage_manager(origin=self.get_storage_mnemonic())
 
+    @override
     def before_serve(self): ...
 
+    @override
     def after_serve(self) -> None:
         self.deregister_service()
 
@@ -207,6 +223,7 @@ def status():
     """Print the status of the control server."""
 
     import rich
+
     from egse.confman import get_status
 
     rich.print(get_status(), end="")
@@ -269,7 +286,9 @@ def register_to_storage():
         # of that control server.
 
         if service:
-            rich.print("Registering CM to the storage manager")
+            rich.print(
+                f"Registering CM to the storage manager on {service['host']}:{service['metadata']['service_port']}"
+            )
             with ServiceProxy(hostname=service["host"], port=service["metadata"]["service_port"]) as service_proxy:
                 service_proxy.register_to_storage()  # register the control server
         else:

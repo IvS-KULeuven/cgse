@@ -153,9 +153,49 @@ class AsyncEventSubscriber:
 class ServiceMessaging:
     """Convenience wrapper for publishing and subscribing to events.
 
+    This class combines `AsyncEventPublisher` with an optional
+    `AsyncEventSubscriber` so service code can focus on business logic.
+    It supports three common patterns:
+
+    1. Publisher-only service (emit events, no subscriptions).
+    2. Subscriber-only service (register handlers and listen forever).
+    3. Mixed service (both publish and subscribe).
+
+    Connection handling is lazy for publishing: the PUSH socket is connected on
+    first `publish_event` call. Subscriber connections are established when
+    `start_listening` is called.
+
     Args:
-        service_name (str): Name of the service.
-        subscriptions (List[str], optional): Event types to subscribe to.
+        service_name (str): Name used as `source_service` in published events.
+        subscriptions (List[str] | None, optional): Event types this service
+            wants to subscribe to. If `None` or empty, no subscriber is
+            created and listening-related calls are no-ops.
+
+    Example:
+        Publisher-only service with automatic cleanup::
+
+            async with ServiceMessaging("inventory-service") as messaging:
+                await messaging.publish_event("stock_updated", {"sku": "ABC-123", "qty": 17})
+
+        Subscriber service with graceful shutdown::
+
+            async def on_user_created(event_data: dict):
+                user = event_data["data"]
+                print(f"new user: {user['user_id']}")
+
+            async with ServiceMessaging("audit-service", subscriptions=["user_created"]) as messaging:
+                messaging.register_handler("user_created", on_user_created)
+
+                listener = asyncio.create_task(messaging.start_listening())
+                # ... run until shutdown signal ...
+                listener.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await listener
+
+    Notes:
+        - Call `register_handler` before `start_listening`.
+        - Always call `disconnect` during shutdown to close sockets and
+          terminate ZMQ contexts cleanly.
     """
 
     def __init__(self, service_name: str, subscriptions: List[str] | None = None):
@@ -163,8 +203,16 @@ class ServiceMessaging:
         self.publisher = AsyncEventPublisher()
         self.subscriber = AsyncEventSubscriber(subscriptions or []) if subscriptions else None
 
+    async def __aenter__(self):
+        """Allow usage with ``async with`` for automatic cleanup."""
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        self.disconnect()
+
     async def publish_event(self, event_type: str, data: Dict[Any, Any], correlation_id: Optional[str] = None):
         """Publish an event"""
+        await self.publisher.connect()
         event = NotificationEvent(
             event_type=event_type,
             source_service=self.service_name,
@@ -181,6 +229,7 @@ class ServiceMessaging:
     async def start_listening(self):
         """Start listening for events"""
         if self.subscriber:
+            await self.subscriber.connect()
             await self.subscriber.start_listening()
 
     def disconnect(self):

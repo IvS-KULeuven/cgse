@@ -2,8 +2,8 @@
 
 Clients send `DataPoint` objects serialized as JSON to the
 PULL socket.  The hub batches the incoming points and flushes them to the
-configured storage backend (InfluxDB, DuckDB, …) via the plugin system in
-``egse.plugins.metrics``.
+configured storage backend (InfluxDB, DuckDB, `...`) via the plugin system in
+`egse.plugins.metrics`.
 
 Backend selection is driven by the environment variable `CGSE_METRICS_BACKEND`
 (default: `"influxdb"`).  Backend-specific configuration is picked up from the
@@ -18,21 +18,26 @@ import multiprocessing
 import sys
 import textwrap
 import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 from typing import Callable
 
 import typer
 import zmq
 import zmq.asyncio
-
 from egse.env import bool_env
 from egse.env import float_env
 from egse.env import int_env
 from egse.env import str_env
 from egse.log import logger
-from egse.logger import remote_logging
 from egse.metrics import TimeSeriesRepository
 from egse.metrics import get_metrics_repo
+from egse.settings import Settings
+from egse.system import TyperAsyncCommand
+from egse.system import get_host_ip
+from egse.zmq_ser import get_port_number
+
+from egse.logger import remote_logging
 from egse.metricshub import DEFAULT_COLLECTOR_PORT
 from egse.metricshub import DEFAULT_REQUESTS_PORT
 from egse.metricshub import PROCESS_NAME
@@ -42,10 +47,6 @@ from egse.metricshub.client import AsyncMetricsHubClient
 from egse.registry import MessageType
 from egse.registry.client import REQUEST_TIMEOUT
 from egse.registry.client import AsyncRegistryClient
-from egse.settings import Settings
-from egse.system import TyperAsyncCommand
-from egse.system import get_host_ip
-from egse.zmq_ser import get_port_number
 
 REQUEST_POLL_TIMEOUT = 1.0
 """Time to wait while listening for requests [seconds]."""
@@ -141,7 +142,6 @@ class AsyncMetricsHub:
 
         # Service registry
         self.registry_client = AsyncRegistryClient(timeout=REQUEST_TIMEOUT)
-        self.registry_client.connect()
 
         self.service_id = None
         self.service_name = PROCESS_NAME
@@ -161,24 +161,49 @@ class AsyncMetricsHub:
             else {"name": "unknown", "injected": False}
         )
 
-        # Batching configuration (from env, with sensible defaults)
-        self.batch_size: int = _env_or_settings_int("CGSE_METRICS_BATCH_SIZE", "BATCH_SIZE", 500)
+        # Batching configuration (from env, then settings, with sensible defaults)
+        self.batch_size: int = _env_or_settings_int("CGSE_METRICS_BATCH_SIZE", "BATCH_SIZE", 1_000)
+        self.max_batch_size: int = _env_or_settings_int("CGSE_METRICS_MAX_BATCH_SIZE", "MAX_BATCH_SIZE", 5_000)
         self.flush_interval: float = _env_or_settings_float("CGSE_METRICS_FLUSH_INTERVAL", "FLUSH_INTERVAL", 2.0)
-        self.debug_counters_enabled: bool = _env_or_settings_bool("CGSE_METRICS_DEBUG_COUNTERS", "DEBUG_COUNTERS", True)
+        self.flush_concurrency: int = _env_or_settings_int("CGSE_METRICS_FLUSH_CONCURRENCY", "FLUSH_CONCURRENCY", 8)
+        self.debug_counters_enabled: bool = _env_or_settings_bool(
+            "CGSE_METRICS_DEBUG_COUNTERS", "DEBUG_COUNTERS", False
+        )
+        self.queue_maxsize: int = _env_or_settings_int("CGSE_METRICS_QUEUE_MAXSIZE", "QUEUE_MAXSIZE", 10_000)
+        self.collector_rcvhwm: int = _env_or_settings_int("CGSE_METRICS_COLLECTOR_RCVHWM", "COLLECTOR_RCVHWM", 10_000)
+        self.collector_yield_every: int = _env_or_settings_int(
+            "CGSE_METRICS_COLLECTOR_YIELD_EVERY", "COLLECTOR_YIELD_EVERY", 250
+        )
+        self.batch_drain_limit: int = _env_or_settings_int("CGSE_METRICS_BATCH_DRAIN_LIMIT", "BATCH_DRAIN_LIMIT", 1_000)
+        self.info_ping_timeout: float = _env_or_settings_float(
+            "CGSE_METRICS_INFO_PING_TIMEOUT", "INFO_PING_TIMEOUT", 0.5
+        )
+        self.backlog_high_watermark: float = _env_or_settings_float(
+            "CGSE_METRICS_BACKLOG_HIGH_WATERMARK", "BACKLOG_HIGH_WATERMARK", 0.20
+        )
 
         # Internal queue: raw dicts as received from ZMQ
-        self.data_queue: asyncio.Queue = asyncio.Queue(maxsize=10_000)
+        self.data_queue: asyncio.Queue = asyncio.Queue(maxsize=self.queue_maxsize)
 
         self.stats = {
             "received": 0,
             "written": 0,
             "dropped": 0,
             "errors": 0,
+            "write_batches": 0,
+            "last_batch_size": 0,
+            "last_write_s": 0.0,
+            "avg_write_s": 0.0,
             "filtered_none_fields": 0,
             "filtered_none_tags": 0,
             "dropped_all_none_fields": 0,
             "start_time": time.time(),
         }
+
+        self._last_queue_full_log_ts = 0.0
+        self._flush_semaphore: asyncio.Semaphore | None = None  # initialized in start()
+        self._pending_flushes: set[asyncio.Task] = set()
+        self._write_executor: ThreadPoolExecutor | None = None
 
         self.running = False
         self._shutdown_event = asyncio.Event()
@@ -206,7 +231,7 @@ class AsyncMetricsHub:
         self.requests_socket.bind(f"tcp://*:{DEFAULT_REQUESTS_PORT}")
 
         # High-water mark so the OS doesn't buffer unboundedly
-        self.collector_socket.setsockopt(zmq.RCVHWM, 10_000)
+        self.collector_socket.setsockopt(zmq.RCVHWM, self.collector_rcvhwm)
 
         if not self._repository_injected:
             self.repository, self.backend_info = _load_repository()
@@ -221,12 +246,20 @@ class AsyncMetricsHub:
 
         self._logger.info("Connected to storage backend.")
 
+        self._write_executor = ThreadPoolExecutor(
+            max_workers=self.flush_concurrency,
+            thread_name_prefix="metricshub-write",
+        )
+        self._flush_semaphore = asyncio.Semaphore(self.flush_concurrency)
+
         self._tasks = [
             asyncio.create_task(self._collector()),
             asyncio.create_task(self._batch_processor()),
             asyncio.create_task(self._stats_reporter()),
             asyncio.create_task(self._handle_requests()),
         ]
+
+        await self.registry_client.connect()
 
         await self.register_service()
 
@@ -248,12 +281,16 @@ class AsyncMetricsHub:
 
         await self._flush_remaining()
 
+        if self._write_executor is not None:
+            self._write_executor.shutdown(wait=True)
+            self._write_executor = None
+
         self.repository.close()  # type: ignore[union-attr]
 
         self.collector_socket.close()
         self.requests_socket.close()
 
-        self.registry_client.disconnect()
+        await self.registry_client.disconnect()
 
         self._logger.info("Async Metrics Hub shutdown complete.")
 
@@ -291,14 +328,13 @@ class AsyncMetricsHub:
     # ------------------------------------------------------------------
 
     async def _collector(self):
-        """Receive serialised DataPoint JSON from ZMQ PULL socket and queue it."""
+        """Receive serialized DataPoint JSON from ZMQ PULL socket and queue it."""
         self._logger.info("Collector task started.")
+        points_since_yield = 0
 
         while self.running:
             try:
-                message_bytes = await asyncio.wait_for(self.collector_socket.recv(), timeout=0.1)
-            except asyncio.TimeoutError:
-                continue
+                message_bytes = await self.collector_socket.recv()
             except asyncio.CancelledError:
                 self._logger.warning("Collector task cancelled.")
                 self.running = False
@@ -333,11 +369,20 @@ class AsyncMetricsHub:
                     self.stats["filtered_none_tags"] += sum(1 for value in tags.values() if value is None)
 
             try:
-                await asyncio.wait_for(self.data_queue.put(point_dict), timeout=0.1)
+                self.data_queue.put_nowait(point_dict)
                 self.stats["received"] += 1
-            except asyncio.TimeoutError:
-                self._logger.warning("Queue full — dropping point.")
+            except asyncio.QueueFull:
+                now = time.monotonic()
+                if now - self._last_queue_full_log_ts > 1.0:
+                    self._logger.warning("Queue full - dropping points.")
+                    self._last_queue_full_log_ts = now
                 self.stats["dropped"] += 1
+
+            # Yield to the event loop every N points to keep the request handler responsive under sustained load.
+            points_since_yield += 1
+            if points_since_yield >= self.collector_yield_every:
+                points_since_yield = 0
+                await asyncio.sleep(0)
 
     async def _batch_processor(self):
         """Drain the queue and flush to the storage backend in batches."""
@@ -348,22 +393,46 @@ class AsyncMetricsHub:
 
         while self.running:
             try:
+                target_batch_size = self.batch_size
+                qsize = self.data_queue.qsize()
+                if self.queue_maxsize > 0 and (qsize / self.queue_maxsize) >= self.backlog_high_watermark:
+                    target_batch_size = max(self.batch_size, self.max_batch_size)
+                effective_drain_limit = max(self.batch_drain_limit, target_batch_size)
+
                 remaining = self.flush_interval - (time.monotonic() - last_flush)
                 timeout = max(0.05, remaining)
 
+                # Always await here — this is the guaranteed yield point that keeps
+                # the event loop (and the request handler) responsive under sustained load.
                 try:
                     point_dict = await asyncio.wait_for(self.data_queue.get(), timeout=timeout)
                     batch.append(point_dict)
                 except asyncio.TimeoutError:
                     pass  # check flush conditions below
 
-                should_flush = len(batch) >= self.batch_size or (
+                # Drain any additional queued points without yielding, capped so we
+                # do not spin long enough to starve other tasks.
+                drained = 0
+                while len(batch) < target_batch_size and drained < effective_drain_limit:
+                    try:
+                        batch.append(self.data_queue.get_nowait())
+                        drained += 1
+                    except asyncio.QueueEmpty:
+                        break
+
+                should_flush = len(batch) >= target_batch_size or (
                     batch and (time.monotonic() - last_flush) >= self.flush_interval
                 )
 
                 if should_flush:
-                    await self._flush_batch(batch)
-                    batch.clear()
+                    # Acquire a slot before handing off.  This yields to the event
+                    # loop (request handler stays responsive) and provides backpressure
+                    # when InfluxDB can't absorb writes as fast as they arrive.
+                    await self._flush_semaphore.acquire()  # type: ignore[union-attr]
+                    task = asyncio.create_task(self._run_flush(batch))
+                    self._pending_flushes.add(task)
+                    task.add_done_callback(self._pending_flushes.discard)
+                    batch = []  # rebind — old list is now owned by the flush task
                     last_flush = time.monotonic()
 
             except asyncio.CancelledError:
@@ -372,6 +441,17 @@ class AsyncMetricsHub:
             except Exception as exc:
                 self._logger.error(f"Batch processor error: {exc}", exc_info=True)
                 await asyncio.sleep(1.0)
+
+    async def _run_flush(self, batch: list[dict]):
+        """Semaphore-owning flush wrapper used by concurrent tasks.
+
+        The semaphore slot was acquired by _batch_processor; this method always
+        releases it on completion so the slot is never leaked.
+        """
+        try:
+            await self._flush_batch(batch)
+        finally:
+            self._flush_semaphore.release()  # type: ignore[union-attr]
 
     async def _flush_batch(self, batch: list[dict]):
         """Write a batch of point dicts to the storage backend.
@@ -386,11 +466,16 @@ class AsyncMetricsHub:
         start = time.monotonic()
         try:
             loop = asyncio.get_running_loop()
-            await loop.run_in_executor(None, lambda: self.repository.write(batch))  # type: ignore[union-attr]
+            await loop.run_in_executor(self._write_executor, lambda: self.repository.write(batch))  # type: ignore[union-attr]
 
             elapsed = time.monotonic() - start
             rate = len(batch) / elapsed if elapsed > 0 else float("inf")
             self.stats["written"] += len(batch)
+            self.stats["write_batches"] += 1
+            self.stats["last_batch_size"] = len(batch)
+            self.stats["last_write_s"] = elapsed
+            write_batches = self.stats["write_batches"]
+            self.stats["avg_write_s"] += (elapsed - self.stats["avg_write_s"]) / write_batches
             self._logger.debug(f"Flushed {len(batch)} points ({rate:.0f} pts/s).")
 
         except Exception as exc:
@@ -398,7 +483,11 @@ class AsyncMetricsHub:
             self.stats["errors"] += len(batch)
 
     async def _flush_remaining(self):
-        """Drain the queue and flush anything left after shutdown is signalled."""
+        """Wait for in-flight flushes, then drain the queue and write what's left."""
+        if self._pending_flushes:
+            self._logger.info(f"Waiting for {len(self._pending_flushes)} in-flight flush task(s)...")
+            await asyncio.gather(*list(self._pending_flushes), return_exceptions=True)
+
         remaining: list[dict] = []
         while not self.data_queue.empty():
             try:
@@ -417,12 +506,21 @@ class AsyncMetricsHub:
                 await asyncio.wait_for(self._shutdown_event.wait(), timeout=STATS_INTERVAL)
                 break  # shutdown was requested
             except asyncio.TimeoutError:
+                uptime = max(1e-6, time.monotonic() - self.stats["start_time"])
+                recv_rate = self.stats["received"] / uptime
+                write_rate = self.stats["written"] / uptime
                 self._logger.info(
                     f"Stats: received={self.stats['received']}, "
                     f"written={self.stats['written']}, "
                     f"dropped={self.stats['dropped']}, "
                     f"errors={self.stats['errors']}, "
-                    f"queue={self.data_queue.qsize()}"
+                    f"queue={self.data_queue.qsize()}/{self.queue_maxsize}, "
+                    f"recv_rate={recv_rate:.0f}/s, "
+                    f"write_rate={write_rate:.0f}/s, "
+                    f"pending_flushes={len(self._pending_flushes)}, "
+                    f"last_batch={self.stats['last_batch_size']}, "
+                    f"last_write={self.stats['last_write_s'] * 1000:.1f}ms, "
+                    f"avg_write={self.stats['avg_write_s'] * 1000:.1f}ms"
                 )
             except asyncio.CancelledError:
                 self._logger.warning("Stats reporter task cancelled.")
@@ -500,7 +598,13 @@ class AsyncMetricsHub:
 
         try:
             loop = asyncio.get_running_loop()
-            return await loop.run_in_executor(None, self.repository.ping)
+            return await asyncio.wait_for(
+                loop.run_in_executor(None, self.repository.ping),
+                timeout=self.info_ping_timeout,
+            )
+        except asyncio.TimeoutError:
+            self._logger.warning(f"Backend ping timed out after {self.info_ping_timeout:.2f}s while serving info.")
+            return False
         except Exception as exc:
             self._logger.warning(f"Backend ping failed while serving info: {exc}")
             return False
@@ -512,7 +616,9 @@ class AsyncMetricsHub:
         backend_info["reachable"] = await self._backend_reachable()
         statistics = self.stats.copy()
         statistics["queue"] = self.data_queue.qsize()
+        statistics["queue_maxsize"] = self.queue_maxsize
         statistics["debug_counters_enabled"] = self.debug_counters_enabled
+        statistics["pending_flushes"] = len(self._pending_flushes)
 
         return {
             "success": True,
@@ -521,7 +627,10 @@ class AsyncMetricsHub:
             "requests_port": get_port_number(self.requests_socket),
             "backend": backend_info,
             "batch_size": self.batch_size,
+            "max_batch_size": self.max_batch_size,
             "flush_interval": self.flush_interval,
+            "flush_concurrency": self.flush_concurrency,
+            "backlog_high_watermark": self.backlog_high_watermark,
             "statistics": statistics,
             "timestamp": int(time.time()),
         }
@@ -542,7 +651,33 @@ class AsyncMetricsHub:
 
 
 def _normalize_payload(payload: Any) -> tuple[dict | None, str | None]:
-    """Validate a DataPoint.as_dict()-style payload."""
+    """Validate and normalize a DataPoint-style payload.
+
+    The expected input shape is compatible with `DataPoint.as_dict()`:
+
+    - `measurement`: non-empty `str`
+    - `fields`: `dict` with non-empty string keys
+    - `tags`: optional `dict` with non-empty string keys
+    - `time` (or `timestamp`): optional `str` | `int` | `float`
+
+    Normalization and filtering rules:
+
+    - `None` field values are removed.
+    - `None` tag values are removed.
+    - If all field values are removed, the payload is rejected.
+    - `timestamp` is accepted as an alias for `time`.
+    - Only key/type validation is performed; value domain constraints are left
+      to downstream storage backends.
+
+    Args:
+        payload: Raw decoded JSON payload received by the collector.
+
+    Returns:
+        `(point_dict, None)` on success, where `point_dict` has keys
+        `measurement`, `fields`, `tags` and optional `time`.
+
+        `(None, error_message)` on validation failure.
+    """
     if not isinstance(payload, dict):
         return None, "payload is not a dict"
 
@@ -643,13 +778,20 @@ async def status():
                   Repository:    {repository_class}
                   Details:       {backend_details}
                 Batch size:      {response["batch_size"]}
+                Max batch size:  {response.get("max_batch_size", response["batch_size"])}
                 Flush interval:  {response["flush_interval"]} s
+                Flush concur.:   {response.get("flush_concurrency", "?")}
+                Backlog HWM:     {response.get("backlog_high_watermark", "?")}
                 Statistics:
                     Received:    {stats.get("received", 0)}
                     Written:     {stats.get("written", 0)}
                     Dropped:     {stats.get("dropped", 0)}
                     Errors:      {stats.get("errors", 0)}
-                    Queue size:  {stats.get("queue", "?")}
+                    Queue size:  {stats.get("queue", "?")} / {stats.get("queue_maxsize", "?")}
+                    Pending flushes: {stats.get("pending_flushes", 0)}
+                    Last batch:  {stats.get("last_batch_size", 0)}
+                    Last write:  {stats.get("last_write_s", 0.0) * 1000:.1f} ms
+                    Avg write:   {stats.get("avg_write_s", 0.0) * 1000:.1f} ms
                     None fields: {stats.get("filtered_none_fields", 0)}
                     None tags:   {stats.get("filtered_none_tags", 0)}
                     All-None:    {stats.get("dropped_all_none_fields", 0)}
@@ -659,6 +801,7 @@ async def status():
     else:
         status_report = "Metrics Hub: not active"
 
+    # print(response)
     print(status_report)
 
 

@@ -1,9 +1,11 @@
-import random
 import threading
 import time
 from enum import Enum
 from typing import Any
 
+from egse.backoff import BackoffStrategy
+from egse.backoff import JitterStrategy
+from egse.backoff import calculate_retry_interval
 from egse.env import bool_env
 from egse.log import logging
 from egse.system import type_name
@@ -67,113 +69,6 @@ class ConnectionState(Enum):
     CONNECTING = "connecting"
     CONNECTED = "connected"
     CIRCUIT_OPEN = "circuit_open"  # Temporarily stopped trying
-
-
-class BackoffStrategy(Enum):
-    """
-    Specifies the strategy for increasing the delay between retry attempts
-    in backoff algorithms to reduce load and avoid overwhelming services.
-
-    Strategies:
-        EXPONENTIAL:
-            The delay doubles with each retry attempt (e.g., 1s, 2s, 4s, 8s).
-            This is the most widely used approach because it quickly reduces load on struggling systems.
-        LINEAR:
-            The delay increases by a fixed amount each time (e.g., 1s, 2s, 3s, 4s).
-            This provides a more gradual reduction in request rate.
-        FIXED:
-            Uses the same delay between all retry attempts.
-            Simple but less adaptive to system conditions.
-
-    References:
-        - AWS Architecture Blog: Exponential Backoff And Jitter
-    """
-
-    EXPONENTIAL = "exponential"
-    """The delay doubles with each retry attempt (e.g., 1s, 2s, 4s, 8s). 
-    This is the most widely used approach because it quickly reduces load on struggling systems."""
-    LINEAR = "linear"
-    """The delay increases by a fixed amount each time (e.g., 1s, 2s, 3s, 4s). 
-    This provides a more gradual reduction in request rate."""
-    FIXED = "fixed"
-    """Uses the same delay between all retry attempts. Simple but less adaptive to system conditions."""
-
-
-class JitterStrategy(Enum):
-    """
-    Specifies the strategy for applying jitter (randomization) to retry intervals
-    in backoff algorithms to avoid synchronized retries and reduce load spikes.
-
-    Strategies:
-        NONE:
-            No jitter is applied. The retry interval is deterministic.
-        FULL:
-            Applies full jitter by selecting a random value uniformly between 0 and the calculated interval.
-            This maximizes randomness but can result in very short delays.
-        EQUAL:
-            Applies "equal jitter" as described in the AWS Architecture Blog.
-            The interval is randomized within [interval/2, interval], ensuring a minimum delay of half the interval.
-            Note: This is not the same as "a jitter of 50% around interval" (which would be [0.5 * interval, 1.5 * interval]).
-        PERCENT_10:
-            Applies a jitter of ±10% around the base interval, resulting in a random interval within [0.9 * interval, 1.1 * interval].
-
-    References:
-        - AWS Architecture Blog: Exponential Backoff And Jitter
-    """
-
-    NONE = "none"
-    """No jitter is applied to the backoff."""
-    FULL = "full"
-    """Maximum distribution but can be too random with very short intervals."""
-    EQUAL = "equal"
-    """Best balance, maintains backoff properties while preventing synchronization."""
-    PERCENT_10 = "10%"
-    """Add a jitter of 10% around the base interval."""
-
-
-def calculate_retry_interval(
-    attempt_number,
-    base_interval,
-    max_interval,
-    backoff_strategy: BackoffStrategy = BackoffStrategy.EXPONENTIAL,
-    jitter_strategy: JitterStrategy = JitterStrategy.EQUAL,
-):
-    """
-    Calculates the next retry interval based on the given backoff and jitter strategies.
-
-    Args:
-        attempt_number (int): The current retry attempt (starting from 0).
-        base_interval (float): The initial interval in seconds.
-        max_interval (float): The maximum allowed interval in seconds.
-        backoff_strategy (BackoffStrategy): Strategy for increasing the delay (exponential, linear, or fixed).
-        jitter_strategy (JitterStrategy): Strategy for randomizing the delay to avoid synchronization.
-
-    Returns:
-        float: The computed retry interval in seconds.
-
-    Notes:
-        - See the docstrings for BackoffStrategy and JitterStrategy for details on each strategy.
-        - Based on best practices from the AWS Architecture Blog: Exponential Backoff And Jitter.
-    """
-
-    if backoff_strategy == BackoffStrategy.EXPONENTIAL:
-        interval = min(base_interval * (2**attempt_number), max_interval)
-    elif backoff_strategy == BackoffStrategy.LINEAR:
-        interval = min(base_interval + attempt_number, max_interval)
-    else:
-        interval = base_interval
-
-    if jitter_strategy == JitterStrategy.NONE:
-        return interval
-    elif jitter_strategy == JitterStrategy.FULL:
-        return random.uniform(0, interval)
-    elif jitter_strategy == JitterStrategy.EQUAL:
-        return interval / 2 + random.uniform(0, interval / 2)
-    elif jitter_strategy == JitterStrategy.PERCENT_10:
-        jitter_amount = interval * 0.1
-        return interval + random.uniform(-jitter_amount, jitter_amount)
-
-    return interval
 
 
 class AsyncServiceConnector:
@@ -302,7 +197,7 @@ class AsyncServiceConnector:
             try:
                 # ensure the state is updated by disconnect hook (disconnect_from_service should set DISCONNECTED)
                 await self.disconnect_from_service()
-            except Exception as exc:
+            except Exception:
                 if VERBOSE_DEBUG:
                     logger.debug(f"Couldn't disconnect from {self.service_name}")
 
