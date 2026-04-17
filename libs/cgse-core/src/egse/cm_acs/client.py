@@ -8,7 +8,7 @@ from egse.setup import Setup
 
 import egse.cm_acs as cm_acs_module
 from egse.async_control import AsyncControlClient
-from navdict import NavigableDict
+from egse.cm_acs.typed_serialization import get_typed_payload_serializer
 
 
 class AsyncConfigurationManagerClient(AsyncControlClient):
@@ -16,6 +16,9 @@ class AsyncConfigurationManagerClient(AsyncControlClient):
 
     service_type = cm_acs_module.SERVICE_TYPE
     client_id = "cm-async-client-xxx"
+
+    def _create_typed_payload_serializer(self):
+        return get_typed_payload_serializer()
 
     async def list_setups(self, **attr: dict[str, Any]) -> list[list]:
         """List the available setups on the async configuration manager, optionally filtered by the given attributes.
@@ -50,7 +53,11 @@ class AsyncConfigurationManagerClient(AsyncControlClient):
         if not response.get("success"):
             raise RuntimeError(f"Failed to get setup: {response.get('message')}")
 
-        return Setup(NavigableDict.from_dict(response["return_code"]))
+        setup = response["return_code"]
+        if isinstance(setup, Setup):
+            return setup
+
+        raise RuntimeError(f"Failed to decode setup response, expected Setup but got {type(setup).__name__}")
 
     async def get_obsid(self) -> dict[str, Any]:
         response = await self.send_device_command({"command": "get_obsid"})

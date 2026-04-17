@@ -1,7 +1,7 @@
 import asyncio
 
-from egse.setup import Setup
 import pytest
+from egse.setup import Setup
 
 from egse.cm_acs.client import AsyncConfigurationManagerClient
 from egse.cm_acs.server import AsyncConfigurationManagerControlServer
@@ -54,8 +54,11 @@ async def test_server(caplog):
 
             response = await client.get_setup()
             assert isinstance(response, Setup), f"Expected Setup instance, but got {type(response)}"
-            assert response.get_id() == "00028", f"Expected setup ID '00028', but got '{response.get_id()}'"
             assert response.has_private_attribute("_filename")
+            assert response.has_private_attribute("_setup_id")
+            assert response.get_id() == "00028", f"Expected setup ID '00028', but got '{response.get_id()}'"
+            assert response.get_filename() is not None, "Expected setup filename to be set, but it was None."
+            assert response.get_filename().endswith("SETUP_LAB23_00028_240123_120028.yaml")
 
     except Exception as exc:
         pytest.fail(f"An unexpected exception occurred: {exc}")

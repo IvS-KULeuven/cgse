@@ -9,6 +9,7 @@ from asyncio import Event
 from asyncio import Task
 from enum import Enum
 from enum import auto
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import Callable
 from typing import Coroutine
@@ -17,6 +18,7 @@ import zmq.asyncio
 from egse.env import bool_env
 from egse.exceptions import InitializationError
 from egse.log import logging
+from egse.serialization import to_json_safe
 from egse.system import Periodic
 from egse.system import camel_to_kebab
 from egse.system import camel_to_snake
@@ -36,6 +38,9 @@ from rich.traceback import Traceback
 
 # from egse.process import ProcessStatus
 from egse.registry.client import AsyncRegistryClient
+
+if TYPE_CHECKING:
+    from egse.serialization import TypedPayloadSerializer
 
 try:
     from typing import override  # type: ignore[import]
@@ -174,11 +179,12 @@ class ServiceCommandRouter:
 
     async def _handle_info(self, cmd: dict[str, Any]) -> list:
         self._logger.debug(f"Handling '{cmd['command']}' service request.")
-        return zmq_json_response(
+        return self._control_server.create_json_response(
+            SocketType.SERVICE,
             {
                 "success": True,
                 "message": self._control_server.get_info(),
-            }
+            },
         )
 
     async def _handle_terminate(self, cmd: dict[str, Any]) -> list:
@@ -186,11 +192,12 @@ class ServiceCommandRouter:
 
         self._control_server.stop()
 
-        return zmq_json_response(
+        return self._control_server.create_json_response(
+            SocketType.SERVICE,
             {
                 "success": True,
                 "message": {"status": "terminating"},
-            }
+            },
         )
 
     def get_info(self) -> dict[str, Any]:
@@ -323,6 +330,15 @@ class AsyncControlServer:
         self.register_custom_handlers()
 
         self.registry = AsyncRegistryClient()
+        self._typed_payload_serializer = self._create_typed_payload_serializer()
+
+    def _create_typed_payload_serializer(self) -> "TypedPayloadSerializer | None":
+        """Hook for subclasses that want typed payload decoding on JSON requests."""
+        return None
+
+    def _typed_serialization_enabled_for(self, socket_type: SocketType) -> bool:
+        """Hook for selecting which channels use typed payload serialization."""
+        return socket_type is SocketType.DEVICE
 
     def register_default_device_command_handlers(self):
         """Register baseline device handlers that are useful for diagnostics and examples."""
@@ -497,7 +513,7 @@ class AsyncControlServer:
                 if message_type == b"MESSAGE_TYPE:STRING":
                     device_command = {"command": data.decode("utf-8")}
                 elif message_type == b"MESSAGE_TYPE:JSON":
-                    device_command = json.loads(data.decode())
+                    device_command = self._decode_json_request(SocketType.DEVICE, json.loads(data.decode()))
                 else:
                     filename, lineno, function_name = get_current_location()
                     # We have an unknown message format, send an error message back
@@ -557,7 +573,7 @@ class AsyncControlServer:
                 if message_type == b"MESSAGE_TYPE:STRING":
                     service_command = {"command": data.decode("utf-8")}
                 elif message_type == b"MESSAGE_TYPE:JSON":
-                    service_command = json.loads(data.decode())
+                    service_command = self._decode_json_request(SocketType.SERVICE, json.loads(data.decode()))
                 else:
                     filename, lineno, function_name = get_current_location()
                     # We have an unknown message format, send an error message back
@@ -590,6 +606,25 @@ class AsyncControlServer:
 
     async def _process_service_command(self, cmd: dict[str, Any]) -> list:
         return await self._service_command_router.process_command(cmd)
+
+    def _decode_json_request(self, socket_type: SocketType, request: dict[str, Any]) -> dict[str, Any]:
+        """Decode typed payload wrappers when enabled for the given socket type."""
+        if self._typed_payload_serializer and self._typed_serialization_enabled_for(socket_type):
+            decoded = self._typed_payload_serializer.decode_value(request)
+            if isinstance(decoded, dict):
+                return decoded
+        return request
+
+    def _encode_json_response(self, socket_type: SocketType, response: dict[str, Any]) -> dict[str, Any]:
+        """Encode typed payload wrappers in outgoing JSON responses and make them JSON-safe."""
+        encoded: Any = response
+        if self._typed_payload_serializer and self._typed_serialization_enabled_for(socket_type):
+            encoded = self._typed_payload_serializer.encode_value(response)
+        return to_json_safe(encoded)
+
+    def create_json_response(self, socket_type: SocketType, response: dict[str, Any]) -> list:
+        """Create a JSON multipart response after applying transport-level serialization rules."""
+        return zmq_json_response(self._encode_json_response(socket_type, response))
 
     async def process_sequential_queue(self):
         """
@@ -862,6 +897,15 @@ class AsyncControlClient:
         self.service_command_port: int = 0
 
         self._post_init_is_done = False
+        self._typed_payload_serializer = self._create_typed_payload_serializer()
+
+    def _create_typed_payload_serializer(self) -> "TypedPayloadSerializer | None":
+        """Hook for subclasses that want typed payload encoding/decoding for JSON messages."""
+        return None
+
+    def _typed_serialization_enabled_for(self, socket_type: SocketType) -> bool:
+        """Hook for selecting which channels use typed payload serialization."""
+        return socket_type is SocketType.DEVICE
 
     async def _post_init(self) -> bool:
         """
@@ -1121,7 +1165,7 @@ class AsyncControlClient:
             if isinstance(request, str):
                 message = zmq_string_request(request)
             elif isinstance(request, dict):
-                message = zmq_json_request(request)
+                message = zmq_json_request(self._encode_json_request(socket_type, request))
             else:
                 raise ValueError(f"request argument shall be a string or a dictionary, not {type(request)}.")
 
@@ -1156,7 +1200,7 @@ class AsyncControlClient:
                 if msg_type == b"MESSAGE_TYPE:STRING":
                     return {"success": True, "message": data.decode("utf-8")}
                 elif msg_type == b"MESSAGE_TYPE:JSON":
-                    return json.loads(data)
+                    return self._decode_json_response(socket_type, json.loads(data))
                 elif msg_type == b"MESSAGE_TYPE:ERROR":
                     return pickle.loads(data)
                 else:
@@ -1199,6 +1243,22 @@ class AsyncControlClient:
                 return self.device_command_socket
             case SocketType.SERVICE:
                 return self.service_command_socket
+
+    def _encode_json_request(self, socket_type: SocketType, request: dict[str, Any]) -> dict[str, Any]:
+        """Encode typed payload wrappers when enabled for the given socket type."""
+        if self._typed_payload_serializer and self._typed_serialization_enabled_for(socket_type):
+            encoded = self._typed_payload_serializer.encode_value(request)
+            if isinstance(encoded, dict):
+                return encoded
+        return request
+
+    def _decode_json_response(self, socket_type: SocketType, response: dict[str, Any]) -> dict[str, Any]:
+        """Decode typed payload wrappers when enabled for the given socket type."""
+        if self._typed_payload_serializer and self._typed_serialization_enabled_for(socket_type):
+            decoded = self._typed_payload_serializer.decode_value(response)
+            if isinstance(decoded, dict):
+                return decoded
+        return response
 
     def recreate_socket(self, socket_type: SocketType):
         if RECREATE_SOCKET:

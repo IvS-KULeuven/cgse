@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from egse.async_control import SocketType
 from egse.async_control import ServiceCommandRouter
 from egse.cm_acs.controller import AsyncConfigurationManagerController
 from egse.response import Failure
-from egse.zmq_ser import zmq_json_response
 
 
 class AsyncConfigurationManagerServices(ServiceCommandRouter):
@@ -24,30 +24,33 @@ class AsyncConfigurationManagerServices(ServiceCommandRouter):
         response = await self._controller.register_to_storage_async()
 
         if isinstance(response, Failure):
-            return zmq_json_response(
+            return self._control_server.create_json_response(
+                SocketType.SERVICE,
                 {
                     "success": False,
                     "message": str(response),
                     "result_type": "Failure",
-                }
+                },
             )
 
-        return zmq_json_response(
+        return self._control_server.create_json_response(
+            SocketType.SERVICE,
             {
                 "success": True,
                 "message": "register_to_storage completed",
                 "result_type": type(response).__name__,
-            }
+            },
         )
 
     async def _handle_health(self, cmd: dict[str, Any]) -> list:
         """Return a compact confman-specific health payload."""
-        return zmq_json_response(
+        return self._control_server.create_json_response(
+            SocketType.SERVICE,
             {
                 "success": True,
                 "message": {
                     "status": "ok",
                     "confman": self._controller.get_status(),
                 },
-            }
+            },
         )

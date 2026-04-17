@@ -9,9 +9,23 @@ from pathlib import Path
 from typing import Any
 from typing import Union
 
+from egse.env import get_conf_data_location
+from egse.log import logging
+from egse.obsid import ObservationIdentifier
+from egse.response import Failure
+from egse.response import Response
+from egse.response import Success
+from egse.settings import SettingsError
+from egse.setup import Setup
+from egse.system import duration
+from egse.system import filter_by_attr
+from egse.system import format_datetime
+from egse.system import humanize_seconds
+
 import egse.cm_acs as cm_acs_module
 import egse.confman as confman_module
 from egse.async_control import DeviceCommandRouter
+from egse.async_control import SocketType
 from egse.command import stringify_function_call
 from egse.confman import _add_setup_info_to_cache
 from egse.confman import _construct_filename
@@ -25,22 +39,9 @@ from egse.confman import find_files
 from egse.confman import get_conf_repo_location
 from egse.confman import load_last_setup_id
 from egse.confman import save_last_setup_id
-from egse.env import get_conf_data_location
-from egse.log import logging
 from egse.notifyhub.event import NotificationEvent
 from egse.notifyhub.services import EventPublisher
-from egse.obsid import ObservationIdentifier
-from egse.response import Failure
-from egse.response import Response
-from egse.response import Success
 from egse.serialization import to_json_safe
-from egse.settings import SettingsError
-from egse.setup import Setup
-from egse.system import duration
-from egse.system import filter_by_attr
-from egse.system import format_datetime
-from egse.system import humanize_seconds
-from egse.zmq_ser import zmq_json_response
 
 logger = logging.getLogger("egse.cm_acs")
 
@@ -131,7 +132,7 @@ class AsyncConfigurationManagerController(DeviceCommandRouter):
             return {
                 "success": True,
                 "message": result.message,
-                "return_code": to_json_safe(result.return_code),
+                "return_code": result.return_code,
                 "result_type": "Success",
             }
 
@@ -155,7 +156,7 @@ class AsyncConfigurationManagerController(DeviceCommandRouter):
         return {
             "success": True,
             "message": f"{method_name} completed",
-            "return_code": to_json_safe(result),
+            "return_code": result,
             "result_type": type(result).__name__,
         }
 
@@ -178,7 +179,7 @@ class AsyncConfigurationManagerController(DeviceCommandRouter):
                 "method": method_name,
             }
 
-        return zmq_json_response(payload)
+        return self._control_server.create_json_response(SocketType.DEVICE, payload)
 
     async def _do_start_observation(self, cmd: dict[str, Any]) -> list:
         function_info = cmd.get("function_info") or {}

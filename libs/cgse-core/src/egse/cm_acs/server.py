@@ -24,6 +24,7 @@ from egse.async_control import ServiceCommandRouter
 from egse.cm_acs.client import AsyncConfigurationManagerClient
 from egse.cm_acs.controller import AsyncConfigurationManagerController
 from egse.cm_acs.services import AsyncConfigurationManagerServices
+from egse.cm_acs.typed_serialization import get_typed_payload_serializer
 from egse.logger import remote_logging
 from egse.registry.client import AsyncRegistryClient
 from egse.registry.client import RegistryClient
@@ -54,6 +55,9 @@ class AsyncConfigurationManagerControlServer(AsyncControlServer):
         super().__init__()
 
         self.logger = logger
+
+    def _create_typed_payload_serializer(self):
+        return get_typed_payload_serializer()
 
     def _create_device_command_router(self) -> DeviceCommandRouter:
         return AsyncConfigurationManagerController(self)
