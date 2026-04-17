@@ -33,13 +33,32 @@ class AsyncConfigurationManagerClient(AsyncControlClient):
         response = await self.send_device_command({"command": "list_setups", "attributes": attr or {}})
         if not response.get("success"):
             raise RuntimeError(f"Failed to list setups: {response.get('message')}")
+
         return response["return_code"]
 
     async def load_setup(self, setup_id: int) -> dict[str, Any]:
         response = await self.send_device_command({"command": "load_setup", "setup_id": setup_id})
         if not response.get("success"):
             raise RuntimeError(f"Failed to load setup: {response.get('message')}")
-        return response["return_code"]
+
+        setup = response["return_code"]
+        if isinstance(setup, Setup):
+            return setup
+
+        raise RuntimeError(f"Failed to decode load_setup response, expected Setup but got {type(setup).__name__}")
+
+    async def submit_setup(self, setup: Setup, description: str) -> Setup:
+        response = await self.send_device_command(
+            {"command": "submit_setup", "setup": setup, "description": description}
+        )
+        if not response.get("success"):
+            raise RuntimeError(f"Failed to submit setup: {response.get('message')}")
+
+        setup = response["return_code"]
+        if isinstance(setup, Setup):
+            return setup
+
+        raise RuntimeError(f"Failed to decode submit_setup response, expected Setup but got {type(setup).__name__}")
 
     async def get_setup(self, setup_id: int | None = None) -> Setup:
         """
@@ -57,7 +76,7 @@ class AsyncConfigurationManagerClient(AsyncControlClient):
         if isinstance(setup, Setup):
             return setup
 
-        raise RuntimeError(f"Failed to decode setup response, expected Setup but got {type(setup).__name__}")
+        raise RuntimeError(f"Failed to decode get_setup response, expected Setup but got {type(setup).__name__}")
 
     async def get_obsid(self) -> dict[str, Any]:
         response = await self.send_device_command({"command": "get_obsid"})

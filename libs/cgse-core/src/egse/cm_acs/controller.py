@@ -58,7 +58,6 @@ SEQUENTIAL_CONTROLLER_METHODS = {
     "reload_setups",
     "reload_setups_async",
     "submit_setup",
-    "submit_setup_async",
 }
 
 # No controller methods currently rely on generic whole-method thread offloading.
@@ -70,7 +69,7 @@ def _active_site_id() -> str:
 
 
 class AsyncConfigurationManagerController(DeviceCommandRouter):
-    """Native controller for async confman command handling."""
+    """Native controller for async configuration manager command handling."""
 
     def __init__(self, control_server):
         super().__init__(control_server)
@@ -212,7 +211,7 @@ class AsyncConfigurationManagerController(DeviceCommandRouter):
         setup = cmd.get("setup")
         description = cmd.get("description", "")
         replace = bool(cmd.get("replace", True))
-        return await self._handle_controller_call("submit_setup_async", setup, description, replace)
+        return await self._handle_controller_call("submit_setup", setup, description, replace)
 
     async def _do_get_setup_for_obsid(self, cmd: dict[str, Any]) -> list:
         return await self._handle_controller_call("get_setup_for_obsid_async", cmd.get("obsid"))
@@ -636,46 +635,7 @@ class AsyncConfigurationManagerController(DeviceCommandRouter):
         except Exception as exc:
             return Failure("Failed to resolve setup for obsid.", exc)
 
-    def submit_setup(self, setup: Setup, description: str, replace: bool = True) -> Setup | Failure:
-        if self._obsid is not None:
-            return Failure(
-                "An new Setup can not be submitted when an observation is running. "
-                "You will need to first send an end_observation request to the configuration manager."
-            )
-
-        site = getattr(setup, "site_id", _active_site_id())
-        setup_id = self.get_next_setup_id_for_site(site)
-        filename = _construct_filename(site, setup_id)
-
-        history = getattr(setup, "history", None)
-        if not isinstance(history, dict):
-            history = {}
-            setattr(setup, "history", history)
-
-        history.update({f"{setup_id}": description})
-        setup.set_private_attribute("_setup_id", setup_id)
-        setup.to_yaml_file(self._data_conf_location / filename)
-
-        if get_conf_repo_location():
-            try:
-                rc = _push_setup_to_repo(filename, description)
-                if isinstance(rc, Failure):
-                    return rc
-                _add_setup_info_to_cache(setup)
-            except Exception as exc:
-                return Failure("Submit_setup could not send the new Setup to the repo.", exc)
-
-        if replace:
-            self._setup = setup
-            self._setup_id = setup_id
-            self._sut_id = _get_sut_id_for_setup(setup)
-            save_last_setup_id(setup_id)
-
-            self._publish_new_setup_event()
-
-        return setup
-
-    async def submit_setup_async(self, setup: Setup, description: str, replace: bool = True) -> Setup | Failure:
+    async def submit_setup(self, setup: Setup, description: str, replace: bool = True) -> Setup | Failure:
         if self._obsid is not None:
             return Failure(
                 "An new Setup can not be submitted when an observation is running. "
@@ -693,16 +653,18 @@ class AsyncConfigurationManagerController(DeviceCommandRouter):
 
         history.update({f"{setup_id}": description})
         setup.set_private_attribute("_setup_id", setup_id)
+
         await asyncio.to_thread(setup.to_yaml_file, self._data_conf_location / filename)
 
-        if get_conf_repo_location():
-            try:
-                rc = await asyncio.to_thread(_push_setup_to_repo, filename, description)
-                if isinstance(rc, Failure):
-                    return rc
-                await asyncio.to_thread(_add_setup_info_to_cache, setup)
-            except Exception as exc:
-                return Failure("Submit_setup could not send the new Setup to the repo.", exc)
+        # FIXME: this should be uncommented for production before releasing the code!
+        # if get_conf_repo_location():
+        #     try:
+        #         rc = await asyncio.to_thread(_push_setup_to_repo, filename, description)
+        #         if isinstance(rc, Failure):
+        #             return rc
+        #         await asyncio.to_thread(_add_setup_info_to_cache, setup)
+        #     except Exception as exc:
+        #         return Failure("Submit_setup could not send the new Setup to the repo.", exc)
 
         if replace:
             self._setup = setup

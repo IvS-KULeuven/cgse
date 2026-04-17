@@ -1,6 +1,10 @@
 import asyncio
 
+from egse.response import Failure
 import pytest
+from rich.console import Console
+
+
 from egse.setup import Setup
 
 from egse.cm_acs.client import AsyncConfigurationManagerClient
@@ -12,7 +16,6 @@ from egse.cm_acs.server import AsyncConfigurationManagerControlServer
 
 @pytest.mark.asyncio
 async def test_server(caplog):
-    from rich.console import Console
 
     console = Console()
 
@@ -59,6 +62,48 @@ async def test_server(caplog):
             assert response.get_id() == "00028", f"Expected setup ID '00028', but got '{response.get_id()}'"
             assert response.get_filename() is not None, "Expected setup filename to be set, but it was None."
             assert response.get_filename().endswith("SETUP_LAB23_00028_240123_120028.yaml")
+
+    except Exception as exc:
+        pytest.fail(f"An unexpected exception occurred: {exc}")
+    finally:
+        server.stop()
+        await server_task
+
+
+@pytest.mark.asyncio
+async def test_submit_setup(caplog):
+    """Test that submit_setup correctly processes a setup submission."""
+
+    console = Console()
+
+    # First start the control server as a background task.
+    server = AsyncConfigurationManagerControlServer()
+    server_task = asyncio.create_task(server.start())
+
+    await asyncio.sleep(0.5)  # give the server time to startup
+
+    try:
+        # Now create a control client that will connect to the above server.
+        async with AsyncConfigurationManagerClient() as client:
+            caplog.clear()
+
+            setup = await client.get_setup(28)
+            response = await client.submit_setup(setup, "Test description")
+
+            assert response is not None, (
+                "Expected to receive a response from the control server when submitting setup, but got None."
+            )
+            assert isinstance(response, Setup), (
+                f"Expected Setup instance in submit_setup response, but got {type(response)}"
+            )
+            assert setup.get_id() is not None
+            assert response.get_id() == int(setup.get_id()) + 1, (
+                f"Expected setup ID '{int(setup.get_id()) + 1}' in submit_setup response, but got '{response.get_id()}'"
+            )
+            assert response.get_filename() is not None, (
+                "Expected setup filename to be set in submit_setup response, but it was None."
+            )
+            assert "SETUP_LAB23_00029" in response.get_filename()  # type: ignore
 
     except Exception as exc:
         pytest.fail(f"An unexpected exception occurred: {exc}")
