@@ -4,6 +4,8 @@ from collections import deque
 from unittest.mock import patch
 
 import pytest
+from egse.response import Failure
+from egse.response import Success
 
 from egse.observation import ObservationContext
 from egse.observation import building_block
@@ -13,8 +15,6 @@ from egse.observation import request_obsid
 from egse.observation import start_observation
 from egse.observation import stringify_args
 from egse.observation import stringify_kwargs
-from egse.response import Failure
-from egse.response import Success
 
 
 @pytest.fixture
@@ -253,6 +253,24 @@ def test_execute_calls_end_observation_on_exception(mock_start, mock_end, mock_o
 @patch("egse.observation.ObservationContext.start_observation")
 def test_start_observation_wrapper_returns_obsid(mock_start, mock_obsid):
     assert start_observation("testing") == 999
+
+
+@patch("egse.observation.request_obsid", return_value=999)
+@patch("egse.observation.ObservationContext.start_observation")
+def test_start_observation_wrapper_passes_parent_call_values(mock_start, mock_obsid):
+    def caller(alpha, beta=2, *extra, gamma=3, **more):
+        return start_observation("testing")
+
+    assert caller(10, 20, 30, gamma=40, delta=50) == 999
+
+    mock_start.assert_called_once_with(
+        {
+            "description": "testing",
+            "func_name": "caller",
+            "args": [10, 20, 30],
+            "kwargs": {"gamma": 40, "delta": 50},
+        }
+    )
 
 
 @patch("egse.observation.logger.error")
