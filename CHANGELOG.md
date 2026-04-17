@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+- The `obsid-table.txt` file now contains the function name and args + kwargs of the parent function. Previously, when `start_observation()` was used instead of `execute()`, the `obsid-table.txt` would contain `unknown_function()` which was rather confusing.
 - Enhance ServiceMessaging class with detailed documentation and examples; add tests for fake user, email, order, and analytics services. The ServiceMessaging class is a convenience wrapper for publishing and subscribing to events that can also be used as a context manager.
 
 ## [0.22.0] - 2026-04-09
