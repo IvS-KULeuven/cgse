@@ -176,9 +176,53 @@ def execute(func: Callable, description=None, *args, **kwargs):
     return response
 
 
-def start_observation(description: str):
+def get_parent_function_call_info() -> tuple[str, list, dict]:
+    import inspect
+
+    parent_frame = inspect.currentframe().f_back.f_back
+    arg_info = inspect.getargvalues(parent_frame)
+    parent_func_name = parent_frame.f_code.co_name
+
+    if parent_func_name == "<module>":
+        return "<main>", [], {}
+
+    code = parent_frame.f_code
+    positional_param_count = code.co_posonlyargcount + code.co_argcount
+    kwonly_names = code.co_varnames[positional_param_count : positional_param_count + code.co_kwonlyargcount]
+
+    positional_arg_names = arg_info.args[:positional_param_count]
+    parent_args = [arg_info.locals[name] for name in positional_arg_names]
+    if arg_info.varargs:
+        parent_args.extend(arg_info.locals[arg_info.varargs])
+
+    parent_kwargs = {name: arg_info.locals[name] for name in kwonly_names}
+    if arg_info.keywords:
+        parent_kwargs.update(arg_info.locals[arg_info.keywords])
+
+    return parent_func_name, parent_args, parent_kwargs
+
+
+def start_observation(description: str, derive_parent_function_call: bool = True):
+
+    if derive_parent_function_call:
+        parent_func_name, parent_args, parent_kwargs = get_parent_function_call_info()
+    else:
+        parent_func_name = None
+        parent_args = []
+        parent_kwargs = {}
+
     try:
-        ObservationContext().start_observation({"description": description})
+        if parent_func_name is None:
+            ObservationContext().start_observation({"description": description})
+        else:
+            ObservationContext().start_observation(
+                {
+                    "description": description,
+                    "func_name": parent_func_name,
+                    "args": parent_args,
+                    "kwargs": parent_kwargs,
+                }
+            )
 
         obsid = request_obsid()
         logger.info(f"Observation started with obsid={obsid}, level={ObservationContext().get_level()}")
