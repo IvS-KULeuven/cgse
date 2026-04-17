@@ -21,7 +21,6 @@ from egse.backoff import calculate_retry_interval
     ],
 )
 def test_calculate_retry_interval_exponential_without_jitter(attempt_number, base_interval, max_interval, expected):
-
     with expected as expected_interval:
         interval = calculate_retry_interval(
             attempt_number=attempt_number,
@@ -59,7 +58,6 @@ def test_calculate_retry_interval_exponential_with_custom_factor():
     ],
 )
 def test_calculate_retry_interval_linear_without_jitter(attempt_number, base_interval, max_interval, expected):
-
     with expected as expected_interval:
         interval = calculate_retry_interval(
             attempt_number=attempt_number,
