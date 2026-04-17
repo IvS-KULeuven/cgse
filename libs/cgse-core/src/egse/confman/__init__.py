@@ -630,8 +630,15 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
                 response,
             )
 
+        # Retrieve and remove the description from the function info, since `stringify_function_call` will
+        # use description and ignore the function name and arguments when description is present.
         description = function_info.pop("description", "")
+
         cmd = stringify_function_call(function_info).replace("\n", " ")
+
+        # In case no function metadata is available, we want to have a more meaningful command than `unknown_function()`
+        if cmd == "unknown_function()":
+            cmd = "start_observation()"
 
         if description:
             cmd += f" [{description}]"
