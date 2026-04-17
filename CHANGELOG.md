@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+- The `obsid-table.txt` file now contains the function name and args + kwargs of the parent function. Previously, when `start_observation()` was used instead of `execute()`, the `obsid-table.txt` would contain `unknown_function()` which was rather confusing.
 - Added an initial asynchronous Configuration Manager control server implementation, including client, controller, server, and service layers.
 - Introduced typed payload serialization utilities for safer/cleaner message exchange in async control flows.
 - Refactored async control infrastructure (including dummy async control components) to improve command routing and error handling.

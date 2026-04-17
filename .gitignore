@@ -53,3 +53,7 @@ venv
 # Packaging
 
 uv.lock
+libs/test_service_registry.db
+libs/cgse-core/metrics.duckdb
+install_influxdb3.sh
+.pylintrc
