@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+- Added an initial asynchronous Configuration Manager control server implementation, including client, controller, server, and service layers.
+- Introduced typed payload serialization utilities for safer/cleaner message exchange in async control flows.
+- Refactored async control infrastructure (including dummy async control components) to improve command routing and error handling.
+- Added configuration settings for the new async Configuration Manager control server (service type, process name, and ports).
+- Expanded automated test coverage for async control behavior, async Configuration Manager control server functionality, and serialization helpers.
 - Enhance ServiceMessaging class with detailed documentation and examples; add tests for fake user, email, order, and analytics services. The ServiceMessaging class is a convenience wrapper for publishing and subscribing to events that can also be used as a context manager.
 
 ## [0.22.0] - 2026-04-09
