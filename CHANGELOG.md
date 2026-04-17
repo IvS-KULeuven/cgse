@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.22.1] - 2026-04-17
+
 - The `obsid-table.txt` file now contains the function name and args + kwargs of the parent function. Previously, when `start_observation()` was used instead of `execute()`, the `obsid-table.txt` would contain `unknown_function()` which was rather confusing.
 - Added an initial asynchronous Configuration Manager control server implementation, including client, controller, server, and service layers.
 - Introduced typed payload serialization utilities for safer/cleaner message exchange in async control flows.
@@ -388,7 +390,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.0...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.1...HEAD
+[0.22.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.0...v0.22.1
 [0.22.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.21.1...v0.22.0
 [0.21.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.21.0...v0.21.1
 [0.21.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.20.5...v0.21.0

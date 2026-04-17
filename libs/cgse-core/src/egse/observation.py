@@ -203,7 +203,6 @@ def get_parent_function_call_info() -> tuple[str, list, dict]:
 
 
 def start_observation(description: str, derive_parent_function_call: bool = True):
-
     if derive_parent_function_call:
         parent_func_name, parent_args, parent_kwargs = get_parent_function_call_info()
     else:

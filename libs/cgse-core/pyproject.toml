@@ -1,6 +1,6 @@
 [project]
 name = "cgse-core"
-version = "0.22.0"
+version = "0.22.1"
 description = "Core services for the CGSE framework"
 authors = [
     {name = "IvS KU Leuven"}
@@ -21,6 +21,7 @@ keywords = [
 dependencies = [
     "cgse-common",
     "cgse-tools",
+    "cgse-gui",
     "apscheduler>=3.11.0",
     "aiosqlite>=0.21.0",
     "aiohttp>=3.11.16",
@@ -115,6 +116,9 @@ extend-select = ["E", "W"]
 
 [tool.ruff.lint.isort]
 force-single-line = true
+
+[tool.uv.sources]
+cgse-gui = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]
