@@ -21,7 +21,6 @@ from typing import Optional
 import rich
 import typer
 import zmq
-
 from egse.env import get_log_file_location
 from egse.log import LOG_DATE_FORMAT_CLEAN
 from egse.log import LOG_DATE_FORMAT_FULL
@@ -30,11 +29,7 @@ from egse.log import LOG_FORMAT_FULL
 from egse.log import LOG_FORMAT_STYLE
 from egse.log import PackageFilter
 from egse.log import get_log_level_from_env
-from egse.logger import SERVICE_TYPE
-from egse.logger import get_log_file_name
-from egse.logger import send_request
 from egse.process import SubProcess
-from egse.registry.client import RegistryClient
 from egse.settings import Settings
 from egse.signal import FileBasedSignaling
 from egse.system import format_datetime
@@ -42,6 +37,11 @@ from egse.system import get_caller_info
 from egse.system import get_host_ip
 from egse.zmq_ser import bind_address
 from egse.zmq_ser import get_port_number
+
+from egse.logger import SERVICE_TYPE
+from egse.logger import get_log_file_name
+from egse.logger import send_request
+from egse.registry.client import RegistryClient
 
 CTRL_SETTINGS = Settings.load("Logging Control Server")
 
