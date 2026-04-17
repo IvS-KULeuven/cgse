@@ -9,26 +9,23 @@ from typing import Any
 from typing import Callable
 
 try:
-    from typing import override
+    from typing import override  # type: ignore[import]
 except ImportError:
-    try:
-        from typing_extensions import override
-    except ImportError:
-
-        def override(method, /):
-            return method
-
+    from typing_extensions import override
 
 import typer
-
-from egse.async_control import AcquisitionAsyncControlServer
-from egse.async_control import TypedAsyncControlClient
 from egse.log import logger
-from egse.logger import remote_logging
 from egse.system import TyperAsyncCommand
 from egse.system import do_every
 from egse.zmq_ser import zmq_json_response
 from egse.zmq_ser import zmq_string_response
+from rich.console import Console
+
+from egse.async_control import AcquisitionAsyncControlServer
+from egse.async_control import DeviceCommandRouter
+from egse.async_control import ServiceCommandRouter
+from egse.async_control import TypedAsyncControlClient
+from egse.logger import remote_logging
 
 
 class DummyDAQSimulator:
@@ -112,57 +109,26 @@ class DummyDAQSimulator:
         do_every(self._interval_s, self._callback_wrapper, stop_event=self._stop)
 
 
-class DummyAsyncControlServer(AcquisitionAsyncControlServer):
-    """Example async control server showing what belongs in a subclass.
+class DummyController(DeviceCommandRouter):
+    """Example controller for the dummy async control server, which could be expanded with device-specific logic."""
 
-    The superclass handles sockets, request/response framing, registration, lifecycle,
-    task management, and common service commands. This subclass only defines
-    device-specific commands and extra service metadata.
-    """
+    def __init__(self, control_server: "DummyAsyncControlServer"):
+        super().__init__(control_server)
 
-    service_type = "dummy-async-control-server"
-
-    def __init__(self):
-        self._last_value: str | None = None
-        self._echo_count = 0
-        self._acquisition_logged_count = 0
-        self._acquisition_interval_s = 0.05
+        self._cs = control_server
         self._daq_simulator: DummyDAQSimulator | None = None
-        super().__init__()
+        self._echo_count = 0
+        self._last_value: str | None = None
+        self._acquisition_interval_s = 0.05
 
     @override
-    def register_custom_handlers(self):
-        """Register dummy command handlers, including acquisition lifecycle commands."""
-        self.add_device_command_handler("echo", self._do_echo)
-        self.add_device_command_handler("set-value", self._do_set_value)
-        self.add_device_command_handler("start-acquisition", self._do_start_acquisition)
-        self.add_device_command_handler("stop-acquisition", self._do_stop_acquisition)
-        self.add_service_command_handler("health", self._handle_health)
+    def register_default_handlers(self):
+        super().register_default_handlers()
 
-    @override
-    def get_service_info(self) -> dict[str, Any]:
-        """Return service metadata, including acquisition state and counters."""
-        info = super().get_service_info()
-        info.update(
-            {
-                "supports": [
-                    "echo",
-                    "set-value",
-                    "start-acquisition",
-                    "stop-acquisition",
-                    "health",
-                    "ping",
-                    "info",
-                    "terminate",
-                ],
-                "echo count": self._echo_count,
-                "last value": self._last_value,
-                "acquisition running": self._is_acquisition_running(),
-                "acquisition logged": self._acquisition_logged_count,
-                "acquisition interval": self._acquisition_interval_s,
-            }
-        )
-        return info
+        self.add_handler("echo", self._do_echo)
+        self.add_handler("set-value", self._do_set_value)
+        self.add_handler("start-acquisition", self._do_start_acquisition)
+        self.add_handler("stop-acquisition", self._do_stop_acquisition)
 
     async def _do_echo(self, cmd: dict[str, Any]) -> list:
         """Echo the provided message and increment a call counter."""
@@ -178,22 +144,6 @@ class DummyAsyncControlServer(AcquisitionAsyncControlServer):
     def _is_acquisition_running(self) -> bool:
         """Return True when the DAQ simulator is actively producing samples."""
         return self._daq_simulator is not None and self._daq_simulator.running
-
-    def custom_callback(self, data, *args, **kwargs):
-        # Do some custom processing of the device driver record here, this might be to extract data from the record, but
-        # the 'record' might also be a handle to a device driver object that can be queried for more information, or it
-        # could be any other data structure depending on how the acquisition callback is invoked by the device
-        # driver/simulator. In this example, we just log the record sequence and value for demonstration purposes,
-        # but in a real control server this is where you would implement the logic to handle incoming acquisition
-        # records, such as parsing the data, applying calibrations, checking for alerts, forwarding to other services,
-        # etc.
-
-        # The DummyDAQSimulator provides a dictionary as the record, but this could be any data structure.
-        record = data
-        logger.debug(f"Custom processing of record {record.get('sequence')} with value {record.get('value')}")
-
-        # Then pass it to the default callback for further processing and finally enqueuing in the acquisition queue.
-        self.on_acquisition_data(record, source="custom", metadata={"processed": True})
 
     async def _do_start_acquisition(self, cmd: dict[str, Any]) -> list:
         """Start the DAQ simulator and stream samples through the acquisition callback."""
@@ -227,7 +177,7 @@ class DummyAsyncControlServer(AcquisitionAsyncControlServer):
         # produced records of device data. The default callback also accept optional keyword arguments,
         # in this case, 'source' and 'metadata' are provided.
 
-        callback = self.get_acquisition_callback()
+        callback = self._cs.get_acquisition_callback()
 
         # Alternatively, you could also define a custom callback function here in the control server subclass that
         # performs additional processing or forwarding of the produced records, and pass that to the device
@@ -260,7 +210,7 @@ class DummyAsyncControlServer(AcquisitionAsyncControlServer):
                 "message": {
                     "running": False,
                     "stopped": was_running,
-                    "acquisition logged": self._acquisition_logged_count,
+                    "acquisition logged": self._cs._acquisition_logged_count,
                 },
             }
         )
@@ -280,10 +230,22 @@ class DummyAsyncControlServer(AcquisitionAsyncControlServer):
         return True
 
     @override
-    async def handle_acquisition_record(self, record: dict[str, Any]):
-        """Receive one processed acquisition record and log it."""
-        self._acquisition_logged_count += 1
-        self.logger.info(f"Dummy acquisition record {self._acquisition_logged_count}: {record.get('data')}")
+    def get_info(self) -> dict[str, Any]:
+        return super().get_info()
+
+
+class DummyServices(ServiceCommandRouter):
+    """Example service command handlers and status extensions for the dummy async control server."""
+
+    def __init__(self, control_server: "DummyAsyncControlServer", controller: DummyController):
+        super().__init__(control_server)
+        self._controller = controller
+        self._cs = control_server
+
+    def register_default_handlers(self):
+        super().register_default_handlers()  # ping, info, terminate, block
+        self.add_handler("health", self._handle_health)
+        self.add_handler("stop", self._handle_stop)
 
     async def _handle_health(self, cmd: dict[str, Any]) -> list:
         """Return a compact health payload for monitoring and tests."""
@@ -292,24 +254,94 @@ class DummyAsyncControlServer(AcquisitionAsyncControlServer):
                 "success": True,
                 "message": {
                     "status": "ok",
-                    "echo count": self._echo_count,
-                    "last value": self._last_value,
-                    "acquisition running": self._is_acquisition_running(),
-                    "acquisition logged": self._acquisition_logged_count,
+                    "echo count": self._controller._echo_count,
+                    "last value": self._controller._last_value,
+                    "acquisition running": self._controller._is_acquisition_running(),
+                    "acquisition logged": self._cs._acquisition_logged_count,
                 },
             }
         )
 
-    @override
-    def stop(self):
+    async def _handle_stop(self):
         """Stop acquisition first, then stop the base server lifecycle."""
-        if self._is_acquisition_running():
-            if self._loop is not None and self._loop.is_running():
-                self._loop.create_task(self.stop_acquisition())
-            elif self._daq_simulator is not None:
-                self._daq_simulator.stop()
-                self._daq_simulator = None
-        super().stop()
+        if self._controller._is_acquisition_running():
+            await self._controller.stop_acquisition()
+        if self._daq_simulator is not None:
+            self._daq_simulator.stop()
+            self._daq_simulator = None
+        self._cs.stop()
+
+    @override
+    def get_info(self) -> dict[str, Any]:
+        info = super().get_info()
+        return info
+
+
+class DummyAsyncControlServer(AcquisitionAsyncControlServer):
+    """Example async control server showing what belongs in a subclass.
+
+    The superclass handles sockets, request/response framing, registration, lifecycle,
+    task management, and common service commands. This subclass only defines
+    device-specific commands and extra service metadata.
+    """
+
+    service_type = "dummy-async-control-server"
+
+    def __init__(self):
+        self._acquisition_logged_count = 0
+        super().__init__()
+
+    @override
+    def _create_device_command_router(self) -> DeviceCommandRouter:
+        """Create and return the device command router with device-specific command handlers."""
+        return DummyController(self)
+
+    @override
+    def _create_service_command_router(self) -> ServiceCommandRouter:
+        """Create and return the services command router with custom command handlers."""
+        return DummyServices(self, self.controller)
+
+    @property
+    def controller(self) -> DummyController:
+        return self._device_command_router  # type: ignore[return-value]
+
+    @property
+    def services(self) -> DummyServices:
+        return self._service_command_router  # type: ignore[return-value]
+
+    @override
+    def get_info(self) -> dict[str, Any]:
+        """Return service metadata, including acquisition state and counters."""
+        info = super().get_info()
+        info.update(
+            {
+                "echo count": self.controller._echo_count,
+                "last value": self.controller._last_value,
+            }
+        )
+        return info
+
+    def custom_callback(self, data, *args, **kwargs):
+        # Do some custom processing of the device driver record here, this might be to extract data from the record, but
+        # the 'record' might also be a handle to a device driver object that can be queried for more information, or it
+        # could be any other data structure depending on how the acquisition callback is invoked by the device
+        # driver/simulator. In this example, we just log the record sequence and value for demonstration purposes,
+        # but in a real control server this is where you would implement the logic to handle incoming acquisition
+        # records, such as parsing the data, applying calibrations, checking for alerts, forwarding to other services,
+        # etc.
+
+        # The DummyDAQSimulator provides a dictionary as the record, but this could be any data structure.
+        record = data
+        logger.debug(f"Custom processing of record {record.get('sequence')} with value {record.get('value')}")
+
+        # Then pass it to the default callback for further processing and finally enqueuing in the acquisition queue.
+        self.on_acquisition_data(record, source="custom", metadata={"processed": True})
+
+    @override
+    async def handle_acquisition_record(self, record: dict[str, Any]):
+        """Receive one processed acquisition record and log it."""
+        self._acquisition_logged_count += 1
+        self.logger.info(f"Dummy acquisition record {self._acquisition_logged_count}: {record.get('data')}")
 
 
 class DummyAsyncControlClient(TypedAsyncControlClient):
@@ -374,9 +406,26 @@ async def start_cs():
 @app.command(cls=TyperAsyncCommand)
 async def stop_cs():
     """Send a quit service command to the dummy async control server."""
-    async with DummyAsyncControlClient() as dummy:
-        logger.info("Sending a stop_server() to the async dummy control server.")
-        await dummy.stop_server()
+    console = Console()
+    try:
+        async with DummyAsyncControlClient() as dummy:
+            logger.info("Sending a stop_server() to the async dummy control server.")
+            if await dummy.stop_server() is None:
+                console.print("Stop command failed or timed out.", style="red")
+    except Exception as exc:
+        console.print(f"Error occurred while sending stop command: {exc}", style="red")
+
+
+@app.command(cls=TyperAsyncCommand)
+async def status():
+    """Get the status of the dummy async control server."""
+    console = Console()
+    try:
+        async with DummyAsyncControlClient() as dummy:
+            status = await dummy.info()
+            console.print(status)
+    except Exception as exc:
+        console.print(f"Error occurred while fetching status: {exc}", style="red")
 
 
 if __name__ == "__main__":
