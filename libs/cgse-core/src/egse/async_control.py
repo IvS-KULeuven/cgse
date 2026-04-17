@@ -14,15 +14,12 @@ from typing import Callable
 from typing import Coroutine
 
 import zmq.asyncio
-from rich.traceback import Traceback
-
 from egse.env import bool_env
 from egse.exceptions import InitializationError
 from egse.log import logging
-
-# from egse.process import ProcessStatus
-from egse.registry.client import AsyncRegistryClient
 from egse.system import Periodic
+from egse.system import camel_to_kebab
+from egse.system import camel_to_snake
 from egse.system import get_current_location
 from egse.system import get_host_ip
 from egse.system import humanize_seconds
@@ -35,6 +32,16 @@ from egse.zmq_ser import zmq_json_request
 from egse.zmq_ser import zmq_json_response
 from egse.zmq_ser import zmq_string_request
 from egse.zmq_ser import zmq_string_response
+from rich.traceback import Traceback
+
+# from egse.process import ProcessStatus
+from egse.registry.client import AsyncRegistryClient
+
+try:
+    from typing import override  # type: ignore[import]
+except ImportError:
+    from typing_extensions import override
+
 
 logger = logging.getLogger("egse.async_control")
 
@@ -59,7 +66,141 @@ class SocketType(Enum):
     SERVICE = auto()
 
 
-async def is_control_server_active(service_type: str, timeout: float = 0.5) -> bool:
+class DeviceCommandRouter:
+    """Owns device-command handlers and dispatch for one control server instance."""
+
+    def __init__(self, control_server: "AsyncControlServer"):
+        self._control_server = control_server
+        self._logger = self._control_server.logger
+        self.handlers: dict[str, Callable] = {}
+
+    def register_default_handlers(self):
+        self.add_handler("block", self._do_block)
+        self.add_handler("say", self._do_say)
+
+    def add_handler(self, command_name: str, command_handler: Callable):
+        self.handlers[command_name] = command_handler
+
+    async def process_command(self, cmd: dict[str, Any]) -> list:
+        command = cmd.get("command")
+        if not command:
+            return zmq_error_response(
+                {
+                    "success": False,
+                    "message": "no command field provided, don't know what to do.",
+                }
+            )
+
+        handler = self.handlers.get(command)
+        if not handler:
+            filename, lineno, function_name = get_current_location()
+            return zmq_error_response(
+                {
+                    "success": False,
+                    "message": f"Unknown command: {command}",
+                    "metadata": {"file": filename, "lineno": lineno, "function": function_name},
+                }
+            )
+
+        return await handler(cmd)
+
+    async def _do_say(self, cmd: dict[str, Any]) -> list:
+        self._logger.debug(f"Executing command: '{cmd['command']}'")
+        self._logger.debug(f"Message: {cmd['message']}")
+        return zmq_string_response(f"Message said: {cmd['message']}")
+
+    async def _do_block(self, cmd: dict[str, Any]) -> list:
+        self._logger.debug(f"Blocking the commanding for {cmd['sleep']}s...")
+        await asyncio.sleep(cmd["sleep"])
+        self._logger.debug(f"Blocking finished after {cmd['sleep']}s.")
+        return zmq_string_response("block: ACK")
+
+    def get_info(self) -> dict[str, Any]:
+        """Service info payload returned by the `info` service command."""
+        return {
+            "device commands": list(self.handlers.keys()),
+        }
+
+
+class ServiceCommandRouter:
+    """Owns service-command handlers and dispatch for one control server instance."""
+
+    def __init__(self, control_server: "AsyncControlServer"):
+        self._control_server = control_server
+        self._logger = self._control_server.logger
+        self.handlers: dict[str, Callable] = {}
+
+    def register_default_handlers(self):
+        self.add_handler("terminate", self._handle_terminate)
+        self.add_handler("info", self._handle_info)
+        self.add_handler("ping", self._handle_ping)
+        self.add_handler("block", self._handle_block)
+
+    def add_handler(self, command_name: str, command_handler: Callable):
+        self.handlers[command_name] = command_handler
+
+    async def process_command(self, cmd: dict[str, Any]) -> list:
+        command = cmd.get("command")
+        if not command:
+            return zmq_error_response(
+                {
+                    "success": False,
+                    "message": "no command field provided, don't know what to do.",
+                }
+            )
+
+        handler = self.handlers.get(command)
+        if not handler:
+            filename, lineno, function_name = get_current_location()
+            return zmq_error_response(
+                {
+                    "success": False,
+                    "message": f"Unknown command: {command}",
+                    "metadata": {"file": filename, "lineno": lineno, "function": function_name},
+                }
+            )
+
+        return await handler(cmd)
+
+    async def _handle_block(self, cmd: dict[str, Any]) -> list:
+        self._logger.debug(f"Handling '{cmd['command']}' service request.")
+        await asyncio.sleep(cmd["sleep"])
+        self._logger.debug(f"Blocking finished after {cmd['sleep']}s.")
+        return zmq_string_response("block: ACK")
+
+    async def _handle_ping(self, cmd: dict[str, Any]) -> list:
+        self._logger.debug(f"Handling '{cmd['command']}' service request.")
+        return zmq_string_response("pong")
+
+    async def _handle_info(self, cmd: dict[str, Any]) -> list:
+        self._logger.debug(f"Handling '{cmd['command']}' service request.")
+        return zmq_json_response(
+            {
+                "success": True,
+                "message": self._control_server.get_info(),
+            }
+        )
+
+    async def _handle_terminate(self, cmd: dict[str, Any]) -> list:
+        self._logger.debug(f"Handling '{cmd['command']}' request.")
+
+        self._control_server.stop()
+
+        return zmq_json_response(
+            {
+                "success": True,
+                "message": {"status": "terminating"},
+            }
+        )
+
+    def get_info(self) -> dict[str, Any]:
+        """Service info payload returned by the `info` service command."""
+        return {
+            "service commands": list(self.handlers.keys()),
+        }
+
+
+async def is_control_server_active(service_type: str, timeout: float = 0.5, attempts: int = 3) -> bool:
     """
     Checks if the Control Server is running.
 
@@ -69,34 +210,50 @@ async def is_control_server_active(service_type: str, timeout: float = 0.5) -> b
     Args:
         service_type (str): the service type of the control server to check
         timeout (float): Timeout when waiting for a reply [s, default=0.5]
+        attempts (int): Number of discovery attempts before returning False [default=3]
 
     Returns:
         True if the Control Server is running and replied with the expected answer; False otherwise.
     """
 
-    # I have a choice here to check if the control server is active/healthy.
-    #
-    # 1. I can connect to the ServiceRegistry, and analyse the 'health' field if it is 'passing', or
+    timeout = max(timeout, 0.05)
+    attempts = max(attempts, 1)
 
-    async with AsyncRegistryClient() as registry:
-        service = await registry.discover_service(service_type)
-    if service:
-        return True if service["health"] == "passing" else False
-    else:
-        return False
+    for attempt in range(attempts):
+        try:
+            async with AsyncRegistryClient(timeout=timeout) as registry:
+                service = await registry.discover_service(service_type)
+        except Exception:
+            service = None
 
-    # 2. I can connect to the control server (by first contacting the service registry) and send a ping.
+        if service:
+            client = AsyncControlClient(
+                endpoint=f"tcp://{service['host']}:{service['port']}",
+                service_type=service_type,
+                timeout=timeout,
+            )
+            client.device_command_port = int(service["port"])
+            client.service_command_port = int(service["metadata"]["service_port"])
+            client._post_init_is_done = True
 
-    # try:
-    #     async with AsyncControlClient(service_type=service_type) as client:
-    #         response = await client.ping()
-    #     return response == "pong"
-    # except InitializationError:
-    #     return False
+            try:
+                async with client:
+                    response = await client.ping(timeout=timeout)
+                return response == "pong"
+            except Exception:
+                return False
+
+        if attempt < attempts - 1:
+            await asyncio.sleep(min(0.1 * (attempt + 1), timeout))
+
+    return False
 
 
 class AsyncControlServer:
     service_type = CONTROL_SERVER_SERVICE_TYPE
+    service_name = ""
+    device_commanding_port = CONTROL_SERVER_DEVICE_COMMANDING_PORT
+    service_commanding_port = CONTROL_SERVER_SERVICE_COMMANDING_PORT
 
     def __init__(self):
         self.interrupted: Event = asyncio.Event()
@@ -111,24 +268,41 @@ class AsyncControlServer:
 
         # self._process_status = ProcessStatus()
 
+        self.service_type = type(self).service_type
+        if self.service_type == AsyncControlServer.service_type:
+            self.service_type = camel_to_kebab(type(self).__name__)
+        """The service type is used for service discovery and should be overridden by subclasses
+        to a more specific type."""
+
+        self.service_name = type(self).service_name or camel_to_snake(type(self).__name__)
+        """The name of your service, used for logging and registry display. Shall be unique across running instances of
+        the same service type, and can be auto-generated with a UUID suffix if needed. Overridden by the subclass to a
+        more readable name."""
+
         self._service_id = None
+        """The unique service ID assigned by the registry on registration, used for deregistration and heartbeats."""
 
         self._sequential_queue: asyncio.Queue[Coroutine[Any, Any, Any]] = asyncio.Queue()
         """Queue for sequential operations that must preserve order of execution."""
 
-        self.device_command_port = CONTROL_SERVER_DEVICE_COMMANDING_PORT
+        self.device_command_port = type(self).device_commanding_port
         """The device commanding port for the control server. This will be 0 at start and dynamically assigned by the
         system."""
 
-        self.service_command_port = CONTROL_SERVER_SERVICE_COMMANDING_PORT
+        self.service_command_port = type(self).service_commanding_port
         """The service commanding port for the control server. This will be 0 at start and dynamically assigned by the
         system."""
 
-        self.device_command_handlers: dict[str, Callable] = {}
-        """Dictionary mapping device command names to their handler functions."""
+        self._device_command_router = self._create_device_command_router()
+        """Router for device-command handlers and dispatch."""
 
-        self.service_command_handlers: dict[str, Callable] = {}
-        """Dictionary mapping service command names to their handler functions."""
+        self._service_command_router = self._create_service_command_router()
+        """Router for service-command handlers and dispatch."""
+
+        # Keep these aliases for backwards compatibility with subclasses that
+        # inspect handler dictionaries directly.
+        self.device_command_handlers = self._device_command_router.handlers
+        self.service_command_handlers = self._service_command_router.handlers
 
         self._tasks: list[Task] = []
         """The background top-level tasks that are performed by the control server."""
@@ -152,23 +326,35 @@ class AsyncControlServer:
 
     def register_default_device_command_handlers(self):
         """Register baseline device handlers that are useful for diagnostics and examples."""
-        self.add_device_command_handler("block", self._do_block)
-        self.add_device_command_handler("say", self._do_say)
+        self._device_command_router.register_default_handlers()
 
     def register_default_service_command_handlers(self):
         """Register baseline service handlers for lifecycle and health checks."""
-        self.add_service_command_handler("terminate", self._handle_terminate)
-        self.add_service_command_handler("info", self._handle_info)
-        self.add_service_command_handler("ping", self._handle_ping)
-        self.add_service_command_handler("block", self._handle_block)
+        self._service_command_router.register_default_handlers()
+
+    def _create_device_command_router(self) -> DeviceCommandRouter:
+        """Factory method; subclasses can override to supply a domain-specific router."""
+        return DeviceCommandRouter(self)
+
+    def _create_service_command_router(self) -> ServiceCommandRouter:
+        """Factory method; subclasses can override to supply a domain-specific router."""
+        return ServiceCommandRouter(self)
+
+    @property
+    def controller(self) -> DeviceCommandRouter:
+        return self._device_command_router  # type: ignore[return-value]
+
+    @property
+    def services(self) -> ServiceCommandRouter:
+        return self._service_command_router  # type: ignore[return-value]
 
     def register_custom_handlers(self):
         """Hook for subclasses to register device-specific command handlers."""
 
-    def get_service_info(self) -> dict[str, Any]:
+    def get_info(self) -> dict[str, Any]:
         """Service info payload returned by the `info` service command."""
-        return {
-            "name": type(self).__name__,
+        info = {
+            "name": self.service_name,
             "hostname": self.get_ip_address(),
             "device commanding port": self.device_command_port,
             "service commanding port": self.service_command_port,
@@ -177,6 +363,9 @@ class AsyncControlServer:
                 (datetime.datetime.now() - self._start_time).total_seconds(), include_micro_seconds=False
             ),
         }
+        info.update(self._device_command_router.get_info())
+        info.update(self._service_command_router.get_info())
+        return info
 
     @staticmethod
     def get_ip_address() -> str:
@@ -192,7 +381,7 @@ class AsyncControlServer:
         self.service_command_port = get_port_number(self.service_command_socket)
 
     def stop(self):
-        self.logger.warning(f"Stopping the async control server {type(self).__name__}.")
+        self.logger.debug(f"Stopping the async control server {type(self).__name__}.")
         self.interrupted.set()
 
     async def start(self):
@@ -233,12 +422,12 @@ class AsyncControlServer:
         ]
 
     async def register_service(self):
-        self.logger.info(f"Registering service {type(self).__name__} as type {self.service_type}")
+        self.logger.info(f"Registering service {self.service_name} as type {self.service_type}")
 
         await self.registry.connect()
 
         self._service_id = await self.registry.register(
-            name=type_name(self),
+            name=self.service_name,
             host=get_host_ip() or "127.0.0.1",
             port=get_port_number(self.device_command_socket),
             service_type=self.service_type,
@@ -340,75 +529,13 @@ class AsyncControlServer:
                 break
 
     async def _process_device_command(self, cmd: dict[str, Any]) -> list:
-        command = cmd.get("command")
-        if not command:
-            return zmq_error_response(
-                {
-                    "success": False,
-                    "message": "no command field provide, don't know what to do.",
-                }
-            )
-
-        handler = self.device_command_handlers.get(command)
-        if not handler:
-            filename, lineno, function_name = get_current_location()
-            return zmq_error_response(
-                {
-                    "success": False,
-                    "message": f"Unknown command: {command}",
-                    "metadata": {"file": filename, "lineno": lineno, "function": function_name},
-                }
-            )
-
-        return await handler(cmd)
+        return await self._device_command_router.process_command(cmd)
 
     def add_device_command_handler(self, command_name: str, command_handler: Callable):
-        self.device_command_handlers[command_name] = command_handler
+        self._device_command_router.add_handler(command_name, command_handler)
 
     def add_service_command_handler(self, command_name: str, command_handler: Callable):
-        self.service_command_handlers[command_name] = command_handler
-
-    async def _do_say(self, cmd: dict[str, Any]) -> list:
-        self.logger.debug(f"Executing command: '{cmd['command']}")
-        self.logger.debug(f"Message: {cmd['message']}")
-        return zmq_string_response(f"Message said: {cmd['message']}")
-
-    async def _do_block(self, cmd: dict[str, Any]) -> list:
-        self.logger.debug(f"Blocking the commanding for {cmd['sleep']}s...")
-        await asyncio.sleep(cmd["sleep"])
-        self.logger.debug(f"Blocking finished after {cmd['sleep']}s.")
-        return zmq_string_response("block: ACK")
-
-    async def _handle_block(self, cmd: dict[str, Any]) -> list:
-        self.logger.debug(f"Handling '{cmd['command']}' service request.")
-        await asyncio.sleep(cmd["sleep"])
-        self.logger.debug(f"Blocking finished after {cmd['sleep']}s.")
-        return zmq_string_response("block: ACK")
-
-    async def _handle_ping(self, cmd: dict[str, Any]) -> list:
-        self.logger.debug(f"Handling '{cmd['command']}' service request.")
-        return zmq_string_response("pong")
-
-    async def _handle_info(self, cmd: dict[str, Any]) -> list:
-        self.logger.debug(f"Handling '{cmd['command']}' service request.")
-        return zmq_json_response(
-            {
-                "success": True,
-                "message": self.get_service_info(),
-            }
-        )
-
-    async def _handle_terminate(self, cmd: dict[str, Any]) -> list:
-        self.logger.debug(f"Handling '{cmd['command']}' request.")
-
-        self.stop()
-
-        return zmq_json_response(
-            {
-                "success": True,
-                "message": {"status": "terminating"},
-            }
-        )
+        self._service_command_router.add_handler(command_name, command_handler)
 
     async def process_service_command(self):
         self.logger.info("Starting service command processing ...")
@@ -462,27 +589,7 @@ class AsyncControlServer:
                 break
 
     async def _process_service_command(self, cmd: dict[str, Any]) -> list:
-        command = cmd.get("command")
-        if not command:
-            return zmq_error_response(
-                {
-                    "success": False,
-                    "message": "no command field provide, don't know what to do.",
-                }
-            )
-
-        handler = self.service_command_handlers.get(command)
-        if not handler:
-            filename, lineno, function_name = get_current_location()
-            return zmq_error_response(
-                {
-                    "success": False,
-                    "message": f"Unknown command: {command}",
-                    "metadata": {"file": filename, "lineno": lineno, "function": function_name},
-                }
-            )
-
-        return await handler(cmd)
+        return await self._service_command_router.process_command(cmd)
 
     async def process_sequential_queue(self):
         """
@@ -592,9 +699,10 @@ class AcquisitionAsyncControlServer(AsyncControlServer):
         self.acquisition_batch_max_wait_s = 0.05
         """Maximum wait time [s] to collect records into a batch."""
 
-    def get_service_info(self) -> dict[str, Any]:
+    @override
+    def get_info(self) -> dict[str, Any]:
         """Service info payload including acquisition queue statistics."""
-        info = super().get_service_info()
+        info = super().get_info()
         info.update(
             {
                 "acquisition queue size": self._acquisition_queue.qsize(),
@@ -723,22 +831,26 @@ DEFAULT_LINGER = 100  # milliseconds
 
 class AsyncControlClient:
     service_type: str | None = None
+    client_id: str = CONTROL_CLIENT_ID
+    """Used as a prefix for the client identity, which is suffixed with a UUID to ensure uniqueness across
+    multiple client instances and in ZeroMQ multipart messages."""
 
     def __init__(
         self,
         endpoint: str | None = None,
         service_type: str | None = None,
-        client_id: str = CONTROL_CLIENT_ID,
+        client_id: str | None = None,
         timeout: float = DEFAULT_CLIENT_REQUEST_TIMEOUT,
         linger: int = DEFAULT_LINGER,
     ):
         self.logger = logging.getLogger("egse.async_control.client")
 
         self.endpoint = endpoint
-        self.service_type = service_type or self.__class__.service_type
+        self.service_type = service_type or type(self).service_type
         self.timeout = timeout  # seconds
         self.linger = linger  # milliseconds
-        self._client_id = f"{client_id}-{uuid.uuid4()}".encode()
+        resolved_client_id = client_id if client_id is not None else type(self).client_id
+        self._client_id = f"{resolved_client_id}-{uuid.uuid4()}".encode()
         self._sequence = 0
 
         self.context: zmq.asyncio.Context = zmq.asyncio.Context.instance()
@@ -775,7 +887,7 @@ class AsyncControlClient:
 
         self._post_init_is_done = True
         if self.service_type:
-            async with AsyncRegistryClient() as registry:
+            async with AsyncRegistryClient(timeout=self.timeout) as registry:
                 service = await registry.discover_service(self.service_type)
             if service:
                 hostname = service["host"]
@@ -891,12 +1003,12 @@ class AsyncControlClient:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.disconnect()
 
-    async def do(self, cmd: dict[str, Any], timeout: float = 5.0) -> dict[str, Any]:
+    async def do(self, cmd: dict[str, Any] | str, timeout: float = 5.0) -> dict[str, Any]:
         """
         Sends a device command to the control server and waits for a response.
 
         Args:
-            cmd (dict): The command to send. Should contain at least a 'command' key.
+            cmd (dict|str): The command to send. A dict should contain at least a 'command' key.
             timeout (float, optional): Maximum time to wait for a response in seconds. Defaults to 5.0.
 
         Returns:
@@ -912,6 +1024,25 @@ class AsyncControlClient:
         response = await self.send_device_command(cmd, timeout=timeout)
         return response
 
+    async def handle(self, cmd: dict[str, Any] | str, timeout: float = 5.0) -> dict[str, Any]:
+        """Sends a service command to the control server and waits for a response.
+
+        Args:
+            cmd (dict|str): The command to send. A dict should contain at least a 'command' key.
+            timeout (float, optional): Maximum time to wait for a response in seconds. Defaults to 5.0.
+
+        Returns:
+            dict: The response from the control server. Contains at least:
+                - 'success' (bool): True if the command was processed successfully, False otherwise.
+                - 'message' (str or dict): The server's response or an error message.
+
+        Notes:
+            If the request times out or a socket error occurs, the method attempts
+            to reset the sockets and returns a response with 'success' set to False
+            and an appropriate error message.
+        """
+        return await self.send_service_command(cmd, timeout=timeout)
+
     async def block(self, sleep: int, timeout: int | None = None) -> str | None:
         cmd = {"command": "block", "sleep": sleep}
         response = await self.send_service_command(cmd, timeout=timeout)
@@ -921,7 +1052,7 @@ class AsyncControlClient:
             self.logger.error(f"Server returned an error: {response['message']}")
             return None
 
-    async def ping(self, timeout: int | None = None) -> str | None:
+    async def ping(self, timeout: float | None = None) -> str | None:
         response = await self.send_service_command("ping", timeout=timeout)
         if response["success"]:
             return response["message"]
@@ -1112,247 +1243,3 @@ class TypedAsyncControlClient(AsyncControlClient):
             return message
         self.logger.error(f"{command_name} returned non-dict message: {type(message).__name__}")
         return None
-
-
-async def cs_test_device_command_timeouts():
-    """
-    This test is about timeouts on the client and blocking commands on the server
-    for *device commands*.
-
-    We start a control server which will register to the service registry and
-    send out heartbeats.
-
-    We start a control client that will connect to the server through its service type.
-    Then we send the following commands, from the client perspective:
-
-    - send a 'block' device command of 8s and a timeout of 3s. This will block the
-      device commanding part on the server for ten seconds. The client will
-      time out on this command after three seconds.
-    - sleep for ten seconds.
-    - send a 'say' command with a timeout of 2s. This will return immediately.
-
-    The client should properly discard the server reply from the timed out block
-    command. You should see a warning message saying a reply was received from a
-    previous command. The 'say' command should receive its response as expected.
-
-    """
-
-    # First start the control server as a background task.
-    server = AsyncControlServer()
-    server_task = asyncio.create_task(server.start())
-
-    logger.info("Starting Asynchronous Control Server ...")
-
-    # Give the control server the time to start up
-    logger.info("Sleep for 0.5s...")
-    await asyncio.sleep(0.5)
-
-    # As of now, the server_task is running 'in the background' in the event loop.
-
-    # Now create a control client that will connect to the above server.
-    async with AsyncControlClient(service_type=CONTROL_SERVER_SERVICE_TYPE) as client:
-        # Sleep some time, so we can see the control server in action, e.g. status reports, housekeeping, etc
-        logger.info("Sleep for 5s...")
-        await asyncio.sleep(5.0)
-
-        logger.info("Send a blocking device command, duration is 8s, timeout is 3s.")
-        response = await client.do({"command": "block", "sleep": 8}, timeout=3)
-        logger.info(f"block: {response=}")
-
-        if response["success"] or "timed out" not in response["message"]:
-            logger.error(f"Did not get expected message from server: {response['message']}")
-
-        logger.info("Sleep for 10s...")
-        await asyncio.sleep(10.0)
-
-        logger.info("Send a 'say' device command, timeout is 2s.")
-        response = await client.do({"command": "say", "message": "Hello, World!"}, timeout=2.0)
-        logger.info(f"say: {response=}")
-
-        if not response["success"] or "Hello, World!" not in response["message"]:
-            logger.error(f"Did not get expected message from server: {response['message']}")
-
-        is_active = await is_control_server_active(service_type=CONTROL_SERVER_SERVICE_TYPE)
-        logger.info(f"Server status: {'active' if is_active else 'unreachable'}")
-
-        logger.info("Sleeping 1s before terminating the server...")
-        await asyncio.sleep(1.0)
-
-        logger.info("Terminating the server.")
-        response = await client.stop_server()
-        logger.info(f"stop_server: {response = }")
-
-    is_active = await is_control_server_active(service_type=CONTROL_SERVER_SERVICE_TYPE)
-    logger.info(f"Server status: {'active' if is_active else 'unreachable'}")
-
-    await server_task
-
-    is_active = await is_control_server_active(service_type=CONTROL_SERVER_SERVICE_TYPE)
-    logger.info(f"Server status: {'active' if is_active else 'unreachable'}")
-
-
-async def cs_test_service_command_timeouts():
-    """
-    This test is about timeouts on the client and blocking commands on the server
-    for *service commands*.
-
-    We start a control server which will register to the service registry and
-    send out heartbeats.
-
-    We start a control client that will connect to the server through its service type.
-    Then we send the following commands, from the client perspective:
-
-    - send a 'block' service command of 8s and a timeout of 3s. This will block the
-      service commanding part on the server for ten seconds. The client will
-      time out on this command after three seconds.
-    - sleep for ten seconds.
-    - send a 'info' command with a timeout of 2s. This will return immediately.
-
-    The client should properly discard the server reply from the timed out block
-    command. You should see a warning message saying a reply was received from a
-    previous command. The 'info' command should receive its response as expected.
-
-    """
-
-    # First start the control server as a background task.
-    server = AsyncControlServer()
-    server_task = asyncio.create_task(server.start())
-
-    logger.info("Starting Asynchronous Control Server ...")
-
-    # Give the control server the time to start up
-    logger.info("Sleep for 0.5s...")
-    await asyncio.sleep(0.5)
-
-    # As of now, the server_task is running 'in the background' in the event loop.
-
-    # Now create a control client that will connect to the above server.
-    async with AsyncControlClient(service_type=CONTROL_SERVER_SERVICE_TYPE) as client:
-        # Sleep some time, so we can see the control server in action, e.g. status reports, housekeeping, etc
-        logger.info("Sleep for 5s...")
-        await asyncio.sleep(5.0)
-
-        logger.info("Send a blocking service command, duration is 8s, timeout is 3s.")
-        response = await client.block(sleep=8, timeout=3)
-        logger.info(f"service block: {response=}")
-
-        logger.info("Sleep for 10s...")
-        await asyncio.sleep(10.0)
-
-        logger.info("Get info on the control server.")
-        response = await client.info()
-        logger.info(f"service info: {response=}")
-
-        is_active = await is_control_server_active(service_type=CONTROL_SERVER_SERVICE_TYPE)
-        logger.info(f"Server status: {'active' if is_active else 'unreachable'}")
-
-        logger.info("Sleeping 1s before terminating the server...")
-        await asyncio.sleep(1.0)
-
-        logger.info("Terminating the server.")
-        response = await client.stop_server()
-        logger.info(f"stop_server: {response = }")
-
-    is_active = await is_control_server_active(service_type=CONTROL_SERVER_SERVICE_TYPE)
-    logger.info(f"Server status: {'active' if is_active else 'unreachable'}")
-
-    await server_task
-
-    is_active = await is_control_server_active(service_type=CONTROL_SERVER_SERVICE_TYPE)
-    logger.info(f"Server status: {'active' if is_active else 'unreachable'}")
-
-
-async def control_server_test():
-    # First start the control server as a background task.
-    server = AsyncControlServer()
-    server_task = asyncio.create_task(server.start())
-
-    logger.info("Starting Asynchronous Control Server ...")
-
-    # Give the control server the time to start up
-    logger.info("Sleep for 0.5s...")
-    await asyncio.sleep(0.5)
-
-    # As of now, the server_task is running 'in the background' in the event loop.
-
-    # Now create a control client that will connect to the above server.
-    async with AsyncControlClient(service_type=CONTROL_SERVER_SERVICE_TYPE) as client:
-        # Sleep some time, so we can see the control server in action, e.g. status reports, housekeeping, etc
-        logger.info("Sleep for 5s...")
-        await asyncio.sleep(5.0)
-
-        logger.info("Send a 'ping' service command...")
-        response = await client.ping()
-        logger.info(f"ping service command: {response = }")  # should be: response = 'pong'
-
-        logger.info("Send an 'info' service command...")
-        response = await client.info()
-        logger.info(f"info service command: {response = }")  # should be: response = {'name': 'AsyncControlServer', ...
-
-        logger.info("Send an 'info' device command...")
-        # info() is a service command and not a device command, so this will fail.
-        response = await client.do({"command": "info"})
-        # should be: response={'success': False, 'message': 'Unknown command: info', ...
-        logger.info(f"info device command: {response=}")
-
-        # this will block commanding since device commands are executed in the same task
-        # the do() will timeout after 3s, but the block command will run for 10s on the
-        # server, and it will send back an ACK (which will be caught and interpreted by
-        # –in this case– the seconds do 'say' command, which will not yet have timed out.
-        logger.info("Send a blocking device command, duration is 9s, timeout is 3s.")
-        response = await client.do({"command": "block", "sleep": 9}, timeout=3.0)
-        # should be: response={'success': False, 'message': 'Request timed out after 3.000s'}
-        logger.info(f"Blocking device command: {response=}")
-
-        # ping() is a service command, so this is not blocked by the above block() command
-        logger.info("Send a 'ping' service command...")
-        response = await client.ping()
-        logger.info(f"ping service command: {response=}")
-
-        # say() is a device command and will time out after 2s because the above blocking
-        # block() command is still running on the server
-        logger.info("Send a 'say' device command, timeout is 2s.")
-        response = await client.do({"command": "say", "message": "Hello, World!"}, timeout=2.0)
-        logger.info(f"say device command: {response=}")
-
-        # Sleep some time, so we can see the control server in action, e.g. status reports, housekeeping, etc
-        logger.info("Sleep for 10s...")
-        await asyncio.sleep(10.0)
-
-        # This time we won't let the command time out...
-        logger.info("Send a 'say' device command, timeout is 2s.")
-        response = await client.do({"command": "say", "message": "Hello, Again!"}, timeout=2.0)
-        logger.info(f"say device command: {response=}")
-
-        is_active = await is_control_server_active(service_type=CONTROL_SERVER_SERVICE_TYPE)
-        logger.info(f"Server status: {'active' if is_active else 'unreachable'}")
-
-        logger.info("Sleeping 1s before terminating the server...")
-        await asyncio.sleep(1.0)
-
-        logger.info("Terminating the server.")
-        response = await client.stop_server()
-        logger.info(f"stop_server: {response = }")
-
-    is_active = await is_control_server_active(service_type=CONTROL_SERVER_SERVICE_TYPE)
-    logger.info(f"Server status: {'active' if is_active else 'unreachable'}")
-
-    await server_task
-
-    is_active = await is_control_server_active(service_type=CONTROL_SERVER_SERVICE_TYPE)
-    logger.info(f"Server status: {'active' if is_active else 'unreachable'}")
-
-
-if __name__ == "__main__":
-    # The statement logging.captureWarnings(True) redirects Python's warnings module output
-    # (such as warnings.warn(...)) to the logging system, so warnings appear in your logs
-    # instead of just printing to stderr. This is useful for unified logging and easier
-    # debugging, especially in larger applications.
-    logging.captureWarnings(True)
-
-    try:
-        main_task = asyncio.run(cs_test_device_command_timeouts())
-        # main_task = asyncio.run(cs_test_service_command_timeouts())
-        # main_task = asyncio.run(control_server_test())
-    except KeyboardInterrupt:
-        print("Caught KeyboardInterrupt, terminating.")
