@@ -8,7 +8,7 @@ import egse
 from egse.coordinates.point import Point, Points
 
 
-def plot_ref(
+def plot_reference_frame(
     frame: ReferenceFrame, master: ReferenceFrame | None = None, fig_name: str | None = None, **kwargs
 ):
     """Plots a reference frame.
