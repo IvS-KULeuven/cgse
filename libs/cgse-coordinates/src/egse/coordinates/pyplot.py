@@ -8,7 +8,7 @@ import egse
 from egse.coordinates.point import Point, Points
 
 
-def plot_reference_frame(
+def plot_ref(
     frame: ReferenceFrame, master: ReferenceFrame | None = None, fig_name: str | None = None, **kwargs
 ):
     """Plots a reference frame.
@@ -110,7 +110,7 @@ def plot_points(points: Points | list[Point], master=None, fig_name: str | None 
         temp_master = master.__copy__()
 
     if isinstance(points, list):
-        all_points = Points(points, reference_frame=temp_master)
+        all_points = Points(points, ref=temp_master)
     elif isinstance(points, Points) or isinstance(points, egse.coordinates.point.Points):
         all_points = points
     else:
@@ -157,7 +157,7 @@ def plot_vectors(
         temp_master = master.__copy__()
 
     if isinstance(points, list):
-        all_points = Points(points, reference_frame=temp_master)
+        all_points = Points(points, ref=temp_master)
     elif isinstance(points, Points) or isinstance(points, egse.coordinates.point.Points):
         all_points = points
     else:
@@ -176,8 +176,8 @@ def plot_vectors(
 
     # Origin of the x, y, and z vectors
     # -> x = The x coordinates of the origin of all vectors
-    # -> [x,y,z] = Origin of points.reference_frame
-    x, y, z = points.reference_frame.get_origin().coordinates[:3]
+    # -> [x,y,z] = Origin of points.ref
+    x, y, z = points.ref.get_origin().coordinates[:3]
     x = np.ones_like(xs) * x
     y = np.ones_like(xs) * y
     z = np.ones_like(xs) * z
