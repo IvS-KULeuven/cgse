@@ -33,6 +33,14 @@ Provide a `cgse` command that is extensible with new commands and command groups
 - [ ] Metrics for all devices will be handled using InfluxDB
 - [x] Use of Grafana to visualize the metrics
 
+### Monitoring and Telemetry
+
+- [ ] Define and document telemetry data retention strategy.
+- [ ] Decide whether database naming should remain tied to `PROJECT` or become
+  explicitly configurable.
+- [ ] Decide whether metrics timestamp precision should remain fixed at `ms` or
+  become configurable.
+
 ## Core Services
 
 - [ ] Process Manager needs to be added with optimised design and performance
@@ -59,21 +67,21 @@ Provide a `cgse` command that is extensible with new commands and command groups
 ## Maintenance and refactoring
 
 - [ ] Allow core services to register and/or re-register to another core service as a listener
-- [ ] The storage manager shall be able to restore registrations from 
-  devices after a restart/crash. This means the registration to the Storage 
+- [ ] The storage manager shall be able to restore registrations from
+  devices after a restart/crash. This means the registration to the Storage
   manager needs to be persistent -> SQLite ?
 - [ ] Refactor the commanding protocol
 - [ ] The Proxy and Protocol classes should be refactored for full dynamic commanding. Eliminate the
   use of command YAML files, replace `dynamic_interface` with `dynamic_command`.
-- [ ] Introduce asyncio into the commanding protocol, e.g. `get_status()` 
+- [ ] Introduce asyncio into the commanding protocol, e.g. `get_status()`
   and `get_housekeeping()` shall be handled asynchronously.
-- [x] GlobalState Setup needs some redesign, especially `GlobalState.setup` 
+- [x] GlobalState Setup needs some redesign, especially `GlobalState.setup`
   which should not consult
   the configuration manager by default.
 
 ## Removals
 
-- [x] The `get_common_egse_root()` is of no use anymore and needs to be 
+- [x] The `get_common_egse_root()` is of no use anymore and needs to be
   removed or replaced in some
   cases.
 
@@ -82,6 +90,6 @@ Provide a `cgse` command that is extensible with new commands and command groups
 - [x] Add unit testing with `nox` running tests for Python 3.9, 3.10, 3.11, and 3.12
 - [ ] Add proper unit tests for all packages – using `pytest`
 - [ ] Add a CI test suite
-- [ ] Add GitHub Action to check proper formatting of all the code in a pull 
+- [ ] Add GitHub Action to check proper formatting of all the code in a pull
   request
 - [ ] Add GitHub Actions for running tests before merging

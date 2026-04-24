@@ -80,10 +80,10 @@ plugins:
         default_handler: python
         handlers:
             python:
-                import:
+                inventories:
                     - https://docs.python.org/3/objects.inv
                     - https://rich.readthedocs.io/en/stable/objects.inv
-                
+
                 options:
                     modernize_annotations: false
                     docstring_style: google
@@ -150,7 +150,10 @@ nav:
     - user_guide/index.md
     - user_guide/cli.md
     - user_guide/env.md
+    - user_guide/grafana.md
   - Administrator Guide:
+    - admin_guide/index.md
+    - admin_guide/monitoring.md
     - admin_guide/make-a-release.md
   - Libs:
     - libs/index.md
@@ -162,6 +165,11 @@ nav:
       - libs/cgse-core/index.md
       - libs/cgse-core/registry.md
       - libs/cgse-core/notifyhub.md
+      - libs/cgse-core/metricshub.md
+      - libs/cgse-core/logger.md
+      - libs/cgse-core/configuration-manager.md
+      - libs/cgse-core/storage-manager.md
+      - libs/cgse-core/process-manager.md
     - cgse-coordinates:
       - libs/cgse-coordinates/index.md
     - cgse-gui:
@@ -199,5 +207,5 @@ nav:
       - api/settings.md
       - api/setup.md
       - api/system.md
-  
+
   - roadmap.md

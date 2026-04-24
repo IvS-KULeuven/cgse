@@ -96,5 +96,6 @@ docs = [
     "mkdocs",
     "mkdocs-material",
     "mkdocs-autorefs",
-    "mkdocstrings-python",
+    "mkdocstrings<1",
+    "mkdocstrings-python<2",
 ]
