@@ -7,6 +7,9 @@ Welcome to the CGSE administrator guide.
 For installation and configuration of the telemetry stack, see
 [Monitoring Stack Setup](monitoring.md).
 
+For detailed Grafana SQL examples and explanations, see
+[Advanced Query](advanced-query.md).
+
 ## Releases
 
 For release procedures, see
