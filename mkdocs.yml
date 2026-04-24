@@ -27,6 +27,8 @@ markdown_extensions:
       alternate_style: true
   - pymdownx.tasklist:
       custom_checkbox: true
+  - pymdownx.arithmatex:
+      generic: true
   - def_list
   - meta
   - footnotes
@@ -111,12 +113,18 @@ plugins:
                     - "!BrokenCommand"
 
 watch:
+  - docs
+  - mkdocs.yml
   - libs/cgse-common/src/egse
   - libs/cgse-core/src/egse
 
 extra_css:
   - stylesheets/custom.css
   - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
 extra:
   social:
@@ -154,6 +162,7 @@ nav:
   - Administrator Guide:
     - admin_guide/index.md
     - admin_guide/monitoring.md
+    - admin_guide/advanced-query.md
     - admin_guide/make-a-release.md
   - Libs:
     - libs/index.md
