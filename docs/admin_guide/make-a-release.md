@@ -28,7 +28,10 @@ Now, create the release branch: e.g. `release/v0.17.3`
   - add links to the different pull requests
   - commit the CHANGELOG file
 - bump the version number: `uv run bump.py [patch|minor|major]`
-- commit all `pyproject.toml` files after the version bump
+- commit all `pyproject.toml` files after the version bump, you can use the following terminal command for that:
+```
+find . -name pyproject.toml -exec echo {} \; | grep -v \.venv | xargs git add
+```
 - push the changes to `origin`
 - create (and merge) a pull request, use the CHANGELOG as description
 

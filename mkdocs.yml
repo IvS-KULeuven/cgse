@@ -80,7 +80,7 @@ plugins:
         default_handler: python
         handlers:
             python:
-                import:
+                inventories:
                     - https://docs.python.org/3/objects.inv
                     - https://rich.readthedocs.io/en/stable/objects.inv
 
@@ -150,7 +150,10 @@ nav:
     - user_guide/index.md
     - user_guide/cli.md
     - user_guide/env.md
+    - user_guide/grafana.md
   - Administrator Guide:
+    - admin_guide/index.md
+    - admin_guide/monitoring.md
     - admin_guide/make-a-release.md
   - Libs:
     - libs/index.md
