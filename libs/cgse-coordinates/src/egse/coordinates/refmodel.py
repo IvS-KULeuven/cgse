@@ -108,7 +108,7 @@ class ReferenceFrameModel:
             Printable string representation of the reference frame.
         """
 
-        return self._model.pretty_str()
+        return str(self._model)
 
     def __len__(self) -> int:
         """Returns the number of reference frames in the model."""
