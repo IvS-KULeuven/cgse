@@ -24,17 +24,13 @@ def test_serialization_of_reference_model():
 
     master = ReferenceFrame.create_master()
 
-    a_ref = ReferenceFrame(
-        transformation=np.identity(4), reference_frame=master, name="a_ref", rotation_config=rot_config
-    )
+    a_ref = ReferenceFrame(transformation=np.identity(4), ref=master, name="a_ref", rotation_config=rot_config)
     a_ref.add_link(master)
 
-    b_ref = ReferenceFrame(
-        transformation=np.identity(4), reference_frame=a_ref, name="b_ref", rotation_config=rot_config
-    )
+    b_ref = ReferenceFrame(transformation=np.identity(4), ref=a_ref, name="b_ref", rotation_config=rot_config)
 
     c_ref = ReferenceFrame.from_translation_rotation(
-        [-2, -2, -2], [-3, -4, -5], rotation_config=rot_config, reference_frame=b_ref, name="c_ref"
+        [-2, -2, -2], [-3, -4, -5], rotation_config=rot_config, ref=b_ref, name="c_ref"
     )
     c_ref.add_link(b_ref)
 
@@ -43,7 +39,7 @@ def test_serialization_of_reference_model():
     model_def = ref_model_to_dict(model_list)
 
     print()
-    print(model_def.pretty_str())
+    print(model_def)
 
     ref_model = dict_to_ref_model(model_def)
 
@@ -55,4 +51,4 @@ def test_serialization_of_reference_model():
     assert "Master" in ref_model.keys()
 
     print()
-    print(ref_model.pretty_str())
+    print(ref_model)

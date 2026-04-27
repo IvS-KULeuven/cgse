@@ -79,7 +79,7 @@ class ReferenceFrameModel:
         """Initialisation of a reference frame model.
 
         Args:
-            model (Dict | List[ReferenceFrame]): List or a dictionary of reference frames that make up the model.
+            model (Dict | List): List or a dictionary of reference frames that make up the model.
             rotation_config (str): Order in which the rotation about the three axes are chained.
             use_degrees (bool): Indicates whether the rotation angles are specified in degrees, rather than radians.
             use_active_movements (bool): Indicates if the rotation is active (object rotates IN a fixed coordinate
@@ -108,7 +108,7 @@ class ReferenceFrameModel:
             Printable string representation of the reference frame.
         """
 
-        return self._model.pretty_str()
+        return str(self._model)
 
     def __len__(self) -> int:
         """Returns the number of reference frames in the model."""
@@ -212,7 +212,7 @@ class ReferenceFrameModel:
 
         ref = self._model[ref]
 
-        if transformation:
+        if transformation is not None:
             self._model[name] = ReferenceFrame(transformation, ref=ref, name=name, rotation_config=self._rot_config)
         else:
             self._model[name] = ReferenceFrame.from_translation_rotation(

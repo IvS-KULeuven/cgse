@@ -128,7 +128,7 @@ def ref_model_to_dict(ref_model) -> navdict:
             f"{serialize_array(translation, precision=6)} | "
             f"{serialize_array(rotation, precision=6)} | "
             f"{ref.name} | "
-            f"{ref.reference_frame.name} | "
+            f"{ref.ref.name} | "
             f"{links})"
         )
 

@@ -19,8 +19,8 @@ def test_master_construction():
 
     assert np.array_equal(master.transformation, np.identity(4))
     assert master.name == "Master"
-    assert master.reference_frame is master
-    assert master.reference_frame == master
+    assert master.ref is master
+    assert master.ref == master
     assert master.rotation_config == "sxyz"
 
 
@@ -28,9 +28,7 @@ def test_link_to_master():
     master = ReferenceFrame.create_master()
     rot_config = "sxyz"
 
-    glfix = ReferenceFrame(
-        transformation=np.identity(4), reference_frame=master, name="glfix", rotation_config=rot_config
-    )
+    glfix = ReferenceFrame(transformation=np.identity(4), ref=master, name="glfix", rotation_config=rot_config)
     glfix.add_link(master, transformation=np.identity(4))
 
     assert not glfix.is_master()
@@ -42,27 +40,27 @@ def test_invalid_constructions():
     # We used to create a master frame when ref is None, but that is no longer supported.
 
     with pytest.raises(ValueError) as ve:
-        ReferenceFrame(transformation=None, reference_frame=None)
+        ReferenceFrame(transformation=None, ref=None)
     assert ve.value.args[1] == "REF_IS_NONE"
 
     # ref shall be a reference frame object
 
     with pytest.raises(ValueError) as ve:
-        ReferenceFrame(transformation=None, reference_frame="MyReference")
+        ReferenceFrame(transformation=None, ref="MyReference")
     assert ve.value.args[1] == "REF_IS_NOT_CLS"
 
     # Master is a reserved name for the MASTER reference frame
 
     with pytest.raises(ValueError) as ve:
         master = ReferenceFrame.create_master()
-        ReferenceFrame(transformation=None, reference_frame=master, name="Master")
+        ReferenceFrame(transformation=None, ref=master, name="Master")
     assert ve.value.args[1] == "MASTER_NAME_USED"
 
     # Master is a reserved name for the MASTER reference frame
 
     with pytest.raises(ValueError) as ve:
         master = ReferenceFrame.create_master()
-        ReferenceFrame(transformation=[], reference_frame=master)
+        ReferenceFrame(transformation=[], ref=master)
     assert ve.value.args[1] == "TRANSFORMATION_IS_NOT_NDARRAY"
 
 
@@ -109,11 +107,11 @@ def test_hash():
     # different because their name is different (and we cannot create two reference
     # frames with the same name).
 
-    a1 = ReferenceFrame.from_translation(1, 1, 1, reference_frame=master, name="A1")
-    a2 = ReferenceFrame.from_translation(1, 1, 1, reference_frame=master, name="A2")
+    a1 = ReferenceFrame.from_translation(1, 1, 1, ref=master, name="A1")
+    a2 = ReferenceFrame.from_translation(1, 1, 1, ref=master, name="A2")
 
-    b1 = ReferenceFrame.from_translation(2, 0, 0, reference_frame=a1, name="B1")
-    b2 = ReferenceFrame.from_translation(2, 0, 0, reference_frame=a2, name="B2")
+    b1 = ReferenceFrame.from_translation(2, 0, 0, ref=a1, name="B1")
+    b2 = ReferenceFrame.from_translation(2, 0, 0, ref=a2, name="B2")
 
     # Put the ReferenceFrames in a set (muttable), uses hashes
     frames = {master, a1, b1}  # __hash__ called three times
@@ -129,8 +127,8 @@ def test_hash():
 
 def test_add_link():
     master = ReferenceFrame.create_master()
-    A = ReferenceFrame.from_translation(1, 1, 1, reference_frame=master, name="A")
-    B = ReferenceFrame.from_translation(2, 0, 0, reference_frame=A, name="B")
+    A = ReferenceFrame.from_translation(1, 1, 1, ref=master, name="A")
+    B = ReferenceFrame.from_translation(2, 0, 0, ref=A, name="B")
 
     B.add_link(A, transformation=B.transformation)
 
@@ -146,7 +144,7 @@ def test_random_name():
     assert not master.name.startswith("F")
 
     # Any other reference frame that is not given a name should start with 'F'
-    ref = ReferenceFrame.from_translation(1.0, 2.0, 3.0, reference_frame=master)
+    ref = ReferenceFrame.from_translation(1.0, 2.0, 3.0, ref=master)
     assert ref.name.startswith("F")
 
 
@@ -155,7 +153,7 @@ def test_set_name():
     with pytest.raises(InvalidOperationError):
         master.set_name("MyMaster")
 
-    ref = ReferenceFrame.from_translation(1.0, 2.0, 3.0, reference_frame=master)
+    ref = ReferenceFrame.from_translation(1.0, 2.0, 3.0, ref=master)
     assert ref.name != "Basic Translation"
     ref.set_name("Basic Translation")
     assert ref.name == "Basic Translation"
@@ -169,14 +167,14 @@ def test_translation():
     transx, transy, transz = 0, 2, 0
     adef = np.identity(4)
     adef[:3, 3] = [transx, transy, transz]
-    a = ReferenceFrame(transformation=adef, reference_frame=master, name="A")
+    a = ReferenceFrame(transformation=adef, ref=master, name="A")
     assert a is not None
 
     b = ReferenceFrame.from_translation(transx, transy, transz, master, name="B")
     assert b is not None
 
     assert np.array_equal(a.get_translation_vector(), b.get_translation_vector())
-    assert a.reference_frame is b.reference_frame
+    assert a.ref is b.ref
     assert a is not b
     assert a != b
     assert a.is_same(b)
@@ -205,13 +203,13 @@ def test_rotation():
 
     # D is rotated wrt master
 
-    D = ReferenceFrame(transformation=TT, reference_frame=master, name="D")
+    D = ReferenceFrame(transformation=TT, ref=master, name="D")
 
     E = ReferenceFrame.from_rotation(rotx, roty, rotz, master, rotation_config=rot_config, name="E", degrees=False)
 
     assert np.array_equal(D.get_rotation_matrix(), E.get_rotation_matrix())
 
-    F = ReferenceFrame.from_rotation(rotx, roty, 45.0, reference_frame=master)
+    F = ReferenceFrame.from_rotation(rotx, roty, 45.0, ref=master)
 
     assert np.array_equal(D.get_rotation_matrix(), F.get_rotation_matrix())
     assert F.is_same(D)
@@ -231,12 +229,12 @@ def test_equals():
     assert m1 is not m2
     assert m1 == m2
 
-    t1 = ReferenceFrame.from_translation(1, 2, 3, reference_frame=master)
-    t2 = ReferenceFrame.from_translation(1, 2, 3, reference_frame=master)
-    t3 = ReferenceFrame.from_translation(1, 2, 3, reference_frame=master, name=t2.name)
-    t4 = ReferenceFrame.from_translation(2, 3, 4, reference_frame=master)
-    t5 = ReferenceFrame.from_translation(2, 3, 4, reference_frame=m1)
-    t6 = ReferenceFrame.from_translation(2, 3, 4, reference_frame=t2)
+    t1 = ReferenceFrame.from_translation(1, 2, 3, ref=master)
+    t2 = ReferenceFrame.from_translation(1, 2, 3, ref=master)
+    t3 = ReferenceFrame.from_translation(1, 2, 3, ref=master, name=t2.name)
+    t4 = ReferenceFrame.from_translation(2, 3, 4, ref=master)
+    t5 = ReferenceFrame.from_translation(2, 3, 4, ref=m1)
+    t6 = ReferenceFrame.from_translation(2, 3, 4, ref=t2)
 
     assert t1 != t2
     assert t1 is not t2
@@ -256,12 +254,12 @@ def test_equals():
     assert t6 != t4  # different ref
     assert not t5.is_same(t6)
 
-    r1 = ReferenceFrame.from_rotation(1, 2, 3, reference_frame=master)
-    r2 = ReferenceFrame.from_rotation(1, 2, 3, reference_frame=master)
-    r3 = ReferenceFrame.from_rotation(1, 2, 3, reference_frame=master, name=r2.name)
-    r4 = ReferenceFrame.from_rotation(2, 3, 4, reference_frame=master)
-    r5 = ReferenceFrame.from_rotation(2, 3, 4, reference_frame=m2)
-    r6 = ReferenceFrame.from_rotation(2, 3, 4, reference_frame=r2)
+    r1 = ReferenceFrame.from_rotation(1, 2, 3, ref=master)
+    r2 = ReferenceFrame.from_rotation(1, 2, 3, ref=master)
+    r3 = ReferenceFrame.from_rotation(1, 2, 3, ref=master, name=r2.name)
+    r4 = ReferenceFrame.from_rotation(2, 3, 4, ref=master)
+    r5 = ReferenceFrame.from_rotation(2, 3, 4, ref=m2)
+    r6 = ReferenceFrame.from_rotation(2, 3, 4, ref=r2)
 
     assert r1 != r2
     assert r1 is not r2
@@ -291,7 +289,7 @@ def test_copy():
     assert master is copy.copy(master)
     assert master == copy.copy(master)
 
-    r = ReferenceFrame.from_translation(1, 2, 3, reference_frame=master)
+    r = ReferenceFrame.from_translation(1, 2, 3, ref=master)
 
     assert r is not copy.copy(r)
 
@@ -318,29 +316,29 @@ def test_position_after_homing():
     master = ReferenceFrame.create_master()
 
     # MEC = MASTER
-    mec = ReferenceFrame(transformation=np.identity(4), reference_frame=master, name="mec", rotation_config=rot_config)
+    mec = ReferenceFrame(transformation=np.identity(4), ref=master, name="mec", rotation_config=rot_config)
 
     # USR, defined in MEC
     tr_u = np.array([0, 0, 0])
     rot_u = np.array([0, 0, 0])
 
     usr = ReferenceFrame.from_translation_rotation(
-        tr_u, rot_u, rotation_config=rot_config, reference_frame=mec, name="usr", degrees=degrees
+        tr_u, rot_u, rotation_config=rot_config, ref=mec, name="usr", degrees=degrees
     )
 
     # PLATFORM (default after homing: PLT = MEC)
-    plt = ReferenceFrame(transformation=np.identity(4), reference_frame=mec, name="plt", rotation_config=rot_config)
+    plt = ReferenceFrame(transformation=np.identity(4), ref=mec, name="plt", rotation_config=rot_config)
 
     # OBJECT, defined wrt PLATFORM
     tr_o = np.array([0, 0, 0])
     rot_o = np.array([0, 0, 0])
     obj = ReferenceFrame.from_translation_rotation(
-        tr_o, rot_o, rotation_config=rot_config, reference_frame=plt, name="obj", degrees=degrees
+        tr_o, rot_o, rotation_config=rot_config, ref=plt, name="obj", degrees=degrees
     )
 
     # OBUSR == OBJ, but defined wrt USR  (OBJ is defined in PLT) --> used in moveAbsolute
     transfo = usr.get_active_transformation_to(obj)
-    obusr = ReferenceFrame(transfo, rotation_config=rot_config, reference_frame=usr, name="obusr")
+    obusr = ReferenceFrame(transfo, rotation_config=rot_config, ref=usr, name="obusr")
 
     # Configure the invariant links within the system
 
@@ -420,28 +418,28 @@ def test_linked_to_reference():
     translation = [0, 2, 0]
     Adef = np.identity(4)
     Adef[:3, 3] = translation
-    A1 = ReferenceFrame(transformation=Adef, reference_frame=master, name="A1")
-    A2 = ReferenceFrame(transformation=Adef, reference_frame=master, name="A2")
+    A1 = ReferenceFrame(transformation=Adef, ref=master, name="A1")
+    A2 = ReferenceFrame(transformation=Adef, ref=master, name="A2")
 
     # C
     translation = [2, 0, 0]
     Cdef = np.identity(4)
     Cdef[:3, 3] = translation
-    C = ReferenceFrame(transformation=Cdef, reference_frame=master, name="C")
+    C = ReferenceFrame(transformation=Cdef, ref=master, name="C")
 
     # B
     translation = [2, 0, 0]
     Bdef = np.identity(4)
     Bdef[:3, 3] = translation
-    B1 = ReferenceFrame(transformation=Bdef, reference_frame=A1, name="B1")
-    B2 = ReferenceFrame(transformation=Bdef, reference_frame=A2, name="B2")
+    B1 = ReferenceFrame(transformation=Bdef, ref=A1, name="B1")
+    B2 = ReferenceFrame(transformation=Bdef, ref=A2, name="B2")
 
     # Frame D is defined in C
     translation = [2, 0, 0]
     rotation = [0, 0, 45]
     degrees = True
     D = ReferenceFrame.from_translation_rotation(
-        translation=translation, rotation=rotation, reference_frame=C, name="D", degrees=degrees
+        translation=translation, rotation=rotation, ref=C, name="D", degrees=degrees
     )
 
     B1.add_link(A1, transformation=B1.transformation)
