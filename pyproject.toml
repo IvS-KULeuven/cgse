@@ -70,13 +70,10 @@ symetrie-hexapod = { workspace = true }
 [tool.uv.workspace]
 members = [
     "libs/cgse-common",
-    "libs/cgse-core",
     "libs/cgse-coordinates",
+    "libs/cgse-core",
     "libs/cgse-gui",
-    "projects/generic/cgse-tools",
-    "projects/generic/keithley-tempcontrol",
-    "projects/generic/lakeshore-tempcontrol",
-    "projects/generic/symetrie-hexapod",
+    "projects/generic/*",
     "projects/plato/*",
     "projects/ariel/*"
 ]
