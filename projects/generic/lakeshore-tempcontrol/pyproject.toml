@@ -27,9 +27,6 @@ dependencies = [
     "PyQt5>=5.15.11",
 ]
 
-[project.optional-dependencies]
-test = ["pytest", "pytest-mock", "pytest-cov"]
-
 [project.scripts]
 lakeshore336_cs = 'egse.tempcontrol.lakeshore.lakeshore336_cs:cli'
 
@@ -48,6 +45,14 @@ lakeshore336 = 'lakeshore_tempcontrol.cgse_services:lakeshore336'
 [project.entry-points."cgse.explore"]
 explore = "lakeshore_tempcontrol.cgse_explore"
 
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = [
+    "src",
+]
+testpaths = [
+    "tests",
+]
 [tool.hatch.build.targets.sdist]
 exclude = [
     "/tests",
@@ -67,3 +72,13 @@ extend-select = ["E501"]
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "pytest-asyncio>=0.26.0",
+    "ruff>=0.9.0",
+    "nox>=2025.2.9",
+]
