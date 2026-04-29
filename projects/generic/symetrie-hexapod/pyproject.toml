@@ -27,7 +27,7 @@ dependencies = [
     "PyQt5>=5.15.11",
     "paramiko",
     "invoke",
-    "pyqtgraph"
+    "pyqtgraph",
 ]
 
 [project.scripts]
@@ -69,6 +69,17 @@ line-length = 120
 
 [tool.ruff.lint]
 extend-select = ["E501"]
+
+[tool.pytest.ini_options]
+pythonpath = [
+    "src",
+]
+testpaths = [
+    "tests",
+]
+
+[tool.uv.sources]
+cgse-coordinates = { workspace = true, editable = true }
 
 [build-system]
 requires = ["hatchling"]
