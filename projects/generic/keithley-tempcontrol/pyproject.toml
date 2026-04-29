@@ -22,12 +22,10 @@ keywords = [
 dependencies = [
     "cgse-common",
     "cgse-core",
+    "cgse-tools",
     "cgse-gui",
     "PyQt5>=5.15.11"
 ]
-
-[project.optional-dependencies]
-test = ["pytest", "pytest-mock", "pytest-cov"]
 
 [project.scripts]
 daq6510_cs = 'egse.tempcontrol.keithley.daq6510_cs:app'
@@ -51,6 +49,12 @@ explore = "keithley_tempcontrol.cgse_explore"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+pythonpath = [
+    "src",
+]
+testpaths = [
+    "tests",
+]
 
 [tool.hatch.build.targets.sdist]
 exclude = [
