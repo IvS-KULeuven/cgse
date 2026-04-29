@@ -7,6 +7,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.22.2] - 2026-04-29
+
+- Fix hexapod simulator: Rename rotation configuration variable for clarity and fix reference_frame → ref
+- Refactor reference frame handling: replace 'reference_frame' with 'ref' in multiple files, fix unit tests
+- Renamed duplicated methods in `Tgf4000Interface`
+- Documentation update:
+  - Add advanced query documentation for temperature rate of change and integrate MathJax support
+  - Add administrator and user guides for monitoring and telemetry setup; enhance release documentation
+  - Add new documentation pages for Metrics Hub, Logger, Configuration Manager, Storage Manager, and Process Manager
+  - Updates to all core services documentation
+
 ## [0.22.1] - 2026-04-17
 
 - The `obsid-table.txt` file now contains the function name and args + kwargs of the parent function. Previously, when `start_observation()` was used instead of `execute()`, the `obsid-table.txt` would contain `unknown_function()` which was rather confusing.
@@ -385,7 +396,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.1...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.2...HEAD
+[0.22.2]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.1...v0.22.2
 [0.22.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.0...v0.22.1
 [0.22.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.21.1...v0.22.0
 [0.21.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.21.0...v0.21.1
