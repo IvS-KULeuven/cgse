@@ -8,20 +8,24 @@ import logging
 import math
 import time
 
-from egse.hexapod.symetrie.alpha import AlphaPlusControllerInterface
-from egse.hexapod.symetrie.dynalpha import AlphaPlusTelnetInterface, decode_validation_error
+from egse.device import DeviceInterface
 from egse.mixin import DynamicCommandMixin
 from egse.proxy import DynamicProxy
+from egse.registry.client import RegistryClient
 from egse.settings import Settings
-from egse.system import Timer
-from egse.system import wait_until
+from egse.system import Timer, wait_until
 from egse.zmq_ser import connect_address
+
+from egse.hexapod.symetrie.alpha import AlphaPlusControllerInterface
+from egse.hexapod.symetrie.dynalpha import AlphaPlusTelnetInterface, decode_validation_error
+from egse.hexapod.symetrie.hexapod import HexapodSimulator
 
 logger = logging.getLogger(__name__)
 
 JORAN_SETTINGS = Settings.load("Hexapod Controller")["JORAN"]
-CTRL_SETTINGS = Settings.load("Hexapod Control Server")["JORAN"]
 DEVICE_SETTINGS = Settings.load(filename="joran.yaml")
+
+PROXY_TIMEOUT = 10.0  # don't wait longer than 10s by default
 
 
 class JoranInterface(AlphaPlusControllerInterface):
@@ -86,7 +90,7 @@ class JoranController(JoranInterface, DynamicCommandMixin):
         raise NotImplementedError
 
 
-class JoranSimulator(JoranInterface):
+class JoranSimulator(HexapodSimulator, DeviceInterface):
     """
     HexapodSimulator simulates the Symétrie Hexapod JORAN. The class is heavily based on the
     ReferenceFrames in the `egse.coordinates` package.
@@ -100,80 +104,50 @@ class JoranSimulator(JoranInterface):
     This class simulates all the movements and status of the Hexapod.
     """
 
-    def __init__(self):
+    def __init__(self, device_id: str):
         super().__init__()
+        self._device_id = device_id
 
-        # Keep a record if the homing() command has been executed.
-
-        self.homing_done = False
-        self.control_loop = False
-        self._virtual_homing = False
-        self._virtual_homing_position = None
-
-    def is_simulator(self):
-        return True
-
-    def connect(self):
-        pass
-
-    def reconnect(self):
-        pass
-
-    def disconnect(self):
-        # TODO:
-        #   Should I keep state in this class to check if it has been disconnected?
-        #
-        # TODO:
-        #   What happens when I re-connect to this Simulator? Shall it be in Homing position or
-        #   do I have to keep state via a persistence mechanism?
-        pass
-
-    def is_connected(self):
-        return True
-
-    def clear_error(self):
-        return 0
-
-    def homing(self):
-        self.goto_zero_position()
-        self.homing_done = True
-        self._virtual_homing = False
-        self._virtual_homing_position = None
-        return 0
-
-    def is_homing_done(self):
-        return self.homing_done
-
-    def activate_control_loop(self):
-        self.control_loop = True
-        return self.control_loop
-
-    def deactivate_control_loop(self):
-        self.control_loop = False
-        return self.control_loop
-
-    pass
+    @property
+    def device_id(self):
+        return self._device_id
 
 
 class JoranProxy(DynamicProxy, JoranInterface):
     """The JoranProxy class is used to connect to the control server and send commands to the
-    Hexapod JORAN remotely."""
+    Hexapod JORAN remotely.
 
-    def __init__(
-        self,
-        protocol=CTRL_SETTINGS["PROTOCOL"],
-        hostname=CTRL_SETTINGS["HOSTNAME"],
-        port=CTRL_SETTINGS["COMMANDING_PORT"],
-    ):
-        """
-        Args:
-            protocol: the transport protocol [default is taken from settings file]
-            hostname: location of the control server (IP address) [default is taken from settings
-            file]
-            port: TCP port on which the control server is listening for commands [default is
-            taken from settings file]
-        """
-        super().__init__(connect_address(protocol, hostname, port))
+    The control server is discovered from the service registry using ``device_id`` as the
+    service type key, which is the same identifier used when the control server was started.
+
+    Args:
+        device_id: identifier of the hexapod control server as registered in the service registry
+        timeout: how long to wait for a response from the control server before giving up
+    """
+
+    def __init__(self, device_id: str, *, timeout: float = PROXY_TIMEOUT):
+        self._device_id = device_id
+        super().__init__("", timeout=timeout, connect=False)
+
+    @property
+    def device_id(self):
+        return self._device_id
+
+    def connect_cs(self):
+        with RegistryClient() as reg:
+            service = reg.discover_service(self._device_id)
+
+        if not service:
+            raise ConnectionError(f"No control server registered as '{self._device_id}'.")
+
+        protocol = service.get("protocol", "tcp")
+        hostname = service["host"]
+        port = service["port"]
+
+        self._endpoint = connect_address(protocol, hostname, port)
+        logger.info(f"JoranProxy connecting to {self._device_id!r} at {self._endpoint}")
+
+        super().connect_cs()
 
 
 if __name__ == "__main__":

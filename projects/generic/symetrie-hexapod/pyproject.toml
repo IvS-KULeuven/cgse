@@ -10,7 +10,7 @@ maintainers = [
     {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"}
 ]
 readme = {"file" = "README.md", "content-type" = "text/markdown"}
-requires-python = ">=3.10"
+requires-python = ">=3.10, <3.13"
 license = "MIT"
 keywords = [
     "CGSE",

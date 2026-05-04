@@ -4,9 +4,32 @@ import numpy as np
 import logging
 
 from egse.hexapod import HexapodError
-from egse.hexapod.symetrie.puna import PunaSimulator as Hexapod
+from egse.hexapod.symetrie.puna import PunaSimulator
+from egse.hexapod.symetrie.zonda import ZondaSimulator
+from egse.hexapod.symetrie.joran import JoranSimulator
 
 _LOGGER = logging.getLogger(__name__)
+
+HEXAPODS = [
+    ("PUNA", "PUNA_01"),
+    ("ZONDA", "ZONDA_01"),
+    ("JORAN", "JORAN_01"),
+]
+
+
+@pytest.fixture
+def hexapod(request):
+    device, device_id = request.param
+
+    def get_simulator():
+        if device == "PUNA":
+            return PunaSimulator(device_id)
+        elif device == "ZONDA":
+            return ZondaSimulator(device_id)
+        elif device == "JORAN":
+            return JoranSimulator(device_id)
+
+    return get_simulator()
 
 
 def wait_until(condition, interval=0.1, timeout=1, *args):
@@ -18,8 +41,12 @@ def wait_until(condition, interval=0.1, timeout=1, *args):
         time.sleep(interval)
 
 
-def test_goto_zero_position():
-    hexapod = Hexapod()
+@pytest.mark.parametrize(
+    "hexapod",
+    HEXAPODS,
+    indirect=True,
+)
+def test_goto_zero_position(hexapod):
 
     try:
         rc = hexapod.goto_zero_position()
@@ -38,9 +65,12 @@ def test_goto_zero_position():
         hexapod.disconnect()
 
 
-def test_position_after_homing():
-    hexapod = Hexapod()
-
+@pytest.mark.parametrize(
+    "hexapod",
+    HEXAPODS,
+    indirect=True,
+)
+def test_position_after_homing(hexapod):
     try:
         hexapod.move_absolute(5, 0, 0, 0, 0, 0)
 
@@ -73,17 +103,25 @@ def test_position_after_homing():
         hexapod.disconnect()
 
 
-def test_construction():
-    hexapod = Hexapod()
+@pytest.mark.parametrize(
+    "hexapod",
+    HEXAPODS,
+    indirect=True,
+)
+def test_construction(hexapod):
     assert hexapod.is_simulator()
     assert not hexapod.is_homing_done()
 
 
-def test_absolute_movement2():
+@pytest.mark.parametrize(
+    "hexapod",
+    HEXAPODS,
+    indirect=True,
+)
+def test_absolute_movement2(hexapod):
     """
     This test originated from a problem with the values of Machine positions after a simple rotation.
     """
-    hexapod = Hexapod()
 
     try:
         tx, ty, tz = [0, 10, 0]
@@ -104,9 +142,12 @@ def test_absolute_movement2():
         hexapod.disconnect()
 
 
-def test_absolute_movement1():
-    hexapod = Hexapod()
-
+@pytest.mark.parametrize(
+    "hexapod",
+    HEXAPODS,
+    indirect=True,
+)
+def test_absolute_movement1(hexapod):
     try:
         tx, ty, tz = [1, 3, 4]
         rx, ry, rz = [35, 25, 10]
@@ -123,9 +164,12 @@ def test_absolute_movement1():
         hexapod.disconnect()
 
 
-def test_absolute_movement():
-    hexapod = Hexapod()
-
+@pytest.mark.parametrize(
+    "hexapod",
+    HEXAPODS,
+    indirect=True,
+)
+def test_absolute_movement(hexapod):
     try:
         tx_u, ty_u, tz_u = -2, -2, -2
         rx_u, ry_u, rz_u = -3, -4, -5
@@ -191,9 +235,12 @@ def test_absolute_movement():
         hexapod.disconnect()
 
 
-def test_coordinates_systems():
-    hexapod = Hexapod()
-
+@pytest.mark.parametrize(
+    "hexapod",
+    HEXAPODS,
+    indirect=True,
+)
+def test_coordinates_systems(hexapod):
     try:
         rc = hexapod.configure_coordinates_systems(1.2, 2.1, 1.3, 0.4, 0.3, 0.2, 1.3, 2.2, 1.2, 0.1, 0.2, 0.3)
 
