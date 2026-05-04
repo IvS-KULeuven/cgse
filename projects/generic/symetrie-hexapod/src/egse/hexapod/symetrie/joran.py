@@ -6,6 +6,7 @@ Symétrie.
 
 import logging
 import math
+import random
 import time
 
 from egse.device import DeviceInterface
@@ -111,6 +112,9 @@ class JoranSimulator(HexapodSimulator, DeviceInterface):
     @property
     def device_id(self):
         return self._device_id
+
+    def get_temperature(self) -> list[float]:
+        return [random.random() for _ in range(6)]
 
 
 class JoranProxy(DynamicProxy, JoranInterface):

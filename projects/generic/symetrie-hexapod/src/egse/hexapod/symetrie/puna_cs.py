@@ -87,10 +87,7 @@ class PunaControlServer(ControlServer):
         return CTRL_SETTINGS["MONITORING_PORT"]
 
     def get_storage_mnemonic(self):
-        try:
-            return CTRL_SETTINGS["STORAGE_MNEMONIC"]
-        except AttributeError:
-            return "PUNA"
+        return CTRL_SETTINGS.get("STORAGE_MNEMONIC", "PUNA")
 
     def is_storage_manager_active(self):
         from egse.storage import is_storage_manager_active

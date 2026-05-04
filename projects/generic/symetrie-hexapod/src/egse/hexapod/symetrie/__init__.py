@@ -86,7 +86,9 @@ def get_hexapod_controller_pars(device_id: str) -> HexapodInfo:
         device_name: str = HEXAPOD_SETTINGS[device_id]["DEVICE_NAME"]
         device_type: str = HEXAPOD_SETTINGS[device_id]["DEVICE_TYPE"]
     except (KeyError, AttributeError) as exc:
-        raise SettingsError("The Settings do not contain proper controller parameters for the Hexapod.") from exc
+        raise SettingsError(
+            f"The Settings do not contain proper controller parameters for the Hexapod with ID {device_id}."
+        ) from exc
 
     logger.debug(f"{hostname=}, {port=}, {device_id=}, {device_name=}, {device_type=}, {controller_type=}")
     return HexapodInfo(hostname, port, device_id, device_name, device_type, controller_type)
