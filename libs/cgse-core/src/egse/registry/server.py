@@ -56,6 +56,7 @@ class AsyncRegistryServer:
         backend: a registry backend, [default=AsyncSQLiteBackend]
         db_path: Path to the SQLite database file [default='service_registry.db']
         cleanup_interval: How often to clean up expired services (seconds) [default=10]
+        enforce_unique_service_types: Whether only one service per service_type is allowed.
     """
 
     def __init__(
@@ -66,12 +67,18 @@ class AsyncRegistryServer:
         backend: AsyncRegistryBackend | None = None,
         db_path: str = DEFAULT_RS_DB_PATH,
         cleanup_interval: int = 0,
+        enforce_unique_service_types: bool | None = None,
     ):
         self.req_port = req_port
         self.pub_port = pub_port
         self.hb_port = hb_port
         self.db_path = db_path
         self.cleanup_interval = cleanup_interval or settings.get("CLEANUP_INTERVAL", 10)
+        self.enforce_unique_service_types = (
+            bool_env("UNIQUE_SERVICE_TYPES", False)
+            if enforce_unique_service_types is None
+            else enforce_unique_service_types
+        )
         self.logger = logger
 
         self.context = None
@@ -88,6 +95,36 @@ class AsyncRegistryServer:
 
         # Tasks
         self._tasks = set()
+
+    async def _reject_on_duplicate_service_type(
+        self, service_id: str, service_type: str | None, singleton: bool = False
+    ) -> dict[str, Any] | None:
+        """Return an error response if unique-type enforcement is enabled and a conflict exists.
+
+        Uniqueness is enforced when either the server-wide ``enforce_unique_service_types`` flag is
+        set *or* the individual registration requests it via ``singleton=True``.
+        """
+        if (not self.enforce_unique_service_types and not singleton) or not service_type:
+            return None
+
+        # Clean expired services first so stale entries do not block valid registrations.
+        await self.backend.clean_expired_services()
+        services = await self.backend.list_services(service_type=service_type)
+
+        for registered_service in services:
+            registered_service_id = registered_service.get("id")
+            if registered_service_id and registered_service_id != service_id:
+                return {
+                    "success": False,
+                    "error": "duplicate_service_type",
+                    "message": (
+                        f"Service type '{service_type}' is already registered by service_id '{registered_service_id}'."
+                    ),
+                    "service_type": service_type,
+                    "existing_service_id": registered_service_id,
+                }
+
+        return None
 
     async def setup_sockets(self):
         """Set up the communication sockets."""
@@ -358,6 +395,12 @@ class AsyncRegistryServer:
         # Get TTL
         ttl = request.get("ttl", 30)
 
+        service_type = service_info.get("type") or service_info.get("metadata", {}).get("type")
+        singleton = bool(service_info.get("singleton", False))
+        duplicate_conflict = await self._reject_on_duplicate_service_type(service_id, service_type, singleton)
+        if duplicate_conflict:
+            return duplicate_conflict
+
         # Register the service
         success = await self.backend.register(service_id, service_info, ttl)
 
@@ -527,6 +570,7 @@ class AsyncRegistryServer:
             "req_port": self.req_port,
             "pub_port": self.pub_port,
             "hb_port": self.hb_port,
+            "enforce_unique_service_types": self.enforce_unique_service_types,
             "services": services,
         }
 
@@ -560,6 +604,7 @@ async def start(
     hb_port: int = DEFAULT_RS_HB_PORT,
     db_path: str = DEFAULT_RS_DB_PATH,
     cleanup_interval: int = 0,
+    enforce_unique_service_types: bool = settings.get("UNIQUE_SERVICE_TYPES", False),
     log_level: str = "WARNING",
 ):
     """Run the registry server with signal handling."""
@@ -571,6 +616,7 @@ async def start(
             hb_port=hb_port,
             db_path=db_path,
             cleanup_interval=cleanup_interval,
+            enforce_unique_service_types=enforce_unique_service_types,
         )
 
         # Set up signal handlers
@@ -611,6 +657,7 @@ async def status(
                 Requests port: {response["req_port"]}
                 Notifications port: {response["pub_port"]}
                 Heartbeat port: {response["hb_port"]}
+                Unique service types: {response.get("enforce_unique_service_types", False)}
                 Registrations: {", ".join([f"({x['name']}, {x['health']})" for x in response["services"]])}\
             """
         )
