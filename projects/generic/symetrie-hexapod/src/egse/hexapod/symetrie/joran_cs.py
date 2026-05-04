@@ -16,27 +16,22 @@ all device behavior correctly, e.g. timing, error conditions, etc.
 """
 
 import logging
-
-from egse.process import SubProcess
-
-if __name__ != "__main__":
-    import multiprocessing
-
-    multiprocessing.current_process().name = "joran_cs"
-
+import multiprocessing
 import sys
+from typing import Annotated
 
 import click
 import rich
+import typer
 import zmq
-
-from egse.control import ControlServer
-from egse.control import is_control_server_active
-from egse.hexapod.symetrie.joran import JoranProxy
-from egse.hexapod.symetrie.joran_protocol import JoranProtocol
+from egse.control import ControlServer, is_control_server_active
+from egse.process import SubProcess
 from egse.settings import Settings
 from egse.zmq_ser import connect_address
 from prometheus_client import start_http_server
+
+from egse.hexapod.symetrie.joran import JoranProxy
+from egse.hexapod.symetrie.joran_protocol import JoranProtocol
 
 logger = logging.getLogger(__name__)
 
@@ -61,10 +56,12 @@ class JoranControlServer(ControlServer):
 
     """
 
-    def __init__(self):
+    def __init__(self, device_id: str, simulator: bool = False):
         super().__init__()
 
-        self.device_protocol = JoranProtocol(self)
+        multiprocessing.current_process().name = "joran_cs"
+
+        self.device_protocol = JoranProtocol(self, device_id=device_id, simulator=simulator)
 
         self.logger.debug(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()}")
 
@@ -94,32 +91,32 @@ class JoranControlServer(ControlServer):
         start_http_server(CTRL_SETTINGS["METRICS_PORT"])
 
 
-@click.group()
-def cli():
-    pass
+app = typer.Typer()
 
 
-@cli.command()
-@click.option("--simulator", "--sim", is_flag=True, help="Start the Hexapod Joran Simulator as the backend.")
-def start(simulator):
-    """Start the Hexapod Joran Control Server."""
-
-    if simulator:
-        Settings.set_simulation_mode(True)
+@app.command()
+def start(
+    device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")],
+    simulator: Annotated[
+        bool, typer.Option("--simulator", "--sim", help="start the hexapod JORAN Control Server in simulator mode")
+    ] = False,
+):
+    """Start the Hexapod JORAN Control Server."""
 
     try:
-        controller = JoranControlServer()
+        controller = JoranControlServer(device_id=device_id, simulator=simulator)
         controller.serve()
 
     except KeyboardInterrupt:
         print("Shutdown requested...exiting")
 
-    except SystemExit as exit_code:
+    except SystemExit as exc:
+        exit_code = exc.code if hasattr(exc, "code") else 0
         print("System Exit with code {}.".format(exit_code))
         sys.exit(exit_code)
 
     except Exception:
-        logger.exception("Cannot start the Hexapod Joran Control Server")
+        logger.exception("Cannot start the Hexapod JORAN Control Server")
 
         # The above line does exactly the same as the traceback, but on the logger
         # import traceback
@@ -128,29 +125,20 @@ def start(simulator):
     return 0
 
 
-@cli.command()
-@click.option("--simulator", "--sim", is_flag=True, help="Start the Hexapod Joran Simulator as the backend.")
-def start_bg(simulator):
-    """Start the JORAN Control Server in the background."""
-    sim = "--simulator" if simulator else ""
-    proc = SubProcess("joran_cs", ["joran_cs", "start", sim])
-    proc.execute()
-
-
-@cli.command()
-def stop():
+@app.command()
+def stop(device_id: str):
     """Send a 'quit_server' command to the Hexapod Joran Control Server."""
 
     try:
-        with JoranProxy() as proxy:
+        with JoranProxy(device_id) as proxy:
             sp = proxy.get_service_proxy()
             sp.quit_server()
     except ConnectionError:
         rich.print("[red]Couldn't connect to 'joran_cs', process probably not running. ")
 
 
-@cli.command()
-def status():
+@app.command()
+def status(device_id: str):
     """Request status information from the Control Server."""
 
     protocol = CTRL_SETTINGS["PROTOCOL"]
@@ -161,7 +149,7 @@ def status():
 
     if is_control_server_active(endpoint):
         rich.print("JORAN Hexapod: [green]active")
-        with JoranProxy() as joran:
+        with JoranProxy(device_id) as joran:
             sim = joran.is_simulator()
             connected = joran.is_connected()
             ip = joran.get_ip_address()
@@ -176,4 +164,4 @@ def status():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format=Settings.LOG_FORMAT_FULL)
 
-    sys.exit(cli())
+    sys.exit(app())

@@ -34,7 +34,7 @@ class PunaProtocol(CommandProtocol):
         # self.hk_conversion_table = read_conversion_dict(self.control_server.get_storage_mnemonic(), use_site=True)
 
         if self.simulator:
-            self.hexapod = PunaSimulator()
+            self.hexapod = PunaSimulator(device_id)
         else:
             *_, device_type, controller_type = get_hexapod_controller_pars(device_id)
 
