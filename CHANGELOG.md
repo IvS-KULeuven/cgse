@@ -7,6 +7,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-05-05
+
+- Service Registry now enforces unique service types by default (`UNIQUE_SERVICE_TYPES=true`). This prevents accidental duplicate registrations for the same service type.
+- Service registration now supports explicit duplicate policy flags:
+  - `singleton=True` to require uniqueness for a specific registration
+  - `allow_duplicate_service_type=True` to override global uniqueness enforcement for a specific registration
+  - invalid combinations are now rejected early (`singleton` and `allow_duplicate_service_type` cannot both be true)
+- Improved Symetrie hexapod connectivity and control-server behavior:
+  - Joran and Puna control server flows now consistently use device IDs
+  - proxy connection handling and error reporting were improved when discovering/connecting to control servers
+  - control-server start/stop logging and storage mnemonic handling were cleaned up for more predictable operations
+- Symetrie hexapod package now declares Python compatibility as `>=3.10,<3.13`.
+
 ## [0.22.2] - 2026-04-29
 
 - Fix hexapod simulator: Rename rotation configuration variable for clarity and fix reference_frame → ref
@@ -396,7 +409,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.2...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.23.0...HEAD
+[0.23.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.2...v0.23.0
 [0.22.2]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.1...v0.22.2
 [0.22.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.0...v0.22.1
 [0.22.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.21.1...v0.22.0
