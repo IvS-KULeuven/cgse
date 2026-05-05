@@ -4,7 +4,7 @@ PACKAGES:
 Service Registry:
 
     CLEANUP_INTERVAL:                30
-    UNIQUE_SERVICE_TYPES:         false
+    UNIQUE_SERVICE_TYPES:          true
     REQUESTER_PORT:                6100
     PUBLISHER_PORT:                6101
     HEARTBEAT_PORT:                6102

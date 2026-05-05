@@ -75,7 +75,7 @@ class AsyncRegistryServer:
         self.db_path = db_path
         self.cleanup_interval = cleanup_interval or settings.get("CLEANUP_INTERVAL", 10)
         self.enforce_unique_service_types = (
-            bool_env("UNIQUE_SERVICE_TYPES", False)
+            bool_env("UNIQUE_SERVICE_TYPES", True)
             if enforce_unique_service_types is None
             else enforce_unique_service_types
         )
@@ -97,14 +97,19 @@ class AsyncRegistryServer:
         self._tasks = set()
 
     async def _reject_on_duplicate_service_type(
-        self, service_id: str, service_type: str | None, singleton: bool = False
+        self,
+        service_id: str,
+        service_type: str | None,
+        singleton: bool = False,
+        allow_duplicate_service_type: bool = False,
     ) -> dict[str, Any] | None:
         """Return an error response if unique-type enforcement is enabled and a conflict exists.
 
-        Uniqueness is enforced when either the server-wide ``enforce_unique_service_types`` flag is
-        set *or* the individual registration requests it via ``singleton=True``.
+        Uniqueness is enforced when either the server-wide `enforce_unique_service_types` flag is
+        set *or* the individual registration requests it via `singleton=True`.
+        Individual registrations can opt out via `allow_duplicate_service_type=True`.
         """
-        if (not self.enforce_unique_service_types and not singleton) or not service_type:
+        if allow_duplicate_service_type or (not self.enforce_unique_service_types and not singleton) or not service_type:
             return None
 
         # Clean expired services first so stale entries do not block valid registrations.
@@ -397,7 +402,20 @@ class AsyncRegistryServer:
 
         service_type = service_info.get("type") or service_info.get("metadata", {}).get("type")
         singleton = bool(service_info.get("singleton", False))
-        duplicate_conflict = await self._reject_on_duplicate_service_type(service_id, service_type, singleton)
+        allow_duplicate_service_type = bool(service_info.get("allow_duplicate_service_type", False))
+        if singleton and allow_duplicate_service_type:
+            return {
+                "success": False,
+                "error": "invalid_service_type_policy",
+                "message": "singleton and allow_duplicate_service_type cannot both be true.",
+            }
+
+        duplicate_conflict = await self._reject_on_duplicate_service_type(
+            service_id,
+            service_type,
+            singleton=singleton,
+            allow_duplicate_service_type=allow_duplicate_service_type,
+        )
         if duplicate_conflict:
             return duplicate_conflict
 
@@ -604,7 +622,7 @@ async def start(
     hb_port: int = DEFAULT_RS_HB_PORT,
     db_path: str = DEFAULT_RS_DB_PATH,
     cleanup_interval: int = 0,
-    enforce_unique_service_types: bool = settings.get("UNIQUE_SERVICE_TYPES", False),
+    enforce_unique_service_types: bool = settings.get("UNIQUE_SERVICE_TYPES", True),
     log_level: str = "WARNING",
 ):
     """Run the registry server with signal handling."""
