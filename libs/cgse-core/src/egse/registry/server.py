@@ -109,7 +109,11 @@ class AsyncRegistryServer:
         set *or* the individual registration requests it via `singleton=True`.
         Individual registrations can opt out via `allow_duplicate_service_type=True`.
         """
-        if allow_duplicate_service_type or (not self.enforce_unique_service_types and not singleton) or not service_type:
+        if (
+            allow_duplicate_service_type
+            or (not self.enforce_unique_service_types and not singleton)
+            or not service_type
+        ):
             return None
 
         # Clean expired services first so stale entries do not block valid registrations.

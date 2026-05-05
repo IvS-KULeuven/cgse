@@ -47,7 +47,6 @@ def wait_until(condition, interval=0.1, timeout=1, *args):
     indirect=True,
 )
 def test_goto_zero_position(hexapod):
-
     try:
         rc = hexapod.goto_zero_position()
 
