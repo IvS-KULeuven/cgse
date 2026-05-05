@@ -68,7 +68,6 @@ def skip_unavailable_proxy(exc: ConnectionError):
     indirect=True,
 )
 def test_context_manager_proxy_no_control_server(hexapod):
-
     print()
 
     dev = get_device(hexapod, "proxy")
@@ -85,7 +84,6 @@ def test_context_manager_proxy_no_control_server(hexapod):
     indirect=True,
 )
 def test_context_manager_simulator(hexapod):
-
     print()
 
     sim = get_device(hexapod, "simulator")
@@ -139,7 +137,6 @@ def test_connection_and_homing(hexapod, backend):
     indirect=True,
 )
 def test_hexapod_connect_and_ping(hexapod):
-
     def check_connect_hexapod(device):
         device.connect_cs()
         assert not device.ping()
@@ -160,7 +157,6 @@ def test_hexapod_connect_and_ping(hexapod):
 )
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_goto_position(hexapod, backend):
-
     dev = get_device(hexapod, backend)
 
     try:
@@ -272,7 +268,6 @@ def test_absolute_movement(hexapod, backend):
 )
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_coordinates_systems(hexapod, backend):
-
     dev = get_device(hexapod, backend)
 
     try:
