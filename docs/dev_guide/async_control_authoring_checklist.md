@@ -7,8 +7,8 @@ Use this checklist when adding a new async control server/client pair in `cgse-c
 - Subclass `AsyncControlServer`.
 - Set a unique `service_type` string.
 - Implement `register_custom_handlers()`.
-- Register device commands with `add_device_command_handler(...)`.
-- Register service commands with `add_service_command_handler(...)`.
+  - Register device commands with `add_device_command_handler(...)`.
+  - Register service commands with `add_service_command_handler(...)`.
 - Optionally override `get_service_info()` to expose server-specific metadata.
 
 ## 2. Define the client subclass

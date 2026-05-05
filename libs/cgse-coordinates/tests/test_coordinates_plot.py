@@ -17,8 +17,8 @@ def test_master_plot_reference_frame():
 def test_master_plot_points():
     master = ReferenceFrame.create_master()
 
-    p1 = Point([1, 2, 3], reference_frame=master, name="P1")
-    p2 = Point([1, 2, 3], reference_frame=master, name="P2")
+    p1 = Point([1, 2, 3], ref=master, name="P1")
+    p2 = Point([1, 2, 3], ref=master, name="P2")
 
     try:
         _ = plot_points([p1, p2], master)

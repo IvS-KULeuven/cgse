@@ -5,7 +5,7 @@ Welcome to the CGSE developer guide! An in-depth reference on how to contribute 
 First thing to know is that this repository is actually a monorepo, meaning it contains a bunch of
 related but self-standing packages with a minimum of interdependencies. A monorepo can grow quite
 big and can contain a lot of packages that even different groups are working on. What they have in
-common is that they use the same guidelines and have the same or a very similar development 
+common is that they use the same guidelines and have the same or a very similar development
 workflow.
 
 Don't confuse a monorepo with a _monolith_ or a _monolithic architecture_. While a monorepo holds
@@ -21,3 +21,4 @@ need the other, but they can perfectly go together.
 ## See also
 
 - [Async Control Authoring Checklist](async_control_authoring_checklist.md)
+- [Monitoring and Telemetry in CGSE](monitoring.md)

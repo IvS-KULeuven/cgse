@@ -292,7 +292,7 @@ class PunaUIModel(HexapodUIModel):
             device = ControllerFactory().create(dev_name, device_id=dev_id)
             device.connect()
         elif connection_type == "simulator":
-            device = PunaSimulator()
+            device = PunaSimulator(device_id)
         else:
             raise ValueError(f"Unknown type of Hexapod implementation passed into the model: {connection_type}")
 

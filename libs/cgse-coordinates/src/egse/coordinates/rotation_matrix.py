@@ -27,7 +27,7 @@ class RotationMatrix:
             rotation_config (str): Order in which the rotation about the three axes are chained.
             active (bool): Indicates if the rotation is active (object rotates IN a fixed coordinate system) or passive
                            (coordinate system rotates AROUND a fixed object).  Even if two angles are zero, the match
-                           between angle orders and rot_config is still critical.
+                           between angle orders and rotation_config is still critical.
         """
 
         rotation_matrix = t3.euler.euler2mat(angle_1, angle_2, angle_3, rotation_config)

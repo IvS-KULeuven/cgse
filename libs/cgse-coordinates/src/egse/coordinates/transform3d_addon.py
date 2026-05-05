@@ -372,7 +372,7 @@ def translation_rotation_to_transformation(
         rotation_config (str): Order in which the rotation about the three axes are chained.
         active (bool): Indicates if the rotation is active (object rotates IN a fixed coordinate system) or passive
                            (coordinate system rotates AROUND a fixed object).  Even if two angles are zero, the match
-                           between angle orders and rot_config is still critical
+                           between angle orders and rotation_config is still critical
         degrees (bool): Indicates whether the rotation angles are specified in degrees, rather than radians.
         translation_first (bool): Indicates the order of the translation and rotation in the transformation matrix.
                                   False if the first three rows of the transformation matrix are (R t). This is the
@@ -416,7 +416,7 @@ def translation_rotation_from_transformation(
     rotation_config (str): Order in which the rotation about the three axes are chained.
     active (bool): Indicates if the rotation is active (object rotates IN a fixed coordinate system) or passive
                        (coordinate system rotates AROUND a fixed object).  Even if two angles are zero, the match
-                       between angle orders and rot_config is still critical
+                       between angle orders and rotation_config is still critical
     degrees (bool): Indicates whether the rotation angles are specified in degrees, rather than radians.
     translation_first (bool): Indicates the order of the translation and rotation in the transformation matrix.
                               False if the first three rows of the transformation matrix are (R t). This is the
@@ -445,19 +445,23 @@ t2tr = translation_rotation_from_transformation
 def vector_plane_intersection(vector, frame, epsilon=1.0e-6):
     """Returns the coordinates of the insection of a vector with a plane.
 
-    The origin of the input vector is:
-        vector.reference_frame.get_origin().coordinates[:3]
+    vector = input vector. Point object, expressing the vector
+        The origin of the input vector is:
+            vector.reference_frame.get_origin().coordinates[:3]
 
-    The direction of the input vector is:
-        vector.coordinates[:3]
+        The direction of the input vector is:
+            vector.coordinates[:3]
+
+    frame = input plane. ReferenceFrame object whose x-y plane is the target plane for intersection
+
+    If the vector's own reference frame is 'frame', the problem is trivial
 
     In all cases, the coordinates of the intersection point are provided as a Point object, in "frame" coordinates
 
     Args:
-        vector (Vector): Input vector.
+        vector (Point): Input vector.
         frame (ReferenceFrame): Reference frame for which the xy-plane is the target plane for intersection.
         epsilon (float):
-
 
     References:
         https://stackoverflow.com/questions/5666222/3d-line-plane-intersection

@@ -241,6 +241,8 @@ class RegistryClient:
         service_type: str | None = None,
         metadata: dict[str, Any] | None = None,
         ttl: int = 30,
+        singleton: bool = False,
+        allow_duplicate_service_type: bool = False,
     ) -> str | None:
         """
         Register this service with the registry.
@@ -252,10 +254,19 @@ class RegistryClient:
             service_type: Service type (for discovery)
             metadata: Additional service metadata
             ttl: Time-to-live in seconds
+            singleton: When True, reject registration if another service with the same
+                service_type is already registered, regardless of the server's global
+                enforce_unique_service_types setting.
+            allow_duplicate_service_type: When True, allow registration even if another
+                service with the same service_type is already registered while the
+                server enforces unique service types globally.
 
         Returns:
             The service ID if successful, None otherwise
         """
+        if singleton and allow_duplicate_service_type:
+            raise ValueError("singleton and allow_duplicate_service_type cannot both be True")
+
         # Prepare service info
         service_info: dict[str, str | int | dict | list] = {"name": name, "host": host, "port": port}
 
@@ -265,6 +276,12 @@ class RegistryClient:
 
         if metadata:
             service_info["metadata"] = metadata
+
+        if singleton:
+            service_info["singleton"] = True
+
+        if allow_duplicate_service_type:
+            service_info["allow_duplicate_service_type"] = True
 
         # Prepare tags for easier discovery
         tags = []
@@ -746,6 +763,8 @@ class AsyncRegistryClient:
         service_type: str | None = None,
         metadata: dict[str, Any] | None = None,
         ttl: int = 30,
+        singleton: bool = False,
+        allow_duplicate_service_type: bool = False,
     ) -> str | None:
         """
         Register this service with the registry.
@@ -757,10 +776,19 @@ class AsyncRegistryClient:
             service_type: Service type (for discovery)
             metadata: Additional service metadata
             ttl: Time-to-live in seconds
+            singleton: When True, reject registration if another service with the same
+                service_type is already registered, regardless of the server's global
+                enforce_unique_service_types setting.
+            allow_duplicate_service_type: When True, allow registration even if another
+                service with the same service_type is already registered while the
+                server enforces unique service types globally.
 
         Returns:
             The service ID if successful, None otherwise
         """
+        if singleton and allow_duplicate_service_type:
+            raise ValueError("singleton and allow_duplicate_service_type cannot both be True")
+
         # Prepare service info
         service_info: dict[str, Any] = {"name": name, "host": host, "port": port}
 
@@ -770,6 +798,12 @@ class AsyncRegistryClient:
 
         if metadata:
             service_info["metadata"] = metadata
+
+        if singleton:
+            service_info["singleton"] = True
+
+        if allow_duplicate_service_type:
+            service_info["allow_duplicate_service_type"] = True
 
         # Prepare tags for easier discovery
         tags = []
