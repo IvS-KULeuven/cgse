@@ -14,14 +14,14 @@ import pytest
 import pytest_asyncio
 import zmq
 import zmq.asyncio
+from egse.log import logger
+from egse.system import type_name
 from fixtures.helpers import is_service_registry_running
 
-from egse.log import logger
 from egse.registry import MessageType
 from egse.registry.backend import AsyncInMemoryBackend
 from egse.registry.client import AsyncRegistryClient
 from egse.registry.server import AsyncRegistryServer
-from egse.system import type_name
 
 # Constants for testing
 TEST_REQ_PORT = 15556
@@ -153,6 +153,7 @@ async def server_health_check(zmq_context) -> bool:
 
                 if len(message_parts) >= 2:
                     message_type = MessageType(message_parts[0])
+                    assert message_type == MessageType.RESPONSE, f"Expected RESPONSE, got {message_type}"
                     message_data = message_parts[1]
 
                     response = json.loads(message_data)
