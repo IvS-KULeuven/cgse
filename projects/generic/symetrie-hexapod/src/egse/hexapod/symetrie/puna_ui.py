@@ -375,18 +375,18 @@ def main(device_id: str, device_type: str = "proxy", profile: bool = False):
         if device_type == "proxy":
             _, _, device_id, device_name, *_ = get_hexapod_controller_pars(device_id)
             factory = ProxyFactory()
-            proxy = factory.create(device_name, device_id=device_id)
-            if not proxy.ping():
-                description = "Could not connect to Hexapod Control Server"
-                info_text = (
-                    "The GUI will start, but the connection button will show a disconnected state. "
-                    "Please check if the Control Server is running and start the server if needed. "
-                    "Otherwise, check if the correct HOSTNAME for the control server is set in the "
-                    "Settings.yaml "
-                    "configuration file."
-                )
+            with factory.create(device_name, device_id=device_id) as proxy:
+                if not proxy.ping():
+                    description = "Could not connect to Hexapod Control Server"
+                    info_text = (
+                        "The GUI will start, but the connection button will show a disconnected state. "
+                        "Please check if the Control Server is running and start the server if needed. "
+                        "Otherwise, check if the correct HOSTNAME for the control server is set in the "
+                        "Settings.yaml "
+                        "configuration file."
+                    )
 
-                show_warning_message(description, info_text)
+                    show_warning_message(description, info_text)
 
         model = PunaUIModel(device_type, device_id)
         view = PunaUIView(model.get_device_controller_type(), model.device_id)
