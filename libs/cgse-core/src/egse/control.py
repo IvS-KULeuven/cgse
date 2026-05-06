@@ -92,6 +92,10 @@ def is_control_server_active(endpoint: str = None, timeout: float = 0.5) -> bool
     return return_code
 
 
+class ServiceRegistrationError(RuntimeError):
+    """Raised when a control server fails to register itself with the service registry."""
+
+
 class ControlServer(metaclass=abc.ABCMeta):
     """Base class for all device control servers and for the Storage Manager and Configuration Manager.
 
@@ -133,6 +137,9 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         self.registry = RegistryClient()
         self.registry.connect()
+
+        self.service_id: str | None = None
+        """The service ID of this Control Server, as registered in the Service Registry."""
 
         # These instance variables will probably be overwritten by the subclass __init__
         self.service_type = camel_to_kebab(type(self).__name__)
@@ -675,13 +682,21 @@ class ControlServer(metaclass=abc.ABCMeta):
         self.signaling.start_monitoring()
         self.signaling.register_handler("reregister", self.reregister_service)
 
+    def can_operate_without_registry(self) -> bool:
+        """Returns True when this server can still operate without being registered.
+
+        The default is strict: registration is required. Subclasses with explicitly
+        configured, externally known endpoints may override this policy hook.
+        """
+        return False
+
     def register_service(self, service_type: str) -> None:
         self.logger.info(f"Registering service {self.service_name} as type {service_type}")
 
         self.service_type = service_type
 
         self.registry.stop_heartbeat()
-        self.registry.register(
+        self._service_id = self.registry.register(
             name=self.service_name,
             host=get_host_ip() or "127.0.0.1",
             port=get_port_number(self.dev_ctrl_cmd_sock),
@@ -691,10 +706,25 @@ class ControlServer(metaclass=abc.ABCMeta):
                 "monitoring_port": get_port_number(self.dev_ctrl_mon_sock),
             },
         )
-        self.registry.start_heartbeat()
+        if self._service_id:
+            self.registry.start_heartbeat()
+        elif self.can_operate_without_registry():
+            self.logger.warning(
+                f"Failed to register '{self.service_name}' as service type '{service_type}'. "
+                f"Continuing because this server is configured to operate without the registry."
+            )
+        else:
+            raise ServiceRegistrationError(
+                f"Failed to register '{self.service_name}' as service type '{service_type}'. "
+                f"The registry may be unavailable or this service type is already registered."
+            )
 
     def deregister_service(self):
-        if self.registry:
+        self.logger.info(
+            f"De-registering control server {self.service_name} from service registry "
+            f"(service type = {self.service_type})."
+        )
+        if self._service_id:
             self.registry.stop_heartbeat()
             self.registry.deregister()
 
