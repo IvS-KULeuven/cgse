@@ -328,8 +328,7 @@ class AsyncControlServer:
         # Socket to handle service commanding pattern - ROUTER-DEALER
         self.service_command_socket: zmq.asyncio.Socket = self._ctx.socket(zmq.ROUTER)
 
-        self.register_default_device_command_handlers()
-        self.register_default_service_command_handlers()
+        self.register_default_handlers()
 
         # Register subclass/device-specific handlers after defaults.
         self.register_handlers()
@@ -345,12 +344,9 @@ class AsyncControlServer:
         """Hook for selecting which channels use typed payload serialization."""
         return socket_type is SocketType.DEVICE
 
-    def register_default_device_command_handlers(self):
-        """Register baseline device handlers that are useful for diagnostics and examples."""
+    def register_default_handlers(self):
+        """Register baseline handlers for both device and service channels."""
         self._device_command_router.register_default_handlers()
-
-    def register_default_service_command_handlers(self):
-        """Register baseline service handlers for lifecycle and health checks."""
         self._service_command_router.register_default_handlers()
 
     def register_handlers(self):
