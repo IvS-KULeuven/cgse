@@ -103,8 +103,7 @@ class AsyncConfigurationManagerController(DeviceCommandRouter):
         if self._storage:
             self._storage.disconnect_cs()
 
-    def register_default_handlers(self):
-        super().register_default_handlers()  # say, block
+    def register_handlers(self):
         self.add_handler("start_observation", self._do_start_observation)
         self.add_handler("end_observation", self._do_end_observation)
         self.add_handler("get_obsid", self._do_get_obsid)

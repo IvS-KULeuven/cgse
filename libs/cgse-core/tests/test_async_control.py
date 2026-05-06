@@ -47,8 +47,21 @@ class RecordingAsyncControlServer(AcquisitionAsyncControlServer):
         await super().handle_acquisition_batch(records)
 
     @override
-    async def handle_acquisition_record(self, record: dict[str, Any]):
-        """Capture records and signal when the expected test count is reached."""
+    async def handle_acquisition(
+        self,
+        data: Any,
+        *,
+        source: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        timestamp: str | None = None,
+    ):
+        """Capture simplified acquisition samples and signal expected test count."""
+        record = {
+            "data": data,
+            "source": source,
+            "metadata": metadata or {},
+            "timestamp": timestamp,
+        }
         self.processed_records.append(record)
         if len(self.processed_records) >= self.expected_records:
             self.processed_event.set()

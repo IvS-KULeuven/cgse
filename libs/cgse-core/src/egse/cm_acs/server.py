@@ -56,13 +56,13 @@ class AsyncConfigurationManagerControlServer(AsyncControlServer):
 
         self.logger = logger
 
-    def _create_typed_payload_serializer(self):
+    def create_typed_payload_serializer(self):
         return get_typed_payload_serializer()
 
-    def _create_device_command_router(self) -> DeviceCommandRouter:
+    def create_device_command_router(self) -> DeviceCommandRouter:
         return AsyncConfigurationManagerController(self)
 
-    def _create_service_command_router(self) -> ServiceCommandRouter:
+    def create_service_command_router(self) -> ServiceCommandRouter:
         return AsyncConfigurationManagerServices(self, self.controller)
 
     @property

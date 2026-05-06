@@ -83,6 +83,9 @@ class DeviceCommandRouter:
         self.add_handler("block", self._do_block)
         self.add_handler("say", self._do_say)
 
+    def register_handlers(self):
+        """Hook for subclasses to register device-specific handlers."""
+
     def add_handler(self, command_name: str, command_handler: Callable):
         self.handlers[command_name] = command_handler
 
@@ -140,6 +143,9 @@ class ServiceCommandRouter:
         self.add_handler("info", self._handle_info)
         self.add_handler("ping", self._handle_ping)
         self.add_handler("block", self._handle_block)
+
+    def register_handlers(self):
+        """Hook for subclasses to register service-specific handlers."""
 
     def add_handler(self, command_name: str, command_handler: Callable):
         self.handlers[command_name] = command_handler
@@ -300,10 +306,10 @@ class AsyncControlServer:
         """The service commanding port for the control server. This will be 0 at start and dynamically assigned by the
         system."""
 
-        self._device_command_router = self._create_device_command_router()
+        self._device_command_router = self.create_device_command_router()
         """Router for device-command handlers and dispatch."""
 
-        self._service_command_router = self._create_service_command_router()
+        self._service_command_router = self.create_service_command_router()
         """Router for service-command handlers and dispatch."""
 
         # Keep these aliases for backwards compatibility with subclasses that
@@ -325,18 +331,17 @@ class AsyncControlServer:
         self.register_default_device_command_handlers()
         self.register_default_service_command_handlers()
 
-        # Call the hook for registering custom handlers, so that they are registered before the server
-        # starts accepting commands.
-        self.register_custom_handlers()
+        # Register subclass/device-specific handlers after defaults.
+        self.register_handlers()
 
         self.registry = AsyncRegistryClient()
-        self._typed_payload_serializer = self._create_typed_payload_serializer()
+        self._typed_payload_serializer = self.create_typed_payload_serializer()
 
-    def _create_typed_payload_serializer(self) -> "TypedPayloadSerializer | None":
+    def create_typed_payload_serializer(self) -> "TypedPayloadSerializer | None":
         """Hook for subclasses that want typed payload decoding on JSON requests."""
         return None
 
-    def _typed_serialization_enabled_for(self, socket_type: SocketType) -> bool:
+    def typed_serialization_enabled_for(self, socket_type: SocketType) -> bool:
         """Hook for selecting which channels use typed payload serialization."""
         return socket_type is SocketType.DEVICE
 
@@ -348,11 +353,16 @@ class AsyncControlServer:
         """Register baseline service handlers for lifecycle and health checks."""
         self._service_command_router.register_default_handlers()
 
-    def _create_device_command_router(self) -> DeviceCommandRouter:
+    def register_handlers(self):
+        """Register server-specific handlers after defaults."""
+        self._device_command_router.register_handlers()
+        self._service_command_router.register_handlers()
+
+    def create_device_command_router(self) -> DeviceCommandRouter:
         """Factory method; subclasses can override to supply a domain-specific router."""
         return DeviceCommandRouter(self)
 
-    def _create_service_command_router(self) -> ServiceCommandRouter:
+    def create_service_command_router(self) -> ServiceCommandRouter:
         """Factory method; subclasses can override to supply a domain-specific router."""
         return ServiceCommandRouter(self)
 
@@ -363,9 +373,6 @@ class AsyncControlServer:
     @property
     def services(self) -> ServiceCommandRouter:
         return self._service_command_router  # type: ignore[return-value]
-
-    def register_custom_handlers(self):
-        """Hook for subclasses to register device-specific command handlers."""
 
     def get_info(self) -> dict[str, Any]:
         """Service info payload returned by the `info` service command."""
@@ -408,7 +415,7 @@ class AsyncControlServer:
 
         await self.register_service()
 
-        self._tasks = self._create_background_tasks()
+        self._tasks = self.create_background_tasks()
 
         try:
             while not self.interrupted.is_set():
@@ -424,7 +431,7 @@ class AsyncControlServer:
         self.disconnect_device_command_socket()
         self.disconnect_service_command_socket()
 
-    def _create_background_tasks(self) -> list[Task]:
+    def create_background_tasks(self) -> list[Task]:
         """Create top-level server tasks.
 
         Subclasses can override this method and append extra tasks while keeping
@@ -609,7 +616,7 @@ class AsyncControlServer:
 
     def _decode_json_request(self, socket_type: SocketType, request: dict[str, Any]) -> dict[str, Any]:
         """Decode typed payload wrappers when enabled for the given socket type."""
-        if self._typed_payload_serializer and self._typed_serialization_enabled_for(socket_type):
+        if self._typed_payload_serializer and self.typed_serialization_enabled_for(socket_type):
             decoded = self._typed_payload_serializer.decode_value(request)
             if isinstance(decoded, dict):
                 return decoded
@@ -618,7 +625,7 @@ class AsyncControlServer:
     def _encode_json_response(self, socket_type: SocketType, response: dict[str, Any]) -> dict[str, Any]:
         """Encode typed payload wrappers in outgoing JSON responses and make them JSON-safe."""
         encoded: Any = response
-        if self._typed_payload_serializer and self._typed_serialization_enabled_for(socket_type):
+        if self._typed_payload_serializer and self.typed_serialization_enabled_for(socket_type):
             encoded = self._typed_payload_serializer.encode_value(response)
         return to_json_safe(encoded)
 
@@ -711,7 +718,12 @@ class AsyncControlServer:
 
 
 class AcquisitionAsyncControlServer(AsyncControlServer):
-    """Async control server variant with callback-based acquisition queueing support."""
+    """Async control server variant with callback-based acquisition queueing support.
+
+    Subclasses can usually override only `handle_acquisition` to process incoming
+    samples. Legacy hooks (`handle_acquisition_record`, `handle_acquisition_batch`)
+    remain available for compatibility and advanced use cases.
+    """
 
     def __init__(self):
         super().__init__()
@@ -748,8 +760,8 @@ class AcquisitionAsyncControlServer(AsyncControlServer):
         )
         return info
 
-    def _create_background_tasks(self) -> list[Task]:
-        tasks = super()._create_background_tasks()
+    def create_background_tasks(self) -> list[Task]:
+        tasks = super().create_background_tasks()
         tasks.append(asyncio.create_task(self.process_acquisition_data(), name="process-acquisition-data"))
         return tasks
 
@@ -804,6 +816,34 @@ class AcquisitionAsyncControlServer(AsyncControlServer):
                     f"(dropped={self.acquisition_dropped_count}, maxsize={self.acquisition_queue_maxsize})."
                 )
 
+    async def _dequeue_acquisition_batch(self) -> list[dict[str, Any]] | None:
+        """Return the next acquisition batch or None when no data was available in time."""
+
+        if not self.acquisition_batch_enabled:
+            try:
+                record = await asyncio.wait_for(self._acquisition_queue.get(), timeout=0.1)
+            except asyncio.TimeoutError:
+                return None
+            return [record]
+
+        try:
+            first_record = await asyncio.wait_for(
+                self._acquisition_queue.get(), timeout=self.acquisition_batch_max_wait_s
+            )
+        except asyncio.TimeoutError:
+            return None
+
+        batch = [first_record]
+
+        # Drain additional records without blocking to create a compact, ordered batch.
+        while len(batch) < self.acquisition_batch_max_size:
+            try:
+                batch.append(self._acquisition_queue.get_nowait())
+            except asyncio.QueueEmpty:
+                break
+
+        return batch
+
     async def process_acquisition_data(self):
         """Drain acquisition records from the queue and dispatch them to sink hooks."""
 
@@ -811,28 +851,9 @@ class AcquisitionAsyncControlServer(AsyncControlServer):
 
         while not self.interrupted.is_set():
             try:
-                if not self.acquisition_batch_enabled:
-                    try:
-                        record = await asyncio.wait_for(self._acquisition_queue.get(), timeout=0.1)
-                    except asyncio.TimeoutError:
-                        continue
-                    batch = [record]
-                else:
-                    try:
-                        first_record = await asyncio.wait_for(
-                            self._acquisition_queue.get(), timeout=self.acquisition_batch_max_wait_s
-                        )
-                    except asyncio.TimeoutError:
-                        continue
-
-                    batch = [first_record]
-
-                    # Drain additional records without blocking to create a compact, ordered batch.
-                    while len(batch) < self.acquisition_batch_max_size:
-                        try:
-                            batch.append(self._acquisition_queue.get_nowait())
-                        except asyncio.QueueEmpty:
-                            break
+                batch = await self._dequeue_acquisition_batch()
+                if batch is None:
+                    continue
 
                 try:
                     await self.handle_acquisition_batch(batch)
@@ -846,15 +867,37 @@ class AcquisitionAsyncControlServer(AsyncControlServer):
             except Exception as exc:
                 self.logger.error(f"Error processing acquisition record: {exc}", exc_info=True)
 
+    async def handle_acquisition(
+        self,
+        data: Any,
+        *,
+        source: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        timestamp: str | None = None,
+    ):
+        """Primary subclass hook for processing one acquisition sample.
+
+        Override this method in subclasses for the common case. The default
+        implementation only logs a debug message.
+        """
+
+        self.logger.debug(
+            "Acquisition sample received "
+            f"(source={source}, timestamp={timestamp}, queue={self._acquisition_queue.qsize()})."
+        )
+
     async def handle_acquisition_batch(self, records: list[dict[str, Any]]):
         """Hook for batch sinks; default keeps strict sequential per-record processing."""
         for record in records:
             await self.handle_acquisition_record(record)
 
     async def handle_acquisition_record(self, record: dict[str, Any]):
-        """Hook for subclasses to forward acquisition data to DB, storage manager, or other services."""
-        self.logger.debug(
-            f"Acquisition record received (source={record.get('source')}, queue={self._acquisition_queue.qsize()})."
+        """Compatibility hook for code that still works with full record dictionaries."""
+        await self.handle_acquisition(
+            record.get("data"),
+            source=record.get("source"),
+            metadata=record.get("metadata"),
+            timestamp=record.get("timestamp"),
         )
 
 
@@ -897,13 +940,13 @@ class AsyncControlClient:
         self.service_command_port: int = 0
 
         self._post_init_is_done = False
-        self._typed_payload_serializer = self._create_typed_payload_serializer()
+        self._typed_payload_serializer = self.create_typed_payload_serializer()
 
-    def _create_typed_payload_serializer(self) -> "TypedPayloadSerializer | None":
+    def create_typed_payload_serializer(self) -> "TypedPayloadSerializer | None":
         """Hook for subclasses that want typed payload encoding/decoding for JSON messages."""
         return None
 
-    def _typed_serialization_enabled_for(self, socket_type: SocketType) -> bool:
+    def typed_serialization_enabled_for(self, socket_type: SocketType) -> bool:
         """Hook for selecting which channels use typed payload serialization."""
         return socket_type is SocketType.DEVICE
 
@@ -1246,7 +1289,7 @@ class AsyncControlClient:
 
     def _encode_json_request(self, socket_type: SocketType, request: dict[str, Any]) -> dict[str, Any]:
         """Encode typed payload wrappers when enabled for the given socket type."""
-        if self._typed_payload_serializer and self._typed_serialization_enabled_for(socket_type):
+        if self._typed_payload_serializer and self.typed_serialization_enabled_for(socket_type):
             encoded = self._typed_payload_serializer.encode_value(request)
             if isinstance(encoded, dict):
                 return encoded
@@ -1254,7 +1297,7 @@ class AsyncControlClient:
 
     def _decode_json_response(self, socket_type: SocketType, response: dict[str, Any]) -> dict[str, Any]:
         """Decode typed payload wrappers when enabled for the given socket type."""
-        if self._typed_payload_serializer and self._typed_serialization_enabled_for(socket_type):
+        if self._typed_payload_serializer and self.typed_serialization_enabled_for(socket_type):
             decoded = self._typed_payload_serializer.decode_value(response)
             if isinstance(decoded, dict):
                 return decoded

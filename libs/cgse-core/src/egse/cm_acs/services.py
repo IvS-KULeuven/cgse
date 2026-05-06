@@ -15,8 +15,7 @@ class AsyncConfigurationManagerServices(ServiceCommandRouter):
         super().__init__(control_server)
         self._controller = controller
 
-    def register_default_handlers(self):
-        super().register_default_handlers()  # ping, info, terminate, block
+    def register_handlers(self):
         self.add_handler("register_to_storage", self.register_to_storage)
         self.add_handler("confman_health", self._handle_health)
 

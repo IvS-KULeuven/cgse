@@ -122,9 +122,7 @@ class DummyController(DeviceCommandRouter):
         self._acquisition_interval_s = 0.05
 
     @override
-    def register_default_handlers(self):
-        super().register_default_handlers()
-
+    def register_handlers(self):
         self.add_handler("echo", self._do_echo)
         self.add_handler("set-value", self._do_set_value)
         self.add_handler("start-acquisition", self._do_start_acquisition)
@@ -242,8 +240,7 @@ class DummyServices(ServiceCommandRouter):
         self._controller = controller
         self._cs = control_server
 
-    def register_default_handlers(self):
-        super().register_default_handlers()  # ping, info, terminate, block
+    def register_handlers(self):
         self.add_handler("health", self._handle_health)
         self.add_handler("stop", self._handle_stop)
 
@@ -292,12 +289,12 @@ class DummyAsyncControlServer(AcquisitionAsyncControlServer):
         super().__init__()
 
     @override
-    def _create_device_command_router(self) -> DeviceCommandRouter:
+    def create_device_command_router(self) -> DeviceCommandRouter:
         """Create and return the device command router with device-specific command handlers."""
         return DummyController(self)
 
     @override
-    def _create_service_command_router(self) -> ServiceCommandRouter:
+    def create_service_command_router(self) -> ServiceCommandRouter:
         """Create and return the services command router with custom command handlers."""
         return DummyServices(self, self.controller)
 
@@ -338,10 +335,20 @@ class DummyAsyncControlServer(AcquisitionAsyncControlServer):
         self.on_acquisition_data(record, source="custom", metadata={"processed": True})
 
     @override
-    async def handle_acquisition_record(self, record: dict[str, Any]):
-        """Receive one processed acquisition record and log it."""
+    async def handle_acquisition(
+        self,
+        data: Any,
+        *,
+        source: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        timestamp: str | None = None,
+    ):
+        """Receive one processed acquisition sample and log it."""
         self._acquisition_logged_count += 1
-        self.logger.info(f"Dummy acquisition record {self._acquisition_logged_count}: {record.get('data')}")
+        self.logger.info(
+            f"Dummy acquisition record {self._acquisition_logged_count}: {data} "
+            f"(source={source}, timestamp={timestamp}, metadata={metadata})"
+        )
 
 
 class DummyAsyncControlClient(TypedAsyncControlClient):

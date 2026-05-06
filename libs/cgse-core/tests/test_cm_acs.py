@@ -15,7 +15,6 @@ from egse.cm_acs.server import AsyncConfigurationManagerControlServer
 
 @pytest.mark.asyncio
 async def test_server(caplog):
-
     console = Console()
 
     # First start the control server as a background task.

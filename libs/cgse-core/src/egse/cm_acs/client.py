@@ -17,7 +17,7 @@ class AsyncConfigurationManagerClient(AsyncControlClient):
     service_type = cm_acs_module.SERVICE_TYPE
     client_id = "cm-async-client-xxx"
 
-    def _create_typed_payload_serializer(self):
+    def create_typed_payload_serializer(self):
         return get_typed_payload_serializer()
 
     async def list_setups(self, **attr: dict[str, Any]) -> list[list]:
