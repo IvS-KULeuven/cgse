@@ -22,37 +22,35 @@ import threading
 from pathlib import Path
 from typing import List
 
-multiprocessing.current_process().name = "joran_ui"
-
 import pyqtgraph as pg
-from PyQt5.QtCore import QDateTime, QLockFile
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QMessageBox
-from PyQt5.QtWidgets import QFrame
-from PyQt5.QtWidgets import QGroupBox
-from PyQt5.QtWidgets import QHBoxLayout
-from PyQt5.QtWidgets import QLabel
-from PyQt5.QtWidgets import QLineEdit
-from PyQt5.QtWidgets import QVBoxLayout
-from PyQt5.QtWidgets import QWidget
-from prometheus_client import start_http_server
-
 from egse.gui import show_warning_message
 from egse.gui.led import Indic
 from egse.gui.states import States
 from egse.gui.stripchart import StripChart
-from egse.hexapod.symetrie.hexapod_ui import ActuatorStates
-from egse.hexapod.symetrie.hexapod_ui import HexapodUIController
-from egse.hexapod.symetrie.hexapod_ui import HexapodUIModel
-from egse.hexapod.symetrie.hexapod_ui import HexapodUIView
-from egse.hexapod.symetrie.joran import JoranController
-from egse.hexapod.symetrie.joran import JoranProxy
-from egse.hexapod.symetrie.joran_protocol import JoranSimulator
 from egse.process import ProcessStatus
 from egse.resource import get_resource
 from egse.settings import Settings
 from egse.system import do_every
+from PyQt5.QtCore import QDateTime, QLockFile, Qt
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import (
+    QApplication,
+    QFrame,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QVBoxLayout,
+    QWidget,
+)
+
+from egse.hexapod.symetrie.hexapod_ui import ActuatorStates, HexapodUIController, HexapodUIModel, HexapodUIView
+from egse.hexapod.symetrie.joran import JoranController, JoranProxy
+from egse.hexapod.symetrie.joran_protocol import JoranSimulator
+
+multiprocessing.current_process().name = "joran_ui"
+
 
 MODULE_LOGGER = logging.getLogger(__name__)
 
