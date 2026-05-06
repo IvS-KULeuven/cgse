@@ -1,11 +1,10 @@
 import asyncio
 
-from egse.response import Failure
 import pytest
-from rich.console import Console
-
-
+from egse.log import logger
+from egse.response import Failure
 from egse.setup import Setup
+from rich.console import Console
 
 from egse.cm_acs.client import AsyncConfigurationManagerClient
 from egse.cm_acs.server import AsyncConfigurationManagerControlServer
@@ -63,6 +62,8 @@ async def test_server(caplog):
             assert response.get_filename() is not None, "Expected setup filename to be set, but it was None."
             assert response.get_filename().endswith("SETUP_LAB23_00028_240123_120028.yaml")
 
+            logger.debug(f"{response.get_filename()=}")
+
     except Exception as exc:
         pytest.fail(f"An unexpected exception occurred: {exc}")
     finally:
@@ -104,6 +105,8 @@ async def test_submit_setup(caplog):
                 "Expected setup filename to be set in submit_setup response, but it was None."
             )
             assert "SETUP_LAB23_00029" in response.get_filename()  # type: ignore
+
+            logger.debug(f"{response.get_filename()=}")
 
     except Exception as exc:
         pytest.fail(f"An unexpected exception occurred: {exc}")
