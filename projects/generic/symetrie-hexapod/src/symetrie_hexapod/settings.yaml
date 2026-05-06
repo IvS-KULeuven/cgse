@@ -2,40 +2,47 @@ PACKAGES:
     SYMETRIE_HEXAPOD: Device driver for the Symétrie Hexapods PUNA, ZONDA, and JORAN
 
 Hexapod Controller:
+    PUNA:
+        HOSTNAME:           localhost
+        PORT:               1025
+        CONTROLLER_TYPE:    alpha
+        DEVICE_NAME:        Puna Hexapod
+        DEVICE_TYPE:        PUNA
+
     PUNA_PLUS:
-        HOSTNAME: localhost
-        PORT: 1025
-        CONTROLLER_TYPE: alpha_plus
-        DEVICE_NAME: Puna Hexapod
-        DEVICE_TYPE: PUNA
-        user_name: provide username in local settings
-        password: provide password in local settings
+        HOSTNAME:           localhost
+        PORT:               1025
+        CONTROLLER_TYPE:    alpha_plus
+        DEVICE_NAME:        Puna Hexapod
+        DEVICE_TYPE:        PUNA
+        user_name:          provide username in local settings
+        password:           provide password in local settings
 
     ZONDA:
-        HOSTNAME: localhost
-        PORT: 1025
-        CONTROLLER_TYPE: alpha_plus
-        DEVICE_NAME: Zonda Hexapod
-        DEVICE_TYPE: ZONDA
+        HOSTNAME:           localhost
+        PORT:               1025
+        CONTROLLER_TYPE:    alpha_plus
+        DEVICE_NAME:        Zonda Hexapod
+        DEVICE_TYPE:        ZONDA
 
     JORAN:
-        HOSTNAME: localhost
-        PORT: 1025
-        CONTROLLER_TYPE: alpha_plus
-        DEVICE_NAME: Joran Hexapod
-        DEVICE_TYPE: JORAN
+        HOSTNAME:           localhost
+        PORT:               1025
+        CONTROLLER_TYPE:    alpha_plus
+        DEVICE_NAME:        Joran Hexapod
+        DEVICE_TYPE:        JORAN
 
 Hexapod Control Server:
     PUNA:
-        SERVICE_TYPE: puna
-        PROTOCOL: tcp
-        HOSTNAME: localhost
-        COMMANDING_PORT: 0
-        MONITORING_PORT: 0
-        SERVICE_PORT: 0
-        METRICS_PORT: 0
-    PUNA_PLUS:
         SERVICE_TYPE:       puna
+        PROTOCOL:           tcp
+        HOSTNAME:           localhost
+        COMMANDING_PORT:    0
+        MONITORING_PORT:    0
+        SERVICE_PORT:       0
+        METRICS_PORT:       0
+    PUNA_PLUS:
+        SERVICE_TYPE:       puna-plus
         PROTOCOL:           tcp
         HOSTNAME:           localhost
         COMMANDING_PORT:    0

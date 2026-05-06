@@ -24,19 +24,25 @@ import typer
 import zmq
 from prometheus_client import start_http_server
 
+from egse.connect import get_endpoint
+from egse.connect import get_metadata_port
 from egse.control import ControlServer
 from egse.control import is_control_server_active
 from egse.hexapod.symetrie import ProxyFactory
 from egse.hexapod.symetrie import get_hexapod_controller_pars
 from egse.hexapod.symetrie import logger
 from egse.hexapod.symetrie.zonda_protocol import ZondaProtocol
-from egse.registry.client import RegistryClient
 from egse.services import ServiceProxy
 from egse.settings import Settings
 from egse.storage import store_housekeeping_information
-from egse.zmq_ser import connect_address
 
 CTRL_SETTINGS = Settings.load("Hexapod Control Server")["ZONDA"]
+
+PROTOCOL = CTRL_SETTINGS.get("PROTOCOL", "tcp")
+HOSTNAME = CTRL_SETTINGS.get("HOSTNAME", "localhost")
+COMMANDING_PORT = CTRL_SETTINGS.get("COMMANDING_PORT", 0)
+SERVICE_PORT = CTRL_SETTINGS.get("SERVICE_PORT", 0)
+MONITORING_PORT = CTRL_SETTINGS.get("MONITORING_PORT", 0)
 
 
 class ZondaControlServer(ControlServer):
@@ -74,22 +80,22 @@ class ZondaControlServer(ControlServer):
         self.register_service(service_type=f"{device_id}")
 
     def get_communication_protocol(self):
-        return CTRL_SETTINGS["PROTOCOL"]
+        return PROTOCOL
 
     def get_commanding_port(self):
-        return CTRL_SETTINGS["COMMANDING_PORT"]
+        return COMMANDING_PORT
 
     def get_service_port(self):
-        return CTRL_SETTINGS["SERVICE_PORT"]
+        return SERVICE_PORT
 
     def get_monitoring_port(self):
-        return CTRL_SETTINGS["MONITORING_PORT"]
+        return MONITORING_PORT
+
+    def can_operate_without_registry(self) -> bool:
+        return bool(COMMANDING_PORT and SERVICE_PORT and MONITORING_PORT)
 
     def get_storage_mnemonic(self):
-        try:
-            return CTRL_SETTINGS["STORAGE_MNEMONIC"]
-        except AttributeError:
-            return "ZONDA"
+        return CTRL_SETTINGS.get("STORAGE_MNEMONIC", "ZONDA")
 
     def is_storage_manager_active(self):
         from egse.storage import is_storage_manager_active
@@ -165,23 +171,23 @@ def start(
 def stop(device_id: str):
     """Send a 'quit_server' command to the Hexapod Zonda Control Server."""
 
-    with RegistryClient() as reg:
-        service = reg.discover_service(device_id)
-        rich.print("service = ", service)
+    try:
+        _, hostname, service_port = get_metadata_port(
+            service_type=device_id,
+            metadata_key="service_port",
+            static_port=SERVICE_PORT,
+            protocol=PROTOCOL,
+            hostname=HOSTNAME,
+        )
+    except RuntimeError as exc:
+        rich.print(f"[red]{exc}")
+        return
 
-        if service:
-            proxy = ServiceProxy(protocol="tcp", hostname=service["host"], port=service["metadata"]["service_port"])
-            proxy.quit_server()
-        else:
-            *_, device_type, controller_type = get_hexapod_controller_pars(device_id)
-
-            factory = ProxyFactory()
-            try:
-                with factory.create(device_type, device_id=device_id) as proxy:
-                    sp = proxy.get_service_proxy()
-                    sp.quit_server()
-            except ConnectionError:
-                rich.print("[red]Couldn't connect to 'zonda_cs', process probably not running. ")
+    proxy = ServiceProxy(protocol=PROTOCOL, hostname=hostname, port=service_port)
+    try:
+        proxy.quit_server()
+    except ConnectionError:
+        rich.print("[red]Couldn't connect to 'zonda_cs', process probably not running.")
 
 
 @app.command()
@@ -190,38 +196,46 @@ def status(device_id: str):
 
     *_, device_type, controller_type = get_hexapod_controller_pars(device_id)
 
-    with RegistryClient() as reg:
-        service = reg.discover_service(device_id)
-        # rich.print("service = ", service)
+    try:
+        endpoint = get_endpoint(service_type=device_id, protocol=PROTOCOL, hostname=HOSTNAME, port=COMMANDING_PORT)
+        commanding_port = int(endpoint.rsplit(":", maxsplit=1)[-1])
 
-        if service:
-            protocol = service.get("protocol", "tcp")
-            hostname = service["host"]
-            port = service["port"]
-            service_port = service["metadata"]["service_port"]
-            monitoring_port = service["metadata"]["monitoring_port"]
-            endpoint = connect_address(protocol, hostname, port)
-            # rich.print(f"{endpoint = }")
-        else:
-            rich.print(
-                f"[red]The ZONDA CS '{device_id}' isn't registered as a service. I cannot contact the control "
-                f"server without the required info from the service registry.[/]"
-            )
-            rich.print("ZONDA Hexapod: [red]inactive")
-            return
+        _, hostname, service_port = get_metadata_port(
+            service_type=device_id,
+            metadata_key="service_port",
+            static_port=SERVICE_PORT,
+            protocol=PROTOCOL,
+            hostname=HOSTNAME,
+        )
+        _, _, monitoring_port = get_metadata_port(
+            service_type=device_id,
+            metadata_key="monitoring_port",
+            static_port=MONITORING_PORT,
+            protocol=PROTOCOL,
+            hostname=HOSTNAME,
+        )
+    except RuntimeError:
+        rich.print(
+            f"[red]The ZONDA CS '{device_id}' isn't registered as a service. I cannot contact the control "
+            f"server without the required info from the service registry.[/]"
+        )
+        rich.print("ZONDA Hexapod: [red]inactive")
+        return
 
     factory = ProxyFactory()
 
     if is_control_server_active(endpoint):
         rich.print("ZONDA Hexapod: [green]active")
-        with factory.create(device_type, device_id=device_id, protocol=protocol, hostname=hostname, port=port) as zonda:
+        with factory.create(
+            device_type, device_id=device_id, protocol=PROTOCOL, hostname=hostname, port=commanding_port
+        ) as zonda:
             sim = zonda.is_simulator()
             connected = zonda.is_connected()
             ip = zonda.get_ip_address()
             rich.print(f"type: {controller_type}")
             rich.print(f"mode: {'simulator' if sim else 'device'}{'' if connected else ' not'} connected")
             rich.print(f"hostname: {ip}")
-            rich.print(f"commanding port: {port}")
+            rich.print(f"commanding port: {commanding_port}")
             rich.print(f"service port: {service_port}")
             rich.print(f"monitoring port: {monitoring_port}")
 

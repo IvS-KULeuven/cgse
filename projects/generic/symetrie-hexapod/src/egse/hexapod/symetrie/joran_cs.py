@@ -24,10 +24,12 @@ import click
 import rich
 import typer
 import zmq
+from egse.connect import get_endpoint
+from egse.connect import get_metadata_port
 from egse.control import ControlServer, is_control_server_active
 from egse.process import SubProcess
+from egse.services import ServiceProxy
 from egse.settings import Settings
-from egse.zmq_ser import connect_address
 from prometheus_client import start_http_server
 
 from egse.hexapod.symetrie.joran import JoranProxy
@@ -36,6 +38,12 @@ from egse.hexapod.symetrie.joran_protocol import JoranProtocol
 logger = logging.getLogger(__name__)
 
 CTRL_SETTINGS = Settings.load("Hexapod Control Server")["JORAN"]
+
+PROTOCOL = CTRL_SETTINGS.get("PROTOCOL", "tcp")
+HOSTNAME = CTRL_SETTINGS.get("HOSTNAME", "localhost")
+COMMANDING_PORT = CTRL_SETTINGS.get("COMMANDING_PORT", 0)
+SERVICE_PORT = CTRL_SETTINGS.get("SERVICE_PORT", 0)
+MONITORING_PORT = CTRL_SETTINGS.get("MONITORING_PORT", 0)
 
 
 class JoranControlServer(ControlServer):
@@ -69,23 +77,27 @@ class JoranControlServer(ControlServer):
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
+        self.service_name = "joran_cs"
+        self.service_type = device_id
+        self.register_service(service_type=self.service_type)
+
     def get_communication_protocol(self):
-        return CTRL_SETTINGS["PROTOCOL"]
+        return PROTOCOL
 
     def get_commanding_port(self):
-        return CTRL_SETTINGS["COMMANDING_PORT"]
+        return COMMANDING_PORT
 
     def get_service_port(self):
-        return CTRL_SETTINGS["SERVICE_PORT"]
+        return SERVICE_PORT
 
     def get_monitoring_port(self):
-        return CTRL_SETTINGS["MONITORING_PORT"]
+        return MONITORING_PORT
+
+    def can_operate_without_registry(self) -> bool:
+        return bool(COMMANDING_PORT and SERVICE_PORT and MONITORING_PORT)
 
     def get_storage_mnemonic(self):
-        try:
-            return CTRL_SETTINGS["STORAGE_MNEMONIC"]
-        except AttributeError:
-            return "JORAN"
+        return CTRL_SETTINGS.get("STORAGE_MNEMONIC", "JORAN")
 
     def before_serve(self):
         start_http_server(CTRL_SETTINGS["METRICS_PORT"])
@@ -130,22 +142,53 @@ def stop(device_id: str):
     """Send a 'quit_server' command to the Hexapod Joran Control Server."""
 
     try:
-        with JoranProxy(device_id) as proxy:
-            sp = proxy.get_service_proxy()
-            sp.quit_server()
+        _, hostname, service_port = get_metadata_port(
+            service_type=device_id,
+            metadata_key="service_port",
+            static_port=SERVICE_PORT,
+            protocol=PROTOCOL,
+            hostname=HOSTNAME,
+        )
+    except RuntimeError as exc:
+        rich.print(f"[red]{exc}")
+        return
+
+    proxy = ServiceProxy(protocol=PROTOCOL, hostname=hostname, port=service_port)
+    try:
+        proxy.quit_server()
     except ConnectionError:
-        rich.print("[red]Couldn't connect to 'joran_cs', process probably not running. ")
+        rich.print("[red]Couldn't connect to 'joran_cs', process probably not running.")
 
 
 @app.command()
 def status(device_id: str):
     """Request status information from the Control Server."""
 
-    protocol = CTRL_SETTINGS["PROTOCOL"]
-    hostname = CTRL_SETTINGS["HOSTNAME"]
-    port = CTRL_SETTINGS["COMMANDING_PORT"]
+    try:
+        endpoint = get_endpoint(service_type=device_id, protocol=PROTOCOL, hostname=HOSTNAME, port=COMMANDING_PORT)
+        commanding_port = int(endpoint.rsplit(":", maxsplit=1)[-1])
 
-    endpoint = connect_address(protocol, hostname, port)
+        _, hostname, service_port = get_metadata_port(
+            service_type=device_id,
+            metadata_key="service_port",
+            static_port=SERVICE_PORT,
+            protocol=PROTOCOL,
+            hostname=HOSTNAME,
+        )
+        _, _, monitoring_port = get_metadata_port(
+            service_type=device_id,
+            metadata_key="monitoring_port",
+            static_port=MONITORING_PORT,
+            protocol=PROTOCOL,
+            hostname=HOSTNAME,
+        )
+    except RuntimeError:
+        rich.print(
+            f"[red]The JORAN CS '{device_id}' isn't registered as a service. I cannot contact the control "
+            f"server without the required info from the service registry.[/]"
+        )
+        rich.print("JORAN Hexapod: [red]not active")
+        return
 
     if is_control_server_active(endpoint):
         rich.print("JORAN Hexapod: [green]active")
@@ -156,7 +199,9 @@ def status(device_id: str):
             rich.print(f"type: ALPHA+")
             rich.print(f"mode: {'simulator' if sim else 'device'}{'' if connected else ' not'} connected")
             rich.print(f"hostname: {ip}")
-            rich.print(f"commanding port: {port}")
+            rich.print(f"commanding port: {commanding_port}")
+            rich.print(f"service port: {service_port}")
+            rich.print(f"monitoring port: {monitoring_port}")
     else:
         rich.print("JORAN Hexapod: [red]not active")
 

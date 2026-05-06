@@ -160,3 +160,39 @@ def status_zonda(device_id: str):
         from egse.hexapod.symetrie import zonda_cs
 
         zonda_cs.status(device_id)
+
+
+# ---------- JORAN Commands --------------------------------------------------------------------------------------------
+
+
+@joran.command(name="start")
+def start_joran(
+    device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")],
+    simulator: Annotated[
+        bool, typer.Option("--simulator", "--sim", help="use a device simulator as the backend")
+    ] = False,
+):
+    """
+    Start the JORAN hexapod control server. The control server is always started in the background.
+    """
+
+    start_hexapod_cs_process("JORAN", device_id, simulator)
+
+
+@joran.command(name="stop")
+def stop_joran(
+    device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")],
+):
+    """Stop the JORAN hexapod control server."""
+
+    stop_hexapod_cs_process("JORAN", device_id)
+
+
+@joran.command(name="status")
+def status_joran(device_id: str):
+    """Print status information on the JORAN hexapod control server."""
+
+    with all_logging_disabled():
+        from egse.hexapod.symetrie import joran_cs
+
+        joran_cs.status(device_id)

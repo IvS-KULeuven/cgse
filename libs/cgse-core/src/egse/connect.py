@@ -64,6 +64,51 @@ def get_endpoint(
     return endpoint
 
 
+def get_metadata_port(
+    service_type: str,
+    metadata_key: str,
+    static_port: int = 0,
+    protocol: str = "tcp",
+    hostname: str = "localhost",
+) -> tuple[str, str, int]:
+    """Return `(protocol, hostname, port)` for a port stored in service registry metadata.
+
+    If `static_port` is non-zero the values are returned immediately without
+    consulting the registry.  When it is 0 the registry is queried and the port
+    is read from `metadata[metadata_key]`.
+
+    Args:
+        service_type: Service type to look up when `static_port` is 0.
+        metadata_key: Key inside the service metadata dict, e.g. `"service_port"`.
+        static_port: Pre-configured port; skips registry when non-zero.
+        protocol: Protocol to use for the static case.
+        hostname: Hostname to use for the static case.
+
+    Returns:
+        A `(protocol, hostname, port)` tuple.
+
+    Raises:
+        RuntimeError: If `static_port` is 0 and the service is not registered or
+            the metadata key is missing.
+    """
+    if static_port:
+        return protocol, hostname, static_port
+
+    from egse.registry.client import RegistryClient
+
+    with RegistryClient() as reg:
+        service = reg.discover_service(service_type)
+
+    if not service:
+        raise RuntimeError(f"No service registered as '{service_type}' and no static port provided.")
+
+    port = service.get("metadata", {}).get(metadata_key)
+    if not port:
+        raise RuntimeError(f"Service '{service_type}' has no '{metadata_key}' in its metadata.")
+
+    return service.get("protocol", "tcp"), service.get("host", "localhost"), port
+
+
 class ConnectionState(Enum):
     DISCONNECTED = "disconnected"
     CONNECTING = "connecting"
