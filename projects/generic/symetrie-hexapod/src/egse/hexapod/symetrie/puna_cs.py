@@ -22,19 +22,14 @@ from typing import Annotated
 import rich
 import typer
 import zmq
-from prometheus_client import start_http_server
-
-from egse.connect import get_endpoint
-from egse.connect import get_metadata_port
-from egse.control import ControlServer
-from egse.control import is_control_server_active
-from egse.hexapod.symetrie import ProxyFactory
-from egse.hexapod.symetrie import get_hexapod_controller_pars
-from egse.hexapod.symetrie import logger
-from egse.hexapod.symetrie.puna_protocol import PunaProtocol
+from egse.connect import get_endpoint, get_metadata_port
+from egse.control import ControlServer, is_control_server_active
 from egse.services import ServiceProxy
 from egse.settings import Settings
 from egse.storage import store_housekeeping_information
+
+from egse.hexapod.symetrie import ProxyFactory, get_hexapod_controller_pars, logger
+from egse.hexapod.symetrie.puna_protocol import PunaProtocol
 
 CTRL_SETTINGS = Settings.load("Hexapod Control Server")["PUNA"]
 
@@ -129,8 +124,7 @@ class PunaControlServer(ControlServer):
 
         unregister_from_storage_manager(origin=self.get_storage_mnemonic())
 
-    def before_serve(self):
-        start_http_server(CTRL_SETTINGS["METRICS_PORT"])
+    def before_serve(self): ...
 
     def after_serve(self) -> None:
         self.deregister_service()

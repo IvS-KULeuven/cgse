@@ -24,13 +24,11 @@ import click
 import rich
 import typer
 import zmq
-from egse.connect import get_endpoint
-from egse.connect import get_metadata_port
+from egse.connect import get_endpoint, get_metadata_port
 from egse.control import ControlServer, is_control_server_active
 from egse.process import SubProcess
 from egse.services import ServiceProxy
 from egse.settings import Settings
-from prometheus_client import start_http_server
 
 from egse.hexapod.symetrie.joran import JoranProxy
 from egse.hexapod.symetrie.joran_protocol import JoranProtocol
@@ -99,8 +97,7 @@ class JoranControlServer(ControlServer):
     def get_storage_mnemonic(self):
         return CTRL_SETTINGS.get("STORAGE_MNEMONIC", "JORAN")
 
-    def before_serve(self):
-        start_http_server(CTRL_SETTINGS["METRICS_PORT"])
+    def before_serve(self): ...
 
 
 app = typer.Typer()
