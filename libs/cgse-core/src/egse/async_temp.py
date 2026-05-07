@@ -329,14 +329,13 @@ class TempControlServer(AcquisitionAsyncControlServer):
             "interval_s": self.daq.sample_interval_s,
         }
 
-    def get_status(self) -> dict[str, Any]:
-        """Extend base monitoring status with async temperature server health.
+    def get_component_status(self) -> dict[str, Any]:
+        """Extend base component status with async temperature server health.
 
         This reports control-server and sink state, not live device telemetry.
         """
-        status = super().get_status()
+        components = super().get_component_status()
 
-        components = status.setdefault("components", {})
         components["scan"] = {
             **self.get_scan_status(),
             "task": {
@@ -360,7 +359,7 @@ class TempControlServer(AcquisitionAsyncControlServer):
             "metrics_sender_connected": self._metrics_sender is not None,
         }
 
-        return status
+        return components
 
     async def start_scan(self, *, duration_s: float, chunk_size: int, poll_interval_s: float) -> bool:
         """Start the buffered DAQ scan loop. Returns True if the scan was started, or False if a scan

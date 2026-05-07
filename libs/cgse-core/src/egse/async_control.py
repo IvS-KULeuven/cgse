@@ -559,12 +559,33 @@ class AsyncControlServer:
         if self.monitoring_socket:
             self.monitoring_socket.close(linger=100)
 
+    def get_component_status(self) -> dict[str, Any]:
+        """Return component-level control server health details.
+
+        Subclasses can override and extend this payload with additional
+        control-server component state while keeping the top-level monitoring
+        schema stable.
+        """
+        return {
+            "device_command_handlers": sorted(self._device_command_router.handlers.keys()),
+            "service_command_handlers": sorted(self._service_command_router.handlers.keys()),
+            "tasks": [
+                {
+                    "name": task.get_name(),
+                    "done": task.done(),
+                    "cancelled": task.cancelled(),
+                }
+                for task in self._tasks
+            ],
+        }
+
     def get_status(self) -> dict[str, Any]:
         """Return control-server/component status for monitoring consumers.
 
         This intentionally reports server health and component state, not device telemetry.
         """
         return {
+            "schema_version": 1,
             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "delay": self.mon_delay,
             "control_server": {
@@ -574,18 +595,7 @@ class AsyncControlServer:
                 "service_commanding_port": self.service_command_port,
                 "monitoring_port": self.monitoring_port,
             },
-            "components": {
-                "device_command_handlers": sorted(self._device_command_router.handlers.keys()),
-                "service_command_handlers": sorted(self._service_command_router.handlers.keys()),
-                "tasks": [
-                    {
-                        "name": task.get_name(),
-                        "done": task.done(),
-                        "cancelled": task.cancelled(),
-                    }
-                    for task in self._tasks
-                ],
-            },
+            "components": self.get_component_status(),
             "process": self._process_status.as_dict(),
         }
 

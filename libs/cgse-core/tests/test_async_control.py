@@ -175,6 +175,7 @@ async def test_control_server_publishes_status_on_monitoring_port():
         status = pickle.loads(status_pickled)
 
         assert isinstance(status, dict)
+        assert status["schema_version"] == 1
         assert "timestamp" in status
         assert "process" in status
         assert "control_server" in status
@@ -200,6 +201,7 @@ def test_temp_control_server_status_extends_base_status():
 
     status = server.get_status()
 
+    assert status["schema_version"] == 1
     assert "components" in status
     assert "process" in status
 
