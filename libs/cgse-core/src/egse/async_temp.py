@@ -14,7 +14,7 @@ devices with the asynchronous command-based control architecture.
    of DAQ operations, including the background scan loop that reads data and forwards it to
    metric sinks (database, InfluxDB, etc.).
 
-3. `TempServiceRouter` — A `ServiceCommandRouter` for handling service-level commands like
+3. `TempServices` — A `ServiceCommandRouter` for handling service-level commands like
    health checks and component info.
 
 **Core Patterns and Best Practices:**
