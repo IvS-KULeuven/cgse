@@ -54,7 +54,7 @@ import zmq.asyncio
 from egse.env import bool_env
 from egse.exceptions import InitializationError
 from egse.log import logging
-from egse.system import Periodic
+from egse.process import ProcessStatus
 from egse.system import camel_to_kebab
 from egse.system import camel_to_snake
 from egse.system import get_current_location
@@ -88,6 +88,7 @@ logger = logging.getLogger("egse.async_control")
 # When zero (0) ports will be dynamically allocated by the system
 CONTROL_SERVER_DEVICE_COMMANDING_PORT = 0
 CONTROL_SERVER_SERVICE_COMMANDING_PORT = 0
+CONTROL_SERVER_MONITORING_PORT = 0
 
 CONTROL_SERVER_SERVICE_TYPE = "async-control-server"
 CONTROL_CLIENT_ID = "async-control-client"
@@ -302,6 +303,7 @@ class AsyncControlServer:
     service_name = ""
     device_commanding_port = CONTROL_SERVER_DEVICE_COMMANDING_PORT
     service_commanding_port = CONTROL_SERVER_SERVICE_COMMANDING_PORT
+    monitoring_port = CONTROL_SERVER_MONITORING_PORT
 
     def __init__(self):
         self.interrupted: Event = asyncio.Event()
@@ -314,8 +316,6 @@ class AsyncControlServer:
         self.hk_delay = 1000
         """Delay between saving housekeeping information [ms]."""
 
-        # self._process_status = ProcessStatus()
-
         self.service_type = type(self).service_type
         if self.service_type == AsyncControlServer.service_type:
             self.service_type = camel_to_kebab(type(self).__name__)
@@ -326,6 +326,10 @@ class AsyncControlServer:
         """The name of your service, used for logging and registry display. Shall be unique across running instances of
         the same service type, and can be auto-generated with a UUID suffix if needed. Overridden by the subclass to a
         more readable name."""
+
+        # Use a unique metrics prefix per instance to avoid collisions when multiple
+        # async control servers are constructed in one process (e.g. tests).
+        self._process_status = ProcessStatus(metrics_prefix=f"{self.service_name}_{uuid.uuid4().hex[:8]}")
 
         self._service_id = None
         """The unique service ID assigned by the registry on registration, used for deregistration and heartbeats."""
@@ -340,6 +344,12 @@ class AsyncControlServer:
         self.service_command_port = type(self).service_commanding_port
         """The service commanding port for the control server. This will be 0 at start and dynamically assigned by the
         system."""
+
+        self.monitoring_port = type(self).monitoring_port
+        """The monitoring PUB port for status updates.
+
+        This will be 0 at start and dynamically assigned by the system.
+        """
 
         self._device_command_router = self.create_device_command_router()
         """Router for device-command handlers and dispatch."""
@@ -362,6 +372,9 @@ class AsyncControlServer:
 
         # Socket to handle service commanding pattern - ROUTER-DEALER
         self.service_command_socket: zmq.asyncio.Socket = self._ctx.socket(zmq.ROUTER)
+
+        # Socket to publish server/component status information.
+        self.monitoring_socket: zmq.asyncio.Socket = self._ctx.socket(zmq.PUB)
 
         self.register_default_handlers()
 
@@ -412,6 +425,7 @@ class AsyncControlServer:
             "hostname": self.get_ip_address(),
             "device commanding port": self.device_command_port,
             "service commanding port": self.service_command_port,
+            "monitoring port": self.monitoring_port,
             "service type": self.service_type,
             "uptime": humanize_seconds(
                 (datetime.datetime.now() - self._start_time).total_seconds(), include_micro_seconds=False
@@ -434,6 +448,10 @@ class AsyncControlServer:
         self.service_command_socket.bind(f"tcp://*:{self.service_command_port}")
         self.service_command_port = get_port_number(self.service_command_socket)
 
+    def connect_monitoring_socket(self):
+        self.monitoring_socket.bind(f"tcp://*:{self.monitoring_port}")
+        self.monitoring_port = get_port_number(self.monitoring_socket)
+
     def stop(self):
         self.logger.debug(f"Stopping the async control server {type(self).__name__}.")
         self.interrupted.set()
@@ -443,6 +461,7 @@ class AsyncControlServer:
 
         self.connect_device_command_socket()
         self.connect_service_command_socket()
+        self.connect_monitoring_socket()
 
         await self.register_service()
 
@@ -461,6 +480,7 @@ class AsyncControlServer:
 
         self.disconnect_device_command_socket()
         self.disconnect_service_command_socket()
+        self.disconnect_monitoring_socket()
 
     def create_background_tasks(self) -> list[Task]:
         """Create top-level server tasks.
@@ -485,7 +505,10 @@ class AsyncControlServer:
             host=get_host_ip() or "127.0.0.1",
             port=get_port_number(self.device_command_socket),
             service_type=self.service_type,
-            metadata={"service_port": get_port_number(self.service_command_socket)},
+            metadata={
+                "service_port": get_port_number(self.service_command_socket),
+                "monitoring_port": get_port_number(self.monitoring_socket),
+            },
         )
         await self.registry.start_heartbeat()
 
@@ -530,6 +553,41 @@ class AsyncControlServer:
         self.logger.debug("Cleaning up service command sockets.")
         if self.service_command_socket:
             self.service_command_socket.close(linger=100)
+
+    def disconnect_monitoring_socket(self):
+        self.logger.debug("Cleaning up monitoring sockets.")
+        if self.monitoring_socket:
+            self.monitoring_socket.close(linger=100)
+
+    def get_status(self) -> dict[str, Any]:
+        """Return control-server/component status for monitoring consumers.
+
+        This intentionally reports server health and component state, not device telemetry.
+        """
+        return {
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "delay": self.mon_delay,
+            "control_server": {
+                "name": self.service_name,
+                "service_type": self.service_type,
+                "device_commanding_port": self.device_command_port,
+                "service_commanding_port": self.service_command_port,
+                "monitoring_port": self.monitoring_port,
+            },
+            "components": {
+                "device_command_handlers": sorted(self._device_command_router.handlers.keys()),
+                "service_command_handlers": sorted(self._service_command_router.handlers.keys()),
+                "tasks": [
+                    {
+                        "name": task.get_name(),
+                        "done": task.done(),
+                        "cancelled": task.cancelled(),
+                    }
+                    for task in self._tasks
+                ],
+            },
+            "process": self._process_status.as_dict(),
+        }
 
     async def process_device_command(self):
         self.logger.info("Starting device command processing ...")
@@ -687,22 +745,23 @@ class AsyncControlServer:
 
     async def send_status_updates(self):
         """
-        Send status information about the control server and the device connection to the monitoring channel.
+        Send status information about the control server and its components to the monitoring channel.
         """
 
         self.logger.info("Starting status updates ...")
 
-        async def status():
-            self.logger.info(f"{datetime.datetime.now()} Sending status updates.")
-            await asyncio.sleep(0.5)  # ideally, should not be larger than periodic interval
+        interval = max(self.mon_delay / 1000.0, 0.05)
 
         try:
-            periodic = Periodic(interval=1.0, callback=status)
-            periodic.start()
+            while not self.interrupted.is_set():
+                status = self.get_status()
+                self.logger.debug(f"{datetime.datetime.now()} Sending status updates.")
+                await self.monitoring_socket.send(pickle.dumps(status))
 
-            await self.interrupted.wait()
-
-            periodic.stop()
+                try:
+                    await asyncio.wait_for(self.interrupted.wait(), timeout=interval)
+                except asyncio.TimeoutError:
+                    continue
 
         except asyncio.CancelledError:
             self.logger.debug("Caught CancelledError on status updates keep-alive loop.")

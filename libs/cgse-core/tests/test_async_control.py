@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+import pickle
 import textwrap
 from typing import Any
 from typing import cast
@@ -11,6 +12,8 @@ except ImportError:
 
 
 import pytest
+import zmq
+import zmq.asyncio
 from egse.log import logging
 from egse.system import type_name
 
@@ -22,7 +25,9 @@ from egse.async_control import InitializationError
 from egse.async_control import is_control_server_active
 from egse.async_dummy import DummyAsyncControlClient
 from egse.async_dummy import DummyAsyncControlServer
+from egse.async_temp import TempControlServer
 from egse.logger import remote_logging
+from egse.registry.client import AsyncRegistryClient
 
 # pytestmark = pytest.mark.skip("Implementation and tests are still a WIP")
 
@@ -121,6 +126,7 @@ async def test_control_server(caplog):
             assert "hostname" in response
             assert "device commanding port" in response
             assert "service commanding port" in response
+            assert "monitoring port" in response
 
             assert await is_control_server_active(service_type=CONTROL_SERVER_SERVICE_TYPE)
 
@@ -140,6 +146,72 @@ async def test_control_server(caplog):
     await server_task
 
     assert not await is_control_server_active(service_type=CONTROL_SERVER_SERVICE_TYPE)
+
+
+@pytest.mark.asyncio
+async def test_control_server_publishes_status_on_monitoring_port():
+    server = AsyncControlServer()
+    server.mon_delay = 100
+    server_task = asyncio.create_task(server.start())
+
+    sub_socket: zmq.asyncio.Socket | None = None
+    ctx = zmq.asyncio.Context.instance()
+
+    try:
+        await asyncio.sleep(0.5)
+
+        assert server.monitoring_port > 0
+
+        async with AsyncRegistryClient(timeout=1.0) as registry:
+            discovered = await registry.discover_service(server.service_type)
+        assert discovered is not None
+        assert discovered["metadata"]["monitoring_port"] == server.monitoring_port
+
+        sub_socket = ctx.socket(zmq.SUB)
+        sub_socket.setsockopt(zmq.SUBSCRIBE, b"")
+        sub_socket.connect(f"tcp://127.0.0.1:{server.monitoring_port}")
+
+        status_pickled = await asyncio.wait_for(sub_socket.recv(), timeout=2.0)
+        status = pickle.loads(status_pickled)
+
+        assert isinstance(status, dict)
+        assert "timestamp" in status
+        assert "process" in status
+        assert "control_server" in status
+        assert "components" in status
+
+        control_server_status = status["control_server"]
+        assert control_server_status["monitoring_port"] == server.monitoring_port
+
+        components_status = status["components"]
+        assert "device_command_handlers" in components_status
+        assert "service_command_handlers" in components_status
+        assert "tasks" in components_status
+    finally:
+        if sub_socket is not None:
+            sub_socket.close(linger=0)
+        server.stop()
+        server_task.cancel()
+        await asyncio.gather(server_task, return_exceptions=True)
+
+
+def test_temp_control_server_status_extends_base_status():
+    server = TempControlServer()
+
+    status = server.get_status()
+
+    assert "components" in status
+    assert "process" in status
+
+    components = status["components"]
+    assert "scan" in components
+    assert "acquisition" in components
+    assert "sinks" in components
+
+    assert components["scan"]["running"] is False
+    assert components["scan"]["daq running"] is False
+    assert components["acquisition"]["queue_size"] == 0
+    assert components["sinks"]["written_csv"] == 0
 
 
 @pytest.mark.asyncio

@@ -329,6 +329,39 @@ class TempControlServer(AcquisitionAsyncControlServer):
             "interval_s": self.daq.sample_interval_s,
         }
 
+    def get_status(self) -> dict[str, Any]:
+        """Extend base monitoring status with async temperature server health.
+
+        This reports control-server and sink state, not live device telemetry.
+        """
+        status = super().get_status()
+
+        components = status.setdefault("components", {})
+        components["scan"] = {
+            **self.get_scan_status(),
+            "task": {
+                "name": self._scan_task.get_name() if self._scan_task is not None else None,
+                "done": self._scan_task.done() if self._scan_task is not None else True,
+                "cancelled": self._scan_task.cancelled() if self._scan_task is not None else False,
+            },
+            "stop_requested": self._scan_stop_event.is_set(),
+        }
+        components["acquisition"] = {
+            "queue_size": self._acquisition_queue.qsize(),
+            "queue_maxsize": self.acquisition_queue_maxsize,
+            "dropped": self.acquisition_dropped_count,
+            "batch_enabled": self.acquisition_batch_enabled,
+            "batch_size": self.acquisition_batch_max_size,
+        }
+        components["sinks"] = {
+            "written_csv": self.csv_count,
+            "sent_metrics": self.metrics_count,
+            "failed_metrics": self.metrics_failed_count,
+            "metrics_sender_connected": self._metrics_sender is not None,
+        }
+
+        return status
+
     async def start_scan(self, *, duration_s: float, chunk_size: int, poll_interval_s: float) -> bool:
         """Start the buffered DAQ scan loop. Returns True if the scan was started, or False if a scan
         is already running. The scan is started in the background and runs until the specified duration
