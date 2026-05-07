@@ -1,3 +1,39 @@
+"""Async ZeroMQ control-server primitives.
+
+Protocol overview
+-----------------
+The command sockets in this module use ZeroMQ multipart messages with four
+frames on the wire:
+
+        [client_id, sequence_id, message_type, data]
+
+The `message_type` frame selects how the final `data` frame should be
+interpreted:
+
+* `MESSAGE_TYPE:STRING`: `data` is a UTF-8 command name such as
+    `start-scan`. The server promotes this to `{"command": "start-scan"}`
+    before dispatching it to a handler.
+* `MESSAGE_TYPE:JSON`: `data` is a UTF-8 encoded JSON object. The JSON
+    payload must contain a `command` field and may include any additional
+    command-specific arguments, for example
+    `{"command": "set-interval", "interval": 2.5}`.
+* `MESSAGE_TYPE:ERROR`: used for transport- or dispatch-level failures.
+    The payload is a pickled Python dict produced by
+    `egse.zmq_ser.zmq_error_response`.
+
+Handlers receive a decoded Python dict and return one of the multipart
+response shapes created by `zmq_string_response()`, `zmq_json_response()`,
+or `zmq_error_response()`.
+
+Typical JSON responses look like:
+
+* `{"success": true, "message": "scan started"}`
+* `{"success": true, "message": {...}, "metadata": {...}}`
+
+Typed payload serialization, when enabled, is applied only to JSON request and
+response bodies. The multipart envelope remains the same.
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -18,7 +54,6 @@ import zmq.asyncio
 from egse.env import bool_env
 from egse.exceptions import InitializationError
 from egse.log import logging
-from egse.serialization import to_json_safe
 from egse.system import Periodic
 from egse.system import camel_to_kebab
 from egse.system import camel_to_snake
@@ -36,8 +71,8 @@ from egse.zmq_ser import zmq_string_request
 from egse.zmq_ser import zmq_string_response
 from rich.traceback import Traceback
 
-# from egse.process import ProcessStatus
 from egse.registry.client import AsyncRegistryClient
+from egse.serialization import to_json_safe
 
 if TYPE_CHECKING:
     from egse.serialization import TypedPayloadSerializer
