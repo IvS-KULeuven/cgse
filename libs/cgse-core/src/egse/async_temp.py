@@ -69,6 +69,8 @@ from typing import Any
 
 import typer
 from egse.log import logger
+from egse.metrics import DataPoint
+from egse.settings import get_site_id
 from egse.system import TyperAsyncCommand
 from egse.zmq_ser import zmq_json_response
 from rich.console import Console
@@ -78,6 +80,9 @@ from egse.async_control import DeviceCommandRouter
 from egse.async_control import ServiceCommandRouter
 from egse.async_control import TypedAsyncControlClient
 from egse.logger import remote_logging
+from egse.metricshub.client import AsyncMetricsHubSender
+
+SITE_ID = get_site_id()
 
 
 class TempController(DeviceCommandRouter):
@@ -247,6 +252,7 @@ class TempServices(ServiceCommandRouter):
                     "scan": self._cs.get_scan_status(),
                     "written_csv": self._cs.csv_count,
                     "sent_metrics": self._cs.metrics_count,
+                    "failed_metrics": self._cs.metrics_failed_count,
                 },
             }
         )
@@ -289,7 +295,9 @@ class TempControlServer(AcquisitionAsyncControlServer):
         self.csv_path = Path("temperature.csv")
         self.csv_count = 0
         self.metrics_count = 0
+        self.metrics_failed_count = 0
         self.latest_sample: dict[str, Any] = {}
+        self._metrics_sender: AsyncMetricsHubSender | None = None
         self._scan_task: asyncio.Task | None = None
         self._scan_stop_event = asyncio.Event()
         self.daq = BufferedFakeDaq(sensor_ids=["T1", "T2", "T3", "T4"], sample_interval_s=1.0)
@@ -393,8 +401,11 @@ class TempControlServer(AcquisitionAsyncControlServer):
         self.csv_count += 1
 
         # 2) Send to metrics hub (replace with your real client call)
-        await self._send_metric("temperature_c", temp_c, tags={"sensor": sensor_id, "source": source or "daq"})
-        self.metrics_count += 1
+        sent = await self._send_metric("temperature_c", temp_c, tags={"sensor": sensor_id, "source": source or "daq"})
+        if sent:
+            self.metrics_count += 1
+        else:
+            self.metrics_failed_count += 1
 
     def _append_csv_row(self, row: list[Any]):
         new_file = not self.csv_path.exists()
@@ -404,16 +415,40 @@ class TempControlServer(AcquisitionAsyncControlServer):
                 writer.writerow(["timestamp", "sensor_id", "temperature_c", "source"])
             writer.writerow(row)
 
-    async def _send_metric(self, name: str, value: float, tags: dict[str, str]):
-        # Replace this with your metrics hub async API call.
-        # Example: await self.metrics_client.write(name=name, value=value, tags=tags)
-        return
+    async def _send_metric(self, name: str, value: float, tags: dict[str, str]) -> bool:
+        # Best-effort metrics propagation: never block acquisition on sink failures.
+        if self._metrics_sender is None:
+            self._metrics_sender = AsyncMetricsHubSender()
+            self._metrics_sender.connect()
+
+        try:
+            point = (
+                DataPoint.measurement(self.service_name)
+                .tag("site_id", SITE_ID)
+                .tag("origin", self.service_type)
+                .field(name, value)
+                .time(dt.datetime.now(dt.timezone.utc))
+            )
+
+            for key, tag_value in tags.items():
+                if tag_value is not None:
+                    point.tag(str(key), str(tag_value))
+
+            return await self._metrics_sender.send(point)
+        except Exception as exc:
+            self.logger.warning(f"Failed to send metric '{name}' to Metrics Hub: {exc!r}")
+            return False
 
     def stop(self):
         if self.is_scan_running() and self._loop is not None and self._loop.is_running():
             self._loop.create_task(self.stop_scan())
         elif self.daq.is_running():
             self.daq.stop_scan()
+
+        if self._metrics_sender is not None:
+            self._metrics_sender.close()
+            self._metrics_sender = None
+
         super().stop()
 
 
