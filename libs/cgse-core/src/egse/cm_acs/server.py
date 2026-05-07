@@ -48,6 +48,7 @@ class AsyncConfigurationManagerControlServer(AsyncControlServer):
     service_name = cm_acs_module.PROCESS_NAME
     device_commanding_port = cm_acs_module.COMMANDING_PORT
     service_commanding_port = cm_acs_module.SERVICE_PORT
+    monitoring_port = cm_acs_module.MONITORING_PORT
 
     def __init__(self):
         multiprocessing.current_process().name = cm_acs_module.PROCESS_NAME
@@ -82,6 +83,12 @@ class AsyncConfigurationManagerControlServer(AsyncControlServer):
             }
         )
         return info
+
+    @override
+    def get_component_status(self) -> dict[str, Any]:
+        components = super().get_component_status()
+        components["confman"] = self.controller.get_status()
+        return components
 
     def stop(self):
         self.controller.quit()
@@ -154,7 +161,7 @@ async def status():
     try:
         async with AsyncConfigurationManagerClient() as proxy:
             info = await proxy.info()
-            health = await proxy.confman_health()
+            health = await proxy.confman_status()
     except Exception as exc:
         if VERBOSE_DEBUG:
             rich.print(f"Async Configuration Manager Status: [red]not active[/] ({exc})")
@@ -166,6 +173,7 @@ async def status():
     host = info.get("hostname") if isinstance(info, dict) else "unknown"
     cmd_port = info.get("device commanding port") if isinstance(info, dict) else "unknown"
     service_port = info.get("service commanding port") if isinstance(info, dict) else "unknown"
+    monitoring_port = info.get("monitoring port") if isinstance(info, dict) else "unknown"
 
     confman_state = health.get("confman", {}) if isinstance(health, dict) else {}
     obsid = confman_state.get("obsid")
@@ -181,6 +189,7 @@ async def status():
                 f"    Hostname: {host}",
                 f"    Commanding port: {cmd_port}",
                 f"    Service port: {service_port}",
+                f"    Monitoring port: {monitoring_port}",
             ]
         )
     )
@@ -197,7 +206,7 @@ async def list_setups(ctx: typer.Context):
 
     try:
         async with AsyncConfigurationManagerClient() as cm:
-            response = await cm.list_setups(attr={})
+            response = await cm.list_setups()
             console.print(f"Received response: {response}, {type(response)=}")
 
     except Exception as exc:

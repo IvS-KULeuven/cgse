@@ -31,6 +31,16 @@ async def test_server(caplog):
             response = await client.ping()  # just to check that the client can communicate with the server
             assert response == "pong", f"Expected 'Pong' response from the control server, but got '{response}'"
 
+            info = await client.info()
+            assert isinstance(info, dict)
+            assert "monitoring port" in info
+            assert int(info["monitoring port"]) > 0
+
+            confman_status = await client.confman_status()
+            assert isinstance(confman_status, dict)
+            assert confman_status.get("status") == "ok"
+            assert "confman" in confman_status
+
             # Sleep some time, so we can see the control server in action, e.g. status reports, housekeeping, etc
             await asyncio.sleep(3.0)
 
@@ -112,3 +122,17 @@ async def test_submit_setup(caplog):
     finally:
         server.stop()
         await server_task
+
+
+def test_cm_acs_server_component_status_contains_confman():
+    server = AsyncConfigurationManagerControlServer()
+    status = server.get_status()
+
+    assert status["schema_version"] == 1
+    assert "components" in status
+    assert "confman" in status["components"]
+
+    confman = status["components"]["confman"]
+    assert isinstance(confman, dict)
+    assert "obsid_active" in confman
+    assert "setup_id" in confman

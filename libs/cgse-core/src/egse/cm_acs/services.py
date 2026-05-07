@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from egse.async_control import SocketType
-from egse.async_control import ServiceCommandRouter
-from egse.cm_acs.controller import AsyncConfigurationManagerController
 from egse.response import Failure
+
+from egse.async_control import ServiceCommandRouter
+from egse.async_control import SocketType
+from egse.cm_acs.controller import AsyncConfigurationManagerController
 
 
 class AsyncConfigurationManagerServices(ServiceCommandRouter):
@@ -17,7 +18,7 @@ class AsyncConfigurationManagerServices(ServiceCommandRouter):
 
     def register_handlers(self):
         self.add_handler("register_to_storage", self.register_to_storage)
-        self.add_handler("confman_health", self._handle_health)
+        self.add_handler("confman_status", self._handle_status)
 
     async def register_to_storage(self, cmd: dict[str, Any]) -> list:
         response = await self._controller.register_to_storage_async()
@@ -41,8 +42,8 @@ class AsyncConfigurationManagerServices(ServiceCommandRouter):
             },
         )
 
-    async def _handle_health(self, cmd: dict[str, Any]) -> list:
-        """Return a compact confman-specific health payload."""
+    async def _handle_status(self, cmd: dict[str, Any]) -> list:
+        """Return a compact confman-specific status payload."""
         return self._control_server.create_json_response(
             SocketType.SERVICE,
             {
