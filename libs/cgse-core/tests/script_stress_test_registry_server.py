@@ -43,7 +43,7 @@ def main(count: int = 1):
 @async_timer()
 async def amain(count: int = 1):
     for _ in range(count):
-        with AsyncRegistryClient() as reg:
+        async with AsyncRegistryClient() as reg:
             if await reg.health_check():
                 rich.print("[green]registry server is healthy.")
             else:

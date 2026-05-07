@@ -22,6 +22,10 @@ dist
 .nox
 htmlcov
 
+# Prototypes
+
+**/prototypes/typed_serialization
+
 # dotenv, ignore all but the example file
 
 .env

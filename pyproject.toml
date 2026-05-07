@@ -39,7 +39,7 @@ markers = [
 ]
 
 log_cli = true
-log_cli_level = "DEBUG"
+log_cli_level = "INFO"
 filterwarnings = [
     "ignore::DeprecationWarning"
 ]
@@ -95,10 +95,11 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "setuptools", # needed by PyCharm
-    "pytest>=8.3.4",
+    "nox",
+    "pytest-asyncio>=1.3.0",
     "pytest-cov>=6.0.0",
     "pytest-mock>=3.14.0",
+    "pytest>=8.3.4",
     "ruff>=0.12.8",
     "setuptools>=75.8.2", # needed by PyCharm
     "pytest-asyncio>=1.3.0",
