@@ -3,11 +3,13 @@ from typing import List
 
 import pytest
 import rich
-
+from egse.env import setup_env
 from egse.log import logger
 
 from egse.confman import ConfigurationManagerProxy
 from egse.confman import is_configuration_manager_active
+
+setup_env()  # Ensure the environment is set up for the tests, e.g. SITE_ID is set
 
 
 def test_is_cm_cs_is_active():
