@@ -10,12 +10,12 @@ devices with the asynchronous command-based control architecture.
    (start-scan, stop-scan, scan-status, etc.). It implements a command guard pattern that blocks
    certain commands while a scan is running to prevent conflicts with ongoing DAQ operations.
 
-2. `TempControlServer` — An `AcquisitionAsyncControlServer` subclass that manages the lifecycle
+2. `TempServices` — A `ServiceCommandRouter` for handling service-level commands like
+   health checks and component info.
+
+3. `TempControlServer` — An `AcquisitionAsyncControlServer` subclass that manages the lifecycle
    of DAQ operations, including the background scan loop that reads data and forwards it to
    metric sinks (database, InfluxDB, etc.).
-
-3. `TempServices` — A `ServiceCommandRouter` for handling service-level commands like
-   health checks and component info.
 
 **Core Patterns and Best Practices:**
 
@@ -62,6 +62,7 @@ from __future__ import annotations
 import asyncio
 import csv
 import datetime as dt
+import random
 import sys
 import time
 from pathlib import Path
@@ -81,8 +82,119 @@ from egse.async_control import ServiceCommandRouter
 from egse.async_control import TypedAsyncControlClient
 from egse.logger import remote_logging
 from egse.metricshub.client import AsyncMetricsHubSender
+from egse.temperature_profile import base_temperature
+from egse.temperature_profile import sensor_temperature_for_id
 
 SITE_ID = get_site_id()
+
+
+class BufferedFakeDaq:
+    """Placeholder buffered DAQ API used by TempControlServer.
+
+    This fake driver models common DAQ behavior where acquisition is controlled by:
+    - `start_scan(duration_s)`
+    - repeated `read_buffer_chunk(max_points)` calls
+    - `stop_scan()`
+
+    It intentionally has no callback-based streaming API. The control server pulls
+    data chunks in its own background loop and forwards samples through the
+    acquisition pipeline.
+
+    Replace this class with your real DAQ driver, while keeping the same high-level
+    contract expected by TempControlServer:
+    - `is_running()` should report whether a scan is active.
+    - `start_scan()` should arm/start hardware acquisition.
+    - `read_buffer_chunk()` may block on hardware I/O and should return a list of
+        sample dictionaries.
+    - `stop_scan()` should stop acquisition safely and should be idempotent.
+
+    Sample shape expected by the server pipeline:
+    {
+        "scan_index": int,
+        "sensor_id": str,
+        "temperature_c": float,
+    }
+    """
+
+    def __init__(self, sensor_ids: list[str], sample_interval_s: float):
+        self.sensor_ids = sensor_ids
+        self.sample_interval_s = sample_interval_s
+        self.setpoint = 25.0
+        self.profile_duration_s = 600.0
+        self._running = False
+        self._scan_index = 0
+        self._rng = random.Random()
+        self._scan_end_monotonic: float | None = None
+        self._scan_start_monotonic: float = time.monotonic()
+
+    def set_sensor_ids(self, sensor_ids: list[str]):
+        self.sensor_ids = sensor_ids
+
+    def set_sample_interval(self, sample_interval_s: float):
+        self.sample_interval_s = sample_interval_s
+
+    def set_setpoint(self, setpoint_c: float):
+        self.setpoint = setpoint_c
+
+    def is_running(self) -> bool:
+        if not self._running:
+            return False
+
+        if self._scan_end_monotonic is not None and time.monotonic() >= self._scan_end_monotonic:
+            self._running = False
+            return False
+
+        return True
+
+    def start_scan(self, duration_s: float = 0.0):
+        self._running = True
+        self._scan_index = 0
+        self._scan_start_monotonic = time.monotonic()
+        if duration_s and duration_s > 0:
+            self._scan_end_monotonic = time.monotonic() + duration_s
+        else:
+            self._scan_end_monotonic = None
+
+    def stop_scan(self):
+        self._running = False
+
+    def read_buffer_chunk(self, max_points: int) -> list[dict[str, Any]]:
+        # Simulate blocking hardware I/O call.
+        time.sleep(min(self.sample_interval_s, 0.2))
+
+        if not self.is_running():
+            return []
+
+        chunk: list[dict[str, Any]] = []
+        for _ in range(max_points):
+            for sensor_id in self.sensor_ids:
+                self._scan_index += 1
+                elapsed_s = time.monotonic() - self._scan_start_monotonic
+                cycle_t = elapsed_s % self.profile_duration_s
+                base_temp = base_temperature(
+                    t=cycle_t,
+                    duration_s=self.profile_duration_s,
+                    room_temp=self.setpoint,
+                    peak_temp=self.setpoint + 7.0,
+                    min_temp=self.setpoint - 26.0,
+                )
+                temperature_c = round(
+                    sensor_temperature_for_id(base_temp, elapsed_s, sensor_id=sensor_id, rng=self._rng),
+                    3,
+                )
+
+                chunk.append(
+                    {
+                        "scan_index": self._scan_index,
+                        "sensor_id": sensor_id,
+                        "temperature_c": temperature_c,
+                    }
+                )
+            # Keep the example bounded per loop even when many sensors are configured.
+            if len(chunk) >= max_points:
+                break
+
+        return chunk
 
 
 class TempController(DeviceCommandRouter):
@@ -114,21 +226,24 @@ class TempController(DeviceCommandRouter):
     def __init__(self, control_server: "TempControlServer"):
         super().__init__(control_server)
         self._cs = control_server
+        self.daq = BufferedFakeDaq(sensor_ids=["T1", "T2", "T3", "T4"], sample_interval_s=1.0)
+        self._scan_task: asyncio.Task | None = None
+        self._scan_stop_event = asyncio.Event()
 
     def register_handlers(self):
-        self.add_handler("start-scan", self._start_scan)
-        self.add_handler("stop-scan", self._stop_scan)
-        self.add_handler("scan-status", self._scan_status)
-        self.add_handler("set-sensors", self._set_sensors)
-        self.add_handler("set-interval", self._set_interval)
-        self.add_handler("set-setpoint", self._set_setpoint)
-        self.add_handler("get-latest", self._get_latest)
+        self.add_handler("start-scan", self.do_start_scan)
+        self.add_handler("stop-scan", self.do_stop_scan)
+        self.add_handler("scan-status", self.do_scan_status)
+        self.add_handler("set-sensors", self.do_set_sensors)
+        self.add_handler("set-interval", self.do_set_interval)
+        self.add_handler("set-setpoint", self.do_set_setpoint)
+        self.add_handler("get-latest", self.do_get_latest)
 
     def _deny_if_not_allowed_during_scan(self, command_name: str) -> list | None:
         """Check if the given command is allowed while a scan is running. If not allowed,
         return a JSON response indicating the device is busy. If allowed, return None."""
 
-        if self._cs.is_scan_running() and command_name not in self.ALLOWED_DURING_SCAN:
+        if self.is_scan_running() and command_name not in self.ALLOWED_DURING_SCAN:
             return zmq_json_response(
                 {
                     "success": False,
@@ -142,7 +257,7 @@ class TempController(DeviceCommandRouter):
             )
         return None
 
-    async def _start_scan(self, cmd: dict[str, Any]) -> list:
+    async def do_start_scan(self, cmd: dict[str, Any]) -> list:
         """Start a buffered DAQ scan with optional parameters.
         The command will be rejected if a scan is already running to avoid conflicts.
 
@@ -163,7 +278,7 @@ class TempController(DeviceCommandRouter):
         chunk_size = int(cmd.get("chunk_size", 16))
         poll_interval_s = float(cmd.get("poll_interval_s", 0.2))
 
-        started = await self._cs.start_scan(
+        started = await self.start_scan(
             duration_s=duration_s,
             chunk_size=chunk_size,
             poll_interval_s=poll_interval_s,
@@ -173,30 +288,30 @@ class TempController(DeviceCommandRouter):
             {
                 "success": True,
                 "message": {
-                    "running": self._cs.is_scan_running(),
+                    "running": self.is_scan_running(),
                     "started": started,
-                    "status": self._cs.get_scan_status(),
+                    "status": self.get_scan_status(),
                 },
             }
         )
 
-    async def _stop_scan(self, cmd: dict[str, Any]) -> list:
+    async def do_stop_scan(self, cmd: dict[str, Any]) -> list:
         """Stop the DAQ scan if it is running. Returns the updated scan status."""
-        stopped = await self._cs.stop_scan()
+        stopped = await self.stop_scan()
         return zmq_json_response(
             {
                 "success": True,
                 "message": {
                     "stopped": stopped,
-                    "status": self._cs.get_scan_status(),
+                    "status": self.get_scan_status(),
                 },
             }
         )
 
-    async def _scan_status(self, cmd: dict[str, Any]) -> list:
-        return zmq_json_response({"success": True, "message": self._cs.get_scan_status()})
+    async def do_scan_status(self, cmd: dict[str, Any]) -> list:
+        return zmq_json_response({"success": True, "message": self.get_scan_status()})
 
-    async def _set_sensors(self, cmd: dict[str, Any]) -> list:
+    async def do_set_sensors(self, cmd: dict[str, Any]) -> list:
         blocked = self._deny_if_not_allowed_during_scan("set-sensors")
         if blocked:
             return blocked
@@ -205,21 +320,21 @@ class TempController(DeviceCommandRouter):
         if not sensor_ids:
             return zmq_json_response({"success": False, "message": {"error": "sensor_ids may not be empty"}})
 
-        self._cs.daq.set_sensor_ids(sensor_ids)
+        self.daq.set_sensor_ids(sensor_ids)
         return zmq_json_response({"success": True, "message": {"sensor_ids": sensor_ids}})
 
-    async def _set_setpoint(self, cmd: dict[str, Any]) -> list:
+    async def do_set_setpoint(self, cmd: dict[str, Any]) -> list:
         # Example of a command that would be blocked during a scan to prevent unsafe reconfiguration.
         blocked = self._deny_if_not_allowed_during_scan("set-setpoint")
         if blocked:
             return blocked
 
         setpoint_c = float(cmd.get("setpoint_c", 25.0))
-        self._cs.daq.set_setpoint(setpoint_c)
+        self.daq.set_setpoint(setpoint_c)
 
         return zmq_json_response({"success": True, "message": {"setpoint_c": setpoint_c}})
 
-    async def _set_interval(self, cmd: dict[str, Any]) -> list:
+    async def do_set_interval(self, cmd: dict[str, Any]) -> list:
         blocked = self._deny_if_not_allowed_during_scan("set-interval")
         if blocked:
             return blocked
@@ -228,94 +343,11 @@ class TempController(DeviceCommandRouter):
         if interval_s <= 0:
             return zmq_json_response({"success": False, "message": {"error": "interval_s must be > 0"}})
 
-        self._cs.daq.set_sample_interval(interval_s)
+        self.daq.set_sample_interval(interval_s)
         return zmq_json_response({"success": True, "message": {"interval_s": interval_s}})
 
-    async def _get_latest(self, cmd: dict[str, Any]) -> list:
+    async def do_get_latest(self, cmd: dict[str, Any]) -> list:
         return zmq_json_response({"success": True, "message": {"latest": self._cs.latest_sample}})
-
-
-class TempServices(ServiceCommandRouter):
-    def __init__(self, control_server: "TempControlServer"):
-        super().__init__(control_server)
-        self._cs = control_server
-
-    def register_handlers(self):
-        self.add_handler("health", self._health)
-
-    async def _health(self, cmd: dict[str, Any]) -> list:
-        return zmq_json_response(
-            {
-                "success": True,
-                "message": {
-                    "status": "ok",
-                    "scan": self._cs.get_scan_status(),
-                    "written_csv": self._cs.csv_count,
-                    "sent_metrics": self._cs.metrics_count,
-                    "failed_metrics": self._cs.metrics_failed_count,
-                },
-            }
-        )
-
-
-class TempControlServer(AcquisitionAsyncControlServer):
-    """Temperature control server example for buffered DAQ scans.
-
-    This class demonstrates a minimal but practical pattern for DAQs that do not
-    provide callback-based streaming and instead expose scan start/stop plus
-    buffered reads.
-
-    Runtime model:
-    1. Device commands (`start-scan`, `stop-scan`, `scan-status`, etc.) are
-        handled by `TempController`.
-    2. `start_scan` starts DAQ acquisition and spawns `_run_scan_loop` as an
-        asyncio background task.
-    3. `_run_scan_loop` periodically pulls chunks from the DAQ buffer and pushes
-        each sample into the acquisition pipeline via `on_acquisition_data`.
-    4. `AcquisitionAsyncControlServer` queues these records and dispatches them
-        to `handle_acquisition`, where sink logic is implemented.
-
-    Data sinks implemented here:
-    - CSV append in `_append_csv_row`.
-    - Metrics forwarding hook in `_send_metric` (stub to replace with real
-       metrics hub client).
-
-    Responsiveness and safety:
-    - Long-running scan work is done in a background task, so command handling
-       stays responsive.
-    - DAQ blocking operations are offloaded with `asyncio.to_thread`.
-    - `TempController` enforces a command whitelist while scanning to prevent
-       unsafe runtime reconfiguration.
-    """
-
-    service_type = "temp-control-server"
-    service_name = "temp_control_server"
-
-    def __init__(self, service_name: str | None = None):
-        self.csv_path = Path("temperature.csv")
-        self.csv_count = 0
-        self.metrics_count = 0
-        self.metrics_failed_count = 0
-        self.latest_sample: dict[str, Any] = {}
-        self._metrics_sender: AsyncMetricsHubSender | None = None
-        self._scan_task: asyncio.Task | None = None
-        self._scan_stop_event = asyncio.Event()
-        self.daq = BufferedFakeDaq(sensor_ids=["T1", "T2", "T3", "T4"], sample_interval_s=1.0)
-        super().__init__()
-
-        if service_name:
-            self.service_name = service_name
-
-        # Buffered scans can produce bursts; optional batching helps reduce overhead.
-        # These variables are used in the acquisition pipeline to control batch behavior.
-        self.acquisition_batch_enabled = True
-        self.acquisition_batch_max_size = 200
-
-    def create_device_command_router(self) -> DeviceCommandRouter:
-        return TempController(self)
-
-    def create_service_command_router(self) -> ServiceCommandRouter:
-        return TempServices(self)
 
     def is_scan_running(self) -> bool:
         task = self._scan_task
@@ -329,44 +361,11 @@ class TempControlServer(AcquisitionAsyncControlServer):
             "interval_s": self.daq.sample_interval_s,
         }
 
-    def get_component_status(self) -> dict[str, Any]:
-        """Extend base component status with async temperature server health.
-
-        This reports control-server and sink state, not live device telemetry.
-        """
-        components = super().get_component_status()
-
-        components["scan"] = {
-            **self.get_scan_status(),
-            "task": {
-                "name": self._scan_task.get_name() if self._scan_task is not None else None,
-                "done": self._scan_task.done() if self._scan_task is not None else True,
-                "cancelled": self._scan_task.cancelled() if self._scan_task is not None else False,
-            },
-            "stop_requested": self._scan_stop_event.is_set(),
-        }
-        components["acquisition"] = {
-            "queue_size": self._acquisition_queue.qsize(),
-            "queue_maxsize": self.acquisition_queue_maxsize,
-            "dropped": self.acquisition_dropped_count,
-            "batch_enabled": self.acquisition_batch_enabled,
-            "batch_size": self.acquisition_batch_max_size,
-        }
-        components["sinks"] = {
-            "written_csv": self.csv_count,
-            "sent_metrics": self.metrics_count,
-            "failed_metrics": self.metrics_failed_count,
-            "metrics_sender_connected": self._metrics_sender is not None,
-        }
-
-        return components
-
     async def start_scan(self, *, duration_s: float, chunk_size: int, poll_interval_s: float) -> bool:
         """Start the buffered DAQ scan loop. Returns True if the scan was started, or False if a scan
         is already running. The scan is started in the background and runs until the specified duration
         elapses or stop_scan() is called.
         """
-
         if self.is_scan_running():
             return False
 
@@ -397,16 +396,133 @@ class TempControlServer(AcquisitionAsyncControlServer):
             while not self._scan_stop_event.is_set() and self.daq.is_running():
                 chunk = await asyncio.to_thread(self.daq.read_buffer_chunk, chunk_size)
                 for sample in chunk:
-                    self.on_acquisition_data(sample, source="daq-buffer", metadata={"mode": "buffered-scan"})
+                    self._cs.on_acquisition_data(sample, source="daq-buffer", metadata={"mode": "buffered-scan"})
 
                 if poll_interval_s:
                     await asyncio.sleep(poll_interval_s)
         except asyncio.CancelledError:
             raise
         except Exception as exc:
-            self.logger.error(f"Buffered scan loop failed: {exc}", exc_info=True)
+            self._cs.logger.error(f"Buffered scan loop failed: {exc}", exc_info=True)
         finally:
             await asyncio.to_thread(self.daq.stop_scan)
+
+
+class TempServices(ServiceCommandRouter):
+    def __init__(self, control_server: "TempControlServer"):
+        super().__init__(control_server)
+        self._cs = control_server
+
+    def register_handlers(self):
+        self.add_handler("health", self._health)
+
+    async def _health(self, cmd: dict[str, Any]) -> list:
+        return zmq_json_response(
+            {
+                "success": True,
+                "message": {
+                    "status": "ok",
+                    "written_csv": self._cs.csv_count,
+                    "sent_metrics": self._cs.metrics_count,
+                    "failed_metrics": self._cs.metrics_failed_count,
+                },
+            }
+        )
+
+
+class TempControlServer(AcquisitionAsyncControlServer):
+    """Temperature control server example for buffered DAQ scans.
+
+    This class demonstrates a minimal but practical pattern for DAQs that do not
+    provide callback-based streaming and instead expose scan start/stop plus
+    buffered reads.
+
+    Runtime model:
+    1. Device commands (`start-scan`, `stop-scan`, `scan-status`, etc.) are
+        handled by `TempController`, which also owns the DAQ and the scan loop.
+    2. `TempController.start_scan` arms the DAQ and spawns `_run_scan_loop` as
+        an asyncio background task.
+    3. `_run_scan_loop` periodically pulls chunks from the DAQ buffer and pushes
+        each sample into the acquisition pipeline via `on_acquisition_data`.
+    4. `AcquisitionAsyncControlServer` queues these records and dispatches them
+        to `handle_acquisition`, where sink logic is implemented.
+
+    Data sinks implemented here:
+    - CSV append in `_append_csv_row`.
+    - Metrics forwarding hook in `_send_metric` (stub to replace with real
+       metrics hub client).
+
+    Responsiveness and safety:
+    - Long-running scan work is done in a background task, so command handling
+       stays responsive.
+    - DAQ blocking operations are offloaded with `asyncio.to_thread`.
+    - `TempController` enforces a command whitelist while scanning to prevent
+       unsafe runtime reconfiguration.
+    """
+
+    service_type = "temp-control-server"
+    service_name = "temp_control_server"
+
+    def __init__(self, service_name: str | None = None):
+        self.csv_path = Path("temperature.csv")
+        self.csv_count = 0
+        self.metrics_count = 0
+        self.metrics_failed_count = 0
+        self.latest_sample: dict[str, Any] = {}
+        self._metrics_sender: AsyncMetricsHubSender | None = None
+        super().__init__()
+
+        if service_name:
+            self.service_name = service_name
+
+        # Buffered scans can produce bursts; optional batching helps reduce overhead.
+        # These variables are used in the acquisition pipeline to control batch behavior.
+        self.acquisition_batch_enabled = True
+        self.acquisition_batch_max_size = 200
+
+    def create_device_command_router(self) -> DeviceCommandRouter:
+        return TempController(self)
+
+    def create_service_command_router(self) -> ServiceCommandRouter:
+        return TempServices(self)
+
+    @property
+    def controller(self) -> "TempController":
+        return self._device_command_router  # type: ignore[return-value]
+
+    def get_component_status(self) -> dict[str, Any]:
+        """Extend base component status with async temperature server health.
+
+        This reports control-server and sink state, not live device telemetry.
+        """
+        components = super().get_component_status()
+
+        components["scan"] = {
+            **self.controller.get_scan_status(),
+            "task": {
+                "name": self.controller._scan_task.get_name() if self.controller._scan_task is not None else None,
+                "done": self.controller._scan_task.done() if self.controller._scan_task is not None else True,
+                "cancelled": (
+                    self.controller._scan_task.cancelled() if self.controller._scan_task is not None else False
+                ),
+            },
+            "stop_requested": self.controller._scan_stop_event.is_set(),
+        }
+        components["acquisition"] = {
+            "queue_size": self._acquisition_queue.qsize(),
+            "queue_maxsize": self.acquisition_queue_maxsize,
+            "dropped": self.acquisition_dropped_count,
+            "batch_enabled": self.acquisition_batch_enabled,
+            "batch_size": self.acquisition_batch_max_size,
+        }
+        components["sinks"] = {
+            "written_csv": self.csv_count,
+            "sent_metrics": self.metrics_count,
+            "failed_metrics": self.metrics_failed_count,
+            "metrics_sender_connected": self._metrics_sender is not None,
+        }
+
+        return components
 
     async def handle_acquisition(
         self,
@@ -472,107 +588,16 @@ class TempControlServer(AcquisitionAsyncControlServer):
             return False
 
     def stop(self):
-        if self.is_scan_running() and self._loop is not None and self._loop.is_running():
-            self._loop.create_task(self.stop_scan())
-        elif self.daq.is_running():
-            self.daq.stop_scan()
+        if self.controller.is_scan_running() and self._loop is not None and self._loop.is_running():
+            self._loop.create_task(self.controller.stop_scan())
+        elif self.controller.daq.is_running():
+            self.controller.daq.stop_scan()
 
         if self._metrics_sender is not None:
             self._metrics_sender.close()
             self._metrics_sender = None
 
         super().stop()
-
-
-class BufferedFakeDaq:
-    """Placeholder buffered DAQ API used by TempControlServer.
-
-    This fake driver models common DAQ behavior where acquisition is controlled by:
-    - `start_scan(duration_s)`
-    - repeated `read_buffer_chunk(max_points)` calls
-    - `stop_scan()`
-
-    It intentionally has no callback-based streaming API. The control server pulls
-    data chunks in its own background loop and forwards samples through the
-    acquisition pipeline.
-
-    Replace this class with your real DAQ driver, while keeping the same high-level
-    contract expected by TempControlServer:
-    - `is_running()` should report whether a scan is active.
-    - `start_scan()` should arm/start hardware acquisition.
-    - `read_buffer_chunk()` may block on hardware I/O and should return a list of
-        sample dictionaries.
-    - `stop_scan()` should stop acquisition safely and should be idempotent.
-
-    Sample shape expected by the server pipeline:
-    {
-        "scan_index": int,
-        "sensor_id": str,
-        "temperature_c": float,
-    }
-    """
-
-    def __init__(self, sensor_ids: list[str], sample_interval_s: float):
-        self.sensor_ids = sensor_ids
-        self.sample_interval_s = sample_interval_s
-        self.setpoint = 25.0
-        self._running = False
-        self._scan_index = 0
-        self._scan_end_monotonic: float | None = None
-
-    def set_sensor_ids(self, sensor_ids: list[str]):
-        self.sensor_ids = sensor_ids
-
-    def set_sample_interval(self, sample_interval_s: float):
-        self.sample_interval_s = sample_interval_s
-
-    def set_setpoint(self, setpoint_c: float):
-        self.setpoint = setpoint_c
-
-    def is_running(self) -> bool:
-        if not self._running:
-            return False
-
-        if self._scan_end_monotonic is not None and time.monotonic() >= self._scan_end_monotonic:
-            self._running = False
-            return False
-
-        return True
-
-    def start_scan(self, duration_s: float = 0.0):
-        self._running = True
-        self._scan_index = 0
-        if duration_s and duration_s > 0:
-            self._scan_end_monotonic = time.monotonic() + duration_s
-        else:
-            self._scan_end_monotonic = None
-
-    def stop_scan(self):
-        self._running = False
-
-    def read_buffer_chunk(self, max_points: int) -> list[dict[str, Any]]:
-        # Simulate blocking hardware I/O call.
-        time.sleep(min(self.sample_interval_s, 0.2))
-
-        if not self.is_running():
-            return []
-
-        chunk: list[dict[str, Any]] = []
-        for _ in range(max_points):
-            for sensor_id in self.sensor_ids:
-                self._scan_index += 1
-                chunk.append(
-                    {
-                        "scan_index": self._scan_index,
-                        "sensor_id": sensor_id,
-                        "temperature_c": self.setpoint + (self._scan_index % 10) * 0.1,
-                    }
-                )
-            # Keep the example bounded per loop even when many sensors are configured.
-            if len(chunk) >= max_points:
-                break
-
-        return chunk
 
 
 class TempAsyncControlClient(TypedAsyncControlClient):
@@ -636,6 +661,8 @@ class TempAsyncControlClient(TypedAsyncControlClient):
         response = await self.send_service_command("health", timeout=timeout)
         return self._success_message_as_dict(response, "health")
 
+
+# ----- CLI Commands ------------------------------------------------------------------------------------------------
 
 app = typer.Typer()
 

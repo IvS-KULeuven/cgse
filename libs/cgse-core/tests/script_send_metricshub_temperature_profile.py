@@ -28,7 +28,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import math
 import random
 import time
 from datetime import datetime
@@ -39,6 +38,8 @@ from egse.metricshub.client import AsyncMetricsHubClient
 from egse.metricshub.client import AsyncMetricsHubSender
 from egse.metricshub.client import MetricsHubClient
 from egse.metricshub.client import MetricsHubSender
+from egse.temperature_profile import base_temperature
+from egse.temperature_profile import sensor_temperatures_3ch
 
 
 def _parse_args() -> argparse.Namespace:
@@ -81,53 +82,6 @@ def _parse_args() -> argparse.Namespace:
     )
 
     return parser.parse_args()
-
-
-def _smoothstep(x: float) -> float:
-    """Cubic smoothstep for x in [0, 1]."""
-    x = max(0.0, min(1.0, x))
-    return x * x * (3.0 - 2.0 * x)
-
-
-def _base_temperature(
-    t: float,
-    duration_s: float,
-    room_temp: float,
-    peak_temp: float,
-    min_temp: float,
-) -> float:
-    """Piecewise profile for one cycle.
-
-    Segments (fraction of total duration):
-    - 0.00 .. 0.15: warm up room -> peak
-    - 0.15 .. 0.70: asymptotic cool down peak -> min
-    - 0.70 .. 1.00: asymptotic warm up min -> room
-    """
-    if duration_s <= 0:
-        return room_temp
-
-    p = max(0.0, min(1.0, t / duration_s))
-
-    if p <= 0.15:
-        x = p / 0.15
-        return room_temp + (peak_temp - room_temp) * _smoothstep(x)
-
-    if p <= 0.70:
-        x = (p - 0.15) / 0.55
-        k = 6.0
-        return min_temp + (peak_temp - min_temp) * math.exp(-k * x)
-
-    x = (p - 0.70) / 0.30
-    k = 3.5
-    return room_temp - (room_temp - min_temp) * math.exp(-k * x)
-
-
-def _sensor_temperatures(base_temp: float, elapsed_s: float, rng: random.Random) -> tuple[float, float, float]:
-    """Derive three sensor readings from the base profile with realistic offsets/noise."""
-    sensor_1 = base_temp + rng.gauss(0.0, 0.05)
-    sensor_2 = base_temp + 0.25 + 0.10 * math.sin(elapsed_s / 25.0) + rng.gauss(0.0, 0.06)
-    sensor_3 = base_temp - 0.20 + 0.07 * math.cos(elapsed_s / 35.0) + rng.gauss(0.0, 0.08)
-    return sensor_1, sensor_2, sensor_3
 
 
 def _print_header(args: argparse.Namespace) -> None:
@@ -214,7 +168,7 @@ def _run_sync(args: argparse.Namespace, rng: random.Random) -> tuple[int, int]:
             if elapsed_s > args.duration_s:
                 break
 
-            base_temp = _base_temperature(
+            base_temp = base_temperature(
                 t=elapsed_s,
                 duration_s=args.duration_s,
                 room_temp=args.room_temp,
@@ -222,7 +176,7 @@ def _run_sync(args: argparse.Namespace, rng: random.Random) -> tuple[int, int]:
                 min_temp=args.min_temp,
             )
 
-            t1, t2, t3 = _sensor_temperatures(base_temp, elapsed_s, rng)
+            t1, t2, t3 = sensor_temperatures_3ch(base_temp, elapsed_s, rng)
             point = _build_point(args, t1, t2, t3, elapsed_s, sample_idx)
 
             if sender.send(point):
@@ -262,7 +216,7 @@ async def _run_async(args: argparse.Namespace, rng: random.Random) -> tuple[int,
             if elapsed_s > args.duration_s:
                 break
 
-            base_temp = _base_temperature(
+            base_temp = base_temperature(
                 t=elapsed_s,
                 duration_s=args.duration_s,
                 room_temp=args.room_temp,
@@ -270,7 +224,7 @@ async def _run_async(args: argparse.Namespace, rng: random.Random) -> tuple[int,
                 min_temp=args.min_temp,
             )
 
-            t1, t2, t3 = _sensor_temperatures(base_temp, elapsed_s, rng)
+            t1, t2, t3 = sensor_temperatures_3ch(base_temp, elapsed_s, rng)
             point = _build_point(args, t1, t2, t3, elapsed_s, sample_idx)
 
             if await sender.send(point):
