@@ -195,9 +195,9 @@ class DuckDBRepository(TimeSeriesRepository):
         table = self._quote_identifier(measurement)
         columns = ["timestamp TIMESTAMPTZ"]
         for column in schema.tags:
-            columns.append(f'{self._quote_identifier(column.name)} {self._duckdb_type(column.data_type)}')
+            columns.append(f"{self._quote_identifier(column.name)} {self._duckdb_type(column.data_type)}")
         for column in schema.fields:
-            columns.append(f'{self._quote_identifier(column.name)} {self._duckdb_type(column.data_type)}')
+            columns.append(f"{self._quote_identifier(column.name)} {self._duckdb_type(column.data_type)}")
 
         assert self.conn is not None
         self.conn.execute(
