@@ -119,7 +119,7 @@ class BufferedFakeDaq:
     def __init__(self, sensor_ids: list[str], sample_interval_s: float):
         self.sensor_ids = sensor_ids
         self.sample_interval_s = sample_interval_s
-        self.setpoint = 25.0
+        self.setpoint = {sensor_id: 25.0 for sensor_id in sensor_ids}
         self.profile_duration_s = 600.0
         self._running = False
         self._scan_index = 0
@@ -133,8 +133,8 @@ class BufferedFakeDaq:
     def set_sample_interval(self, sample_interval_s: float):
         self.sample_interval_s = sample_interval_s
 
-    def set_setpoint(self, setpoint_c: float):
-        self.setpoint = setpoint_c
+    def set_setpoint(self, sensor_id: str, setpoint_c: float):
+        self.setpoint[sensor_id] = setpoint_c
 
     def is_running(self) -> bool:
         if not self._running:
@@ -174,9 +174,9 @@ class BufferedFakeDaq:
                 base_temp = base_temperature(
                     t=cycle_t,
                     duration_s=self.profile_duration_s,
-                    room_temp=self.setpoint,
-                    peak_temp=self.setpoint + 7.0,
-                    min_temp=self.setpoint - 26.0,
+                    room_temp=self.setpoint[sensor_id],
+                    peak_temp=self.setpoint[sensor_id] + 7.0,
+                    min_temp=self.setpoint[sensor_id] - 26.0,
                 )
                 temperature_c = round(
                     sensor_temperature_for_id(base_temp, elapsed_s, sensor_id=sensor_id, rng=self._rng),
@@ -191,8 +191,8 @@ class BufferedFakeDaq:
                     }
                 )
             # Keep the example bounded per loop even when many sensors are configured.
-            if len(chunk) >= max_points:
-                break
+            # if len(chunk) >= max_points:
+            #     break
 
         return chunk
 
@@ -329,10 +329,11 @@ class TempController(DeviceCommandRouter):
         if blocked:
             return blocked
 
+        sensor_id = str(cmd.get("sensor_id", "unknown"))
         setpoint_c = float(cmd.get("setpoint_c", 25.0))
-        self.daq.set_setpoint(setpoint_c)
+        self.daq.set_setpoint(sensor_id, setpoint_c)
 
-        return zmq_json_response({"success": True, "message": {"setpoint_c": setpoint_c}})
+        return zmq_json_response({"success": True, "message": {"sensor_id": sensor_id, "setpoint_c": setpoint_c}})
 
     async def do_set_interval(self, cmd: dict[str, Any]) -> list:
         blocked = self._deny_if_not_allowed_during_scan("set-interval")
@@ -358,6 +359,7 @@ class TempController(DeviceCommandRouter):
             "running": self.is_scan_running(),
             "daq running": self.daq.is_running(),
             "sensor_ids": self.daq.sensor_ids,
+            "set_points": [self.daq.setpoint[sensor_id] for sensor_id in self.daq.sensor_ids],
             "interval_s": self.daq.sample_interval_s,
         }
 
@@ -646,9 +648,11 @@ class TempAsyncControlClient(TypedAsyncControlClient):
         )
         return self._success_message_as_dict(response, "set-interval")
 
-    async def set_setpoint(self, setpoint_c: float, timeout: float | None = None) -> dict[str, Any] | None:
+    async def set_setpoint(
+        self, sensor_id: str, setpoint_c: float, timeout: float | None = None
+    ) -> dict[str, Any] | None:
         response = await self.send_device_command(
-            {"command": "set-setpoint", "setpoint_c": setpoint_c},
+            {"command": "set-setpoint", "sensor_id": sensor_id, "setpoint_c": setpoint_c},
             timeout=timeout,
         )
         return self._success_message_as_dict(response, "set-setpoint")
@@ -732,12 +736,12 @@ async def get_latest():
 
 
 @app.command(cls=TyperAsyncCommand)
-async def set_setpoint(setpoint_c: float):
+async def set_setpoint(sensor_id: str, setpoint_c: float):
     """Set the temperature setpoint for the async temperature control server."""
     console = Console()
     try:
         async with TempAsyncControlClient() as client:
-            response = await client.set_setpoint(setpoint_c=setpoint_c)
+            response = await client.set_setpoint(sensor_id=sensor_id, setpoint_c=setpoint_c)
             console.print(response)
     except Exception as exc:
         console.print(f"Error occurred while setting setpoint: {exc}", style="red")
