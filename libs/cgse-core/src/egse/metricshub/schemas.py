@@ -70,6 +70,18 @@ MH_LOAD_SCHEMA = MeasurementSchema(
     fields=SYNTHETIC_LOAD_SCHEMA.fields,
 )
 
+#: Typed schema for the temperature-control-server measurement (async_temp.py).
+TEMP_CONTROL_SERVER_SCHEMA = MeasurementSchema(
+    name="temp_control_server",
+    tags=(
+        MeasurementColumn(name="site_id", data_type="symbol"),
+        MeasurementColumn(name="origin", data_type="symbol"),
+        MeasurementColumn(name="sensor", data_type="symbol"),
+        MeasurementColumn(name="source", data_type="symbol"),
+    ),
+    fields=(MeasurementColumn(name="temperature_c", data_type="double"),),
+)
+
 #: Names supported by built-in load schemas.
 LOAD_SCHEMA_NAMES = frozenset({SYNTHETIC_LOAD_SCHEMA.name, MH_LOAD_SCHEMA.name})
 
@@ -89,3 +101,4 @@ def register_measurement_schemas() -> None:
     """
     register_measurement_schema(SYNTHETIC_LOAD_SCHEMA)
     register_measurement_schema(MH_LOAD_SCHEMA)
+    register_measurement_schema(TEMP_CONTROL_SERVER_SCHEMA)
