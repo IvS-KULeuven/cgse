@@ -1,14 +1,18 @@
 import json
+from collections.abc import Sequence
 from datetime import datetime
 from datetime import timezone
 from typing import Any
+from typing import cast
 
 import pandas
 import psycopg
+from psycopg import sql
+from psycopg.abc import Query
 from psycopg.rows import dict_row
 
-from egse.metrics import DataPoint
 from egse.metrics import MeasurementSchema
+from egse.metrics import PointLike
 from egse.metrics import TimeSeriesRepository
 from egse.metrics import get_measurement_schema
 
@@ -54,7 +58,7 @@ class QuestDBRepository(TimeSeriesRepository):
         if schema not in (SCHEMA_UNIFIED, SCHEMA_PER_MEASUREMENT):
             raise ValueError(f"schema must be '{SCHEMA_UNIFIED}' or '{SCHEMA_PER_MEASUREMENT}', got {schema!r}")
         # QuestDB requires timestamps to be inserted in strictly increasing order.
-        # Concurrent flushes can arrive out-of-order, so we must serialise writes.
+        # Concurrent flushes can arrive out-of-order, so we must serialize writes.
         self.max_flush_concurrency: int = 1
         self.host = host
         self.port = port
@@ -63,18 +67,18 @@ class QuestDBRepository(TimeSeriesRepository):
         self.password = password
         self.table_name = table_name
         self.schema = schema
-        self.conn: psycopg.Connection | None = None
-        self._ping_conn: psycopg.Connection | None = None
+        self.conn: psycopg.Connection[Any] | None = None
+        self._ping_conn: psycopg.Connection[Any] | None = None
         self._created_tables: set[str] = set()
 
-    def _make_connection(self) -> psycopg.Connection:
+    def _make_connection(self) -> psycopg.Connection[Any]:
         return psycopg.connect(
             host=self.host,
             port=self.port,
             dbname=self.database,
             user=self.user,
             password=self.password,
-            row_factory=dict_row,
+            row_factory=cast(Any, dict_row),
             autocommit=True,
         )
 
@@ -105,18 +109,23 @@ class QuestDBRepository(TimeSeriesRepository):
         if self.schema == SCHEMA_UNIFIED:
             with self.conn.cursor() as cur:
                 cur.execute(
-                    f"""
-                    CREATE TABLE IF NOT EXISTS \"{self.table_name}\" (
-                        measurement SYMBOL,
-                        time TIMESTAMP,
-                        tags VARCHAR,
-                        fields VARCHAR
-                    ) TIMESTAMP(time) PARTITION BY DAY
-                    """
+                    sql.SQL(
+                        """
+                        CREATE TABLE IF NOT EXISTS {} (
+                            measurement SYMBOL,
+                            time TIMESTAMP,
+                            tags VARCHAR,
+                            fields VARCHAR
+                        ) TIMESTAMP(time) PARTITION BY DAY
+                        """
+                    ).format(sql.Identifier(self.table_name))
                 )
             self._created_tables.add(self.table_name)
 
     def ping(self) -> bool:
+        if self.conn is None:
+            return False
+
         if self._ping_conn is None and not self._reconnect_ping_conn():
             return False
 
@@ -153,7 +162,7 @@ class QuestDBRepository(TimeSeriesRepository):
         return datetime.now(timezone.utc)
 
     @staticmethod
-    def _to_dict(point: DataPoint | dict) -> dict[str, Any]:
+    def _to_dict(point: PointLike | dict) -> dict[str, Any]:
         if isinstance(point, dict):
             return point
         return point.as_dict()
@@ -224,20 +233,30 @@ class QuestDBRepository(TimeSeriesRepository):
         if measurement in self._created_tables:
             return
 
-        columns = ['time TIMESTAMP']
+        columns: list[sql.Composable] = [sql.SQL("time TIMESTAMP")]
         for column in schema.tags:
-            columns.append(f'"{column.name}" {self._questdb_type(column.data_type)}')
+            columns.append(
+                sql.SQL("{} {}").format(
+                    sql.Identifier(column.name), sql.SQL(cast(Any, self._questdb_type(column.data_type)))
+                )
+            )
         for column in schema.fields:
-            columns.append(f'"{column.name}" {self._questdb_type(column.data_type)}')
+            columns.append(
+                sql.SQL("{} {}").format(
+                    sql.Identifier(column.name), sql.SQL(cast(Any, self._questdb_type(column.data_type)))
+                )
+            )
 
         assert self.conn is not None
         with self.conn.cursor() as cur:
             cur.execute(
-                f'''
-                CREATE TABLE IF NOT EXISTS "{measurement}" (
-                    {", ".join(columns)}
-                ) TIMESTAMP(time) PARTITION BY DAY
-                '''
+                sql.SQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS {} (
+                        {}
+                    ) TIMESTAMP(time) PARTITION BY DAY
+                    """
+                ).format(sql.Identifier(measurement), sql.SQL(", ").join(columns))
             )
 
         # Verify that the table actually has the expected columns.  If the table
@@ -247,8 +266,7 @@ class QuestDBRepository(TimeSeriesRepository):
         expected = {"time"} | {c.name for c in schema.tags} | {c.name for c in schema.fields}
         with self.conn.cursor(row_factory=dict_row) as cur:
             cur.execute(
-                "SELECT column_name FROM information_schema.columns "
-                "WHERE table_name = %s",
+                "SELECT column_name FROM information_schema.columns WHERE table_name = %s",
                 (measurement,),
             )
             actual = {row["column_name"] for row in cur.fetchall()}
@@ -279,18 +297,21 @@ class QuestDBRepository(TimeSeriesRepository):
                 row.append(self._coerce_value(fields.get(column.name), column.data_type))
             rows.append(tuple(row))
 
-        column_names = ['"time"']
-        column_names.extend(f'"{column.name}"' for column in schema.tags)
-        column_names.extend(f'"{column.name}"' for column in schema.fields)
-        placeholders = ", ".join(["%s"] * len(column_names))
+        column_names = ["time"]
+        column_names.extend(column.name for column in schema.tags)
+        column_names.extend(column.name for column in schema.fields)
 
         with self.conn.cursor() as cur:
             cur.executemany(
-                f'INSERT INTO "{measurement}" ({", ".join(column_names)}) VALUES ({placeholders})',
+                sql.SQL("INSERT INTO {} ({}) VALUES ({})").format(
+                    sql.Identifier(measurement),
+                    sql.SQL(", ").join(sql.Identifier(name) for name in column_names),
+                    sql.SQL(", ").join(sql.Placeholder() for _ in column_names),
+                ),
                 rows,
             )
 
-    def write(self, points: DataPoint | dict | list[DataPoint | dict]) -> None:
+    def write(self, points: PointLike | dict | list[PointLike | dict]) -> None:
         if self.conn is None:
             raise ConnectionError("Not connected. Call connect() first.")
 
@@ -312,7 +333,9 @@ class QuestDBRepository(TimeSeriesRepository):
 
             with self.conn.cursor() as cur:
                 cur.executemany(
-                    f'INSERT INTO "{self.table_name}" (measurement, time, tags, fields) VALUES (%s, %s, %s, %s)',
+                    sql.SQL("INSERT INTO {} (measurement, time, tags, fields) VALUES (%s, %s, %s, %s)").format(
+                        sql.Identifier(self.table_name)
+                    ),
                     rows,
                 )
         else:
@@ -340,16 +363,26 @@ class QuestDBRepository(TimeSeriesRepository):
                 self._ensure_measurement_table(measurement)
                 with self.conn.cursor() as cur:
                     cur.executemany(
-                        f'INSERT INTO "{measurement}" (time, tags, fields) VALUES (%s, %s, %s)',
+                        sql.SQL("INSERT INTO {} (time, tags, fields) VALUES (%s, %s, %s)").format(
+                            sql.Identifier(measurement)
+                        ),
                         mrows,
                     )
 
-    def query(self, query_str: str, mode: str = "all") -> Any:
+    def query(
+        self,
+        query_str: str | Query,
+        mode: str = "all",
+        params: Sequence[Any] | None = None,
+    ) -> Any:
         if self.conn is None:
             raise ConnectionError("Not connected. Call connect() first.")
 
         with self.conn.cursor() as cur:
-            cur.execute(query_str)
+            if params is None:
+                cur.execute(cast(Any, query_str))
+            else:
+                cur.execute(cast(Any, query_str), params)
             rows = cur.fetchall() if cur.description else []
 
         if mode == "pandas":
@@ -366,13 +399,15 @@ class QuestDBRepository(TimeSeriesRepository):
         assert self.conn is not None
         with self.conn.cursor() as cur:
             cur.execute(
-                f"""
-                CREATE TABLE IF NOT EXISTS \"{measurement}\" (
-                    time TIMESTAMP,
-                    tags VARCHAR,
-                    fields VARCHAR
-                ) TIMESTAMP(time) PARTITION BY DAY
-                """
+                sql.SQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS {} (
+                        time TIMESTAMP,
+                        tags VARCHAR,
+                        fields VARCHAR
+                    ) TIMESTAMP(time) PARTITION BY DAY
+                    """
+                ).format(sql.Identifier(measurement))
             )
         self._created_tables.add(measurement)
 
@@ -386,7 +421,7 @@ class QuestDBRepository(TimeSeriesRepository):
         if self.schema == SCHEMA_PER_MEASUREMENT:
             return self.get_table_names()
         rows = self.query(
-            f'SELECT DISTINCT measurement FROM "{self.table_name}" ORDER BY measurement',
+            sql.SQL("SELECT DISTINCT measurement FROM {} ORDER BY measurement").format(sql.Identifier(self.table_name)),
             mode="all",
         )
         return [row["measurement"] for row in rows]
@@ -396,7 +431,10 @@ class QuestDBRepository(TimeSeriesRepository):
         return [row["table_name"] for row in rows]
 
     def get_column_names(self, table_name: str) -> list[str]:
-        rows = self.query(f'SHOW COLUMNS FROM "{table_name}"', mode="all")
+        rows = self.query(
+            sql.SQL("SHOW COLUMNS FROM {}").format(sql.Identifier(table_name)),
+            mode="all",
+        )
         return [row["column"] for row in rows if "column" in row]
 
     def get_values_last_hours(
@@ -414,17 +452,27 @@ class QuestDBRepository(TimeSeriesRepository):
         For the ``per_measurement`` schema, *table_name* is the measurement
         name directly and *measurement* is ignored.
         """
-        measurement_filter = ""
         if self.schema == SCHEMA_UNIFIED and measurement is not None:
-            measurement_filter = f"AND measurement = '{measurement}'"
-        query = f"""
-            SELECT time, fields
-            FROM "{table_name}"
-            WHERE time >= dateadd('h', -{int(hours)}, now())
-            {measurement_filter}
-            ORDER BY time DESC
-        """
-        rows = self.query(query, mode="all")
+            query = sql.SQL(
+                """
+                SELECT time, fields
+                FROM {}
+                WHERE time >= dateadd('h', -%s, now())
+                  AND measurement = %s
+                ORDER BY time DESC
+                """
+            ).format(sql.Identifier(table_name))
+            rows = self.query(query, mode="all", params=(int(hours), measurement))
+        else:
+            query = sql.SQL(
+                """
+                SELECT time, fields
+                FROM {}
+                WHERE time >= dateadd('h', -%s, now())
+                ORDER BY time DESC
+                """
+            ).format(sql.Identifier(table_name))
+            rows = self.query(query, mode="all", params=(int(hours),))
         parsed = self._extract_field(rows, column_name)
         if mode == "pandas":
             return pandas.DataFrame(parsed)
@@ -446,18 +494,29 @@ class QuestDBRepository(TimeSeriesRepository):
         For the ``per_measurement`` schema, *table_name* is the measurement
         name directly and *measurement* is ignored.
         """
-        measurement_filter = ""
         if self.schema == SCHEMA_UNIFIED and measurement is not None:
-            measurement_filter = f"AND measurement = '{measurement}'"
-        query = f"""
-            SELECT time, fields
-            FROM "{table_name}"
-            WHERE time >= '{start_time}'
-              AND time < '{end_time}'
-            {measurement_filter}
-            ORDER BY time DESC
-        """
-        rows = self.query(query, mode="all")
+            query = sql.SQL(
+                """
+                SELECT time, fields
+                FROM {}
+                WHERE time >= %s
+                  AND time < %s
+                  AND measurement = %s
+                ORDER BY time DESC
+                """
+            ).format(sql.Identifier(table_name))
+            rows = self.query(query, mode="all", params=(start_time, end_time, measurement))
+        else:
+            query = sql.SQL(
+                """
+                SELECT time, fields
+                FROM {}
+                WHERE time >= %s
+                  AND time < %s
+                ORDER BY time DESC
+                """
+            ).format(sql.Identifier(table_name))
+            rows = self.query(query, mode="all", params=(start_time, end_time))
         parsed = self._extract_field(rows, column_name)
         if mode == "pandas":
             return pandas.DataFrame(parsed)

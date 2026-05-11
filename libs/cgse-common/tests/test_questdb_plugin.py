@@ -11,6 +11,29 @@ from egse.plugins.metrics.questdb import QuestDBRepository
 from egse.plugins.metrics.questdb import get_repository_class
 
 
+def _query_text(query) -> str:
+    if isinstance(query, str):
+        return query
+    text = str(query)
+    if text and text != repr(query):
+        return text
+    return repr(query)
+
+
+def _query_contains(query: str, literal_sql: str, identifier: str | None = None) -> bool:
+    if literal_sql in query:
+        return True
+    if identifier and f"Identifier('{identifier}')" in query:
+        return True
+    return False
+
+
+def _has_column_definition(query: str, column_name: str, data_type: str) -> bool:
+    if f'"{column_name}" {data_type}' in query:
+        return True
+    return f"Identifier('{column_name}')" in query and f"SQL('{data_type}')" in query
+
+
 class FakeCursor:
     def __init__(self, conn):
         self.conn = conn
@@ -23,22 +46,23 @@ class FakeCursor:
         return False
 
     def execute(self, query, params=None):
-        self.conn.executed.append((query, params))
+        query_text = _query_text(query)
+        self.conn.executed.append((query_text, params))
         self.description = [("col",)]
 
-        if "SELECT 1" in query:
+        if "SELECT 1" in query_text:
             self.conn.rows = [{"?column?": 1}]
-        elif "SELECT table_name FROM tables()" in query:
+        elif "SELECT table_name FROM tables()" in query_text:
             self.conn.rows = [{"table_name": "timeseries"}]
-        elif "SHOW COLUMNS FROM" in query:
+        elif "SHOW COLUMNS FROM" in query_text:
             self.conn.rows = [{"column": "measurement"}, {"column": "time"}, {"column": "fields"}]
-        elif "information_schema.columns" in query:
+        elif "information_schema.columns" in query_text:
             # Return all columns that are expected by any schema registered in the fake.
             # We model this as: the table was freshly created so all schema columns exist.
             measurement = params[0] if params else ""
             cols = self.conn.schema_columns.get(measurement, [])
             self.conn.rows = [{"column_name": c} for c in cols]
-        elif "SELECT time, fields" in query:
+        elif "SELECT time, fields" in query_text:
             self.conn.rows = [
                 {
                     "time": datetime.datetime(2026, 4, 24, 12, 0, tzinfo=datetime.timezone.utc),
@@ -50,7 +74,7 @@ class FakeCursor:
             self.description = None
 
     def executemany(self, query, rows):
-        self.conn.executed_many.append((query, rows))
+        self.conn.executed_many.append((_query_text(query), rows))
 
     def fetchall(self):
         return self.conn.rows
@@ -100,7 +124,10 @@ def test_connect_creates_table(monkeypatch):
     repo.connect()
 
     assert repo.conn is fake_conn
-    assert any('CREATE TABLE IF NOT EXISTS "timeseries"' in query for query, _ in fake_conn.executed)
+    assert any(
+        _query_contains(query, 'CREATE TABLE IF NOT EXISTS "timeseries"', "timeseries")
+        for query, _ in fake_conn.executed
+    )
 
 
 def test_ping_query_and_close(monkeypatch):
@@ -146,7 +173,7 @@ def test_write_and_helpers(monkeypatch):
 
     assert len(fake_conn.executed_many) == 1
     insert_query, rows = fake_conn.executed_many[0]
-    assert 'INSERT INTO "metrics"' in insert_query
+    assert _query_contains(insert_query, 'INSERT INTO "metrics"', "metrics")
     assert len(rows) == 1
     assert rows[0][0] == "camera_tm"
 
@@ -180,9 +207,7 @@ def test_write_uses_declared_measurement_schema(monkeypatch):
 
     # Pre-populate fake schema_columns so the column-existence verification in
     # _ensure_schema_table succeeds (simulates the table being freshly created).
-    fake_conn.schema_columns["synthetic_load"] = [
-        "time", "device_id", "profile", "temperature", "sample_idx"
-    ]
+    fake_conn.schema_columns["synthetic_load"] = ["time", "device_id", "profile", "temperature", "sample_idx"]
 
     repo = QuestDBRepository(schema="per_measurement")
     repo.connect()
@@ -195,16 +220,24 @@ def test_write_uses_declared_measurement_schema(monkeypatch):
         }
     )
 
-    create_queries = [query for query, _ in fake_conn.executed if 'CREATE TABLE IF NOT EXISTS "synthetic_load"' in query]
+    create_queries = [
+        query
+        for query, _ in fake_conn.executed
+        if _query_contains(query, 'CREATE TABLE IF NOT EXISTS "synthetic_load"', "synthetic_load")
+    ]
     assert len(create_queries) == 1
     # SYMBOL is mapped to VARCHAR for PGWire DDL compatibility
-    assert '"device_id" VARCHAR' in create_queries[0]
-    assert '"profile" VARCHAR' in create_queries[0]
-    assert '"temperature" DOUBLE' in create_queries[0]
-    assert '"sample_idx" LONG' in create_queries[0]
+    assert _has_column_definition(create_queries[0], "device_id", "VARCHAR")
+    assert _has_column_definition(create_queries[0], "profile", "VARCHAR")
+    assert _has_column_definition(create_queries[0], "temperature", "DOUBLE")
+    assert _has_column_definition(create_queries[0], "sample_idx", "LONG")
 
     insert_query, rows = fake_conn.executed_many[-1]
-    assert 'INSERT INTO "synthetic_load" ("time", "device_id", "profile", "temperature", "sample_idx")' in insert_query
+    assert _query_contains(
+        insert_query,
+        'INSERT INTO "synthetic_load" ("time", "device_id", "profile", "temperature", "sample_idx")',
+        "synthetic_load",
+    )
     assert rows[0][1:] == ("srcA_000", "source-A", 21.5, 42)
 
 
