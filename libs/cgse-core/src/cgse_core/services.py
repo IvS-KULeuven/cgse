@@ -1,17 +1,16 @@
 import asyncio
 import datetime
-import logging
 import time
 from pathlib import Path
 
 import rich
 import typer
-
-from egse.registry.client import AsyncRegistryClient
 from egse.signal import DEFAULT_SIGNAL_DIR
 from egse.signal import create_signal_command_file
 from egse.system import TyperAsyncCommand
 from egse.system import format_datetime
+
+from egse.registry.client import AsyncRegistryClient
 
 from ._start import start_cm_cs
 from ._start import start_log_cs
@@ -43,12 +42,19 @@ core = typer.Typer(
 
 
 @core.command(name="start")
-def start_core_services(log_level: str = "WARNING"):
+def start_core_services(
+    log_level: str = "WARNING",
+    enforce_unique_service_types: bool | None = typer.Option(
+        None,
+        "--enforce-unique-service-types/--allow-duplicate-service-types",
+        help="Override registry startup mode: enforce one service per type, or allow duplicates for pooling.",
+    ),
+):
     """Start the core services in the background."""
 
     rich.print("[green]Starting the core services...[/]")
 
-    start_rm_cs(log_level)
+    start_rm_cs(log_level, enforce_unique_service_types)
     start_log_cs()
     start_notifyhub()
     start_metricshub()
@@ -104,9 +110,16 @@ rm_cs = typer.Typer(
 
 
 @rm_cs.command(name="start")
-def rm_cs_start(log_level: str = "WARNING"):
+def rm_cs_start(
+    log_level: str = "WARNING",
+    enforce_unique_service_types: bool | None = typer.Option(
+        None,
+        "--enforce-unique-service-types/--allow-duplicate-service-types",
+        help="Override registry startup mode: enforce one service per type, or allow duplicates for pooling.",
+    ),
+):
     """Start the Service Registry Manager."""
-    start_rm_cs(log_level)
+    start_rm_cs(log_level, enforce_unique_service_types)
 
 
 @rm_cs.command(name="stop")

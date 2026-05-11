@@ -7,9 +7,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-05-05
+
+- Service Registry now enforces unique service types by default (`UNIQUE_SERVICE_TYPES=true`). This prevents accidental duplicate registrations for the same service type.
+- Service registration now supports explicit duplicate policy flags:
+  - `singleton=True` to require uniqueness for a specific registration
+  - `allow_duplicate_service_type=True` to override global uniqueness enforcement for a specific registration
+  - invalid combinations are now rejected early (`singleton` and `allow_duplicate_service_type` cannot both be true)
+- Improved Symetrie hexapod connectivity and control-server behavior:
+  - Joran and Puna control server flows now consistently use device IDs
+  - proxy connection handling and error reporting were improved when discovering/connecting to control servers
+  - control-server start/stop logging and storage mnemonic handling were cleaned up for more predictable operations
+- Symetrie hexapod package now declares Python compatibility as `>=3.10,<3.13`.
+
+## [0.22.2] - 2026-04-29
+
+- Fix hexapod simulator: Rename rotation configuration variable for clarity and fix reference_frame → ref
+- Refactor reference frame handling: replace 'reference_frame' with 'ref' in multiple files, fix unit tests
+- Renamed duplicated methods in `Tgf4000Interface`
+- Documentation update:
+  - Add advanced query documentation for temperature rate of change and integrate MathJax support
+  - Add administrator and user guides for monitoring and telemetry setup; enhance release documentation
+  - Add new documentation pages for Metrics Hub, Logger, Configuration Manager, Storage Manager, and Process Manager
+  - Updates to all core services documentation
+
 ## [0.22.1] - 2026-04-17
 
 - The `obsid-table.txt` file now contains the function name and args + kwargs of the parent function. Previously, when `start_observation()` was used instead of `execute()`, the `obsid-table.txt` would contain `unknown_function()` which was rather confusing.
+- Added an initial asynchronous Configuration Manager control server implementation, including client, controller, server, and service layers.
+- Introduced typed payload serialization utilities for safer/cleaner message exchange in async control flows.
+- Refactored async control infrastructure (including dummy async control components) to improve command routing and error handling.
+- Added configuration settings for the new async Configuration Manager control server (service type, process name, and ports).
+- Expanded automated test coverage for async control behavior, async Configuration Manager control server functionality, and serialization helpers.
 - Enhance ServiceMessaging class with detailed documentation and examples; add tests for fake user, email, order, and analytics services. The ServiceMessaging class is a convenience wrapper for publishing and subscribing to events that can also be used as a context manager.
 
 ## [0.22.0] - 2026-04-09
@@ -385,7 +414,9 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.1...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.23.0...HEAD
+[0.23.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.2...v0.23.0
+[0.22.2]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.1...v0.22.2
 [0.22.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.0...v0.22.1
 [0.22.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.21.1...v0.22.0
 [0.21.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.21.0...v0.21.1

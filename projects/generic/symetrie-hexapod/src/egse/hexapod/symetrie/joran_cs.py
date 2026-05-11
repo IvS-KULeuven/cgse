@@ -16,31 +16,32 @@ all device behavior correctly, e.g. timing, error conditions, etc.
 """
 
 import logging
-
-from egse.process import SubProcess
-
-if __name__ != "__main__":
-    import multiprocessing
-
-    multiprocessing.current_process().name = "joran_cs"
-
+import multiprocessing
 import sys
+from typing import Annotated
 
 import click
 import rich
+import typer
 import zmq
+from egse.connect import get_endpoint, get_metadata_port
+from egse.control import ControlServer, is_control_server_active
+from egse.process import SubProcess
+from egse.services import ServiceProxy
+from egse.settings import Settings
 
-from egse.control import ControlServer
-from egse.control import is_control_server_active
 from egse.hexapod.symetrie.joran import JoranProxy
 from egse.hexapod.symetrie.joran_protocol import JoranProtocol
-from egse.settings import Settings
-from egse.zmq_ser import connect_address
-from prometheus_client import start_http_server
 
 logger = logging.getLogger(__name__)
 
 CTRL_SETTINGS = Settings.load("Hexapod Control Server")["JORAN"]
+
+PROTOCOL = CTRL_SETTINGS.get("PROTOCOL", "tcp")
+HOSTNAME = CTRL_SETTINGS.get("HOSTNAME", "localhost")
+COMMANDING_PORT = CTRL_SETTINGS.get("COMMANDING_PORT", 0)
+SERVICE_PORT = CTRL_SETTINGS.get("SERVICE_PORT", 0)
+MONITORING_PORT = CTRL_SETTINGS.get("MONITORING_PORT", 0)
 
 
 class JoranControlServer(ControlServer):
@@ -61,10 +62,12 @@ class JoranControlServer(ControlServer):
 
     """
 
-    def __init__(self):
+    def __init__(self, device_id: str, simulator: bool = False):
         super().__init__()
 
-        self.device_protocol = JoranProtocol(self)
+        multiprocessing.current_process().name = "joran_cs"
+
+        self.device_protocol = JoranProtocol(self, device_id=device_id, simulator=simulator)
 
         self.logger.debug(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()}")
 
@@ -72,54 +75,57 @@ class JoranControlServer(ControlServer):
 
         self.poller.register(self.dev_ctrl_cmd_sock, zmq.POLLIN)
 
+        self.service_name = "joran_cs"
+        self.service_type = device_id
+        self.register_service(service_type=self.service_type)
+
     def get_communication_protocol(self):
-        return CTRL_SETTINGS["PROTOCOL"]
+        return PROTOCOL
 
     def get_commanding_port(self):
-        return CTRL_SETTINGS["COMMANDING_PORT"]
+        return COMMANDING_PORT
 
     def get_service_port(self):
-        return CTRL_SETTINGS["SERVICE_PORT"]
+        return SERVICE_PORT
 
     def get_monitoring_port(self):
-        return CTRL_SETTINGS["MONITORING_PORT"]
+        return MONITORING_PORT
+
+    def can_operate_without_registry(self) -> bool:
+        return bool(COMMANDING_PORT and SERVICE_PORT and MONITORING_PORT)
 
     def get_storage_mnemonic(self):
-        try:
-            return CTRL_SETTINGS["STORAGE_MNEMONIC"]
-        except AttributeError:
-            return "JORAN"
+        return CTRL_SETTINGS.get("STORAGE_MNEMONIC", "JORAN")
 
-    def before_serve(self):
-        start_http_server(CTRL_SETTINGS["METRICS_PORT"])
+    def before_serve(self): ...
 
 
-@click.group()
-def cli():
-    pass
+app = typer.Typer()
 
 
-@cli.command()
-@click.option("--simulator", "--sim", is_flag=True, help="Start the Hexapod Joran Simulator as the backend.")
-def start(simulator):
-    """Start the Hexapod Joran Control Server."""
-
-    if simulator:
-        Settings.set_simulation_mode(True)
+@app.command()
+def start(
+    device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")],
+    simulator: Annotated[
+        bool, typer.Option("--simulator", "--sim", help="start the hexapod JORAN Control Server in simulator mode")
+    ] = False,
+):
+    """Start the Hexapod JORAN Control Server."""
 
     try:
-        controller = JoranControlServer()
+        controller = JoranControlServer(device_id=device_id, simulator=simulator)
         controller.serve()
 
     except KeyboardInterrupt:
         print("Shutdown requested...exiting")
 
-    except SystemExit as exit_code:
+    except SystemExit as exc:
+        exit_code = exc.code if hasattr(exc, "code") else 0
         print("System Exit with code {}.".format(exit_code))
         sys.exit(exit_code)
 
     except Exception:
-        logger.exception("Cannot start the Hexapod Joran Control Server")
+        logger.exception("Cannot start the Hexapod JORAN Control Server")
 
         # The above line does exactly the same as the traceback, but on the logger
         # import traceback
@@ -128,47 +134,71 @@ def start(simulator):
     return 0
 
 
-@cli.command()
-@click.option("--simulator", "--sim", is_flag=True, help="Start the Hexapod Joran Simulator as the backend.")
-def start_bg(simulator):
-    """Start the JORAN Control Server in the background."""
-    sim = "--simulator" if simulator else ""
-    proc = SubProcess("joran_cs", ["joran_cs", "start", sim])
-    proc.execute()
-
-
-@cli.command()
-def stop():
+@app.command()
+def stop(device_id: str):
     """Send a 'quit_server' command to the Hexapod Joran Control Server."""
 
     try:
-        with JoranProxy() as proxy:
-            sp = proxy.get_service_proxy()
-            sp.quit_server()
+        _, hostname, service_port = get_metadata_port(
+            service_type=device_id,
+            metadata_key="service_port",
+            static_port=SERVICE_PORT,
+            protocol=PROTOCOL,
+            hostname=HOSTNAME,
+        )
+    except RuntimeError as exc:
+        rich.print(f"[red]{exc}")
+        return
+
+    proxy = ServiceProxy(protocol=PROTOCOL, hostname=hostname, port=service_port)
+    try:
+        proxy.quit_server()
     except ConnectionError:
-        rich.print("[red]Couldn't connect to 'joran_cs', process probably not running. ")
+        rich.print("[red]Couldn't connect to 'joran_cs', process probably not running.")
 
 
-@cli.command()
-def status():
+@app.command()
+def status(device_id: str):
     """Request status information from the Control Server."""
 
-    protocol = CTRL_SETTINGS["PROTOCOL"]
-    hostname = CTRL_SETTINGS["HOSTNAME"]
-    port = CTRL_SETTINGS["COMMANDING_PORT"]
+    try:
+        endpoint = get_endpoint(service_type=device_id, protocol=PROTOCOL, hostname=HOSTNAME, port=COMMANDING_PORT)
+        commanding_port = int(endpoint.rsplit(":", maxsplit=1)[-1])
 
-    endpoint = connect_address(protocol, hostname, port)
+        _, hostname, service_port = get_metadata_port(
+            service_type=device_id,
+            metadata_key="service_port",
+            static_port=SERVICE_PORT,
+            protocol=PROTOCOL,
+            hostname=HOSTNAME,
+        )
+        _, _, monitoring_port = get_metadata_port(
+            service_type=device_id,
+            metadata_key="monitoring_port",
+            static_port=MONITORING_PORT,
+            protocol=PROTOCOL,
+            hostname=HOSTNAME,
+        )
+    except RuntimeError:
+        rich.print(
+            f"[red]The JORAN CS '{device_id}' isn't registered as a service. I cannot contact the control "
+            f"server without the required info from the service registry.[/]"
+        )
+        rich.print("JORAN Hexapod: [red]not active")
+        return
 
     if is_control_server_active(endpoint):
         rich.print("JORAN Hexapod: [green]active")
-        with JoranProxy() as joran:
+        with JoranProxy(device_id) as joran:
             sim = joran.is_simulator()
             connected = joran.is_connected()
             ip = joran.get_ip_address()
             rich.print(f"type: ALPHA+")
             rich.print(f"mode: {'simulator' if sim else 'device'}{'' if connected else ' not'} connected")
             rich.print(f"hostname: {ip}")
-            rich.print(f"commanding port: {port}")
+            rich.print(f"commanding port: {commanding_port}")
+            rich.print(f"service port: {service_port}")
+            rich.print(f"monitoring port: {monitoring_port}")
     else:
         rich.print("JORAN Hexapod: [red]not active")
 
@@ -176,4 +206,4 @@ def status():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format=Settings.LOG_FORMAT_FULL)
 
-    sys.exit(cli())
+    sys.exit(app())

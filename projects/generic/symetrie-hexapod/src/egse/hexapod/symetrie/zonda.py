@@ -26,6 +26,9 @@ from numpy import loadtxt
 from time import sleep
 
 DEVICE_SETTINGS = Settings.load(filename="zonda.yaml")
+CTRL_SETTINGS = Settings.load("Hexapod Control Server")
+
+PROXY_TIMEOUT = 10.0  # don't wait longer than 10s by default
 
 HOME_COMPLETE = 6
 IN_POSITION = 3
@@ -681,8 +684,13 @@ class ZondaSimulator(HexapodSimulator, DeviceInterface):
     This class simulates all the movements and status of the Hexapod.
     """
 
-    def __init__(self):
+    def __init__(self, device_id: str):
         super().__init__()
+        self._device_id = device_id
+
+    @property
+    def device_id(self):
+        return self._device_id
 
     def get_temperature(self) -> list[float]:
         return [random.random() for _ in range(6)]
@@ -692,32 +700,38 @@ class ZondaProxy(Proxy, ZondaInterface):
     """The ZondaProxy class is used to connect to the control server and send commands to the
     Hexapod ZONDA remotely.
 
-    Args:
-        protocol: the transport protocol
-        hostname: location of the control server (IP address)
-        port: TCP port on which the control server is listening for commands
+    The control server is discovered from the service registry using ``device_id`` as the
+    service type key, which is the same identifier used when the control server was started.
 
+    Args:
+        device_id: identifier of the hexapod control server as registered in the service registry
+        timeout: how long to wait for a response from the control server before giving up
     """
 
-    def __init__(self, protocol: str, hostname: str, port: int):
-        super().__init__(connect_address(protocol, hostname, port))
+    def __init__(self, device_id: str, *, timeout: float = PROXY_TIMEOUT):
+        self._device_id = device_id
+        super().__init__("", timeout=timeout, connect=False)
 
-    @classmethod
-    def from_identifier(cls, device_id: str):
+    @property
+    def device_id(self):
+        return self._device_id
+
+    def connect_cs(self):
         with RegistryClient() as reg:
-            service = reg.discover_service(device_id)
+            service = reg.discover_service(self._device_id)
 
-            if service:
-                protocol = service.get("protocol", "tcp")
-                hostname = service["host"]
-                port = service["port"]
+        if not service:
+            raise ConnectionError(f"No control server registered as '{self._device_id}'.")
 
-            else:
-                raise RuntimeError(f"No service registered as {device_id}")
+        protocol = service.get("protocol", "tcp")
+        hostname = service["host"]
+        port = service["port"]
 
-        logger.info(f"{protocol=}:{hostname=}:{port=}")
+        self._endpoint = connect_address(protocol, hostname, port)
+        logger.info(f"ZondaProxy connecting to {self._device_id!r} at {self._endpoint}")
 
-        return cls(protocol, hostname, port)
+        super().connect_cs()
+        self.load_commands()
 
 
 def decode_validation_error(value) -> Dict:

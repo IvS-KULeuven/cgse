@@ -14,14 +14,14 @@ import pytest
 import pytest_asyncio
 import zmq
 import zmq.asyncio
+from egse.log import logger
+from egse.system import type_name
 from fixtures.helpers import is_service_registry_running
 
-from egse.log import logger
 from egse.registry import MessageType
 from egse.registry.backend import AsyncInMemoryBackend
 from egse.registry.client import AsyncRegistryClient
 from egse.registry.server import AsyncRegistryServer
-from egse.system import type_name
 
 # Constants for testing
 TEST_REQ_PORT = 15556
@@ -153,6 +153,7 @@ async def server_health_check(zmq_context) -> bool:
 
                 if len(message_parts) >= 2:
                     message_type = MessageType(message_parts[0])
+                    assert message_type == MessageType.RESPONSE, f"Expected RESPONSE, got {message_type}"
                     message_data = message_parts[1]
 
                     response = json.loads(message_data)
@@ -240,7 +241,7 @@ async def client(server, zmq_context):
     """
     Function-scoped fixture for AsyncRegistryClient with proper setup and teardown.
     """
-    with AsyncRegistryClient(
+    async with AsyncRegistryClient(
         registry_req_endpoint=f"tcp://localhost:{TEST_REQ_PORT}",
         registry_sub_endpoint=f"tcp://localhost:{TEST_PUB_PORT}",
         timeout=5000,  # 5 second timeout
@@ -377,6 +378,238 @@ async def test_server_register_service(server, req_socket, sub_socket):
     assert event["type"] == "register"
     assert "service_id" in event["data"]
     assert event["data"]["service_info"]["name"] == "test-service"
+
+
+@pytest.mark.asyncio
+async def test_server_register_duplicate_service_type_allowed_by_default(server, req_socket):
+    """Duplicate service types are allowed when uniqueness enforcement is disabled."""
+    server.enforce_unique_service_types = False
+
+    first = await send_request(
+        MessageType.REQUEST_WITH_REPLY,
+        req_socket,
+        {
+            "action": "register",
+            "service_info": {"name": "svc-a", "host": "localhost", "port": 8181, "type": "shared-type"},
+        },
+    )
+    second = await send_request(
+        MessageType.REQUEST_WITH_REPLY,
+        req_socket,
+        {
+            "action": "register",
+            "service_info": {"name": "svc-b", "host": "localhost", "port": 8182, "type": "shared-type"},
+        },
+    )
+
+    assert first["success"] is True
+    assert second["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_server_register_duplicate_service_type_rejected_in_unique_mode(server, req_socket):
+    """Duplicate service types are rejected when uniqueness enforcement is enabled."""
+    server.enforce_unique_service_types = True
+
+    try:
+        first = await send_request(
+            MessageType.REQUEST_WITH_REPLY,
+            req_socket,
+            {
+                "action": "register",
+                "service_info": {
+                    "id": "fixed-id-1",
+                    "name": "svc-a",
+                    "host": "localhost",
+                    "port": 8281,
+                    "type": "singleton-type",
+                },
+            },
+        )
+        second = await send_request(
+            MessageType.REQUEST_WITH_REPLY,
+            req_socket,
+            {
+                "action": "register",
+                "service_info": {
+                    "id": "fixed-id-2",
+                    "name": "svc-b",
+                    "host": "localhost",
+                    "port": 8282,
+                    "type": "singleton-type",
+                },
+            },
+        )
+        update_same_id = await send_request(
+            MessageType.REQUEST_WITH_REPLY,
+            req_socket,
+            {
+                "action": "register",
+                "service_info": {
+                    "id": "fixed-id-1",
+                    "name": "svc-a-updated",
+                    "host": "localhost",
+                    "port": 8283,
+                    "type": "singleton-type",
+                },
+            },
+        )
+
+        assert first["success"] is True
+        assert second["success"] is False
+        assert second["error"] == "duplicate_service_type"
+        assert second["service_type"] == "singleton-type"
+        assert second["existing_service_id"] == "fixed-id-1"
+        assert update_same_id["success"] is True
+    finally:
+        server.enforce_unique_service_types = False
+
+
+@pytest.mark.asyncio
+async def test_server_register_singleton_overrides_permissive_global(server, req_socket):
+    """A registration with singleton=True is rejected for duplicate types even when the global
+    enforce_unique_service_types flag is False."""
+    server.enforce_unique_service_types = False
+
+    first = await send_request(
+        MessageType.REQUEST_WITH_REPLY,
+        req_socket,
+        {
+            "action": "register",
+            "service_info": {
+                "id": "singleton-id-1",
+                "name": "svc-a",
+                "host": "localhost",
+                "port": 8381,
+                "type": "exclusive-type",
+                "singleton": True,
+            },
+        },
+    )
+    second = await send_request(
+        MessageType.REQUEST_WITH_REPLY,
+        req_socket,
+        {
+            "action": "register",
+            "service_info": {
+                "id": "singleton-id-2",
+                "name": "svc-b",
+                "host": "localhost",
+                "port": 8382,
+                "type": "exclusive-type",
+                "singleton": True,
+            },
+        },
+    )
+    # A non-singleton with the same type is also blocked because the first registrant claimed
+    # exclusivity; but if the second service does NOT set singleton it should still be blocked
+    # by the server if the first one did. No — the server only checks per-request; test that a
+    # non-singleton duplicate is allowed when the global flag is off.
+    non_singleton_duplicate = await send_request(
+        MessageType.REQUEST_WITH_REPLY,
+        req_socket,
+        {
+            "action": "register",
+            "service_info": {
+                "id": "non-singleton-id-3",
+                "name": "svc-c",
+                "host": "localhost",
+                "port": 8383,
+                "type": "exclusive-type",
+            },
+        },
+    )
+
+    assert first["success"] is True
+    assert second["success"] is False
+    assert second["error"] == "duplicate_service_type"
+    assert second["existing_service_id"] == "singleton-id-1"
+    # Non-singleton with same type is allowed when global flag is off
+    assert non_singleton_duplicate["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_server_register_allow_duplicate_overrides_strict_global(server, req_socket):
+    """A registration with allow_duplicate_service_type=True can pool even when global
+    uniqueness enforcement is enabled."""
+    server.enforce_unique_service_types = True
+
+    try:
+        first = await send_request(
+            MessageType.REQUEST_WITH_REPLY,
+            req_socket,
+            {
+                "action": "register",
+                "service_info": {
+                    "id": "pool-id-1",
+                    "name": "pool-a",
+                    "host": "localhost",
+                    "port": 8481,
+                    "type": "pool-type",
+                    "allow_duplicate_service_type": True,
+                },
+            },
+        )
+        second = await send_request(
+            MessageType.REQUEST_WITH_REPLY,
+            req_socket,
+            {
+                "action": "register",
+                "service_info": {
+                    "id": "pool-id-2",
+                    "name": "pool-b",
+                    "host": "localhost",
+                    "port": 8482,
+                    "type": "pool-type",
+                    "allow_duplicate_service_type": True,
+                },
+            },
+        )
+        non_pooled_duplicate = await send_request(
+            MessageType.REQUEST_WITH_REPLY,
+            req_socket,
+            {
+                "action": "register",
+                "service_info": {
+                    "id": "pool-id-3",
+                    "name": "pool-c",
+                    "host": "localhost",
+                    "port": 8483,
+                    "type": "pool-type",
+                },
+            },
+        )
+
+        assert first["success"] is True
+        assert second["success"] is True
+        assert non_pooled_duplicate["success"] is False
+        assert non_pooled_duplicate["error"] == "duplicate_service_type"
+    finally:
+        server.enforce_unique_service_types = False
+
+
+@pytest.mark.asyncio
+async def test_server_register_rejects_conflicting_service_type_policy_flags(server, req_socket):
+    """A registration cannot request both singleton and allow_duplicate_service_type."""
+    response = await send_request(
+        MessageType.REQUEST_WITH_REPLY,
+        req_socket,
+        {
+            "action": "register",
+            "service_info": {
+                "id": "conflict-policy-id",
+                "name": "conflict-svc",
+                "host": "localhost",
+                "port": 8581,
+                "type": "conflict-type",
+                "singleton": True,
+                "allow_duplicate_service_type": True,
+            },
+        },
+    )
+
+    assert response["success"] is False
+    assert response["error"] == "invalid_service_type_policy"
 
 
 @pytest.mark.asyncio

@@ -2,17 +2,23 @@ import subprocess
 import sys
 
 import rich
-
 from egse.system import redirect_output_to_log
 
 
-def start_rm_cs(log_level: str):
+def start_rm_cs(log_level: str, enforce_unique_service_types: bool | None = None):
     rich.print("Starting the service registry manager core service...")
 
     out = redirect_output_to_log("rm_cs.start.log")
 
+    command = [sys.executable, "-m", "egse.registry.server", "start", "--log-level", log_level]
+
+    if enforce_unique_service_types is True:
+        command.append("--enforce-unique-service-types")
+    elif enforce_unique_service_types is False:
+        command.append("--no-enforce-unique-service-types")
+
     subprocess.Popen(
-        [sys.executable, "-m", "egse.registry.server", "start", "--log-level", log_level],
+        command,
         stdout=out,
         stderr=out,
         stdin=subprocess.DEVNULL,

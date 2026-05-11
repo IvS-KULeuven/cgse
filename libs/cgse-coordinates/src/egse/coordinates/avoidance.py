@@ -61,9 +61,7 @@ def is_avoidance_ok(hexusr: ReferenceFrame, hexobj: ReferenceFrame, setup: Setup
 
     # The collection of points defining the avoidance volume around FPA_SEN
 
-    vert_obj = Points(
-        coordinates=np.array([vertices_x, vertices_y, vertices_z]), reference_frame=hexobj, name="vert_obj"
-    )
+    vert_obj = Points(coordinates=np.array([vertices_x, vertices_y, vertices_z]), ref=hexobj, name="vert_obj")
 
     # Their coordinates in HEX_USR
     # NB: vert_obj is a Points object, vert_usr is an array

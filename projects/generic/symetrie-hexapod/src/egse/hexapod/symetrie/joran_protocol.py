@@ -24,13 +24,15 @@ class JoranCommand(ClientServerCommand):
 
 
 class JoranProtocol(CommandProtocol):
-    def __init__(self, control_server: ControlServer):
+    def __init__(self, control_server: ControlServer, device_id: str, simulator: bool = False):
         super().__init__(control_server)
+        self.simulator = simulator
+        self.device_id = device_id
 
         self.hk_conversion_table = read_conversion_dict(self.control_server.get_storage_mnemonic(), use_site=True)
 
-        if Settings.simulation_mode():
-            self.hexapod = JoranSimulator()
+        if self.simulator:
+            self.hexapod = JoranSimulator(self.device_id)
         else:
             self.hexapod = JoranController()
 
@@ -54,7 +56,7 @@ class JoranProtocol(CommandProtocol):
     def get_status(self):
         status = super().get_status()
 
-        if self.state == DeviceConnectionState.DEVICE_NOT_CONNECTED and not Settings.simulation_mode():
+        if self.state == DeviceConnectionState.DEVICE_NOT_CONNECTED and not self.simulator:
             return status
 
         mach_positions = self.hexapod.get_machine_positions()
@@ -69,7 +71,7 @@ class JoranProtocol(CommandProtocol):
         result = dict()
         result["timestamp"] = format_datetime()
 
-        if self.state == DeviceConnectionState.DEVICE_NOT_CONNECTED and not Settings.simulation_mode():
+        if self.state == DeviceConnectionState.DEVICE_NOT_CONNECTED and not self.simulator:
             return result
 
         mach_positions = self.hexapod.get_machine_positions()

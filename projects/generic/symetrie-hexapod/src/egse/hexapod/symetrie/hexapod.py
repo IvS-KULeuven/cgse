@@ -25,7 +25,7 @@ class HexapodSimulator:
         identity = np.identity(4)
 
         # Rotation around static axis, and around x, y and z in that order
-        self.rot_config = "sxyz"
+        self.rotation_config = "sxyz"
 
         # Configure the Master Reference Frame
         self.cs_master = ReferenceFrame.create_master()
@@ -35,7 +35,7 @@ class HexapodSimulator:
             transformation=identity,
             ref=self.cs_master,
             name="Machine[Master]",
-            rot_config=self.rot_config,
+            rotation_config=self.rotation_config,
         )
 
         # Configure the Platform Coordinate System, i.e. cs_platform [ref:cs_machine]
@@ -45,7 +45,7 @@ class HexapodSimulator:
             transformation=identity,
             ref=self.cs_machine,
             name="Platform[Machine]",
-            rot_config=self.rot_config,
+            rotation_config=self.rotation_config,
         )
 
         # Configure the User Coordinate System, i.e. cs_user [ref:cs_machine]
@@ -53,7 +53,7 @@ class HexapodSimulator:
             transformation=identity,
             ref=self.cs_machine,
             name="User[Machine]",
-            rot_config=self.rot_config,
+            rotation_config=self.rotation_config,
         )
 
         # Configure the Object Coordinate System, i.e. cs_object [ref:cs_platform]
@@ -61,7 +61,7 @@ class HexapodSimulator:
             transformation=identity,
             ref=self.cs_platform,
             name="Object[Platform]",
-            rot_config=self.rot_config,
+            rotation_config=self.rotation_config,
         )
 
         # We use a CS called cs_object_in_user, i.e. Object as defined in the User CS,
@@ -70,7 +70,7 @@ class HexapodSimulator:
 
         tf_user_to_object = self.cs_user.get_active_transformation_to(self.cs_object)
         self.cs_object_in_user = ReferenceFrame(
-            tf_user_to_object, rot_config=self.rot_config, ref=self.cs_user, name="Object[User]"
+            tf_user_to_object, rotation_config=self.rotation_config, ref=self.cs_user, name="Object[User]"
         )
 
         # Define the invariant links within the system, i.e. some systems are bound with an
@@ -184,8 +184,8 @@ class HexapodSimulator:
         self.cs_user = ReferenceFrame.from_translation_rotation(
             translation,
             rotation,
-            rotation_config=self.rot_config,
-            reference_frame=self.cs_machine,
+            rotation_config=self.rotation_config,
+            ref=self.cs_machine,
             name="User[Machine]",
             degrees=degrees,
         )
@@ -194,7 +194,7 @@ class HexapodSimulator:
 
         tf_user_to_object = self.cs_user.get_active_transformation_to(self.cs_object)
         self.cs_object_in_user = ReferenceFrame(
-            tf_user_to_object, rot_config=self.rot_config, ref=self.cs_user, name="Object[User]"
+            tf_user_to_object, rotation_config=self.rotation_config, ref=self.cs_user, name="Object[User]"
         )
 
         # Define the invariant links within the system, i.e. some systems are bound with an
@@ -221,8 +221,8 @@ class HexapodSimulator:
         self.cs_object = ReferenceFrame.from_translation_rotation(
             translation,
             rotation,
-            rotation_config=self.rot_config,
-            reference_frame=self.cs_platform,
+            rotation_config=self.rotation_config,
+            ref=self.cs_platform,
             name="Object[Platform]",
             degrees=degrees,
         )
@@ -231,7 +231,7 @@ class HexapodSimulator:
 
         tf_user_to_object = self.cs_user.get_active_transformation_to(self.cs_object)
         self.cs_object_in_user = ReferenceFrame(
-            tf_user_to_object, rot_config=self.rot_config, ref=self.cs_user, name="Object[User]"
+            tf_user_to_object, rotation_config=self.rotation_config, ref=self.cs_user, name="Object[User]"
         )
 
         # Object CS and Platform CS are invariant, reset the transformation. User in Object is
@@ -266,7 +266,7 @@ class HexapodSimulator:
         self.cs_object_in_user.set_translation_rotation(
             translation,
             rotation,
-            rotation_config=self.rot_config,
+            rotation_config=self.rotation_config,
             active=True,
             degrees=True,
             preserve_links=True,
@@ -281,7 +281,7 @@ class HexapodSimulator:
         self.cs_object.apply_translation_rotation(
             tr_rel,
             rot_rel,
-            rotation_config=self.rot_config,
+            rotation_config=self.rotation_config,
             active=True,
             degrees=True,
             preserve_links=True,
@@ -322,7 +322,7 @@ class HexapodSimulator:
         import egse.coordinates.transform3d_addon as t3add
 
         rotation = t3add.translation_rotation_to_transformation(
-            [0, 0, 0], [rx, ry, rz], rotation_config=self.rot_config
+            [0, 0, 0], [rx, ry, rz], rotation_config=self.rotation_config
         )
 
         transformation = derotation @ translation @ rerotation @ rotation
@@ -402,7 +402,7 @@ class HexapodSimulator:
         self.cs_platform.set_translation_rotation(
             translation,
             rotation,
-            rotation_config=self.rot_config,
+            rotation_config=self.rotation_config,
             active=True,
             degrees=True,
             preserve_links=True,
@@ -422,7 +422,7 @@ class HexapodSimulator:
         self.cs_platform.set_translation_rotation(
             translation,
             rotation,
-            rotation_config=self.rot_config,
+            rotation_config=self.rotation_config,
             active=True,
             degrees=True,
             preserve_links=True,
@@ -439,7 +439,7 @@ class HexapodSimulator:
         # self.cs_object_in_user.setTranslationRotation(
         #     tr_abs,
         #     rot_abs,
-        #     rot_config=self.rot_config,
+        #     rotation_config=self.rotation_config,
         #     active=True,
         #     degrees=True,
         #     preserveLinks=True,

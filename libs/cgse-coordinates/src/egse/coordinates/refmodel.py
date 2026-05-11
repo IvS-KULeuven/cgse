@@ -45,18 +45,9 @@ from egse.coordinates import dict_to_ref_model
 from egse.coordinates import ref_model_to_dict
 from egse.setup import NavigableDict
 
-LOGGER = logging.getLogger(__name__)
+from egse.coordinates.reference_frame import ReferenceFrame
 
-# TODO : HANDLING "moving_in_ref" (obusr)  in move_absolute_ext and move_relative_ext
-#        should it be added to the model temporarily ??
-#        after the move : remove the link and delete that frame
-#
-# Priority 1
-#   * access methods to allow for things like is_avoidance_ok(hexsim.cs_user, hexsim.cs_object,
-#     setup=setup, verbose=True)
-#
-#  Priority 2
-#   * Move name handling from ReferenceFrame to here (if necessary)
+LOGGER = logging.getLogger(__name__)
 
 
 class ReferenceFrameModel:
@@ -79,7 +70,7 @@ class ReferenceFrameModel:
         """Initialisation of a reference frame model.
 
         Args:
-            model (Dict | List[ReferenceFrame]): List or a dictionary of reference frames that make up the model.
+            model (Dict | List): List or a dictionary of reference frames that make up the model.
             rotation_config (str): Order in which the rotation about the three axes are chained.
             use_degrees (bool): Indicates whether the rotation angles are specified in degrees, rather than radians.
             use_active_movements (bool): Indicates if the rotation is active (object rotates IN a fixed coordinate
@@ -108,7 +99,7 @@ class ReferenceFrameModel:
             Printable string representation of the reference frame.
         """
 
-        return self._model.pretty_str()
+        return str(self._model)
 
     def __len__(self) -> int:
         """Returns the number of reference frames in the model."""
@@ -178,10 +169,6 @@ class ReferenceFrameModel:
     def add_master_frame(self) -> None:
         """Adds the master reference frame to the model."""
 
-        # TODO: First check if there is not already a Master frame in the model
-
-        from egse.coordinates.reference_frame import ReferenceFrame
-
         self._model["Master"] = ReferenceFrame.create_master()
 
     def add_frame(
@@ -205,14 +192,12 @@ class ReferenceFrameModel:
                              reference frame is defined w.r.t. this one.
         """
 
-        from egse.coordinates.reference_frame import ReferenceFrame
-
         if name in self._model:
             raise KeyError("A reference frame with the name '{name} already exists in the model.")
 
         ref = self._model[ref]
 
-        if transformation:
+        if transformation is not None:
             self._model[name] = ReferenceFrame(transformation, ref=ref, name=name, rotation_config=self._rot_config)
         else:
             self._model[name] = ReferenceFrame.from_translation_rotation(
@@ -235,7 +220,6 @@ class ReferenceFrameModel:
         """
 
         if name in self._model:
-            from egse.coordinates.reference_frame import ReferenceFrame
 
             frame: ReferenceFrame = self._model[name]
 
@@ -351,25 +335,32 @@ class ReferenceFrameModel:
             translation (np.ndarray): Translation vector.
             rotation (np.ndarray): Rotation vector.
             degrees (bool): Indicates whether the rotation angles are specified in degrees, rather than radians.
+
+        Caveat:
+            There can not be a link between frame and other, not direct and not indirect.
+            So, with A-link-B-link-C-link-D, we can not do move_absolute_in_other('A', 'D', ...)
+
+        Principle:
+            1. create a 'new' reference frame at the location of frame in other
+            2. link frame with 'new'
+            3. move new to the desired absolute position (frame is automatically following thanks to the link)
+            4. remove the link and delete new
         """
-
-        # TODO:
-        #   There can not be a link between frame and other, not direct and not indirect.
-        #   So, with A-link-B-link-C-link-D, we can not do move_absolute_in_other('A', 'D', ...)
-
         frame = self._model[frame]
         other = self._model[other]
 
+        # get location of frame in other
         transformation = other.get_active_transformation_to(frame)
 
-        from egse.coordinates.reference_frame import ReferenceFrame
-
+        # Create new RefenceFrame in other, at the location of frame, and link it to frame
         moving_in_other = ReferenceFrame(
             transformation, ref=other, name="moving_in_other", rotation_config=self._rot_config
         )
 
         moving_in_other.add_link(frame)
 
+        # Move the new frame to the desired absolute position in other.
+        # The link ensures that frame is following new
         moving_in_other.set_translation_rotation(
             translation,
             rotation,
@@ -379,6 +370,7 @@ class ReferenceFrameModel:
             preserve_links=True,
         )
 
+        # delete the temporary ('new') ReferenceFrame
         moving_in_other.remove_link(frame)
 
         del moving_in_other
@@ -425,18 +417,15 @@ class ReferenceFrameModel:
             translation (np.ndarray): Translation vector.
             rotation (np.ndarray): Rotation vector.
             degrees (bool): Indicates whether the rotation angles are specified in degrees, rather than radians.
+
+        Caveat:
+            There can not be a link between frame and other, not direct and not indirect.
+            So, with A-link-B-link-C-link-D, we can not do move_relative_other('A', 'D', ...)
         """
-
-        # TODO:
-        #   There can not be a link between frame and other, not direct and not indirect.
-        #   So, with A-link-B-link-C-link-D, we can not do move_absolute_in_other('A', 'D', ...)
-
         frame = self._model[frame]
         other = self._model[other]
 
         transformation = frame.get_active_transformation_to(other)
-
-        from egse.coordinates.reference_frame import ReferenceFrame
 
         moving_in_other = ReferenceFrame(
             transformation, ref=other, name="moving_in_other", rotation_config=self._rot_config
@@ -721,30 +710,6 @@ def draw_frame(ax: plt.Axes, reference_frame, plane="xz", default_axis_length: i
     plt.text(point[0], point[1], reference_frame.name, transform=ax.transAxes + offset)
 
 
-def define_the_initial_setup() -> ReferenceFrameModel:
-    """Defines the initial setup of the reference frame model.
-
-    Returns:
-        Reference frame model with the initial setup.
-    """
-
-    model = ReferenceFrameModel()
-
-    model.add_master_frame()
-    model.add_frame("A", translation=[2, 2, 2], rotation=[0, 0, 0], ref="Master")
-    model.add_frame("B", translation=[-2, 2, 2], rotation=[0, 0, 0], ref="Master")
-    model.add_frame("C", translation=[2, 2, 5], rotation=[0, 0, 0], ref="A")
-    model.add_frame("D", translation=[2, 2, 2], rotation=[0, 0, 0], ref="B")
-
-    model.add_link("A", "B")
-    model.add_link("B", "C")
-
-    print(model.serialize())
-    plot_ref_model_3d(model)
-
-    return model
-
-
 def get_vectors(reference_frame_1, reference_frame_2, model: ReferenceFrameModel) -> tuple[np.ndarray, np.ndarray]:
     """Returns the translation and rotation vectors for the active transformation for the 1st reference frame to the 2nd.
 
@@ -778,6 +743,30 @@ def print_vectors(reference_frame_1: str, reference_frame_2: str, model: Referen
         f"{reference_frame_1:8s} -> {reference_frame_2:8s} : Trans [{trans[0]:11.4e}, {trans[1]:11.4e}, {trans[2]:11.4e}]    Rot [{rot[0]:11.4e}, {rot[1]:11.4e}, {rot[2]:11.4e}]"
     )
     return
+
+
+def define_the_initial_setup() -> ReferenceFrameModel:
+    """Defines the initial setup of the reference frame model.
+
+    Returns:
+        Reference frame model with the initial setup.
+    """
+
+    model = ReferenceFrameModel()
+
+    model.add_master_frame()
+    model.add_frame("A", translation=[2, 2, 2], rotation=[0, 0, 0], ref="Master")
+    model.add_frame("B", translation=[-2, 2, 2], rotation=[0, 0, 0], ref="Master")
+    model.add_frame("C", translation=[2, 2, 5], rotation=[0, 0, 0], ref="A")
+    model.add_frame("D", translation=[2, 2, 2], rotation=[0, 0, 0], ref="B")
+
+    model.add_link("A", "B")
+    model.add_link("B", "C")
+
+    print(model.serialize())
+    plot_ref_model_3d(model)
+
+    return model
 
 
 if __name__ == "__main__":

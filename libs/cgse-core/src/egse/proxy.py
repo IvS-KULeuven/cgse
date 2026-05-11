@@ -94,13 +94,16 @@ class ControlServerConnectionInterface:
 
 
 class BaseProxy(ControlServerConnectionInterface):
-    def __init__(self, endpoint: str, timeout: float = REQUEST_TIMEOUT):
+    def __init__(self, endpoint: str, timeout: float = REQUEST_TIMEOUT, *, connect: bool = True):
         """
         The endpoint is a string that is constructed from the protocol, hostname
          and port number and has the format: `protocol://hostname:port`.
 
         The `timeout` argument specifies the number of fractional seconds to wait
         for a reply from the control server.
+
+        When `connect` is `False`, the proxy is constructed without establishing a connection.
+        Call `connect_cs()` explicitly when ready to connect.
         """
 
         self._logger = logger
@@ -111,9 +114,12 @@ class BaseProxy(ControlServerConnectionInterface):
         self._endpoint = endpoint
         self._timeout = timeout
 
-        self.connect_cs()
+        if connect:
+            self.connect_cs()
 
     def __enter__(self):
+        if self._socket is None:
+            self.connect_cs()
         if not self.ping():
             raise ConnectionError(f"Proxy is not connected to endpoint ({self._endpoint}) when entering the context.")
 
@@ -127,14 +133,22 @@ class BaseProxy(ControlServerConnectionInterface):
         if VERBOSE_DEBUG:
             self._logger.debug(f"Trying to connect {self.__class__.__name__} to {self._endpoint}")
 
+        if self._socket:
+            self._logger.warning(
+                f"{self.__class__.__name__} is already connected to {self._endpoint}, disconnecting first."
+            )
+            self.disconnect_cs()
+
         self._socket = self._ctx.socket(zmq.REQ)
         self._socket.connect(self._endpoint)
         self._poller.register(self._socket, zmq.POLLIN)
 
     def disconnect_cs(self):
-        self._socket.setsockopt(zmq.LINGER, 0)
-        self._socket.close()
-        self._poller.unregister(self._socket)
+        if self._socket:
+            self._socket.setsockopt(zmq.LINGER, 0)
+            self._socket.close()
+            self._poller.unregister(self._socket)
+            self._socket = None
 
     def reconnect_cs(self):
         if VERBOSE_DEBUG:
@@ -289,7 +303,7 @@ class Proxy(BaseProxy, ControlServerConnectionInterface):
     during initialization, a ConnectionError will be raised.
     """
 
-    def __init__(self, endpoint, timeout: float = REQUEST_TIMEOUT):
+    def __init__(self, endpoint, timeout: float = REQUEST_TIMEOUT, *, connect: bool = True):
         """
         During initialization, the Proxy will connect to the control server and send a
         handshaking `Ping` command. When that succeeds the Proxy will request and load the
@@ -298,22 +312,28 @@ class Proxy(BaseProxy, ControlServerConnectionInterface):
         can fix the problem with the control server and call `connect_cs()`, followed by a call to
         `load_commands()`.
 
-        The `timeout` argument specifies the number of seconds
+        The `timeout` argument specifies the number of seconds.
+
+        When `connect` is `False`, the proxy is constructed without establishing a connection.
+        Call `connect_cs()` explicitly when ready to connect.
         """
 
-        super().__init__(endpoint, timeout)
+        super().__init__(endpoint, timeout, connect=connect)
 
         self._commands = {}
 
-        if self.ping():
-            self.load_commands()
-        else:
-            self._logger.warning(
-                f"{self.__class__.__name__} could not connect to its control server at {endpoint}. "
-                f"No commands have been loaded."
-            )
+        if connect:
+            if self.ping():
+                self.load_commands()
+            else:
+                self._logger.warning(
+                    f"{self.__class__.__name__} could not connect to its control server at {endpoint}. "
+                    f"No commands have been loaded."
+                )
 
     def __enter__(self):
+        if self._socket is None:
+            self.connect_cs()
         if not self.ping():
             raise ConnectionError("Proxy is not connected when entering the context.")
 

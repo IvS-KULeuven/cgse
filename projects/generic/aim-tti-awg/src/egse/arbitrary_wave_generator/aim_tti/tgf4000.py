@@ -874,7 +874,7 @@ class Tgf4000Interface(DeviceInterface):
         cmd_string="PULSWID ${width}",
         process_cmd_string=add_lf,
     )
-    def set_pulse_period(self, width: float) -> None:
+    def set_pulse_width(self, width: float) -> None:
         """Sets the pulse waveform width.
 
         Args:
@@ -889,7 +889,7 @@ class Tgf4000Interface(DeviceInterface):
         process_cmd_string=add_lf,
         process_response=parse_floats,
     )
-    def get_pulse_period(self) -> float:
+    def get_pulse_width(self) -> float:
         """Returns the pulse waveform width.
 
         Returns:

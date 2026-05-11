@@ -1,6 +1,6 @@
 [project]
 name = "cgse-core"
-version = "0.22.1"
+version = "0.23.0"
 description = "Core services for the CGSE framework"
 authors = [
     {name = "IvS KU Leuven"}
@@ -80,7 +80,7 @@ pythonpath = ["tests", "src"]
 testpaths = ["tests"]
 addopts = "-rA --cov --cov-branch --cov-report html"
 log_cli = true
-log_cli_level = "DEBUG"
+log_cli_level = "INFO"
 filterwarnings = [
     "ignore::DeprecationWarning"
 ]

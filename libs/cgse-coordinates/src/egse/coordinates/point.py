@@ -163,7 +163,7 @@ class Point:
             coordinates = list(coordinates)
             if len(coordinates) == 3:
                 coordinates.append(1)
-            return np.ndarray(coordinates)
+            return np.array(coordinates)
         else:
             raise ValueError("Input must be a list, numpy.ndarray or Point")
 
@@ -189,7 +189,7 @@ class Point:
         """
 
         coordinates = Point.__coords__(coordinates)
-        self.coordinates = np.ndarray(coordinates)
+        self.coordinates = np.array(coordinates)
 
         self.x = self.coordinates[0]
         self.y = self.coordinates[1]

@@ -121,7 +121,7 @@ class ReferenceFrame(object):
         self.debug = False
 
         DEBUG and LOGGER.debug(
-            f"transformation={transformation_to_string(transformation)}, ref={ref!r}, name={name}, rot_config={rotation_config}"
+            f"transformation={transformation_to_string(transformation)}, ref={ref!r}, name={name}, rotation_config={rotation_config}"
         )
 
         # All argument testing is done in the __new__() method and we should be save here.
@@ -144,11 +144,11 @@ class ReferenceFrame(object):
 
         return
 
-    def __new__(cls, transformation, ref, name=None, rot_config=_ROT_CONFIG_DEFAULT):
+    def __new__(cls, transformation, ref, name=None, rotation_config=_ROT_CONFIG_DEFAULT):
         """Create a new ReferenceFrame class."""
 
         DEBUG and LOGGER.debug(
-            f"transformation={transformation_to_string(transformation)}, ref={ref!r}, name={name}, rot_config={rot_config}"
+            f"transformation={transformation_to_string(transformation)}, ref={ref!r}, name={name}, rotation_config={rotation_config}"
         )
 
         if ref is None:
@@ -182,8 +182,8 @@ class ReferenceFrame(object):
             LOGGER.error(msg)
             raise ValueError(msg, "TRANSFORMATION_IS_NOT_NDARRAY")
 
-        if rot_config is None:
-            msg = "The 'rot_config' keyword argument can not be None, do not specify it when you want to use the default value."
+        if rotation_config is None:
+            msg = "The 'rotation_config' keyword argument can not be None, do not specify it when you want to use the default value."
             LOGGER.error(msg)
             raise ValueError(msg)
 
@@ -1309,7 +1309,7 @@ class ReferenceFrame(object):
                 DEBUG and LOGGER.debug("self.transformation not equals other.transformation")
                 return False
             if self.rotation_config != other.rotation_config:
-                DEBUG and LOGGER.debug("self.rotation_config not equals other.rot_config")
+                DEBUG and LOGGER.debug("self.rotation_config not equals other.rotation_config")
                 return False
             # The following tests are here to prevent recursion to go infinite when self and other
             # point to itself
@@ -1358,7 +1358,7 @@ class ReferenceFrame(object):
                 DEBUG and LOGGER.debug("self.transformation not equals other.transformation")
                 return False
             if self.rotation_config != other.rotation_config:
-                DEBUG and LOGGER.debug("self.rot_config not equals other.rot_config")
+                DEBUG and LOGGER.debug("self.rotation_config not equals other.rotation_config")
                 return False
             # The following tests are here to prevent recursion to go infinite when self and other
             # point to itself
