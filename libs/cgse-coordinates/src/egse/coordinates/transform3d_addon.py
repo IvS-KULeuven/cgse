@@ -502,10 +502,10 @@ def vector_plane_intersection(pt, frame, plane='xy', epsilon=1.e-6):
             print('--> there exists no intersection (or an infinity of them)')
             return None
         else:
-            # Vector from the point in the plane to the origin of the vector (w)
+            # Vector from the point in the plane to the origin of the vector (w = p0 - pco)
             plane_to_vec = vec_orig - plane_orig
 
-            # Solution  ("how many 'vectors' away is the interesection ?")
+            # Solution  ("how many 'vectors' away is the interesection ?" ; factor=-(plane * w) / vec_x_normal)
             vec_multiplicator = - np.dot(plane_normal, plane_to_vec) / vec_x_normal
 
             return Point(vec_orig + (vec * vec_multiplicator), ref=frame)
