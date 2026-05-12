@@ -2,14 +2,13 @@
 
 Clients send `DataPoint` objects serialized as JSON to the
 PULL socket.  The hub batches the incoming points and flushes them to the
-configured storage backend (InfluxDB, DuckDB, `...`) via the plugin system in
+configured storage backend (InfluxDB, QuestDB, DuckDB, `...`) via the plugin system in
 `egse.plugins.metrics`.
 
 Backend selection is driven by the environment variable `CGSE_METRICS_BACKEND`
 (default: `"influxdb"`).  Backend-specific configuration is picked up from the
 environment inside the respective plugin (e.g. `CGSE_INFLUX_*` for InfluxDB).
-DuckDB additionally requires `CGSE_DUCKDB_PATH`.
-QuestDB requires `CGSE_QUESTDB_*` settings.
+DuckDB additionally requires `CGSE_DUCKDB_PATH`. QuestDB requires `CGSE_QUESTDB_*` settings.
 """
 
 import asyncio
@@ -142,12 +141,13 @@ def _get_backend_config() -> tuple[str, dict[str, Any], dict[str, Any]]:
 
 
 def _load_repository() -> tuple[TimeSeriesRepository, dict[str, Any]]:
-    """Build a `TimeSeriesRepository` and safe backend metadata."""
+    """Return a `TimeSeriesRepository` and a dictionary containing safe public backend metadata."""
     backend, config, public_info = _get_backend_config()
     return get_metrics_repo(backend, config), public_info
 
 
 def _register_measurement_schemas_from_env() -> list[str]:
+    """Load measurement schemas from modules specified in `CGSE_METRICS_SCHEMA_MODULES`."""
     modules_raw = str_env("CGSE_METRICS_SCHEMA_MODULES", "")
     modules = [item.strip() for item in modules_raw.split(",") if item.strip()]
     if not modules:
