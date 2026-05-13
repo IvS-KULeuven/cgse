@@ -457,73 +457,106 @@ def _inspect_questdb(
                 print("  Time window: n/a")
                 print(f"  Warning: could not compute stats ({exc})")
 
-            try:
-                sample = repo.query(
-                    f'SELECT tags, fields FROM "{table}" ORDER BY time DESC LIMIT {int(sample_rows)}',
-                    mode="all",
-                )
-                tag_keys = _parse_json_keys([row.get("tags") for row in sample])
-                field_keys = _parse_json_keys([row.get("fields") for row in sample])
-                print(f"  Tag keys (sampled): {', '.join(tag_keys) if tag_keys else '(none)'}")
-                print(f"  Field keys (sampled): {', '.join(field_keys) if field_keys else '(none)'}")
+            # Check if this is unified schema (with tags/fields columns) or typed schema (per_measurement)
+            has_tags_fields = "tags" in columns and "fields" in columns if columns else False
 
-                tag_values: dict[str, list[str]] = {}
-                effective_mode = tag_values_mode
-                if effective_mode == "auto":
-                    row_count = int(stats.get("row_count") or 0) if stats else 0
-                    effective_mode = "distinct" if row_count and row_count <= 1_000_000 else "sampled"
-
-                if effective_mode == "distinct":
-                    distinct_query_failed = False
-                    for key in tag_keys:
-                        try:
-                            rows = repo.query(
-                                (
-                                    f"SELECT DISTINCT json_extract(tags, '$.{key}') AS tag_value "
-                                    f'FROM "{table}" '
-                                    f"WHERE json_extract(tags, '$.{key}') IS NOT NULL "
-                                    f"ORDER BY tag_value "
-                                    f"LIMIT {int(max_tag_values)}"
-                                ),
-                                mode="all",
-                            )
-                            values = []
-                            for row in rows:
-                                raw = row.get("tag_value")
-                                if raw is None:
-                                    continue
-                                text = _format_value(raw)
-                                if text.startswith('"') and text.endswith('"') and len(text) >= 2:
-                                    text = text[1:-1]
-                                if text not in values:
-                                    values.append(text)
-                            if values:
-                                tag_values[key] = values
-                        except Exception:
-                            distinct_query_failed = True
-                            break
-                    if distinct_query_failed:
-                        effective_mode = "sampled"
-
-                if effective_mode == "sampled":
-                    tag_values = _collect_questdb_tag_values_sampled(
-                        repo=repo,
-                        table=table,
-                        sample_rows=sample_rows,
-                        max_tag_values=max_tag_values,
-                        min_time=stats.get("min_time") if stats else None,
-                        max_time=stats.get("max_time") if stats else None,
+            if has_tags_fields:
+                # Unified schema with JSON-stored tags and fields
+                try:
+                    sample = repo.query(
+                        f'SELECT tags, fields FROM "{table}" ORDER BY time DESC LIMIT {int(sample_rows)}',
+                        mode="all",
                     )
-                    if tag_values:
-                        print("  Tag values (sampled):")
+                    tag_keys = _parse_json_keys([row.get("tags") for row in sample])
+                    field_keys = _parse_json_keys([row.get("fields") for row in sample])
+                    print(f"  Tag keys (sampled): {', '.join(tag_keys) if tag_keys else '(none)'}")
+                    print(f"  Field keys (sampled): {', '.join(field_keys) if field_keys else '(none)'}")
+
+                    tag_values: dict[str, list[str]] = {}
+                    effective_mode = tag_values_mode
+                    if effective_mode == "auto":
+                        row_count = int(stats.get("row_count") or 0) if stats else 0
+                        effective_mode = "distinct" if row_count and row_count <= 1_000_000 else "sampled"
+
+                    if effective_mode == "distinct":
+                        distinct_query_failed = False
+                        for key in tag_keys:
+                            try:
+                                rows = repo.query(
+                                    (
+                                        f"SELECT DISTINCT json_extract(tags, '$.{key}') AS tag_value "
+                                        f'FROM "{table}" '
+                                        f"WHERE json_extract(tags, '$.{key}') IS NOT NULL "
+                                        f"ORDER BY tag_value "
+                                        f"LIMIT {int(max_tag_values)}"
+                                    ),
+                                    mode="all",
+                                )
+                                values = []
+                                for row in rows:
+                                    raw = row.get("tag_value")
+                                    if raw is None:
+                                        continue
+                                    text = _format_value(raw)
+                                    if text.startswith('"') and text.endswith('"') and len(text) >= 2:
+                                        text = text[1:-1]
+                                    if text not in values:
+                                        values.append(text)
+                                if values:
+                                    tag_values[key] = values
+                            except Exception:
+                                distinct_query_failed = True
+                                break
+                        if distinct_query_failed:
+                            effective_mode = "sampled"
+
+                    if effective_mode == "sampled":
+                        tag_values = _collect_questdb_tag_values_sampled(
+                            repo=repo,
+                            table=table,
+                            sample_rows=sample_rows,
+                            max_tag_values=max_tag_values,
+                            min_time=stats.get("min_time") if stats else None,
+                            max_time=stats.get("max_time") if stats else None,
+                        )
+                        if tag_values:
+                            print("  Tag values (sampled):")
+                            for key, values in tag_values.items():
+                                print(f"    - {key}: {', '.join(values)}")
+                    elif tag_values:
+                        print("  Tag values (distinct):")
                         for key, values in tag_values.items():
                             print(f"    - {key}: {', '.join(values)}")
-                elif tag_values:
-                    print("  Tag values (distinct):")
-                    for key, values in tag_values.items():
-                        print(f"    - {key}: {', '.join(values)}")
-            except Exception as exc:
-                print(f"  Tag/field keys (sampled): n/a ({exc})")
+                except Exception as exc:
+                    print(f"  Tag/field keys (sampled): n/a ({exc})")
+            else:
+                # Typed schema with native columns (per_measurement with measurement schema)
+                # Display the typed columns (excluding time column) and their actual values
+                typed_columns = [col for col in columns if col != "time"] if columns else []
+                if typed_columns:
+                    print(f"  Tag/field keys (typed): {', '.join(typed_columns)}")
+
+                    # Try to show some sample values for the typed columns
+                    try:
+                        quoted_cols = ", ".join([f'"{col}"' for col in typed_columns[:5]])
+                        sample_query = f'SELECT {quoted_cols} FROM "{table}" ORDER BY time DESC LIMIT 1'
+                        sample_rows_data = repo.query(sample_query, mode="all")
+                        if sample_rows_data:
+                            sample_row = sample_rows_data[0]
+                            sample_values = {}
+                            for col in typed_columns:
+                                if col in sample_row:
+                                    val = sample_row[col]
+                                    if val is not None:
+                                        sample_values[col] = _format_value(val)
+                            if sample_values:
+                                print("  Sample values:")
+                                for key, value in sample_values.items():
+                                    print(f"    - {key}: {value}")
+                    except Exception as exc:
+                        print(f"  Sample values: n/a ({exc})")
+                else:
+                    print("  Tag/field keys (typed): (none)")
 
         return 0
     finally:
