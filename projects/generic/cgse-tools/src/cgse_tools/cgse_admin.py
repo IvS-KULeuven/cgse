@@ -429,6 +429,7 @@ def _inspect_questdb(
         for table in candidate_tables:
             print(f"\nTable: {table}")
             stats: dict[str, Any] | None = None
+            columns: list[str] | None = None
             try:
                 columns = repo.get_column_names(table)
                 print(f"  Columns: {', '.join(columns) if columns else '(none)'}")
