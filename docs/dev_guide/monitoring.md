@@ -1,14 +1,14 @@
 # Monitoring and Telemetry in CGSE
 
 CGSE can propagate housekeeping and metrics data from control server processes to
-InfluxDB. Grafana can then be used to visualize these metrics.
+InfluxDB or QuestDB. Grafana can then be used to visualize these metrics.
 
 This page is developer-focused: it explains how CGSE structures telemetry data
-and how that data reaches InfluxDB.
+and how that data reaches the configured metrics backend.
 
 For stack installation and system configuration, see
 [Monitoring Stack Setup](../admin_guide/monitoring.md).
-
+Alo
 For day-to-day Grafana usage and dashboard creation, see
 [Using Grafana](../user_guide/grafana.md).
 
@@ -25,15 +25,30 @@ In the current implementation, the name of the database in which all CGSE metric
 
 To inspect the available database names, execute this in a terminal on the server:
 
-```bash
-influxdb3 show databases
-```
+=== "InfluxDB"
+
+	```bash
+	influxdb3 show databases
+	```
+
+=== "QuestDB"
+
+	```bash
+	cgse admin sql --backend questdb 'SELECT current_database() AS database;'
+	```
 
 To create a database manually, execute:
 
-```bash
-influxdb3 create database <database name>
-```
+=== "InfluxDB"
+
+	```bash
+	influxdb3 create database <database name>
+	```
+
+=== "QuestDB"
+
+	QuestDB typically uses the configured database (default: `qdb`) and does not
+	require a per-project database creation step in the CGSE workflow.
 
 ### Table Names
 
@@ -42,14 +57,22 @@ mnemonic of the process in lower case.
 
 To list the available tables, execute this in a terminal on the server:
 
-```bash
-influxdb3 query --database <database name> "SHOW TABLES"
-```
+=== "InfluxDB"
+
+	```bash
+	influxdb3 query --database <database name> "SHOW TABLES"
+	```
+
+=== "QuestDB"
+
+	```bash
+	cgse admin sql --backend questdb 'SELECT table_name FROM tables()'
+	```
 
 Note that a table is often also called a measurement. They are basically the same thing, just different names for the same concept, depending on context:
 
 - When you interact with InfluxDB using line protocol (the native InfluxDB write format), it's called a measurement.
-- When you query using SQL (which InfluxDB 3 supports natively), that same entity appears as a table.
+- When you query using SQL, that same entity appears as a table.
 
 ### Content of the Tables
 
@@ -58,35 +81,59 @@ housekeeping and metrics parameters. The timestamp column is named `TIME`.
 
 To inspect the columns of a table, execute this in a terminal on the server:
 
-```bash
-influxdb3 query --database <database name> "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '<table name>'"
-```
+=== "InfluxDB"
+
+	```bash
+	influxdb3 query --database <database name> "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '<table name>'"
+	```
+
+=== "QuestDB"
+
+	```bash
+	cgse admin sql --backend questdb "SHOW COLUMNS FROM \"<table name>\""
+	```
 
 To inspect the stored data in ascending timestamp order, execute:
 
-```bash
-influxdb3 query --database <database name> "SELECT * FROM <table name> ORDER BY TIME"
-```
+=== "InfluxDB"
+
+	```bash
+	influxdb3 query --database <database name> "SELECT * FROM <table name> ORDER BY TIME"
+	```
+
+=== "QuestDB"
+
+	```bash
+	cgse admin sql --backend questdb "SELECT * FROM \"<table name>\" ORDER BY time"
+	```
 
 Add a time range to restrict the data range:
-```bash
-influxdb3 query --database <database name> "SELECT * FROM <table name> WHERE time >= now() - interval '10 minutes' ORDER BY TIME"
-```
+
+=== "InfluxDB"
+
+	```bash
+	influxdb3 query --database <database name> "SELECT * FROM <table name> WHERE time >= now() - interval '10 minutes' ORDER BY TIME"
+	```
+
+=== "QuestDB"
+
+	```bash
+	cgse admin sql --backend questdb "SELECT * FROM \"<table name>\" WHERE time >= dateadd('m', -10, now()) ORDER BY time"
+	```
 
 ---
 
-## Propagating Metrics to InfluxDB via Python
+## Propagating Metrics via Python
 
-To populate metrics in InfluxDB, CGSE uses the `influxdb3-python` package. This
-dependency is defined in the `pyproject.toml` file of the `cgse-common`
-module.
+To populate metrics, CGSE uses the configured backend repository (for example,
+InfluxDB or QuestDB) through the shared metrics interfaces.
 
 When implementing a new device, no additional propagation code is typically
 needed. Metrics propagation is handled automatically in the `serve` method of
 `ControlServer`.
 
 When housekeeping information is written to CSV, `ControlServer.propagate_metrics(..)`
-is called and writes the corresponding metrics to InfluxDB.
+is called and writes the corresponding metrics to the configured backend.
 
 ---
 

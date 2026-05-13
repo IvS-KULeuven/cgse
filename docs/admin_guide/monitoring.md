@@ -1,10 +1,10 @@
 # Monitoring Stack Setup
 
 This page describes how to install and configure the telemetry visualization
-stack used with CGSE: InfluxDB3 Core for storage and Grafana for visualization.
+stack used with CGSE: InfluxDB3 Core or QuestDB for storage and Grafana for visualization.
 
 Grafana itself is not part of CGSE, but most users rely on it to inspect the
-telemetry data written by CGSE into InfluxDB.
+telemetry data written by CGSE into InfluxDB or QuestDB.
 
 For dashboard usage, see [Using Grafana](../user_guide/grafana.md).
 
@@ -40,6 +40,45 @@ Store this token securely, Grafana and other administration tasks depend on it.
 !!!WARNING
     Don't push your admin InfluxDB token to a (remote) repository. Too many users put it in a `.env` file and forget to _git ignore_ that file. Don't make that mistake!
 
+### Install QuestDB
+
+QuestDB is an alternative time-series backend supported by CGSE. The easiest way to run QuestDB is with Docker:
+
+```bash
+docker run -d --name questdb \
+    -p 9000:9000 -p 8812:8812 \
+    questdb/questdb
+```
+
+This exposes the web console on port `9000` and the PGWire SQL port on `8812`.
+
+#### Install QuestDB from a tar archive (Linux)
+
+If Docker is not available, download the Linux binary from the [QuestDB releases page](https://github.com/questdb/questdb/releases/latest). The Linux package includes a bundled JVM so no prior Java installation is needed:
+
+```bash
+# Download the latest Linux release (replace the version as needed)
+wget https://github.com/questdb/questdb/releases/download/9.3.5/questdb-9.3.5-rt-linux-amd64.tar.gz
+
+# Extract
+tar -xzf questdb-9.3.5-rt-linux-amd64.tar.gz
+cd questdb-9.3.5-rt-linux-amd64
+
+# Start QuestDB
+./questdb.sh start
+```
+
+To stop or check status:
+
+```bash
+./questdb.sh stop
+./questdb.sh status
+```
+
+The data directory defaults to `$HOME/.questdb`. Pass `-d /path/to/data` to `questdb.sh` to use a different location. For platforms without a bundled JVM (e.g. ARM Linux), download the `no-jre` variant and ensure Java 17 is available on your system.
+
+QuestDB does not require an authentication token by default (the default credentials are `admin` / `quest`). Update `CGSE_QUESTDB_USER` and `CGSE_QUESTDB_PASSWORD` if you configure custom credentials.
+
 ### Install Grafana
 
 Installing Grafana is a bit more complicated and it's best that you follow the official installation from the [GrafanaLabs](https://grafana.com/docs/grafana/latest/setup-grafana/installation/) installation page. After installation, start the required services if they are not already running.
@@ -63,6 +102,12 @@ influxdb3 query --database <database name> "SHOW TABLES"
 
 If no tables are present yet, that usually means no CGSE process has written
 telemetry to the selected database.
+
+To verify QuestDB, open the web console at `http://localhost:9000` or run a query via the CGSE admin tool:
+
+```bash
+cgse admin sql --backend questdb 'SELECT table_name FROM tables()'
+```
 
 ---
 
@@ -146,12 +191,21 @@ The tool reads configuration from environment variables and falls back to defaul
 
 - `--dry-run`: Preview row counts and inferred schemas without writing to QuestDB
 - `--preflight-only`: Run preflight visibility checks and exit
+- `--skip-preflight`: Skip preflight checks and proceed directly
 - `--tables cm,storagecontrolserver`: Migrate only specific measurements (comma-separated)
 - `--since 2026-01-01T00:00:00Z --until 2026-03-01T00:00:00Z`: Migrate a specific time range
 - `--state-file <path>`: Path to the state file (default: `.migrate_influx_to_questdb.state.json`)
 - `--resume`: Resume from saved checkpoints (default: enabled)
 - `--reset-state`: Delete existing state file before starting (starts fresh)
 - `--questdb-schema unified|per_measurement`: Choose target schema (default from env or `unified`)
+- `--drop-destination-table`: Drop and recreate the destination table before migrating
+- `--replace-destination-range`: Delete destination rows in the migrated time range before writing, making reruns idempotent (default: enabled)
+- `--write-batch-size N`: Rows per QuestDB write call (default: `5000`)
+- `--query-batch-size N`: Rows fetched per InfluxDB query batch (default: `10000`)
+- `--time-chunk-hours N`: Split large time ranges into chunks of N hours (default: disabled)
+- `--adaptive-chunking`: Automatically reduce chunk size on query failures (default: enabled)
+
+All connection parameters (`--questdb-host`, `--questdb-port`, `--questdb-database`, `--questdb-user`, `--questdb-password`, `--questdb-table`, `--influx-host`, `--influx-database`, `--influx-token`) can also be passed directly as CLI flags to override environment variables.
 
 **Examples:**
 

@@ -184,6 +184,15 @@ Environment variables can override these settings. Typical examples:
 - `CGSE_QUESTDB_TABLE` (default: `timeseries`)
 - `CGSE_QUESTDB_SCHEMA` (default: `per_measurement`; options: `unified`, `per_measurement`)
 
+    **Schema modes:**
+
+    - `unified` — all measurements are stored in a single table (default name: `timeseries`) with columns
+      `measurement`, `time`, `tags` (JSON), and `fields` (JSON). Suitable for prototyping or when the
+      set of measurements and fields is not known in advance.
+    - `per_measurement` — each measurement gets its own table named after the measurement (e.g. `DAQ6510`).
+      If a typed `MeasurementSchema` is registered for that measurement, individual typed columns are created;
+      otherwise the table falls back to `time`, `tags` (JSON), and `fields` (JSON).
+
 ## Control Server Integration
 
 Control servers use `MetricsHubSender` and no longer need direct backend credentials.
