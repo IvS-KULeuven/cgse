@@ -7,7 +7,7 @@ import typer
 
 from egse.system import redirect_output_to_log
 
-tgf4000 = typer.Typer(name="tgf4000", help="Aim -TTi, Dual-channel arbitrary function generator", no_args_is_help=True)
+tgf4000 = typer.Typer(name="tgf4000", help="Aim-TTi, Dual-channel arbitrary function generator", no_args_is_help=True)
 
 
 @tgf4000.command(name="start")

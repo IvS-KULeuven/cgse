@@ -28,6 +28,7 @@ from egse.arbitrary_wave_generator.aim_tti import (
     BeepMode,
     NetworkConfig,
     WaveformShape,
+    ArbData,
 )
 from egse.arbitrary_wave_generator.aim_tti.tgf4000_devif import Tgf4000EthernetInterface
 from egse.device import DeviceInterface
