@@ -220,7 +220,6 @@ class ReferenceFrameModel:
         """
 
         if name in self._model:
-
             frame: ReferenceFrame = self._model[name]
 
             # We need to get the links out in a list because the frame.remove_link() method deletes
