@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+- Fixed the `uv run cgse admin inspect-db --backend questdb` error for typed schema tables. The issue was that the code was trying to query non-existent `tags` and `fields` JSON columns from QuestDB's typed per-measurement schema tables.
+
 ## [0.23.0] - 2026-05-05
 
 - Service Registry now enforces unique service types by default (`UNIQUE_SERVICE_TYPES=true`). This prevents accidental duplicate registrations for the same service type.

@@ -10,7 +10,9 @@ from egse.metricshub.client import AsyncMetricsHubSender
 from egse.metricshub.client import MetricsHubClient
 from egse.metricshub.client import MetricsHubSender
 from egse.metricshub.server import AsyncMetricsHub
+from egse.metricshub.server import _get_backend_config
 from egse.metricshub.server import _normalize_payload
+from egse.metricshub.server import _register_measurement_schemas_from_env
 from egse.registry import MessageType
 
 
@@ -149,6 +151,7 @@ async def test_collector_tracks_none_filtering_debug_counters():
     push = hub.context.socket(zmq.PUSH)
     push.connect(endpoint)
 
+    hub.debug_counters_enabled = True
     hub.running = True
     collector_task = asyncio.create_task(hub._collector())
 
@@ -279,6 +282,7 @@ async def test_sender_to_hub_data_path_over_zmq():
 
     hub.batch_size = 1
     hub.flush_interval = 0.05
+    hub._flush_semaphore = asyncio.Semaphore(hub.flush_concurrency)
     hub.running = True
 
     collector_task = asyncio.create_task(hub._collector())
@@ -386,3 +390,74 @@ async def test_control_requests_health_info_terminate_in_process():
         hub.collector_socket.close(linger=0)
         hub.requests_socket.close(linger=0)
         hub.context.term()
+
+
+def test_get_backend_config_questdb(monkeypatch):
+    monkeypatch.setenv("CGSE_METRICS_BACKEND", "questdb")
+    monkeypatch.setenv("CGSE_QUESTDB_HOST", "questdb.local")
+    monkeypatch.setenv("CGSE_QUESTDB_PORT", "9000")
+    monkeypatch.setenv("CGSE_QUESTDB_DATABASE", "cgse")
+    monkeypatch.setenv("CGSE_QUESTDB_USER", "cgse_user")
+    monkeypatch.setenv("CGSE_QUESTDB_PASSWORD", "secret")
+    monkeypatch.setenv("CGSE_QUESTDB_TABLE", "metrics_ts")
+    monkeypatch.setenv("CGSE_QUESTDB_SCHEMA", "per_measurement")
+
+    backend, config, public_info = _get_backend_config()
+
+    assert backend == "questdb"
+    assert config == {
+        "host": "questdb.local",
+        "port": 9000,
+        "database": "cgse",
+        "user": "cgse_user",
+        "password": "secret",
+        "table_name": "metrics_ts",
+        "schema": "per_measurement",
+    }
+    assert public_info == {
+        "name": "questdb",
+        "host": "questdb.local",
+        "port": 9000,
+        "database": "cgse",
+        "user": "cgse_user",
+        "table_name": "metrics_ts",
+        "schema": "per_measurement",
+    }
+
+
+def test_get_backend_config_questdb_defaults_to_per_measurement(monkeypatch):
+    monkeypatch.setenv("CGSE_METRICS_BACKEND", "questdb")
+    monkeypatch.delenv("CGSE_QUESTDB_SCHEMA", raising=False)
+
+    backend, config, public_info = _get_backend_config()
+
+    assert backend == "questdb"
+    assert config["schema"] == "per_measurement"
+    assert public_info["schema"] == "per_measurement"
+
+
+def test_get_backend_config_unknown_backend(monkeypatch):
+    monkeypatch.setenv("CGSE_METRICS_BACKEND", "nope")
+
+    with pytest.raises(ValueError, match="Supported: 'influxdb', 'duckdb', 'questdb'"):
+        _get_backend_config()
+
+
+def test_register_measurement_schemas_from_env(monkeypatch):
+    monkeypatch.setenv("CGSE_METRICS_SCHEMA_MODULES", "project.schemas")
+    monkeypatch.setenv("CGSE_METRICS_SCHEMA_REGISTER_FUNCTION", "register_measurement_schemas")
+
+    captured = {}
+
+    def fake_loader(modules, function_name):
+        captured["modules"] = modules
+        captured["function_name"] = function_name
+        return ["project.schemas"]
+
+    monkeypatch.setattr("egse.metricshub.server.load_measurement_schemas_from_modules", fake_loader)
+
+    loaded = _register_measurement_schemas_from_env()
+
+    assert loaded == ["project.schemas"]
+    assert captured["modules"] == ["project.schemas"]
+    assert captured["function_name"] == "register_measurement_schemas"

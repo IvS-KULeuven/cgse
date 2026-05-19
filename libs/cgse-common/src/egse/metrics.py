@@ -1,11 +1,21 @@
 __all__ = [
     "DataPoint",
+    "MeasurementColumn",
+    "MeasurementSchema",
     "TimeSeriesRepository",
+    "clear_measurement_schemas",
     "define_metrics",
+    "get_measurement_schema",
+    "get_measurement_schemas",
     "get_metrics_repo",
+    "load_measurement_schemas_from_modules",
+    "register_measurement_schema",
 ]
 
 import datetime
+import importlib
+from dataclasses import dataclass
+from dataclasses import field
 from typing import Any
 from typing import Optional
 from typing import Protocol
@@ -27,6 +37,73 @@ from egse.system import str_to_datetime
 SITE_ID = Settings.load("SITE").ID
 
 TimestampLike = str | int | float | datetime.datetime
+
+MetricScalarType = str
+
+
+@dataclass(frozen=True)
+class MeasurementColumn:
+    name: str
+    data_type: MetricScalarType
+
+
+@dataclass(frozen=True)
+class MeasurementSchema:
+    name: str
+    tags: tuple[MeasurementColumn, ...] = field(default_factory=tuple)
+    fields: tuple[MeasurementColumn, ...] = field(default_factory=tuple)
+
+    def get_tag(self, name: str) -> MeasurementColumn | None:
+        for column in self.tags:
+            if column.name == name:
+                return column
+        return None
+
+    def get_field(self, name: str) -> MeasurementColumn | None:
+        for column in self.fields:
+            if column.name == name:
+                return column
+        return None
+
+
+_MEASUREMENT_SCHEMAS: dict[str, MeasurementSchema] = {}
+
+
+def register_measurement_schema(schema: MeasurementSchema) -> None:
+    _MEASUREMENT_SCHEMAS[schema.name] = schema
+
+
+def get_measurement_schema(measurement_name: str) -> MeasurementSchema | None:
+    return _MEASUREMENT_SCHEMAS.get(measurement_name)
+
+
+def get_measurement_schemas() -> dict[str, MeasurementSchema]:
+    return dict(_MEASUREMENT_SCHEMAS)
+
+
+def clear_measurement_schemas() -> None:
+    _MEASUREMENT_SCHEMAS.clear()
+
+
+def load_measurement_schemas_from_modules(
+    module_names: list[str],
+    function_name: str = "register_measurement_schemas",
+) -> list[str]:
+    loaded_modules: list[str] = []
+    for module_name in module_names:
+        normalized = module_name.strip()
+        if not normalized:
+            continue
+
+        module = importlib.import_module(normalized)
+        callback = getattr(module, function_name, None)
+        if callback is None or not callable(callback):
+            raise AttributeError(f"Module {normalized!r} does not expose callable {function_name!r}")
+
+        callback()
+        loaded_modules.append(normalized)
+
+    return loaded_modules
 
 
 def define_metrics(

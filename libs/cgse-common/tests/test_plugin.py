@@ -18,6 +18,7 @@ def test_load_plugins_fn():
     assert plugins_1.keys() == plugins_2.keys()
 
     assert "influxdb" in plugins_1
+    assert "questdb" in plugins_1
 
     # No Exception should be raised when the module doesn't exist
     plugins = load_plugins_fn("not-a-module")

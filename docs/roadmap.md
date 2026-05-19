@@ -30,7 +30,7 @@ Provide a `cgse` command that is extensible with new commands and command groups
 ### Common functionality
 
 - [ ] Reference Frames and coordinate transformations -> Graphs
-- [ ] Metrics for all devices will be handled using InfluxDB
+- [x] Metrics for all devices will be handled using InfluxDB or QuestDB
 - [x] Use of Grafana to visualize the metrics
 
 ### Monitoring and Telemetry

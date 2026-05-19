@@ -30,6 +30,7 @@ cgse-status = "egse.tools.status:main"
 cgse-tools = 'egse.version:get_version_installed'
 
 [project.entry-points."cgse.command"]
+admin = 'cgse_tools.cgse_admin:app'
 init = 'cgse_tools.cgse_commands:init'
 top = 'cgse_tools.cgse_commands:top'
 clock = 'cgse_tools.cgse_clock:clock'

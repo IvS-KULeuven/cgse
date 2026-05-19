@@ -31,7 +31,19 @@ Examples:
         --channels 3 \
         --sensor-biases=-0.3,0.0,0.25 \
         --rate 7500
-"""
+Typed-schema run (QuestDB / DuckDB per-measurement table):
+
+    # Start Metrics Hub with schema module loaded:
+    export CGSE_METRICS_SCHEMA_MODULES=egse.metricshub.schemas
+    mh_cs start
+
+    # Then run the load script — the hub will route synthetic_load to a typed
+    # table instead of the generic fallback:
+    uv run py tests/script_send_metricshub_load.py --rate 7500
+
+    # Alternatively use --register-schema to load the schema locally and print
+    # a reminder if the hub was not started with the module set:
+    uv run py tests/script_send_metricshub_load.py --register-schema --rate 7500"""
 
 from __future__ import annotations
 
@@ -44,6 +56,8 @@ from typing import Any
 
 from egse.metricshub.client import MetricsHubClient
 from egse.metricshub.client import MetricsHubSender
+from egse.metricshub.schemas import LOAD_SCHEMA_NAMES
+from egse.metricshub.schemas import register_measurement_schemas as _register_schemas
 
 
 @dataclass(slots=True)
@@ -107,6 +121,15 @@ def _parse_args() -> argparse.Namespace:
         "--skip-status-check",
         action="store_true",
         help="Skip the initial Metrics Hub status request",
+    )
+    parser.add_argument(
+        "--register-schema",
+        action="store_true",
+        help=(
+            "Register built-in load measurement schemas locally before sending. "
+            "Useful for local validation and as a reminder to start the Metrics Hub with "
+            "CGSE_METRICS_SCHEMA_MODULES=egse.metricshub.schemas for typed backend writes."
+        ),
     )
 
     return parser.parse_args()
@@ -229,6 +252,12 @@ def _print_header(args: argparse.Namespace) -> None:
     print(f"  room/peak/min:      {args.room_temp:.1f} / {args.peak_temp:.1f} / {args.min_temp:.1f} degC")
     if args.sensor_biases.strip():
         print(f"  sensor_biases:      {args.sensor_biases}")
+    schema_active = args.measurement in LOAD_SCHEMA_NAMES
+    print(f"  typed schema:       {'yes — egse.metricshub.schemas' if schema_active else 'no (generic fallback)'}")
+    if schema_active:
+        print(
+            "  schema hint:        start hub with CGSE_METRICS_SCHEMA_MODULES=egse.metricshub.schemas for typed writes"
+        )
 
 
 def _print_status(req_endpoint: str) -> None:
@@ -266,6 +295,12 @@ def run() -> int:
         raise ValueError("--channels must be > 0")
     if args.report_interval_s <= 0:
         raise ValueError("--report-interval-s must be > 0")
+
+    if args.register_schema:
+        _register_schemas()
+        print(f"Schemas registered locally: {sorted(LOAD_SCHEMA_NAMES)!r}")
+        print("  (For typed backend writes, also start the hub with")
+        print("   CGSE_METRICS_SCHEMA_MODULES=egse.metricshub.schemas)")
 
     rng = random.Random(args.seed)
     channels = _build_channels(args, rng)

@@ -79,6 +79,6 @@ Metrics Hub:                                     # MH_CS
     COLLECTOR_PORT:                6130
     PUBLISHER_PORT:                6131
     REQUESTS_PORT:                 6132
-    BACKEND:                   influxdb          # The storage backend to use for the Metrics Hub. Supported values: "influxdb", "duckdb"
+    BACKEND:                   influxdb          # The storage backend to use for the Metrics Hub. Supported values: "influxdb", "duckdb", "questdb"
     BATCH_SIZE:                     500
     FLUSH_INTERVAL:                 2.0

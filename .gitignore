@@ -21,6 +21,7 @@ dist
 .coverage.*
 .nox
 htmlcov
+libs/cgse-core/temperature.csv
 
 # Prototypes
 
@@ -58,4 +59,7 @@ libs/cgse-core/metrics.duckdb
 install_influxdb3.sh
 .pylintrc
 
+# CGSE Specific
+
+.migrate_influx_to_questdb.state.json
 service_registry.db*

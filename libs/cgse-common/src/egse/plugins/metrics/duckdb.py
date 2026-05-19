@@ -11,7 +11,9 @@ from typing import List
 import duckdb
 
 from egse.metrics import DataPoint
+from egse.metrics import MeasurementSchema
 from egse.metrics import TimeSeriesRepository
+from egse.metrics import get_measurement_schema
 
 
 class DuckDBRepository(TimeSeriesRepository):
@@ -36,6 +38,7 @@ class DuckDBRepository(TimeSeriesRepository):
         self.db_path = db_path
         self.table_name = table_name
         self.conn = None
+        self._created_tables: set[str] = set()
 
     def connect(self) -> None:
         """Connect to DuckDB database and create schema."""
@@ -101,6 +104,145 @@ class DuckDBRepository(TimeSeriesRepository):
         except Exception:
             return False
 
+    @staticmethod
+    def _to_datetime(value: Any) -> datetime:
+        if value is None:
+            return datetime.now()
+        if isinstance(value, datetime):
+            return value
+        if isinstance(value, (int, float)):
+            return datetime.fromtimestamp(value)
+        if isinstance(value, str):
+            try:
+                return datetime.fromisoformat(value.replace("Z", "+00:00"))
+            except ValueError:
+                return datetime.now()
+        return datetime.now()
+
+    @staticmethod
+    def _to_dict(point: DataPoint | dict) -> dict[str, Any]:
+        if isinstance(point, dict):
+            return point
+        return point.as_dict()
+
+    @staticmethod
+    def _duckdb_type(data_type: str) -> str:
+        mapping = {
+            "symbol": "VARCHAR",
+            "string": "VARCHAR",
+            "varchar": "VARCHAR",
+            "long": "BIGINT",
+            "double": "DOUBLE",
+            "boolean": "BOOLEAN",
+            "timestamp": "TIMESTAMPTZ",
+        }
+        normalized = data_type.strip().lower()
+        if normalized not in mapping:
+            raise ValueError(f"Unsupported DuckDB data type {data_type!r}")
+        return mapping[normalized]
+
+    @staticmethod
+    def _coerce_value(value: Any, data_type: str) -> Any:
+        if value is None:
+            return None
+
+        normalized = data_type.strip().lower()
+        if normalized in ("symbol", "string", "varchar"):
+            return str(value)
+        if normalized == "long":
+            return int(value)
+        if normalized == "double":
+            return float(value)
+        if normalized == "boolean":
+            if isinstance(value, bool):
+                return value
+            if isinstance(value, str):
+                lowered = value.strip().lower()
+                if lowered in ("true", "1", "yes", "on"):
+                    return True
+                if lowered in ("false", "0", "no", "off"):
+                    return False
+                raise ValueError(f"Cannot coerce {value!r} to boolean")
+            return bool(value)
+        if normalized == "timestamp":
+            return DuckDBRepository._to_datetime(value)
+
+        raise ValueError(f"Unsupported DuckDB data type {data_type!r}")
+
+    @staticmethod
+    def _validate_schema_payload(measurement: str, payload: dict[str, Any], schema: MeasurementSchema) -> None:
+        tags = payload.get("tags") or {}
+        fields = payload.get("fields") or {}
+        tag_names = {column.name for column in schema.tags}
+        field_names = {column.name for column in schema.fields}
+
+        unknown_tags = sorted(set(tags) - tag_names)
+        unknown_fields = sorted(set(fields) - field_names)
+        if unknown_tags or unknown_fields:
+            raise ValueError(
+                f"Measurement {measurement!r} does not match declared schema; "
+                f"unknown tags={unknown_tags}, unknown fields={unknown_fields}"
+            )
+
+    @staticmethod
+    def _quote_identifier(value: str) -> str:
+        return '"' + value.replace('"', '""') + '"'
+
+    def _ensure_schema_table(self, measurement: str, schema: MeasurementSchema) -> None:
+        if measurement in self._created_tables:
+            return
+
+        table = self._quote_identifier(measurement)
+        columns = ["timestamp TIMESTAMPTZ"]
+        for column in schema.tags:
+            columns.append(f"{self._quote_identifier(column.name)} {self._duckdb_type(column.data_type)}")
+        for column in schema.fields:
+            columns.append(f"{self._quote_identifier(column.name)} {self._duckdb_type(column.data_type)}")
+
+        assert self.conn is not None
+        self.conn.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS {table} (
+                {", ".join(columns)}
+            )
+            """
+        )
+        self._created_tables.add(measurement)
+
+    def _write_schema_rows(self, measurement: str, schema: MeasurementSchema, payloads: list[dict[str, Any]]) -> None:
+        assert self.conn is not None
+
+        table = self._quote_identifier(measurement)
+        column_names = ["timestamp"]
+        column_names.extend(column.name for column in schema.tags)
+        column_names.extend(column.name for column in schema.fields)
+
+        rows: list[tuple[Any, ...]] = []
+        for payload in payloads:
+            self._validate_schema_payload(measurement, payload, schema)
+            tags = payload.get("tags") or {}
+            fields = payload.get("fields") or {}
+            timestamp = self._to_datetime(payload.get("time") or payload.get("timestamp"))
+
+            row: list[Any] = [timestamp]
+            for column in schema.tags:
+                row.append(self._coerce_value(tags.get(column.name), column.data_type))
+            for column in schema.fields:
+                row.append(self._coerce_value(fields.get(column.name), column.data_type))
+            rows.append(tuple(row))
+
+        placeholders = ", ".join(["?"] * len(column_names))
+        values: list[Any] = []
+        for row in rows:
+            values.extend(row)
+
+        quoted_columns = ", ".join(self._quote_identifier(name) for name in column_names)
+        rows_placeholders = ", ".join([f"({placeholders})"] * len(rows))
+        self.conn.execute(
+            f"INSERT INTO {table} ({quoted_columns}) VALUES {rows_placeholders}",
+            values,
+        )
+
     def write(self, points: DataPoint | dict | List[DataPoint | dict]) -> None:
         """Write data points to DuckDB.
 
@@ -116,57 +258,49 @@ class DuckDBRepository(TimeSeriesRepository):
         if not isinstance(points, list):
             points = [points]
 
-        # Prepare data for bulk insert
-        data = []
+        by_measurement: dict[str, list[dict[str, Any]]] = {}
         for point in points:
-            if isinstance(point, dict):
-                measurement = point.get("measurement", "unknown")
-                # DataPoint.as_dict() uses "time"; allow "timestamp" as fallback
-                timestamp = point.get("time") or point.get("timestamp")
-                tags = point.get("tags") or {}
-                fields = point.get("fields") or {}
-            else:
-                measurement = point.measurement
-                timestamp = point.timestamp
-                tags = point.tags or {}
-                fields = point.fields or {}
+            payload = self._to_dict(point)
+            measurement = str(payload.get("measurement", "unknown"))
+            by_measurement.setdefault(measurement, []).append(payload)
 
-            # Normalize timestamp to ISO string
-            if timestamp is None:
-                timestamp = datetime.now().isoformat()
-            elif isinstance(timestamp, (int, float)):
-                timestamp = datetime.fromtimestamp(timestamp).isoformat()
-            elif isinstance(timestamp, str):
-                try:
-                    dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
-                    timestamp = dt.isoformat()
-                except ValueError:
-                    timestamp = datetime.now().isoformat()
+        generic_data: list[dict[str, Any]] = []
+        for measurement, payloads in by_measurement.items():
+            schema = get_measurement_schema(measurement)
+            if schema is not None:
+                self._ensure_schema_table(measurement, schema)
+                self._write_schema_rows(measurement, schema, payloads)
+                continue
 
-            data.append(
-                {
-                    "measurement": measurement,
-                    "timestamp": timestamp,
-                    "tags": json.dumps(tags) if isinstance(tags, dict) else tags,
-                    "fields": json.dumps(fields) if isinstance(fields, dict) else fields,
-                }
-            )
+            for payload in payloads:
+                timestamp = self._to_datetime(payload.get("time") or payload.get("timestamp")).isoformat()
+                tags = payload.get("tags") or {}
+                fields = payload.get("fields") or {}
+                generic_data.append(
+                    {
+                        "measurement": measurement,
+                        "timestamp": timestamp,
+                        "tags": json.dumps(tags) if isinstance(tags, dict) else tags,
+                        "fields": json.dumps(fields) if isinstance(fields, dict) else fields,
+                    }
+                )
+
+        if not generic_data:
+            return
 
         try:
-            # Use prepared statement for bulk insert
-            placeholders = ", ".join(["(?, ?, ?, ?)"] * len(data))
+            placeholders = ", ".join(["(?, ?, ?, ?)"] * len(generic_data))
             values = []
-            for row in data:
+            for row in generic_data:
                 values.extend([row["measurement"], row["timestamp"], row["tags"], row["fields"]])
 
             self.conn.execute(
                 f"""
                 INSERT INTO {self.table_name} (measurement, timestamp, tags, fields)
                 VALUES {placeholders}
-            """,
+                """,
                 values,
             )
-
         except Exception as e:
             raise RuntimeError(f"Failed to write data points: {e}")
 
