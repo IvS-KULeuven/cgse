@@ -7,7 +7,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-- Fixed the `uv run cgse admin inspect-db --backend questdb` error for typed schema tables. The issue was that the code was trying to query non-existent `tags` and `fields` JSON columns from QuestDB's typed per-measurement schema tables.
+
+## [0.24.0] - 2026-05-19
+
+- Added and integrated QuestDB typed schema support in the metrics stack, including schema-aware handling in plugins and Metrics Hub.
+- Added and improved CGSE admin database tooling:
+  - `cgse admin inspect-db --backend questdb` now correctly supports both unified and typed schema tables.
+  - SQL execution support was added for QuestDB, DuckDB, and InfluxDB, with schema validation.
+- Improved QuestDB plugin behavior and type safety for SQL query handling, with expanded integration and unit test coverage.
+- Merged and hardened asynchronous control infrastructure updates:
+  - asynchronous Configuration Manager control server/client/controller/service implementation and settings
+  - typed payload serialization helpers for JSON-safe async messaging
+  - extended monitoring and status reporting for async control and temperature control servers
+- Improved temperature-control and simulation behavior:
+  - per-sensor setpoint handling in `BufferedFakeDaq`
+  - shared temperature profile helpers for simulation and test scripts
+- Improved Symetrie hexapod behavior and operations:
+  - better service registration error handling and metadata retrieval in control-server flows
+  - removed Prometheus metrics integration from hexapod control/UI modules
+  - improved Puna UI proxy startup/resource handling through context-managed proxy creation
+- Updated docs for QuestDB and metrics operations, including migration guidance from InfluxDB.
 
 ## [0.23.0] - 2026-05-05
 
@@ -416,7 +435,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.23.0...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.24.0...HEAD
+[0.24.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.2...v0.23.0
 [0.22.2]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.1...v0.22.2
 [0.22.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.0...v0.22.1
