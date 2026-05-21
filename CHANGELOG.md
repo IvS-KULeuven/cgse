@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.24.1] - 2026-05-21
+
+- Reduced the root CGSE source distribution and wheel to a minimal set of files, so published archives are smaller and contain only the required packaging assets.
 
 ## [0.24.0] - 2026-05-19
 
@@ -435,7 +438,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.24.0...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.24.1...HEAD
+[0.24.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.24.0...v0.24.1
 [0.24.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.2...v0.23.0
 [0.22.2]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.1...v0.22.2
