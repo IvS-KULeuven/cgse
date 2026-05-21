@@ -86,6 +86,15 @@ extend-select = ["E", "W"]
 [tool.ruff.lint.isort]
 force-single-line = true
 
+
+[tool.hatch.build.targets.sdist]
+only-include = [
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
+    "bump.py"
+]
+
 [tool.hatch.build.targets.wheel]
 only-include = ["bump.py", "README.md"]
 
