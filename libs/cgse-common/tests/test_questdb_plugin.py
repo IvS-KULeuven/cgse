@@ -55,7 +55,10 @@ class FakeCursor:
         elif "SELECT table_name FROM tables()" in query_text:
             self.conn.rows = [{"table_name": "timeseries"}]
         elif "SHOW COLUMNS FROM" in query_text:
-            self.conn.rows = [{"column": "measurement"}, {"column": "time"}, {"column": "fields"}]
+            if "typed_metrics" in query_text:
+                self.conn.rows = [{"column": "time"}, {"column": "temperature"}]
+            else:
+                self.conn.rows = [{"column": "measurement"}, {"column": "time"}, {"column": "fields"}]
         elif "information_schema.columns" in query_text:
             # Return all columns that are expected by any schema registered in the fake.
             # We model this as: the table was freshly created so all schema columns exist.
@@ -67,6 +70,17 @@ class FakeCursor:
                 {
                     "time": datetime.datetime(2026, 4, 24, 12, 0, tzinfo=datetime.timezone.utc),
                     "fields": '{"temperature": 22.5}',
+                }
+            ]
+        elif (
+            "SELECT time" in query_text
+            and "fields" not in query_text
+            and ("temperature" in query_text or "Identifier('temperature')" in query_text)
+        ):
+            self.conn.rows = [
+                {
+                    "time": datetime.datetime(2026, 4, 24, 12, 0, tzinfo=datetime.timezone.utc),
+                    "temperature": 22.5,
                 }
             ]
         else:
@@ -120,7 +134,7 @@ def test_connect_creates_table(monkeypatch):
 
     monkeypatch.setattr("egse.plugins.metrics.questdb.psycopg.connect", fake_connect)
 
-    repo = QuestDBRepository()
+    repo = QuestDBRepository(schema="unified")
     repo.connect()
 
     assert repo.conn is fake_conn
@@ -134,7 +148,7 @@ def test_ping_query_and_close(monkeypatch):
     fake_conn = FakeConnection()
     monkeypatch.setattr("egse.plugins.metrics.questdb.psycopg.connect", lambda **kwargs: fake_conn)
 
-    repo = QuestDBRepository()
+    repo = QuestDBRepository(schema="unified")
     repo.connect()
 
     assert repo.ping() is True
@@ -157,7 +171,7 @@ def test_write_and_helpers(monkeypatch):
     fake_conn = FakeConnection()
     monkeypatch.setattr("egse.plugins.metrics.questdb.psycopg.connect", lambda **kwargs: fake_conn)
 
-    repo = QuestDBRepository(table_name="metrics")
+    repo = QuestDBRepository(table_name="metrics", schema="unified")
     repo.connect()
 
     repo.write(
@@ -267,3 +281,135 @@ def test_write_rejects_unknown_declared_fields(monkeypatch):
                 "time": "2026-04-24T12:00:00Z",
             }
         )
+
+
+def test_line_protocol_schema_is_supported(monkeypatch):
+    fake_conn = FakeConnection()
+    monkeypatch.setattr("egse.plugins.metrics.questdb.psycopg.connect", lambda **kwargs: fake_conn)
+
+    repo = QuestDBRepository(schema="line_protocol")
+    repo.connect()
+
+    assert repo.schema == "line_protocol"
+    # line_protocol mode should not create unified table on connect.
+    assert not any('CREATE TABLE IF NOT EXISTS "timeseries"' in query for query, _ in fake_conn.executed)
+
+
+def test_write_line_protocol_posts_to_ilp_endpoint(monkeypatch):
+    fake_conn = FakeConnection()
+    monkeypatch.setattr("egse.plugins.metrics.questdb.psycopg.connect", lambda **kwargs: fake_conn)
+
+    class _Response:
+        status_code = 204
+        text = ""
+
+    captured: dict[str, object] = {}
+
+    def fake_post(url, params, data, headers, timeout):
+        captured["url"] = url
+        captured["params"] = params
+        captured["data"] = data
+        captured["headers"] = headers
+        captured["timeout"] = timeout
+        return _Response()
+
+    monkeypatch.setattr("egse.plugins.metrics.questdb.requests.post", fake_post)
+
+    repo = QuestDBRepository(schema="line_protocol", host="questdb.local", ilp_port=9000)
+    repo.connect()
+    repo.write(
+        {
+            "measurement": "camera_tm",
+            "tags": {"device_id": "cam_01"},
+            "fields": {"temperature": 23.4, "counter": 3},
+            "time": "2026-04-24T12:00:00Z",
+        }
+    )
+
+    assert captured["url"] == "http://questdb.local:9000/write"
+    assert captured["params"] == {"precision": "n"}
+    assert captured["headers"] == {"Content-Type": "text/plain; charset=utf-8"}
+    assert captured["timeout"] == 5.0
+    body = captured["data"]
+    assert isinstance(body, bytes)
+    text_body = body.decode("utf-8")
+    assert text_body.startswith("camera_tm,device_id=cam_01 ")
+    assert "temperature=23.4" in text_body
+    assert "counter=3i" in text_body
+
+
+def test_write_line_protocol_raises_on_http_error(monkeypatch):
+    fake_conn = FakeConnection()
+    monkeypatch.setattr("egse.plugins.metrics.questdb.psycopg.connect", lambda **kwargs: fake_conn)
+
+    class _Response:
+        status_code = 400
+        text = "invalid line protocol"
+
+    monkeypatch.setattr("egse.plugins.metrics.questdb.requests.post", lambda *args, **kwargs: _Response())
+
+    repo = QuestDBRepository(schema="line_protocol")
+    repo.connect()
+
+    with pytest.raises(RuntimeError, match="QuestDB line protocol write failed"):
+        repo.write({"measurement": "cpu", "fields": {"value": 1}})
+
+
+def test_get_values_helpers_support_typed_tables(monkeypatch):
+    fake_conn = FakeConnection()
+    monkeypatch.setattr("egse.plugins.metrics.questdb.psycopg.connect", lambda **kwargs: fake_conn)
+
+    repo = QuestDBRepository(schema="per_measurement")
+    repo.connect()
+
+    values = repo.get_values_last_hours("typed_metrics", "temperature", hours=1, mode="")
+    assert len(values) == 1
+    assert values[0]["temperature"] == 22.5
+
+    values_range = repo.get_values_in_range("typed_metrics", "temperature", "2026-04-24", "2026-04-25", mode="")
+    assert len(values_range) == 1
+    assert values_range[0]["temperature"] == 22.5
+
+
+def test_per_measurement_fallback_uses_line_protocol(monkeypatch):
+    fake_conn = FakeConnection()
+    monkeypatch.setattr("egse.plugins.metrics.questdb.psycopg.connect", lambda **kwargs: fake_conn)
+
+    class _Response:
+        status_code = 204
+        text = ""
+
+    captured: dict[str, object] = {}
+
+    def fake_post(url, params, data, headers, timeout):
+        captured["url"] = url
+        captured["params"] = params
+        captured["data"] = data
+        captured["headers"] = headers
+        captured["timeout"] = timeout
+        return _Response()
+
+    monkeypatch.setattr("egse.plugins.metrics.questdb.requests.post", fake_post)
+
+    repo = QuestDBRepository(schema="per_measurement", host="questdb.local", ilp_port=9000)
+    repo.connect()
+    repo.write(
+        {
+            "measurement": "fallback_measurement",
+            "tags": {"device_id": "cam_01"},
+            "fields": {"temperature": 23.4},
+            "timestamp": "2026-04-24T12:00:00Z",
+        }
+    )
+
+    assert captured["url"] == "http://questdb.local:9000/write"
+    assert captured["params"] == {"precision": "n"}
+    assert captured["headers"] == {"Content-Type": "text/plain; charset=utf-8"}
+    assert captured["timeout"] == 5.0
+    body = captured["data"]
+    assert isinstance(body, bytes)
+    text_body = body.decode("utf-8")
+    assert text_body.startswith("fallback_measurement,device_id=cam_01 ")
+    assert "temperature=23.4" in text_body
+    # No PGWire INSERTs should happen for fallback measurements.
+    assert fake_conn.executed_many == []

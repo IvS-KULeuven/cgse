@@ -62,10 +62,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--questdb-schema",
         default=os.environ.get("CGSE_QUESTDB_SCHEMA", "unified"),
-        choices=["unified", "per_measurement"],
+        choices=["unified", "per_measurement", "line_protocol"],
         help=(
             "QuestDB schema mode. 'unified' stores all measurements in a single table (default). "
-            "'per_measurement' creates one table per measurement, mirroring InfluxDB's structure."
+            "'per_measurement' creates one table per measurement. "
+            "'line_protocol' writes via QuestDB ILP and auto-creates typed columns."
         ),
     )
 
@@ -512,10 +513,11 @@ def _delete_destination_range(
     if repo.conn is None:
         raise ConnectionError("QuestDB repository is not connected")
 
-    # For per_measurement schema the target table IS the measurement; no
+    # For per_measurement/line_protocol schema the target table IS the
+    # measurement; no
     # measurement-column filter needed.  For unified schema we filter by both
     # the measurement column and the time range.
-    if repo.schema == "per_measurement":
+    if repo.schema in {"per_measurement", "line_protocol"}:
         target_table = f'"{measurement}"'
         where_parts: list[str] = []
         params: list[Any] = []
@@ -733,7 +735,7 @@ def migrate(args: argparse.Namespace) -> int:
         print(f"  Influx:  {args.influx_host} / {args.influx_database}")
         print(
             f"  QuestDB: {args.questdb_host}:{args.questdb_port} / {args.questdb_database} / "
-            + (f"table={args.questdb_table}" if args.questdb_schema == "unified" else "schema=per_measurement")
+            + (f"table={args.questdb_table}" if args.questdb_schema == "unified" else f"schema={args.questdb_schema}")
         )
         print(f"  Tables:  {', '.join(tables)}")
         print(f"  Filter:  {where_clause if where_clause else '(none)'}")
@@ -758,7 +760,7 @@ def migrate(args: argparse.Namespace) -> int:
             return 0
 
         if args.drop_destination_table and not args.dry_run:
-            if args.questdb_schema == "per_measurement":
+            if args.questdb_schema in {"per_measurement", "line_protocol"}:
                 # Drop each individual measurement table so they are recreated fresh.
                 for _t in tables:
                     print(f"Dropping destination table '{_t}'...")
