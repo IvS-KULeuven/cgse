@@ -114,8 +114,10 @@ def _get_backend_config() -> tuple[str, dict[str, Any], dict[str, Any]]:
             password = str_env("CGSE_QUESTDB_PASSWORD", "quest")
             table_name = str_env("CGSE_QUESTDB_TABLE", "timeseries")
             schema = str_env("CGSE_QUESTDB_SCHEMA", "per_measurement").strip().lower()
-            if schema not in {"unified", "per_measurement"}:
-                raise ValueError(f"Invalid CGSE_QUESTDB_SCHEMA '{schema}'. Supported: 'unified', 'per_measurement'.")
+            if schema not in {"unified", "per_measurement", "line_protocol"}:
+                raise ValueError(
+                    f"Invalid CGSE_QUESTDB_SCHEMA '{schema}'. Supported: 'unified', 'per_measurement', 'line_protocol'."
+                )
             config = {
                 "host": host,
                 "port": port,

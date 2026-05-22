@@ -7,6 +7,7 @@ from typing import cast
 
 import pandas
 import psycopg
+import requests
 from psycopg import sql
 from psycopg.abc import Query
 from psycopg.rows import dict_row
@@ -15,6 +16,7 @@ from egse.metrics import MeasurementSchema
 from egse.metrics import PointLike
 from egse.metrics import TimeSeriesRepository
 from egse.metrics import get_measurement_schema
+from egse.plugins.metrics.line_protocol import to_line_protocol
 
 __all__ = [
     "QuestDBRepository",
@@ -24,14 +26,15 @@ __all__ = [
 
 SCHEMA_UNIFIED = "unified"
 SCHEMA_PER_MEASUREMENT = "per_measurement"
+SCHEMA_LINE_PROTOCOL = "line_protocol"
 
 
 class QuestDBRepository(TimeSeriesRepository):
     """TimeSeriesRepository implementation backed by QuestDB over PGWire.
 
-    Two schema modes are supported (`schema` parameter):
+    Three schema modes are supported (`schema` parameter):
 
-    `"unified"` (default)
+    `"unified"`
         All measurements are stored in a single table (`table_name`, default
         `"timeseries"`) with columns `(measurement SYMBOL, time TIMESTAMP,
         tags VARCHAR, fields VARCHAR)`.  Simple but mixes all measurements.
@@ -45,8 +48,14 @@ class QuestDBRepository(TimeSeriesRepository):
         `DAQ6510`), with columns `(time TIMESTAMP, tags VARCHAR, fields
         VARCHAR)` by default. When a measurement schema is declared in the
         shared metrics registry, the table is created with native typed columns
-        instead. This preserves the generic fallback while allowing stable
-        measurements to be stored efficiently.
+        and writes are validated/coerced via PGWire. If no schema is declared,
+        points are written via line protocol ingestion so QuestDB infers typed
+        columns.
+
+    `"line_protocol"`
+        Data points are serialized to line protocol and written through QuestDB's
+        HTTP ingress endpoint. Tags become SYMBOL columns and fields become typed
+        columns inferred by QuestDB from line protocol values.
     """
 
     def __init__(
@@ -57,10 +66,18 @@ class QuestDBRepository(TimeSeriesRepository):
         user: str = "admin",
         password: str = "quest",
         table_name: str = "timeseries",
-        schema: str = SCHEMA_UNIFIED,
+        schema: str = SCHEMA_PER_MEASUREMENT,
+        ilp_port: int = 9000,
+        ilp_path: str = "/write",
+        ilp_timeout: float = 5.0,
+        ilp_precision: str = "n",
     ):
-        if schema not in (SCHEMA_UNIFIED, SCHEMA_PER_MEASUREMENT):
-            raise ValueError(f"schema must be '{SCHEMA_UNIFIED}' or '{SCHEMA_PER_MEASUREMENT}', got {schema!r}")
+        if schema not in (SCHEMA_UNIFIED, SCHEMA_PER_MEASUREMENT, SCHEMA_LINE_PROTOCOL):
+            raise ValueError(
+                "schema must be "
+                f"'{SCHEMA_UNIFIED}', '{SCHEMA_PER_MEASUREMENT}', or '{SCHEMA_LINE_PROTOCOL}', "
+                f"got {schema!r}"
+            )
         # QuestDB requires timestamps to be inserted in strictly increasing order.
         # Concurrent flushes can arrive out-of-order, so we must serialize writes.
         self.max_flush_concurrency: int = 1
@@ -71,9 +88,71 @@ class QuestDBRepository(TimeSeriesRepository):
         self.password = password
         self.table_name = table_name
         self.schema = schema
+        self.ilp_port = int(ilp_port)
+        self.ilp_path = ilp_path if ilp_path.startswith("/") else f"/{ilp_path}"
+        self.ilp_timeout = float(ilp_timeout)
+        self.ilp_precision = ilp_precision
         self.conn: psycopg.Connection[Any] | None = None
         self._ping_conn: psycopg.Connection[Any] | None = None
         self._created_tables: set[str] = set()
+
+    def _ilp_url(self) -> str:
+        return f"http://{self.host}:{self.ilp_port}{self.ilp_path}"
+
+    def _ensure_lp_measurement_table(self, measurement: str) -> None:
+        """Ensure an ILP measurement table exists with `time` as designated timestamp."""
+        if measurement in self._created_tables:
+            return
+
+        assert self.conn is not None
+        with self.conn.cursor() as cur:
+            cur.execute(
+                sql.SQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS {} (
+                        time TIMESTAMP
+                    ) TIMESTAMP(time) PARTITION BY DAY
+                    """
+                ).format(sql.Identifier(measurement))
+            )
+
+        self._created_tables.add(measurement)
+
+    def _write_line_protocol(self, payloads: list[dict[str, Any]]) -> None:
+        # Accept payloads that use 'timestamp' as an alias of 'time'.
+        normalized_payloads: list[dict[str, Any]] = []
+        for payload in payloads:
+            if "time" in payload or "timestamp" not in payload:
+                normalized_payloads.append(payload)
+                continue
+            normalized = dict(payload)
+            normalized["time"] = payload.get("timestamp")
+            normalized_payloads.append(normalized)
+
+        # Create measurement tables with `time` as designated timestamp so LP
+        # ingestion uses consistent temporal-column naming.
+        measurement_names = {
+            str(payload.get("measurement")) for payload in normalized_payloads if payload.get("measurement")
+        }
+        for measurement in measurement_names:
+            self._ensure_lp_measurement_table(measurement)
+
+        lines = [line for payload in normalized_payloads if (line := to_line_protocol(payload))]
+        if not lines:
+            return
+
+        response = requests.post(
+            self._ilp_url(),
+            params={"precision": self.ilp_precision},
+            data="\n".join(lines).encode("utf-8"),
+            headers={"Content-Type": "text/plain; charset=utf-8"},
+            timeout=self.ilp_timeout,
+        )
+
+        if response.status_code >= 300:
+            body = response.text.strip()
+            details = f": {body}" if body else ""
+            raise RuntimeError(f"QuestDB line protocol write failed with HTTP {response.status_code}{details}")
 
     def _make_connection(self) -> psycopg.Connection[Any]:
         """Create a new connection to QuestDB. This is used for both the main connection and the
@@ -368,6 +447,7 @@ class QuestDBRepository(TimeSeriesRepository):
         all points are written to the same table with a 'measurement' column. For the per-measurement schema,
         points are grouped by their 'measurement' and written to separate tables. If a measurement has a
         declared schema, the data is validated and coerced to the appropriate types before writing.
+        If no schema is declared, fallback ingestion uses line protocol so QuestDB infers typed columns.
         """
 
         if self.conn is None:
@@ -378,6 +458,11 @@ class QuestDBRepository(TimeSeriesRepository):
 
         if not isinstance(points, list):
             points = [points]
+
+        if self.schema == SCHEMA_LINE_PROTOCOL:
+            payloads = [self._to_dict(point) for point in points]
+            self._write_line_protocol(payloads)
+            return
 
         if self.schema == SCHEMA_UNIFIED:
             rows: list[tuple[str, datetime, str, str]] = []
@@ -411,21 +496,9 @@ class QuestDBRepository(TimeSeriesRepository):
                     self._write_schema_rows(measurement, schema, payloads)
                     continue
 
-                mrows: list[tuple[datetime, str, str]] = []
-                for payload in payloads:
-                    timestamp = self._to_datetime(payload.get("time") or payload.get("timestamp"))
-                    tags = payload.get("tags") or {}
-                    fields = payload.get("fields") or {}
-                    mrows.append((timestamp, json.dumps(tags), json.dumps(fields)))
-
-                self._ensure_measurement_table(measurement)
-                with self.conn.cursor() as cur:
-                    cur.executemany(
-                        sql.SQL("INSERT INTO {} (time, tags, fields) VALUES (%s, %s, %s)").format(
-                            sql.Identifier(measurement)
-                        ),
-                        mrows,
-                    )
+                # Fallback for measurements without a declared schema: write via
+                # line protocol so QuestDB creates inferred typed columns.
+                self._write_line_protocol(payloads)
 
     def query(
         self,
@@ -480,11 +553,12 @@ class QuestDBRepository(TimeSeriesRepository):
     def get_measurement_names(self) -> list[str]:
         """Return distinct measurement names.
 
-        For `per_measurement` schema this is the same as `get_table_names()`.
+        For `per_measurement` and `line_protocol` schemas this is the same as
+        `get_table_names()`.
         For `unified` schema this queries the distinct values in the
         `measurement` column of the unified table.
         """
-        if self.schema == SCHEMA_PER_MEASUREMENT:
+        if self.schema in {SCHEMA_PER_MEASUREMENT, SCHEMA_LINE_PROTOCOL}:
             return self.get_table_names()
         rows = self.query(
             sql.SQL("SELECT DISTINCT measurement FROM {} ORDER BY measurement").format(sql.Identifier(self.table_name)),
@@ -526,10 +600,12 @@ class QuestDBRepository(TimeSeriesRepository):
 
         For the `unified` schema, *table_name* is the unified table name and
         *measurement* can be supplied to filter by a specific measurement.
-        For the `per_measurement` schema, *table_name* is the measurement
-        name directly and *measurement* is ignored.
+        For the `per_measurement` and `line_protocol` schemas, *table_name* is
+        the measurement name directly and *measurement* is ignored.
         """
-        if self.schema == SCHEMA_UNIFIED and measurement is not None:
+        has_fields_json = "fields" in set(self.get_column_names(table_name))
+
+        if has_fields_json and self.schema == SCHEMA_UNIFIED and measurement is not None:
             query = sql.SQL(
                 """
                 SELECT time, fields
@@ -540,7 +616,7 @@ class QuestDBRepository(TimeSeriesRepository):
                 """
             ).format(sql.Identifier(table_name))
             rows = self.query(query, mode="all", params=(int(hours), measurement))
-        else:
+        elif has_fields_json:
             query = sql.SQL(
                 """
                 SELECT time, fields
@@ -550,7 +626,18 @@ class QuestDBRepository(TimeSeriesRepository):
                 """
             ).format(sql.Identifier(table_name))
             rows = self.query(query, mode="all", params=(int(hours),))
-        parsed = self._extract_field(rows, column_name)
+        else:
+            query = sql.SQL(
+                """
+                SELECT time, {}
+                FROM {}
+                WHERE time >= dateadd('h', -%s, now())
+                ORDER BY time DESC
+                """
+            ).format(sql.Identifier(column_name), sql.Identifier(table_name))
+            rows = self.query(query, mode="all", params=(int(hours),))
+
+        parsed = self._extract_field(rows, column_name) if has_fields_json else self._extract_value(rows, column_name)
         if mode == "pandas":
             return pandas.DataFrame(parsed)
         return parsed
@@ -568,10 +655,12 @@ class QuestDBRepository(TimeSeriesRepository):
 
         For the `unified` schema, *table_name* is the unified table name and
         *measurement* can be supplied to filter by a specific measurement.
-        For the `per_measurement` schema, *table_name* is the measurement
-        name directly and *measurement* is ignored.
+        For the `per_measurement` and `line_protocol` schemas, *table_name* is
+        the measurement name directly and *measurement* is ignored.
         """
-        if self.schema == SCHEMA_UNIFIED and measurement is not None:
+        has_fields_json = "fields" in set(self.get_column_names(table_name))
+
+        if has_fields_json and self.schema == SCHEMA_UNIFIED and measurement is not None:
             query = sql.SQL(
                 """
                 SELECT time, fields
@@ -583,7 +672,7 @@ class QuestDBRepository(TimeSeriesRepository):
                 """
             ).format(sql.Identifier(table_name))
             rows = self.query(query, mode="all", params=(start_time, end_time, measurement))
-        else:
+        elif has_fields_json:
             query = sql.SQL(
                 """
                 SELECT time, fields
@@ -594,10 +683,27 @@ class QuestDBRepository(TimeSeriesRepository):
                 """
             ).format(sql.Identifier(table_name))
             rows = self.query(query, mode="all", params=(start_time, end_time))
-        parsed = self._extract_field(rows, column_name)
+        else:
+            query = sql.SQL(
+                """
+                SELECT time, {}
+                FROM {}
+                WHERE time >= %s
+                  AND time < %s
+                ORDER BY time DESC
+                """
+            ).format(sql.Identifier(column_name), sql.Identifier(table_name))
+            rows = self.query(query, mode="all", params=(start_time, end_time))
+
+        parsed = self._extract_field(rows, column_name) if has_fields_json else self._extract_value(rows, column_name)
         if mode == "pandas":
             return pandas.DataFrame(parsed)
         return parsed
+
+    @staticmethod
+    def _extract_value(rows: list[dict[str, Any]], column_name: str) -> list[dict[str, Any]]:
+        """Extract a typed column value from query results."""
+        return [{"time": row.get("time"), column_name: row.get(column_name)} for row in rows]
 
     @staticmethod
     def _extract_field(rows: list[dict[str, Any]], column_name: str) -> list[dict[str, Any]]:

@@ -430,15 +430,30 @@ def _inspect_questdb(
             print(f"\nTable: {table}")
             stats: dict[str, Any] | None = None
             columns: list[str] | None = None
+            time_column: str | None = None
             try:
                 columns = repo.get_column_names(table)
                 print(f"  Columns: {', '.join(columns) if columns else '(none)'}")
+                if columns:
+                    if "time" in columns:
+                        time_column = "time"
+                    elif "timestamp" in columns:
+                        time_column = "timestamp"
             except Exception as exc:
                 print(f"  Columns: n/a ({exc})")
 
             try:
+                if not time_column:
+                    raise ValueError("No time column found (expected 'time' or 'timestamp')")
+                time_expr = f'"{time_column}"'
+                stats_query = (
+                    "SELECT COUNT(*) AS row_count, "
+                    f"MIN({time_expr}) AS min_time, "
+                    f"MAX({time_expr}) AS max_time "
+                    f'FROM "{table}"'
+                )
                 stats_rows = repo.query(
-                    f'SELECT COUNT(*) AS row_count, MIN(time) AS min_time, MAX(time) AS max_time FROM "{table}"',
+                    stats_query,
                     mode="all",
                 )
                 if stats_rows:
@@ -458,14 +473,17 @@ def _inspect_questdb(
                 print("  Time window: n/a")
                 print(f"  Warning: could not compute stats ({exc})")
 
-            # Check if this is unified schema (with tags/fields columns) or typed schema (per_measurement)
+            # Check if this is unified schema (with tags/fields columns) or typed schema.
             has_tags_fields = "tags" in columns and "fields" in columns if columns else False
 
             if has_tags_fields:
                 # Unified schema with JSON-stored tags and fields
                 try:
+                    if not time_column:
+                        raise ValueError("No time column found (expected 'time' or 'timestamp')")
+                    time_expr = f'"{time_column}"'
                     sample = repo.query(
-                        f'SELECT tags, fields FROM "{table}" ORDER BY time DESC LIMIT {int(sample_rows)}',
+                        f'SELECT tags, fields FROM "{table}" ORDER BY {time_expr} DESC LIMIT {int(sample_rows)}',
                         mode="all",
                     )
                     tag_keys = _parse_json_keys([row.get("tags") for row in sample])
@@ -531,16 +549,19 @@ def _inspect_questdb(
                 except Exception as exc:
                     print(f"  Tag/field keys (sampled): n/a ({exc})")
             else:
-                # Typed schema with native columns (per_measurement with measurement schema)
-                # Display the typed columns (excluding time column) and their actual values
-                typed_columns = [col for col in columns if col != "time"] if columns else []
+                # Typed schema with native columns (per_measurement or line_protocol).
+                # Display the typed columns (excluding temporal column) and their actual values
+                typed_columns = [col for col in columns if col not in {"time", "timestamp"}] if columns else []
                 if typed_columns:
                     print(f"  Tag/field keys (typed): {', '.join(typed_columns)}")
 
                     # Try to show some sample values for the typed columns
                     try:
+                        if not time_column:
+                            raise ValueError("No time column found (expected 'time' or 'timestamp')")
+                        time_expr = f'"{time_column}"'
                         quoted_cols = ", ".join([f'"{col}"' for col in typed_columns[:5]])
-                        sample_query = f'SELECT {quoted_cols} FROM "{table}" ORDER BY time DESC LIMIT 1'
+                        sample_query = f'SELECT {quoted_cols} FROM "{table}" ORDER BY {time_expr} DESC LIMIT 1'
                         sample_rows_data = repo.query(sample_query, mode="all")
                         if sample_rows_data:
                             sample_row = sample_rows_data[0]
@@ -607,8 +628,8 @@ def _inspect_duckdb(
                 f"""
                 SELECT
                     COUNT(*) AS row_count,
-                    MIN(timestamp) AS min_time,
-                    MAX(timestamp) AS max_time
+                    MIN(time) AS min_time,
+                    MAX(time) AS max_time
                 FROM {duckdb_table}
                 WHERE measurement = '{measurement}'
                 """
@@ -623,7 +644,7 @@ def _inspect_duckdb(
                 SELECT tags, fields
                 FROM {duckdb_table}
                 WHERE measurement = '{measurement}'
-                ORDER BY timestamp DESC
+                ORDER BY time DESC
                 LIMIT 200
                 """
             )
@@ -656,7 +677,7 @@ def migrate_influx_to_questdb(
     questdb_password: Annotated[str, typer.Option(help="QuestDB password")] = "quest",
     questdb_table: Annotated[str, typer.Option(help="QuestDB table name (unified schema mode)")] = "timeseries",
     questdb_schema: Annotated[
-        str, typer.Option(help="QuestDB schema mode: 'unified' or 'per_measurement'")
+        str, typer.Option(help="QuestDB schema mode: 'unified', 'per_measurement', or 'line_protocol'")
     ] = "unified",
     tables: Annotated[
         str, typer.Option(help="Comma-separated list of measurements to migrate (auto-discover if empty)")
@@ -772,7 +793,7 @@ def inspect_db(
     questdb_table: Annotated[str, typer.Option(help="QuestDB unified table name")] = "timeseries",
     questdb_schema: Annotated[
         str,
-        typer.Option(help="QuestDB schema mode: unified or per_measurement"),
+        typer.Option(help="QuestDB schema mode: unified, per_measurement, or line_protocol"),
     ] = "per_measurement",
     duckdb_path: Annotated[str, typer.Option(help="DuckDB file path")] = "",
     duckdb_table: Annotated[str, typer.Option(help="DuckDB main table name")] = "timeseries",
@@ -884,7 +905,7 @@ def execute_sql(
     questdb_table: Annotated[str, typer.Option(help="QuestDB unified table name")] = "timeseries",
     questdb_schema: Annotated[
         str,
-        typer.Option(help="QuestDB schema mode: unified or per_measurement"),
+        typer.Option(help="QuestDB schema mode: unified, per_measurement, or line_protocol"),
     ] = "per_measurement",
     duckdb_path: Annotated[str, typer.Option(help="DuckDB file path")] = "",
     duckdb_table: Annotated[str, typer.Option(help="DuckDB main table name")] = "timeseries",

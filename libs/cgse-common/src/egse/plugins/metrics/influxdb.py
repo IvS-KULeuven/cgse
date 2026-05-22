@@ -32,7 +32,6 @@ __all__ = [
 ]
 
 import logging
-import math
 from datetime import datetime
 from datetime import timezone
 
@@ -50,6 +49,7 @@ from egse.env import int_env
 from egse.env import str_env
 from egse.metrics import PointLike
 from egse.metrics import TimeSeriesRepository
+from egse.plugins.metrics.line_protocol import to_line_protocol
 from egse.system import type_name
 
 logger = logging.getLogger("egse.plugins")
@@ -221,83 +221,8 @@ class InfluxDBRepository(TimeSeriesRepository):
 
     @staticmethod
     def _to_line_protocol(payload: dict) -> str | None:
-        """Convert a DataPoint-style dict to an InfluxDB line protocol string.
-
-        Args:
-            payload: Dictionary with `measurement`, optional `tags`, `fields`,
-                and optional `time`.
-
-        Returns:
-            A line-protocol string when conversion succeeds, otherwise `None`.
-
-        Rules:
-            - Missing/empty measurement returns `None`.
-            - `fields` must contain at least one supported non-`None` value,
-              otherwise `None` is returned.
-            - `tags` with `None` values are skipped.
-            - Float `NaN`/`Inf` values are skipped.
-            - `time` supports Unix seconds (int/float) or ISO-8601 string and is
-              emitted as nanoseconds.
-        """
-        measurement = payload.get("measurement", "")
-        if not measurement:
-            return None
-
-        fields = payload.get("fields") or {}
-        tags = payload.get("tags") or {}
-        timestamp = payload.get("time")
-
-        def _esc(s: str) -> str:
-            """Escape commas, equals signs, and spaces in tag/field keys and tag values."""
-            return s.replace(",", "\\,").replace("=", "\\=").replace(" ", "\\ ")
-
-        def _field_val(v: object) -> str | None:
-            if isinstance(v, bool):
-                return "true" if v else "false"
-            if isinstance(v, int):
-                return f"{v}i"
-            if isinstance(v, float):
-                if not math.isfinite(v):
-                    return None
-                return repr(v)
-            if isinstance(v, str):
-                return '"' + v.replace("\\", "\\\\").replace('"', '\\"') + '"'
-            return None
-
-        # measurement[,tag=val ...]
-        meas_escaped = measurement.replace(",", "\\,").replace(" ", "\\ ")
-        parts = [meas_escaped]
-        if tags:
-            tag_str = ",".join(f"{_esc(str(k))}={_esc(str(v))}" for k, v in sorted(tags.items()) if v is not None)
-            if tag_str:
-                parts.append("," + tag_str)
-
-        # field_key=field_val[,...]
-        field_parts = []
-        for k, v in fields.items():
-            if v is None:
-                continue
-            fv = _field_val(v)
-            if fv is not None:
-                field_parts.append(f"{_esc(str(k))}={fv}")
-
-        if not field_parts:
-            return None
-
-        lp = "".join(parts) + " " + ",".join(field_parts)
-
-        # Timestamp in nanoseconds
-        if timestamp is not None:
-            if isinstance(timestamp, (int, float)):
-                lp += f" {int(timestamp * 1_000_000_000)}"
-            elif isinstance(timestamp, str):
-                try:
-                    dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
-                    lp += f" {int(dt.timestamp() * 1_000_000_000)}"
-                except ValueError:
-                    pass
-
-        return lp
+        """Convert a DataPoint-style dict to an InfluxDB line protocol string."""
+        return to_line_protocol(payload)
 
     def query(self, query_str: str, mode: str = "all") -> pyarrow.Table | pandas.DataFrame:
         try:

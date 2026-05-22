@@ -22,7 +22,7 @@ class DuckDBRepository(TimeSeriesRepository):
 
     DuckDB stores time-series data in a table with columns for:
     - measurement: The measurement name (like table name in InfluxDB)
-    - timestamp: Time column
+    - time: Time column
     - tags: JSON object storing tag key-value pairs
     - fields: JSON object storing field key-value pairs
     """
@@ -50,7 +50,7 @@ class DuckDBRepository(TimeSeriesRepository):
                 f"""
                 CREATE TABLE IF NOT EXISTS {self.table_name} (
                     measurement VARCHAR NOT NULL,
-                    timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                    time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                     tags JSON,
                     fields JSON,
                     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
@@ -68,8 +68,8 @@ class DuckDBRepository(TimeSeriesRepository):
 
             self.conn.execute(
                 f"""
-                CREATE INDEX IF NOT EXISTS idx_{self.table_name}_timestamp
-                ON {self.table_name}(timestamp)
+                CREATE INDEX IF NOT EXISTS idx_{self.table_name}_time
+                ON {self.table_name}(time)
             """
             )
 
@@ -79,7 +79,7 @@ class DuckDBRepository(TimeSeriesRepository):
                 CREATE OR REPLACE VIEW {self.table_name}_flat AS
                 SELECT
                     measurement,
-                    timestamp,
+                    time,
                     tags,
                     fields,
                     created_at,
@@ -193,7 +193,7 @@ class DuckDBRepository(TimeSeriesRepository):
             return
 
         table = self._quote_identifier(measurement)
-        columns = ["timestamp TIMESTAMPTZ"]
+        columns = ["time TIMESTAMPTZ"]
         for column in schema.tags:
             columns.append(f"{self._quote_identifier(column.name)} {self._duckdb_type(column.data_type)}")
         for column in schema.fields:
@@ -213,7 +213,7 @@ class DuckDBRepository(TimeSeriesRepository):
         assert self.conn is not None
 
         table = self._quote_identifier(measurement)
-        column_names = ["timestamp"]
+        column_names = ["time"]
         column_names.extend(column.name for column in schema.tags)
         column_names.extend(column.name for column in schema.fields)
 
@@ -279,7 +279,7 @@ class DuckDBRepository(TimeSeriesRepository):
                 generic_data.append(
                     {
                         "measurement": measurement,
-                        "timestamp": timestamp,
+                        "time": timestamp,
                         "tags": json.dumps(tags) if isinstance(tags, dict) else tags,
                         "fields": json.dumps(fields) if isinstance(fields, dict) else fields,
                     }
@@ -292,11 +292,11 @@ class DuckDBRepository(TimeSeriesRepository):
             placeholders = ", ".join(["(?, ?, ?, ?)"] * len(generic_data))
             values = []
             for row in generic_data:
-                values.extend([row["measurement"], row["timestamp"], row["tags"], row["fields"]])
+                values.extend([row["measurement"], row["time"], row["tags"], row["fields"]])
 
             self.conn.execute(
                 f"""
-                INSERT INTO {self.table_name} (measurement, timestamp, tags, fields)
+                INSERT INTO {self.table_name} (measurement, time, tags, fields)
                 VALUES {placeholders}
                 """,
                 values,
@@ -344,7 +344,7 @@ class DuckDBRepository(TimeSeriesRepository):
             # Get basic schema
             columns = [
                 {"column_name": "measurement", "data_type": "VARCHAR", "is_nullable": "NO"},
-                {"column_name": "timestamp", "data_type": "TIMESTAMPTZ", "is_nullable": "YES"},
+                {"column_name": "time", "data_type": "TIMESTAMPTZ", "is_nullable": "YES"},
                 {"column_name": "tags", "data_type": "JSON", "is_nullable": "YES"},
                 {"column_name": "fields", "data_type": "JSON", "is_nullable": "YES"},
                 {"column_name": "created_at", "data_type": "TIMESTAMPTZ", "is_nullable": "YES"},
@@ -426,7 +426,7 @@ class DuckDBRepository(TimeSeriesRepository):
             col_name = col["column_name"]
             col_type = col.get("column_type", "")
 
-            if col_name == "timestamp":
+            if col_name == "time":
                 schema["time_column"] = col
             elif col_type == "tag" or col_name.startswith("tag_"):
                 schema["tag_columns"].append(col)
@@ -475,10 +475,10 @@ class DuckDBRepository(TimeSeriesRepository):
             assert self.conn.description is not None  # for type checker
 
             query = f"""
-                SELECT measurement, timestamp, tags, fields, created_at
+                SELECT measurement, time, tags, fields, created_at
                 FROM {self.table_name}
                 WHERE measurement = ?
-                ORDER BY timestamp DESC, created_at DESC
+                ORDER BY time DESC, created_at DESC
                 LIMIT ?
             """
 
@@ -516,8 +516,8 @@ class DuckDBRepository(TimeSeriesRepository):
                 SELECT
                     measurement,
                     COUNT(*) as record_count,
-                    MIN(timestamp) as earliest_timestamp,
-                    MAX(timestamp) as latest_timestamp,
+                    MIN(time) as earliest_timestamp,
+                    MAX(time) as latest_timestamp,
                     COUNT(DISTINCT json_object_keys(json(tags))) as unique_tag_keys,
                     COUNT(DISTINCT json_object_keys(json(fields))) as unique_field_keys
                 FROM {self.table_name}
@@ -550,10 +550,10 @@ class DuckDBRepository(TimeSeriesRepository):
                 where_clause = f" AND {where_clause}"
 
             query = f"""
-                SELECT measurement, timestamp, tags, fields, created_at
+                SELECT measurement, time, tags, fields, created_at
                 FROM {self.table_name}
                 WHERE measurement = ?{where_clause}
-                ORDER BY timestamp DESC
+                ORDER BY time DESC
                 LIMIT ?
             """
 
@@ -597,12 +597,12 @@ class DuckDBRepository(TimeSeriesRepository):
 
             query = f"""
                 SELECT
-                    date_trunc('{time_bucket}', timestamp) as time_bucket,
+                    date_trunc('{time_bucket}', time) as time_bucket,
                     {agg_func}(CAST(json_extract_string(fields, '$.{field_name}') AS DOUBLE)) as {field_name}_{agg_func.lower()}
                 FROM {self.table_name}
                 WHERE measurement = ?
                 AND json_extract_string(fields, '$.{field_name}') IS NOT NULL
-                GROUP BY date_trunc('{time_bucket}', timestamp)
+                GROUP BY date_trunc('{time_bucket}', time)
                 ORDER BY time_bucket
             """
 

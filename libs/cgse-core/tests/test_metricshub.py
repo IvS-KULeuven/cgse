@@ -436,6 +436,17 @@ def test_get_backend_config_questdb_defaults_to_per_measurement(monkeypatch):
     assert public_info["schema"] == "per_measurement"
 
 
+def test_get_backend_config_questdb_line_protocol(monkeypatch):
+    monkeypatch.setenv("CGSE_METRICS_BACKEND", "questdb")
+    monkeypatch.setenv("CGSE_QUESTDB_SCHEMA", "line_protocol")
+
+    backend, config, public_info = _get_backend_config()
+
+    assert backend == "questdb"
+    assert config["schema"] == "line_protocol"
+    assert public_info["schema"] == "line_protocol"
+
+
 def test_get_backend_config_unknown_backend(monkeypatch):
     monkeypatch.setenv("CGSE_METRICS_BACKEND", "nope")
 
