@@ -1,5 +1,12 @@
 # Common-EGSE
 
+## Latest release
+
+- PyPI: https://pypi.org/project/cgse/
+- GitHub releases: https://github.com/IvS-KULeuven/cgse/releases
+- Latest release notes: https://github.com/IvS-KULeuven/cgse/releases/latest
+- Changelog: https://github.com/IvS-KULeuven/cgse/blob/main/CHANGELOG.md
+
 This is a monorepo with all the code and documentation for the common egse framework.
 
 This repository is organized in two main areas, `libs` and `projects`. The `libs` folder contains library type 

@@ -1,6 +1,6 @@
 [project]
 name = "cgse-gui"
-version = "0.24.1"
+version = "0.25.0"
 description = "GUI components for CGSE"
 authors = [
     {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
@@ -35,3 +35,10 @@ packages = ["src/egse"]
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[project.urls]
+Homepage = "https://github.com/IvS-KULeuven/cgse/tree/main/libs/cgse-gui"
+Repository = "https://github.com/IvS-KULeuven/cgse"
+Releases = "https://github.com/IvS-KULeuven/cgse/releases"
+Changelog = "https://github.com/IvS-KULeuven/cgse/blob/main/CHANGELOG.md"
+Documentation = "https://ivs-kuleuven.github.io/cgse/"

@@ -1,5 +1,12 @@
 # Extraction of HK from the MySQL Facility Database
 
+## Latest release
+
+- PyPI: https://pypi.org/project/ariel-facility/
+- GitHub releases: https://github.com/IvS-KULeuven/cgse/releases
+- Latest release notes: https://github.com/IvS-KULeuven/cgse/releases/latest
+- Changelog: https://github.com/IvS-KULeuven/cgse/blob/main/CHANGELOG.md
+
 During the Ariel TA test campaign at CSL, facility (and potentially other) housekeeping data will be stored in the MySQL 
 facility database.  To store (housekeeping) data in a consistent way across devices/processes and to enable quick-look 
 analysis (e.g. via Grafana dashboards), we want to extract the data from the MySQL facility database and ingest it 

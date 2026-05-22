@@ -1,6 +1,6 @@
 [project]
 name = "cgse"
-version = "0.24.1"
+version = "0.25.0"
 description = "Generic Common-EGSE: Commanding and monitoring lab equipment"
 authors = [
     {name = "IvS KU Leuven"}
@@ -123,3 +123,10 @@ docs = [
     "mkdocstrings<1",
     "mkdocstrings-python<2",
 ]
+
+[project.urls]
+Homepage = "https://github.com/IvS-KULeuven/cgse"
+Repository = "https://github.com/IvS-KULeuven/cgse"
+Releases = "https://github.com/IvS-KULeuven/cgse/releases"
+Changelog = "https://github.com/IvS-KULeuven/cgse/blob/main/CHANGELOG.md"
+Documentation = "https://ivs-kuleuven.github.io/cgse/"

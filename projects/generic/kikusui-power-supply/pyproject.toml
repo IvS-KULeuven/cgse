@@ -1,6 +1,6 @@
 [project]
 name = "kikusui_power_supply"
-version = "0.24.1"
+version = "0.25.0"
 description = "KIKUSUI PMX power supplies"
 authors = [
     {name = "IvS KU Leuven"}
@@ -80,3 +80,10 @@ dev = [
     "pytest-asyncio>=0.26.0",
     "ipython",
 ]
+
+[project.urls]
+Homepage = "https://github.com/IvS-KULeuven/cgse/tree/main/projects/generic/kikusui-power-supply"
+Repository = "https://github.com/IvS-KULeuven/cgse"
+Releases = "https://github.com/IvS-KULeuven/cgse/releases"
+Changelog = "https://github.com/IvS-KULeuven/cgse/blob/main/CHANGELOG.md"
+Documentation = "https://ivs-kuleuven.github.io/cgse/"

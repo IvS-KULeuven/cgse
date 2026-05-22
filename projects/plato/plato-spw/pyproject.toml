@@ -1,6 +1,6 @@
 [project]
 name = "plato-spw"
-version = "0.24.1"
+version = "0.25.0"
 description = "SpaceWire implementation for CGSE"
 authors = [
     {name = "IvS KU Leuven"}
@@ -47,3 +47,10 @@ extend-select = ["E501"]
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[project.urls]
+Homepage = "https://github.com/IvS-KULeuven/cgse/tree/main/projects/plato/plato-spw"
+Repository = "https://github.com/IvS-KULeuven/cgse"
+Releases = "https://github.com/IvS-KULeuven/cgse/releases"
+Changelog = "https://github.com/IvS-KULeuven/cgse/blob/main/CHANGELOG.md"
+Documentation = "https://ivs-kuleuven.github.io/cgse/"

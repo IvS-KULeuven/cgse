@@ -442,7 +442,7 @@ tr2t = translation_rotation_to_transformation
 t2tr = translation_rotation_from_transformation
 
 
-def vector_plane_intersection(pt, frame, plane='xy', epsilon=1.e-6):
+def vector_plane_intersection(pt, frame, plane="xy", epsilon=1.0e-6):
     """
 
     Args:
@@ -468,26 +468,26 @@ def vector_plane_intersection(pt, frame, plane='xy', epsilon=1.e-6):
 
     if pt.ref == frame:
         # The point is defined in frame => the origin of the vector is the origin of the target plane.
-        return np.array([0,0,0])
+        return np.array([0, 0, 0])
     else:
         # Express all inputs in 'frame'
 
         # Vector Origin (website: p0)
-        vec_orig = Point(pt.ref.get_origin().coordinates[:3], ref=pt.ref, name='ptorig').express_in(frame)[:3]
+        vec_orig = Point(pt.ref.get_origin().coordinates[:3], ref=pt.ref, name="ptorig").express_in(frame)[:3]
         # Vector End (website: p1)
-        vec_end  = pt.express_in(frame)[:3]
+        vec_end = pt.express_in(frame)[:3]
         # Vector (website: u)
         vec = vec_end - vec_orig
 
         # A point in Plane (website: pco)
         plane_orig = frame.get_origin().coordinates[:3]
         # Normal to the plane (website: pno)
-        if plane in ['xy', 'yx']:
-            plane_normal = frame.get_axis('z').coordinates[:3]
-        elif plane in ['yz', 'zy']:
-            plane_normal = frame.get_axis('x').coordinates[:3]
-        elif plane in ['xz', 'zx']:
-            plane_normal = frame.get_axis('y').coordinates[:3]
+        if plane in ["xy", "yx"]:
+            plane_normal = frame.get_axis("z").coordinates[:3]
+        elif plane in ["yz", "zy"]:
+            plane_normal = frame.get_axis("x").coordinates[:3]
+        elif plane in ["xz", "zx"]:
+            plane_normal = frame.get_axis("y").coordinates[:3]
         else:
             raise ValueError(f"{plane=}; must be a string in ['xy', 'yz', 'zx']")
 
@@ -497,16 +497,15 @@ def vector_plane_intersection(pt, frame, plane='xy', epsilon=1.e-6):
         # Test if there is an intersection (and if it's unique)
         # --> input vector and normal mustn't be perpendicular, else the vector is // to the plane or inside it
         #
-        if (np.allclose(vec_x_normal, 0., atol=epsilon)):
-            print('The input vector is // to the plane normal (or inside the plane)')
-            print('--> there exists no intersection (or an infinity of them)')
+        if np.allclose(vec_x_normal, 0.0, atol=epsilon):
+            print("The input vector is // to the plane normal (or inside the plane)")
+            print("--> there exists no intersection (or an infinity of them)")
             return None
         else:
             # Vector from the point in the plane to the origin of the vector (w = p0 - pco)
             plane_to_vec = vec_orig - plane_orig
 
             # Solution  ("how many 'vectors' away is the interesection ?" ; factor=-(plane * w) / vec_x_normal)
-            vec_multiplicator = - np.dot(plane_normal, plane_to_vec) / vec_x_normal
+            vec_multiplicator = -np.dot(plane_normal, plane_to_vec) / vec_x_normal
 
             return Point(vec_orig + (vec * vec_multiplicator), ref=frame)
-

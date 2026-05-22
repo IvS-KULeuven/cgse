@@ -1,6 +1,6 @@
 [project]
 name = "symetrie-hexapod"
-version = "0.24.1"
+version = "0.25.0"
 description = "Symetrie Hexapod implementation for CGSE"
 authors = [
     {name = "IvS KU Leuven"}
@@ -91,3 +91,10 @@ dev = [
     "pytest-cov>=6.0.0",
     "ruff>=0.9.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/IvS-KULeuven/cgse/tree/main/projects/generic/symetrie-hexapod"
+Repository = "https://github.com/IvS-KULeuven/cgse"
+Releases = "https://github.com/IvS-KULeuven/cgse/releases"
+Changelog = "https://github.com/IvS-KULeuven/cgse/blob/main/CHANGELOG.md"
+Documentation = "https://ivs-kuleuven.github.io/cgse/"

@@ -1,6 +1,6 @@
 [project]
 name = "ariel-facility"
-version = "0.24.1"
+version = "0.25.0"
 description = "Extract HK from MySQL Facility Database for Ariel"
 authors = [
     {name = "IVS KU Leuven"}
@@ -61,3 +61,10 @@ extend-select = ["E501"]
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[project.urls]
+Homepage = "https://github.com/IvS-KULeuven/cgse/tree/main/projects/ariel/ariel-facility"
+Repository = "https://github.com/IvS-KULeuven/cgse"
+Releases = "https://github.com/IvS-KULeuven/cgse/releases"
+Changelog = "https://github.com/IvS-KULeuven/cgse/blob/main/CHANGELOG.md"
+Documentation = "https://ivs-kuleuven.github.io/cgse/"

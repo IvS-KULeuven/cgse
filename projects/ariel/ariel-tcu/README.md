@@ -1,5 +1,12 @@
 # Telescope Control Unit (TCU)
 
+## Latest release
+
+- PyPI: https://pypi.org/project/ariel-tcu/
+- GitHub releases: https://github.com/IvS-KULeuven/cgse/releases
+- Latest release notes: https://github.com/IvS-KULeuven/cgse/releases/latest
+- Changelog: https://github.com/IvS-KULeuven/cgse/blob/main/CHANGELOG.md
+
 ## Reference Document
 
 - RD01: TCU User Manual (ARIEL-IEEC-PL-TN-002), v1.2
