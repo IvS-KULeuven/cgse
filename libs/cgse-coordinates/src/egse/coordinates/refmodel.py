@@ -726,20 +726,34 @@ def get_vectors(reference_frame_1, reference_frame_2, model: ReferenceFrameModel
     )
 
 
-def print_vectors(reference_frame_1: str, reference_frame_2: str, model: ReferenceFrameModel) -> None:
-    """Prints the translation and rotation vectors for the active transformation for the 1st reference frame to the 2nd.
+def print_vectors(reference_frame_1: str, reference_frame_2: str, model: ReferenceFrameModel,
+                    format: str = "10.5f", decimals: int = None) -> None:
+    """
+    Prints the translation and rotation vectors for the active transformation for the 1st reference frame to the 2nd.
 
     Args:
         reference_frame_1 (str): Name of the reference frame to get the active transformation from.
         reference_frame_2 (str): Name of the reference frame to get the active transformation to.
         model (ReferenceFrameModel): Model containing the reference frames with the given names.
+        format="10.5f" (str): default print-format
+        decimals=None  (int): if given a positive value, decimals is used instead (passed to np.round)
     """
-
     trans, rot = model.get_frame(reference_frame_1).get_active_translation_rotation_vectors_to(
-        model.get_frame(reference_frame_2)
-    )
+        model.get_frame(reference_frame_2))
+
+    if decimals is None:
+        fmt = f"{{:{format}}}"
+        trans_str = ", ".join(fmt.format(x) for x in trans)
+        rot_str = ", ".join(fmt.format(x) for x in rot)
+    else:
+        trans_r = np.round(trans, decimals)
+        rot_r = np.round(rot, decimals)
+        trans_str = ", ".join(str(x) for x in trans_r)
+        rot_str = ", ".join(str(x) for x in rot_r)
+
     print(
-        f"{reference_frame_1:8s} -> {reference_frame_2:8s} : Trans [{trans[0]:11.4e}, {trans[1]:11.4e}, {trans[2]:11.4e}]    Rot [{rot[0]:11.4e}, {rot[1]:11.4e}, {rot[2]:11.4e}]"
+        f"{reference_frame_1:8s} -> {reference_frame_2:8s} : "
+        f"Trans [{trans_str}]    Rot [{rot_str}]"
     )
     return
 
