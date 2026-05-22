@@ -6,6 +6,13 @@
 
 # Generic Functionality used in the Common-EGSE
 
+## Latest release
+
+- PyPI: https://pypi.org/project/cgse-common/
+- GitHub releases: https://github.com/IvS-KULeuven/cgse/releases
+- Latest release notes: https://github.com/IvS-KULeuven/cgse/releases/latest
+- Changelog: https://github.com/IvS-KULeuven/cgse/blob/main/CHANGELOG.md
+
 This package 'cgse-common' contains functionality that is used by all `cgse` sub-packages, but it is designed to be a stand-alone generic package that can be used also in any other project.
 
 

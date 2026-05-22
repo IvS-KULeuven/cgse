@@ -7,6 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-05-22
+
+- Added QuestDB `line_protocol` schema mode with HTTP ILP ingestion, including typed-column inference and support for configurable ILP host/port/path/timeout/precision.
+- Improved QuestDB `per_measurement` behavior for measurements without declared schemas by falling back to line protocol ingestion instead of JSON `fields` inserts.
+- Added a shared metrics line-protocol serializer (`egse.plugins.metrics.line_protocol.to_line_protocol`) and updated the InfluxDB repository to use it.
+- Extended Metrics Hub QuestDB backend configuration validation to accept `CGSE_QUESTDB_SCHEMA=line_protocol`.
+- Extended CGSE admin tooling (`cgse admin inspect-db`, migration, and SQL flows) to support `line_protocol` schema mode and to handle both `time` and `timestamp` temporal columns during inspection/statistics queries.
+- Aligned DuckDB metrics repository time-column naming to `time` (from `timestamp`) for schema consistency.
+- Expanded test coverage for QuestDB line protocol ingestion, typed-table value queries, per-measurement fallback behavior, and Metrics Hub QuestDB schema handling.
+
 ## [0.24.1] - 2026-05-21
 
 - Reduced the root CGSE source distribution and wheel to a minimal set of files, so published archives are smaller and contain only the required packaging assets.
@@ -438,7 +448,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.24.1...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.0...HEAD
+[0.25.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.24.1...v0.25.0
 [0.24.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.24.0...v0.24.1
 [0.24.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.22.2...v0.23.0

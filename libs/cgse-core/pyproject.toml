@@ -133,3 +133,10 @@ dev = [
     "pytest-timeout>=2.3.1",
     "ruff>=0.9.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/IvS-KULeuven/cgse/tree/main/libs/cgse-core"
+Repository = "https://github.com/IvS-KULeuven/cgse"
+Releases = "https://github.com/IvS-KULeuven/cgse/releases"
+Changelog = "https://github.com/IvS-KULeuven/cgse/blob/main/CHANGELOG.md"
+Documentation = "https://ivs-kuleuven.github.io/cgse/"

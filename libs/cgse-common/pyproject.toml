@@ -115,3 +115,10 @@ dev = [
     "nox",
     "setuptools>=75.8.2",  # needed by PyCharm
 ]
+
+[project.urls]
+Homepage = "https://github.com/IvS-KULeuven/cgse/tree/main/libs/cgse-common"
+Repository = "https://github.com/IvS-KULeuven/cgse"
+Releases = "https://github.com/IvS-KULeuven/cgse/releases"
+Changelog = "https://github.com/IvS-KULeuven/cgse/blob/main/CHANGELOG.md"
+Documentation = "https://ivs-kuleuven.github.io/cgse/"
