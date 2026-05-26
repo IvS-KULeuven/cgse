@@ -4,8 +4,8 @@ from egse.settings import Settings
 HERE = Path(__file__).parent
 
 DEVICE_SETTINGS = Settings.load("ThermalVac")
-SETPOINT_TEMP_MIN = DEVICE_SETTINGS.get("SETPOINT_TEMP_MIN", None)
-SETPOINT_TEMP_MAX = DEVICE_SETTINGS.get("SETPOINT_TEMP_MAX", None)
+SETPOINT_TEMP_MIN: float | None = DEVICE_SETTINGS.get("SETPOINT_TEMP_MIN", None)
+SETPOINT_TEMP_MAX: float | None = DEVICE_SETTINGS.get("SETPOINT_TEMP_MAX", None)
 
 CS_SETTINGS = Settings.load("ThermalVac Control Server")
 PROTOCOL = CS_SETTINGS.get("PROTOCOL", "tcp")  # Communication protocol
@@ -15,6 +15,28 @@ SERVICE_NAME = CS_SETTINGS.get("SERVICE_NAME", "TVAC")
 SAMPLE_INTERVAL = CS_SETTINGS.get("SAMPLE_INTERVAL", 5.0)  # Sample interval [s]
 
 PROXY_TIMEOUT = 10  # Timeout for proxy connections [s]
+
+
+def clamp_setpoint_temperature(value: float) -> float:
+    """Clamps the requested temperature setpoint to the supported safety range.
+
+    If the given temperature setpoint is outside the allowed range, it will be clamped to the nearest limit from the
+    settings.
+
+    Args:
+        value (float): Temperature setpoint to clamp [°C].
+
+    Returns:
+        Clamped temperature setpoint [°C].
+
+    Raises:
+        ValueError: If temperature limits are not configured in the settings.
+    """
+
+    if SETPOINT_TEMP_MIN is None or SETPOINT_TEMP_MAX is None:
+        raise ValueError(f"Temperature limits not configured: MIN={SETPOINT_TEMP_MIN}, MAX={SETPOINT_TEMP_MAX}")
+
+    return max(SETPOINT_TEMP_MIN, min(SETPOINT_TEMP_MAX, value))
 
 
 def tvac_state_to_string(state: int) -> str:
