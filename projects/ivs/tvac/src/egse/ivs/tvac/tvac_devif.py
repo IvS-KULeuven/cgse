@@ -5,7 +5,7 @@ from typing import Any
 from egse.device import DeviceConnectionError
 from asyncua import Client, ua
 
-from egse.ivs.thermalvac import DEVICE_SETTINGS
+from egse.ivs.tvac import DEVICE_SETTINGS
 
 LOGGER = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class ThermalVacOpcUaInterface:
 
         self.hostname = DEVICE_SETTINGS["HOSTNAME"] if hostname is None else hostname
         self.port = DEVICE_SETTINGS["PORT"] if port is None else port
-        self.device_id = "ThermalVac"
+        self.device_id = "TVAC"
 
         self._is_connection_open = False
         self.client = Client(self.server_url)

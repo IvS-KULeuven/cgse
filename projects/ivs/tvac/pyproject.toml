@@ -1,5 +1,5 @@
 [project]
-name = "ivs_thermalvac"
+name = "ivs_tvac"
 version = "0.25.0"
 description = "Thermal Vacuum Chamber"
 authors = [
@@ -28,22 +28,22 @@ dependencies = [
 test = ["pytest", "pytest-mock", "pytest-cov"]
 
 [project.scripts]
-thermalvac = "egse.ivs.thermalvac.async_thermalvac:app"
+tvac = "egse.ivs.tvac.async_tvac:app"
 
 ##[project.gui-scripts]
 ##tgf4000_ui = "egse.arbitrary_wave_generator.aim_tti.tgf4000_ui:main"
 
 [project.entry-points."cgse.version"]
-ivs-thermalvac = 'egse.version:get_version_installed'
+ivs-tvac = 'egse.version:get_version_installed'
 
 [project.entry-points."cgse.settings"]
-ivs-thermalvac = "ivs_thermalvac:settings.yaml"
+ivs-tvac = "ivs_tvac:settings.yaml"
 
 [project.entry-points."cgse.service.device_command"]
-thermalvac = 'ivs_thermalvac.cgse_services:thermalvac'
+tvac = 'ivs_tvac.cgse_services:tvac'
 
 [project.entry-points."cgse.explore"]
-explore = "ivs_thermalvac.cgse_explore"
+explore = "ivs_tvac.cgse_explore"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -62,7 +62,7 @@ exclude = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/egse", "src/ivs_thermalvac"]
+packages = ["src/egse", "src/ivs_tvac"]
 
 [tool.ruff]
 line-length = 120

@@ -1,4 +1,4 @@
-PACKAGES: IVS_THERMALVAC
+PACKAGES: IVS_TVAC
 
 ThermalVac:
     HOSTNAME:           localhost

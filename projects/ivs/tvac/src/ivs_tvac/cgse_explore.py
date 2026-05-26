@@ -12,7 +12,7 @@ def show_processes():
     """Returns a list of ProcessInfo data classes for matching processes from this package."""
 
     def filter_procs(pi: ProcessInfo):
-        pattern = r"thermalvac"
+        pattern = r"tvac"
 
         return re.search(pattern, pi.command)
 

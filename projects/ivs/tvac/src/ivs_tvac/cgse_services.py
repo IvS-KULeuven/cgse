@@ -8,40 +8,40 @@ import typer
 from egse.system import all_logging_disabled
 from egse.system import redirect_output_to_log
 
-thermalvac = typer.Typer(name="thermalvac", help="Thermal Vacuum Chamber")
+tvac = typer.Typer(name="tvac", help="Thermal Vacuum Chamber", no_args_is_help=True)
 
 
-@thermalvac.command(name="start")
-def start_thermalvac():
+@tvac.command(name="start")
+def start_tvac():
     """Starts the ThermalVac service."""
 
     rich.print("Starting ThermalVac service")
 
-    out = redirect_output_to_log("thermalvac.start.log")
+    out = redirect_output_to_log("tvac.start.log")
 
-    cmd = [sys.executable, "-m", "egse.ivs.thermalvac.async_thermalvac", "start"]
+    cmd = [sys.executable, "-m", "egse.ivs.tvac.async_tvac", "start"]
 
     subprocess.Popen(cmd, stdout=out, stderr=out, stdin=subprocess.DEVNULL, close_fds=True)
 
 
-@thermalvac.command(name="stop")
-def stop_thermalvac():
+@tvac.command(name="stop")
+def stop_tvac():
     """Stops the ThermalVac service."""
 
     rich.print("Terminating the ThermalVac service")
 
-    out = redirect_output_to_log("thermalvac.stop.log")
+    out = redirect_output_to_log("tvac.stop.log")
 
-    cmd = [sys.executable, "-m", "egse.ivs.thermalvac.async_thermalvac", "stop"]
+    cmd = [sys.executable, "-m", "egse.ivs.tvac.async_tvac", "stop"]
 
     subprocess.Popen(cmd, stdout=out, stderr=out, stdin=subprocess.DEVNULL, close_fds=True)
 
 
-@thermalvac.command(name="status")
-def status_thermalvac():
+@tvac.command(name="status")
+def status_tvac():
     """Prints status information for the ThermalVac service."""
 
     with all_logging_disabled():
-        from egse.ivs.thermalvac import async_thermalvac
+        from egse.ivs.tvac import async_tvac
 
-        asyncio.run(async_thermalvac.status())
+        asyncio.run(async_tvac.status())

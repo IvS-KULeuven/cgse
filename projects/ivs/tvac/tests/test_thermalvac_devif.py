@@ -7,7 +7,7 @@ import pytest
 from asyncua import Client, ua
 
 from egse.device import DeviceConnectionError
-from egse.ivs.thermalvac.thermalvac_devif import ThermalVacOpcUaInterface
+from egse.ivs.tvac.thermalvac_devif import ThermalVacOpcUaInterface
 
 
 @pytest.fixture

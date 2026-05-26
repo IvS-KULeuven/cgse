@@ -1,6 +1,6 @@
 """Unit tests for ThermalVac module initialisation."""
 
-from egse.ivs.thermalvac import tvac_state_to_string
+from egse.ivs.tvac import tvac_state_to_string
 
 
 class TestTvacStateToString:
