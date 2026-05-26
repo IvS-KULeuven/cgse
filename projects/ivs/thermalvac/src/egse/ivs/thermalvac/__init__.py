@@ -10,6 +10,8 @@ SETPOINT_TEMP_MAX = DEVICE_SETTINGS.get("SETPOINT_TEMP_MAX", None)
 CS_SETTINGS = Settings.load("ThermalVac Control Server")
 PROTOCOL = CS_SETTINGS.get("PROTOCOL", "tcp")  # Communication protocol
 STORAGE_MNEMONIC = CS_SETTINGS.get("STORAGE_MNEMONIC", "TVAC")
+SERVICE_TYPE = CS_SETTINGS.get("SERVICE_TYPE", "TVAC")
+SERVICE_NAME = CS_SETTINGS.get("SERVICE_NAME", "TVAC")
 SAMPLE_INTERVAL = CS_SETTINGS.get("SAMPLE_INTERVAL", 5.0)  # Sample interval [s]
 
 PROXY_TIMEOUT = 10  # Timeout for proxy connections [s]
