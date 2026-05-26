@@ -75,7 +75,8 @@ members = [
     "libs/cgse-gui",
     "projects/generic/*",
     "projects/plato/*",
-    "projects/ariel/*"
+    "projects/ariel/*",
+    "projects/ivs/*",
 ]
 exclude = ["docs/*"]
 
