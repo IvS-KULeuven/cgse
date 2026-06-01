@@ -33,6 +33,8 @@ from egse.plugin import HierarchicalEntryPoints
 from egse.plugin import entry_points
 from egse.system import get_package_description
 from egse.system import snake_to_title
+from egse.version import get_version_from_pip
+from egse.version import is_latest_version
 
 
 def broken_command(name: str, module: str, exc: Exception):
@@ -114,10 +116,14 @@ def version(ctx: typer.Context):
     #     rich.print(f"CGSE-CORE installed version = [bold default]{installed_version}[/]")
 
     for ep in sorted(entry_points("cgse.version"), key=lambda x: x.name):
+        pypi_version = get_version_from_pip(ep.name)
+        is_latest = is_latest_version(ep.name)
         if installed_version := get_version_installed(ep.name):
             rich.print(
-                f"{ep.name.upper()} installed version = [bold default]{installed_version}[/] — "
-                f"{get_package_description(ep.name)}"
+                f"{ep.name.upper()} installed version = [bold default]{installed_version}[/] - "
+                f"{get_package_description(ep.name)} - "
+                f"{'latest' if is_latest else 'outdated'}"
+                f"{f' (latest version on PyPI: {pypi_version})' if not is_latest and pypi_version else ''}"
             )
 
 
@@ -168,9 +174,9 @@ def main(ctx: typer.Context, verbose: bool = False):
     """
     The `cgse` command is used to:
 
-    - initialise your project environment
+    - initialize your project environment
 
-    - visualise and check project and environment settings
+    - visualize and check project and environment settings
 
     - inspect, configure, monitor the core services and device control servers.
     """

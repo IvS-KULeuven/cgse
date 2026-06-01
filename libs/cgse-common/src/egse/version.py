@@ -12,9 +12,17 @@ The actual numbers are updated for each release in the `settings.yaml` configura
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
+import urllib
+from packaging.version import Version
 from pathlib import Path
+from urllib.error import HTTPError
+from urllib.error import URLError
+from urllib.request import urlopen
+
+from packaging.version import Version
 
 # WARNING: Make sure you are not importing any `egse` packages at the module level.
 # This module is magically loaded by pip to determine the VERSION number before the
@@ -27,6 +35,8 @@ __all__ = [
     "get_version_installed",
     "get_version_from_git",
     "get_version_from_settings",
+    "is_latest_version",
+    "is_installed",
     "VERSION",
 ]
 
@@ -136,6 +146,26 @@ def get_version_from_git(location: str | Path | None = None) -> str:
     return version
 
 
+def get_version_from_pip(package_name: str) -> str | None:
+    """
+    Returns the latest version that is available from the Python Package Index (PyPI).
+
+    Args:
+        package_name: the name of the installed package, e.g. cgse or cgse-common
+    Returns:
+        The latest version of the package available on PyPI. When the package is not on PyPI, None is returned.
+    """
+    url = f"https://pypi.org/pypi/{package_name}/json"
+    try:
+        with urlopen(url) as response:
+            data = json.load(response)
+        latest = data["info"]["version"]
+    except (HTTPError, URLError, json.JSONDecodeError):
+        latest = None
+
+    return latest
+
+
 def get_version_installed(package_name: str) -> str:
     """
     Returns the version that is installed, i.e. read from the metadata in the import lib.
@@ -158,6 +188,49 @@ def get_version_installed(package_name: str) -> str:
             version = "0.0.0"
 
     return version
+
+
+def is_installed(package_name: str) -> bool:
+    """
+    Returns True if package metadata exists in the current environment.
+    """
+    from egse.system import chdir
+
+    with chdir(Path(__file__).parent):
+        from importlib.metadata import PackageNotFoundError
+        from importlib.metadata import version as get_version
+
+        try:
+            get_version(package_name)
+            return True
+        except PackageNotFoundError:
+            return False
+
+
+def is_latest_version(package_name: str) -> bool:
+    """
+    Checks if the installed version of the package is the latest version available on PyPI.
+
+    If the package is not available on PyPI, it is assumed that the installed version is the latest.
+
+    Args:
+        package_name: the name of the installed package, e.g. cgse or cgse-ts
+
+    Returns:
+        True if the installed version is the latest, False otherwise and if the package is not installed.
+    """
+    if not is_installed(package_name):
+        return False
+
+    installed_version = get_version_installed(package_name)
+    latest_version = get_version_from_pip(package_name)
+
+    if not latest_version:
+        return True
+
+    up_to_date = Version(installed_version) >= Version(latest_version)
+
+    return up_to_date
 
 
 # The version will be the installed version of the `egse.common`, because this is the package that is guaranteed
