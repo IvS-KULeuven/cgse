@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.25.1] - 2026-06-11
+
+- Add version checking functionality to display latest package versions. The `cgse version` command will now report if a version is out-of-date with respect to PyPI.
+
 ## [0.25.0] - 2026-05-22
 
 - Added QuestDB `line_protocol` schema mode with HTTP ILP ingestion, including typed-column inference and support for configurable ILP host/port/path/timeout/precision.
@@ -448,7 +452,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.0...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.1...HEAD
+[0.25.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.0...v0.25.1
 [0.25.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.24.1...v0.25.0
 [0.24.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.24.0...v0.24.1
 [0.24.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.23.0...v0.24.0
