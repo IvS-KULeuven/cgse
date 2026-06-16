@@ -17,7 +17,7 @@ dependencies = [
     "cgse-core",
     "cgse-tools",
     "marimo>=0.17.0",
-    "pandas-stubs==2.3.2.250926",
+    "pandas-stubs",
     "rich>=13.9.4",
     "tomlkit>=0.13.2",
 ]
@@ -75,7 +75,8 @@ members = [
     "libs/cgse-gui",
     "projects/generic/*",
     "projects/plato/*",
-    "projects/ariel/*"
+    "projects/ariel/*",
+    "projects/ivs/*",
 ]
 exclude = ["docs/*"]
 
