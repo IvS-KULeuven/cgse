@@ -55,31 +55,30 @@ class FakeCursor:
         elif "SELECT table_name FROM tables()" in query_text:
             self.conn.rows = [{"table_name": "timeseries"}]
         elif "SHOW COLUMNS FROM" in query_text:
+            # Let tests control per-measurement columns via schema_columns dict.
+            for table_name, cols in self.conn.schema_columns.items():
+                if f'"{table_name}"' in query_text or f"Identifier('{table_name}')" in query_text:
+                    self.conn.rows = [{"column": c} for c in cols]
+                    return
             if "typed_metrics" in query_text:
-                self.conn.rows = [{"column": "time"}, {"column": "temperature"}]
+                self.conn.rows = [{"column": "timestamp"}, {"column": "temperature"}]
             else:
-                self.conn.rows = [{"column": "measurement"}, {"column": "time"}, {"column": "fields"}]
-        elif "information_schema.columns" in query_text:
-            # Return all columns that are expected by any schema registered in the fake.
-            # We model this as: the table was freshly created so all schema columns exist.
-            measurement = params[0] if params else ""
-            cols = self.conn.schema_columns.get(measurement, [])
-            self.conn.rows = [{"column_name": c} for c in cols]
-        elif "SELECT time, fields" in query_text:
+                self.conn.rows = [{"column": "measurement"}, {"column": "timestamp"}, {"column": "fields"}]
+        elif "SELECT timestamp, fields" in query_text:
             self.conn.rows = [
                 {
-                    "time": datetime.datetime(2026, 4, 24, 12, 0, tzinfo=datetime.timezone.utc),
+                    "timestamp": datetime.datetime(2026, 4, 24, 12, 0, tzinfo=datetime.timezone.utc),
                     "fields": '{"temperature": 22.5}',
                 }
             ]
         elif (
-            "SELECT time" in query_text
+            "SELECT timestamp" in query_text
             and "fields" not in query_text
             and ("temperature" in query_text or "Identifier('temperature')" in query_text)
         ):
             self.conn.rows = [
                 {
-                    "time": datetime.datetime(2026, 4, 24, 12, 0, tzinfo=datetime.timezone.utc),
+                    "timestamp": datetime.datetime(2026, 4, 24, 12, 0, tzinfo=datetime.timezone.utc),
                     "temperature": 22.5,
                 }
             ]
@@ -192,7 +191,7 @@ def test_write_and_helpers(monkeypatch):
     assert rows[0][0] == "camera_tm"
 
     assert repo.get_table_names() == ["timeseries"]
-    assert repo.get_column_names("metrics") == ["measurement", "time", "fields"]
+    assert repo.get_column_names("metrics") == ["measurement", "timestamp", "fields"]
 
     values = repo.get_values_last_hours("metrics", "temperature", hours=1, mode="")
     assert len(values) == 1
@@ -221,7 +220,7 @@ def test_write_uses_declared_measurement_schema(monkeypatch):
 
     # Pre-populate fake schema_columns so the column-existence verification in
     # _ensure_schema_table succeeds (simulates the table being freshly created).
-    fake_conn.schema_columns["synthetic_load"] = ["time", "device_id", "profile", "temperature", "sample_idx"]
+    fake_conn.schema_columns["synthetic_load"] = ["timestamp", "device_id", "profile", "temperature", "sample_idx"]
 
     repo = QuestDBRepository(schema="per_measurement")
     repo.connect()
@@ -237,7 +236,8 @@ def test_write_uses_declared_measurement_schema(monkeypatch):
     create_queries = [
         query
         for query, _ in fake_conn.executed
-        if _query_contains(query, 'CREATE TABLE IF NOT EXISTS "synthetic_load"', "synthetic_load")
+        if "CREATE TABLE IF NOT EXISTS" in query
+        and _query_contains(query, 'CREATE TABLE IF NOT EXISTS "synthetic_load"', "synthetic_load")
     ]
     assert len(create_queries) == 1
     # SYMBOL is mapped to VARCHAR for PGWire DDL compatibility
@@ -249,7 +249,7 @@ def test_write_uses_declared_measurement_schema(monkeypatch):
     insert_query, rows = fake_conn.executed_many[-1]
     assert _query_contains(
         insert_query,
-        'INSERT INTO "synthetic_load" ("time", "device_id", "profile", "temperature", "sample_idx")',
+        'INSERT INTO "synthetic_load" ("timestamp", "device_id", "profile", "temperature", "sample_idx")',
         "synthetic_load",
     )
     assert rows[0][1:] == ("srcA_000", "source-A", 21.5, 42)
@@ -267,7 +267,7 @@ def test_write_rejects_unknown_declared_fields(monkeypatch):
         )
     )
 
-    fake_conn.schema_columns["synthetic_load"] = ["time", "device_id", "temperature"]
+    fake_conn.schema_columns["synthetic_load"] = ["timestamp", "device_id", "temperature"]
 
     repo = QuestDBRepository(schema="per_measurement")
     repo.connect()

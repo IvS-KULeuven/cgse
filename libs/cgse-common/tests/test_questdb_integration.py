@@ -34,7 +34,11 @@ import psycopg
 import pytest
 
 from egse.metrics import DataPoint
+from egse.metrics import MeasurementColumn
+from egse.metrics import MeasurementSchema
+from egse.metrics import clear_measurement_schemas
 from egse.metrics import get_metrics_repo
+from egse.metrics import register_measurement_schema
 from egse.plugins.metrics.questdb import QuestDBRepository
 
 # ---------------------------------------------------------------------------
@@ -47,8 +51,12 @@ QUESTDB_DATABASE = os.environ.get("CGSE_QUESTDB_DATABASE", "qdb")
 QUESTDB_USER = os.environ.get("CGSE_QUESTDB_USER", "admin")
 QUESTDB_PASSWORD = os.environ.get("CGSE_QUESTDB_PASSWORD", "quest")
 
-# Table used by all integration tests — dropped + recreated per test session
+# Table used by unified-schema integration tests
 _INTEGRATION_TABLE = "cgse_integration_test"
+
+# Tables used by per_measurement integration tests
+_PM_ILP_TABLE = "cgse_pm_ilp_test"
+_PM_TYPED_TABLE = "cgse_pm_typed_test"
 
 pytestmark = pytest.mark.integration
 
@@ -73,6 +81,19 @@ def _wait_for_rows(repo: QuestDBRepository, table: str, expected: int, timeout: 
     return 0
 
 
+def _wait_for_table(repo: QuestDBRepository, table: str, timeout: float = 5.0) -> bool:
+    """Poll until ``table`` appears in QuestDB (ILP WAL commit fence)."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            if table in repo.get_table_names():
+                return True
+        except Exception:
+            pass
+        time.sleep(0.1)
+    return False
+
+
 # ---------------------------------------------------------------------------
 # Session-scoped fixture: live QuestDB repo
 # ---------------------------------------------------------------------------
@@ -92,6 +113,7 @@ def questdb():
         user=QUESTDB_USER,
         password=QUESTDB_PASSWORD,
         table_name=_INTEGRATION_TABLE,
+        schema="unified",
     )
 
     try:
@@ -136,7 +158,7 @@ def test_table_is_listed(questdb):
 def test_column_names(questdb):
     cols = questdb.get_column_names(_INTEGRATION_TABLE)
     assert "measurement" in cols
-    assert "time" in cols
+    assert "timestamp" in cols
     assert "tags" in cols
     assert "fields" in cols
 
@@ -195,14 +217,14 @@ def test_write_batch(questdb):
 def test_query_raw_returns_list(questdb):
     _wait_for_rows(questdb, _INTEGRATION_TABLE, 1)
 
-    rows = questdb.query(f"SELECT * FROM {_INTEGRATION_TABLE} ORDER BY time LIMIT 3", mode="all")
+    rows = questdb.query(f"SELECT * FROM {_INTEGRATION_TABLE} ORDER BY timestamp LIMIT 3", mode="all")
     assert isinstance(rows, list)
     assert len(rows) >= 1
     assert "measurement" in rows[0]
 
 
 def test_query_pandas_returns_dataframe(questdb):
-    df = questdb.query(f"SELECT * FROM {_INTEGRATION_TABLE} ORDER BY time LIMIT 5", mode="pandas")
+    df = questdb.query(f"SELECT * FROM {_INTEGRATION_TABLE} ORDER BY timestamp LIMIT 5", mode="pandas")
     assert isinstance(df, pd.DataFrame)
     assert "measurement" in df.columns
 
@@ -236,14 +258,14 @@ def test_get_values_in_range_returns_list(questdb):
     assert isinstance(rows, list)
     assert len(rows) >= 1
     row = rows[0]
-    assert "time" in row
+    assert "timestamp" in row
     assert "temperature" in row
 
 
 def test_query_field_extraction_from_json(questdb):
     """Verify that _extract_field correctly parses the JSON fields column."""
     rows = questdb.query(
-        f"SELECT time, fields FROM {_INTEGRATION_TABLE} WHERE measurement = 'camera_tm' ORDER BY time LIMIT 5",
+        f"SELECT timestamp, fields FROM {_INTEGRATION_TABLE} WHERE measurement = 'camera_tm' ORDER BY timestamp LIMIT 5",
         mode="all",
     )
     assert rows, "Expected at least one camera_tm row"
@@ -310,3 +332,110 @@ def test_context_manager():
         assert repo.ping() is True
     # After __exit__ the connection is closed
     assert repo.conn is None
+
+
+# ---------------------------------------------------------------------------
+# per_measurement schema tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def questdb_pm():
+    """QuestDBRepository in per_measurement mode.
+
+    Tables are NOT created on connect() — they appear lazily on first write,
+    either via ILP (no schema) or PGWire DDL (declared schema).
+    """
+    repo = QuestDBRepository(
+        host=QUESTDB_HOST,
+        port=QUESTDB_PORT,
+        database=QUESTDB_DATABASE,
+        user=QUESTDB_USER,
+        password=QUESTDB_PASSWORD,
+        schema="per_measurement",
+    )
+
+    try:
+        repo.connect()
+    except Exception as exc:
+        pytest.skip(f"QuestDB not reachable at {QUESTDB_HOST}:{QUESTDB_PORT}: {exc}")
+
+    assert repo.conn is not None
+    with repo.conn.cursor() as cur:
+        for table in (_PM_ILP_TABLE, _PM_TYPED_TABLE):
+            cur.execute(f"DROP TABLE IF EXISTS {table}")
+
+    yield repo
+
+    try:
+        assert repo.conn is not None
+        with repo.conn.cursor() as cur:
+            for table in (_PM_ILP_TABLE, _PM_TYPED_TABLE):
+                cur.execute(f"DROP TABLE IF EXISTS {table}")
+    finally:
+        repo.close()
+
+
+def test_pm_tables_absent_before_write(questdb_pm):
+    """No per-measurement table exists before the first write."""
+    tables = questdb_pm.get_table_names()
+    assert _PM_ILP_TABLE not in tables
+    assert _PM_TYPED_TABLE not in tables
+
+
+def test_pm_ilp_write_creates_table(questdb_pm):
+    """Writing a schema-less measurement creates the table lazily via ILP."""
+    questdb_pm.write(
+        {
+            "measurement": _PM_ILP_TABLE,
+            "tags": {"sensor": "s1"},
+            "fields": {"value": 42.0},
+            "time": "2026-06-21T10:00:00Z",
+        }
+    )
+    assert _wait_for_table(questdb_pm, _PM_ILP_TABLE), f"Table {_PM_ILP_TABLE!r} was not created after ILP write"
+    count = _wait_for_rows(questdb_pm, _PM_ILP_TABLE, 1)
+    assert count >= 1
+
+
+def test_pm_ilp_table_has_expected_columns(questdb_pm):
+    """ILP-created table has QuestDB's native 'timestamp' column plus tag/field columns."""
+    cols = questdb_pm.get_column_names(_PM_ILP_TABLE)
+    assert "timestamp" in cols
+    assert "sensor" in cols
+    assert "value" in cols
+
+
+def test_pm_typed_write_creates_table(questdb_pm):
+    """Writing a measurement with a declared schema creates a typed table synchronously via PGWire DDL."""
+    register_measurement_schema(
+        MeasurementSchema(
+            name=_PM_TYPED_TABLE,
+            tags=(MeasurementColumn("sensor_id", "symbol"),),
+            fields=(MeasurementColumn("temperature", "double"), MeasurementColumn("sample_idx", "long")),
+        )
+    )
+    try:
+        questdb_pm.write(
+            {
+                "measurement": _PM_TYPED_TABLE,
+                "tags": {"sensor_id": "s42"},
+                "fields": {"temperature": 25.0, "sample_idx": 1},
+                "time": "2026-06-21T10:00:00Z",
+            }
+        )
+        # DDL via PGWire is synchronous — table is present immediately
+        assert _PM_TYPED_TABLE in questdb_pm.get_table_names()
+        cols = questdb_pm.get_column_names(_PM_TYPED_TABLE)
+        assert "timestamp" in cols
+        assert "sensor_id" in cols
+        assert "temperature" in cols
+        assert "sample_idx" in cols
+    finally:
+        clear_measurement_schemas()
+
+
+def test_pm_typed_data_is_readable(questdb_pm):
+    """Data written to a typed per_measurement table is visible after WAL commit."""
+    count = _wait_for_rows(questdb_pm, _PM_TYPED_TABLE, 1)
+    assert count >= 1

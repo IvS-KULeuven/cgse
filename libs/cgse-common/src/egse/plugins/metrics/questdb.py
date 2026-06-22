@@ -99,25 +99,6 @@ class QuestDBRepository(TimeSeriesRepository):
     def _ilp_url(self) -> str:
         return f"http://{self.host}:{self.ilp_port}{self.ilp_path}"
 
-    def _ensure_lp_measurement_table(self, measurement: str) -> None:
-        """Ensure an ILP measurement table exists with `time` as designated timestamp."""
-        if measurement in self._created_tables:
-            return
-
-        assert self.conn is not None
-        with self.conn.cursor() as cur:
-            cur.execute(
-                sql.SQL(
-                    """
-                    CREATE TABLE IF NOT EXISTS {} (
-                        time TIMESTAMP
-                    ) TIMESTAMP(time) PARTITION BY DAY
-                    """
-                ).format(sql.Identifier(measurement))
-            )
-
-        self._created_tables.add(measurement)
-
     def _write_line_protocol(self, payloads: list[dict[str, Any]]) -> None:
         # Accept payloads that use 'timestamp' as an alias of 'time'.
         normalized_payloads: list[dict[str, Any]] = []
@@ -128,14 +109,6 @@ class QuestDBRepository(TimeSeriesRepository):
             normalized = dict(payload)
             normalized["time"] = payload.get("timestamp")
             normalized_payloads.append(normalized)
-
-        # Create measurement tables with `time` as designated timestamp so LP
-        # ingestion uses consistent temporal-column naming.
-        measurement_names = {
-            str(payload.get("measurement")) for payload in normalized_payloads if payload.get("measurement")
-        }
-        for measurement in measurement_names:
-            self._ensure_lp_measurement_table(measurement)
 
         lines = [line for payload in normalized_payloads if (line := to_line_protocol(payload))]
         if not lines:
@@ -189,6 +162,28 @@ class QuestDBRepository(TimeSeriesRepository):
             self._ping_conn = None
             return False
 
+    def _reconnect_main_conn(self) -> bool:
+        """Recreate the main write connection after an unexpected server disconnect.
+
+        QuestDB may close PGWire connections (e.g. due to a server restart or an
+        internal error during DDL). This method attempts a transparent reconnect so
+        that the next write can retry without requiring a MetricsHub restart.
+        The _created_tables cache is kept intact because the tables still exist in
+        QuestDB after a reconnect.
+        """
+        try:
+            if self.conn is not None:
+                self.conn.close()
+        except Exception:
+            pass
+        self.conn = None
+
+        try:
+            self.conn = self._make_connection()
+            return True
+        except Exception:
+            return False
+
     def connect(self) -> None:
         """Establish connection to QuestDB and create the unified table if using unified schema.
         For the per-measurement schema, tables are created lazily on first write.
@@ -207,10 +202,10 @@ class QuestDBRepository(TimeSeriesRepository):
                         """
                         CREATE TABLE IF NOT EXISTS {} (
                             measurement SYMBOL,
-                            time TIMESTAMP,
+                            timestamp TIMESTAMP,
                             tags VARCHAR,
                             fields VARCHAR
-                        ) TIMESTAMP(time) PARTITION BY DAY
+                        ) TIMESTAMP(timestamp) PARTITION BY DAY
                         """
                     ).format(sql.Identifier(self.table_name))
                 )
@@ -357,7 +352,7 @@ class QuestDBRepository(TimeSeriesRepository):
         if measurement in self._created_tables:
             return
 
-        columns: list[sql.Composable] = [sql.SQL("time TIMESTAMP")]
+        columns: list[sql.Composable] = [sql.SQL("timestamp TIMESTAMP")]
         for column in schema.tags:
             columns.append(
                 sql.SQL("{} {}").format(
@@ -378,7 +373,7 @@ class QuestDBRepository(TimeSeriesRepository):
                     """
                     CREATE TABLE IF NOT EXISTS {} (
                         {}
-                    ) TIMESTAMP(time) PARTITION BY DAY
+                    ) TIMESTAMP(timestamp) PARTITION BY DAY
                     """
                 ).format(sql.Identifier(measurement), sql.SQL(", ").join(columns))
             )
@@ -387,13 +382,8 @@ class QuestDBRepository(TimeSeriesRepository):
         # pre-existed with a different layout (e.g. a prior generic-fallback table
         # with 'tags'/'fields' JSON columns) the CREATE above is a no-op and
         # subsequent typed INSERTs will fail with confusing errors.
-        expected = {"time"} | {c.name for c in schema.tags} | {c.name for c in schema.fields}
-        with self.conn.cursor(row_factory=dict_row) as cur:
-            cur.execute(
-                "SELECT column_name FROM information_schema.columns WHERE table_name = %s",
-                (measurement,),
-            )
-            actual = {row["column_name"] for row in cur.fetchall()}
+        expected = {"timestamp"} | {c.name for c in schema.tags} | {c.name for c in schema.fields}
+        actual = set(self.get_column_names(measurement))
 
         missing = expected - actual
         if missing:
@@ -428,7 +418,7 @@ class QuestDBRepository(TimeSeriesRepository):
                 row.append(self._coerce_value(fields.get(column.name), column.data_type))
             rows.append(tuple(row))
 
-        column_names = ["time"]
+        column_names = ["timestamp"]
         column_names.extend(column.name for column in schema.tags)
         column_names.extend(column.name for column in schema.fields)
 
@@ -443,13 +433,12 @@ class QuestDBRepository(TimeSeriesRepository):
             )
 
     def write(self, points: PointLike | dict | list[PointLike | dict]) -> None:
-        """Write one or more points to QuestDB. The points can be PointLike objects or dicts. For the unified schema,
-        all points are written to the same table with a 'measurement' column. For the per-measurement schema,
-        points are grouped by their 'measurement' and written to separate tables. If a measurement has a
-        declared schema, the data is validated and coerced to the appropriate types before writing.
-        If no schema is declared, fallback ingestion uses line protocol so QuestDB infers typed columns.
-        """
+        """Write one or more points to QuestDB.
 
+        If the server closes the connection unexpectedly (e.g. during a DDL statement
+        for a new measurement table), the connection is transparently re-established and
+        the batch is retried once before raising.
+        """
         if self.conn is None:
             raise ConnectionError("Not connected. Call connect() first.")
 
@@ -458,6 +447,16 @@ class QuestDBRepository(TimeSeriesRepository):
 
         if not isinstance(points, list):
             points = [points]
+
+        try:
+            self._write_impl(points)
+        except psycopg.OperationalError:
+            if not self._reconnect_main_conn():
+                raise
+            self._write_impl(points)
+
+    def _write_impl(self, points: list[PointLike | dict]) -> None:
+        """Internal write implementation. Callers must ensure points is a non-empty list."""
 
         if self.schema == SCHEMA_LINE_PROTOCOL:
             payloads = [self._to_dict(point) for point in points]
@@ -474,9 +473,9 @@ class QuestDBRepository(TimeSeriesRepository):
                 fields = payload.get("fields") or {}
                 rows.append((measurement, timestamp, json.dumps(tags), json.dumps(fields)))
 
-            with self.conn.cursor() as cur:
+            with self.conn.cursor() as cur:  # type: ignore[union-attr]
                 cur.executemany(
-                    sql.SQL("INSERT INTO {} (measurement, time, tags, fields) VALUES (%s, %s, %s, %s)").format(
+                    sql.SQL("INSERT INTO {} (measurement, timestamp, tags, fields) VALUES (%s, %s, %s, %s)").format(
                         sql.Identifier(self.table_name)
                     ),
                     rows,
@@ -530,25 +529,6 @@ class QuestDBRepository(TimeSeriesRepository):
             return rows
 
         raise ValueError(f"Invalid mode '{mode}', use 'all', or 'pandas'.")
-
-    def _ensure_measurement_table(self, measurement: str) -> None:
-        """Create the per-measurement table if it doesn't exist yet (cached)."""
-        if measurement in self._created_tables:
-            return
-        assert self.conn is not None
-        with self.conn.cursor() as cur:
-            cur.execute(
-                sql.SQL(
-                    """
-                    CREATE TABLE IF NOT EXISTS {} (
-                        time TIMESTAMP,
-                        tags VARCHAR,
-                        fields VARCHAR
-                    ) TIMESTAMP(time) PARTITION BY DAY
-                    """
-                ).format(sql.Identifier(measurement))
-            )
-        self._created_tables.add(measurement)
 
     def get_measurement_names(self) -> list[str]:
         """Return distinct measurement names.
@@ -608,31 +588,31 @@ class QuestDBRepository(TimeSeriesRepository):
         if has_fields_json and self.schema == SCHEMA_UNIFIED and measurement is not None:
             query = sql.SQL(
                 """
-                SELECT time, fields
+                SELECT timestamp, fields
                 FROM {}
-                WHERE time >= dateadd('h', -%s, now())
+                WHERE timestamp >= dateadd('h', -%s, now())
                   AND measurement = %s
-                ORDER BY time DESC
+                ORDER BY timestamp DESC
                 """
             ).format(sql.Identifier(table_name))
             rows = self.query(query, mode="all", params=(int(hours), measurement))
         elif has_fields_json:
             query = sql.SQL(
                 """
-                SELECT time, fields
+                SELECT timestamp, fields
                 FROM {}
-                WHERE time >= dateadd('h', -%s, now())
-                ORDER BY time DESC
+                WHERE timestamp >= dateadd('h', -%s, now())
+                ORDER BY timestamp DESC
                 """
             ).format(sql.Identifier(table_name))
             rows = self.query(query, mode="all", params=(int(hours),))
         else:
             query = sql.SQL(
                 """
-                SELECT time, {}
+                SELECT timestamp, {}
                 FROM {}
-                WHERE time >= dateadd('h', -%s, now())
-                ORDER BY time DESC
+                WHERE timestamp >= dateadd('h', -%s, now())
+                ORDER BY timestamp DESC
                 """
             ).format(sql.Identifier(column_name), sql.Identifier(table_name))
             rows = self.query(query, mode="all", params=(int(hours),))
@@ -663,34 +643,34 @@ class QuestDBRepository(TimeSeriesRepository):
         if has_fields_json and self.schema == SCHEMA_UNIFIED and measurement is not None:
             query = sql.SQL(
                 """
-                SELECT time, fields
+                SELECT timestamp, fields
                 FROM {}
-                WHERE time >= %s
-                  AND time < %s
+                WHERE timestamp >= %s
+                  AND timestamp < %s
                   AND measurement = %s
-                ORDER BY time DESC
+                ORDER BY timestamp DESC
                 """
             ).format(sql.Identifier(table_name))
             rows = self.query(query, mode="all", params=(start_time, end_time, measurement))
         elif has_fields_json:
             query = sql.SQL(
                 """
-                SELECT time, fields
+                SELECT timestamp, fields
                 FROM {}
-                WHERE time >= %s
-                  AND time < %s
-                ORDER BY time DESC
+                WHERE timestamp >= %s
+                  AND timestamp < %s
+                ORDER BY timestamp DESC
                 """
             ).format(sql.Identifier(table_name))
             rows = self.query(query, mode="all", params=(start_time, end_time))
         else:
             query = sql.SQL(
                 """
-                SELECT time, {}
+                SELECT timestamp, {}
                 FROM {}
-                WHERE time >= %s
-                  AND time < %s
-                ORDER BY time DESC
+                WHERE timestamp >= %s
+                  AND timestamp < %s
+                ORDER BY timestamp DESC
                 """
             ).format(sql.Identifier(column_name), sql.Identifier(table_name))
             rows = self.query(query, mode="all", params=(start_time, end_time))
@@ -703,7 +683,7 @@ class QuestDBRepository(TimeSeriesRepository):
     @staticmethod
     def _extract_value(rows: list[dict[str, Any]], column_name: str) -> list[dict[str, Any]]:
         """Extract a typed column value from query results."""
-        return [{"time": row.get("time"), column_name: row.get(column_name)} for row in rows]
+        return [{"timestamp": row.get("timestamp"), column_name: row.get(column_name)} for row in rows]
 
     @staticmethod
     def _extract_field(rows: list[dict[str, Any]], column_name: str) -> list[dict[str, Any]]:
@@ -724,7 +704,7 @@ class QuestDBRepository(TimeSeriesRepository):
             if not isinstance(fields, dict):
                 fields = {}
 
-            result.append({"time": row.get("time"), column_name: fields.get(column_name)})
+            result.append({"timestamp": row.get("timestamp"), column_name: fields.get(column_name)})
 
         return result
 
