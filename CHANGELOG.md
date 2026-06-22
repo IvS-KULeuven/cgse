@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.25.2] - 2026-06-22
+
+- Fixed a race condition in the QuestDB plugin where pre-creating a measurement table via PGWire DDL (`CREATE TABLE`) concurrently with ILP HTTP writes caused QuestDB to drop the PGWire connection (`psycopg.OperationalError: server closed the connection unexpectedly`). The DDL pre-create methods `_ensure_lp_measurement_table` and `_ensure_measurement_table` have been removed; ILP now auto-creates tables natively.
+- Added transparent reconnect-and-retry logic to `QuestDBRepository.write()`: if the server closes the connection unexpectedly (e.g. during DDL for a new typed measurement table), the connection is re-established and the batch is retried once before raising.
+- Renamed the designated timestamp column from `time` to `timestamp` across all QuestDB schema modes (unified, per_measurement, line_protocol), aligning PGWire-created tables with ILP auto-created tables. Existing tables created before this release must be dropped and recreated.
+- Replaced the `information_schema.columns` query in `_ensure_schema_table` with `SHOW COLUMNS FROM`, which is more reliable across QuestDB versions and platforms.
+- Expanded integration test coverage: corrected the unified-schema fixture and added a dedicated `per_measurement` integration test suite covering lazy ILP table creation (schema-less measurements) and synchronous typed table creation (declared-schema measurements).
+
 ## [0.25.1] - 2026-06-11
 
 - Add version checking functionality to display latest package versions. The `cgse version` command will now report if a version is out-of-date with respect to PyPI.
@@ -452,7 +460,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.1...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.2...HEAD
+[0.25.2]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.1...v0.25.2
 [0.25.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.0...v0.25.1
 [0.25.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.24.1...v0.25.0
 [0.24.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.24.0...v0.24.1
