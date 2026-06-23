@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Dependencies
+
+- The `psycopg` package is now always installed with its `binary` extra.
+
 ## [0.25.2] - 2026-06-22
 
 ### IVS ThermalVac
