@@ -2,12 +2,12 @@ PACKAGES:
     RS_PRO_POWER_SUPPLY
 
 
-RS-PRO RS-D3000 Controller:
+RS-PRO RS-D3305P Controller:
     RSD1:
         HOSTNAME: localhost
         PORT: 5025
 
-RS-PRO RS-D3000 Control Server:
+RS-PRO RS-D3305P Control Server:
     PROTOCOL:     tcp
     RSD1:
         SERVICE_TYPE:   RSD1

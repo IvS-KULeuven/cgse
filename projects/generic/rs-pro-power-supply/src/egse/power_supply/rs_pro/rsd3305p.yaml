@@ -1,17 +1,17 @@
 BaseClass:
-    egse.power_supply.rs_pro.rsd.Rsd3000Interface
+    egse.power_supply.rs_pro.rsd.Rsd3305pInterface
 
 ProxyClass:
-    egse.power_supply.rs_pro.rsd.Rsd3000Proxy
+    egse.power_supply.rs_pro.rsd.Rsd3305pProxy
 
 ControlServerClass:
-    egse.power_supply.rs_pro.rsd_cs.Rsd3000ControlServer
+    egse.power_supply.rs_pro.rsd_cs.Rsd3305pControlServer
 
 ControlServer:
     egse.power_supply.rs_pro.rsd_cs
 
 #UserInterface:
-#    egse.power_supply.kikusui.rsd3000.pmx_a_ui
+#    egse.power_supply.kikusui.rsd3305p.pmx_a_ui
 
 Commands:
 
@@ -22,20 +22,20 @@ Commands:
         returns: bool | True if the far end is a simulator instead of the real hardware
 
     is_connected:
-        description: Check if the RS-PRO RS-D3000 hardware controller is connected.
+        description: Check if the RS-PRO RS-D3305P hardware controller is connected.
 
     connect:
-        description: Connect the RS-PRO RS-D3000 hardware controller
+        description: Connect the RS-PRO RS-D3305P hardware controller
 
     reconnect:
-        description: Reconnect the RS-PRO RS-D3000 hardware controller.
+        description: Reconnect the RS-PRO RS-D3305P hardware controller.
             
             This command will force a disconnect and then try to re-connect to the controller.
 
     disconnect:
-        description: Disconnect from the RS-PRO RS-D3000 hardware controller.
+        description: Disconnect from the RS-PRO RS-D3305P hardware controller.
             
-            This command will be send to the RS-PRO RS-D3000 Control Server which will then
+            This command will be send to the RS-PRO RS-D3305P Control Server which will then
             disconnect from the hardware controller.
             
             This command does not affect the ZeroMQ connection of the Proxy to the

@@ -7,26 +7,26 @@ import typer
 
 from egse.system import redirect_output_to_log
 
-rsd3000 = typer.Typer(name="rsd3000", help="RS-PRO, RS-D3000 power supply", no_args_is_help=True)
+rsd3305p = typer.Typer(name="rsd3305p", help="RS-PRO, RS-D3305P power supply", no_args_is_help=True)
 
 
-@rsd3000.command(name="start")
-def start_rs3000(
+@rsd3305p.command(name="start")
+def start_rs3305p(
     device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")],
     simulator: Annotated[
         bool, typer.Option("--simulator", "--sim", help="use a device simulator as the backend")
     ] = False,
 ):
-    """Starts the RS-D3000 service.
+    """Starts the RS-D3305P service.
 
     Args:
-        device_id: RS-D3000 identifier.
+        device_id: RS-D3305P identifier.
     """
 
-    rich.print("Starting service RS-D3000")
-    out = redirect_output_to_log("rsd3000.start.log")
+    rich.print("Starting service RS-D3305P")
+    out = redirect_output_to_log("rsd3305p.start.log")
 
-    cmd = [sys.executable, "-m", "egse.power_supply.rs_pro.rsd3000_cs", "start", device_id]
+    cmd = [sys.executable, "-m", "egse.power_supply.rs_pro.rsd3305p_cs", "start", device_id]
     if simulator:
         cmd.append("--simulator")
     subprocess.Popen(
@@ -38,22 +38,22 @@ def start_rs3000(
     )
 
 
-@rsd3000.command(name="stop")
-def stop_rsd3000(
+@rsd3305p.command(name="stop")
+def stop_rsd3305p(
     device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")],
 ):
-    """Stops the RS-D3000 service.
+    """Stops the RS-D3305P service.
 
     Args:
-        device_id: RS-D3000 identifier.
+        device_id: RS-D3305P identifier.
     """
 
-    rich.print("Terminating service RS-D3000")
+    rich.print("Terminating service RS-D3305P")
 
-    out = redirect_output_to_log("rsd3000_cs.stop.log")
+    out = redirect_output_to_log("rsd3305p_cs.stop.log")
 
     subprocess.Popen(
-        [sys.executable, "-m", "egse.power_supply.rs_pro.rsd3000_cs", "stop", device_id],
+        [sys.executable, "-m", "egse.power_supply.rs_pro.rsd3305p_cs", "stop", device_id],
         stdout=out,
         stderr=out,
         stdin=subprocess.DEVNULL,
@@ -61,18 +61,18 @@ def stop_rsd3000(
     )
 
 
-@rsd3000.command(name="status")
-def status_rsd3000(
+@rsd3305p.command(name="status")
+def status_rsd3305p(
     device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")],
 ):
-    """Prints status information on the RS-D3000 service.
+    """Prints status information on the RS-D3305P service.
 
     Args:
-        device_id: RS-D3000 identifier.
+        device_id: RS-D3305P identifier.
     """
 
     proc = subprocess.Popen(
-        [sys.executable, "-m", "egse.power_supply.rs_pro.rsd3000_cs", "status", device_id],
+        [sys.executable, "-m", "egse.power_supply.rs_pro.rsd3305p_cs", "status", device_id],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         stdin=subprocess.DEVNULL,
@@ -83,22 +83,22 @@ def status_rsd3000(
     rich.print(stdout.decode(), end="")
 
 
-@rsd3000.command(name="start-sim")
-def start_rs3000_sim(
+@rsd3305p.command(name="start-sim")
+def start_rs3305p_sim(
     device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")],
 ):
-    """Start the RS-D3000 Simulator.
+    """Start the RS-D3305P Simulator.
 
     Args:
-        device_id: RS-D3000 identifier.
+        device_id: RS-D3305P identifier.
     """
 
-    rich.print("Starting service RS-D3000 Simulator")
+    rich.print("Starting service RS-D3305P Simulator")
 
-    out = redirect_output_to_log("rsd3000_sim.start.log")
+    out = redirect_output_to_log("rsd3305p_sim.start.log")
 
     subprocess.Popen(
-        [sys.executable, "-m", "egse.power_supply.rs_pro.rsd3000_sim", "start", device_id],
+        [sys.executable, "-m", "egse.power_supply.rs_pro.rsd3305p_sim", "start", device_id],
         stdout=out,
         stderr=out,
         stdin=subprocess.DEVNULL,
@@ -106,22 +106,22 @@ def start_rs3000_sim(
     )
 
 
-@rsd3000.command(name="stop-sim")
-def stop_rs3000_sim(
+@rsd3305p.command(name="stop-sim")
+def stop_rs3305p_sim(
     device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")],
 ):
-    """Stops the RS-D3000 Simulator.
+    """Stops the RS-D3305P Simulator.
 
     Args:
-        device_id: RS-D3000 identifier.
+        device_id: RS-D3305P identifier.
     """
 
-    rich.print("Terminating the RS-D3000 simulator.")
+    rich.print("Terminating the RS-D3305P simulator.")
 
-    out = redirect_output_to_log("rsd3000_sim.stop.log")
+    out = redirect_output_to_log("rsd3305p_sim.stop.log")
 
     subprocess.Popen(
-        [sys.executable, "-m", "egse.power_supply.rs_pro.rsd3000_sim", "stop", device_id],
+        [sys.executable, "-m", "egse.power_supply.rs_pro.rsd3305p_sim", "stop", device_id],
         stdout=out,
         stderr=out,
         stdin=subprocess.DEVNULL,
@@ -130,4 +130,4 @@ def stop_rs3000_sim(
 
 
 if __name__ == "__main__":
-    rsd3000()
+    rsd3305p()

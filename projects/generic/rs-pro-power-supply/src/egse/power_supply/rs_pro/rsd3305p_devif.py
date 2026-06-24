@@ -30,16 +30,16 @@ time_in_s = time.time()
 
 
 class RsdError(Exception):
-    """An RS-D3000-specific error."""
+    """An RS-D3305P-specific error."""
 
     pass
 
 
-class Rsd3000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
-    """Ethernet Interface for the RS-PRO RS-D3000 devices."""
+class Rsd3305pEthernetInterface(DeviceConnectionInterface, DeviceTransport):
+    """Ethernet Interface for the RS-PRO RS-D3305P devices."""
 
-    def __init__(self, hostname: str = None, port: int = None, device_id: str = None, read_timeout: float = 60):
-        """Initialisation of an Ethernet interface for an RS-PRO RS-D3000 device.
+    def __init__(self, hostname: str = None, port: int = None, device_id: str = "RS-D3305P", read_timeout: float = 60):
+        """Initialisation of an Ethernet interface for an RS-PRO RS-D3305P device.
 
         Args:
             hostname( str): Hostname to which to open a socket.
@@ -59,7 +59,7 @@ class Rsd3000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
         self.read_timeout = read_timeout
 
     def connect(self) -> None:
-        """Connects to the RS-PRO RS-D3000 hardware.
+        """Connects to the RS-PRO RS-D3305P hardware.
 
         Raises:
             DeviceConnectionError: When the connection could not be established. Check the logging messages for more
@@ -127,7 +127,7 @@ class Rsd3000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
             )
 
     def disconnect(self) -> None:
-        """Disconnects from the RS-PRO RS-D3000 hardware.
+        """Disconnects from the RS-PRO RS-D3305P hardware.
 
         Raises:
             DeviceConnectionError when the socket could not be closed.
@@ -142,7 +142,7 @@ class Rsd3000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
             raise DeviceConnectionError(self.device_id, f"Could not close socket to {self.hostname}") from e_exc
 
     def reconnect(self):
-        """Reconnects to the RS-PRO RS-D3000 hardware.
+        """Reconnects to the RS-PRO RS-D3305P hardware.
 
         Raises:
             ConnectionError when the device cannot be reconnected for some reason.
@@ -153,7 +153,7 @@ class Rsd3000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
         self.connect()
 
     def is_connected(self) -> bool:
-        """Checks if the RS-PRO RS-D3000 hardware is connected.
+        """Checks if the RS-PRO RS-D3305P hardware is connected.
 
         This will send a query for the device identification and validate the answer.
 
@@ -207,7 +207,7 @@ class Rsd3000EthernetInterface(DeviceConnectionInterface, DeviceTransport):
             raise DeviceConnectionError(self.device_id, "Socket communication error.") from e_socket
         except AttributeError:
             if not self._is_connection_open:
-                msg = "The DT8874 is not connected, use the connect() method."
+                msg = "The RS-PRO RS-D3305P is not connected, use the connect() method."
                 raise DeviceConnectionError(self.device_id, msg)
             raise
 

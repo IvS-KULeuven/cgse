@@ -12,7 +12,7 @@ def show_processes():
     """Returns of list of ProcessInfo data classes for matching processes from this package."""
 
     def filter_procs(pi: ProcessInfo):
-        pattern = r"rsd3000"
+        pattern = r"rsd3305p"
 
         return re.search(pattern, pi.command)
 

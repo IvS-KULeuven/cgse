@@ -1,4 +1,4 @@
-"""Control Server for the RS-PRO RS-D3000."""
+"""Control Server for the RS-PRO RS-D3305P."""
 
 import logging
 import multiprocessing
@@ -11,25 +11,26 @@ import zmq
 
 from egse.control import is_control_server_active, ControlServer
 from egse.power_supply.rs_pro import PROTOCOL, CS_SETTINGS
+from egse.power_supply.rs_pro.rsd3305p import Rsd3305pProxy
 from egse.registry.client import RegistryClient
 from egse.services import ServiceProxy
 from egse.settings import Settings
 from egse.storage import store_housekeeping_information
 from egse.zmq_ser import connect_address, get_port_number
 
-logger = logging.getLogger("egse.power_supply.rs_pro.rsd3000")
-DEVICE_SETTINGS = Settings.load("RS-PRO RS-D3000")
+logger = logging.getLogger("egse.power_supply.rs_pro.rsd3305p")
+DEVICE_SETTINGS = Settings.load("RS-PRO RS-D3305P")
 
 
-def is_rsd3000_cs_active(device_id: str, timeout: float = 0.5) -> bool:
-    """Checks whether the RS-PRO RS-D3000 Control Server is running.
+def is_rsd3305p_cs_active(device_id: str, timeout: float = 0.5) -> bool:
+    """Checks whether the RS-PRO RS-D3305P Control Server is running.
 
     Args:
         device_id (str): Device identifier, as per (local) settings and setup.
         timeout (float): Timeout when waiting for a reply [s].
 
     Returns:
-        True if the RS-PRO RS-D3000 Control Server is running and replied with the expected answer; False otherwise.
+        True if the RS-PRO RS-D3305P Control Server is running and replied with the expected answer; False otherwise.
     """
 
     commanding_port = CS_SETTINGS[device_id].get(
@@ -43,7 +44,7 @@ def is_rsd3000_cs_active(device_id: str, timeout: float = 0.5) -> bool:
 
     else:
         with RegistryClient() as reg:
-            service_type = CS_SETTINGS[device_id].get("SERVICE_TYPE", "rsd3000_cs")
+            service_type = CS_SETTINGS[device_id].get("SERVICE_TYPE", "rsd3305p_cs")
             service = reg.discover_service(service_type)
 
             if service:
@@ -60,9 +61,9 @@ def is_rsd3000_cs_active(device_id: str, timeout: float = 0.5) -> bool:
     return is_control_server_active(endpoint, timeout)
 
 
-class Rsd3000ControlServer(ControlServer):
+class Rsd3305pControlServer(ControlServer):
     def __init__(self, device_id: str, simulator: bool = False):
-        """Initialisation of a new RS-PRO RS-D3000 Control Server.
+        """Initialisation of a new RS-PRO RS-D3305P Control Server.
 
         Args:
             device_id (str): Device identifier, as per (local) settings and setup.
@@ -72,8 +73,8 @@ class Rsd3000ControlServer(ControlServer):
         super().__init__()
 
         self.device_id = device_id
-        process_name = CS_SETTINGS[device_id].get("PROCESS_NAME", "rsd3000_cs")
-        service_type = CS_SETTINGS[device_id].get("SERVICE_TYPE", "rsd3000_cs")
+        process_name = CS_SETTINGS[device_id].get("PROCESS_NAME", "rsd3305p_cs")
+        service_type = CS_SETTINGS[device_id].get("SERVICE_TYPE", "rsd3305p_cs")
 
         multiprocessing.current_process().name = (
             process_name  # Name under which it is registered in the service registry
@@ -83,9 +84,9 @@ class Rsd3000ControlServer(ControlServer):
         self.service_name = process_name
         self.service_type = service_type
 
-        from egse.power_supply.rs_pro.rds3000_protocol import Rsd3000Protocol
+        from egse.power_supply.rs_pro.rsd3305p_protocol import Rsd3305pProtocol
 
-        self.device_protocol = Rsd3000Protocol(self, device_id, simulator=simulator)
+        self.device_protocol = Rsd3305pProtocol(self, device_id, simulator=simulator)
 
         self.logger.info(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()}")
 
@@ -96,49 +97,49 @@ class Rsd3000ControlServer(ControlServer):
         self.register_service(service_type)
 
     def get_communication_protocol(self) -> str:
-        """Returns the communication protocol used RS-PRO RS-D3000 Control Server.
+        """Returns the communication protocol used RS-PRO RS-D3305P Control Server.
 
         Returns:
-            Communication protocol used by the RS-PRO RS-D3000 Control Server, as specified in the settings.
+            Communication protocol used by the RS-PRO RS-D3305P Control Server, as specified in the settings.
         """
 
         return PROTOCOL
 
     def get_commanding_port(self) -> int:
-        """Returns the commanding port used by the RS-PRO RS-D3000 Control Server.
+        """Returns the commanding port used by the RS-PRO RS-D3305P Control Server.
 
         Returns:
-            Commanding port used by the RS-PRO RS-D3000 Control Server, as specified in the settings.
+            Commanding port used by the RS-PRO RS-D3305P Control Server, as specified in the settings.
         """
 
         return get_port_number(self.dev_ctrl_cmd_sock) or self.cs_settings.get("COMMANDING_PORT", 0)
 
     def get_service_port(self) -> int:
-        """Returns the service port used by the RS-PRO RS-D3000 Control Server.
+        """Returns the service port used by the RS-PRO RS-D3305P Control Server.
 
         Returns:
-            Service port used by the RS-PRO RS-D3000 Control Server, as specified in the settings.
+            Service port used by the RS-PRO RS-D3305P Control Server, as specified in the settings.
         """
 
         return get_port_number(self.dev_ctrl_service_sock) or self.cs_settings.get("SERVICE_PORT", 0)
 
     def get_monitoring_port(self) -> int:
-        """Returns the monitoring port used by the RS-PRO RS-D3000 Control Server.
+        """Returns the monitoring port used by the RS-PRO RS-D3305P Control Server.
 
         Returns:
-            Monitoring port used by the RS-PRO RS-D3000 Control Server, as specified in the settings.
+            Monitoring port used by the RS-PRO RS-D3305P Control Server, as specified in the settings.
         """
 
         return get_port_number(self.dev_ctrl_mon_sock) or self.cs_settings.get("MONITORING_PORT", 0)
 
     def get_storage_mnemonic(self) -> str:
-        """Returns the storage mnemonic used by the RS-PRO RS-D3000 Control Server.
+        """Returns the storage mnemonic used by the RS-PRO RS-D3305P Control Server.
 
         Returns:
-            Storage mnemonic used by the RS-PRO RS-D3000 Control Server, as specified in the settings.
+            Storage mnemonic used by the RS-PRO RS-D3305P Control Server, as specified in the settings.
         """
 
-        return self.cs_settings.get("STORAGE_MNEMONIC", "RDS3000")
+        return self.cs_settings.get("STORAGE_MNEMONIC", "RS-D3305P")
 
     def is_storage_manager_active(self):
         """Checks whether the Storage Manager is active."""
@@ -148,7 +149,7 @@ class Rsd3000ControlServer(ControlServer):
         return is_storage_manager_active()
 
     def store_housekeeping_information(self, data):
-        """Sends housekeeping information of the RS-PRO RS-D3000 to the Storage Manager."""
+        """Sends housekeeping information of the RS-PRO RS-D3305P to the Storage Manager."""
 
         origin = self.get_storage_mnemonic()
         store_housekeeping_information(origin, data)
@@ -189,10 +190,10 @@ def start(
     ],
     simulator: Annotated[
         bool,
-        typer.Option("--simulator", "--sim", help="start the RS-PRO RS-D3000 Control Server in simulator mode"),
+        typer.Option("--simulator", "--sim", help="start the RS-PRO RS-D3305P Control Server in simulator mode"),
     ] = False,
 ) -> int:
-    """Starts the RS-PRO RS-D3000 Control Server with the given identifier."""
+    """Starts the RS-PRO RS-D3305P Control Server with the given identifier."""
 
     with remote_logging():
         from egse.env import setup_env
@@ -201,7 +202,7 @@ def start(
 
         # noinspection PyBroadException
         try:
-            control_server = RSd3000ControlServer(device_id, simulator)
+            control_server = Rsd3305pControlServer(device_id, simulator)
             control_server.serve()
         except KeyboardInterrupt:
             logger.debug("Shutdown requested...exiting")
@@ -209,7 +210,7 @@ def start(
             logger.debug("System Exit with code {}.".format(exit_code))
             sys.exit(exit_code.code)
         except Exception:
-            msg = "Cannot start the RS-PRO RS-D3000 {device_id} Control Server"
+            msg = f"Cannot start the RS-PRO RS-D3305P {device_id} Control Server"
             logger.exception(msg)
             rich.print(f"[red]{msg}.")
 
@@ -222,9 +223,9 @@ def stop(
         str, typer.Argument(help="Identifies the hardware controller (as per local settings and setup)")
     ],
 ) -> None:
-    """Sends a `quit_server` command to the RS-PRO RS-D3000 Control Server."""
+    """Sends a `quit_server` command to the RS-PRO RS-D3305P Control Server."""
 
-    service_type = CS_SETTINGS[device_id].get("SERVICE_TYPE", "rsd3000_cs")
+    service_type = CS_SETTINGS[device_id].get("SERVICE_TYPE", "rsd3305p_cs")
 
     with RegistryClient() as reg:
         service = reg.discover_service(service_type)
@@ -234,11 +235,11 @@ def stop(
             proxy.quit_server()
         else:
             try:
-                with Rsd3000Proxy(device_id) as rsd3000_proxy:
-                    with rsd3000_proxy.get_service_proxy() as sp:
+                with Rsd3305pProxy(device_id) as rsd3305p_proxy:
+                    with rsd3305p_proxy.get_service_proxy() as sp:
                         sp.quit_server()
             except ConnectionError:
-                rich.print(f"[red]Couldn't connect to 'rsd3000_cs' {device_id}, process probably not running. ")
+                rich.print(f"[red]Couldn't connect to 'rsd3305p_cs' {device_id}, process probably not running. ")
 
 
 @app.command()
@@ -247,13 +248,13 @@ def status(
         str, typer.Argument(help="Identifies the hardware controller (as per local settings and setup)")
     ],
 ) -> None:
-    """Requests the status information from the RS-PRO RS-D3000 Control Server."""
+    """Requests the status information from the RS-PRO RS-D3305P Control Server."""
 
     hostname = CS_SETTINGS[device_id].get("HOSTNAME", "localhost")
     commanding_port = CS_SETTINGS[device_id].get("COMMANDING_PORT", 0)
     service_port = CS_SETTINGS[device_id].get("SERVICE_PORT", 0)
     monitoring_port = CS_SETTINGS[device_id].get("MONITORING_PORT", 0)
-    service_type = CS_SETTINGS[device_id].get("SERVICE_TYPE", "rsd3000_cs")
+    service_type = CS_SETTINGS[device_id].get("SERVICE_TYPE", "rsd3305p_cs")
 
     if commanding_port != 0:
         endpoint = connect_address(PROTOCOL, hostname, commanding_port)
@@ -274,20 +275,20 @@ def status(
                 endpoint = connect_address(protocol, hostname, port)
             else:
                 rich.print(
-                    f"[red]The RS-PRO RS-D3000 Control Server {device_id} isn't registered as a service. The Control "
+                    f"[red]The RS-PRO RS-D3305P Control Server {device_id} isn't registered as a service. The Control "
                     f"Server cannot be contacted without the required information from the service registry.[/]"
                 )
-                rich.print(f"RS-PRO RS-D3000 {device_id}: [red]not active")
+                rich.print(f"RS-PRO RS-D3305P {device_id}: [red]not active")
                 return
 
     # noinspection PyUnboundLocalVariable
     if is_control_server_active(endpoint, timeout=2):
-        rich.print(f"RS-PRO RS-D3000 {device_id}: [green]active -> {endpoint}")
+        rich.print(f"RS-PRO RS-D3305P {device_id}: [green]active -> {endpoint}")
 
-        with Rsd3000Proxy(device_id) as rsd3000:
-            sim = rsd3000.is_simulator()
-            connected = rsd3000.is_connected()
-            ip = rsd3000.get_ip_address()
+        with Rsd3305pProxy(device_id) as rsd3305p_proxy:
+            sim = rsd3305p_proxy.is_simulator()
+            connected = rsd3305p_proxy.is_connected()
+            ip = rsd3305p_proxy.get_ip_address()
             rich.print(f"mode: {'simulator' if sim else 'device'}{'' if connected else ' not'} connected")
             rich.print(f"hostname: {ip}")
             # noinspection PyUnboundLocalVariable
@@ -297,7 +298,7 @@ def status(
             # noinspection PyUnboundLocalVariable
             rich.print(f"monitoring port: {monitoring_port}")
     else:
-        rich.print(f"RS-PRO RS-D3000 {device_id}: [red]not active")
+        rich.print(f"RS-PRO RS-D3305P {device_id}: [red]not active")
 
 
 if __name__ == "__main__":
