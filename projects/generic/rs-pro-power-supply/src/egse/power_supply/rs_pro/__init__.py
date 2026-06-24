@@ -11,8 +11,8 @@ PROTOCOL = CS_SETTINGS.get("PROTOCOL", "tcp")  # Communication protocol
 
 PROXY_TIMEOUT = 10
 
-class OperatingMode(IntEnum):
 
+class OperatingMode(IntEnum):
     INDEPENDENT = 0
     TRACKING_SERIES = 1
     TRACKING_PARALLEL = 2

@@ -1,9 +1,10 @@
 """Control Server for the RS-PRO RS-D3305P."""
 
-import logging
 import multiprocessing
 from typing import Annotated
+import logging
 
+from egse.logger import set_all_logger_levels, remote_logging
 import rich
 import sys
 import typer
@@ -302,10 +303,6 @@ def status(
 
 
 if __name__ == "__main__":
-    import logging
-
-    from egse.logger import set_all_logger_levels, remote_logging
-
     set_all_logger_levels(logging.DEBUG)
 
     sys.exit(app())

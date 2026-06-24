@@ -1,13 +1,6 @@
 import logging
 
 from egse.power_supply.rs_pro import DEVICE_SETTINGS
-
-LOGGER = logging.getLogger(__name__)
-
-IDENTIFICATION_QUERY = "*IDN?"
-
-
-import logging
 import socket
 import time
 from string import digits
@@ -23,10 +16,15 @@ from egse.device import (
 
 logger = logging.getLogger(__name__)
 
+
+LOGGER = logging.getLogger(__name__)
+
+IDENTIFICATION_QUERY = "*IDN?"
+
 CONNECT_TIMEOUT = 3.0  # Timeout when connecting the socket [s]
 
-remove_digits = str.maketrans("", "", digits)
-time_in_s = time.time()
+# remove_digits = str.maketrans("", "", digits)
+# time_in_s = time.time()
 
 
 class RsdError(Exception):

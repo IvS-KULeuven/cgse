@@ -55,7 +55,6 @@ class Rsd3305pInterface(DeviceInterface):
 
         self.ethernet_interface = Rsd3305pEthernetInterface(device_id=device_id)
 
-
     @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="LOCK1", process_cmd_string=add_lf)
     def lock_front_panel(self) -> None:
         """Locks the front panel."""
@@ -239,8 +238,6 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
-
-
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string="*IDN?",
@@ -277,7 +274,6 @@ class Rsd3305pInterface(DeviceInterface):
             RCL1 recalls the panel settings stored in memory slot 1.
         """
 
-
         raise NotImplementedError
 
     @dynamic_command(
@@ -293,7 +289,6 @@ class Rsd3305pInterface(DeviceInterface):
         """
 
         raise NotImplementedError
-
 
     @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="OUT${channel}:1", process_cmd_string=add_lf)
     def enable_output(self, channel: int) -> None:
@@ -315,13 +310,11 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
-
     @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="OUT12:1", process_cmd_string=add_lf)
     def enable_both_outputs(self) -> None:
         """Turns the output of both channels on."""
 
         raise NotImplementedError
-
 
     @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="OUT12:0", process_cmd_string=add_lf)
     def disable_both_outputs(self) -> None:
@@ -329,13 +322,14 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
-
     @dynamic_command(
         cmd_type=CommandType.WRITE,
         cmd_string="VASTEP${channel}:${start_voltage}, ${end_voltage}, ${step_voltage}, ${step_time}",
         process_cmd_string=add_lf,
     )
-    def automatic_voltage_step(self, channel: int, start_voltage: float, end_voltage: float, step_voltage: float, step_time: float) -> None:
+    def automatic_voltage_step(
+        self, channel: int, start_voltage: float, end_voltage: float, step_voltage: float, step_time: float
+    ) -> None:
         """Sets the automatic step voltage output.
 
         Args:
@@ -361,10 +355,7 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(
-        cmd_type=CommandType.WRITE,
-        cmd_string="VSTEP${channel}:${voltage}",
-    )
+    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="VSTEP${channel}:${voltage}", process_cmd_string=add_lf)
     def set_trigger_voltage_step(self, channel: int, voltage: float) -> None:
         """Sets the trigger step voltage output.
 
@@ -440,11 +431,8 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(
-        cmd_type=CommandType.WRITE,
-        cmd_string="ISTEP${channel}:${current}",
-    )
-    def set_trigger_voltage_step(self, channel: int, current: float) -> None:
+    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="ISTEP${channel}:${current}", process_cmd_string=add_lf)
+    def set_trigger_current_step(self, channel: int, current: float) -> None:
         """Sets the trigger step current output.
 
         This sets by which amount the current will be increased/decreased when `current_up`/`current_down` is called.
@@ -513,7 +501,7 @@ class Rsd3305pController(Rsd3305pInterface, DynamicCommandMixin):
     """RS-PRO RS-D3305P device controller interface."""
 
     def __init__(self, device_id: str):
-        """Initialisation of an RS-PRO RS-D3305P arbitrary wave generator with the given identifier.
+        """Initialisation of an RS-PRO RS-D3305P power supply with the given identifier.
 
         Args:
             device_id (str): Device identifier, as per (local) settings and setup.
@@ -572,7 +560,6 @@ class Rsd3305pSimulator(Rsd3305pInterface):
 
     def get_id(self) -> tuple[str, str, str]:
         return "RS-D3305P", "VX.X", "SN:XXXXXX"
-
 
 
 class Rsd3305pProxy(DynamicProxy, Rsd3305pInterface):
