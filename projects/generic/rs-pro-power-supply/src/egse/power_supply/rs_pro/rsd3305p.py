@@ -371,6 +371,7 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
+    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="VUP${channel}", process_cmd_string=add_lf)
     def voltage_up(self, channel: int) -> None:
         """Increases the voltage of the given channel.
 
@@ -385,6 +386,7 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
+    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="VDOWN${channel}", process_cmd_string=add_lf)
     def voltage_down(self, channel: int) -> None:
         """Decreases the voltage of the given channel.
 
@@ -447,6 +449,7 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
+    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="IUP${channel}", process_cmd_string=add_lf)
     def current_up(self, channel: int) -> None:
         """Increases the current of the given channel.
 
@@ -461,6 +464,7 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
+    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="IDOWN{channel}", process_cmd_string=add_lf)
     def current_down(self, channel: int) -> None:
         """Decreases the current of the given channel.
 
