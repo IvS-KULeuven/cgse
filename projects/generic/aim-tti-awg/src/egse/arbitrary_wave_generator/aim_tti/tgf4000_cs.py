@@ -212,7 +212,7 @@ def start(
             logger.debug("System Exit with code {}.".format(exit_code))
             sys.exit(exit_code.code)
         except Exception:
-            msg = "Cannot start the Aim-TTi TGF4000 {device_id} Control Server"
+            msg = f"Cannot start the Aim-TTi TGF4000 {device_id} Control Server"
             logger.exception(msg)
             rich.print(f"[red]{msg}.")
 
