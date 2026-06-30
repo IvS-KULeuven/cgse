@@ -1,30 +1,22 @@
 import logging
+import time
+
+from serial.tools import list_ports
 
 from egse.power_supply.rs_pro import DEVICE_SETTINGS
-import socket
-import time
-from string import digits
+import serial
 
 
 from egse.device import (
-    DeviceConnectionError,
-    DeviceTimeoutError,
-    DeviceError,
     DeviceConnectionInterface,
     DeviceTransport,
 )
 
-logger = logging.getLogger(__name__)
-
-
 LOGGER = logging.getLogger(__name__)
 
+ENCODING = "ascii"
+LINE_ENDING = "\n"
 IDENTIFICATION_QUERY = "*IDN?"
-
-CONNECT_TIMEOUT = 3.0  # Timeout when connecting the socket [s]
-
-# remove_digits = str.maketrans("", "", digits)
-# time_in_s = time.time()
 
 
 class RsdError(Exception):
@@ -33,120 +25,84 @@ class RsdError(Exception):
     pass
 
 
-class Rsd3305pEthernetInterface(DeviceConnectionInterface, DeviceTransport):
-    """Ethernet Interface for the RS-PRO RS-D3305P devices."""
-
-    def __init__(self, hostname: str = None, port: int = None, device_id: str = "RS-D3305P", read_timeout: float = 60):
-        """Initialisation of an Ethernet interface for an RS-PRO RS-D3305P device.
+class Rsd3305pUsbInterface(DeviceConnectionInterface, DeviceTransport):
+    def __init__(self, device_id: str):
+        """Initialisation of a serial interface to the TCU Arduino.
 
         Args:
-            hostname( str): Hostname to which to open a socket.
-            port (int): Port to which to open a socket.
-            device_id (str): Identifier of the device to which to open a socket.
-            read_timeout (float): Timeout for reading commands [s].
+            device_id (str): Identifier of the device to which to open a serial port.
         """
 
         super().__init__()
 
-        self.hostname = DEVICE_SETTINGS[device_id]["HOSTNAME"] if hostname is None else hostname
-        self.port = DEVICE_SETTINGS[device_id]["PORT"] if port is None else port
         self.device_id = device_id
-        self._sock = None
+        self.serial_number = DEVICE_SETTINGS[device_id]["SERIAL_NUMBER"]
 
-        self._is_connection_open = False
-        self.read_timeout = read_timeout
+        ports = list_ports.comports()
+        self.port = None
+
+        for port in ports:
+            if port.serial_number == self.serial_number:
+                self.port = f"/dev/{port.name}"
+                break
+
+        if not self.port:
+            raise RsdError(f"{self.device_id}: Serial port not found.")
+
+        self.psu = serial.Serial(
+            port=self.port,
+            bytesize=serial.EIGHTBITS,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE,
+            xonxoff=False,
+            rtscts=False,
+            dsrdtr=False,
+        )
+        time.sleep(0.05)
+        self.psu.reset_input_buffer()
+        # self.arduino.baudrate = DEVICE_SETTINGS["BAUD_RATE"]
+        # self.arduino.bytesize = DEVICE_SETTINGS["NUM_DATA_BITS"]
+        # self.arduino.parity = DEVICE_SETTINGS["PARITY"]
+        # self.arduino.stopbits = DEVICE_SETTINGS["NUM_STOP_BITS"]
 
     def connect(self) -> None:
         """Connects to the RS-PRO RS-D3305P hardware.
 
         Raises:
-            DeviceConnectionError: When the connection could not be established. Check the logging messages for more
-                                   details.
-            DeviceTimeoutError: When the connection timed out.
-            ValueError: When hostname or port number are not provided.
+            RsdError when a connection could not be established.
         """
 
-        # Sanity checks
-
-        if self._is_connection_open:
-            logger.warning(f"{self.device_id}: trying to connect to an already connected socket.")
-            return
-
-        if self.hostname in (None, ""):
-            raise ValueError(f"{self.device_id}: hostname is not initialised.")
+        if self.is_connected():
+            raise RsdError(f"{self.device_id}: already connected.")
 
         if self.port in (None, 0):
-            raise ValueError(f"{self.device_id}: port number is not initialised.")
-
-        # Create a new socket instance
+            raise RsdError(f"{self.device_id}: port is not initialised.")
 
         try:
-            self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-            # The following lines are to experiment with blocking and timeout, but there is no need.
-            # self._sock.setblocking(1)
-            # self._sock.settimeout(3)
-        except socket.error as e_socket:
-            raise DeviceConnectionError(self.device_id, "Failed to create socket.") from e_socket
-
-        # Attempt to establish a connection to the remote host
-
-        # FIXME: Socket shall be closed on exception?
-
-        # We set a timeout of 3s before connecting and reset to None (=blocking) after the `connect` method has been
-        # called. This is because when no device is available, e.g. during testing, the timeout will take about
-        # two minutes, which is way too long. It needs to be evaluated if this approach is acceptable and not causing
-        # problems during production.
-
-        try:
-            logger.debug(f'Connecting a socket to host "{self.hostname}" using port {self.port}')
-            self._sock.settimeout(3)
-            self._sock.connect((self.hostname, self.port))
-            self._sock.settimeout(None)
-        except ConnectionRefusedError as exc:
-            raise DeviceConnectionError(self.device_id, f"Connection refused to {self.hostname}:{self.port}.") from exc
-        except TimeoutError as exc:
-            raise DeviceTimeoutError(self.device_id, f"Connection to {self.hostname}:{self.port} timed out.") from exc
-        except socket.gaierror as exc:
-            raise DeviceConnectionError(self.device_id, f"Socket address info error for {self.hostname}") from exc
-        except socket.herror as exc:
-            raise DeviceConnectionError(self.device_id, f"Socket host address error for {self.hostname}") from exc
-        except OSError as exc:
-            raise DeviceConnectionError(self.device_id, f"OSError caught ({exc}).") from exc
-
-        self._is_connection_open = True
-
-        # Check that we are connected to the controller by issuing the "VERSION" or
-        # "*IDN?" query. If we don't get the right response, then disconnect automatically.
-
-        if not self.is_connected():
-            raise DeviceConnectionError(
-                self.device_id, "Device is not connected, check logging messages for the cause."
-            )
+            self.psu.open()
+        except Exception as e_exc:
+            raise RsdError(f"{self.device_id}: Failed to open serial port.") from e_exc
 
     def disconnect(self) -> None:
         """Disconnects from the RS-PRO RS-D3305P hardware.
 
         Raises:
-            DeviceConnectionError when the socket could not be closed.
+            RsdError when the connection could not be closed.
         """
 
         try:
-            if self._is_connection_open:
-                logger.debug(f"Disconnecting from {self.hostname}")
-                self._sock.close()
-                self._is_connection_open = False
+            self.psu.close()
         except Exception as e_exc:
-            raise DeviceConnectionError(self.device_id, f"Could not close socket to {self.hostname}") from e_exc
+            raise RsdError(f"{self.device_id}: Failed to close serial port.") from e_exc
 
-    def reconnect(self):
+    def reconnect(self) -> None:
         """Reconnects to the RS-PRO RS-D3305P hardware.
 
         Raises:
-            ConnectionError when the device cannot be reconnected for some reason.
+            RsdError when the device cannot be reconnected for some reason.
         """
 
-        if self._is_connection_open:
+        if self.is_connected():
             self.disconnect()
         self.connect()
 
@@ -158,24 +114,24 @@ class Rsd3305pEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         Returns: True is the device is connected and answered with the proper ID; False otherwise.
         """
 
-        if not self._is_connection_open:
+        if not self.psu.is_open:
             return False
 
         try:
             print(f"Result from identification query: {self.query(IDENTIFICATION_QUERY)}")
             # noinspection PyTypeChecker
-            manufacturer, model, *_ = self.query(IDENTIFICATION_QUERY).split(",")
+            manufacturer, *_ = self.query(IDENTIFICATION_QUERY).split(" ")
 
-        except DeviceError as exc:
-            logger.exception(exc)
-            logger.error("Most probably the client connection was closed. Disconnecting...")
+        except RsdError as exc:
+            LOGGER.exception(exc)
+            LOGGER.error("Most probably the client connection was closed. Disconnecting...")
             self.disconnect()
             return False
 
-        if "RS-PRO" not in manufacturer or "RS3" not in model:
-            logger.error(
-                f"Device did not respond correctly to a {IDENTIFICATION_QUERY} command, manufacturer={manufacturer}, "
-                f"model={model}. Disconnecting..."
+        if "RS-D3305P" not in manufacturer:
+            LOGGER.error(
+                f"Device did not respond correctly to a {IDENTIFICATION_QUERY} command, manufacturer={manufacturer}."
+                f" Disconnecting..."
             )
             self.disconnect()
             return False
@@ -186,106 +142,59 @@ class Rsd3305pEthernetInterface(DeviceConnectionInterface, DeviceTransport):
         """Sends a single command to the device controller without waiting for a response.
 
         Args:
-            command (str): Command to send to the controller
-
-        Raises:
-            DeviceConnectionError when the command could not be sent due to a communication problem.
-            DeviceTimeoutError when the command could not be sent due to a timeout.
+            command (str): Command to send to the controller.
         """
 
-        try:
-            command += "\n" if not command.endswith("\n") else ""
+        self.psu.write(_cmd_bytes(command))
+        self.psu.flush()
 
-            self._sock.sendall(command.encode())
-
-        except socket.timeout as e_timeout:
-            raise DeviceTimeoutError(self.device_id, "Socket timeout error") from e_timeout
-        except socket.error as e_socket:
-            # Interpret any socket-related error as a connection error
-            raise DeviceConnectionError(self.device_id, "Socket communication error.") from e_socket
-        except AttributeError:
-            if not self._is_connection_open:
-                msg = "The RS-PRO RS-D3305P is not connected, use the connect() method."
-                raise DeviceConnectionError(self.device_id, msg)
-            raise
-
-    def trans(self, command: str) -> str | bytes:
+    def trans(self, command: str, max_bytes: int = 256) -> bytes:
         """Sends a single command to the device controller and block until a response from the controller.
 
         This is seen as a transaction.
 
         Args:
-            command (str): Command to send to the controller
+            command (str): Command to send to the controller.
+            max_bytes (int, optional): Maximum number of bytes to send. Defaults to 256.
 
         Returns:
-            Either a string returned by the controller (on success), or an error message (on failure).
+            Bytestring returned by the controller.
 
         Raises:
-            DeviceConnectionError when there was an I/O problem during communication with the controller.
-            DeviceTimeoutError when there was a timeout in either sending the command or receiving the response.
+            TimeoutError when no data were received from the controller.
         """
 
-        try:
-            # Attempt to send the complete command
+        self.psu.reset_input_buffer()
+        self.psu.write(_cmd_bytes(command))
+        self.psu.flush()
 
-            command += "\n" if not command.endswith("\n") else ""
+        data = self.psu.read_until(expected=b"\n", size=max_bytes)
 
-            self._sock.sendall(command.encode())
+        if not data:
+            data = self.psu.read(max_bytes)
 
-            # wait for, read and return the response from RS-PRO RS-D3000 (will be at most TBD chars)
+        if not data:
+            raise TimeoutError(f"No response from {self.device_id} for command {command}")
 
-            return_string = self.read()
-
-            return return_string.decode().rstrip()
-
-        except UnicodeError:
-            # noinspection PyUnboundLocalVariable
-            return return_string
-        except socket.timeout as e_timeout:
-            raise DeviceTimeoutError(self.device_id, "Socket timeout error") from e_timeout
-        except socket.error as e_socket:
-            # Interpret any socket-related error as an I/O error
-            raise DeviceConnectionError(self.device_id, "Socket communication error.") from e_socket
-        except ConnectionError as exc:
-            raise DeviceConnectionError(self.device_id, "Connection error.") from exc
-        except AttributeError:
-            if not self._is_connection_open:
-                raise DeviceConnectionError(self.device_id, "Device not connected, use the connect() method.")
-            raise
-
-    def read(self) -> bytes:
-        """Reads from the device buffer.
-
-        Returns: Content of the device buffer.
-        """
-
-        n_total = 0
-        buf_size = 2048
-
-        # Set a timeout of READ_TIMEOUT to the socket.recv
-
-        saved_timeout = self._sock.gettimeout()
-        self._sock.settimeout(self.read_timeout)
-
-        try:
-            for idx in range(100):
-                time.sleep(0.001)  # Give the device time to fill the buffer
-                data = self._sock.recv(buf_size)
-                n = len(data)
-                n_total += n
-                if n < buf_size:
-                    break
-        except socket.timeout:
-            logger.warning(f"Socket timeout error for {self.hostname}:{self.port}")
-            return b"\r\n"
-        except TimeoutError as exc:
-            logger.warning(f"Socket timeout error: {exc}")
-            return b"\r\n"
-        finally:
-            self._sock.settimeout(saved_timeout)
-
-        # noinspection PyUnboundLocalVariable
         return data
+
+        # text = data.decode(ENCODING, errors="ignore").strip("\r\n\x00 ")
+
+    def read(self):
+
+        raise NotImplementedError
+
+
+def _cmd_bytes(command: str) -> bytes:
+    """Converts the given command to bytes.
+
+    Args:
+        command (str): String representing the command to send to the controller.
+
+    Returns:
+        Command to send to the controller.
+    """
+    return command.strip().encode(ENCODING, errors="ignore") + LINE_ENDING.encode(ENCODING)
 
 
 def main():
