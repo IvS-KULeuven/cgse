@@ -562,8 +562,96 @@ class Rsd3305pSimulator(Rsd3305pInterface):
 
         super().__init__(device_id)
 
+        self.output_enabled = [False, False]
+
+        self.voltage_setpoints = [0, 0]
+        self.current_setpoints = [0, 0]
+
+        self.trigger_voltage_step = [0, 0]
+        self.trigger_current_step = [0, 0]
+
+        self.operating_mode = OperatingMode.INDEPENDENT
+
+    def lock_front_panel(self) -> None:
+        pass
+
+    def unlock_front_panel(self) -> None:
+        pass
+
+    def set_current(self, channel: int, current: float) -> None:
+        self.voltage_setpoints[channel - 1] = current
+
+    def get_current_config(self, channel: int) -> float:
+        return self.voltage_setpoints[channel - 1]
+
+    def set_voltage(self, channel: int, voltage: float) -> None:
+        self.current_setpoints[channel - 1] = voltage
+
+    def get_voltage_config(self, channel: int) -> float:
+        return self.current_setpoints[channel - 1]
+
+    def get_current(self, channel: int) -> float:
+        if self.output_enabled[channel - 1]:
+            return np.random.normal(self.get_current_config(channel), 1, 1)
+        else:
+            return 0
+
+    def get_voltage(self, channel: int) -> float:
+        return np.random.normal(self.get_voltage_config(channel), 1, 1)
+
+    def select_operating_mode(self, mode: OperatingMode) -> None:
+        self.operating_mode = mode
+
+    def enable_beep(self):
+        pass
+
+    def disable_beep(self):
+        pass
+
+    def get_status(self):
+        # TODO
+        pass
+
     def get_id(self) -> tuple[str, str, str]:
         return "RS-D3305P", "VX.X", "SN:XXXXXX"
+
+    def save(self, memory: int) -> None:
+        pass
+
+    def recall(self, memory: int) -> bytes:
+        pass
+
+    def enable_output(self, channel: int):
+        self.output_enabled[channel - 1] = True
+
+    def disable_output(self, channel: int):
+        self.output_enabled[channel - 1] = False
+
+    def enable_both_outputs(self) -> None:
+        self.enable_output(1)
+        self.enable_output(2)
+
+    def disable_both_outputs(self) -> None:
+        self.disable_output(1)
+        self.disable_output(2)
+
+    def set_trigger_voltage_step(self, channel: int, voltage: float) -> None:
+        self.trigger_voltage_step[channel - 1] = voltage
+
+    def voltage_up(self, channel: int) -> None:
+        self.voltage_setpoints[channel - 1] += self.trigger_voltage_step[channel - 1]
+
+    def voltage_down(self, channel: int) -> None:
+        self.voltage_setpoints[channel - 1] -= self.trigger_voltage_step[channel - 1]
+
+    def set_trigger_current_step(self, channel: int, current: float) -> None:
+        self.trigger_current_step[channel - 1] = current
+
+    def current_up(self, channel: int) -> None:
+        self.current_setpoints[channel - 1] += self.trigger_current_step[channel - 1]
+
+    def current_down(self, channel: int) -> None:
+        self.current_setpoints[channel - 1] -= self.trigger_current_step[channel - 1]
 
 
 class Rsd3305pProxy(DynamicProxy, Rsd3305pInterface):
