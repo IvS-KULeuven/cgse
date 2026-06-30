@@ -15,12 +15,10 @@ from egse.power_supply.rs_pro import PROTOCOL, CS_SETTINGS
 from egse.power_supply.rs_pro.rsd3305p import Rsd3305pProxy
 from egse.registry.client import RegistryClient
 from egse.services import ServiceProxy
-from egse.settings import Settings
 from egse.storage import store_housekeeping_information
 from egse.zmq_ser import connect_address, get_port_number
 
 logger = logging.getLogger("egse.power_supply.rs_pro.rsd3305p")
-DEVICE_SETTINGS = Settings.load("RS-PRO RS-D3305P")
 
 
 def is_rsd3305p_cs_active(device_id: str, timeout: float = 0.5) -> bool:
