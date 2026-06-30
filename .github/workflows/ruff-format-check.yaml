@@ -3,6 +3,10 @@ name: Ruff Formatting Check
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+      - develop
 
 jobs:
   ruff-format:
