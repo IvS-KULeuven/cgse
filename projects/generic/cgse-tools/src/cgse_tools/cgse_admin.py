@@ -101,8 +101,15 @@ def _normalize_backend_name(backend: str) -> str:
 
 
 def _is_influx_file_limit_error(exc: Exception) -> bool:
-    msg = str(exc).lower()
-    return "query would scan" in msg and "exceeding the file limit" in msg
+    # Walk the exception chain: influxdb.py wraps InfluxDB3ClientError in a
+    # ValueError whose message omits the original details.
+    candidate: BaseException | None = exc
+    while candidate is not None:
+        msg = str(candidate).lower()
+        if "query would scan" in msg and "exceeding the file limit" in msg:
+            return True
+        candidate = candidate.__cause__
+    return False
 
 
 def _is_read_only_statement(sql: str) -> bool:

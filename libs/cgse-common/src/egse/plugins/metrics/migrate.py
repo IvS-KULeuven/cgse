@@ -658,8 +658,15 @@ def _iter_influx_batches(
 
 
 def _is_influx_query_file_limit_error(exc: Exception) -> bool:
-    message = str(exc).lower()
-    return "query would scan" in message and "exceeding the file limit" in message
+    # Walk the exception chain: influxdb.py wraps InfluxDB3ClientError in a
+    # ValueError whose message omits the original details.
+    candidate: BaseException | None = exc
+    while candidate is not None:
+        msg = str(candidate).lower()
+        if "query would scan" in msg and "exceeding the file limit" in msg:
+            return True
+        candidate = candidate.__cause__
+    return False
 
 
 def migrate(args: argparse.Namespace) -> int:

@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### CGSE Admin
+
+- Fixed InfluxDB file-scan limit detection in `inspect-db` and `migrate-influx-to-questdb`. The `influxdb.py` query method wraps `InfluxDB3ClientError` in a plain `ValueError` with a generic "check the query" message, discarding the original error text. Both `_is_influx_file_limit_error` (admin) and `_is_influx_query_file_limit_error` (migrate) now walk the full exception chain via `__cause__` to find the original "Query would scan N Parquet files" message, so the file-scan limit fallback behaviour triggers correctly for long-lived measurements that have accumulated many Parquet files.
+
 ## [0.25.3] - 2026-07-01
 
 ### CGSE Admin
