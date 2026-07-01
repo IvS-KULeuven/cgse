@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.25.3] - 2026-07-01
+
 ### CGSE Admin
 
 - Fixed `cgse admin sql --backend influxdb` producing garbled output with literal `\n` characters. The InfluxDB query method returns a PyArrow Table; iterating over it yields columns rather than rows, causing each column to be serialised as a single JSON-escaped string. The result is now converted to a list of row dicts via `to_pylist()` before printing.
