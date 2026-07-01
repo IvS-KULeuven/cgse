@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.25.6] - 2026-07-01
+
 ### InfluxDB → QuestDB migration
 
 - Fixed `migrate-influx-to-questdb` failing with `cast error from protocol type: FLOAT to column type: LONG` when migrating measurements whose integer fields are read back by pandas as `float64` (standard pandas behaviour when a column contains NaNs). `_scalar_or_none` now converts whole-number floats (e.g. `1.0`) to `int` before building the ILP payload, so the line protocol serialiser emits the `i` suffix (`1i`) and QuestDB accepts the value into `LONG` columns.
@@ -504,7 +506,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.5...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.6...HEAD
+[0.25.6]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.5...v0.25.6
 [0.25.5]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.4...v0.25.5
 [0.25.4]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.3...v0.25.4
 [0.25.3]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.2...v0.25.3
