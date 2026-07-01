@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.25.5] - 2026-07-01
+
 ### CGSE Admin
 
 - Added `--since`, `--until`, and `--time-chunk-hours` options to `cgse admin inspect-db --backend influxdb`. InfluxDB 3 Core scans all Parquet files for every query regardless of `LIMIT`, so long-lived measurements cannot report row count or time window without a time filter. With `--since 2025-01-01T00:00:00Z --time-chunk-hours 24`, the stats query is split into fixed-size time windows (same mechanism as `migrate-influx-to-questdb`); each chunk scans only its own files and the results are aggregated to give the true row count and time window across the full range. When the file-scan limit is hit without these options, the output prints a targeted tip.
@@ -498,7 +500,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.4...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.5...HEAD
+[0.25.5]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.4...v0.25.5
 [0.25.4]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.3...v0.25.4
 [0.25.3]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.2...v0.25.3
 [0.25.2]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.1...v0.25.2
