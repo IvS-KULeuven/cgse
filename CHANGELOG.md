@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### CGSE Admin
+
+- Added `--since`, `--until`, and `--time-chunk-hours` options to `cgse admin inspect-db --backend influxdb`. InfluxDB 3 Core scans all Parquet files for every query regardless of `LIMIT`, so long-lived measurements cannot report row count or time window without a time filter. With `--since 2025-01-01T00:00:00Z --time-chunk-hours 24`, the stats query is split into fixed-size time windows (same mechanism as `migrate-influx-to-questdb`); each chunk scans only its own files and the results are aggregated to give the true row count and time window across the full range. When the file-scan limit is hit without these options, the output prints a targeted tip.
+
 ## [0.25.4] - 2026-07-01
 
 ### CGSE Admin
