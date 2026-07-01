@@ -374,12 +374,8 @@ def _inspect_influx(
                     # Fall back to LIMIT 1 queries; InfluxDB can resolve these
                     # from file-level min/max statistics without a full scan.
                     try:
-                        min_df = repo.query(
-                            f'SELECT time FROM "{table}" ORDER BY time ASC LIMIT 1', mode="pandas"
-                        )
-                        max_df = repo.query(
-                            f'SELECT time FROM "{table}" ORDER BY time DESC LIMIT 1', mode="pandas"
-                        )
+                        min_df = repo.query(f'SELECT time FROM "{table}" ORDER BY time ASC LIMIT 1', mode="pandas")
+                        max_df = repo.query(f'SELECT time FROM "{table}" ORDER BY time DESC LIMIT 1', mode="pandas")
                         min_time = min_df["time"].iloc[0] if not min_df.empty else "n/a"
                         max_time = max_df["time"].iloc[0] if not max_df.empty else "n/a"
                         print("  Rows: n/a (file-scan limit; use --query-file-limit to increase)")
