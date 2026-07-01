@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### InfluxDB → QuestDB migration
+
+- Fixed `migrate-influx-to-questdb` failing with `cast error from protocol type: FLOAT to column type: LONG` when migrating measurements whose integer fields are read back by pandas as `float64` (standard pandas behaviour when a column contains NaNs). `_scalar_or_none` now converts whole-number floats (e.g. `1.0`) to `int` before building the ILP payload, so the line protocol serialiser emits the `i` suffix (`1i`) and QuestDB accepts the value into `LONG` columns.
+
 ## [0.25.5] - 2026-07-01
 
 ### CGSE Admin
