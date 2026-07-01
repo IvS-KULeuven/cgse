@@ -100,6 +100,11 @@ def _normalize_backend_name(backend: str) -> str:
     return normalized
 
 
+def _is_influx_file_limit_error(exc: Exception) -> bool:
+    msg = str(exc).lower()
+    return "query would scan" in msg and "exceeding the file limit" in msg
+
+
 def _is_read_only_statement(sql: str) -> bool:
     stripped = sql.strip().lower()
     if not stripped:
@@ -216,7 +221,8 @@ def _execute_sql_influx(
             print("ERROR: InfluxDB is unreachable")
             return 3
 
-        rows = repo.query(statement, mode="all")
+        result = repo.query(statement, mode="all")
+        rows = result.to_pylist() if hasattr(result, "to_pylist") else result
         _print_query_result(rows, max_rows=max_rows)
         return 0
     finally:
@@ -363,9 +369,29 @@ def _inspect_influx(
                     print(f"  Rows: {int(record.get('row_count', 0) or 0)}")
                     print(f"  Time window: {record.get('min_time')} -> {record.get('max_time')}")
             except Exception as exc:
-                print("  Rows: n/a")
-                print("  Time window: n/a")
-                print(f"  Warning: could not compute stats ({exc})")
+                if _is_influx_file_limit_error(exc):
+                    # Full-range aggregation hits the Parquet file-scan limit.
+                    # Fall back to LIMIT 1 queries; InfluxDB can resolve these
+                    # from file-level min/max statistics without a full scan.
+                    try:
+                        min_df = repo.query(
+                            f'SELECT time FROM "{table}" ORDER BY time ASC LIMIT 1', mode="pandas"
+                        )
+                        max_df = repo.query(
+                            f'SELECT time FROM "{table}" ORDER BY time DESC LIMIT 1', mode="pandas"
+                        )
+                        min_time = min_df["time"].iloc[0] if not min_df.empty else "n/a"
+                        max_time = max_df["time"].iloc[0] if not max_df.empty else "n/a"
+                        print("  Rows: n/a (file-scan limit; use --query-file-limit to increase)")
+                        print(f"  Time window: {min_time} -> {max_time}")
+                    except Exception as exc2:
+                        print("  Rows: n/a")
+                        print("  Time window: n/a")
+                        print(f"  Warning: could not compute stats ({exc2})")
+                else:
+                    print("  Rows: n/a")
+                    print("  Time window: n/a")
+                    print(f"  Warning: could not compute stats ({exc})")
 
         return 0
     finally:

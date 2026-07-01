@@ -343,8 +343,13 @@ def _run_preflight(
     tables: list[str],
     since: str,
     until: str,
-) -> tuple[bool, dict[str, tuple[dt.datetime | None, dt.datetime | None, int]]]:
-    """Return (has_warning, per_table_visible_range)."""
+) -> tuple[bool, dict[str, tuple[dt.datetime | None, dt.datetime | None, int]], set[str]]:
+    """Return (has_warning, per_table_visible_range, failed_tables).
+
+    ``failed_tables`` contains measurements whose preflight query raised an exception
+    (e.g. InfluxDB file-scan limit). This is distinct from measurements that simply
+    have no query-visible rows, so callers can report the difference to the user.
+    """
     since_dt = _normalize_dt(_to_datetime_or_none(since))
     until_dt = _normalize_dt(_to_datetime_or_none(until))
 
@@ -353,6 +358,7 @@ def _run_preflight(
 
     has_warning = False
     per_table: dict[str, tuple[dt.datetime | None, dt.datetime | None, int]] = {}
+    failed_tables: set[str] = set()
     for table in tables:
         table_quoted = _quote_influx_identifier(table)
         try:
@@ -364,6 +370,7 @@ def _run_preflight(
         except Exception as exc:
             has_warning = True
             per_table[table] = (None, None, 0)
+            failed_tables.add(table)
             print(f"  - {table}: query failed ({exc})")
             print("    WARNING: skipping this table for preflight and migration.")
             continue
@@ -396,7 +403,7 @@ def _run_preflight(
             print("    WARNING: --until is newer than latest query-visible row.")
             print("    WARNING: this can indicate no data in that span or Core limits.")
 
-    return has_warning, per_table
+    return has_warning, per_table, failed_tables
 
 
 def _iter_time_chunks(
@@ -519,10 +526,10 @@ def _delete_destination_range(
         params = [measurement]
 
     if since_dt is not None:
-        where_parts.append("time >= %s")
+        where_parts.append("timestamp >= %s")
         params.append(since_dt)
     if until_dt is not None:
-        where_parts.append("time < %s")
+        where_parts.append("timestamp < %s")
         params.append(until_dt)
 
     where_clause = " AND ".join(where_parts)
@@ -759,10 +766,13 @@ def migrate(args: argparse.Namespace) -> int:
 
         has_preflight_warning = False
         preflight_ranges: dict[str, tuple[dt.datetime | None, dt.datetime | None, int]] = {}
+        preflight_failed: set[str] = set()
         if args.skip_preflight:
             print("\nSkipping preflight checks (--skip-preflight).")
         else:
-            has_preflight_warning, preflight_ranges = _run_preflight(influx, tables, args.since, args.until)
+            has_preflight_warning, preflight_ranges, preflight_failed = _run_preflight(
+                influx, tables, args.since, args.until
+            )
             if has_preflight_warning:
                 print("\nPreflight warnings detected. Review range coverage before migration.")
 
@@ -809,7 +819,11 @@ def migrate(args: argparse.Namespace) -> int:
 
             table_min_dt, table_max_dt, _ = preflight_ranges.get(table, (None, None, 0))
             if not args.skip_preflight and table_min_dt is None and table_max_dt is None:
-                print("  Skipping table due to failed or empty preflight.")
+                if table in preflight_failed:
+                    print("  Skipping table: preflight query failed (likely hit InfluxDB file-scan limit).")
+                    print("  Tip: retry with --skip-preflight --time-chunk-hours to bypass the preflight.")
+                else:
+                    print("  Skipping table: no query-visible rows in InfluxDB.")
                 continue
             since_dt = _normalize_dt(_to_datetime_or_none(args.since)) or table_min_dt
             until_dt = _normalize_dt(_to_datetime_or_none(args.until)) or table_max_dt
