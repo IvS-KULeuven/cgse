@@ -245,6 +245,11 @@ def _scalar_or_none(value: Any) -> Any:
 
     if isinstance(value, float):
         if math.isfinite(value):
+            # Pandas reads integer columns as float64 when NaNs are present.
+            # Convert whole-number floats back to int so ILP serialises them
+            # with the 'i' suffix and QuestDB accepts them into LONG columns.
+            if value == int(value):
+                return int(value)
             return value
         return None
 
