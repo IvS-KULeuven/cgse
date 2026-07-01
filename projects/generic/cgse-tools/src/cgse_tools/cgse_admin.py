@@ -273,6 +273,56 @@ def _collect_questdb_tag_values_sampled(
     return merged
 
 
+def _influx_stats_chunked(
+    repo: Any,
+    table: str,
+    since: str,
+    until: str,
+    time_chunk_hours: float,
+) -> tuple[int, Any, Any]:
+    """Aggregate COUNT/MIN/MAX for an InfluxDB measurement using time-chunked queries.
+
+    Each chunk spans ``time_chunk_hours`` hours and stays within the Parquet
+    file-scan limit.  Returns (total_rows, min_time, max_time); min_time and
+    max_time are None when the range is empty.
+    """
+    since_dt = dt.datetime.fromisoformat(since.replace("Z", "+00:00"))
+    if until:
+        until_dt = dt.datetime.fromisoformat(until.replace("Z", "+00:00"))
+    else:
+        until_dt = dt.datetime.now(tz=dt.timezone.utc)
+
+    chunk_delta = dt.timedelta(hours=time_chunk_hours)
+    total_count = 0
+    global_min: Any = None
+    global_max: Any = None
+
+    current = since_dt
+    while current < until_dt:
+        chunk_end = min(current + chunk_delta, until_dt)
+        chunk_since = current.isoformat().replace("+00:00", "Z")
+        chunk_until = chunk_end.isoformat().replace("+00:00", "Z")
+        try:
+            df = repo.query(
+                f"SELECT COUNT(*) AS row_count, MIN(time) AS min_time, MAX(time) AS max_time "
+                f"FROM \"{table}\" WHERE time >= '{chunk_since}' AND time < '{chunk_until}'",
+                mode="pandas",
+            )
+            if not df.empty:
+                record = df.to_dict(orient="records")[0]
+                count = int(record.get("row_count", 0) or 0)
+                if count > 0:
+                    total_count += count
+                    if global_min is None:
+                        global_min = record.get("min_time")
+                    global_max = record.get("max_time")
+        except Exception:
+            pass  # skip chunks that still exceed the file limit
+        current = chunk_end
+
+    return total_count, global_min, global_max
+
+
 def _inspect_influx(
     influx_host: str,
     influx_database: str,
@@ -281,6 +331,9 @@ def _inspect_influx(
     max_tables: int,
     sample_rows: int,
     max_tag_values: int,
+    since: str = "",
+    until: str = "",
+    time_chunk_hours: float = 0.0,
 ) -> int:
     repo = get_metrics_repo(
         "influxdb",
@@ -302,11 +355,20 @@ def _inspect_influx(
             tables = [t for t in tables if t in tables_filter]
         tables = sorted(tables)[:max_tables]
 
+        where_parts: list[str] = []
+        if since:
+            where_parts.append(f"time >= '{since}'")
+        if until:
+            where_parts.append(f"time < '{until}'")
+        where_clause = ("WHERE " + " AND ".join(where_parts)) if where_parts else ""
+
         print("Database inspection")
         print("  Backend: influxdb")
         print(f"  Host: {influx_host}")
         print(f"  Database: {influx_database}")
         print(f"  Measurements: {len(tables)}")
+        if since or until:
+            print(f"  Time filter: {since or '-inf'} -> {until or '+inf'}")
 
         if not tables:
             print("  No measurements found.")
@@ -338,7 +400,7 @@ def _inspect_influx(
                 try:
                     quoted_tags = ", ".join([f'"{name}"' for name in sorted(set(tag_names))])
                     tags_df = repo.query(
-                        f'SELECT {quoted_tags} FROM "{table}" ORDER BY time DESC LIMIT {int(sample_rows)}',
+                        f'SELECT {quoted_tags} FROM "{table}" {where_clause} ORDER BY time DESC LIMIT {int(sample_rows)}',
                         mode="pandas",
                     )
                     tag_values: dict[str, list[str]] = {}
@@ -363,38 +425,38 @@ def _inspect_influx(
                 except Exception as exc:
                     print(f"  Tag values (sampled): n/a ({exc})")
 
-            try:
-                stats_df = repo.query(
-                    f'SELECT COUNT(*) AS row_count, MIN(time) AS min_time, MAX(time) AS max_time FROM "{table}"',
-                    mode="pandas",
+            if time_chunk_hours > 0:
+                total_count, min_time, max_time = _influx_stats_chunked(
+                    repo, table, since, until, time_chunk_hours
                 )
-                if stats_df.empty:
+                if min_time is None:
                     print("  Rows: 0")
-                    print("  Time window: n/a")
+                    print("  Time window: n/a (no data in range)")
                 else:
-                    record = stats_df.to_dict(orient="records")[0]
-                    print(f"  Rows: {int(record.get('row_count', 0) or 0)}")
-                    print(f"  Time window: {record.get('min_time')} -> {record.get('max_time')}")
-            except Exception as exc:
-                if _is_influx_file_limit_error(exc):
-                    # Full-range aggregation hits the Parquet file-scan limit.
-                    # Fall back to LIMIT 1 queries; InfluxDB can resolve these
-                    # from file-level min/max statistics without a full scan.
-                    try:
-                        min_df = repo.query(f'SELECT time FROM "{table}" ORDER BY time ASC LIMIT 1', mode="pandas")
-                        max_df = repo.query(f'SELECT time FROM "{table}" ORDER BY time DESC LIMIT 1', mode="pandas")
-                        min_time = min_df["time"].iloc[0] if not min_df.empty else "n/a"
-                        max_time = max_df["time"].iloc[0] if not max_df.empty else "n/a"
-                        print("  Rows: n/a (file-scan limit; use --query-file-limit to increase)")
-                        print(f"  Time window: {min_time} -> {max_time}")
-                    except Exception as exc2:
+                    print(f"  Rows: {total_count}")
+                    print(f"  Time window: {min_time} -> {max_time}")
+            else:
+                try:
+                    stats_df = repo.query(
+                        f'SELECT COUNT(*) AS row_count, MIN(time) AS min_time, MAX(time) AS max_time FROM "{table}" {where_clause}',
+                        mode="pandas",
+                    )
+                    if stats_df.empty:
+                        print("  Rows: 0")
+                        print("  Time window: n/a")
+                    else:
+                        record = stats_df.to_dict(orient="records")[0]
+                        print(f"  Rows: {int(record.get('row_count', 0) or 0)}")
+                        print(f"  Time window: {record.get('min_time')} -> {record.get('max_time')}")
+                except Exception as exc:
+                    if _is_influx_file_limit_error(exc):
+                        print("  Rows: n/a (file-scan limit)")
+                        print("  Time window: n/a (file-scan limit)")
+                        print("  Tip: rerun with --since 2025-01-01T00:00:00Z --time-chunk-hours 24")
+                    else:
                         print("  Rows: n/a")
                         print("  Time window: n/a")
-                        print(f"  Warning: could not compute stats ({exc2})")
-                else:
-                    print("  Rows: n/a")
-                    print("  Time window: n/a")
-                    print(f"  Warning: could not compute stats ({exc})")
+                        print(f"  Warning: could not compute stats ({exc})")
 
         return 0
     finally:
@@ -802,6 +864,11 @@ def inspect_db(
         str,
         typer.Option(help="Optional comma-separated table/measurement filter"),
     ] = "",
+    since: Annotated[str, typer.Option(help="RFC3339 start time for InfluxDB stats (required with --time-chunk-hours)")] = "",
+    until: Annotated[str, typer.Option(help="RFC3339 end time for InfluxDB stats (defaults to now)")] = "",
+    time_chunk_hours: Annotated[
+        float, typer.Option(help="Chunk size in hours for InfluxDB stats queries (use 24 or larger to stay within file-scan limits)")
+    ] = 0.0,
     max_tables: Annotated[int, typer.Option(help="Maximum number of tables/measurements to inspect")] = 100,
     sample_rows: Annotated[int, typer.Option(help="Rows sampled for tag/field key discovery")] = 200,
     max_tag_values: Annotated[int, typer.Option(help="Maximum distinct values shown per tag key")] = 10,
@@ -869,6 +936,9 @@ def inspect_db(
             max_tables=max_tables,
             sample_rows=sample_rows,
             max_tag_values=max_tag_values,
+            since=since,
+            until=until,
+            time_chunk_hours=time_chunk_hours,
         )
         raise typer.Exit(code=exit_code)
 
