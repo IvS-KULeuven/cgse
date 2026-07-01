@@ -426,9 +426,7 @@ def _inspect_influx(
                     print(f"  Tag values (sampled): n/a ({exc})")
 
             if time_chunk_hours > 0:
-                total_count, min_time, max_time = _influx_stats_chunked(
-                    repo, table, since, until, time_chunk_hours
-                )
+                total_count, min_time, max_time = _influx_stats_chunked(repo, table, since, until, time_chunk_hours)
                 if min_time is None:
                     print("  Rows: 0")
                     print("  Time window: n/a (no data in range)")
@@ -864,10 +862,15 @@ def inspect_db(
         str,
         typer.Option(help="Optional comma-separated table/measurement filter"),
     ] = "",
-    since: Annotated[str, typer.Option(help="RFC3339 start time for InfluxDB stats (required with --time-chunk-hours)")] = "",
+    since: Annotated[
+        str, typer.Option(help="RFC3339 start time for InfluxDB stats (required with --time-chunk-hours)")
+    ] = "",
     until: Annotated[str, typer.Option(help="RFC3339 end time for InfluxDB stats (defaults to now)")] = "",
     time_chunk_hours: Annotated[
-        float, typer.Option(help="Chunk size in hours for InfluxDB stats queries (use 24 or larger to stay within file-scan limits)")
+        float,
+        typer.Option(
+            help="Chunk size in hours for InfluxDB stats queries (use 24 or larger to stay within file-scan limits)"
+        ),
     ] = 0.0,
     max_tables: Annotated[int, typer.Option(help="Maximum number of tables/measurements to inspect")] = 100,
     sample_rows: Annotated[int, typer.Option(help="Rows sampled for tag/field key discovery")] = 200,
