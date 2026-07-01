@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### CGSE Admin
+
+- Fixed `cgse admin sql --backend influxdb` producing garbled output with literal `\n` characters. The InfluxDB query method returns a PyArrow Table; iterating over it yields columns rather than rows, causing each column to be serialised as a single JSON-escaped string. The result is now converted to a list of row dicts via `to_pylist()` before printing.
+- Improved the skip message in `migrate-influx-to-questdb` when a measurement cannot be migrated after preflight. The command now distinguishes between a preflight query that failed (e.g. hit the InfluxDB file-scan limit) and a measurement that is genuinely empty, and prints a targeted tip to retry with `--skip-preflight --time-chunk-hours` in the failure case.
+- Fixed `migrate-influx-to-questdb` using `time` instead of `timestamp` as the column name in the `DELETE FROM` range-replacement query. The designated timestamp column was renamed from `time` to `timestamp` in v0.25.2 across `questdb.py`, but `_delete_destination_range` in `migrate.py` was not updated at the same time, causing the delete to fail or target a non-existent column on QuestDB instances that support `DELETE FROM` over PGWire.
+- Removed the redundant standalone migration script `libs/cgse-common/tests/script_migrate_influx_to_questdb.py`; use `cgse admin migrate-influx-to-questdb` instead.
+- Fixed `cgse admin inspect-db --backend influxdb` silently reporting `n/a` for row count and time window when a measurement has too many Parquet files for InfluxDB Core's file-scan limit. The combined `MIN/MAX/COUNT` aggregation now falls back to two `ORDER BY time LIMIT 1` queries (ascending and descending) that InfluxDB can resolve from file-level statistics without a full scan, so the time window is still reported; row count is shown as unavailable with a hint to raise `--query-file-limit`.
+
 ### Dependencies
 
 - The `psycopg` package is now always installed with its `binary` extra.
@@ -478,7 +486,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.2...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.3...HEAD
+[0.25.3]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.2...v0.25.3
 [0.25.2]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.1...v0.25.2
 [0.25.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.0...v0.25.1
 [0.25.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.24.1...v0.25.0
