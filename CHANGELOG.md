@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.25.4] - 2026-07-01
+
 ### CGSE Admin
 
 - Fixed InfluxDB file-scan limit detection in `inspect-db` and `migrate-influx-to-questdb`. The `influxdb.py` query method wraps `InfluxDB3ClientError` in a plain `ValueError` with a generic "check the query" message, discarding the original error text. Both `_is_influx_file_limit_error` (admin) and `_is_influx_query_file_limit_error` (migrate) now walk the full exception chain via `__cause__` to find the original "Query would scan N Parquet files" message, so the file-scan limit fallback behaviour triggers correctly for long-lived measurements that have accumulated many Parquet files.
@@ -492,7 +494,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.3...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.4...HEAD
+[0.25.4]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.3...v0.25.4
 [0.25.3]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.2...v0.25.3
 [0.25.2]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.1...v0.25.2
 [0.25.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.0...v0.25.1
