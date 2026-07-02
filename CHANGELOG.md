@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 
+## [0.25.7] - 2026-07-02
+
 ### InfluxDB → QuestDB migration
 
 - Fixed `migrate-influx-to-questdb` writing all migrated rows with the server's current timestamp instead of the original InfluxDB timestamps. The `to_line_protocol` helper only handled `int`, `float`, and `str` timestamps; when the migration passes a `datetime` object (as returned by pandas after converting a `pd.Timestamp`), the timestamp branch was silently skipped and QuestDB fell back to the ingestion time. Added a `datetime` branch that converts to nanosecond epoch so the ILP line carries the correct historical timestamp. This affected measurements migrated via the ILP fallback path (i.e. `per_measurement` schema for measurements without a declared `MeasurementSchema`).
@@ -511,7 +513,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.6...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.7...HEAD
+[0.25.7]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.6...v0.25.7
 [0.25.6]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.5...v0.25.6
 [0.25.5]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.4...v0.25.5
 [0.25.4]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.3...v0.25.4
