@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+
+### InfluxDB → QuestDB migration
+
+- Fixed `migrate-influx-to-questdb` writing all migrated rows with the server's current timestamp instead of the original InfluxDB timestamps. The `to_line_protocol` helper only handled `int`, `float`, and `str` timestamps; when the migration passes a `datetime` object (as returned by pandas after converting a `pd.Timestamp`), the timestamp branch was silently skipped and QuestDB fell back to the ingestion time. Added a `datetime` branch that converts to nanosecond epoch so the ILP line carries the correct historical timestamp. This affected measurements migrated via the ILP fallback path (i.e. `per_measurement` schema for measurements without a declared `MeasurementSchema`).
+
 ## [0.25.6] - 2026-07-01
 
 ### InfluxDB → QuestDB migration
