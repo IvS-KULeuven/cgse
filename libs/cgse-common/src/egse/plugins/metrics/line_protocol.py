@@ -65,7 +65,9 @@ def to_line_protocol(payload: Mapping[str, Any]) -> str | None:
     lp = "".join(parts) + " " + ",".join(field_parts)
 
     if timestamp is not None:
-        if isinstance(timestamp, (int, float)):
+        if isinstance(timestamp, datetime):
+            lp += f" {int(timestamp.timestamp() * 1_000_000_000)}"
+        elif isinstance(timestamp, (int, float)):
             lp += f" {int(timestamp * 1_000_000_000)}"
         elif isinstance(timestamp, str):
             try:
