@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+import pyarrow
 
 from egse.metrics import get_metrics_repo
 from egse.plugins.metrics.influxdb import InfluxDBRepository
@@ -156,11 +157,15 @@ def _assert_read_only_influx_query(query: str) -> None:
         raise ValueError(f"Blocked non-read-only InfluxDB query: {query!r}")
 
 
-def _influx_query(influx: InfluxDBRepository, query: str, mode: str = "pandas") -> pd.DataFrame:
+def _influx_query(
+    influx: InfluxDBRepository, query: str, mode: str = "pandas"
+) -> pyarrow.Table | pd.DataFrame:
     _assert_read_only_influx_query(query)
     result = influx.query(query, mode=mode)
     if mode == "pandas" and not isinstance(result, pd.DataFrame):
         raise TypeError("Expected pandas DataFrame from Influx query")
+    if mode == "all" and not isinstance(result, pyarrow.Table):
+        raise TypeError("Expected PyArrow Table from Influx query")
     return result
 
 
@@ -234,81 +239,49 @@ def _infer_tag_and_field_columns(influx: InfluxDBRepository, table: str) -> tupl
     return tag_cols, field_cols
 
 
-def _scalar_or_none(value: Any) -> Any:
-    if value is None:
-        return None
-    if pd.isna(value):
-        return None
-
-    if isinstance(value, (bool, int, str)):
-        return value
-
-    if isinstance(value, float):
-        if math.isfinite(value):
-            # Pandas reads integer columns as float64 when NaNs are present.
-            # Convert whole-number floats back to int so ILP serialises them
-            # with the 'i' suffix and QuestDB accepts them into LONG columns.
-            # Guard against floats that are whole numbers but exceed int64 range
-            # (e.g. corrupt sensor values like 4.1e+36) — keep those as float.
-            if value == int(value) and -(2**63) <= value <= 2**63 - 1:
-                return int(value)
-            return value
-        return None
-
-    if isinstance(value, (pd.Timestamp, dt.datetime)):
-        return value.isoformat()
-
-    return str(value)
-
-
-def _row_to_payload(
+def _arrow_row_to_payload(
     table: str,
     row: dict[str, Any],
     tag_cols: list[str],
     field_cols: list[str],
 ) -> dict[str, Any] | None:
-    if "time" not in row or row["time"] is None or pd.isna(row["time"]):
+    """Convert a row dict from PyArrow's to_pylist() into a QuestDB payload.
+
+    Arrow preserves InfluxDB column types exactly: int64 → int, float64 → float,
+    utf8/dictionary → str, timestamp → datetime.  No type coercion is needed here.
+    """
+    time_val = row.get("time")
+    if time_val is None or not isinstance(time_val, dt.datetime):
         return None
 
     tags: dict[str, str] = {}
     for c in tag_cols:
-        if c not in row:
-            continue
-        value = _scalar_or_none(row[c])
-        if value is not None:
-            tags[c] = str(value)
+        v = row.get(c)
+        if v is not None:
+            tags[c] = str(v)
 
     fields: dict[str, Any] = {}
     for c in field_cols:
-        if c not in row:
-            continue
-        value = _scalar_or_none(row[c])
-        if value is not None:
-            fields[c] = value
+        v = row.get(c)
+        if v is not None:
+            fields[c] = v
 
-    # If field inference produced no columns, fallback to all non-time/non-tag columns.
+    # If field inference produced no columns, fall back to all non-time/non-tag columns.
     if not fields:
-        for c, value_raw in row.items():
-            if c == "time" or c.startswith("iox::") or c in tags:
+        for k, v in row.items():
+            if k == "time" or k.startswith("iox::") or k in tags:
                 continue
-            value = _scalar_or_none(value_raw)
-            if value is not None:
-                fields[c] = value
+            if v is not None:
+                fields[k] = v
 
     if not fields:
         return None
-
-    time_val = row["time"]
-    if isinstance(time_val, pd.Timestamp):
-        time_out: Any = time_val.to_pydatetime()
-    else:
-        time_out = time_val
 
     return {
         "measurement": table,
         "tags": tags,
         "fields": fields,
-        "time": time_out,
+        "time": time_val,
     }
 
 
@@ -575,13 +548,13 @@ def _iter_influx_batches_windowed(
     offset = 0
     while True:
         query = f"SELECT * FROM {table_quoted} {chunk_where} ORDER BY time ASC LIMIT {query_batch_size} OFFSET {offset}"
-        df = _influx_query(influx, query, mode="pandas")
+        arrow_table = _influx_query(influx, query, mode="all")
 
-        if not isinstance(df, pd.DataFrame) or df.empty:
+        if not isinstance(arrow_table, pyarrow.Table) or arrow_table.num_rows == 0:
             break
 
-        yield df
-        offset += len(df)
+        yield arrow_table
+        offset += arrow_table.num_rows
 
 
 def _iter_influx_batches_windowed_adaptive(
@@ -655,13 +628,13 @@ def _iter_influx_batches(
         query = (
             f"SELECT * FROM {table_quoted} {where_clause} ORDER BY time ASC LIMIT {query_batch_size} OFFSET {offset}"
         )
-        df = _influx_query(influx, query, mode="pandas")
+        arrow_table = _influx_query(influx, query, mode="all")
 
-        if not isinstance(df, pd.DataFrame) or df.empty:
+        if not isinstance(arrow_table, pyarrow.Table) or arrow_table.num_rows == 0:
             break
 
-        yield df
-        offset += len(df)
+        yield arrow_table
+        offset += arrow_table.num_rows
 
 
 def _is_influx_query_file_limit_error(exc: Exception) -> bool:
@@ -898,12 +871,12 @@ def migrate(args: argparse.Namespace) -> int:
                 batch_iter = _iter_influx_batches(influx, table, per_table_where_clause, args.query_batch_size)
 
             try:
-                for batch_df in batch_iter:
-                    rows = batch_df.to_dict(orient="records")
+                for arrow_batch in batch_iter:
+                    rows = arrow_batch.to_pylist()
                     table_rows_read += len(rows)
 
                     for row in rows:
-                        payload = _row_to_payload(table, row, tag_cols, field_cols)
+                        payload = _arrow_row_to_payload(table, row, tag_cols, field_cols)
                         if payload is None:
                             continue
                         write_buffer.append(payload)
