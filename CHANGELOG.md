@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 
+## [0.25.9] - 2026-07-03
+
+### InfluxDB → QuestDB migration
+
+- Replaced pandas-based row iteration in `migrate-influx-to-questdb` with direct PyArrow table reads. InfluxDB 3 returns query results as PyArrow tables where column types are preserved exactly (Arrow `int64` stays `int64`, `float64` stays `float64`, nulls are represented via a null bitmap rather than NaN). Converting to pandas was causing `int64` columns with nulls to silently become `float64`, requiring heuristic float-to-int promotion that produced LONG/DOUBLE type conflicts in QuestDB across batches. Batch iterators now yield `pyarrow.Table` and rows are extracted via `to_pylist()`, which returns Python native types (`int`, `float`, `str`, `datetime`, `None`) directly. `_scalar_or_none` and the associated int-promotion heuristics are removed. QuestDB column types are now always correct on first write: Arrow `int64` fields emit ILP `123i` (LONG), `float64` fields emit `1.5` (DOUBLE), with no cross-batch type inconsistency.
+
 ## [0.25.8] - 2026-07-03
 
 ### InfluxDB → QuestDB migration
