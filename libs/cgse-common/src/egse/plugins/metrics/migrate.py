@@ -248,7 +248,9 @@ def _scalar_or_none(value: Any) -> Any:
             # Pandas reads integer columns as float64 when NaNs are present.
             # Convert whole-number floats back to int so ILP serialises them
             # with the 'i' suffix and QuestDB accepts them into LONG columns.
-            if value == int(value):
+            # Guard against floats that are whole numbers but exceed int64 range
+            # (e.g. corrupt sensor values like 4.1e+36) — keep those as float.
+            if value == int(value) and -(2**63) <= value <= 2**63 - 1:
                 return int(value)
             return value
         return None
