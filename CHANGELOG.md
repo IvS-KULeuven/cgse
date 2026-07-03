@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 
+## [0.25.8] - 2026-07-03
+
+### InfluxDB → QuestDB migration
+
+- Fixed `migrate-influx-to-questdb` crashing with `QuestDB line protocol write failed with HTTP 400` when a measurement contains a field whose pandas `float64` value is a whole number but exceeds the int64 range (e.g. corrupt or sentinel sensor values such as `4.1e+36`). The `_scalar_or_none` float-to-int promotion now includes a range guard (`-(2**63) <= value <= 2**63 - 1`); out-of-range whole-number floats are kept as `float` so the ILP serialiser emits them without the `i` suffix and QuestDB stores them as `DOUBLE`.
+
 ## [0.25.7] - 2026-07-02
 
 ### InfluxDB → QuestDB migration
