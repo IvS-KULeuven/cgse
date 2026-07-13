@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.25.10] - 2026-07-13
+
 ### Logging and CLI Improvements
 
 - Enhanced logging setup in `egse.log` to guard against duplicate handler registration. When the logging module is executed as `__main__` and also imported elsewhere in the same Python run, handlers are now checked by name (`EGSE_HANDLER_NAME`, `ROOT_HANDLER_NAME`) before attachment to ensure idempotent handler setup and prevent accumulation of duplicate handlers.
