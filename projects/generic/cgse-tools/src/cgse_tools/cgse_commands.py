@@ -131,7 +131,7 @@ def init(project: str = ""):
             textwrap.dedent(
                 f"""
                 # -> Add the following lines to your bash profile or equivalent
-                
+
                 export PROJECT={project}
                 export SITE_ID={site_id}
                 export {project}_DATA_STORAGE_LOCATION={data_storage_location}
@@ -305,7 +305,8 @@ def check_setups(verbose: bool = False):
 
     # ---------- check if the Site_ID is set
 
-    verbose and rich.print("Checking site id ...")
+    if verbose:
+        rich.print("Checking site id ...")
 
     if not site_id:
         any_errors += 1
@@ -316,7 +317,8 @@ def check_setups(verbose: bool = False):
 
     # ---------- check if the <PROJECT>_CONF_DATA_LOCATION is set
 
-    verbose and rich.print("Checking configuration data location ...")
+    if verbose:
+        rich.print("Checking configuration data location ...")
 
     if not conf_data_location:
         any_errors += 1
@@ -324,7 +326,7 @@ def check_setups(verbose: bool = False):
             "[red]The location of the configuration data can not be determined, check your environment using `cgse "
             "show env`.[/]"
         )
-    elif not Path(conf_data_location).exists():
+    elif not Path(conf_data_location).expanduser().resolve().exists():
         any_errors += 1
         error_messages.append(f"[red]The location of the configuration data doesn't exist: {conf_data_location!s}[/]")
 
@@ -334,7 +336,8 @@ def check_setups(verbose: bool = False):
 
     # ---------- check if there is at least one SETUP in the configuration data folder
 
-    verbose and rich.print("Checking available SETUP files ...")
+    if verbose:
+        rich.print("Checking available SETUP files ...")
 
     files = list(find_files("SETUP*.yaml", root=conf_data_location))
 
@@ -358,7 +361,8 @@ def check_setups(verbose: bool = False):
 
     # ---------- check for each SETUP file if the site_id matches the SITE_ID
 
-    verbose and rich.print("Checking site_id in setup files ...")
+    if verbose:
+        rich.print("Checking site_id in setup files ...")
 
     for file in files:
         setup = Setup.from_yaml_file(file)

@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Logging and CLI Improvements
+
+- Enhanced logging setup in `egse.log` to guard against duplicate handler registration. When the logging module is executed as `__main__` and also imported elsewhere in the same Python run, handlers are now checked by name (`EGSE_HANDLER_NAME`, `ROOT_HANDLER_NAME`) before attachment to ensure idempotent handler setup and prevent accumulation of duplicate handlers.
+- Improved verbosity checks in `cgse_commands.check_setups()`: replaced `verbose and rich.print(...)` expressions with proper `if verbose: rich.print(...)` blocks for clarity and consistency.
+- Fixed configuration data directory path handling in `check_setups()` to expand user home directory (`~`) and resolve symlinks via `Path.expanduser().resolve()` before existence check.
 
 ## [0.25.9] - 2026-07-03
 
