@@ -127,9 +127,7 @@ if not any(h.name == EGSE_HANDLER_NAME for h in egse_logger.handlers):
     if os.getenv("LOG_FORMAT", "").lower() == "full":
         egse_formatter = logging.Formatter(fmt=LOG_FORMAT_FULL, datefmt=LOG_DATE_FORMAT_FULL, style=LOG_FORMAT_STYLE)
     else:
-        egse_formatter = logging.Formatter(
-            fmt=LOG_FORMAT_CLEAN, datefmt=LOG_DATE_FORMAT_CLEAN, style=LOG_FORMAT_STYLE
-        )
+        egse_formatter = logging.Formatter(fmt=LOG_FORMAT_CLEAN, datefmt=LOG_DATE_FORMAT_CLEAN, style=LOG_FORMAT_STYLE)
 
     egse_handler.setFormatter(egse_formatter)
     egse_handler.addFilter(EGSEFilter())
@@ -146,9 +144,7 @@ if not any(h.name == ROOT_HANDLER_NAME for h in root_logger.handlers):
     if os.getenv("LOG_FORMAT", "").lower() == "full":
         root_formatter = logging.Formatter(fmt=LOG_FORMAT_FULL, datefmt=LOG_DATE_FORMAT_FULL, style=LOG_FORMAT_STYLE)
     else:
-        root_formatter = logging.Formatter(
-            fmt=LOG_FORMAT_CLEAN, datefmt=LOG_DATE_FORMAT_CLEAN, style=LOG_FORMAT_STYLE
-        )
+        root_formatter = logging.Formatter(fmt=LOG_FORMAT_CLEAN, datefmt=LOG_DATE_FORMAT_CLEAN, style=LOG_FORMAT_STYLE)
     root_handler.setFormatter(root_formatter)
     root_handler.addFilter(PackageFilter())
     root_handler.addFilter(NonEGSEFilter())

@@ -157,9 +157,7 @@ def _assert_read_only_influx_query(query: str) -> None:
         raise ValueError(f"Blocked non-read-only InfluxDB query: {query!r}")
 
 
-def _influx_query(
-    influx: InfluxDBRepository, query: str, mode: str = "pandas"
-) -> pyarrow.Table | pd.DataFrame:
+def _influx_query(influx: InfluxDBRepository, query: str, mode: str = "pandas") -> pyarrow.Table | pd.DataFrame:
     _assert_read_only_influx_query(query)
     result = influx.query(query, mode=mode)
     if mode == "pandas" and not isinstance(result, pd.DataFrame):
