@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.25.10] - 2026-07-13
+
 ### Logging and CLI Improvements
 
 - Enhanced logging setup in `egse.log` to guard against duplicate handler registration. When the logging module is executed as `__main__` and also imported elsewhere in the same Python run, handlers are now checked by name (`EGSE_HANDLER_NAME`, `ROOT_HANDLER_NAME`) before attachment to ensure idempotent handler setup and prevent accumulation of duplicate handlers.
@@ -530,7 +532,10 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.7...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.10...HEAD
+[0.25.10]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.9...v0.25.10
+[0.25.9]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.8...v0.25.9
+[0.25.8]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.7...v0.25.8
 [0.25.7]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.6...v0.25.7
 [0.25.6]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.5...v0.25.6
 [0.25.5]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.4...v0.25.5
