@@ -532,7 +532,10 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.7...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.10...HEAD
+[0.25.10]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.9...v0.25.10
+[0.25.9]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.8...v0.25.9
+[0.25.8]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.7...v0.25.8
 [0.25.7]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.6...v0.25.7
 [0.25.6]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.5...v0.25.6
 [0.25.5]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.4...v0.25.5
