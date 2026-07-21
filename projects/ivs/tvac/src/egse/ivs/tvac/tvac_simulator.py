@@ -120,6 +120,7 @@ def _base_pressure(elapsed_in_cycle: float) -> float:
         heating_elapsed = elapsed_in_cycle - COOLING_DURATION - STABLE_DURATION
         return _asymptotic_approach(heating_elapsed, HEATING_DURATION, HIGH_VACUUM_PRESSURE, ATMOSPHERIC_PRESSURE)
 
+
 # Variant type, initial value and read/write access for every node in OPC_UA_NODES.
 #
 # The variant type must be declared explicitly and must match what the client reads/writes: OPC UA is
