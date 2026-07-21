@@ -14,12 +14,13 @@ from egse.ivs.tvac import (
 )
 import asyncio
 import datetime as dt
+import multiprocessing
 import sys
 from typing import Any
 
 import typer
 
-from egse.ivs.tvac.tvac_devif import ThermalVacOpcUaInterface, ThermalVacError
+from egse.ivs.tvac.tvac_devif import OPC_UA_NODES, ThermalVacOpcUaInterface, ThermalVacError
 from egse.metrics import DataPoint
 from egse.settings import get_site_id
 from egse.setup import load_setup
@@ -39,52 +40,21 @@ from egse.metricshub.client import AsyncMetricsHubSender
 
 **Key Architectural Components:**
 
-1. `ThermalVacController` — A `DeviceCommandRouter` sub-class that handles device-specific commands (start-scan, 
-   stop-scan, scan-status, etc.). It implements a command guard pattern that blocks certain commands while a scan is 
+1. `ThermalVacController` — A `DeviceCommandRouter` sub-class that handles device-specific commands (start-scan,
+   stop-scan, scan-status, etc.). It implements a command guard pattern that blocks certain commands while a scan is
    running to prevent conflicts with ongoing DAQ operations.
 
-2. `ThermalVacServices` — A `ServiceCommandRouter` for handling service-level commands like health checks and 
+2. `ThermalVacServices` — A `ServiceCommandRouter` for handling service-level commands like health checks and
    component info.
 
-3. `ThermalVacControlServer` — An `AcquisitionAsyncControlServer` subc-lass that manages the lifecycle of DAQ 
+3. `ThermalVacControlServer` — An `AcquisitionAsyncControlServer` subc-lass that manages the lifecycle of DAQ
    operations, including the background scan loop that reads data and forwards it to metric sinks.
 """
 
 SITE_ID = get_site_id()
 
-# Look-up table, relating the name of the command with the actual command that is passed on to the OPC UA interface
-
-OPC_UA_NODES = {
-    "is_vacuum_gauge_powered": "ns=4;s=MAIN.fbThermalVac.q_bVacuumGaugeOn",
-    "is_vacuum_gauge_error": "ns=4;s=MAIN.fbThermalVac.stSTAT.bVacuumGaugeError",
-    "get_vessel_pressure": "ns=4;s=MAIN.fbThermalVac.stSTAT.rVesselPressure",
-    "get_filtered_vessel_pressure": "ns=4;s=MAIN.fbThermalVac.stSTAT.rVesselPressureFilt",
-    "get_temperatures": "ns=4;s=MAIN.fbThermalVac.stSTAT.rPt100sTempCelcius",
-    "get_dut_temperatures": "ns=4;s=MAIN.fbThermalVac.stSTAT.rDUTTempSensCelcius",
-    "get_dut_temperature_weights": "ns=4;s=MAIN.fbThermalVac.stSTAT.iDUTTempSensWeight",
-    "get_avg_temperature": "ns=4;s=PRG_PID_CALL.fbAverageTemp.output",
-    "temperature_setpoint": "ns=4;s=PRG_PID_CALL.rSetpointTemp",
-    "get_pid_output_cooling": "ns=4;s=PRG_CTRL_PID_Cooling.stPID_STAT.lrOutput",
-    "get_pid_output_heating": "ns=4;s=PRG_CTRL_PID_Heating.stPID_STAT.lrOutput",
-    "temperature_ctrl_active": "ns=4;s=MAIN.fbThermalVac.stCMD.bStartTemperatureControl",
-    "is_scroll_pump_running": "ns=4;s=MAIN.fbThermalVac.stScrollPump_STAT.bRunning",
-    "is_scroll_pump_alarm": "ns=4;s=MAIN.fbThermalVac.stScrollPump_STAT.bAlarm",
-    "get_turbo_pump_rpm": "ns=4;s=MAIN.fbThermalVac.stTurboPump_STAT.udiRotorSpeed",
-    "is_turbo_pump_error": "ns=4;s=MAIN.fbThermalVac.stTurboPump_STAT.bError",
-    "get_tvac_state": "ns=4;s=MAIN.fbThermalVac.stSTAT.eState",
-    "set_stop_pumps": "ns=4;s=MAIN.fbThermalVac.bStopPumps",
-    "is_data_logging_active": "ns=4;s=PRG_DataLogging.bDataLoggingActive",
-    "start_data_logging": "ns=4;s=GVL.bStartDataLogging",
-    "stop_data_logging": "ns=4;s=GVL.bStopDataLogging",
-    "get_data_logging_state": "ns=4;s=PRG_DataLogging.fbDataLogger.eState",
-    "is_data_logging_error": "ns=4;s=PRG_DataLogging.fbDataLogger.bError",
-    "get_data_logging_error_id": "ns=4;s=PRG_DataLogging.fbDataLogger.eErrorId",
-    "get_data_logging_filename": "ns=4;s=PRG_DataLogging.sFileName",
-    "get_data_logging_directory": "ns=4;s=GVL.sDataLoggingDir",
-    "set_file_path_to_read": "ns=4;s=GVL.fbReadFileContents.sFilePath",
-    "trigger_state": "ns=4;s=GVL.fbReadFileContents.eReadState",
-    "get_file_content": "ns=4;s=GVL.fbReadFileContents.sFileContent",
-}
+# Cap [s] for the read-retry backoff in `_run_scan_loop` when the device connection is down.
+SCAN_RETRY_BACKOFF_MAX = 30.0
 
 
 class ThermalVacDaq:
@@ -1493,13 +1463,34 @@ class ThermalVacController(DeviceCommandRouter):
         When calling `start_scan`, this co-routine is schedule (in a spawn task), meaning that - in a loop - the DAQ
         acquires the data in a dictionary, which is handled by the `on_acquisition_data` method of the Control Server.
         This keeps on going as long as the DAQ is running and as long as the `stop_scan` co-routine has not been called.
+
+        A failed read (e.g. the OPC UA connection to the device dropped) does not end the scan: it's retried with
+        a growing backoff (capped at `SCAN_RETRY_BACKOFF_MAX`) until it succeeds or the scan is stopped, so an
+        unattended scan self-heals from a transient device outage instead of silently dying.
         """
+
+        backoff = SAMPLE_INTERVAL
 
         try:
             while not self.scan_stop_event.is_set() and self.daq.is_running():
                 # Data acquisition -> Dictionary with the data
 
-                data = await self.daq.read_buffer_chunk()
+                try:
+                    data = await self.daq.read_buffer_chunk()
+                except asyncio.CancelledError:
+                    raise
+                except Exception as exc:
+                    self._cs.logger.error(
+                        f"Buffered scan loop: read failed ({exc}); retrying in {backoff:.0f}s", exc_info=True
+                    )
+                    try:
+                        await asyncio.wait_for(self.scan_stop_event.wait(), timeout=backoff)
+                    except asyncio.TimeoutError:
+                        pass
+                    backoff = min(backoff * 2, SCAN_RETRY_BACKOFF_MAX)
+                    continue
+
+                backoff = SAMPLE_INTERVAL
 
                 # Now handle the data by passing it to `on_acquisition_data`
 
@@ -1552,6 +1543,9 @@ class ThermalVacServices(ServiceCommandRouter):
 
 
 class ThermalVacControlServer(AcquisitionAsyncControlServer):
+    service_type = SERVICE_TYPE
+    service_name = SERVICE_NAME
+
     def __init__(self):
         """Initialisation of ThermalVac Control Server."""
 
@@ -1800,7 +1794,7 @@ class ThermalVacControlServer(AcquisitionAsyncControlServer):
 
         # Best-effort metrics propagation: never block acquisition on sink failures.
         if self._metrics_sender is None:
-            self._metrics_sender: AsyncMetricsHubSender = AsyncMetricsHubSender()
+            self._metrics_sender = AsyncMetricsHubSender()
             self._metrics_sender.connect()  # noqa
 
         try:
@@ -1823,6 +1817,25 @@ class ThermalVacControlServer(AcquisitionAsyncControlServer):
             self.logger.warning(f"Failed to send metric to Metrics Hub: {exc!r}")
             return False
 
+    def create_background_tasks(self) -> list[asyncio.Task]:
+        """Creates the base server tasks plus a task that connects to the OPC UA interface and starts scanning.
+
+        `AsyncControlServer.start()` blocks in its own keep-alive loop until the server is stopped, so connecting
+        to the OPC UA interface and starting the scan cannot be done by simply awaiting them after `super().start()`
+        in `start()` below - that code would only run once the server is already shutting down. Instead, they run
+        as one of the concurrently-scheduled background tasks, like the base class already does for its own tasks.
+        """
+
+        tasks = super().create_background_tasks()
+        tasks.append(asyncio.create_task(self._connect_and_start_scan(), name="tvac-connect-and-start-scan"))
+        return tasks
+
+    async def _connect_and_start_scan(self) -> None:
+        """Connects to the OPC UA interface and starts the data acquisition scan."""
+
+        await self.controller.daq.connect_to_opcua()
+        await self.controller.start_scan()
+
     async def start(self) -> None:
         """Starts the asynchronous ThermalVac Control Server.
 
@@ -1832,10 +1845,9 @@ class ThermalVacControlServer(AcquisitionAsyncControlServer):
             - Starting a data acquisition scan.
         """
 
-        await super().start()
+        multiprocessing.current_process().name = "tvac_cs"
 
-        await self.controller.daq.connect_to_opcua()
-        self.controller.daq.start_scan()
+        await super().start()
 
     def stop(self) -> None:
         """Stops the asynchronous ThermalVac Control Server.
@@ -1856,13 +1868,21 @@ class ThermalVacControlServer(AcquisitionAsyncControlServer):
             self._metrics_sender.close()
             self._metrics_sender = None
 
-        asyncio.run(self.controller.daq.disconnect_from_opcua())
+        if self._loop is not None and self._loop.is_running():
+            # `stop()` is invoked from the (async) "terminate" service command handler, i.e. from inside the
+            # already-running event loop, so `asyncio.run()` would raise "cannot be called from a running
+            # event loop". Schedule the disconnect on that loop instead.
+            self._loop.create_task(self.controller.daq.disconnect_from_opcua())
+        else:
+            asyncio.run(self.controller.daq.disconnect_from_opcua())
 
         super().stop()
 
 
 class ThermalVacControlClient(TypedAsyncControlClient):
     """Typed client wrapper for ThermalVacControlServer commands."""
+
+    service_type = SERVICE_TYPE
 
     async def start_scan(self, *, timeout: float | None = None) -> dict[str, Any] | None:
         response = await self.send_device_command(
@@ -2049,7 +2069,7 @@ app = typer.Typer()
 
 
 @app.command(cls=TyperAsyncCommand)
-async def start_cs():
+async def start():
     """Starts the asynchronous ThermalVac Control Server."""
 
     with remote_logging():
@@ -2068,7 +2088,7 @@ async def start_cs():
 
 
 @app.command(cls=TyperAsyncCommand)
-async def stop_cs():
+async def stop():
     """Sends terminate command to the asynchronous ThermalVac Control Server.
 
     This includes:

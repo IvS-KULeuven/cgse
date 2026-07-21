@@ -334,6 +334,9 @@ class AsyncControlServer:
         self._service_id = None
         """The unique service ID assigned by the registry on registration, used for deregistration and heartbeats."""
 
+        self.storage_manager_active = False
+        """Set at start-up to whether the Storage Manager was active and this server registered to it."""
+
         self._sequential_queue: asyncio.Queue[Coroutine[Any, Any, Any]] = asyncio.Queue()
         """Queue for sequential operations that must preserve order of execution."""
 
@@ -465,6 +468,15 @@ class AsyncControlServer:
 
         await self.register_service()
 
+        self.storage_manager_active = await asyncio.to_thread(self.is_storage_manager_active)
+        if self.storage_manager_active:
+            self.logger.info(f"Storage Manager is active, registering {self.service_name} to Storage Manager.")
+            await asyncio.to_thread(self.register_to_storage_manager)
+        else:
+            self.logger.warning(
+                f"Storage Manager is not active, housekeeping information will not be stored for {self.service_name}."
+            )
+
         self._tasks = self.create_background_tasks()
 
         try:
@@ -475,6 +487,9 @@ class AsyncControlServer:
             self.logger.debug(f"Caught CancelledError on server keep-alive loop, terminating {type(self).__name__}.")
         finally:
             await self._cleanup_running_tasks()
+
+        if self.storage_manager_active:
+            await asyncio.to_thread(self.unregister_from_storage_manager)
 
         await self.deregister_service()
 
@@ -494,6 +509,20 @@ class AsyncControlServer:
             asyncio.create_task(self.send_status_updates(), name="send-status-updates"),
             asyncio.create_task(self.process_sequential_queue(), name="process-sequential-queue"),
         ]
+
+    def is_storage_manager_active(self) -> bool:
+        """Hook for subclasses: return True if this server should register with the Storage Manager.
+
+        If True, `register_to_storage_manager()` and `unregister_from_storage_manager()` must also
+        be implemented by the subclass.
+        """
+        return False
+
+    def register_to_storage_manager(self) -> None:
+        """Hook for subclasses that need to register with the Storage Manager."""
+
+    def unregister_from_storage_manager(self) -> None:
+        """Hook for subclasses that need to unregister from the Storage Manager."""
 
     async def register_service(self):
         self.logger.info(f"Registering service {self.service_name} as type {self.service_type}")

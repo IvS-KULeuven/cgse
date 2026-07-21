@@ -7,7 +7,7 @@ import pytest
 from asyncua import Client, ua
 
 from egse.device import DeviceConnectionError
-from egse.ivs.tvac.thermalvac_devif import ThermalVacOpcUaInterface
+from egse.ivs.tvac.tvac_devif import ThermalVacOpcUaInterface
 
 
 @pytest.fixture
@@ -33,7 +33,7 @@ def mock_client():
 @pytest.fixture
 def thermalvac_interface(default_hostname, default_port, mock_client):
     """Create ThermalVacOpcUaInterface instance with mocked client."""
-    with patch("egse.ivs.thermalvac.thermalvac_devif.Client", return_value=mock_client):
+    with patch("egse.ivs.tvac.tvac_devif.Client", return_value=mock_client):
         interface = ThermalVacOpcUaInterface(hostname=default_hostname, port=default_port)
     return interface
 
@@ -54,7 +54,7 @@ async def test_successful_connection(thermalvac_interface, mock_client):
 @pytest.mark.asyncio
 async def test_connection_raises_error_when_hostname_missing(default_port, mock_client):
     """Test connection fails when hostname is not initialized."""
-    with patch("egse.ivs.thermalvac.thermalvac_devif.Client", return_value=mock_client):
+    with patch("egse.ivs.tvac.tvac_devif.Client", return_value=mock_client):
         interface = ThermalVacOpcUaInterface(hostname=None, port=default_port)
         interface.hostname = None
 
@@ -67,7 +67,7 @@ async def test_connection_raises_error_when_hostname_missing(default_port, mock_
 @pytest.mark.asyncio
 async def test_connection_raises_error_when_port_missing(default_hostname, mock_client):
     """Test connection fails when port is not initialized."""
-    with patch("egse.ivs.thermalvac.thermalvac_devif.Client", return_value=mock_client):
+    with patch("egse.ivs.tvac.tvac_devif.Client", return_value=mock_client):
         interface = ThermalVacOpcUaInterface(hostname=default_hostname, port=None)
         interface.port = None
 
@@ -128,6 +128,23 @@ async def test_disconnection_when_not_connected(thermalvac_interface, mock_clien
 
     assert thermalvac_interface._is_connection_open is False
     mock_client.disconnect.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_disconnect_clears_flag_even_if_client_disconnect_raises(thermalvac_interface, mock_client):
+    """A failed close (e.g. the socket is already dead) must not leave `_is_connection_open` stuck True,
+    since that would permanently block any future `connect()`/`reconnect()` call.
+    """
+    mock_root = MagicMock()
+    mock_root.read_browse_name = AsyncMock()
+    mock_client.get_root_node.return_value = mock_root
+
+    await thermalvac_interface.connect()
+    mock_client.disconnect.side_effect = ConnectionError("socket already closed")
+
+    await thermalvac_interface.disconnect()
+
+    assert thermalvac_interface._is_connection_open is False
 
 
 @pytest.mark.asyncio
@@ -233,7 +250,7 @@ async def test_write_node_sets_value(thermalvac_interface, mock_client):
     mock_variable.set_value = AsyncMock()
     mock_client.get_node.return_value = mock_variable
 
-    with patch("egse.ivs.thermalvac.thermalvac_devif.ua") as mock_ua:
+    with patch("egse.ivs.tvac.tvac_devif.ua") as mock_ua:
         mock_ua.DataValue = MagicMock()
         mock_ua.Variant = MagicMock()
 
@@ -250,7 +267,7 @@ async def test_write_node_with_integer_value(thermalvac_interface, mock_client):
     mock_variable.set_value = AsyncMock()
     mock_client.get_node.return_value = mock_variable
 
-    with patch("egse.ivs.thermalvac.thermalvac_devif.ua") as mock_ua:
+    with patch("egse.ivs.tvac.tvac_devif.ua") as mock_ua:
         mock_ua.DataValue = MagicMock()
         mock_ua.Variant = MagicMock()
 
@@ -273,7 +290,7 @@ async def test_server_url_with_custom_hostname_and_port(mock_client):
     custom_hostname = "192.168.1.100"
     custom_port = 4841
 
-    with patch("egse.ivs.thermalvac.thermalvac_devif.Client", return_value=mock_client):
+    with patch("egse.ivs.tvac.tvac_devif.Client", return_value=mock_client):
         interface = ThermalVacOpcUaInterface(hostname=custom_hostname, port=custom_port)
 
     expected_url = f"opc.tcp://{custom_hostname}:{custom_port}"
@@ -287,7 +304,7 @@ async def test_context_manager_establishes_connection(default_hostname, default_
     mock_root.read_browse_name = AsyncMock()
     mock_client.get_root_node.return_value = mock_root
 
-    with patch("egse.ivs.thermalvac.thermalvac_devif.Client", return_value=mock_client):
+    with patch("egse.ivs.tvac.tvac_devif.Client", return_value=mock_client):
         async with ThermalVacOpcUaInterface(hostname=default_hostname, port=default_port) as interface:
             assert interface._is_connection_open is True
 
@@ -299,7 +316,7 @@ async def test_context_manager_closes_connection(default_hostname, default_port,
     mock_root.read_browse_name = AsyncMock()
     mock_client.get_root_node.return_value = mock_root
 
-    with patch("egse.ivs.thermalvac.thermalvac_devif.Client", return_value=mock_client):
+    with patch("egse.ivs.tvac.tvac_devif.Client", return_value=mock_client):
         async with ThermalVacOpcUaInterface(hostname=default_hostname, port=default_port) as interface:
             pass
 
@@ -314,7 +331,7 @@ async def test_context_manager_closes_on_exception(default_hostname, default_por
     mock_root.read_browse_name = AsyncMock()
     mock_client.get_root_node.return_value = mock_root
 
-    with patch("egse.ivs.thermalvac.thermalvac_devif.Client", return_value=mock_client):
+    with patch("egse.ivs.tvac.tvac_devif.Client", return_value=mock_client):
         try:
             async with ThermalVacOpcUaInterface(hostname=default_hostname, port=default_port) as interface:
                 raise RuntimeError("Test exception")
@@ -345,10 +362,10 @@ async def test_concurrent_operations_with_lock(thermalvac_interface, mock_client
 @pytest.mark.asyncio
 async def test_device_id_is_set_correctly(default_hostname, default_port, mock_client):
     """Test that device_id is set correctly during initialization."""
-    with patch("egse.ivs.thermalvac.thermalvac_devif.Client", return_value=mock_client):
+    with patch("egse.ivs.tvac.tvac_devif.Client", return_value=mock_client):
         interface = ThermalVacOpcUaInterface(hostname=default_hostname, port=default_port)
 
-    assert interface.device_id == "ThermalVac"
+    assert interface.device_id == "TVAC"
 
 
 @pytest.mark.asyncio
@@ -357,7 +374,7 @@ async def test_initialization_uses_provided_hostname_and_port(mock_client):
     custom_hostname = "custom.host.com"
     custom_port = 9999
 
-    with patch("egse.ivs.thermalvac.thermalvac_devif.Client", return_value=mock_client):
+    with patch("egse.ivs.tvac.tvac_devif.Client", return_value=mock_client):
         interface = ThermalVacOpcUaInterface(hostname=custom_hostname, port=custom_port)
 
     assert interface.hostname == custom_hostname
@@ -381,7 +398,7 @@ async def test_read_and_write_operations_sequence(thermalvac_interface, mock_cli
 
     await thermalvac_interface.connect()
 
-    with patch("egse.ivs.thermalvac.thermalvac_devif.ua") as mock_ua:
+    with patch("egse.ivs.tvac.tvac_devif.ua") as mock_ua:
         mock_ua.DataValue = MagicMock()
         mock_ua.Variant = MagicMock()
 
@@ -391,3 +408,80 @@ async def test_read_and_write_operations_sequence(thermalvac_interface, mock_cli
     assert read_result == 25.5
     assert read_variable.read_value.called
     assert write_variable.set_value.called
+
+
+@pytest.mark.asyncio
+async def test_read_node_reconnects_and_retries_once_on_failure(thermalvac_interface, mock_client):
+    """A failed read triggers exactly one reconnect, then a retry that succeeds."""
+    variable = AsyncMock()
+    variable.read_value = AsyncMock(side_effect=[ConnectionError("client is disconnected"), 42])
+    mock_client.get_node.return_value = variable
+
+    with (
+        patch.object(thermalvac_interface, "is_connected", AsyncMock(return_value=False)) as mock_is_connected,
+        patch.object(thermalvac_interface, "reconnect", AsyncMock()) as mock_reconnect,
+    ):
+        result = await thermalvac_interface.read_node("ns=2;i=1234")
+
+    assert result == 42
+    mock_is_connected.assert_called_once()
+    mock_reconnect.assert_called_once()
+    assert variable.read_value.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_write_node_reconnects_and_retries_once_on_failure(thermalvac_interface, mock_client):
+    """A failed write triggers exactly one reconnect, then a retry that succeeds."""
+    variable = AsyncMock()
+    variable.set_value = AsyncMock(side_effect=[ConnectionError("client is disconnected"), None])
+    mock_client.get_node.return_value = variable
+
+    with (
+        patch.object(thermalvac_interface, "is_connected", AsyncMock(return_value=False)),
+        patch.object(thermalvac_interface, "reconnect", AsyncMock()) as mock_reconnect,
+        patch("egse.ivs.tvac.tvac_devif.ua") as mock_ua,
+    ):
+        mock_ua.DataValue = MagicMock()
+        mock_ua.Variant = MagicMock()
+
+        await thermalvac_interface.write_node("ns=2;i=1234", 1.0, ua.VariantType.Double)
+
+    mock_reconnect.assert_called_once()
+    assert variable.set_value.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_read_node_raises_if_retry_after_reconnect_also_fails(thermalvac_interface, mock_client):
+    """If the retried op also fails, that second failure propagates instead of being swallowed."""
+    variable = AsyncMock()
+    variable.read_value = AsyncMock(side_effect=ConnectionError("still disconnected"))
+    mock_client.get_node.return_value = variable
+
+    with (
+        patch.object(thermalvac_interface, "is_connected", AsyncMock(return_value=False)),
+        patch.object(thermalvac_interface, "reconnect", AsyncMock()),
+    ):
+        with pytest.raises(ConnectionError, match="still disconnected"):
+            await thermalvac_interface.read_node("ns=2;i=1234")
+
+    assert variable.read_value.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_reconnect_skipped_if_already_reconnected_by_another_caller(thermalvac_interface, mock_client):
+    """The `is_connected()` re-check taken under `_reconnect_lock` exists so that if another concurrent
+    caller already reconnected while this one was waiting for the lock, it skips its own redundant
+    `reconnect()` call and just retries directly.
+    """
+    variable = AsyncMock()
+    variable.read_value = AsyncMock(side_effect=[ConnectionError("down"), 7])
+    mock_client.get_node.return_value = variable
+
+    with (
+        patch.object(thermalvac_interface, "is_connected", AsyncMock(return_value=True)),
+        patch.object(thermalvac_interface, "reconnect", AsyncMock()) as mock_reconnect,
+    ):
+        result = await thermalvac_interface.read_node("ns=2;i=1234")
+
+    assert result == 7
+    mock_reconnect.assert_not_called()
