@@ -916,6 +916,83 @@ async def test_client_heartbeat(client, server, req_socket):
     await client.stop_heartbeat()
 
 
+@pytest.mark.asyncio
+async def test_client_register_with_explicit_service_id_updates_in_place(client, server, req_socket):
+    """Passing `service_id` to `register()` should update the existing entry in place (same id, new
+    host) instead of being treated as a brand new registration.
+    """
+    server.enforce_unique_service_types = True
+
+    try:
+        service_id = await client.register(
+            "reconnect-test-service", "1.2.3.4", 8080, service_type="reconnect-test"
+        )
+        assert service_id is not None
+
+        updated_id = await client.register(
+            "reconnect-test-service", "5.6.7.8", 8080, service_type="reconnect-test", service_id=service_id
+        )
+
+        assert updated_id == service_id
+
+        response = await send_request(
+            MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "get", "service_id": service_id}
+        )
+        assert response["service"]["host"] == "5.6.7.8"
+
+        listing = await send_request(
+            MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "list", "service_type": "reconnect-test"}
+        )
+        assert len(listing["services"]) == 1
+    finally:
+        server.enforce_unique_service_types = False
+
+
+@pytest.mark.asyncio
+async def test_client_reregister_refreshes_host(client, server, req_socket, monkeypatch):
+    """`reregister()` should pick up the current IP (via `get_host_ip`) rather than resending the
+    stale cached host, while keeping the same service_id (in-place update).
+    """
+    service_id = await client.register("reregister-test-service", "1.2.3.4", 8080)
+    assert service_id is not None
+
+    monkeypatch.setattr("egse.registry.client.get_host_ip", lambda: "9.9.9.9")
+
+    new_id = await client.reregister()
+
+    assert new_id == service_id
+    assert client._service_info["host"] == "9.9.9.9"
+
+    response = await send_request(
+        MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "get", "service_id": service_id}
+    )
+    assert response["service"]["host"] == "9.9.9.9"
+
+
+@pytest.mark.asyncio
+async def test_client_heartbeat_detects_host_change(client, server, req_socket, monkeypatch):
+    """The heartbeat loop itself should notice an IP change and re-register automatically, not just
+    `reregister()` when called directly.
+    """
+    service_id = await client.register("heartbeat-host-change-service", "1.2.3.4", 8080, ttl=5)
+    assert service_id is not None
+
+    monkeypatch.setattr("egse.registry.client.get_host_ip", lambda: "8.8.4.4")
+
+    await client.start_heartbeat(interval=1)
+
+    try:
+        await asyncio.sleep(1.5)
+
+        response = await send_request(
+            MessageType.REQUEST_WITH_REPLY, req_socket, {"action": "get", "service_id": service_id}
+        )
+        assert response["service"]["host"] == "8.8.4.4"
+        assert response["service"]["id"] == service_id
+    finally:
+        await client.stop_heartbeat()
+
+
 @pytest.mark.timeout(10)
 @pytest.mark.asyncio
 async def test_client_event_listener(client, server, req_socket):
