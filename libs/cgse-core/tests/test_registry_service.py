@@ -924,9 +924,7 @@ async def test_client_register_with_explicit_service_id_updates_in_place(client,
     server.enforce_unique_service_types = True
 
     try:
-        service_id = await client.register(
-            "reconnect-test-service", "1.2.3.4", 8080, service_type="reconnect-test"
-        )
+        service_id = await client.register("reconnect-test-service", "1.2.3.4", 8080, service_type="reconnect-test")
         assert service_id is not None
 
         updated_id = await client.register(
