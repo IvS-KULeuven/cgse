@@ -11,14 +11,15 @@ from typing import Union
 
 import zmq
 import zmq.asyncio
-
 from egse.env import bool_env
 from egse.log import logging
+from egse.system import do_every
+from egse.system import get_host_ip
+
 from egse.registry import DEFAULT_RS_HB_PORT
 from egse.registry import DEFAULT_RS_PUB_PORT
 from egse.registry import DEFAULT_RS_REQ_PORT
 from egse.registry import MessageType
-from egse.system import do_every
 
 VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
 
@@ -243,6 +244,7 @@ class RegistryClient:
         ttl: int = 30,
         singleton: bool = False,
         allow_duplicate_service_type: bool = False,
+        service_id: str | None = None,
     ) -> str | None:
         """
         Register this service with the registry.
@@ -260,6 +262,8 @@ class RegistryClient:
             allow_duplicate_service_type: When True, allow registration even if another
                 service with the same service_type is already registered while the
                 server enforces unique service types globally.
+            service_id: When given, resubmits this exact id so the registry updates the existing
+                entry in place (e.g. to refresh a stale host) instead of allocating a new one.
 
         Returns:
             The service ID if successful, None otherwise
@@ -269,6 +273,9 @@ class RegistryClient:
 
         # Prepare service info
         service_info: dict[str, str | int | dict | list] = {"name": name, "host": host, "port": port}
+
+        if service_id:
+            service_info["id"] = service_id
 
         # Add optional fields
         if service_type:
@@ -345,12 +352,16 @@ class RegistryClient:
             )
             return None
 
+        new_host = get_host_ip() or str(self._service_info["host"])
+
         return self.register(
             name=self._service_info["name"],
-            host=self._service_info["host"],
+            host=new_host,
             port=self._service_info["port"],
-            service_type=self._service_info["type"],
-            metadata=self._service_info["metadata"],
+            service_type=self._service_info.get("type"),
+            metadata=self._service_info.get("metadata"),
+            ttl=self._ttl or 30,
+            service_id=self._service_id,
         )
 
     def discover_service(self, service_type: str) -> dict[str, Any] | None:
@@ -490,6 +501,15 @@ class RegistryClient:
 
         def send_heartbeat():
             try:
+                current_host = get_host_ip()
+                if current_host and self._service_info and current_host != self._service_info.get("host"):
+                    self.logger.info(
+                        f"Detected IP address change ({self._service_info.get('host')} -> {current_host}); "
+                        f"re-registering"
+                    )
+                    self.reregister()
+                    return
+
                 request = {"action": "renew", "service_id": self._service_id}
 
                 response = self._send_heartbeat(request)
@@ -765,6 +785,7 @@ class AsyncRegistryClient:
         ttl: int = 30,
         singleton: bool = False,
         allow_duplicate_service_type: bool = False,
+        service_id: str | None = None,
     ) -> str | None:
         """
         Register this service with the registry.
@@ -782,6 +803,8 @@ class AsyncRegistryClient:
             allow_duplicate_service_type: When True, allow registration even if another
                 service with the same service_type is already registered while the
                 server enforces unique service types globally.
+            service_id: When given, resubmits this exact id so the registry updates the existing
+                entry in place (e.g. to refresh a stale host) instead of allocating a new one.
 
         Returns:
             The service ID if successful, None otherwise
@@ -791,6 +814,9 @@ class AsyncRegistryClient:
 
         # Prepare service info
         service_info: dict[str, Any] = {"name": name, "host": host, "port": port}
+
+        if service_id:
+            service_info["id"] = service_id
 
         # Add optional fields
         if service_type:
@@ -879,12 +905,16 @@ class AsyncRegistryClient:
             )
             return None
 
+        new_host = get_host_ip() or self._service_info["host"]
+
         return await self.register(
             name=self._service_info["name"],
-            host=self._service_info["host"],
+            host=new_host,
             port=self._service_info["port"],
-            service_type=self._service_info["type"],
-            metadata=self._service_info["metadata"],
+            service_type=self._service_info.get("type"),
+            metadata=self._service_info.get("metadata"),
+            ttl=self._ttl or 30,
+            service_id=self._service_id,
         )
 
     async def start_heartbeat(self, interval: int | None = None) -> asyncio.Task | None:
@@ -916,6 +946,16 @@ class AsyncRegistryClient:
             try:
                 while self._running and self._service_id:
                     try:
+                        current_host = get_host_ip()
+                        if current_host and self._service_info and current_host != self._service_info.get("host"):
+                            self.logger.info(
+                                f"Detected IP address change ({self._service_info.get('host')} -> {current_host}); "
+                                f"re-registering"
+                            )
+                            await self.reregister()
+                            await asyncio.sleep(interval)
+                            continue
+
                         request = {"action": "renew", "service_id": self._service_id}
 
                         response = await self._send_heartbeat(request)
