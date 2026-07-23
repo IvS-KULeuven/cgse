@@ -7,6 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+nothing yet
+
+---
+
+## [0.25.11] - 2026-07-23
+
+### Service Registration
+
+- Fixed a problem with registered services that are running on a machine that can change host-IP between Ethernet and Wifi. The registration was not updated for the new host-IP making the services unreachable. This is now fixed in the registry client when sending heartbeats. The client checks if the host-IP has changed and then sends a re-registration with the new host-IP.
+
 ### TVAC Updates and Improvements
 
 - Module `async_tvac.py` renamed to `tvac_acs.py` to be consistent with other devices.
@@ -548,7 +558,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.10...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.11...HEAD
+[0.25.11]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.10...v0.25.11
 [0.25.10]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.9...v0.25.10
 [0.25.9]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.8...v0.25.9
 [0.25.8]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.7...v0.25.8
