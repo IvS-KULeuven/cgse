@@ -28,10 +28,8 @@ dependencies = [
 test = ["pytest", "pytest-mock", "pytest-cov"]
 
 [project.scripts]
-tvac = "egse.ivs.tvac.async_tvac:app"
-
-##[project.gui-scripts]
-##tgf4000_ui = "egse.arbitrary_wave_generator.aim_tti.tgf4000_ui:main"
+tvac_cs = "egse.ivs.tvac.tvac_acs:app"
+tvac_sim = "egse.ivs.tvac.tvac_simulator:app"
 
 [project.entry-points."cgse.version"]
 ivs-tvac = 'egse.version:get_version_installed'

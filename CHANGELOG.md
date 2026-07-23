@@ -7,6 +7,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### TVAC Updates and Improvements
+
+- Module `async_tvac.py` renamed to `tvac_acs.py` to be consistent with other devices.
+- A new TVAC simulator was added to test and validate workflows without the real chamber hardware.
+- Rename the `tvac` command to `tvac_cs` (control server: `start`/`stop`/`status`/`get-latest`) and add `tvac_sim`
+  (simulator: `start`/`stop`).
+- The `uv run cgse tvac` command now has `start-cs`, `stop-cs`, `start-sim`, and `stop-sim` sub-commands.
+- Lookup table OPC_UA_NODES moved into `tvac_devif.py`.
+- Fixed undefined `service_type` and `service_name` that caused registration of default auto-generated name.
+- Thermal vacuum control now handles temporary connection problems with a backoff reconnection strategy.
+- Added proper registration to the Storage manager and send housekeeping to write into CSV file.
+- Data collection during TVAC runs was improved to better handle sustained streams of measurements.
+- Stopping a running scan is now more responsive, even while the system is waiting between retry attempts.
+- Health and error reporting was improved to make troubleshooting faster and clearer.
+- Test coverage was expanded for `tvac` and device-interface behavior.
+
 ## [0.25.10] - 2026-07-13
 
 ### Logging and CLI Improvements

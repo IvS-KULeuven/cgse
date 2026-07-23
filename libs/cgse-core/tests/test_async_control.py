@@ -85,6 +85,28 @@ class SequentialExecutionTestServer(AsyncControlServer):
         return token
 
 
+class StorageAwareTestServer(AsyncControlServer):
+    """Test helper server with instrumented Storage Manager hooks."""
+
+    def __init__(self, active: bool):
+        super().__init__()
+        self._storage_active = active
+        self.storage_calls: list[str] = []
+
+    @override
+    def is_storage_manager_active(self) -> bool:
+        self.storage_calls.append("is_storage_manager_active")
+        return self._storage_active
+
+    @override
+    def register_to_storage_manager(self) -> None:
+        self.storage_calls.append("register_to_storage_manager")
+
+    @override
+    def unregister_from_storage_manager(self) -> None:
+        self.storage_calls.append("unregister_from_storage_manager")
+
+
 @pytest.mark.asyncio
 async def test_control_server(caplog):
     # First start the control server as a background task.
@@ -194,6 +216,42 @@ async def test_control_server_publishes_status_on_monitoring_port():
         server.stop()
         server_task.cancel()
         await asyncio.gather(server_task, return_exceptions=True)
+
+
+@pytest.mark.asyncio
+async def test_control_server_registers_and_unregisters_from_storage_manager_when_active():
+    server = StorageAwareTestServer(active=True)
+    server_task = asyncio.create_task(server.start())
+
+    await asyncio.sleep(0.5)  # give the server time to startup
+
+    assert server.storage_manager_active is True
+    assert server.storage_calls == ["is_storage_manager_active", "register_to_storage_manager"]
+
+    server.stop()
+    await asyncio.wait_for(server_task, timeout=3.0)
+
+    assert server.storage_calls == [
+        "is_storage_manager_active",
+        "register_to_storage_manager",
+        "unregister_from_storage_manager",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_control_server_skips_storage_manager_when_not_active():
+    server = StorageAwareTestServer(active=False)
+    server_task = asyncio.create_task(server.start())
+
+    await asyncio.sleep(0.5)  # give the server time to startup
+
+    assert server.storage_manager_active is False
+    assert server.storage_calls == ["is_storage_manager_active"]
+
+    server.stop()
+    await asyncio.wait_for(server_task, timeout=3.0)
+
+    assert server.storage_calls == ["is_storage_manager_active"]
 
 
 def test_temp_control_server_status_extends_base_status():
