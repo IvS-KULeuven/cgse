@@ -1,9 +1,16 @@
 import logging
 import time
+from serial import SerialException
 
 from serial.tools import list_ports
 
-from egse.power_supply.rs_pro import DEVICE_SETTINGS
+from egse.power_supply.rs_pro import (
+    DEVICE_SETTINGS,
+    IDENTIFICATION_QUERY,
+    ENCODING,
+    LINE_ENDING,
+    split_result_on_blanks,
+)
 import serial
 
 
@@ -14,15 +21,20 @@ from egse.device import (
 
 LOGGER = logging.getLogger(__name__)
 
-ENCODING = "ascii"
-LINE_ENDING = "\n"
-IDENTIFICATION_QUERY = "*IDN?"
-
 
 class RsdError(Exception):
     """An RS-D3305P-specific error."""
 
     pass
+
+
+def print_serial_ports() -> str | None:
+    """Prints a list of all available serial ports."""
+
+    ports = list_ports.comports()
+
+    for port in ports:
+        print(port.name, port.serial_number)
 
 
 class Rsd3305pUsbInterface(DeviceConnectionInterface, DeviceTransport):
@@ -39,6 +51,7 @@ class Rsd3305pUsbInterface(DeviceConnectionInterface, DeviceTransport):
         self.serial_number = DEVICE_SETTINGS[device_id]["SERIAL_NUMBER"]
 
         ports = list_ports.comports()
+
         self.port = None
 
         for port in ports:
@@ -60,10 +73,6 @@ class Rsd3305pUsbInterface(DeviceConnectionInterface, DeviceTransport):
         )
         time.sleep(0.05)
         self.psu.reset_input_buffer()
-        # self.arduino.baudrate = DEVICE_SETTINGS["BAUD_RATE"]
-        # self.arduino.bytesize = DEVICE_SETTINGS["NUM_DATA_BITS"]
-        # self.arduino.parity = DEVICE_SETTINGS["PARITY"]
-        # self.arduino.stopbits = DEVICE_SETTINGS["NUM_STOP_BITS"]
 
     def connect(self) -> None:
         """Connects to the RS-PRO RS-D3305P hardware.
@@ -72,14 +81,10 @@ class Rsd3305pUsbInterface(DeviceConnectionInterface, DeviceTransport):
             RsdError when a connection could not be established.
         """
 
-        if self.is_connected():
-            raise RsdError(f"{self.device_id}: already connected.")
-
-        if self.port in (None, 0):
-            raise RsdError(f"{self.device_id}: port is not initialised.")
-
         try:
             self.psu.open()
+        except SerialException:
+            pass
         except Exception as e_exc:
             raise RsdError(f"{self.device_id}: Failed to open serial port.") from e_exc
 

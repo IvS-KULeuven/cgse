@@ -4,8 +4,7 @@ PACKAGES:
 
 RS-PRO RS-D3305P Controller:
     RSD1:
-        HOSTNAME: localhost
-        PORT: 5025
+        SERIAL_NUMBER:      "000036130000"  # You really need the quotes here
 
 RS-PRO RS-D3305P Control Server:
     PROTOCOL:     tcp
