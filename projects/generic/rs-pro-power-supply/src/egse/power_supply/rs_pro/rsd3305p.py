@@ -752,6 +752,24 @@ class Rsd3305pSimulator(Rsd3305pInterface):
 
         self.operating_mode = OperatingMode.INDEPENDENT
 
+        # Automatic stepping state
+        self.auto_voltage_step_active = [False, False]
+        self.auto_voltage_step_params = [{}, {}]  # Store parameters for each channel
+        self.auto_voltage_step_threads = [None, None]  # Thread handles for voltage stepping
+        self.auto_voltage_step_stop = [threading.Event(), threading.Event()]  # Stop flags for voltage stepping
+
+        self.auto_current_step_active = [False, False]
+        self.auto_current_step_params = [{}, {}]  # Store parameters for each channel
+        self.auto_current_step_threads = [None, None]  # Thread handles for current stepping
+        self.auto_current_step_stop = [threading.Event(), threading.Event()]  # Stop flags for current stepping
+
+        self.ip_address = "192.168.1.199"
+        self.subnet_mask = "255.255.255.0"
+        self.gateway = "192.168.1.1"
+        self.dhcp = True
+        self.port = 6325
+        self.baudrate = 9600
+
     def lock_front_panel(self) -> None:
         pass
 
@@ -759,12 +777,14 @@ class Rsd3305pSimulator(Rsd3305pInterface):
         pass
 
     def set_current(self, channel: int, current: float) -> None:
+        # noinspection PyTypeChecker
         self.voltage_setpoints[channel - 1] = current
 
     def get_current_config(self, channel: int) -> float:
         return self.voltage_setpoints[channel - 1]
 
     def set_voltage(self, channel: int, voltage: float) -> None:
+        # noinspection PyTypeChecker
         self.current_setpoints[channel - 1] = voltage
 
     def get_voltage_config(self, channel: int) -> float:
@@ -772,12 +792,16 @@ class Rsd3305pSimulator(Rsd3305pInterface):
 
     def get_current(self, channel: int) -> float:
         if self.output_enabled[channel - 1]:
-            return np.random.normal(self.get_current_config(channel), 1, 1)
+            return float(
+                np.random.uniform(self.get_current_config(channel) - 0.2, self.get_current_config(channel) + 0.2)
+            )
+            # return np.random.normal(self.get_current_config(channel), 1, 1)
         else:
             return 0
 
     def get_voltage(self, channel: int) -> float:
-        return np.random.normal(self.get_voltage_config(channel), 1, 1)
+        return float(np.random.uniform(self.get_voltage_config(channel) - 0.2, self.get_voltage_config(channel) + 0.2))
+        # return np.random.normal(self.get_voltage_config(channel), 1, 1)
 
     def select_operating_mode(self, mode: OperatingMode) -> None:
         self.operating_mode = mode
@@ -789,8 +813,13 @@ class Rsd3305pSimulator(Rsd3305pInterface):
         pass
 
     def get_status(self):
-        # TODO
-        pass
+        return {
+            "ch1_mode": "CV",
+            "ch2_mode": "CV",
+            "tracking": self.operating_mode.value,
+            "ch1_on": self.output_enabled[0],
+            "ch2_on": self.output_enabled[1],
+        }
 
     def get_id(self) -> tuple[str, str, str]:
         return "RS-D3305P", "VX.X", "SN:XXXXXX"
@@ -816,6 +845,7 @@ class Rsd3305pSimulator(Rsd3305pInterface):
         self.disable_output(2)
 
     def set_trigger_voltage_step(self, channel: int, voltage: float) -> None:
+        # noinspection PyTypeChecker
         self.trigger_voltage_step[channel - 1] = voltage
 
     def voltage_up(self, channel: int) -> None:
@@ -825,6 +855,7 @@ class Rsd3305pSimulator(Rsd3305pInterface):
         self.voltage_setpoints[channel - 1] -= self.trigger_voltage_step[channel - 1]
 
     def set_trigger_current_step(self, channel: int, current: float) -> None:
+        # noinspection PyTypeChecker
         self.trigger_current_step[channel - 1] = current
 
     def current_up(self, channel: int) -> None:
@@ -832,6 +863,235 @@ class Rsd3305pSimulator(Rsd3305pInterface):
 
     def current_down(self, channel: int) -> None:
         self.current_setpoints[channel - 1] -= self.trigger_current_step[channel - 1]
+
+    def _voltage_step_worker(
+        self,
+        channel: int,
+        start_voltage: float,
+        end_voltage: float,
+        step_voltage: float,
+        step_time: float,
+        stop_event: threading.Event,
+    ) -> None:
+
+        current_voltage = start_voltage
+        direction = 1 if end_voltage >= start_voltage else -1
+
+        while not stop_event.is_set():
+            # Update setpoint
+            # noinspection PyTypeChecker
+            self.voltage_setpoints[channel - 1] = current_voltage
+
+            # Check if we've reached the end voltage
+            if direction > 0 and current_voltage >= end_voltage:
+                # noinspection PyTypeChecker
+                self.voltage_setpoints[channel - 1] = end_voltage
+                break
+            elif direction < 0 and current_voltage <= end_voltage:
+                # noinspection PyTypeChecker
+                self.voltage_setpoints[channel - 1] = end_voltage
+                break
+
+            # Wait for step_time or until stop is signalled
+            if stop_event.wait(timeout=step_time):
+                break
+
+            # Increment by step_voltage
+            current_voltage += step_voltage * direction
+
+    def _current_step_worker(
+        self,
+        channel: int,
+        start_current: float,
+        end_current: float,
+        step_current: float,
+        step_time: float,
+        stop_event: threading.Event,
+    ) -> None:
+
+        current_current = start_current
+        direction = 1 if end_current >= start_current else -1
+
+        while not stop_event.is_set():
+            # Update setpoint
+            # noinspection PyTypeChecker
+            self.current_setpoints[channel - 1] = current_current
+
+            # Check if we've reached the end current
+            if direction > 0 and current_current >= end_current:
+                # noinspection PyTypeChecker
+                self.current_setpoints[channel - 1] = end_current
+                break
+            elif direction < 0 and current_current <= end_current:
+                # noinspection PyTypeChecker
+                self.current_setpoints[channel - 1] = end_current
+                break
+
+            # Wait for step_time or until stop is signalled
+            if stop_event.wait(timeout=step_time):
+                break
+
+            # Increment by step_current
+            current_current += step_current * direction
+
+    def automatic_voltage_step(
+        self, channel: int, start_voltage: float, end_voltage: float, step_voltage: float, step_time: float
+    ) -> None:
+
+        # Stop any existing stepping on this channel
+        if self.auto_voltage_step_active[channel - 1]:
+            self.stop_automatic_voltage_step(channel)
+
+        # Reset the stop event
+        self.auto_voltage_step_stop[channel - 1].clear()
+
+        # Store parameters
+        self.auto_voltage_step_params[channel - 1] = {
+            "start_voltage": start_voltage,
+            "end_voltage": end_voltage,
+            "step_voltage": step_voltage,
+            "step_time": step_time,
+        }
+
+        # Start the stepping thread
+        self.auto_voltage_step_active[channel - 1] = True
+        thread = threading.Thread(
+            target=self._voltage_step_worker,
+            args=(
+                channel,
+                start_voltage,
+                end_voltage,
+                step_voltage,
+                step_time,
+                self.auto_voltage_step_stop[channel - 1],
+            ),
+            daemon=True,
+            name=f"voltage-step-ch{channel}",
+        )
+        thread.start()
+        # noinspection PyTypeChecker
+        self.auto_voltage_step_threads[channel - 1] = thread
+
+    def stop_automatic_voltage_step(self, channel: int) -> None:
+
+        if self.auto_voltage_step_active[channel - 1]:
+            # Signal the thread to stop
+            self.auto_voltage_step_stop[channel - 1].set()
+
+            # Wait for thread to finish (with timeout for safety)
+            thread = self.auto_voltage_step_threads[channel - 1]
+            if thread and thread.is_alive():
+                thread.join(timeout=1.0)
+
+            self.auto_voltage_step_active[channel - 1] = False
+            self.auto_voltage_step_params[channel - 1] = {}
+            self.auto_voltage_step_threads[channel - 1] = None
+
+    def automatic_current_step(
+        self, channel: int, start_current: float, end_current: float, step_current: float, step_time: float
+    ) -> None:
+
+        # Stop any existing stepping on this channel
+        if self.auto_current_step_active[channel - 1]:
+            self.stop_automatic_current_step(channel)
+
+        # Reset the stop event
+        self.auto_current_step_stop[channel - 1].clear()
+
+        # Store parameters
+        self.auto_current_step_params[channel - 1] = {
+            "start_current": start_current,
+            "end_current": end_current,
+            "step_current": step_current,
+            "step_time": step_time,
+        }
+
+        # Start the stepping thread
+        self.auto_current_step_active[channel - 1] = True
+        thread = threading.Thread(
+            target=self._current_step_worker,
+            args=(
+                channel,
+                start_current,
+                end_current,
+                step_current,
+                step_time,
+                self.auto_current_step_stop[channel - 1],
+            ),
+            daemon=True,
+            name=f"current-step-ch{channel}",
+        )
+        thread.start()
+        # noinspection PyTypeChecker
+        self.auto_current_step_threads[channel - 1] = thread
+
+    def stop_automatic_current_step(self, channel: int) -> None:
+
+        if self.auto_current_step_active[channel - 1]:
+            # Signal the thread to stop
+            self.auto_current_step_stop[channel - 1].set()
+
+            # Wait for thread to finish (with timeout for safety)
+            thread = self.auto_current_step_threads[channel - 1]
+            if thread and thread.is_alive():
+                thread.join(timeout=1.0)
+
+            self.auto_current_step_active[channel - 1] = False
+            self.auto_current_step_params[channel - 1] = {}
+            self.auto_current_step_threads[channel - 1] = None
+
+    def set_ip_address(self, ip_address: str) -> None:
+        self.ip_address = ip_address
+
+    def get_ip_address(self) -> str:
+        return self.ip_address
+
+    def set_subnet_mask(self, subnet_mask: str) -> None:
+        self.subnet_mask = subnet_mask
+
+    def get_subnet_mask(self) -> str:
+        return self.subnet_mask
+
+    def set_gateway(self, gateway: str) -> None:
+        self.gateway = gateway
+
+    def get_gateway(self) -> str:
+        return self.gateway
+
+    def enable_dhcp(self) -> None:
+        self.dhcp = True
+
+    def disable_dhcp(self) -> None:
+        self.dhcp = False
+
+    def get_mac_address(self) -> str:
+        return "93-47-df-48-48-48"
+
+    def set_port(self, port: int) -> None:
+        self.port = port
+
+    def get_port(self) -> int:
+        return self.port
+
+    def set_baudrate(self, baudrate: int) -> None:
+        self.baudrate = baudrate
+
+    def get_baudrate(self) -> int:
+        return self.baudrate
+
+    def get_device_info(self) -> dict:
+        # TODO
+        return {
+            "DHCP": int(self.dhcp),
+            "IP": self.get_ip_address(),
+            "NETMASK": self.get_subnet_mask(),
+            "GW": self.get_gateway(),
+            "PORT": self.get_port(),
+            "BAUDRATE": self.get_baudrate(),
+        }
+
+    def reset(self) -> None:
+        pass
 
 
 class Rsd3305pProxy(DynamicProxy, Rsd3305pInterface):
