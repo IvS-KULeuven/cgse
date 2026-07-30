@@ -27,11 +27,11 @@ dependencies = [
 test = ["pytest", "pytest-mock", "pytest-cov"]
 
 [project.scripts]
-rsd3000_cs = 'egse.power_supply.rs_pro.rsd3000_cs:app'
-#rsd3000_sim = 'egse.power_supply.rs_pro.rsd3000_sim:app'
+rsd3305p_cs = 'egse.power_supply.rs_pro.rsd3305p_cs:app'
+#rsd3305p_sim = 'egse.power_supply.rs_pro.rsd3305p_sim:app'
 
 #[project.gui-scripts]
-#rsd3000_ui = "egse.power_supply.rs_pro.rsd3000_ui:main"
+#rsd3305p_ui = "egse.power_supply.rs_pro.rsd3305p_ui:main"
 
 [project.entry-points."cgse.version"]
 rs-pro-power-supply = 'egse.version:get_version_installed'
@@ -40,7 +40,7 @@ rs-pro-power-supply = 'egse.version:get_version_installed'
 rs-pro-power-supply = "rs_pro_power_supply:settings.yaml"
 
 [project.entry-points."cgse.service.device_command"]
-rsd3000 = 'rs_pro_power_supply.cgse_services:rsd3000'
+rsd3305p = 'rs_pro_power_supply.cgse_services:rsd3305p'
 
 [project.entry-points."cgse.explore"]
 explore = "rs_pro_power_supply.cgse_explore"
