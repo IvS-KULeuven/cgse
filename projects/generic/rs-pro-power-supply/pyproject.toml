@@ -1,7 +1,7 @@
 [project]
 name = "rs_pro_power_supply"
-version = "0.22.2"
-description = "RS-PRO RS-D3000 Power Supply"
+version = "0.25.11"
+description = "RS-PRO RS-D3305P Power Supply"
 authors = [
     {name = "IvS KU Leuven"}
 ]
