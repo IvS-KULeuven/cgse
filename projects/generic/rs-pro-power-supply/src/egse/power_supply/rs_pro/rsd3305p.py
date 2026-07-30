@@ -200,7 +200,7 @@ class Rsd3305pInterface(DeviceInterface):
     def get_status(self) -> dict:
         """Returns the status of the power supply unit.
 
-        The response an 8-bit number in the following format:
+        The status byte contains the following information:
 
             - bit 0: 0 when channel 1 is operated in CC mode, 1 when channel 1 is operated in CV mode;
             - bit 1: 0 when channel 2 is operated in CC mode, 1 when channel 2 is operated in CV mode;
@@ -209,8 +209,22 @@ class Rsd3305pInterface(DeviceInterface):
             - bit 6: 0 if the output of channel 1 is off, 1 if the output of channel 1 is on;
             - bit 7: 0 if the output of channel 2 is off, 1 if the output of channel 2 is on.
 
+        This is decoded into a dictionary with the following keys:
+
+            - "ch1_mode": "CC" or "CV" (mode of channel 1);
+            - "ch2_mode": "CC" or "CV" (mode of channel 2);
+            - "tracking": "Independent", "Series", or "Parallel" (operating mode);
+            - "ch1_on": True if the output of channel 1 is on, False otherwise;
+            - "ch2_on": True if the output of channel 2 is on, False otherwise.
+
         Returns:
-            8-bit number with the status of the power supply unit.
+            Dictionary of decoded status bytes.  The keys in this dictionary are:
+
+                - "ch1_mode": "CC" or "CV" (mode of channel 1);
+                - "ch2_mode": "CC" or "CV" (mode of channel 2);
+                - "tracking": "Independent", "Series", or "Parallel" (operating mode);
+                - "ch1_on": True if the output of channel 1 is on, False otherwise;
+                - "ch2_on": True if the output of channel 2 is on, False otherwise.
         """
 
         raise NotImplementedError
