@@ -113,6 +113,8 @@ class Rsd3305pProtocol(DynamicCommandProtocol):
                 channel=channel
             )  # Voltage setpoint [V]
 
+        result |= self.rsd3305p.get_status()
+
         if self.hk_conversion_table:
             return convert_hk_names(result, self.hk_conversion_table)
         return result
