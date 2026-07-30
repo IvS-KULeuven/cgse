@@ -39,8 +39,6 @@ class Rsd3305pInterface(DeviceInterface):
 
         self.device_id = device_id
 
-        self.ethernet_interface = Rsd3305pEthernetInterface(device_id=device_id)
-
     @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="LOCK1")
     def lock_front_panel(self) -> None:
         """Locks the front panel."""
@@ -523,7 +521,7 @@ class Rsd3305pController(Rsd3305pInterface, DynamicCommandMixin):
 
         super().__init__(device_id)
 
-        self.transport = self.rsd3305p = Rsd3305pEthernetInterface(device_id=device_id)
+        self.transport = self.rsd3305p = Rsd3305pUsbInterface(device_id=device_id)
 
     # noinspection PyMethodMayBeStatic
     def is_simulator(self) -> bool:
