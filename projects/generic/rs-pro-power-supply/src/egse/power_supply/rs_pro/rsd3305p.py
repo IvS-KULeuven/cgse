@@ -500,6 +500,164 @@ class Rsd3305pInterface(DeviceInterface):
         """
         raise NotImplementedError
 
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string=":SYST:IPAD ${ip_address}",
+    )
+    def set_ip_address(self, ip_address: str) -> None:
+        """Sets the IP address of the power supply unit.
+
+        Args:
+            ip_address (str): IP address to set.
+        """
+
+        raise NotImplementedError
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string=":SYST:IPAD?", process_response=to_string)
+    def get_ip_address(self) -> str:
+        """Returns the IP address of the power supply unit.
+
+        Returns:
+            IP address of the power supply unit.
+        """
+
+        raise NotImplementedError
+
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string=":SYST:SMASK",
+    )
+    def set_subnet_mask(self, subnet_mask: str) -> None:
+        """Sets the subnet mask of the power supply unit.
+
+        Args:
+            subnet_mask (str): Subnet mask to set.
+        """
+
+        raise NotImplementedError
+
+    @dynamic_command(
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string=":SYST:SMASK?",
+        process_response=to_string,
+    )
+    def get_subnet_mask(self) -> str:
+        """Returns the subnet mask of the power supply unit.
+
+        Returns:
+            Subnet mask of the power supply unit.
+        """
+
+        raise NotImplementedError
+
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string=":SYST:DHCP 1",
+    )
+    def enable_dhcp(self) -> None:
+        """Enables the DHCP mode of the power supply unit."""
+
+        raise NotImplementedError
+
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string=":SYST:DHCP 0",
+    )
+    def disable_dhcp(self) -> None:
+        """Disables the DHCP mode of the power supply unit."""
+
+        raise NotImplementedError
+
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string=":SYST:MAC?", process_response=to_string)
+    def get_mac_address(self) -> str:
+        """Returns the MAC address of the power supply unit.
+
+        Returns:
+            MAC address of the power supply unit.
+        """
+
+        raise NotImplementedError
+
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string=":SYST:PORT?",
+    )
+    def set_port(self, port: int) -> None:
+        """Sets the port of the power supply unit.
+
+        The port number should be a number in the range 0-65535, excl. 18191.
+
+        Args:
+            port (int): Port to set for the power supply unit [1, 65535].
+        """
+
+        raise NotImplementedError
+
+    @dynamic_command(
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string=":SYST:PORT?",
+        process_response=to_int,
+    )
+    def get_port(self) -> int:
+        """Returns the port of the power supply unit.
+
+        The port number should be a number in the range 0-65535, excl. 18191.
+
+        Returns:
+            Port of the power supply unit.
+        """
+
+        raise NotImplementedError
+
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string=":SYST:BAUD ${baudrate}",
+    )
+    def set_baudrate(self, baudrate: int) -> None:
+        """Sets the baudrate of the power supply unit.
+
+        Args:
+            baudrate (int): Baudrate to set for the power supply unit.
+        """
+
+        raise NotImplementedError
+
+    @dynamic_command(
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string=":SYST:BAUD?",
+        process_response=to_int,
+    )
+    def get_baudrate(self) -> int:
+        """Returns the baudrate of the power supply unit.
+
+        Returns:
+            Baudrate of the power supply unit.
+        """
+
+        raise NotImplementedError
+
+    @dynamic_command(
+        cmd_type=CommandType.TRANSACTION,
+        cmd_string=":SYST:DEVINFO?",
+    )
+    def get_device_info(self) -> dict:
+        """Returns the device information of the power supply unit.
+
+        Returns:
+            TODO
+        """
+
+        raise NotImplementedError
+
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string=":SYST:FACTRESET",
+    )
+    def reset(self) -> None:
+        """Restores the factory defaults of the interface."""
+
+        raise NotImplementedError
+
     # @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="OCP${int(ocp)}", process_cmd_string=add_lf)
     # def set_ocp(self, ocp: bool) -> None:
     #     """Turns the power supply unit's OCP on/off.
