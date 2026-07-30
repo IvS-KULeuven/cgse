@@ -118,9 +118,8 @@ class Rsd3305pUsbInterface(DeviceConnectionInterface, DeviceTransport):
             return False
 
         try:
-            print(f"Result from identification query: {self.query(IDENTIFICATION_QUERY)}")
             # noinspection PyTypeChecker
-            manufacturer, *_ = self.query(IDENTIFICATION_QUERY).split(" ")
+            model, *_ = split_result_on_blanks(self.query(IDENTIFICATION_QUERY))
 
         except RsdError as exc:
             LOGGER.exception(exc)
@@ -128,10 +127,9 @@ class Rsd3305pUsbInterface(DeviceConnectionInterface, DeviceTransport):
             self.disconnect()
             return False
 
-        if "RS-D3305P" not in manufacturer:
+        if "RS-D3305P" not in model:
             LOGGER.error(
-                f"Device did not respond correctly to a {IDENTIFICATION_QUERY} command, manufacturer={manufacturer}."
-                f" Disconnecting..."
+                f"Device did not respond correctly to a {IDENTIFICATION_QUERY} command, model={model}. Disconnecting..."
             )
             self.disconnect()
             return False
