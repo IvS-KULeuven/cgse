@@ -69,8 +69,8 @@ class Rsd3305pControlServer(ControlServer):
             simulator (bool): Indicates whether to operate in simulator mode.
         """
 
-        super().__init__()
         self.cs_settings = CS_SETTINGS[device_id]
+        super().__init__()
 
         self.device_id = device_id
         process_name = self.cs_settings.get("PROCESS_NAME", "rsd3305p_cs")

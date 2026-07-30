@@ -770,6 +770,21 @@ class Rsd3305pSimulator(Rsd3305pInterface):
         self.port = 6325
         self.baudrate = 9600
 
+    def is_simulator(self) -> bool:
+        return True
+
+    def is_connected(self) -> bool:
+        return True
+
+    def connect(self) -> None:
+        pass
+
+    def disconnect(self) -> None:
+        pass
+
+    def reset(self) -> None:
+        pass
+
     def lock_front_panel(self) -> None:
         pass
 

@@ -98,7 +98,7 @@ def start_rs3305p_sim(
     out = redirect_output_to_log("rsd3305p_sim.start.log")
 
     subprocess.Popen(
-        [sys.executable, "-m", "egse.power_supply.rs_pro.rsd3305p_sim", "start", device_id],
+        [sys.executable, "-m", "egse.power_supply.rs_pro.rsd3305p", "start", device_id, " --sim"],
         stdout=out,
         stderr=out,
         stdin=subprocess.DEVNULL,
@@ -121,7 +121,7 @@ def stop_rs3305p_sim(
     out = redirect_output_to_log("rsd3305p_sim.stop.log")
 
     subprocess.Popen(
-        [sys.executable, "-m", "egse.power_supply.rs_pro.rsd3305p_sim", "stop", device_id],
+        [sys.executable, "-m", "egse.power_supply.rs_pro.rsd3305p", "stop", device_id],
         stdout=out,
         stderr=out,
         stdin=subprocess.DEVNULL,
