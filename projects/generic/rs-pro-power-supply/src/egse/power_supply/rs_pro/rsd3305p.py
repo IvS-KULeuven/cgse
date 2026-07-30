@@ -1,36 +1,22 @@
-from egse.power_supply.rs_pro.rsd3305p_devif import Rsd3305pEthernetInterface
+import numpy as np
+import threading
+
+from egse.power_supply.rs_pro.rsd3305p_devif import Rsd3305pUsbInterface
 from egse.device import DeviceInterface
-from egse.mixin import dynamic_command, add_lf, DynamicCommandMixin, CommandType
+from egse.mixin import dynamic_command, DynamicCommandMixin, CommandType
 from egse.proxy import DynamicProxy
 from egse.registry.client import RegistryClient
 from egse.zmq_ser import connect_address
-from egse.power_supply.rs_pro import CS_SETTINGS, PROXY_TIMEOUT, OperatingMode
-
-
-def split_result_on_comma(response: str) -> tuple[str, ...]:
-    """Splits the given response string on commas.
-
-    Args:
-        response (str): Response string to split.
-
-    Returns:
-        Tuple of strings split on commas.
-    """
-
-    return tuple(response.split(","))
-
-
-def to_float(response: str) -> float:
-    """Converts the given response string to a float.
-
-    Args:
-        response (str): Response string to convert.
-
-    Returns:
-        Float value converted from the response string.
-    """
-
-    return float(response)
+from egse.power_supply.rs_pro import (
+    CS_SETTINGS,
+    PROXY_TIMEOUT,
+    OperatingMode,
+    to_float,
+    decode_status,
+    split_result_on_blanks,
+    to_string,
+    to_int,
+)
 
 
 class Rsd3305pError(Exception):
