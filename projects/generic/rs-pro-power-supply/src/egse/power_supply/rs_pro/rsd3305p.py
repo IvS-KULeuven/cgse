@@ -41,7 +41,7 @@ class Rsd3305pInterface(DeviceInterface):
 
         self.ethernet_interface = Rsd3305pEthernetInterface(device_id=device_id)
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="LOCK1", process_cmd_string=add_lf)
+    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="LOCK1")
     def lock_front_panel(self) -> None:
         """Locks the front panel."""
 
@@ -50,14 +50,13 @@ class Rsd3305pInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.WRITE,
         cmd_string="LOCK0",
-        process_cmd_string=add_lf,
     )
-    def unlock_front_panel(self):
+    def unlock_front_panel(self) -> None:
         """Unlocks the front panel."""
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="ISET${channel}:${current}", process_cmd_string=add_lf)
+    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="ISET${channel}:${current}")
     def set_current(self, channel: int, current: float) -> None:
         """Sets the output current for the given channel.
 
@@ -74,7 +73,6 @@ class Rsd3305pInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string="ISET${channel}?",
-        process_cmd_string=add_lf,
         process_response=to_float,
     )
     def get_current_config(self, channel: int) -> float:
@@ -92,7 +90,7 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="VSET${channel}:${voltage}", process_cmd_string=add_lf)
+    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="VSET${channel}:${voltage}")
     def set_voltage(self, channel: int, voltage: float) -> None:
         """Sets the output voltage for the given channel.
 
@@ -109,7 +107,6 @@ class Rsd3305pInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string="VSET${channel}?",
-        process_cmd_string=add_lf,
         process_response=to_float,
     )
     def get_voltage_config(self, channel: int) -> float:
@@ -129,8 +126,7 @@ class Rsd3305pInterface(DeviceInterface):
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string="IOUT{channel}?",
-        process_cmd_string=add_lf,
+        cmd_string="IOUT${channel}?",
         process_response=to_float,
     )
     def get_current(self, channel: int) -> float:
@@ -150,8 +146,7 @@ class Rsd3305pInterface(DeviceInterface):
 
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
-        cmd_string="VOUT{channel}?",
-        process_cmd_string=add_lf,
+        cmd_string="VOUT${channel}?",
         process_response=to_float,
     )
     def get_voltage(self, channel: int) -> float:
@@ -169,7 +164,7 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="TRACK{mode}", process_cmd_string=add_lf)
+    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="TRACK${mode}")
     def select_operating_mode(self, mode: OperatingMode) -> None:
         """Selects the operating mode of the power supply unit.
 
@@ -188,9 +183,8 @@ class Rsd3305pInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.WRITE,
         cmd_string="BEEP1",
-        process_cmd_string=add_lf,
     )
-    def enable_beep(self):
+    def enable_beep(self) -> None:
         """Turns on the beep."""
 
         raise NotImplementedError
@@ -198,15 +192,14 @@ class Rsd3305pInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.WRITE,
         cmd_string="BEEP0",
-        process_cmd_string=add_lf,
     )
-    def disable_beep(self):
+    def disable_beep(self) -> None:
         """Turns off the beep."""
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string="STATUS?", process_cmd_string=add_lf)
-    def get_status(self) -> bytes:
+    @dynamic_command(cmd_type=CommandType.TRANSACTION, cmd_string="STATUS?", process_response=decode_status)
+    def get_status(self) -> dict:
         """Returns the status of the power supply unit.
 
         The response an 8-bit number in the following format:
@@ -227,8 +220,7 @@ class Rsd3305pInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string="*IDN?",
-        process_cmd_string=add_lf,
-        process_response=split_result_on_comma,
+        process_response=split_result_on_blanks,
     )
     def get_id(self) -> tuple[str, str, str]:
         """Returns the instrument identification.
@@ -245,7 +237,6 @@ class Rsd3305pInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.TRANSACTION,
         cmd_string="RCL${memory}",
-        process_cmd_string=add_lf,
     )
     def recall(self, memory: int) -> bytes:
         """Re-calls the panel settings from the given memory slot.
@@ -265,7 +256,6 @@ class Rsd3305pInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.WRITE,
         cmd_string="SAV${memory}",
-        process_cmd_string=add_lf,
     )
     def save(self, memory: int) -> None:
         """Stores the panel setting in the given memory slot.
@@ -276,7 +266,10 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="OUT${channel}:1", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="OUT${channel}:1",
+    )
     def enable_output(self, channel: int) -> None:
         """Turns the output of the given channel on.
 
@@ -286,7 +279,10 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="OUT${channel}:0", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="OUT${channel}:0",
+    )
     def disable_output(self, channel: int) -> None:
         """Turns the output of the given channel off.
 
@@ -296,13 +292,19 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="OUT12:1", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="OUT12:1",
+    )
     def enable_both_outputs(self) -> None:
         """Turns the output of both channels on."""
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="OUT12:0", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="OUT12:0",
+    )
     def disable_both_outputs(self) -> None:
         """Turns the output of both channels off."""
 
@@ -311,7 +313,6 @@ class Rsd3305pInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.WRITE,
         cmd_string="VASTEP${channel}:${start_voltage}, ${end_voltage}, ${step_voltage}, ${step_time}",
-        process_cmd_string=add_lf,
     )
     def automatic_voltage_step(
         self, channel: int, start_voltage: float, end_voltage: float, step_voltage: float, step_time: float
@@ -331,7 +332,10 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="VAST0P${channel}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="VAST0P${channel}",
+    )
     def stop_automatic_voltage_step(self, channel: int) -> None:
         """Stops the automatic step voltage output.
 
@@ -341,7 +345,10 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="VSTEP${channel}:${voltage}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="VSTEP${channel}:${voltage}",
+    )
     def set_trigger_voltage_step(self, channel: int, voltage: float) -> None:
         """Sets the trigger step voltage output.
 
@@ -357,7 +364,10 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="VUP${channel}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="VUP${channel}",
+    )
     def voltage_up(self, channel: int) -> None:
         """Increases the voltage of the given channel.
 
@@ -372,7 +382,10 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="VDOWN${channel}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="VDOWN${channel}",
+    )
     def voltage_down(self, channel: int) -> None:
         """Decreases the voltage of the given channel.
 
@@ -389,7 +402,6 @@ class Rsd3305pInterface(DeviceInterface):
     @dynamic_command(
         cmd_type=CommandType.WRITE,
         cmd_string="IASTEP${channel}:${start_current}, ${end_current}, ${step_current}, ${step_time}",
-        process_cmd_string=add_lf,
     )
     def automatic_current_step(
         self, channel: int, start_current: float, end_current: float, step_current: float, step_time: float
@@ -409,7 +421,10 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="IAST0P${channel}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="IAST0P${channel}",
+    )
     def stop_automatic_current_step(self, channel: int) -> None:
         """Stops the automatic step current output.
 
@@ -419,7 +434,10 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="ISTEP${channel}:${current}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="ISTEP${channel}:${current}",
+    )
     def set_trigger_current_step(self, channel: int, current: float) -> None:
         """Sets the trigger step current output.
 
@@ -435,7 +453,10 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="IUP${channel}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="IUP${channel}",
+    )
     def current_up(self, channel: int) -> None:
         """Increases the current of the given channel.
 
@@ -450,7 +471,10 @@ class Rsd3305pInterface(DeviceInterface):
 
         raise NotImplementedError
 
-    @dynamic_command(cmd_type=CommandType.WRITE, cmd_string="IDOWN{channel}", process_cmd_string=add_lf)
+    @dynamic_command(
+        cmd_type=CommandType.WRITE,
+        cmd_string="IDOWN${channel}",
+    )
     def current_down(self, channel: int) -> None:
         """Decreases the current of the given channel.
 
