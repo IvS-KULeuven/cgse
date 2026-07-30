@@ -68,12 +68,13 @@ class Rsd3305pControlServer(ControlServer):
             device_id (str): Device identifier, as per (local) settings and setup.
             simulator (bool): Indicates whether to operate in simulator mode.
         """
-        self.cs_settings = CS_SETTINGS[device_id]
+
         super().__init__()
+        self.cs_settings = CS_SETTINGS[device_id]
 
         self.device_id = device_id
-        process_name = CS_SETTINGS[device_id].get("PROCESS_NAME", "rsd3305p_cs")
-        service_type = CS_SETTINGS[device_id].get("SERVICE_TYPE", "rsd3305p_cs")
+        process_name = self.cs_settings.get("PROCESS_NAME", "rsd3305p_cs")
+        service_type = self.cs_settings.get("SERVICE_TYPE", "rsd3305p_cs")
 
         multiprocessing.current_process().name = (
             process_name  # Name under which it is registered in the service registry
