@@ -239,9 +239,9 @@ class Rsd3305pInterface(DeviceInterface):
 
         Returns:
             Tuple with:
-                - Manufacturer,
                 - Model,
-                - Software version.
+                - Software version,
+                - Serial number.
         """
 
         raise NotImplementedError
