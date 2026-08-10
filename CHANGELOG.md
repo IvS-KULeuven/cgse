@@ -7,7 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-nothing yet
+### Dynamic commands
+
+- Added support for optional argument validation in `@dynamic_command` via a `validate` callback. The callback receives the same `*args` and `**kwargs` as the decorated call and can raise `ValueError` when the input is invalid.
 
 ---
 
