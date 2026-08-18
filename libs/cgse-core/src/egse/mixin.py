@@ -128,6 +128,7 @@ def dynamic_command(
     use_format: bool = False,
     pre_cmd: Callable = None,
     post_cmd: Callable = None,
+    validate: Callable = None,
 ):
     """Convert an interface method into a dynamic command.
 
@@ -166,6 +167,10 @@ def dynamic_command(
     this content, although possible, it is usually not a good idea to alter the content of the
     response argument. The `post_cmd` function shall return (i.e. pass through) the response.
 
+    The validate keyword allows you to specify a function that will be called with the same arguments
+    as the decorated function. The validate function can check the arguments and raise a ValueError
+    if the arguments are not valid. The validate function shall not return anything.
+
     This decorator can add the following static attributes to the method:
 
     * `__dynamic_interface`
@@ -176,6 +181,7 @@ def dynamic_command(
     * `__use_format`
     * `__pre_cmd`
     * `__post_cmd`
+    * `__validate`
 
     Args:
         cmd_type (str): one of 'read', 'write', 'query', or 'transaction' [required keyword]
@@ -187,6 +193,7 @@ def dynamic_command(
         use_format (bool): use string formatting instead of string templates
         pre_cmd (Callable): the function to execute before the command is executed
         post_cmd (Callable): the function to execute after the command is executed
+        validate (Callable): the function to execute to validate the command arguments
     """
 
     # Perform some checks on required arguments
@@ -227,6 +234,9 @@ def dynamic_command(
 
         if post_cmd is not None:
             setattr(func, "__post_cmd", post_cmd)
+
+        if validate is not None:
+            setattr(func, "__validate", validate)
 
         return func
 
@@ -380,6 +390,10 @@ class DynamicCommandMixin:
         @functools.wraps(attr)
         def command_wrapper(*args, **kwargs):
             """Generates command strings and executes the transport functions."""
+
+            if hasattr(attr, "__validate"):
+                validate_func = getattr(attr, "__validate")
+                validate_func(*args, **kwargs)
 
             if hasattr(attr, "__cmd_string"):
                 cmd_str = getattr(attr, "__cmd_string")

@@ -227,6 +227,21 @@ def create_fancy_cmd_string(a: str, b: int, *, c: float, d: str) -> str:
     return f"FANCY {a}, {d} – {b:04d} {c=:.3f}"
 
 
+def validate_channel_as_arg(channel: int) -> None:
+    """Validate that the channel argument is in the range 1-4."""
+    if channel not in [1, 2, 3, 4]:
+        raise ValueError(f"Channel {channel} is out of range. Must be in [1, 2, 3, 4].")
+    return None
+
+
+def validate_channel_as_kwarg(*args, **kwargs) -> None:
+    """Validate that the channel argument is in the range 1-4."""
+    channel = kwargs.get("channel")
+    if channel not in [1, 2, 3, 4]:
+        raise ValueError(f"Channel {channel} is out of range. Must be in [1, 2, 3, 4].")
+    return None
+
+
 class NewStyleCommandInterface:
     """Interface definition for new style dynamic commands."""
 
@@ -291,6 +306,18 @@ class NewStyleCommandInterface:
     @dynamic_command(cmd_type="transaction", cmd_string_func=create_fancy_cmd_string)
     def test_cmd_string_func(self, a: str, b: int, *, c: float, d: str) -> bytes:
         """Returns a command string based on the arguments."""
+
+    @dynamic_command(cmd_type="transaction", cmd_string="ISET${channel}?", validate=validate_channel_as_arg)
+    def test_cmd_validation_as_arg(self, channel: int) -> str:
+        """Returns the processed command string, but the channel argument is validated to be in the range 1-4.
+        A ValueError is raised if the channel is out of range.
+        """
+
+    @dynamic_command(cmd_type="transaction", cmd_string="ISET${channel}?", validate=validate_channel_as_kwarg)
+    def test_cmd_validation_as_kwarg(self, channel: int) -> str:
+        """Returns the processed command string, but the channel argument is validated to be in the range 1-4.
+        A ValueError is raised if the channel is out of range.
+        """
 
 
 class NewStyleCommand(DynamicCommandMixin, NewStyleCommandInterface):
@@ -388,6 +415,17 @@ def test_new_style(caplog):
     )
 
     assert ns.test_cmd_string_func("Hello!", 5, c=3.14, d="World!").decode() == "FANCY Hello!, World! – 0005 c=3.140"
+
+    assert ns.test_cmd_validation_as_kwarg(channel=1) == b"ISET1?"
+    assert ns.test_cmd_validation_as_arg(channel=4) == b"ISET4?"
+
+    with pytest.raises(ValueError) as exc_info:
+        ns.test_cmd_validation_as_kwarg(channel=0)
+    assert "Channel 0 is out of range" in str(exc_info.value)
+
+    with pytest.raises(ValueError) as exc_info:
+        ns.test_cmd_validation_as_arg(23)
+    assert "Channel 23 is out of range" in str(exc_info.value)
 
 
 def test_interface_definition():
