@@ -110,13 +110,11 @@ show = typer.Typer(help="Show information about settings, environment, setup, ..
 
 
 @show.command(name="settings")
-def show_settings():
-    ...
+def show_settings(): ...
 
 
 @show.command(name="env")
-def show_env():
-    ...
+def show_env(): ...
 ```
 
 To add this command group to the `cgse` app, the following entry was used in the `pyproject. toml`

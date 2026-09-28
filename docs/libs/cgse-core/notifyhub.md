@@ -93,15 +93,15 @@ contexts.
     ```python
     from egse.notifyhub.services import EventSubscriber
 
-    def load_setup(event_data: dict):
-        ...
+
+    def load_setup(event_data: dict): ...
+
 
     subscriber = EventSubscriber(["new_setup"])
     subscriber.register_handler("new_setup", load_setup)
     subscriber.connect()
 
     while True:
-
         ...
 
         if subscriber.poll():
@@ -115,8 +115,9 @@ contexts.
     ```python
     from egse.notifyhub.services import AsyncEventSubscriber
 
-    async def load_setup(event_data: dict):
-        ...
+
+    async def load_setup(event_data: dict): ...
+
 
     subscriber = AsyncEventSubscriber(["new_setup"])
     subscriber.register_handler("new_setup", load_setup)
@@ -156,7 +157,7 @@ hub is not available, `False` is returned.
 
     with NotificationHubClient() as client:
         if not client.health_check():
-            ... # notification hub not available
+            ...  # notification hub not available
     ```
 
 === "Asynchronous"
@@ -166,7 +167,7 @@ hub is not available, `False` is returned.
 
     with AsyncNotificationHubClient() as client:
         if not await client.health_check():
-            ... # notification hub not available
+            ...  # notification hub not available
     ```
 
 The health check has a default timeout of 5 seconds. If this is too long for

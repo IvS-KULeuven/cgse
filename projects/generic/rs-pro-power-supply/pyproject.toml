@@ -1,0 +1,82 @@
+[project]
+name = "rs_pro_power_supply"
+version = "0.25.11"
+description = "RS-PRO RS-D3305P Power Supply"
+authors = [
+    {name = "IvS KU Leuven"}
+]
+maintainers = [
+    {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
+    {name = "Sara Regibo", email = "sara.regibo@kuleuven.be"}
+]
+readme = {"file" = "README.md", "content-type" = "text/markdown"}
+requires-python = ">=3.10"
+license = "MIT"
+keywords = [
+    "CGSE",
+    "Common-EGSE",
+    "hardware testing",
+    "software framework",
+]
+dependencies = [
+    "cgse-common",
+    "cgse-core",
+]
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-mock", "pytest-cov"]
+
+[project.scripts]
+rsd3305p_cs = 'egse.power_supply.rs_pro.rsd3305p_cs:app'
+#rsd3305p_sim = 'egse.power_supply.rs_pro.rsd3305p_sim:app'
+
+#[project.gui-scripts]
+#rsd3305p_ui = "egse.power_supply.rs_pro.rsd3305p_ui:main"
+
+[project.entry-points."cgse.version"]
+rs-pro-power-supply = 'egse.version:get_version_installed'
+
+[project.entry-points."cgse.settings"]
+rs-pro-power-supply = "rs_pro_power_supply:settings.yaml"
+
+[project.entry-points."cgse.service.device_command"]
+rsd3305p = 'rs_pro_power_supply.cgse_services:rsd3305p'
+
+[project.entry-points."cgse.explore"]
+explore = "rs_pro_power_supply.cgse_explore"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/tests",
+    "/pytest.ini",
+    "/.gitignore",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/egse", "src/rs_pro_power_supply"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+extend-select = ["E501"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "setuptools", # needed by PyCharm
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "ruff>=0.9.0",
+    "nox>=2025.2.9",
+    "setuptools>=75.8.2", # needed by PyCharm
+    "pytest-asyncio>=0.26.0",
+    "ipython",
+]
