@@ -196,16 +196,12 @@ class MySequentialServer(AsyncControlServer):
 
     async def _do_fetch(self, cmd: dict[str, Any]) -> list:
         # External client request goes through the same serialized lane.
-        value = await self._execute_sequential(
-            asyncio.to_thread(self._driver.fetch_reading)
-        )
+        value = await self._execute_sequential(asyncio.to_thread(self._driver.fetch_reading))
         return zmq_json_response({"success": True, "message": {"value": value}})
 
     async def poll_timer_tick(self):
         # Internal timer work uses the same lane, preventing command/timer races.
-        value = await self._execute_sequential(
-            asyncio.to_thread(self._driver.fetch_reading)
-        )
+        value = await self._execute_sequential(asyncio.to_thread(self._driver.fetch_reading))
         self.logger.info("Polled device reading: %s", value)
 ```
 

@@ -130,3 +130,18 @@ def decode_status(response: bytes) -> dict:
         "ch2_on": ch2_on,
     }
 
+
+def check_channel(kwargs: dict):
+    """Checks whether the given channel is 1 or 2.
+
+    Args:
+        kwargs (dict): Dictionary of arguments passed to the function.
+
+    Raises:
+        ValueError if the channel is neither 1 nor 2.
+    """
+
+    channel = kwargs.get("channel")
+
+    if channel not in (1, 2):
+        raise ValueError("Channel must be 1 or 2.")

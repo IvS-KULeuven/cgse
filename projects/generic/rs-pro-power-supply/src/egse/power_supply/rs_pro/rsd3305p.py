@@ -16,6 +16,7 @@ from egse.power_supply.rs_pro import (
     split_result_on_blanks,
     to_string,
     to_int,
+    check_channel,
 )
 
 

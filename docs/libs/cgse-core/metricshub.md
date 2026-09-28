@@ -35,10 +35,10 @@ The canonical payload shape matches `DataPoint.as_dict()`:
 
 ```python
 {
-	"measurement": "camera_tm",
-	"tags": {"device_id": "cam_01"},
-	"fields": {"temperature": 23.4},
-	"time": 1774354482.517,  # optional, unix timestamp
+    "measurement": "camera_tm",
+    "tags": {"device_id": "cam_01"},
+    "fields": {"temperature": 23.4},
+    "time": 1774354482.517,  # optional, unix timestamp
 }
 ```
 
@@ -62,14 +62,10 @@ Any core service, control server, or script can send points to the hub.
 	from egse.metrics import DataPoint
 	from egse.metricshub.client import MetricsHubSender
 
-	point = (
-		DataPoint.measurement("camera_tm")
-		.tag("device_id", "cam_01")
-		.field("temperature", 23.4)
-	)
+	point = DataPoint.measurement("camera_tm").tag("device_id", "cam_01").field("temperature", 23.4)
 
 	with MetricsHubSender() as sender:
-		sender.send(point)
+	    sender.send(point)
 	```
 
 === "Asynchronous"
@@ -78,14 +74,10 @@ Any core service, control server, or script can send points to the hub.
 	from egse.metrics import DataPoint
 	from egse.metricshub.client import AsyncMetricsHubSender
 
-	point = (
-		DataPoint.measurement("camera_tm")
-		.tag("device_id", "cam_01")
-		.field("temperature", 23.4)
-	)
+	point = DataPoint.measurement("camera_tm").tag("device_id", "cam_01").field("temperature", 23.4)
 
 	with AsyncMetricsHubSender() as sender:
-		await sender.send(point)
+	    await sender.send(point)
 	```
 
 ## Control Actions
@@ -104,8 +96,8 @@ The control endpoint supports three actions:
 	from egse.metricshub.client import MetricsHubClient
 
 	with MetricsHubClient() as client:
-		ok = client.health_check()
-		info = client.server_status()
+	    ok = client.health_check()
+	    info = client.server_status()
 	```
 
 === "Asynchronous"
@@ -114,8 +106,8 @@ The control endpoint supports three actions:
 	from egse.metricshub.client import AsyncMetricsHubClient
 
 	with AsyncMetricsHubClient() as client:
-		ok = await client.health_check()
-		info = await client.server_status()
+	    ok = await client.health_check()
+	    info = await client.server_status()
 	```
 
 The `info` response contains:

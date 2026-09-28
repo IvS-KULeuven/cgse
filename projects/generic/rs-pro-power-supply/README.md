@@ -23,7 +23,6 @@ RS-PRO RS-D3305P Control Server:
 To get hold of the serial number of the device, you can use the following command:
 
 ```python
-
 from egse.power_supply.rs_pro.rsd3305p_devif import print_serial_ports
 
 print_serial_ports()
