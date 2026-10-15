@@ -126,6 +126,7 @@ __all__ = [
     "submit_setup_to_disk",
     "submit_setup",
     "SetupError",
+    "validate_setup_description",
     "load_last_setup_id",
     "save_last_setup_id",
 ]
@@ -166,6 +167,39 @@ setup_ctx: ContextVar[Setup | None] = ContextVar("setup", default=None)
 
 class SetupError(Exception):
     """A setup-specific error."""
+
+
+def validate_setup_description(description: str) -> str:
+    """Check that the description can be written to, and read back from, a Setup YAML file.
+
+    The description is stored unquoted in the `history` section of the Setup file, so characters
+    like `:` or `#` would result in a file that can not be loaded again.
+
+    Raises:
+        SetupError: when the description is not a single line or does not survive a YAML round-trip.
+    """
+    from ruamel.yaml import YAML
+    from ruamel.yaml.error import YAMLError
+
+    if not isinstance(description, str):
+        raise SetupError(f"The Setup description must be a string, got {type(description).__name__}.")
+
+    if "\n" in description or "\r" in description:
+        raise SetupError("The Setup description must be a single line.")
+
+    try:
+        loaded = YAML(typ="safe").load(f"history:\n    1: {description}\n")
+        valid = loaded["history"][1] == description
+    except (YAMLError, TypeError, KeyError):
+        valid = False
+
+    if not valid:
+        raise SetupError(
+            f"Invalid Setup description {description!r}: it can not be stored in a YAML file. "
+            "Avoid special characters like ':', '#', quotes or leading '-', '[', '{', '&', '*', '!', '|', '>', '@'."
+        )
+
+    return description
 
 
 # This is a replacement of the standard load_csv() function from the navdict package.
@@ -766,6 +800,8 @@ def submit_setup_to_disk(setup: Setup, description: str, **kwargs) -> str | None
     Returns:
         The Setup ID of the newly created Setup or None.
     """
+
+    validate_setup_description(description)
 
     site_id = kwargs.get("site_id") or setup.get("site_id") or get_site_id()
     setup_location = Path(get_conf_data_location(site_id)).expanduser()
