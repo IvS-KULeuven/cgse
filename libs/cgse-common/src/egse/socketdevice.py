@@ -116,11 +116,15 @@ class SocketDevice(DeviceConnectionInterface, DeviceTransport):
         """
         Disconnect from the Ethernet connection.
 
+        Disconnecting when the device is not connected does nothing.
+
         Raises:
             ConnectionError when the socket could not be closed.
         """
 
-        assert self.socket is not None  # extra check + for mypy type checking
+        if self.socket is None:
+            self.is_connection_open = False
+            return
 
         try:
             if self.is_connection_open:
