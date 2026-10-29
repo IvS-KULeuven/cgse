@@ -83,51 +83,5 @@ def status_rsd3305p(
     rich.print(stdout.decode(), end="")
 
 
-@rsd3305p.command(name="start-sim")
-def start_rs3305p_sim(
-    device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")],
-):
-    """Start the RS-D3305P Simulator.
-
-    Args:
-        device_id: RS-D3305P identifier.
-    """
-
-    rich.print("Starting service RS-D3305P Simulator")
-
-    out = redirect_output_to_log("rsd3305p_sim.start.log")
-
-    subprocess.Popen(
-        [sys.executable, "-m", "egse.power_supply.rs_pro.rsd3305p", "start", device_id, " --sim"],
-        stdout=out,
-        stderr=out,
-        stdin=subprocess.DEVNULL,
-        close_fds=True,
-    )
-
-
-@rsd3305p.command(name="stop-sim")
-def stop_rs3305p_sim(
-    device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")],
-):
-    """Stops the RS-D3305P Simulator.
-
-    Args:
-        device_id: RS-D3305P identifier.
-    """
-
-    rich.print("Terminating the RS-D3305P simulator.")
-
-    out = redirect_output_to_log("rsd3305p_sim.stop.log")
-
-    subprocess.Popen(
-        [sys.executable, "-m", "egse.power_supply.rs_pro.rsd3305p", "stop", device_id],
-        stdout=out,
-        stderr=out,
-        stdin=subprocess.DEVNULL,
-        close_fds=True,
-    )
-
-
 if __name__ == "__main__":
     rsd3305p()
