@@ -516,6 +516,9 @@ class LakeShore336Controller(LakeShore336Interface):
     def is_connected(self) -> bool:
         return self.lakeshore.is_connected()
 
+    def is_connection_open(self) -> bool:
+        return self.lakeshore.is_connection_open()
+
     def connect(self):
         self.lakeshore.connect()
 
@@ -553,6 +556,9 @@ class LakeShore336Simulator(LakeShore336Interface):
         return True
 
     def is_connected(self) -> bool:
+        return self._is_connected
+
+    def is_connection_open(self) -> bool:
         return self._is_connected
 
     def connect(self):
