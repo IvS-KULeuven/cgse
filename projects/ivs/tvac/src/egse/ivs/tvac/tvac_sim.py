@@ -32,11 +32,12 @@ from pathlib import Path
 from typing import Any
 
 import typer
-from asyncua import Server, ua
+from asyncua import Client, Server, ua
 from rich.console import Console
 
 from egse.env import get_log_file_location
 from egse.ivs.tvac import DEVICE_SETTINGS
+from egse.ivs.tvac import tvac_state_to_string
 from egse.ivs.tvac.tvac_devif import OPC_UA_NODES
 from egse.process import kill_process
 from egse.system import TyperAsyncCommand
@@ -318,6 +319,44 @@ class ThermalVacSimulator:
         await self.stop()
 
 
+async def read_status(hostname: str | None = None, port: int | None = None, timeout: float = 5.0) -> dict[str, Any]:
+    """Connects to a running ThermalVac simulator as an OPC UA client and reads a few status nodes.
+
+    Args:
+        hostname (str | None): Hostname of the simulator. If None, read from the settings.
+        port (int | None): Port of the simulator. If None, read from the settings.
+        timeout (float): Time to wait for the connection and the reads [s].
+
+    Returns:
+        The server URL, TVAC state, average temperature [degC], filtered vessel pressure [mbar] and whether data
+        logging is active.
+
+    Raises:
+        OSError: when nothing is listening on the server URL.
+        TimeoutError: when the simulator doesn't respond within the timeout.
+    """
+
+    hostname = DEVICE_SETTINGS["HOSTNAME"] if hostname is None else hostname
+    port = DEVICE_SETTINGS["PORT"] if port is None else port
+    server_url = f"opc.tcp://{hostname}:{port}"
+
+    async def _read() -> dict[str, Any]:
+        async with Client(server_url, timeout=timeout) as client:
+
+            async def value(key: str) -> Any:
+                return await client.get_node(OPC_UA_NODES[key]).read_value()
+
+            return {
+                "server_url": server_url,
+                "tvac_state": tvac_state_to_string(await value("get_tvac_state")),
+                "avg_temperature": await value("get_avg_temperature"),
+                "vessel_pressure": await value("get_filtered_vessel_pressure"),
+                "data_logging_active": await value("is_data_logging_active"),
+            }
+
+    return await asyncio.wait_for(_read(), timeout)
+
+
 # ----- CLI Commands ------------------------------------------------------------------------------------------------
 
 app = typer.Typer()
@@ -384,6 +423,34 @@ async def stop():
         console.print(f"ThermalVac simulator (pid={pid}) was not running.", style="yellow")
 
     pid_file.unlink(missing_ok=True)
+
+
+@app.command(cls=TyperAsyncCommand)
+async def status():
+    """Prints the status of the ThermalVac OPC UA simulator: TVAC state, average temperature, pressure and data
+    logging. Exits with code 1 when the simulator is not running or not responding."""
+
+    console = Console()
+    logging.getLogger("asyncua").setLevel(logging.ERROR)  # no connection details in the status output
+    server_url = f"opc.tcp://{DEVICE_SETTINGS['HOSTNAME']}:{DEVICE_SETTINGS['PORT']}"
+
+    try:
+        info = await read_status()
+    except (TimeoutError, asyncio.TimeoutError):
+        console.print(f"ThermalVac simulator: [red]not responding[/] on {server_url}")
+        raise typer.Exit(1)
+    except OSError:
+        console.print(f"ThermalVac simulator: [red]not running[/] on {server_url}")
+        raise typer.Exit(1)
+
+    pid_file = _simulator_pid_file()
+    pid = pid_file.read_text().strip() if pid_file.exists() else "unknown"
+
+    console.print(f"ThermalVac simulator: [green]running[/] on {info['server_url']} (pid={pid})")
+    console.print(f"  TVAC state: {info['tvac_state']}")
+    console.print(f"  average temperature: {info['avg_temperature']:.2f} degC")
+    console.print(f"  vessel pressure: {info['vessel_pressure']:.3g} mbar")
+    console.print(f"  data logging: {'active' if info['data_logging_active'] else 'inactive'}")
 
 
 if __name__ == "__main__":
