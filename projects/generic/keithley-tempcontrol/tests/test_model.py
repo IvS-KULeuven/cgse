@@ -8,7 +8,10 @@ from egse.tempcontrol.keithley.daq6510_adev import parse_readings
 from egse.tempcontrol.keithley.daq6510_config import ScanConfig
 from egse.tempcontrol.keithley.daq6510_config import SensorConfig
 from egse.tempcontrol.keithley.daq6510_model import DAQ6510Model
+from egse.tempcontrol.keithley.daq6510_model import TEMPERATURE_PROFILE
 from egse.tempcontrol.keithley.daq6510_model import ModelledDAQ6510
+from egse.tempcontrol.keithley.daq6510_model import channel_temperature
+from egse.tempcontrol.keithley.daq6510_model import profile_temperature
 from egse.tempcontrol.keithley.daq6510_model import short_form
 from egse.tempcontrol.keithley.daq6510_model import split_arguments
 
@@ -227,3 +230,51 @@ def test_trace_data_timestamp_element():
     assert channel == "101"
     assert tst.startswith("01/02/2025 03:04:05.")
     assert len(tst.split(".")[1]) == 9
+
+
+def test_temperature_profile():
+    cycle = TEMPERATURE_PROFILE[-1][0]
+    assert cycle == 3600
+
+    # room temperature, three high plateaus, a low plateau and back to room temperature
+    for t, expected in [(0, 20), (150, 20), (750, 40), (1230, 50), (1710, 60), (2670, -100), (3500, 20)]:
+        assert profile_temperature(t) == pytest.approx(expected)
+
+    assert profile_temperature(450) == pytest.approx(30)  # halfway the first ramp
+    assert profile_temperature(2160) == pytest.approx(-20)  # halfway the cool down
+
+    # the cycle repeats
+    for t in (0, 450, 1710, 2670, 3500):
+        assert profile_temperature(t + cycle) == pytest.approx(profile_temperature(t))
+        assert profile_temperature(t + 5 * cycle) == pytest.approx(profile_temperature(t))
+
+    temperatures = [profile_temperature(t) for t in range(0, cycle, 10)]
+    assert min(temperatures) == pytest.approx(-100)
+    assert max(temperatures) == pytest.approx(60)
+
+
+def test_channel_temperatures_differ_but_are_deterministic():
+    channels = ["101", "102", "103", "104"]
+
+    for t in (0, 650, 2500):
+        values = [channel_temperature(ch, t) for ch in channels]
+        assert len(set(values)) == len(channels)
+        assert values == [channel_temperature(ch, t) for ch in channels]
+
+    # all channels stay close to the profile on a plateau
+    for ch in channels:
+        assert channel_temperature(ch, 2800) == pytest.approx(-100, abs=0.5)
+
+
+def test_model_readings_follow_the_profile():
+    clock = FakeClock()
+    model = DAQ6510Model(clock=clock, scan_duration=0.1)
+    model.process("ROUT:SCAN:CRE (@101:102); ROUT:SCAN:COUN:SCAN 0; ROUT:SCAN:INT 600; INIT")
+
+    clock.t = 3000.0  # 5 scans, at 0, 600, ..., 2400 s
+    response = model.process('TRAC:DATA? 1, 10, "defbuffer1", CHAN, READ').split(",")
+    values = [float(v) for v in response[1::2]]
+
+    assert values[0] == pytest.approx(20, abs=0.5)  # room temperature at the start
+    assert values[2] == pytest.approx(40, abs=0.5)  # 600 s, end of the first ramp
+    assert values[8] == pytest.approx(-84, abs=0.5)  # 2400 s, cooling down from 60 to -100 between 1860 and 2460 s

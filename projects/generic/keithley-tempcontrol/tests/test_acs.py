@@ -12,6 +12,7 @@ from typing import Any
 
 import pytest
 
+from egse.device import DeviceConnectionError
 from egse.device import DeviceError
 from egse.device import DeviceTimeoutError
 from egse.tempcontrol.keithley import daq6510_acs
@@ -622,3 +623,108 @@ async def test_drop_connection_when_disconnect_fails(setup, monkeypatch):
     monkeypatch.setattr(controller.daq, "disconnect", disconnect)
 
     await controller._drop_connection()  # logs a warning, doesn't raise
+
+
+# ----- connection loss and power cycles -----------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_connection_lost_reconnects_without_data_loss(setup):
+    server, model, clock = setup
+    controller = server.controller
+    daq = controller.daq
+
+    await command(server, "start-scan")
+    clock.t = 1.5
+    await wait_for(lambda: controller.scans_received == 2)
+
+    daq.break_connection()
+    clock.t = 4.5
+    await wait_for(lambda: controller.scans_received == 5)
+
+    assert "Broken pipe" in controller.last_error
+    assert daq.is_connection_open
+    assert controller.is_scan_running()
+    assert controller.restarts == 0  # the instrument kept scanning, no restart needed
+
+    timestamps = [m["timestamp"] for m in server.metrics]
+    assert timestamps == sorted(set(timestamps))
+
+
+@pytest.mark.asyncio
+async def test_scan_is_restarted_after_a_power_cycle(setup):
+    server, model, clock = setup
+    controller = server.controller
+
+    await command(server, "start-scan")
+    clock.t = 1.5
+    await wait_for(lambda: controller.scans_received == 2)
+
+    # A power cycle: the instrument loses its configuration and the buffer, and the connection is lost
+    model.reset()
+    controller.daq.break_connection()
+
+    await wait_for(lambda: controller.restarts == 1)
+    assert model.scan_state == "RUNNING"
+    assert model.scan_channels == CHANNELS
+    assert model.scan_count == 0
+    assert ("101", "RTD:FOUR") in model.sense  # the sensors are configured again
+
+    clock.t = 4.0  # the restarted scan started at 1.5
+    await wait_for(lambda: controller.scans_received == 5)
+
+    status = (await command(server, "scan-status"))["message"]
+    assert status["running"] is True
+    assert status["restarts"] == 1
+
+
+@pytest.mark.asyncio
+async def test_scan_stops_when_the_restart_fails(setup, monkeypatch):
+    server, model, clock = setup
+    controller = server.controller
+
+    await command(server, "start-scan")
+    clock.t = 1.5
+    await wait_for(lambda: controller.scans_received == 2)
+
+    async def configure_scan(config):
+        await controller.daq.write('SENS:FUNC "TEMP", (@1x)')  # the instrument reports an error
+
+    model.reset()
+    monkeypatch.setattr(controller.daq, "configure_scan", configure_scan)
+    controller.daq.break_connection()
+
+    await wait_for(lambda: not controller.is_scan_running())
+
+    assert controller.last_error.startswith("ScanRestartError")
+    assert "-224" in controller.last_error
+    assert (await command(server, "scan-status"))["message"]["running"] is False
+
+    # the scan can be started again once the cause is fixed
+    monkeypatch.undo()
+    assert (await command(server, "start-scan"))["message"]["started"] is True
+
+
+@pytest.mark.asyncio
+async def test_incomplete_buffer_read_is_fetched_again(setup, monkeypatch):
+    server, model, clock = setup
+    controller = server.controller
+
+    await command(server, "start-scan")
+    await controller.stop_scan()  # we poll manually in this test
+    model.process("INIT")
+
+    clock.t = 2.5  # 3 scans
+    read_buffer = controller.daq.read_buffer
+
+    async def empty_response(start, end, buffer_name):
+        return []  # e.g. the device closed the connection
+
+    monkeypatch.setattr(controller.daq, "read_buffer", empty_response)
+    with pytest.raises(DeviceConnectionError, match="Expected 9 readings"):
+        await controller.poll_buffer()
+    assert controller.next_index == 1
+
+    monkeypatch.setattr(controller.daq, "read_buffer", read_buffer)
+    assert await controller.poll_buffer() == 3
+    assert controller.next_index == 3 * len(CHANNELS) + 1

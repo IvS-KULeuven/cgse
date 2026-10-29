@@ -37,6 +37,8 @@ real device yet:
 - `TRACe:ACTual:END?` counts the readings of a running scan, one by one, from index 1 after `TRACe:POINts`.
 - `ABORt` followed by `TRACe:CLEar` and `INITiate` restarts the scan with the same configuration (buffer rollover).
 - A sensor configuration from the Setup produces no errors in `SYSTem:ERRor?`.
+- Between two scans, `ROUTe:SCAN:STATe?` reports `RUNNING` or `WAITING`. After a reconnect, the control server
+  restarts the scan for any other state (e.g. `IDLE` after a power cycle).
 
 ## Reference Documents
  - Model DAQ6510 Data Acquisition and Multimeter System Reference Manual (DAQ6510-901-01 Rev. B / September 2019)

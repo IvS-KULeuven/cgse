@@ -47,6 +47,7 @@ from egse.async_control import AcquisitionAsyncControlServer
 from egse.async_control import DeviceCommandRouter
 from egse.async_control import ServiceCommandRouter
 from egse.async_control import TypedAsyncControlClient
+from egse.device import DeviceConnectionError
 from egse.device import DeviceError
 from egse.device import DeviceTimeoutError
 from egse.log import logger
@@ -93,6 +94,14 @@ def failure(error: str, **details: Any) -> list:
     return zmq_json_response({"success": False, "message": {"error": error, **details}})
 
 
+ACTIVE_SCAN_STATES = frozenset({"RUNNING", "WAITING", "PAUSED"})
+"""Trigger model states reported by `ROUT:SCAN:STAT?` for which the scan is still active on the instrument."""
+
+
+class ScanRestartError(Exception):
+    """The scan could not be restarted after the instrument stopped scanning, e.g. after a power cycle."""
+
+
 def utc_now() -> datetime.datetime:
     return datetime.datetime.now(datetime.timezone.utc)
 
@@ -129,6 +138,8 @@ class DAQ6510Controller(DeviceCommandRouter):
         self.scan_started_at: datetime.datetime | None = None
         self.scans_received = 0
         self.rollovers = 0
+        self.restarts = 0
+        """Number of times the scan was restarted because the instrument was no longer scanning."""
         self.last_error: str | None = None
 
         self.poll_interval = POLL_INTERVAL
@@ -240,6 +251,7 @@ class DAQ6510Controller(DeviceCommandRouter):
             "scan_started_at": self.scan_started_at.isoformat() if self.scan_started_at else None,
             "scans_received": self.scans_received,
             "rollovers": self.rollovers,
+            "restarts": self.restarts,
             "last_error": self.last_error,
         }
 
@@ -265,19 +277,13 @@ class DAQ6510Controller(DeviceCommandRouter):
         config = config or await self._cs.load_scan_config()
 
         async with self.hw_lock:
-            await self.daq.abort()
-            await self.daq.get_errors()  # start with an empty error queue
-            await self.daq.set_time()
-            await self.daq.configure_scan(config)
-            errors = await self.daq.get_errors()
-            if errors:
-                raise ValueError(f"The DAQ6510 reported errors while configuring the scan: {errors}")
-            await self.daq.start_scan()
+            await self._configure_and_start(config)
 
         self.scan_config = config
         self.next_index = 1
         self.scans_received = 0
         self.rollovers = 0
+        self.restarts = 0
         self.last_error = None
         self.scan_started_at = utc_now()
 
@@ -289,6 +295,49 @@ class DAQ6510Controller(DeviceCommandRouter):
         logger.info(f"Scan started on channels {config.channel_list} with an interval of {config.interval}s.")
 
         return True
+
+    async def _configure_and_start(self, config: ScanConfig):
+        """Configures the instrument for the scan and starts it. Must be called while holding the hardware lock.
+
+        Raises:
+            ValueError: when the instrument reported errors while configuring the scan.
+            DeviceError: when the communication with the device fails.
+        """
+        await self.daq.abort()
+        await self.daq.get_errors()  # start with an empty error queue
+        await self.daq.set_time()
+        await self.daq.configure_scan(config)
+        errors = await self.daq.get_errors()
+        if errors:
+            raise ValueError(f"The DAQ6510 reported errors while configuring the scan: {errors}")
+        await self.daq.start_scan()
+
+    async def _ensure_scan_is_running(self):
+        """Restarts the scan when the instrument is no longer scanning. Must be called while holding the hardware lock.
+
+        This is checked after every reconnect: when the instrument was power cycled (or the simulator restarted),
+        the connection was lost and the instrument came back without a scan. The readings in the buffer that were
+        not fetched before the power cycle are lost.
+
+        Raises:
+            ScanRestartError: when the instrument reported errors while configuring the scan again.
+            DeviceError: when the communication with the device fails.
+        """
+        state = await self.daq.get_scan_state()
+        if state.split(";")[0].strip().upper() in ACTIVE_SCAN_STATES:
+            return
+
+        logger.warning(
+            f"The DAQ6510 is no longer scanning (scan state {state!r}), the instrument was probably power cycled. "
+            f"Restarting the scan."
+        )
+        try:
+            await self._configure_and_start(self.scan_config)
+        except ValueError as exc:
+            raise ScanRestartError(str(exc)) from exc
+
+        self.next_index = 1
+        self.restarts += 1
 
     async def stop_scan(self) -> bool:
         """Stops the scan loop and aborts the scan on the instrument.
@@ -315,9 +364,12 @@ class DAQ6510Controller(DeviceCommandRouter):
     async def _run_scan_loop(self):
         """Polls the reading buffer and forwards complete scans to the acquisition pipeline.
 
-        Errors don't end the loop, the next poll is retried with a growing backoff. On a timeout the connection is
-        re-established to discard a late response that would otherwise be read as the answer to the next query.
-        The instrument keeps scanning on its own meanwhile, so no data is lost when the connection recovers.
+        Errors don't end the loop, the next poll is retried with a growing backoff. On a timeout or a connection
+        error the connection is re-established, which also discards a late response that would otherwise be read as
+        the answer to the next query. The instrument keeps scanning on its own meanwhile, so no data is lost when the
+        connection recovers. After a reconnect, the scan is restarted when the instrument is no longer scanning.
+
+        Only when the scan can not be restarted, the loop ends and the scan is no longer running.
         """
         backoff = self.poll_interval
 
@@ -326,14 +378,19 @@ class DAQ6510Controller(DeviceCommandRouter):
                 if not self.daq.is_connection_open:
                     async with self.hw_lock:
                         await self.daq.connect()
+                        await self._ensure_scan_is_running()
                 await self.poll_buffer()
                 backoff = self.poll_interval
             except asyncio.CancelledError:
                 raise
+            except ScanRestartError as exc:
+                self.last_error = f"{type(exc).__name__}: {exc}"
+                logger.error(f"Scan loop: the scan could not be restarted, the scan is stopped: {exc}")
+                return
             except Exception as exc:  # noqa: BLE001, any failure is retried, the loop must not die
                 self.last_error = f"{type(exc).__name__}: {exc}"
                 logger.error(f"Scan loop: polling the DAQ6510 failed ({exc}), retrying in {backoff:.1f}s.")
-                if isinstance(exc, DeviceTimeoutError):
+                if isinstance(exc, (DeviceTimeoutError, DeviceConnectionError)):
                     await self._drop_connection()
                 await self._wait_for_stop(backoff)
                 backoff = min(backoff * 2, RECONNECT_BACKOFF_MAX)
@@ -377,13 +434,24 @@ class DAQ6510Controller(DeviceCommandRouter):
                 self.next_index = 1
 
             readings = []
+            first_index = self.next_index
             n_complete = ((end - self.next_index + 1) // n_channels) * n_channels
             chunk_size = max(n_channels, (MAX_READINGS_PER_REQUEST // n_channels) * n_channels)
-            while n_complete > 0:
-                count = min(n_complete, chunk_size)
-                readings.extend(await self.daq.read_buffer(self.next_index, self.next_index + count - 1, buffer))
-                self.next_index += count
-                n_complete -= count
+            try:
+                while n_complete > 0:
+                    count = min(n_complete, chunk_size)
+                    chunk = await self.daq.read_buffer(self.next_index, self.next_index + count - 1, buffer)
+                    if len(chunk) != count:
+                        # Don't skip readings, e.g. an empty response when the connection was closed by the device
+                        raise DeviceConnectionError(
+                            self.daq.device_name, f"Expected {count} readings from the buffer, got {len(chunk)}."
+                        )
+                    readings.extend(chunk)
+                    self.next_index += count
+                    n_complete -= count
+            except BaseException:
+                self.next_index = first_index  # nothing was passed on yet, fetch these readings again on the next poll
+                raise
 
             if end >= self.rollover_fraction * config.buffer_capacity:
                 readings.extend(await self._rollover(config))

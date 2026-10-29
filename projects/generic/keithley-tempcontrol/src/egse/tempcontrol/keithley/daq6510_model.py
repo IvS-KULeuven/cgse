@@ -25,6 +25,7 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Callable
 
+from egse.device import DeviceConnectionError
 from egse.scpi import get_channel_names
 from egse.tempcontrol.keithley.daq6510_adev import DAQ6510
 
@@ -36,6 +37,47 @@ DEFAULT_CAPACITY = 100_000
 UNITS = {"CELSIUS": "Celsius", "KELVIN": "Kelvin", "FAHRENHEIT": "Fahrenheit"}
 
 VOWELS = set("AEIOU")
+
+TEMPERATURE_PROFILE = (
+    (0, 20.0),
+    (300, 20.0),
+    (600, 40.0),
+    (900, 40.0),
+    (1080, 50.0),
+    (1380, 50.0),
+    (1560, 60.0),
+    (1860, 60.0),
+    (2460, -100.0),
+    (2880, -100.0),
+    (3420, 20.0),
+    (3600, 20.0),
+)
+"""The simulated temperature cycle as (time [s], temperature [°C]) points, linear in between. Starting from room
+temperature, the temperature goes through three high plateaus, cools down to a low plateau and goes back to room
+temperature. The cycle repeats, the last time is the duration of the cycle."""
+
+
+def profile_temperature(t: float) -> float:
+    """Returns the temperature [°C] of the TEMPERATURE_PROFILE at time t [s], the profile repeats indefinitely."""
+    t %= TEMPERATURE_PROFILE[-1][0]
+    for (t0, temp0), (t1, temp1) in zip(TEMPERATURE_PROFILE, TEMPERATURE_PROFILE[1:]):
+        if t <= t1:
+            return temp0 + (temp1 - temp0) * (t - t0) / (t1 - t0)
+    return TEMPERATURE_PROFILE[-1][1]
+
+
+def channel_temperature(channel: str, t: float) -> float:
+    """Returns the simulated temperature [°C] of a channel at time t [s] since the start of the simulation.
+
+    All channels follow the TEMPERATURE_PROFILE with small, deterministic differences, so they can be told apart:
+    a time lag, an offset and a ripple with a different period.
+    """
+    k = int(channel) % 100  # the channel number on the card
+    lag = 20.0 * ((k - 1) % 6)
+    offset = 0.15 * ((k - 1) % 5) - 0.3
+    ripple = 0.1 * math.sin(2 * math.pi * t / (90.0 + 13.0 * k))
+    return profile_temperature(max(t - lag, 0.0)) + offset + ripple
+
 
 # Optional SCPI nodes that are dropped from the header before matching.
 OPTIONAL_NODES = {"IMM", "NEXT"}
@@ -197,14 +239,16 @@ class DAQ6510Model:
             age = now - (self._scan_start + scan * period + self.scan_duration)
             timestamp = self.device_time() - datetime.timedelta(seconds=age)
             for idx, channel in enumerate(self.scan_channels):
-                ts = timestamp + datetime.timedelta(seconds=self.scan_duration * idx / len(self.scan_channels))
+                delay = self.scan_duration * idx / len(self.scan_channels)
+                ts = timestamp + datetime.timedelta(seconds=delay)
                 epoch = ts.timestamp()
+                t = now - age + delay - self._clock_epoch  # time of this reading since the start of the model
                 buffer.append(
                     Reading(
                         channel=channel,
                         seconds=int(epoch),
                         fractional=epoch - int(epoch),
-                        value=self._measure(channel, scan),
+                        value=self._measure(channel, t),
                         unit=self._unit(channel),
                     )
                 )
@@ -220,9 +264,9 @@ class DAQ6510Model:
                 return name
         return "Celsius"
 
-    def _measure(self, channel: str, scan: int) -> float:
-        """A deterministic, slowly varying temperature, different for each channel."""
-        value = 20.0 + 0.5 * (int(channel) % 10) + 0.25 * math.sin(scan / 10.0)
+    def _measure(self, channel: str, t: float) -> float:
+        """The temperature of the channel at time t [s] since the start of the model, in the unit of the channel."""
+        value = channel_temperature(channel, t)
         unit = self._unit(channel)
         if unit == "Kelvin":
             value += 273.15
@@ -466,20 +510,29 @@ class ModelledDAQ6510(DAQ6510):
         self.model = model or DAQ6510Model()
         self.fail_next: Exception | None = None
         """Set an exception to be raised by the next write or trans, to test error handling."""
+        self.connection_broken = False
+        """When True, every write or trans fails until the driver reconnects, like a socket closed by the device."""
+
+    def break_connection(self):
+        """Simulates the device closing the connection, e.g. on a power cycle. Only a reconnect recovers from this."""
+        self.connection_broken = True
 
     def _check_failure(self):
+        if self.connection_broken:
+            raise DeviceConnectionError(self.device_name, "Communication error: [Errno 32] Broken pipe")
         if self.fail_next is not None:
             exc, self.fail_next = self.fail_next, None
             raise exc
 
     async def connect(self) -> None:
         self._is_connection_open = True
+        self.connection_broken = False
 
     async def disconnect(self) -> None:
         self._is_connection_open = False
 
     async def is_connected(self) -> bool:
-        return self._is_connection_open
+        return self._is_connection_open and not self.connection_broken
 
     async def write(self, command: str) -> None:
         self._check_failure()
