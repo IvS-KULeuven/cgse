@@ -239,6 +239,31 @@ def test_sync_reconnect_behaviour(sync_echo_server):
     assert dev.is_connected() is False
 
 
+def test_sync_disconnect_when_not_connected(sync_echo_server):
+    host, port = sync_echo_server
+    dev = SocketDevice(hostname=host, port=port)
+
+    # disconnecting a device that was never connected does nothing
+    dev.disconnect()
+    assert dev.is_connected() is False
+
+    dev.connect()
+    dev.disconnect()
+
+    # a second disconnect does nothing
+    dev.disconnect()
+    assert dev.is_connected() is False
+    assert dev.socket is None
+
+    # the device can still be connected afterwards
+    dev.connect()
+    assert dev.is_connected() is True
+    assert b"RESP:AGAIN" in dev.trans("AGAIN")
+
+    dev.disconnect()
+    assert dev.is_connected() is False
+
+
 @pytest.mark.asyncio
 async def test_async_connect_write_trans_and_disconnect(async_echo_server):
     host, port, server, _active_writers = async_echo_server
