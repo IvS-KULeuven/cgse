@@ -11,6 +11,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Added support for optional argument validation in `@dynamic_command` via a `validate` callback. The callback receives the same `*args` and `**kwargs` as the decorated call and can raise `ValueError` when the input is invalid.
 
+### Keithley DAQ6510 asynchronous control server
+
+- The DAQ6510 control server is now asynchronous (`daq6510_acs.py`). The `daq6510_cs` command keeps its name and
+  points to the new module, like `tvac_cs` → `tvac_acs`.
+- The scan configuration (channels, sensors, interval) is loaded from the `gse.DAQ6510` section of the Setup in the
+  Configuration Manager, or from a file with `daq6510_cs start --setup-file`. `--auto-scan` starts the scan on connect.
+- The control server polls the reading buffer, stores complete scans with the Storage Manager and sends them to the
+  Metrics Hub. The buffer is restarted at 90% of its capacity without losing readings.
+- Connection problems are retried with a backoff and reconnect. The scan is restarted when the instrument stopped
+  scanning: after a reconnect (power cycle), or when no new scan arrived for two scan intervals plus 10 s (aborted from
+  the front panel or by another client).
+- The scan status separates the present condition (`health`: `ok`/`degraded`/`failed`, `consecutive_errors`) from the
+  record of past errors (`last_error`, `last_error_at`, `error_count`), cleared with `daq6510_cs clear-errors`.
+- New `daq6510_cs` commands: `start-scan`, `stop-scan`, `get-latest`, `reset`, `clear-errors`, `get-idn`, `get-time`,
+  `set-time`, `get-buffer-count`, `get-errors` and `send-command`. Failures are printed in red with exit code 1.
+- `cgse daq6510` has lifecycle commands only: `start`, `stop`, `status`, `start-sim`, `stop-sim` and the new
+  `status-sim`.
+- The simulator accepts several clients at the same time and has `status` and `command` subcommands. Each channel
+  follows a slightly different temperature cycle of one hour (room temperature, plateaus at 40, 50 and 60 °C,
+  −100 °C), based on the UTC wall clock so it continues across restarts.
+- Removed the synchronous control server, proxy, protocol, `daq6510_dev.py` and the `daq6510_mon` monitor.
+  Settings: removed the ZeroMQ ports and `DELAY` from `Keithley Control Server`, added `POLL_INTERVAL` and
+  `BUFFER_CAPACITY`; the device `TIMEOUT` is now 5 s.
+- The simulator tests in `tests/test_adev.py` reset the simulator and only run with `DAQ6510_SIM_TESTS=1`.
+
+### Common
+
+- `SocketDevice.disconnect()` does nothing when not connected, instead of raising an `AssertionError`.
+- `AsyncSCPIInterface.disconnect()` always resets the connection state, also when closing fails (e.g. after the
+  device closed the connection), so the next `connect()` opens a new connection.
+
 ---
 
 ## [0.25.11] - 2026-07-23
