@@ -109,37 +109,5 @@ def status_daq6510_sim():
     rich.print(stdout.decode(), end="")
 
 
-@daq6510.command(name="start-scan")
-def start_daq6510_scan():
-    """Configure the DAQ6510 from the Setup and start a scan."""
-    rich.print("Starting a scan on the DAQ6510")
-
-    out = redirect_output_to_log("daq6510_cs.start_scan.log")
-
-    subprocess.Popen(
-        [sys.executable, "-m", "egse.tempcontrol.keithley.daq6510_acs", "start-scan"],
-        stdout=out,
-        stderr=out,
-        stdin=subprocess.DEVNULL,
-        close_fds=True,
-    )
-
-
-@daq6510.command(name="stop-scan")
-def stop_daq6510_scan():
-    """Abort the scan on the DAQ6510."""
-    rich.print("Stopping the scan on the DAQ6510")
-
-    out = redirect_output_to_log("daq6510_cs.stop_scan.log")
-
-    subprocess.Popen(
-        [sys.executable, "-m", "egse.tempcontrol.keithley.daq6510_acs", "stop-scan"],
-        stdout=out,
-        stderr=out,
-        stdin=subprocess.DEVNULL,
-        close_fds=True,
-    )
-
-
 if __name__ == "__main__":
     daq6510()
