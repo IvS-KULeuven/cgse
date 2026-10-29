@@ -51,6 +51,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `app`).
 - Removed the `lakeshore336_ui` GUI script, the `lakeshore336_ui` module doesn't exist.
 
+### Aim-TTi TGF4000
+
+- Removed the `cgse tgf4000 start-sim` and `stop-sim` subcommands, they ran the `tgf4000_sim` module that doesn't
+  exist. There is no separate simulator process: use `cgse tgf4000 start --sim DEVICE_ID`. `cgse tgf4000` now has
+  `start`, `stop` and `status`.
+
 ---
 
 ## [0.25.11] - 2026-07-23
