@@ -140,6 +140,17 @@ class Dt8874ControlServer(ControlServer):
 
         return ORIGIN
 
+    def get_device_status(self) -> dict:
+        """Returns the state of the Digilent MEASURpoint DT8874 for the status report.
+
+        The connection state is taken from the open connection, the device itself is not queried.
+        """
+
+        return {
+            "connected": self.device_protocol.dt8874.is_connection_open(),
+            "sim_mode": self.device_protocol.simulator,
+        }
+
     def is_storage_manager_active(self):
         """Checks whether the Storage Manager is active."""
 
