@@ -35,6 +35,11 @@ Commands:
         device_method: None
         response:      handle_get_process_status
 
+    get_status_report:
+        description:   Ask for the status report of the control server, including the service or device specific status.
+        device_method: None
+        response:      handle_get_status_report
+
     get_cs_module:
         description:   Returns the module in which the control server has been implemented.
         device_method: None
