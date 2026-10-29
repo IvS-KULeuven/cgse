@@ -197,3 +197,45 @@ def test_configuration_manager_status_details():
     assert details["obsid_active"] is True
     assert details["obsid"] == "LAB_00042_00012"
     json.dumps(details)
+
+
+def test_storage_manager_status_details():
+    from types import SimpleNamespace
+
+    from egse.storage.storage_cs import StorageControlServer
+
+    controller = SimpleNamespace(
+        get_obsid=lambda: None,
+        get_disk_usage=lambda: (1000, 400, 600),
+        get_storage_location=lambda: "/data/LAB",
+        get_loaded_setup_id=lambda: 42,
+        get_registry_names=lambda: ["CM", "DAQ6510"],
+    )
+    server = SimpleNamespace(device_protocol=SimpleNamespace(controller=controller))
+
+    # Called on a stand-in, so no Storage Manager is started or registered.
+    details = StorageControlServer.get_status_details(server)
+
+    assert details == {
+        "storage_location": "/data/LAB",
+        "disk_usage": {"total": 1000, "used": 400, "free": 600},
+        "loaded_setup_id": 42,
+        "obsid": None,
+        "registrations": ["CM", "DAQ6510"],
+    }
+    json.dumps(details)
+
+
+def test_process_manager_status_details():
+    from types import SimpleNamespace
+
+    from egse.procman.procman_cs import ProcessManagerControlServer
+
+    controller = SimpleNamespace(get_core_processes=lambda: {"Storage Manager": "SM_CS"})
+    server = SimpleNamespace(device_protocol=SimpleNamespace(controller=controller))
+
+    # Called on a stand-in, so no Process Manager is started or registered.
+    details = ProcessManagerControlServer.get_status_details(server)
+
+    assert details == {"core_processes": {"Storage Manager": "SM_CS"}}
+    json.dumps(details)

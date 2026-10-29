@@ -78,6 +78,13 @@ class ProcessManagerControlServer(ControlServer):
     def get_storage_mnemonic(self):
         return STORAGE_MNEMONIC
 
+    def get_status_details(self) -> dict:
+        """Returns the core services known to the Process Manager, as a mapping of name to service type.
+
+        The device identifiers are not included, because they require loading the Setup on every status request.
+        """
+        return {"core_processes": self.device_protocol.controller.get_core_processes()}
+
     def is_storage_manager_active(self):
         from egse.storage import is_storage_manager_active
 
