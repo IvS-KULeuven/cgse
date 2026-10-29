@@ -56,12 +56,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Removed the `cgse tgf4000 start-sim` and `stop-sim` subcommands, they ran the `tgf4000_sim` module that doesn't
   exist. There is no separate simulator process: use `cgse tgf4000 start --sim DEVICE_ID`. `cgse tgf4000` now has
   `start`, `stop` and `status`.
+- Fixed `tgf4000_cs start --sim`: the simulator and the proxy no longer need `HOSTNAME`/`PORT` in the device
+  settings (removed the unused `ethernet_interface` from `Tgf4000Interface`).
+- The control server settings use `HOSTNAME` instead of `HOST`, which the code never read.
 
 ### KIKUSUI PMX-A
 
 - Removed the `cgse pmx_a start-sim` and `stop-sim` subcommands, they ran the `pmx_a_sim` module that doesn't exist.
   There is no separate simulator process: use `cgse pmx_a start --sim DEVICE_ID`. `cgse pmx_a` now has `start`,
   `stop` and `status`.
+- Fixed `pmx_a_cs start --sim`, it crashed with `NotImplementedError` when the Storage Manager was running. The
+  simulator now implements `get_current()`, `set_current()`, `get_voltage()` and `set_voltage()`.
 
 ### RS PRO RS-D3305P
 
@@ -77,6 +82,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   development, `stop-sim` ran the `puna_sim` module that doesn't exist. There is no separate simulator process: use
   `cgse puna start --sim DEVICE_ID`. `cgse puna`, `cgse zonda` and `cgse joran` now all have `start`, `stop` and
   `status`.
+- JORAN: the control server starts without a telemetry dictionary in the Setup (housekeeping names are not
+  converted and no metrics are sent, a warning is logged), loads `joran.yaml` from its package directory, and
+  `JoranInterface` derives from `DeviceInterface` like PUNA and ZONDA.
+- JORAN: the control server deregisters on stop; before, the process didn't exit after `joran_cs stop`.
+
+### Status report
+
+- New status report on request for all control servers: `ServiceProxy.get_status_report()` for synchronous control
+  servers (new `get_status_report` service command) and `get_status_report()` on asynchronous control clients (new
+  `status_report` service command). Both return the same layout: `schema_version`, `timestamp`, `control_server`
+  (name, service type, device id, hostname, ports), `process`, `device` and `details`. The status published on the
+  monitoring port and `get_process_status()` are unchanged.
+- The `process` section has normalized, JSON-safe keys: `pid`, `uptime_s`, `uuid`, `rss`, `uss`, `cpu_user_s`,
+  `cpu_system_s`, `cpu_count`, `cpu_percent` (new `ProcessStatus.as_status_dict()` in `cgse-common`).
+- New hooks to fill the report: `get_status_details()` on `ControlServer` (by default the entries the device protocol
+  adds to its `get_status()`), and `get_device_status()` on `ControlServer` and `AsyncControlServer` (`None` for
+  servers without a device, otherwise `{"connected": ..., "sim_mode": ...}`). When one of them raises, that section
+  contains only an `error` entry and the rest of the report is still returned.
+- `AsyncControlServer` has a `device_id` attribute, `None` by default.
+- Configuration Manager: `details` has `obsid_active`, `obsid`, `setup_id` and `site_id`, not the full Setup.
+  Storage Manager: `storage_location`, `disk_usage`, `loaded_setup_id`, `obsid` and `registrations`.
+  Process Manager: `core_processes`.
+
+### Device state in the status report
+
+- All device control servers report `device: {connected, sim_mode}`. `connected` tells whether the connection to the
+  device is open; the device itself is not queried, so a status request never blocks the control server.
+- New `is_connection_open()` on the TGF4000, PMX-A, RS-D3305P, DT8874 (Digilent), LakeShore336 and PUNA controllers,
+  simulators and device interfaces. The TCU, ZONDA and JORAN use their existing `is_connected()`, which doesn't query
+  the device either.
+- DAQ6510 and TVAC: `sim_mode` is `None`, the simulator is a separate process the control server cannot tell apart
+  from the device. New `is_connection_open` property on `ThermalVacOpcUaInterface` and `ThermalVacDaq`.
 
 ---
 
