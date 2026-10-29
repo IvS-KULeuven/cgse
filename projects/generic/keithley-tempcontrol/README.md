@@ -19,10 +19,18 @@ latest readings in memory. Readings are stored with the Storage Manager and sent
 
 ```
 daq6510_cs start [--setup-file SETUP.yaml] [--auto-scan]
-daq6510_cs start-scan | stop-scan | get-latest | reset | status | stop
+daq6510_cs start-scan | stop-scan | get-latest | reset | clear-errors | status | stop
 ```
 
-While a scan is running, only read-only queries, `stop-scan` and `reset` are accepted.
+While a scan is running, only read-only queries, `stop-scan`, `reset` and `clear-errors` are accepted.
+
+The `scan` section of the status separates the present condition from the record of past errors:
+
+- `health` is `ok`, `degraded` while errors repeat, or `failed` when the scan ended because of an error. It clears by
+  itself when the problem is gone (`failed` clears when a new scan is started). `consecutive_errors` counts the errors
+  since the last successful poll.
+- `last_error`, `last_error_at` and `error_count` keep the last error and the number of errors, also when the problem
+  is gone. They are cleared with `clear-errors` or when a new scan is started.
 
 Without hardware, start the simulator with `daq6510_sim start` and set `HOSTNAME: localhost` for the
 `Keithley DAQ6510` settings.

@@ -119,6 +119,7 @@ class DAQ6510Controller(DeviceCommandRouter):
             "get-time",
             "get-buffer-count",
             "get-errors",
+            "clear-errors",
         }
     )
 
@@ -140,7 +141,17 @@ class DAQ6510Controller(DeviceCommandRouter):
         self.rollovers = 0
         self.restarts = 0
         """Number of times the scan was restarted because the instrument was no longer scanning."""
+
+        # Errors follow the usual alarm handling: the condition (consecutive_errors, scan_failed) clears by itself,
+        # the record of the last error stays until it is cleared with `clear-errors` or a new scan is started.
         self.last_error: str | None = None
+        self.last_error_at: datetime.datetime | None = None
+        self.error_count = 0
+        """Number of errors since the scan was started or the errors were cleared."""
+        self.consecutive_errors = 0
+        """Number of errors since the last successful poll, 0 when the scan works."""
+        self.scan_failed = False
+        """True when the scan ended, or could not be started automatically, because of an error."""
 
         self.poll_interval = POLL_INTERVAL
         self.rollover_fraction = ROLLOVER_FRACTION
@@ -157,6 +168,7 @@ class DAQ6510Controller(DeviceCommandRouter):
         self.add_handler("get-buffer-count", self.do_get_buffer_count)
         self.add_handler("get-errors", self.do_get_errors)
         self.add_handler("send-command", self.do_send_command)
+        self.add_handler("clear-errors", self.do_clear_errors)
 
     async def process_command(self, cmd: dict[str, Any]) -> list:
         """Rejects commands that are not allowed during a scan, before they are dispatched."""
@@ -197,6 +209,10 @@ class DAQ6510Controller(DeviceCommandRouter):
     async def do_reset(self, cmd: dict[str, Any]) -> list:
         await self.stop_scan()
         return await self._device_call(self.daq.reset)
+
+    async def do_clear_errors(self, cmd: dict[str, Any]) -> list:
+        self.clear_errors()
+        return success(self.get_scan_status())
 
     async def do_scan_status(self, cmd: dict[str, Any]) -> list:
         return success(self.get_scan_status())
@@ -252,8 +268,34 @@ class DAQ6510Controller(DeviceCommandRouter):
             "scans_received": self.scans_received,
             "rollovers": self.rollovers,
             "restarts": self.restarts,
+            "health": self.get_scan_health(),
+            "consecutive_errors": self.consecutive_errors,
+            "error_count": self.error_count,
             "last_error": self.last_error,
+            "last_error_at": self.last_error_at.isoformat() if self.last_error_at else None,
         }
+
+    def get_scan_health(self) -> str:
+        """Returns the present condition of the scan: 'ok', 'degraded' while errors repeat, 'failed' when the scan
+        ended because of an error. Unlike `last_error`, this clears by itself when the condition is gone."""
+        if self.scan_failed:
+            return "failed"
+        if self.is_scan_running() and self.consecutive_errors > 0:
+            return "degraded"
+        return "ok"
+
+    def record_error(self, error: str):
+        self.last_error = error
+        self.last_error_at = utc_now()
+        self.error_count += 1
+        self.consecutive_errors += 1
+
+    def clear_errors(self):
+        """Clears the record of past errors, i.e. acknowledges them. The present condition is not changed: when the
+        problem persists, the next error is recorded again."""
+        self.last_error = None
+        self.last_error_at = None
+        self.error_count = 0
 
     async def start_scan(self, config: ScanConfig | None = None) -> bool:
         """Configures the instrument and starts a scan that repeats until aborted.
@@ -284,7 +326,9 @@ class DAQ6510Controller(DeviceCommandRouter):
         self.scans_received = 0
         self.rollovers = 0
         self.restarts = 0
-        self.last_error = None
+        self.clear_errors()
+        self.consecutive_errors = 0
+        self.scan_failed = False
         self.scan_started_at = utc_now()
 
         await self._cs.on_scan_started(config)
@@ -381,14 +425,16 @@ class DAQ6510Controller(DeviceCommandRouter):
                         await self._ensure_scan_is_running()
                 await self.poll_buffer()
                 backoff = self.poll_interval
+                self.consecutive_errors = 0
             except asyncio.CancelledError:
                 raise
             except ScanRestartError as exc:
-                self.last_error = f"{type(exc).__name__}: {exc}"
+                self.record_error(f"{type(exc).__name__}: {exc}")
+                self.scan_failed = True
                 logger.error(f"Scan loop: the scan could not be restarted, the scan is stopped: {exc}")
                 return
             except Exception as exc:  # noqa: BLE001, any failure is retried, the loop must not die
-                self.last_error = f"{type(exc).__name__}: {exc}"
+                self.record_error(f"{type(exc).__name__}: {exc}")
                 logger.error(f"Scan loop: polling the DAQ6510 failed ({exc}), retrying in {backoff:.1f}s.")
                 if isinstance(exc, (DeviceTimeoutError, DeviceConnectionError)):
                     await self._drop_connection()
@@ -512,6 +558,7 @@ class DAQ6510Services(ServiceCommandRouter):
                 "status": "ok",
                 "connected": self._cs.controller.daq.is_connection_open,
                 "scan running": self._cs.controller.is_scan_running(),
+                "scan health": self._cs.controller.get_scan_health(),
                 "stored": self._cs.stored_count,
                 "sent_metrics": self._cs.metrics_count,
                 "failed_metrics": self._cs.metrics_failed_count,
@@ -610,7 +657,8 @@ class DAQ6510ControlServer(AcquisitionAsyncControlServer):
                     try:
                         await controller.start_scan()
                     except (ValueError, DeviceError) as exc:
-                        controller.last_error = str(exc)
+                        controller.record_error(f"{type(exc).__name__}: {exc}")
+                        controller.scan_failed = True
                         logger.error(f"Could not start the scan automatically: {exc}")
 
                 delay = CONNECTION_CHECK_INTERVAL if connected else backoff
@@ -826,6 +874,9 @@ class DAQ6510Client(TypedAsyncControlClient):
             "send-command", timeout=timeout, command_string=command_string, response=response
         )
 
+    async def clear_errors(self, timeout: float | None = None) -> dict[str, Any] | None:
+        return await self._device_command("clear-errors", timeout=timeout)
+
     async def health(self, timeout: float | None = None) -> dict[str, Any] | None:
         response = await self.send_service_command("health", timeout=timeout)
         return self._success_message_as_dict(response, "health")
@@ -904,6 +955,12 @@ async def stop_scan():
 async def get_latest():
     """Prints the latest readings."""
     await _run_client(lambda client: client.get_latest(), "Could not get the latest readings")
+
+
+@app.command(cls=TyperAsyncCommand)
+async def clear_errors():
+    """Clears the record of past scan errors (last error and error count), e.g. after they were looked into."""
+    await _run_client(lambda client: client.clear_errors(), "Could not clear the errors")
 
 
 @app.command(cls=TyperAsyncCommand)

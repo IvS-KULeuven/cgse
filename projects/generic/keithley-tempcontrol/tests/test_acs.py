@@ -728,3 +728,120 @@ async def test_incomplete_buffer_read_is_fetched_again(setup, monkeypatch):
     monkeypatch.setattr(controller.daq, "read_buffer", read_buffer)
     assert await controller.poll_buffer() == 3
     assert controller.next_index == 3 * len(CHANNELS) + 1
+
+
+# ----- error record and condition -------------------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_error_condition_clears_but_the_record_stays(setup, monkeypatch):
+    server, _, clock = setup
+    controller = server.controller
+
+    await command(server, "start-scan")
+    status = (await command(server, "scan-status"))["message"]
+    assert status["health"] == "ok"
+    assert status["error_count"] == 0
+    assert status["last_error"] is None
+    assert status["last_error_at"] is None
+
+    # errors that repeat: the scan is degraded
+    get_buffer_end = controller.daq.get_buffer_end
+
+    async def failing_get_buffer_end(buffer_name):
+        raise DeviceError("DAQ6510", "Something went wrong")
+
+    monkeypatch.setattr(controller.daq, "get_buffer_end", failing_get_buffer_end)
+    await wait_for(lambda: controller.consecutive_errors >= 2)
+    assert (await command(server, "scan-status"))["message"]["health"] == "degraded"
+
+    # the problem is gone: the condition clears by itself, the record of the error stays
+    monkeypatch.setattr(controller.daq, "get_buffer_end", get_buffer_end)
+    await wait_for(lambda: controller.consecutive_errors == 0, timeout=5.0)
+
+    status = (await command(server, "scan-status"))["message"]
+    assert status["health"] == "ok"
+    assert status["error_count"] >= 2
+    assert "Something went wrong" in status["last_error"]
+    assert status["last_error_at"] is not None
+
+    # clearing the errors is allowed during the scan
+    response = await command(server, "clear-errors")
+    assert response["success"]
+    assert response["message"]["last_error"] is None
+    assert response["message"]["last_error_at"] is None
+    assert response["message"]["error_count"] == 0
+    assert controller.is_scan_running()
+
+    clock.t = 1.5
+    await wait_for(lambda: controller.scans_received == 2)
+    assert controller.last_error is None
+
+
+@pytest.mark.asyncio
+async def test_clear_errors_does_not_hide_a_persisting_problem(setup, monkeypatch):
+    server, _, _ = setup
+    controller = server.controller
+
+    async def failing_get_buffer_end(buffer_name):
+        raise DeviceError("DAQ6510", "Still broken")
+
+    await command(server, "start-scan")
+    monkeypatch.setattr(controller.daq, "get_buffer_end", failing_get_buffer_end)
+    await wait_for(lambda: controller.consecutive_errors >= 1)
+
+    status = (await command(server, "clear-errors"))["message"]
+    assert status["health"] == "degraded"  # the condition is not cleared
+    assert status["last_error"] is None
+
+    await wait_for(lambda: controller.last_error is not None, timeout=5.0)  # recorded again on the next failure
+    assert "Still broken" in controller.last_error
+
+
+@pytest.mark.asyncio
+async def test_failed_scan_health(setup, monkeypatch):
+    server, model, clock = setup
+    controller = server.controller
+
+    await command(server, "start-scan")
+    clock.t = 1.5
+    await wait_for(lambda: controller.scans_received == 2)
+
+    async def configure_scan(config):
+        await controller.daq.write('SENS:FUNC "TEMP", (@1x)')
+
+    model.reset()
+    monkeypatch.setattr(controller.daq, "configure_scan", configure_scan)
+    controller.daq.break_connection()
+    await wait_for(lambda: not controller.is_scan_running())
+
+    status = (await command(server, "scan-status"))["message"]
+    assert status["health"] == "failed"
+    assert status["running"] is False
+
+    # clearing the errors doesn't change the condition, starting a new scan does
+    assert (await command(server, "clear-errors"))["message"]["health"] == "failed"
+
+    monkeypatch.undo()
+    status = (await command(server, "start-scan"))["message"]["status"]
+    assert status["health"] == "ok"
+    assert status["last_error"] is None
+
+
+@pytest.mark.asyncio
+async def test_failed_auto_scan_is_reported(setup):
+    server, _, _ = setup
+    server.config = make_config(sensors=[SensorConfig("TEMPERATURE", "(@1x)", [("TRANSDUCER", "FRTD")])])
+    await server.controller.daq.disconnect()
+    server.auto_scan = True
+
+    task = asyncio.create_task(server.maintain_connection())
+    try:
+        await wait_for(lambda: server.controller.scan_failed)
+    finally:
+        server.interrupted.set()
+        await task
+
+    status = server.controller.get_scan_status()
+    assert status["health"] == "failed"
+    assert "-224" in status["last_error"]
