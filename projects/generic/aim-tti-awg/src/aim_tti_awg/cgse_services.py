@@ -83,51 +83,5 @@ def status_tgf4000(
     rich.print(stdout.decode(), end="")
 
 
-@tgf4000.command(name="start-sim")
-def start_tgf4000_sim(
-    device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")],
-):
-    """Start the TGF4000 Simulator.
-
-    Args:
-        device_id: TGF4000 identifier.
-    """
-
-    rich.print("Starting service TGF4000 Simulator")
-
-    out = redirect_output_to_log("tgf4000_sim.start.log")
-
-    subprocess.Popen(
-        [sys.executable, "-m", "egse.arbitrary_wave_generator.aim_tti.tgf4000_sim", "start", device_id],
-        stdout=out,
-        stderr=out,
-        stdin=subprocess.DEVNULL,
-        close_fds=True,
-    )
-
-
-@tgf4000.command(name="stop-sim")
-def stop_tgf4000_sim(
-    device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")],
-):
-    """Stops the TGF4000 Simulator.
-
-    Args:
-        device_id: TGF4000 identifier.
-    """
-
-    rich.print("Terminating the TGF4000 simulator.")
-
-    out = redirect_output_to_log("tgf4000_sim.stop.log")
-
-    subprocess.Popen(
-        [sys.executable, "-m", "egse.arbitrary_wave_generator.aim_tti.tgf4000_sim", "stop", device_id],
-        stdout=out,
-        stderr=out,
-        stdin=subprocess.DEVNULL,
-        close_fds=True,
-    )
-
-
 if __name__ == "__main__":
     tgf4000()
