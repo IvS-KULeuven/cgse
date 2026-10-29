@@ -89,4 +89,3 @@ def status_lakeshore336(
     from egse.tempcontrol.lakeshore import lakeshore336_cs
 
     lakeshore336_cs.status(device_id)
-
