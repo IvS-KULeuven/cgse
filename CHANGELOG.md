@@ -63,6 +63,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   There is no separate simulator process: use `cgse pmx_a start --sim DEVICE_ID`. `cgse pmx_a` now has `start`,
   `stop` and `status`.
 
+### RS PRO RS-D3305P
+
+- Removed the `cgse rsd3305p start-sim` and `stop-sim` subcommands, they ran the driver module `rsd3305p` instead of
+  a simulator. There is no separate simulator process: use `cgse rsd3305p start --sim DEVICE_ID`. `cgse rsd3305p` now
+  has `start`, `stop` and `status`.
+- Added the missing `pyserial` dependency, the `rsd3305p_cs` command failed with `No module named 'serial'` when no
+  other package had installed it.
+
 ---
 
 ## [0.25.11] - 2026-07-23
