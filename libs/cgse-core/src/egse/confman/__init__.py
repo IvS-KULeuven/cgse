@@ -140,9 +140,11 @@ from egse.response import Success
 from egse.settings import Settings
 from egse.settings import SettingsError
 from egse.setup import Setup
+from egse.setup import SetupError
 from egse.setup import disentangle_filename
 from egse.setup import load_last_setup_id
 from egse.setup import save_last_setup_id
+from egse.setup import validate_setup_description
 from egse.system import duration
 from egse.system import filter_by_attr
 from egse.system import format_datetime
@@ -901,6 +903,11 @@ class ConfigurationManagerController(ConfigurationManagerInterface):
         #    Do we need to keep a record from which this Setup is derived?
 
         # FIXME: define and handle exceptional conditions, like IOError
+
+        try:
+            validate_setup_description(description)
+        except SetupError as exc:
+            return Failure("The Setup was not submitted.", exc)
 
         if self._obsid is not None:
             return Failure(
