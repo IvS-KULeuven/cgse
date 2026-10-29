@@ -1,9 +1,18 @@
+"""
+Keithley DAQ6510 simulator.
+
+A socket server on the SCPI port of the DAQ6510 that passes every command to a `DAQ6510Model`. The model keeps
+a reading buffer that is filled by a background scan, so the control server can be run without hardware:
+
+    $ daq6510_sim start
+    $ daq6510_cs start --auto-scan --setup-file SETUP.yaml
+
+Set the HOSTNAME of the "Keithley DAQ6510" settings to localhost to connect to the simulator.
+"""
+
 import contextlib
-import datetime
-import re
 import socket
-import time
-from functools import partial
+import threading
 from typing import Annotated
 
 import typer
@@ -12,10 +21,10 @@ from egse.env import bool_env
 from egse.log import logging
 from egse.settings import Settings
 from egse.system import SignalCatcher
+from egse.tempcontrol.keithley.daq6510_model import DAQ6510Model
 
 logger = logging.getLogger("egse.daq6510-sim")
 
-VERSION = "0.1.0"
 VERBOSE_DEBUG = bool_env("VERBOSE_DEBUG")
 HOST = "localhost"
 DAQ_SETTINGS = Settings.load("Keithley DAQ6510")
@@ -28,71 +37,12 @@ CONNECTION_TIMEOUT = 2.0
 SEPARATOR = b"\n"
 SEPARATOR_STR = SEPARATOR.decode()
 
-device_time = datetime.datetime.now(datetime.timezone.utc)
-reference_time = device_time
-
-
 app = typer.Typer(help="DAQ6510 Simulator")
 
-error_msg: str = ""
-"""Global error message, always contains the last error. Reset to an empty string in the inner loop of run_simulator."""
-
-
-def create_datetime(year, month, day, hour, minute, second):
-    global device_time, reference_time
-    device_time = datetime.datetime(year, month, day, hour, minute, second, tzinfo=datetime.timezone.utc)
-    reference_time = datetime.datetime.now(datetime.timezone.utc)
-
-
-def nothing():
-    return None
-
-
-def set_time(year, month, day, hour, minute, second):
-    logger.info(f"TIME {year}, {month}, {day}, {hour}, {minute}, {second}")
-    create_datetime(int(year), int(month), int(day), int(hour), int(minute), int(second))
-
-
-def get_time():
-    current_device_time = device_time + (datetime.datetime.now(datetime.timezone.utc) - reference_time)
-    msg = current_device_time.strftime("%a %b %d %H:%M:%S %Y")
-    logger.info(f":SYST:TIME? {msg = }")
-    return msg
-
-
-def beep(a, b):
-    logger.info(f"BEEP {a=}, {b=}")
-
-
-def block(secs: str):
-    logger.info(f"Blocking execution for {secs} seconds.")
-    time.sleep(float(secs))
-
-
-def reset():
-    logger.info("RESET")
-
-
-def log(level: int, msg: str):
-    logger.log(level, msg)
-
-
-COMMAND_ACTIONS_RESPONSES = {
-    "*IDN?": (None, f"KEITHLEY INSTRUMENTS,DAQ6510,SIMULATOR,{VERSION}"),
-    "*ACTION-RESPONSE?": (partial(log, logging.INFO, "Requested action with response."), get_time),
-    "*ACTION-NO-RESPONSE": (partial(log, logging.INFO, "Requested action without response."), None),
-}
-
-# Check the regex at https://regex101.com
-
-COMMAND_PATTERNS_ACTIONS_RESPONSES = {
-    r":?\*RST": (reset, None),
-    r":?SYST(?:em)*:TIME (\d+), (\d+), (\d+), (\d+), (\d+), (\d+)": (set_time, None),
-    r":?SYST(?:em)*:TIME\? 1": (nothing, get_time),
-    r":?SYST(?:em)*:BEEP(?:er)* (\d+), (\d+(?:\.\d+)?)": (beep, None),
-    # Command to test how the software reacts if the device is busy and blocked
-    r"BLOCK:TIME (\d+(?:\.\d+)?)": (block, None),
-}
+model = DAQ6510Model()
+"""The simulated device, it keeps its state across client connections."""
+model_lock = threading.Lock()
+"""Serializes the commands of all clients, the model is not thread-safe."""
 
 
 def write(conn, response: str):
@@ -121,7 +71,7 @@ def read(conn) -> str:
             if SEPARATOR in buf:
                 line, rest = buf.split(SEPARATOR, 1)
                 _recv_buffers[fileno] = rest
-                logger.info(f"read: {line=}")
+                logger.debug(f"read: {line=}")
                 return line.decode().rstrip()
 
             # Read more data
@@ -146,132 +96,121 @@ def read(conn) -> str:
 
 def process_command(command_string: str) -> str | None:
     """Process the given command string and return a response."""
-    global COMMAND_ACTIONS_RESPONSES
-    global COMMAND_PATTERNS_ACTIONS_RESPONSES
-    global error_msg
 
     if VERBOSE_DEBUG:
         logger.debug(f"{command_string=}")
 
-    try:
-        action, response = COMMAND_ACTIONS_RESPONSES[command_string]
-        if VERBOSE_DEBUG:
-            logger.debug(f"{action=}, {response=}")
+    with model_lock:
+        response = model.process(command_string)
 
-        if action:
-            action()
+    if VERBOSE_DEBUG:
+        logger.debug(f"{response=}")
 
-        if response:
-            if error_msg:
-                return error_msg
-            else:
-                return response() if callable(response) else response
-        else:
-            if error_msg:
-                logger.error(f"Error occurred during process command: {error_msg}")
-            return None
-    except KeyError:
-        # try to match with a value
-        for key, value in COMMAND_PATTERNS_ACTIONS_RESPONSES.items():
-            if match := re.match(key, command_string, flags=re.IGNORECASE):
-                if VERBOSE_DEBUG:
-                    logger.debug(f"{match=}, {match.groups()}")
-                action, response = value
-                if VERBOSE_DEBUG:
-                    logger.debug(f"{action=}, {response=}")
+    return response
 
-                if action:
-                    action(*match.groups())
 
-                if response:
-                    if error_msg:
-                        return error_msg
-                    else:
-                        return response() if callable(response) else response
-                else:
-                    if error_msg:
-                        logger.error(f"Error occurred during process command: {error_msg}")
-                    return None
-
-        logger.error(f"ERROR: unknown command string: {command_string}")
-        return None
+def handle_connection(conn: socket.socket, addr, stop: threading.Event):
+    """Serves one client until it closes the connection or the simulator is stopped. Runs in its own thread."""
+    with conn:
+        logger.info(f"Accepted connection from {addr}")
+        # The DAQ6510 doesn't send a string after connection
+        conn.settimeout(READ_TIMEOUT)
+        try:
+            while not stop.is_set():
+                with contextlib.suppress(socket.timeout):
+                    data = read(conn)
+                    if VERBOSE_DEBUG:
+                        logger.debug(f"{data = }")
+                    if not data:
+                        logger.info(f"Client {addr} closed connection.")
+                        return
+                    if data.strip() == "STOP":
+                        logger.info("Client requested to terminate...")
+                        stop.set()
+                        return
+                    response = process_command(data.strip())
+                    if response is not None:
+                        write(conn, response)
+        except ConnectionResetError as exc:
+            logger.info(f"ConnectionResetError: {exc}")
+        except Exception as exc:
+            logger.info(f"{exc.__class__.__name__} caught: {exc.args}")
 
 
 def run_simulator():
-    global error_msg
-
+    """Accepts client connections and serves each of them in a separate thread, like the real device which
+    accepts multiple connections on its SCPI port. All clients talk to the same model."""
     logger.info("Starting the DAQ6510 Simulator")
 
     killer = SignalCatcher()
+    stop = threading.Event()
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.bind((HOST, DAQ_SETTINGS.PORT))
         s.listen()
         s.settimeout(CONNECTION_TIMEOUT)
-        while True:
-            while True:
-                with contextlib.suppress(socket.timeout):
-                    conn, addr = s.accept()
-                    break
-                if killer.term_signal_received:
-                    return
-            with conn:
-                logger.info(f"Accepted connection from {addr}")
-                # write(conn, "This is PLATO DAQ6510 X.X.sim")  # The DAQ6510 doesn't send a string after connection
-                conn.settimeout(READ_TIMEOUT)
-                try:
-                    while True:
-                        error_msg = ""
-                        with contextlib.suppress(socket.timeout):
-                            data = read(conn)
-                            if VERBOSE_DEBUG:
-                                logger.debug(f"{data = }")
-                            if not data:
-                                logger.info("Client closed connection, accepting new connection...")
-                                break
-                            if data.strip() == "STOP":
-                                logger.info("Client requested to terminate...")
-                                s.close()
-                                return
-                            for cmd in data.split(";"):
-                                response = process_command(cmd.strip())
-                                if response is not None:
-                                    write(conn, response)
-                        if killer.term_signal_received:
-                            logger.info("Terminating...")
-                            s.close()
-                            return
-                        if killer.user_signal_received:
-                            if killer.signal_name == "SIGUSR1":
-                                logger.info("SIGUSR1 is not supported by this simulator")
-                            if killer.signal_name == "SIGUSR2":
-                                logger.info("SIGUSR2 is not supported by this simulator")
-                            killer.clear()
-
-                except ConnectionResetError as exc:
-                    logger.info(f"ConnectionResetError: {exc}")
-                except Exception as exc:
-                    logger.info(f"{exc.__class__.__name__} caught: {exc.args}")
+        while not stop.is_set():
+            with contextlib.suppress(socket.timeout):
+                conn, addr = s.accept()
+                threading.Thread(target=handle_connection, args=(conn, addr, stop), daemon=True).start()
+            if killer.term_signal_received:
+                logger.info("Terminating...")
+                stop.set()
+            if killer.user_signal_received:
+                logger.info(f"{killer.signal_name} is not supported by this simulator")
+                killer.clear()
 
 
-def send_request(cmd: str, cmd_type: str = "query") -> str | None:
-    from egse.tempcontrol.keithley.daq6510_dev import DAQ6510
+class SimulatorClient:
+    """A minimal blocking client for the simulator CLI commands.
 
-    response = None
+    This deliberately doesn't use the DAQ6510 driver, so a problem in the driver can't hide the state of the
+    simulator.
 
-    daq_dev = DAQ6510(hostname="localhost", port=5025)
-    daq_dev.connect()
+    Raises:
+        ConnectionError: when the simulator is not running.
+        TimeoutError: when the simulator doesn't answer a query in time.
+    """
 
-    if cmd_type.lower().strip() == "query":
-        response = daq_dev.query(cmd)
-    elif cmd_type.lower().strip() == "write":
-        daq_dev.write(cmd)
-    else:
-        logger.info(f"Unknown command type {cmd_type} for send_request.")
+    def __init__(self, hostname: str = HOST, port: int | None = None, timeout: float = 5.0):
+        self.hostname = hostname
+        self.port = port or DAQ_SETTINGS.PORT
+        self.timeout = timeout
+        self._sock: socket.socket | None = None
+        self._buffer = b""
 
-    daq_dev.disconnect()
+    def __enter__(self):
+        self._sock = socket.create_connection((self.hostname, self.port), timeout=self.timeout)
+        return self
 
-    return response
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._sock.close()
+        self._sock = None
+
+    def write(self, command: str):
+        self._sock.sendall(command.encode() + SEPARATOR)
+
+    def query(self, command: str) -> str:
+        self.write(command)
+        while SEPARATOR not in self._buffer:
+            data = self._sock.recv(4096)
+            if not data:
+                raise ConnectionError("The simulator closed the connection.")
+            self._buffer += data
+        line, self._buffer = self._buffer.split(SEPARATOR, 1)
+        return line.decode().strip()
+
+
+def _not_running():
+    print(f"DAQ6510 simulator: not running (no connection on {HOST}:{DAQ_SETTINGS.PORT})")
+    raise typer.Exit(1)
+
+
+def _not_responding():
+    print(f"DAQ6510 simulator: not responding on {HOST}:{DAQ_SETTINGS.PORT}")
+    print("  The port accepts connections, but the simulator doesn't answer, it might be busy with another client.")
+    raise typer.Exit(1)
 
 
 @app.command()
@@ -281,14 +220,38 @@ def start():
 
 @app.command()
 def status():
-    response = send_request("*IDN?")
-    logger.info(f"{response}")
+    """Prints the status of the simulator: identification, scan state and buffer content.
+
+    The exit code is 1 when the simulator is not running.
+    """
+    queries = {
+        "identification": "*IDN?",
+        "scan state": "ROUT:SCAN:STAT?",
+        "readings in defbuffer1": 'TRAC:ACT? "defbuffer1"',
+        "device time": "SYST:TIME? 1",
+    }
+    try:
+        with SimulatorClient() as sim:
+            info = {name: sim.query(cmd) for name, cmd in queries.items()}
+    except ConnectionError:
+        _not_running()
+    except TimeoutError:
+        _not_responding()
+
+    print(f"DAQ6510 simulator: running on {HOST}:{DAQ_SETTINGS.PORT}")
+    for name, value in info.items():
+        print(f"  {name}: {value}")
 
 
 @app.command()
 def stop():
-    response = send_request("STOP", "write")
-    logger.info(f"{response}")
+    """Stops the simulator."""
+    try:
+        with SimulatorClient() as sim:
+            sim.write("STOP")
+    except ConnectionError:
+        _not_running()
+    print("DAQ6510 simulator: stop requested")
 
 
 @app.command()
@@ -296,9 +259,22 @@ def command(
     cmd: str,
     cmd_type: Annotated[str, typer.Argument(help="either 'write', 'query'")] = "query",
 ):
-    """Send an SCPI command directly to the simulator. The response will be in the log info."""
-    response = send_request(cmd, cmd_type)
-    logger.info(f"{response}")
+    """Send an SCPI command directly to the simulator and print the response of a query."""
+    cmd_type = cmd_type.lower().strip()
+    if cmd_type not in ("query", "write"):
+        print(f"Unknown command type {cmd_type!r}, use 'query' or 'write'.")
+        raise typer.Exit(2)
+
+    try:
+        with SimulatorClient() as sim:
+            if cmd_type == "query":
+                print(sim.query(cmd))
+            else:
+                sim.write(cmd)
+    except ConnectionError:
+        _not_running()
+    except TimeoutError:
+        _not_responding()
 
 
 if __name__ == "__main__":
