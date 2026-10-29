@@ -642,15 +642,34 @@ class AsyncControlServer:
             "process": self._process_status.as_dict(),
         }
 
+    def get_device_status(self) -> dict[str, Any] | None:
+        """Return the state of the device that is controlled by this control server.
+
+        Control servers of devices shall override this method, see `egse.control.ControlServer.get_device_status()`
+        for the entries of the returned dictionary.
+
+        Returns:
+            None for control servers that do not control a device.
+        """
+        return None
+
     def get_status_report(self) -> dict[str, Any]:
         """Return the status report, as requested by clients through the `status_report` service command.
 
         The report has the same layout for synchronous and asynchronous control servers, see
-        `egse.control.ControlServer.get_status_report()`. The `details` are the component status from
-        `get_component_status()`.
+        `egse.control.ControlServer.get_status_report()`. The `device` section comes from `get_device_status()`, the
+        `details` are the component status from `get_component_status()`.
 
         The status that is published on the monitoring channel, see `get_status()`, is not changed by this report.
         """
+
+        def collect(section: str, func: Callable):
+            try:
+                return func()
+            except Exception as exc:
+                self.logger.error(f"Could not retrieve the {section} for the status report: {type_name(exc)}: {exc}")
+                return {"error": f"{type_name(exc)}: {exc}"}
+
         return {
             "schema_version": 1,
             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
@@ -664,7 +683,8 @@ class AsyncControlServer:
                 "monitoring_port": self.monitoring_port,
             },
             "process": self._process_status.as_status_dict(),
-            "details": self.get_component_status(),
+            "device": collect("device status", self.get_device_status),
+            "details": collect("component status", self.get_component_status),
         }
 
     async def process_device_command(self):

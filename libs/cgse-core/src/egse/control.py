@@ -326,6 +326,20 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         return {key: value for key, value in status.items() if key not in base_keys}
 
+    def get_device_status(self) -> dict | None:
+        """Returns the state of the device that is controlled by this Control Server.
+
+        Control Servers of devices shall override this method and return a dictionary with the following entries:
+
+        * connected (bool | None): True when the device is connected, None when this is not known;
+        * sim_mode (bool | None): True when the Control Server talks to a simulator, None when this is not known.
+
+        Returns:
+            None for Control Servers that do not control a device, e.g. the core services.
+        """
+
+        return None
+
     def get_status_report(self) -> dict:
         """Returns the status report of the Control Server, as requested by clients through the service command
         `get_status_report`.
@@ -336,15 +350,19 @@ class ControlServer(metaclass=abc.ABCMeta):
         * timestamp: ISO 8601 UTC timestamp;
         * control_server: name, service type, device identifier, hostname, and ports of the Control Server;
         * process: process information with normalized keys, see `ProcessStatus.as_status_dict()`;
-        * details: service or device specific status, see `get_status_details()`. When the details cannot be
-          retrieved, this contains only an `error` entry, so the rest of the report is still returned.
+        * device: state of the controlled device, see `get_device_status()`, or None when there is no device;
+        * details: service or device specific status, see `get_status_details()`.
+
+        When the device state or the details cannot be retrieved, that section contains only an `error` entry, so the
+        rest of the report is still returned.
         """
 
-        try:
-            details = self.get_status_details()
-        except Exception as exc:
-            self.logger.error(f"Could not retrieve the status details: {type_name(exc)}: {exc}")
-            details = {"error": f"{type_name(exc)}: {exc}"}
+        def collect(section: str, func: Callable):
+            try:
+                return func()
+            except Exception as exc:
+                self.logger.error(f"Could not retrieve the {section} for the status report: {type_name(exc)}: {exc}")
+                return {"error": f"{type_name(exc)}: {exc}"}
 
         return {
             "schema_version": 1,
@@ -359,7 +377,8 @@ class ControlServer(metaclass=abc.ABCMeta):
                 "monitoring_port": get_port_number(self.dev_ctrl_mon_sock),
             },
             "process": self._process_status.as_status_dict(),
-            "details": details,
+            "device": collect("device status", self.get_device_status),
+            "details": collect("status details", self.get_status_details),
         }
 
     def get_average_execution_times(self) -> dict:

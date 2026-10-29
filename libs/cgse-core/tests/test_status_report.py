@@ -81,6 +81,11 @@ class StatusTestControlServer(ControlServer):
     def get_monitoring_port(self):
         return 0
 
+    def get_device_status(self) -> dict:
+        if self.device_protocol.fail:
+            raise RuntimeError("device not connected")
+        return {"connected": True, "sim_mode": False}
+
     def close(self):
         for sock in (self.dev_ctrl_cmd_sock, self.dev_ctrl_service_sock, self.dev_ctrl_mon_sock):
             sock.close(linger=0)
@@ -105,6 +110,7 @@ def assert_common_layout(report: dict):
     assert set(report["control_server"]) == CONTROL_SERVER_KEYS
     assert set(report["process"]) == PROCESS_KEYS
     assert isinstance(report["process"]["uuid"], str)
+    assert "device" in report
     assert "details" in report
 
     json.dumps(report)  # the report shall be JSON-safe
@@ -122,16 +128,19 @@ def test_sync_status_report(sync_server):
     assert control_server["service_commanding_port"] == get_port_number(sync_server.dev_ctrl_service_sock)
     assert control_server["service_commanding_port"] > 0
 
+    assert report["device"] == {"connected": True, "sim_mode": False}
+
     # Only the entries that the device protocol adds to the base status.
     assert report["details"] == {"extra": 42}
 
 
-def test_sync_status_report_when_details_fail(sync_server):
+def test_sync_status_report_when_device_and_details_fail(sync_server):
     sync_server.device_protocol.fail = True
 
     report = sync_server.get_status_report()
 
     assert_common_layout(report)
+    assert report["device"] == {"error": "RuntimeError: device not connected"}
     assert report["details"] == {"error": "RuntimeError: device not connected"}
 
 
@@ -156,6 +165,7 @@ def test_sync_status_report_through_service_proxy(sync_server):
 
     assert_common_layout(report)
     assert report["control_server"]["device_id"] == "DEV-1"
+    assert report["device"] == {"connected": True, "sim_mode": False}
     assert report["details"] == {"extra": 42}
 
 
@@ -167,11 +177,37 @@ def test_async_status_report():
     assert_common_layout(report)
     assert report["control_server"]["service_type"] == server.service_type
     assert report["control_server"]["device_id"] is None
+    assert report["device"] is None
     assert "service_command_handlers" in report["details"]
     assert "status_report" in report["details"]["service_command_handlers"]
 
     # The status on the monitoring channel keeps its original process keys.
     assert "PID" in server.get_status()["process"]
+
+
+def test_async_status_report_with_device():
+    class DeviceAsyncControlServer(AsyncControlServer):
+        def __init__(self, fail: bool = False):
+            super().__init__()
+            self.device_id = "DEV-2"
+            self.fail = fail
+
+        def get_device_status(self):
+            if self.fail:
+                raise RuntimeError("device not connected")
+            return {"connected": False, "sim_mode": None}
+
+    report = DeviceAsyncControlServer().get_status_report()
+
+    assert_common_layout(report)
+    assert report["control_server"]["device_id"] == "DEV-2"
+    assert report["device"] == {"connected": False, "sim_mode": None}
+
+    report = DeviceAsyncControlServer(fail=True).get_status_report()
+
+    assert_common_layout(report)
+    assert report["device"] == {"error": "RuntimeError: device not connected"}
+    assert "service_command_handlers" in report["details"]
 
 
 def test_configuration_manager_status_details():
