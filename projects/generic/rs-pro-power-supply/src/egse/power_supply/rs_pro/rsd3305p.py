@@ -709,6 +709,15 @@ class Rsd3305pController(Rsd3305pInterface, DynamicCommandMixin):
 
         return self.transport.is_connected()
 
+    def is_connection_open(self) -> bool:
+        """Checks whether the connection to the RS-PRO RS-D3305P is open, without communicating with the device.
+
+        Returns:
+            True if the connection to the RS-PRO RS-D3305P is open; False otherwise.
+        """
+
+        return self.transport.is_connection_open()
+
     def connect(self):
         """Opens the connection to the RS-PRO RS-D3305P.
 
@@ -775,6 +784,9 @@ class Rsd3305pSimulator(Rsd3305pInterface):
         return True
 
     def is_connected(self) -> bool:
+        return True
+
+    def is_connection_open(self) -> bool:
         return True
 
     def connect(self) -> None:
