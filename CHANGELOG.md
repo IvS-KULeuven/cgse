@@ -42,6 +42,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `AsyncSCPIInterface.disconnect()` always resets the connection state, also when closing fails (e.g. after the
   device closed the connection), so the next `connect()` opens a new connection.
 
+### LakeShore 336
+
+- Removed the `cgse lakeshore336 start-simulator` subcommand, it printed the status of the control server instead of
+  starting a simulator. There is no separate simulator process: use `cgse lakeshore336 start --sim DEVICE_ID`.
+  `cgse lakeshore336` now has `start`, `stop` and `status`.
+- Fixed the `lakeshore336_cs` command, it failed with an `ImportError` (the entry point referred to `cli` instead of
+  `app`).
+- Removed the `lakeshore336_ui` GUI script, the `lakeshore336_ui` module doesn't exist.
+
 ---
 
 ## [0.25.11] - 2026-07-23

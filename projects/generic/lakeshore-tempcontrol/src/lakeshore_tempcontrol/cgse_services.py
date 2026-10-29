@@ -90,19 +90,3 @@ def status_lakeshore336(
 
     lakeshore336_cs.status(device_id)
 
-
-@lakeshore336.command(name="start-simulator")
-def start_lakeshore336_sim(
-    device_id: Annotated[str, typer.Argument(help="the device identifier, identifies the hardware controller")],
-):
-    """Starts the LakeShore336 Simulator.
-
-    Args:
-        device_id (str): Device identifier
-    """
-
-    rich.print("Starting service LakeShore336 Simulator")
-
-    from egse.tempcontrol.lakeshore import lakeshore336_cs
-
-    lakeshore336_cs.status(device_id)

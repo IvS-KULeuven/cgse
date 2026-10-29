@@ -28,10 +28,7 @@ dependencies = [
 ]
 
 [project.scripts]
-lakeshore336_cs = 'egse.tempcontrol.lakeshore.lakeshore336_cs:cli'
-
-[project.gui-scripts]
-lakeshore336_ui = "egse.tempcontrol.lakeshore.lakeshore336_ui:main"
+lakeshore336_cs = 'egse.tempcontrol.lakeshore.lakeshore336_cs:app'
 
 [project.entry-points."cgse.version"]
 lakeshore-tempcontrol = 'egse.version:get_version_installed'
