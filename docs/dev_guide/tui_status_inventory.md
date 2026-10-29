@@ -9,6 +9,46 @@ text output of `cgse <service> status`. Where the APIs are insufficient, they wi
 File and line references are relative to `libs/cgse-core/src/` unless the path is given in full. They are a snapshot and
 will drift as the code changes.
 
+The tables below are the **baseline** before the status report was added. What has been implemented since is described
+in [The status report](#the-status-report) and marked in [Proposed API enhancements](#proposed-api-enhancements).
+
+## The status report
+
+Implemented on the branch `feat/status-on-request` (core) and one `feat/<package>-device-status` branch per device
+package (aim-tti, kikusui, rs-pro, digilent, ariel-tcu, symetrie, lakeshore, daq6510, tvac).
+
+Every control server returns a status report on request, with the same layout for sync and async servers:
+
+| Server kind          | Request                                                                     |
+|----------------------|-----------------------------------------------------------------------------|
+| Sync `ControlServer` | `ServiceProxy.get_status_report()`, service command `get_status_report`     |
+| `AsyncControlServer` | `get_status_report()` on the async client, service command `status_report`  |
+
+```text
+schema_version   1
+timestamp        ISO 8601, UTC
+control_server   name, service_type, device_id, hostname, device_commanding_port, service_commanding_port,
+                 monitoring_port
+process          pid, uptime_s, uuid, rss, uss, cpu_user_s, cpu_system_s, cpu_count, cpu_percent
+device           None for services without a device, otherwise {connected, sim_mode}
+details          service or device specific status
+```
+
+- `process` comes from `ProcessStatus.as_status_dict()`: normalized keys, the UUID as a string. The status published on
+  the monitoring port and `get_process_status()` keep the old keys.
+- `device` comes from `get_device_status()`. `connected` tells whether the connection to the device is open; the device
+  itself is not queried, so a status request never blocks a control server or disconnects a device. `sim_mode` is the
+  protocol's `simulator` flag for the sync drivers, and `None` (unknown) for DAQ6510 and TVAC.
+- `details` comes from `get_status_details()` (sync, by default the entries the device protocol adds to its
+  `get_status()`) or `get_component_status()` (async). CM: `obsid_active, obsid, setup_id, site_id`. SM:
+  `storage_location, disk_usage, loaded_setup_id, obsid, registrations`. PM: `core_processes`.
+- When `device` or `details` cannot be retrieved, that section contains only an `error` entry.
+- Only `control_server`, `process` and `device` are guaranteed JSON-safe. Sync `details` travel over pickle and may hold
+  any value a device protocol puts there, e.g. `NaN` in the `alength` of the hexapods, which is not valid strict JSON.
+- A server only offers the new request after a restart with the new code. Clients such as the TUI need a fallback (e.g.
+  `get_process_status()`) for servers that don't have it.
+- Every driver was checked in simulator mode with a live request, except LakeShore336 (see the defects below).
+
 ## Status access by server kind
 
 | Server kind                     | Liveness                              | Status available by request                                                                                                               | Full status (incl. service/device extras)                                                                                                     |
@@ -79,36 +119,69 @@ and TVAC, whose status prints a dict, this always yields connected=True and sim=
 
 ## Proposed API enhancements
 
-1. **Status on request in both base servers.** Add a `get_status` service command to the sync `ServiceProtocol`
-   (`services.yaml`) that returns the *device protocol's* `get_status()`, and a `status` service command to
-   `AsyncControlServer` that returns `get_status()`. This covers CM, SM, PM and all device drivers in one change.
-   Normalize the process keys (`pid`, `uptime_s`, `rss`, `uss`, `cpu_percent`, …) and make `UUID` a string so the dict
-   is JSON-safe.
-2. **One base schema with service-specific sections**, based on the async `get_status()`: `schema_version`,
-   `control_server{name, service_type, device_id, host, ports}`, `process{…}`, plus a service section. For device
-   drivers add `device{connected, sim_mode}`; protocols already track `state` (`DeviceConnectionState`) but do not
-   report it.
-3. **Service sections for the core services**: CM sync `{obsid, setup_id, site_id}` (as `cm_acs` `confman_status`),
-   SM `{storage_location, loaded_setup_id, registrations, disk_usage}`, PM `{managed processes}`.
+1. **Done — status on request in both base servers.** Implemented as `get_status_report` (sync) and `status_report`
+   (async), see [The status report](#the-status-report). The monitoring status is unchanged; the normalized process
+   keys are only in the new report.
+2. **Done — one base schema with service-specific sections**, including `device{connected, sim_mode}` for all device
+   drivers.
+   *Correction:* this item first stated that the protocols already track `state` (`DeviceConnectionState`) and only
+   need to report it. That is not the case: only PUNA and ZONDA update `state`, in all other drivers it stays
+   `DEVICE_NOT_CONNECTED`. `connected` is therefore taken from the open connection of each driver (a new
+   `is_connection_open()`, or an existing `is_connected()` that doesn't query the device).
+3. **Done — service sections for the core services**: CM sync `{obsid_active, obsid, setup_id, site_id}`, SM
+   `{storage_location, disk_usage, loaded_setup_id, obsid, registrations}`, PM `{core_processes}`. The device ids are
+   not in the PM section, because `get_device_ids()` loads the Setup on every call and the PM serves requests on a
+   single thread.
 4. **Bring the custom servers in line**: add `pid`, `uptime` and `host` to the registry, notification hub, metrics hub
    and logger status replies; give the logger a client class; let the notification hub and metrics hub clients
    discover their endpoint from the registry.
 5. **Richer registry metadata**: `device_id`, `cgse_object` (the `cgse <obj>` name) and `sim_mode`. One
    `list_services()` call can then build the TUI overview and map a service to its lifecycle command, replacing the
    `SequenceMatcher` heuristic in `procman_ui.get_cgse_cmd()`.
-6. **Simulator mode for async drivers** (DAQ6510, TVAC) must come from a setting or start flag, since the server
-   cannot detect it is talking to a separate simulator process.
-7. **Process Manager lifecycle**: `start_process` should return a result (it returns `None` now), add
+6. **Open — simulator mode for async drivers** (DAQ6510, TVAC) must come from a setting or start flag, since the
+   server cannot detect it is talking to a separate simulator process. Until then they report `sim_mode: None`.
+7. **Open — Process Manager lifecycle**: `start_process` should return a result (it returns `None` now), add
    `restart_process`, and resolve the command from the service type instead of accepting shell strings. Its
-   `get_*_status` methods should use the client APIs from 1–2 instead of text-matching.
+   `get_*_status` methods should use the status report instead of text-matching. This is part of a broader refactor of
+   the Process Manager, which is too complex and uses blocking calls.
 
-## Defects found during the inventory
+## Defects
 
-- TVAC: `cgse tvac` uses `start-cs`/`stop-cs` instead of `start`/`stop`, breaking the `cgse <obj> start|stop|status`
-  contract the Process Manager relies on.
-- JORAN: no `after_serve()`, so it never deregisters; `self.device_id` is never set.
+### Fixed
+
+- TVAC: `cgse tvac` used `start-cs`/`stop-cs` instead of `start`/`stop`, breaking the `cgse <obj> start|stop|status`
+  contract the Process Manager relies on. Fixed in PR #441 (`feat/tvac-cgse-subcommands`).
+- JORAN: no `after_serve()`, so it never deregistered and the process didn't exit after `joran_cs stop` (the registry
+  heartbeat thread kept running). Fixed on `feat/symetrie-device-status`.
+- JORAN: the control server didn't start: it required a telemetry dictionary in the Setup, loaded `joran.yaml` from the
+  wrong location, and `JoranInterface` lacked the `DeviceInterface` methods. Fixed on `feat/symetrie-device-status`.
+- TGF4000: the simulator and the proxy required `HOSTNAME`/`PORT` in the device settings (an unused
+  `ethernet_interface` was created in `Tgf4000Interface`), and the control server settings used `HOST` while the code
+  reads `HOSTNAME`. Fixed on `feat/aim-tti-device-status`.
+- PMX-A: `pmx_a_cs start --sim` crashed with `NotImplementedError` when the Storage Manager was running, the simulator
+  didn't implement `get_current()`/`get_voltage()`. Fixed on `feat/kikusui-device-status`.
+- CLAUDE.md mentioned registry ports 4242/4243; the settings use 6100/6101/6102 (4242/4243 are only the code fallback
+  in `egse/registry/__init__.py`). Fixed in the local CLAUDE.md, which is not tracked by git.
+
+### Open
+
+- JORAN: `self.device_id` is never set, the status report shows `device_id: null`.
+- JORAN: `JoranController.__init__` would fail with real hardware: `{JORAN_SETTINGS.IP}` creates a set instead of a
+  string, and `super.__init__()` is missing the parentheses. `joran.py` also loads `joran.yaml` without a location
+  into the unused `DEVICE_SETTINGS`.
 - ZONDA: `service_name` is never set (defaults to `zonda_control_server`); `get_status()` has no guard for a
   disconnected device.
+- Hexapods: the status details contain `NaN` (`alength`), which is not valid strict JSON.
+- Hexapods: `dynalpha.py` uses `telnetlib`, which is removed in Python 3.13.
+- LakeShore336 (prototype): `lakeshore336_cs.py` has no `if __name__ == "__main__"`, so `python -m
+  egse.tempcontrol.lakeshore.lakeshore336_cs` and therefore `cgse lakeshore336 start --background` silently do
+  nothing. The protocol needs a Setup with `gse.tempcontrol.lakeshore336[<device_id>].input_channels`, also with
+  `--sim`, so it could not be checked live.
+- TGF4000: `tgf4000.py` defines several methods more than once (ruff F811), e.g. `set_am_frequency` three times.
+- `ControlServer`: `ProcessStatus` registers its Prometheus metrics without a unique prefix, so only one sync control
+  server can be created per Python process (relevant for tests).
+- Process Manager: `get_device_ids()` / `get_devices()` load the Setup on every call, which blocks the single-threaded
+  server.
 - Notification Hub: registers the ports from settings, not the bound ports, so dynamic ports (`0`) are registered as
   0; `_generate_health_response()` is never called.
 - Metrics Hub: `start_time` is set with `time.time()` but compared with `time.monotonic()` in the stats reporter, so the
@@ -118,4 +191,7 @@ and TVAC, whose status prints a dict, this always yields connected=True and sim=
 - Process Manager: `StatusCommand.cmd` interpolates the `device_args` list directly into the command string (runtime
   effect not verified).
 - facility_hk: an unknown command gets no reply, leaving the client's REQ socket stuck.
-- CLAUDE.md mentions registry ports 4242/4243; the settings use 6100–6102 (4242 is only the code fallback).
+- Tests failing on `main`, independent of these changes: `ariel-tcu` `test_tcu.py::test_set_prof_gen_axis_speed`,
+  `cgse-core` `test_async_control.py::test_control_server` (its log capture is empty) and
+  `test_client_server_interaction.py::test_proxy_without_cs`, and 10 tests in `cgse-common`. The `cgse-common` and
+  `cgse-core` tests cannot run in one pytest process, both have a `tests/fixtures` package.
