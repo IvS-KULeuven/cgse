@@ -1,6 +1,5 @@
 import subprocess
 import sys
-import textwrap
 from typing import Annotated
 
 import rich
@@ -75,55 +74,6 @@ def status_puna(device_id: str):
         from egse.hexapod.symetrie import puna_cs
 
         puna_cs.status(device_id)
-
-
-@puna.command(name="start-sim")
-def start_puna_sim(device_id: str):
-    """Start the PUNA Hexapod Simulator (the device simulator)."""
-
-    rich.print(
-        textwrap.dedent(
-            f"""\
-            [orange3]The PUNA simulator is in development, for now use the `--sim` option when starting the control
-            server.[/]
-
-            The `--sim` option will use a Controller clas that doesn't send commands to the device, but simulates
-            the requests by performing actions on the reference frames defined in the hexapod. This means you are
-            not exercising the actual device commanding, but the net result or outcome is the same.
-
-            usage: cgse puna start --sim {device_id}
-            """
-        )
-    )
-    return
-
-    rich.print("Starting service PUNA Simulator")
-
-    out = redirect_output_to_log(f"puna_sim.{device_id.lower()}.start.log")
-
-    subprocess.Popen(
-        [sys.executable, "-m", "egse.hexapod.symetrie.puna_sim", "start", device_id],
-        stdout=out,
-        stderr=out,
-        stdin=subprocess.DEVNULL,
-        close_fds=True,
-    )
-
-
-@puna.command(name="stop-sim")
-def stop_puna_sim(device_id: str):
-    """Stop the PUNA Hexapod Simulator."""
-    rich.print("Terminating the PUNA simulator.")
-
-    out = redirect_output_to_log(f"puna_sim.{device_id.lower()}.stop.log")
-
-    subprocess.Popen(
-        [sys.executable, "-m", "egse.hexapod.symetrie.puna_sim", "stop", device_id],
-        stdout=out,
-        stderr=out,
-        stdin=subprocess.DEVNULL,
-        close_fds=True,
-    )
 
 
 # ---------- ZONDA Commands --------------------------------------------------------------------------------------------

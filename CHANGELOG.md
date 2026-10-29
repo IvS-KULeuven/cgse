@@ -71,6 +71,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Added the missing `pyserial` dependency, the `rsd3305p_cs` command failed with `No module named 'serial'` when no
   other package had installed it.
 
+### Symétrie Hexapods
+
+- Removed the `cgse puna start-sim` and `stop-sim` subcommands: `start-sim` only printed that the simulator is in
+  development, `stop-sim` ran the `puna_sim` module that doesn't exist. There is no separate simulator process: use
+  `cgse puna start --sim DEVICE_ID`. `cgse puna`, `cgse zonda` and `cgse joran` now all have `start`, `stop` and
+  `status`.
+
 ---
 
 ## [0.25.11] - 2026-07-23
