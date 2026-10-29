@@ -129,6 +129,9 @@ class HexapodSimulator:
     def is_connected(self):
         return True
 
+    def is_connection_open(self):
+        return True
+
     def reset(self, wait=True, verbose=False):
         # TODO:
         #   Find out what exactly a reset() should be doing. Does it bring back the Hexapod
