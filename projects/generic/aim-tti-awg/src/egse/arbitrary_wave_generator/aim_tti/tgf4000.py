@@ -264,8 +264,6 @@ class Tgf4000Interface(DeviceInterface):
 
         self.device_id = device_id
 
-        self.ethernet_interface = Tgf4000EthernetInterface(device_id=device_id)
-
     # Channel selection
 
     @dynamic_command(
@@ -4275,6 +4273,15 @@ class Tgf4000Controller(Tgf4000Interface, DynamicCommandMixin):
 
         return self.transport.is_connected()
 
+    def is_connection_open(self) -> bool:
+        """Checks whether the connection to the Aim-TTi TGF4000 is open, without communicating with the device.
+
+        Returns:
+            True if the connection to the Aim-TTi TGF4000 is open; False otherwise.
+        """
+
+        return self.transport.is_connection_open()
+
     def connect(self):
         """Opens the connection to the Aim-TTI TGF4000.
 
@@ -4521,6 +4528,9 @@ class Tgf4000Simulator(Tgf4000Interface):
         self._is_connected = True
 
     def is_connected(self) -> bool:
+        return self._is_connected
+
+    def is_connection_open(self) -> bool:
         return self._is_connected
 
     def is_simulator(self) -> bool:
