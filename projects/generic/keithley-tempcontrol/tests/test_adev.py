@@ -1,14 +1,17 @@
 """Tests for the asynchronous DAQ6510 driver over a real socket connection to the simulator.
 
-Start the simulator before running these tests, they are skipped otherwise:
+These tests reset the simulator (`*RST`, `ABOR`), which stops a scan that a running control server depends on.
+They only run when asked for, with the simulator started:
 
     $ daq6510_sim start
+    $ DAQ6510_SIM_TESTS=1 uv run pytest tests/test_adev.py
 
 The HOSTNAME of the "Keithley DAQ6510" settings must point to the simulator (localhost).
 """
 
 import asyncio
 import datetime
+import os
 import socket
 
 import pytest
@@ -38,9 +41,17 @@ def is_simulator_available() -> bool:
     return "DAQ6510" in response and "SIMULATOR" in response
 
 
-pytestmark = pytest.mark.skipif(
-    not is_simulator_available(), reason="These tests need the DAQ6510 simulator, start it with 'daq6510_sim start'."
-)
+SIM_TESTS_ENABLED = os.environ.get("DAQ6510_SIM_TESTS", "") == "1"
+
+pytestmark = [
+    pytest.mark.skipif(
+        not SIM_TESTS_ENABLED, reason="These tests reset the simulator, set DAQ6510_SIM_TESTS=1 to run them."
+    ),
+    pytest.mark.skipif(
+        SIM_TESTS_ENABLED and not is_simulator_available(),
+        reason="These tests need the DAQ6510 simulator, start it with 'daq6510_sim start'.",
+    ),
+]
 
 
 def make_config(**kwargs) -> ScanConfig:

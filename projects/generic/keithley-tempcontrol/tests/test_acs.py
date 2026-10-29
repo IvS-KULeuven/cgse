@@ -11,6 +11,7 @@ import pickle
 from typing import Any
 
 import pytest
+import typer
 
 from egse.device import DeviceConnectionError
 from egse.device import DeviceError
@@ -679,6 +680,65 @@ async def test_scan_is_restarted_after_a_power_cycle(setup):
 
 
 @pytest.mark.asyncio
+async def test_aborted_scan_is_restarted(setup):
+    server, model, clock = setup
+    controller = server.controller
+    controller.clock = clock
+
+    await command(server, "start-scan")
+    clock.t = 1.5
+    await wait_for(lambda: controller.scans_received == 2)
+
+    # The scan is aborted by another client or from the front panel, the connection stays up
+    model.process("ABOR")
+    assert model.scan_state == "ABORTED"
+
+    clock.t = 1.5 + controller.stall_timeout() - 0.1  # not stalled yet
+    await asyncio.sleep(0.05)
+    assert controller.restarts == 0
+
+    clock.t = 1.5 + controller.stall_timeout() + 0.1
+    await wait_for(lambda: controller.restarts == 1)
+    assert model.scan_state == "RUNNING"
+    assert controller.daq.is_connection_open
+
+    clock.t += 2.5  # the restarted scan delivers new scans
+    await wait_for(lambda: controller.scans_received == 5)
+    assert controller.get_scan_health() == "ok"
+
+
+@pytest.mark.asyncio
+async def test_slow_scan_is_not_restarted(setup, monkeypatch):
+    server, model, clock = setup
+    controller = server.controller
+    controller.clock = clock
+
+    await command(server, "start-scan")
+    clock.t = 1.5
+    await wait_for(lambda: controller.scans_received == 2)
+
+    checks = []
+    get_scan_state = controller.daq.get_scan_state
+
+    async def counting_get_scan_state():
+        checks.append(clock.t)
+        return await get_scan_state()
+
+    monkeypatch.setattr(controller.daq, "get_scan_state", counting_get_scan_state)
+
+    # No new scans while the instrument is still scanning, e.g. a scan takes longer than expected
+    monkeypatch.setattr(model, "_update_scan", lambda: None)
+
+    clock.t = 1.5 + controller.stall_timeout() + 0.1
+    await wait_for(lambda: len(checks) == 1)
+    await asyncio.sleep(0.05)
+
+    assert len(checks) == 1  # checked once, not on every poll
+    assert controller.restarts == 0
+    assert controller.is_scan_running()
+
+
+@pytest.mark.asyncio
 async def test_scan_stops_when_the_restart_fails(setup, monkeypatch):
     server, model, clock = setup
     controller = server.controller
@@ -845,3 +905,71 @@ async def test_failed_auto_scan_is_reported(setup):
     status = server.controller.get_scan_status()
     assert status["health"] == "failed"
     assert "-224" in status["last_error"]
+
+
+# ----- command line ---------------------------------------------------------------------------------------------------
+
+
+@pytest.fixture
+def cli(setup, monkeypatch):
+    """Routes the device commands of the command line through the control server under test."""
+    server, model, clock = setup
+
+    class Client:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *exc):
+            return False
+
+        async def send_device_command(self, request, timeout=None):
+            return decode(await server.controller.process_command(request))
+
+    monkeypatch.setattr(daq6510_acs, "DAQ6510Client", Client)
+    return server, model, clock
+
+
+@pytest.mark.asyncio
+async def test_cli_prints_the_result(cli, capsys):
+    server, model, _ = cli
+
+    await daq6510_acs._run_device_command("get-idn")
+    assert "DAQ6510" in capsys.readouterr().out
+
+    await daq6510_acs._run_device_command("set-time", time="2025-01-02T03:04:05")
+    assert capsys.readouterr().out.strip() == "OK"  # a successful command without a result
+    assert model.process("SYST:TIME? 1") == "Thu Jan 02 03:04:05 2025"
+
+    await daq6510_acs._run_device_command("send-command", command_string="ROUT:SCAN:STAT?", response=True)
+    assert capsys.readouterr().out.startswith("IDLE")
+
+
+@pytest.mark.asyncio
+async def test_cli_reports_a_failure(cli, capsys):
+    server, _, _ = cli
+
+    await command(server, "start-scan")
+
+    with pytest.raises(typer.Exit) as exc_info:
+        await daq6510_acs._run_device_command("set-time")
+    assert exc_info.value.exit_code == 1
+    out = capsys.readouterr().out
+    assert "'set-time' failed" in out
+    assert "device-busy" in out
+
+
+@pytest.mark.asyncio
+async def test_cli_reports_an_unreachable_control_server(monkeypatch, capsys):
+    class Client:
+        async def __aenter__(self):
+            raise ConnectionError("no service_type (DAQ6510) found")
+
+        async def __aexit__(self, *exc):
+            return False
+
+    monkeypatch.setattr(daq6510_acs, "DAQ6510Client", Client)
+
+    with pytest.raises(typer.Exit) as exc_info:
+        await daq6510_acs._run_device_command("get-idn")
+    assert exc_info.value.exit_code == 1
+    assert "Could not send 'get-idn'" in capsys.readouterr().out

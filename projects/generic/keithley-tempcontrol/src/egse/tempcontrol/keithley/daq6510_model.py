@@ -54,7 +54,8 @@ TEMPERATURE_PROFILE = (
 )
 """The simulated temperature cycle as (time [s], temperature [°C]) points, linear in between. Starting from room
 temperature, the temperature goes through three high plateaus, cools down to a low plateau and goes back to room
-temperature. The cycle repeats, the last time is the duration of the cycle."""
+temperature. The cycle repeats, the last time is the duration of the cycle. The model uses the UTC wall clock as
+time (seconds since the Unix epoch), so each cycle starts at a whole hour and continues across simulator restarts."""
 
 
 def profile_temperature(t: float) -> float:
@@ -67,7 +68,7 @@ def profile_temperature(t: float) -> float:
 
 
 def channel_temperature(channel: str, t: float) -> float:
-    """Returns the simulated temperature [°C] of a channel at time t [s] since the start of the simulation.
+    """Returns the simulated temperature [°C] of a channel at time t [s], the model uses seconds since the Unix epoch.
 
     All channels follow the TEMPERATURE_PROFILE with small, deterministic differences, so they can be told apart:
     a time lag, an offset and a ripple with a different period.
@@ -242,7 +243,9 @@ class DAQ6510Model:
                 delay = self.scan_duration * idx / len(self.scan_channels)
                 ts = timestamp + datetime.timedelta(seconds=delay)
                 epoch = ts.timestamp()
-                t = now - age + delay - self._clock_epoch  # time of this reading since the start of the model
+                # The profile follows the wall clock (not the device time that can be set with SYST:TIME), so it
+                # continues where it was when the simulator is restarted.
+                t = self._wall_epoch.timestamp() + now - age + delay - self._clock_epoch
                 buffer.append(
                     Reading(
                         channel=channel,

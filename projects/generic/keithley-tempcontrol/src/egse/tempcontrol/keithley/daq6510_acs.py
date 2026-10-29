@@ -37,7 +37,9 @@ __all__ = [
 import asyncio
 import datetime
 import sys
+import time
 from pathlib import Path
+from typing import Annotated
 from typing import Any
 from typing import Callable
 
@@ -82,6 +84,8 @@ RECONNECT_BACKOFF_MAX = 60.0
 """Maximum time between two attempts to (re)connect to the device [s]."""
 CONNECTION_CHECK_INTERVAL = 10.0
 """Time between two connection checks while connected [s]."""
+STALL_MARGIN = 10.0
+"""The scan is considered stalled when no new scan arrived for two scan intervals plus this margin [s]."""
 
 SITE_ID = get_site_id()
 
@@ -141,6 +145,9 @@ class DAQ6510Controller(DeviceCommandRouter):
         self.rollovers = 0
         self.restarts = 0
         """Number of times the scan was restarted because the instrument was no longer scanning."""
+        self.clock: Callable[[], float] = time.monotonic
+        self.last_progress: float = 0.0
+        """Time of the last new scan, or of the last check of the scan state, according to `clock`."""
 
         # Errors follow the usual alarm handling: the condition (consecutive_errors, scan_failed) clears by itself,
         # the record of the last error stays until it is cleared with `clear-errors` or a new scan is started.
@@ -330,6 +337,7 @@ class DAQ6510Controller(DeviceCommandRouter):
         self.consecutive_errors = 0
         self.scan_failed = False
         self.scan_started_at = utc_now()
+        self.last_progress = self.clock()
 
         await self._cs.on_scan_started(config)
 
@@ -361,7 +369,8 @@ class DAQ6510Controller(DeviceCommandRouter):
 
         This is checked after every reconnect: when the instrument was power cycled (or the simulator restarted),
         the connection was lost and the instrument came back without a scan. The readings in the buffer that were
-        not fetched before the power cycle are lost.
+        not fetched before the power cycle are lost. It is also checked when the scan stalls without a connection
+        loss, e.g. when the scan was aborted from the front panel or by another client.
 
         Raises:
             ScanRestartError: when the instrument reported errors while configuring the scan again.
@@ -372,7 +381,7 @@ class DAQ6510Controller(DeviceCommandRouter):
             return
 
         logger.warning(
-            f"The DAQ6510 is no longer scanning (scan state {state!r}), the instrument was probably power cycled. "
+            f"The DAQ6510 is no longer scanning (scan state {state!r}), it was power cycled or the scan was aborted. "
             f"Restarting the scan."
         )
         try:
@@ -382,6 +391,7 @@ class DAQ6510Controller(DeviceCommandRouter):
 
         self.next_index = 1
         self.restarts += 1
+        self.last_progress = self.clock()
 
     async def stop_scan(self) -> bool:
         """Stops the scan loop and aborts the scan on the instrument.
@@ -411,7 +421,8 @@ class DAQ6510Controller(DeviceCommandRouter):
         Errors don't end the loop, the next poll is retried with a growing backoff. On a timeout or a connection
         error the connection is re-established, which also discards a late response that would otherwise be read as
         the answer to the next query. The instrument keeps scanning on its own meanwhile, so no data is lost when the
-        connection recovers. After a reconnect, the scan is restarted when the instrument is no longer scanning.
+        connection recovers. After a reconnect, and when no new scan arrived for longer than the stall timeout, the
+        scan is restarted when the instrument is no longer scanning.
 
         Only when the scan can not be restarted, the loop ends and the scan is no longer running.
         """
@@ -423,7 +434,10 @@ class DAQ6510Controller(DeviceCommandRouter):
                     async with self.hw_lock:
                         await self.daq.connect()
                         await self._ensure_scan_is_running()
-                await self.poll_buffer()
+                if await self.poll_buffer() > 0:
+                    self.last_progress = self.clock()
+                elif self.clock() - self.last_progress > self.stall_timeout():
+                    await self._check_stalled_scan()
                 backoff = self.poll_interval
                 self.consecutive_errors = 0
             except asyncio.CancelledError:
@@ -443,6 +457,21 @@ class DAQ6510Controller(DeviceCommandRouter):
                 continue
 
             await self._wait_for_stop(self.poll_interval)
+
+    def stall_timeout(self) -> float:
+        """Returns the time without a new scan after which the scan state of the instrument is checked [s]."""
+        return 2 * self.scan_config.interval + STALL_MARGIN
+
+    async def _check_stalled_scan(self):
+        """Checks the scan state when no new scan arrived for a while, and restarts the scan when the instrument is
+        no longer scanning. When it is still scanning (e.g. a scan takes longer than expected), it is checked again
+        after the next stall timeout."""
+        logger.warning(
+            f"No new scan from the DAQ6510 for {self.clock() - self.last_progress:.1f}s, checking the scan state."
+        )
+        async with self.hw_lock:
+            await self._ensure_scan_is_running()
+        self.last_progress = self.clock()
 
     async def _wait_for_stop(self, timeout: float):
         try:
@@ -910,6 +939,23 @@ async def start(
             rich.print(f"[red]{msg}.")
 
 
+async def _run_device_command(command: str, timeout: float | None = None, **kwargs: Any):
+    """Sends a device command to the control server and prints the result, or the error with exit code 1."""
+    try:
+        async with DAQ6510Client() as client:
+            response = await client.send_device_command({"command": command, **kwargs}, timeout=timeout)
+    except Exception as exc:  # noqa: BLE001
+        rich.print(f"[red]Could not send '{command}' to the DAQ6510 control server: {exc}")
+        raise typer.Exit(1)
+
+    if not response.get("success"):
+        rich.print(f"[red]'{command}' failed: {response.get('message')}")
+        raise typer.Exit(1)
+
+    message = response.get("message")
+    rich.print("OK" if message is None else message)
+
+
 async def _run_client(func: Callable, error_message: str):
     try:
         async with DAQ6510Client() as client:
@@ -942,31 +988,74 @@ async def status():
 @app.command(cls=TyperAsyncCommand)
 async def start_scan():
     """Configures the DAQ6510 from the Setup and starts a scan."""
-    await _run_client(lambda client: client.start_scan(), "Could not start the scan")
+    await _run_device_command("start-scan", timeout=30.0)
 
 
 @app.command(cls=TyperAsyncCommand)
 async def stop_scan():
     """Aborts the scan on the DAQ6510."""
-    await _run_client(lambda client: client.stop_scan(), "Could not stop the scan")
+    await _run_device_command("stop-scan")
 
 
 @app.command(cls=TyperAsyncCommand)
 async def get_latest():
     """Prints the latest readings."""
-    await _run_client(lambda client: client.get_latest(), "Could not get the latest readings")
+    await _run_device_command("get-latest")
 
 
 @app.command(cls=TyperAsyncCommand)
 async def clear_errors():
     """Clears the record of past scan errors (last error and error count), e.g. after they were looked into."""
-    await _run_client(lambda client: client.clear_errors(), "Could not clear the errors")
+    await _run_device_command("clear-errors")
 
 
 @app.command(cls=TyperAsyncCommand)
 async def reset():
     """Aborts the scan and resets the DAQ6510 to its default settings."""
-    await _run_client(lambda client: client.reset(), "Could not reset the DAQ6510")
+    await _run_device_command("reset")
+
+
+@app.command(cls=TyperAsyncCommand)
+async def get_idn():
+    """Prints the identification of the DAQ6510."""
+    await _run_device_command("get-idn")
+
+
+@app.command(cls=TyperAsyncCommand)
+async def get_time():
+    """Prints the date and time of the DAQ6510, this is UTC when the time was set by the control server."""
+    await _run_device_command("get-time")
+
+
+@app.command(cls=TyperAsyncCommand)
+async def set_time(
+    time: Annotated[
+        str | None, typer.Argument(help="ISO date and time in UTC, e.g. 2026-10-29T10:30:00, default is now.")
+    ] = None,
+):
+    """Sets the date and time of the DAQ6510 (UTC). Not allowed while a scan is running."""
+    await _run_device_command("set-time", time=time)
+
+
+@app.command(cls=TyperAsyncCommand)
+async def get_buffer_count():
+    """Prints the number of readings in the reading buffer of the scan."""
+    await _run_device_command("get-buffer-count")
+
+
+@app.command(cls=TyperAsyncCommand)
+async def get_errors():
+    """Reads and prints the errors in the error queue of the DAQ6510, this empties the error queue."""
+    await _run_device_command("get-errors")
+
+
+@app.command(cls=TyperAsyncCommand)
+async def send_command(
+    command_string: Annotated[str, typer.Argument(help="The SCPI command, e.g. 'ROUT:SCAN:STAT?'.")],
+    query: Annotated[bool, typer.Option(help="The command returns a response, e.g. a query ending in '?'.")] = False,
+):
+    """Sends a raw SCPI command to the DAQ6510. Not allowed while a scan is running."""
+    await _run_device_command("send-command", command_string=command_string, response=query)
 
 
 if __name__ == "__main__":

@@ -20,7 +20,12 @@ latest readings in memory. Readings are stored with the Storage Manager and sent
 ```
 daq6510_cs start [--setup-file SETUP.yaml] [--auto-scan]
 daq6510_cs start-scan | stop-scan | get-latest | reset | clear-errors | status | stop
+daq6510_cs get-idn | get-time | get-buffer-count | get-errors
+daq6510_cs set-time [ISO-TIME] | send-command "SCPI" [--query]
 ```
+
+`set-time` and `send-command` are refused while a scan is running. `get-errors` empties the error queue of the
+instrument.
 
 While a scan is running, only read-only queries, `stop-scan`, `reset` and `clear-errors` are accepted.
 
@@ -32,8 +37,13 @@ The `scan` section of the status separates the present condition from the record
 - `last_error`, `last_error_at` and `error_count` keep the last error and the number of errors, also when the problem
   is gone. They are cleared with `clear-errors` or when a new scan is started.
 
+The scan is restarted (counted in `restarts`) when the instrument stopped scanning: after a reconnect, e.g. after a
+power cycle, and when no new scan arrived for two scan intervals plus 10 s, e.g. after an abort from the front panel or
+by another client.
+
 Without hardware, start the simulator with `daq6510_sim start` and set `HOSTNAME: localhost` for the
-`Keithley DAQ6510` settings.
+`Keithley DAQ6510` settings. The tests in `tests/test_adev.py` run against the simulator and reset it, they only run
+with `DAQ6510_SIM_TESTS=1`.
 
 ### To verify on hardware
 
@@ -45,8 +55,9 @@ real device yet:
 - `TRACe:ACTual:END?` counts the readings of a running scan, one by one, from index 1 after `TRACe:POINts`.
 - `ABORt` followed by `TRACe:CLEar` and `INITiate` restarts the scan with the same configuration (buffer rollover).
 - A sensor configuration from the Setup produces no errors in `SYSTem:ERRor?`.
-- Between two scans, `ROUTe:SCAN:STATe?` reports `RUNNING` or `WAITING`. After a reconnect, the control server
-  restarts the scan for any other state (e.g. `IDLE` after a power cycle).
+- Between two scans, `ROUTe:SCAN:STATe?` reports `RUNNING` or `WAITING`. After a reconnect, and when no new scan
+  arrived for two scan intervals plus 10 s, the control server restarts the scan for any other state (e.g. `IDLE`
+  after a power cycle, `ABORTED` after an abort from the front panel or another client).
 
 ## Reference Documents
  - Model DAQ6510 Data Acquisition and Multimeter System Reference Manual (DAQ6510-901-01 Rev. B / September 2019)

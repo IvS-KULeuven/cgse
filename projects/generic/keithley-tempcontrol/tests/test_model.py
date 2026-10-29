@@ -147,7 +147,8 @@ def test_parse_readings():
 @pytest.mark.asyncio
 async def test_driver_configure_and_read_scan():
     clock = FakeClock()
-    model = DAQ6510Model(clock=clock, scan_duration=0.1)
+    start = datetime.datetime(2026, 10, 29, 12, 0, 0, tzinfo=datetime.timezone.utc)  # start of a cycle
+    model = DAQ6510Model(clock=clock, wall_clock=lambda: start, scan_duration=0.1)
     daq = ModelledDAQ6510(model)
     await daq.connect()
 
@@ -268,7 +269,8 @@ def test_channel_temperatures_differ_but_are_deterministic():
 
 def test_model_readings_follow_the_profile():
     clock = FakeClock()
-    model = DAQ6510Model(clock=clock, scan_duration=0.1)
+    start = datetime.datetime(2026, 10, 29, 12, 0, 0, tzinfo=datetime.timezone.utc)  # a whole hour, start of a cycle
+    model = DAQ6510Model(clock=clock, wall_clock=lambda: start, scan_duration=0.1)
     model.process("ROUT:SCAN:CRE (@101:102); ROUT:SCAN:COUN:SCAN 0; ROUT:SCAN:INT 600; INIT")
 
     clock.t = 3000.0  # 5 scans, at 0, 600, ..., 2400 s
@@ -278,3 +280,24 @@ def test_model_readings_follow_the_profile():
     assert values[0] == pytest.approx(20, abs=0.5)  # room temperature at the start
     assert values[2] == pytest.approx(40, abs=0.5)  # 600 s, end of the first ramp
     assert values[8] == pytest.approx(-84, abs=0.5)  # 2400 s, cooling down from 60 to -100 between 1860 and 2460 s
+
+
+def test_profile_continues_after_a_restart():
+    """The profile follows the wall clock, a model created later (a restarted simulator) continues the same cycle."""
+    start = datetime.datetime(2026, 10, 29, 12, 0, 0, tzinfo=datetime.timezone.utc)
+
+    first = DAQ6510Model(clock=FakeClock(), wall_clock=lambda: start, scan_duration=0.1)
+    first.process("ROUT:SCAN:CRE (@101); ROUT:SCAN:COUN:SCAN 0; ROUT:SCAN:INT 600; INIT")
+    first.clock.t = 2000.0  # scans at 0, 600, 1200, 1800 s
+
+    restarted_clock = FakeClock()
+    restart = start + datetime.timedelta(seconds=1800)
+    restarted = DAQ6510Model(clock=restarted_clock, wall_clock=lambda: restart, scan_duration=0.1)
+    restarted.process("ROUT:SCAN:CRE (@101); ROUT:SCAN:COUN:SCAN 0; ROUT:SCAN:INT 600; INIT")
+    restarted_clock.t = 200.0  # one scan at 1800 s since the start of the cycle
+
+    before = float(first.process('TRAC:DATA? 4, 4, "defbuffer1", READ'))
+    after = float(restarted.process('TRAC:DATA? 1, 1, "defbuffer1", READ'))
+
+    assert before == pytest.approx(60, abs=0.5)  # 1800 s, the 60 °C plateau, not the 20 °C start of the cycle
+    assert after == pytest.approx(before)
