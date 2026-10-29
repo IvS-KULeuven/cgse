@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -1147,6 +1147,23 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Add a Service">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sub-commands-of-a-device" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sub-commands of a device
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -3438,6 +3455,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Add a Service">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sub-commands-of-a-device" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sub-commands of a device
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -3497,7 +3531,8 @@ places. The following entry-points are currently defined:</p>
 <li><code>cgse.command</code>: Packages can add commands or sub-commands to the <code>cgse</code> app to manage
   their functionality from within the <code>cgse</code> app, e.g. to start or stop the service or to report on
   its status.</li>
-<li><code>cgse.service</code>: Package provides a device driver or another service.</li>
+<li><code>cgse.service</code>: Package provides a device driver or another service. Device packages use the
+  sub-group <code>cgse.service.device_command</code>, see <a href="#add-a-service">Add a Service</a>.</li>
 <li><code>cgse.settings</code>: Package can add their own settings.</li>
 <li><code>cgse.explore</code>: Package provides a set of functions to explore, e.g. if any of the processes 
   it provides are running.</li>
@@ -3515,8 +3550,8 @@ specified.</p>
 <p>Add the following to your <code>pyproject.toml</code> file in your project's root folder, replacing
 <em>package-name</em> with the name of your project. The entry-point value is currently not used, but you
 want to use a valid format, the value below is always valid.</p>
-<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">&quot;cgse.version&quot;</span><span class="k">]</span>
-<span class="n">package-name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;egse.version:get_version_installed&#39;</span>
+<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">"cgse.version"</span><span class="k">]</span>
+<span class="n">package-name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'egse.version:get_version_installed'</span>
 </code></pre></div>
 <h2 id="extending-the-cgse-app">Extending the <code>cgse</code> app<a class="headerlink" href="#extending-the-cgse-app" title="Permanent link">&para;</a></h2>
 <h3 id="add-a-command">Add a Command<a class="headerlink" href="#add-a-command" title="Permanent link">&para;</a></h3>
@@ -3527,8 +3562,8 @@ is as simple as writing a function. The function will be added to the <code>cgse
 the <code>app.command()</code> function of <code>Typer</code>, making the function a top-level command of the <code>cgse</code>
 app. The function can be defined as a plain function or with Typer's <code>@app.command</code> decorator.</p>
 <p>In the <code>pyproject.toml</code> file of your project, add the following lines to add the CGSE command:</p>
-<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">&quot;cgse.command&quot;</span><span class="k">]</span>
-<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;module:object&#39;</span>
+<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">"cgse.command"</span><span class="k">]</span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'module:object'</span>
 </code></pre></div>
 <p>Where:</p>
 <ul>
@@ -3538,8 +3573,8 @@ app. The function can be defined as a plain function or with Typer's <code>@app.
 </ul>
 <p>As an example, for the <code>cgse-tools</code> package, the <code>init</code> command of the <code>cgse</code> app is listed in
 the <code>pyproject.toml</code> file as follows:</p>
-<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">&quot;cgse.command&quot;</span><span class="k">]</span>
-<span class="n">init</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;cgse_tools.cgse_commands:init&#39;</span>
+<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">"cgse.command"</span><span class="k">]</span>
+<span class="n">init</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'cgse_tools.cgse_commands:init'</span>
 </code></pre></div>
 <p>The <code>init</code> function is defined in the <code>cgse_commands.py</code> module which is located in the
 <code>cgse_tools</code> module in the <code>src</code> folder of the package:</p>
@@ -3570,37 +3605,119 @@ command where you currently have the sub-commands <code>env</code> and <code>set
 the decorator <code>@&lt;app&gt;.command()</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">typer</span>
 
-<span class="n">show</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Typer</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Show information about settings, environment, setup, ...&quot;</span><span class="p">)</span>
+<span class="n">show</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Typer</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">"Show information about settings, environment, setup, ..."</span><span class="p">)</span>
 
 
-<span class="nd">@show</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;settings&quot;</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">show_settings</span><span class="p">():</span>
-    <span class="o">...</span>
+<span class="nd">@show</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"settings"</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">show_settings</span><span class="p">():</span> <span class="o">...</span>
 
 
-<span class="nd">@show</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;env&quot;</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">show_env</span><span class="p">():</span>
-    <span class="o">...</span>
+<span class="nd">@show</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"env"</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">show_env</span><span class="p">():</span> <span class="o">...</span>
 </code></pre></div>
 <p>To add this command group to the <code>cgse</code> app, the following entry was used in the <code>pyproject. toml</code>
 file of the <code>cgse-tools</code> project. Notice the <code>[group]</code> at the end of the entry which indicates this
 is a command group instead of a single command.</p>
-<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">&quot;cgse.command&quot;</span><span class="k">]</span>
-<span class="n">show</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;cgse_tools.cgse_commands:show[group]&#39;</span>
+<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">"cgse.command"</span><span class="k">]</span>
+<span class="n">show</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'cgse_tools.cgse_commands:show[group]'</span>
 </code></pre></div>
 <h3 id="add-a-service">Add a Service<a class="headerlink" href="#add-a-service" title="Permanent link">&para;</a></h3>
 <p>If your package provides a device driver or a specific service, use the <code>cgse.service</code>
-entry-point group. Service entry-points follow the same scheme as command groups, i.e. they are
-added to the <code>cgse</code> app as a <code>Typer()</code> object. Use the following entry in your <code>pyproject.toml</code>
-file:</p>
-<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">&quot;cgse.service&quot;</span><span class="k">]</span>
-<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;module:object&#39;</span>
+entry-point group or one of its sub-groups. Service entry-points follow the same scheme as command
+groups, i.e. they are added to the <code>cgse</code> app as a <code>Typer()</code> object. A device package uses the
+<code>cgse.service.device_command</code> sub-group:</p>
+<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">"cgse.service.device_command"</span><span class="k">]</span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'module:object'</span>
 </code></pre></div>
 <p>where:</p>
 <ul>
-<li><code>name</code> is the name of the service or device driver</li>
+<li><code>name</code> is the name of the sub-command of the <code>cgse</code> app, e.g. <code>daq6510</code> for <code>cgse daq6510</code></li>
 <li><code>module</code> is a fully qualified module name for your package, a module that can be imported</li>
 <li><code>object</code> is the name of the <code>Typer()</code> object that you want to add as a service</li>
+</ul>
+<p>The <code>cgse</code> app loads the <code>cgse.service</code> group and every sub-group <code>cgse.service.&lt;sub-group&gt;</code>. The
+commands of a sub-group are listed in their own section of <code>cgse --help</code>, named after the sub-group,
+e.g. <em>Device Command</em> for <code>cgse.service.device_command</code>. The sub-groups currently used are:</p>
+<table>
+<thead>
+<tr>
+<th>Entry-point group</th>
+<th>Section in <code>cgse --help</code></th>
+<th>Used by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cgse.service.core_command</code></td>
+<td>Core Command</td>
+<td>the core services in <code>cgse-core</code></td>
+</tr>
+<tr>
+<td><code>cgse.service.device_command</code></td>
+<td>Device Command</td>
+<td>device packages, e.g. <code>keithley-tempcontrol</code></td>
+</tr>
+<tr>
+<td><code>cgse.service.example</code></td>
+<td>Example</td>
+<td>the example service in <code>cgse-tools</code></td>
+</tr>
+</tbody>
+</table>
+<p>The process manager GUI (<code>pm_ui</code>) only looks at the <code>cgse.service.device_command</code> group, and it
+uses the <code>object</code> part of the entry-point value as the name of the <code>cgse</code> sub-command. Keep <code>name</code>
+and <code>object</code> the same, e.g.:</p>
+<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">"cgse.service.device_command"</span><span class="k">]</span>
+<span class="n">daq6510</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'keithley_tempcontrol.cgse_services:daq6510'</span>
+</code></pre></div>
+<h4 id="sub-commands-of-a-device">Sub-commands of a device<a class="headerlink" href="#sub-commands-of-a-device" title="Permanent link">&para;</a></h4>
+<p>The <code>cgse &lt;device&gt;</code> sub-commands manage the life cycle of the control server, nothing else:</p>
+<table>
+<thead>
+<tr>
+<th>Sub-command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>start</code></td>
+<td>Starts the control server.</td>
+</tr>
+<tr>
+<td><code>stop</code></td>
+<td>Stops the control server.</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td>Prints the status of the control server.</td>
+</tr>
+<tr>
+<td><code>start-sim</code></td>
+<td>Starts the device simulator in the background.</td>
+</tr>
+<tr>
+<td><code>stop-sim</code></td>
+<td>Stops the device simulator.</td>
+</tr>
+<tr>
+<td><code>status-sim</code></td>
+<td>Prints the status of the device simulator.</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>The process manager starts, stops and queries a control server with
+  <code>cgse &lt;device&gt; start|stop|status [&lt;device_id&gt;]</code>, so use these names.</li>
+<li>Add <code>start-sim</code>, <code>stop-sim</code> and <code>status-sim</code> only when the package has a simulator that runs as
+  a separate process, e.g. <code>daq6510_sim</code> in <code>keithley-tempcontrol</code>. When the simulator is part of
+  the control server, add a <code>--sim</code> (<code>--simulator</code>) option to <code>start</code> instead, e.g.
+  <code>cgse puna start --sim PUNA_01</code>. The process manager offers simulator mode when it finds <code>--sim</code>
+  in the output of <code>cgse &lt;device&gt; start --help</code>.</li>
+<li>Device operations, e.g. starting a scan or reading the latest values, don't belong in the <code>cgse</code>
+  app. Provide them in the command of the control server itself, e.g. <code>daq6510_cs start-scan</code>.
+  The <code>start</code> and <code>stop</code> sub-commands usually run the control server command in the background with
+  its output redirected to a log file, so the result of a device operation would not be seen.</li>
 </ul>
 <h2 id="explore">Explore<a class="headerlink" href="#explore" title="Permanent link">&para;</a></h2>
 <p>The entry-point <code>cgse.explore</code> can be used to extend functionality without adding a new command 
@@ -3608,8 +3725,8 @@ or sub-command to the <code>cgse</code> app. The idea is that commands that work
 use this entry-point to perform certain tasks on the package. This is currently used for the 
 <code>show procs</code> command (see below).</p>
 <p>The entry-point has the following format:</p>
-<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">&quot;cgse.explore&quot;</span><span class="k">]</span>
-<span class="n">explore</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&lt;package&gt;.cgse_explore&quot;</span>
+<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">"cgse.explore"</span><span class="k">]</span>
+<span class="n">explore</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"&lt;package&gt;.cgse_explore"</span>
 </code></pre></div>
 <p>So, what happens is that a command that wants to apply a functionality on an external package 
 loads the <code>cgse_explore.py</code> module for that package and checks if a function with a specific 
@@ -3743,7 +3860,7 @@ something like below (the format is from the unix <code>ps -ef</code> command). 
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.indexes", "navigation.tabs.sticky", "navigation.footer", "content.code.annotate", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -2067,6 +2067,45 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#influxdb-3x-backend-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        InfluxDB 3.x backend variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#duckdb-backend-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DuckDB backend variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#questdb-backend-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        QuestDB backend variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3533,6 +3572,45 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#influxdb-3x-backend-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        InfluxDB 3.x backend variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#duckdb-backend-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DuckDB backend variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#questdb-backend-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        QuestDB backend variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3625,10 +3703,10 @@ the active endpoints through the Registry, especially when ports are configured 
 <h2 id="metrics-payload">Metrics Payload<a class="headerlink" href="#metrics-payload" title="Permanent link">&para;</a></h2>
 <p>The canonical payload shape matches <code>DataPoint.as_dict()</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
-    <span class="s2">&quot;measurement&quot;</span><span class="p">:</span> <span class="s2">&quot;camera_tm&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;device_id&quot;</span><span class="p">:</span> <span class="s2">&quot;cam_01&quot;</span><span class="p">},</span>
-    <span class="s2">&quot;fields&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="mf">23.4</span><span class="p">},</span>
-    <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="mf">1774354482.517</span><span class="p">,</span>  <span class="c1"># optional, unix timestamp</span>
+    <span class="s2">"measurement"</span><span class="p">:</span> <span class="s2">"camera_tm"</span><span class="p">,</span>
+    <span class="s2">"tags"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"device_id"</span><span class="p">:</span> <span class="s2">"cam_01"</span><span class="p">},</span>
+    <span class="s2">"fields"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"temperature"</span><span class="p">:</span> <span class="mf">23.4</span><span class="p">},</span>
+    <span class="s2">"time"</span><span class="p">:</span> <span class="mf">1774354482.517</span><span class="p">,</span>  <span class="c1"># optional, unix timestamp</span>
 <span class="p">}</span>
 </code></pre></div>
 <h3 id="normalization-rules">Normalization Rules<a class="headerlink" href="#normalization-rules" title="Permanent link">&para;</a></h3>
@@ -3648,11 +3726,7 @@ the active endpoints through the Registry, especially when ports are configured 
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">egse.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPoint</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">egse.metricshub.client</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetricsHubSender</span>
 
-<span class="n">point</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">DataPoint</span><span class="o">.</span><span class="n">measurement</span><span class="p">(</span><span class="s2">&quot;camera_tm&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">tag</span><span class="p">(</span><span class="s2">&quot;device_id&quot;</span><span class="p">,</span> <span class="s2">&quot;cam_01&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s2">&quot;temperature&quot;</span><span class="p">,</span> <span class="mf">23.4</span><span class="p">)</span>
-<span class="p">)</span>
+<span class="n">point</span> <span class="o">=</span> <span class="n">DataPoint</span><span class="o">.</span><span class="n">measurement</span><span class="p">(</span><span class="s2">"camera_tm"</span><span class="p">)</span><span class="o">.</span><span class="n">tag</span><span class="p">(</span><span class="s2">"device_id"</span><span class="p">,</span> <span class="s2">"cam_01"</span><span class="p">)</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s2">"temperature"</span><span class="p">,</span> <span class="mf">23.4</span><span class="p">)</span>
 
 <span class="k">with</span> <span class="n">MetricsHubSender</span><span class="p">()</span> <span class="k">as</span> <span class="n">sender</span><span class="p">:</span>
     <span class="n">sender</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
@@ -3662,11 +3736,7 @@ the active endpoints through the Registry, especially when ports are configured 
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">egse.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataPoint</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">egse.metricshub.client</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncMetricsHubSender</span>
 
-<span class="n">point</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">DataPoint</span><span class="o">.</span><span class="n">measurement</span><span class="p">(</span><span class="s2">&quot;camera_tm&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">tag</span><span class="p">(</span><span class="s2">&quot;device_id&quot;</span><span class="p">,</span> <span class="s2">&quot;cam_01&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s2">&quot;temperature&quot;</span><span class="p">,</span> <span class="mf">23.4</span><span class="p">)</span>
-<span class="p">)</span>
+<span class="n">point</span> <span class="o">=</span> <span class="n">DataPoint</span><span class="o">.</span><span class="n">measurement</span><span class="p">(</span><span class="s2">"camera_tm"</span><span class="p">)</span><span class="o">.</span><span class="n">tag</span><span class="p">(</span><span class="s2">"device_id"</span><span class="p">,</span> <span class="s2">"cam_01"</span><span class="p">)</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="s2">"temperature"</span><span class="p">,</span> <span class="mf">23.4</span><span class="p">)</span>
 
 <span class="k">with</span> <span class="n">AsyncMetricsHubSender</span><span class="p">()</span> <span class="k">as</span> <span class="n">sender</span><span class="p">:</span>
     <span class="k">await</span> <span class="n">sender</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
@@ -3733,7 +3803,7 @@ python<span class="w"> </span>-m<span class="w"> </span>egse.metricshub.server<s
 <ul>
 <li><code>COLLECTOR_PORT</code></li>
 <li><code>REQUESTS_PORT</code></li>
-<li><code>BACKEND</code> (<code>influxdb</code> or <code>duckdb</code>)</li>
+<li><code>BACKEND</code> (<code>influxdb</code>, <code>duckdb</code>, or <code>questdb</code>)</li>
 <li><code>BATCH_SIZE</code></li>
 <li><code>FLUSH_INTERVAL</code></li>
 </ul>
@@ -3742,7 +3812,38 @@ python<span class="w"> </span>-m<span class="w"> </span>egse.metricshub.server<s
 <li><code>CGSE_METRICS_BACKEND</code></li>
 <li><code>CGSE_METRICS_BATCH_SIZE</code></li>
 <li><code>CGSE_METRICS_FLUSH_INTERVAL</code></li>
-<li>backend-specific variables (<code>CGSE_INFLUX_*</code>, <code>CGSE_DUCKDB_PATH</code>)</li>
+<li>backend-specific variables</li>
+</ul>
+<h3 id="influxdb-3x-backend-variables">InfluxDB 3.x backend variables<a class="headerlink" href="#influxdb-3x-backend-variables" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>CGSE_INFLUX_HOST</code> (default: <code>http://localhost:8181</code>)</li>
+<li><code>CGSE_INFLUX_DATABASE</code> (default: <code>PROJECT</code> env var or <code>cgse</code>)</li>
+<li><code>INFLUXDB3_AUTH_TOKEN</code> (default: <code>""</code>)</li>
+</ul>
+<h3 id="duckdb-backend-variables">DuckDB backend variables<a class="headerlink" href="#duckdb-backend-variables" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>CGSE_DUCKDB_PATH</code> (default: <code>metrics.duckdb</code>)</li>
+</ul>
+<h3 id="questdb-backend-variables">QuestDB backend variables<a class="headerlink" href="#questdb-backend-variables" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>CGSE_QUESTDB_HOST</code> (default: <code>localhost</code>)</li>
+<li><code>CGSE_QUESTDB_PORT</code> (default: <code>8812</code>)</li>
+<li><code>CGSE_QUESTDB_DATABASE</code> (default: <code>qdb</code>)</li>
+<li><code>CGSE_QUESTDB_USER</code> (default: <code>admin</code>)</li>
+<li><code>CGSE_QUESTDB_PASSWORD</code> (default: <code>quest</code>)</li>
+<li><code>CGSE_QUESTDB_TABLE</code> (default: <code>timeseries</code>)</li>
+<li>
+<p><code>CGSE_QUESTDB_SCHEMA</code> (default: <code>per_measurement</code>; options: <code>unified</code>, <code>per_measurement</code>)</p>
+<p><strong>Schema modes:</strong></p>
+<ul>
+<li><code>unified</code> — all measurements are stored in a single table (default name: <code>timeseries</code>) with columns
+  <code>measurement</code>, <code>time</code>, <code>tags</code> (JSON), and <code>fields</code> (JSON). Suitable for prototyping or when the
+  set of measurements and fields is not known in advance.</li>
+<li><code>per_measurement</code> — each measurement gets its own table named after the measurement (e.g. <code>DAQ6510</code>).
+  If a typed <code>MeasurementSchema</code> is registered for that measurement, individual typed columns are created;
+  otherwise the table falls back to <code>time</code>, <code>tags</code> (JSON), and <code>fields</code> (JSON).</li>
+</ul>
+</li>
 </ul>
 <h2 id="control-server-integration">Control Server Integration<a class="headerlink" href="#control-server-integration" title="Permanent link">&para;</a></h2>
 <p>Control servers use <code>MetricsHubSender</code> and no longer need direct backend credentials.
@@ -3856,7 +3957,7 @@ all-<code>None</code> payload drops.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.indexes", "navigation.tabs.sticky", "navigation.footer", "content.code.annotate", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../../javascripts/mathjax.js"></script>
       

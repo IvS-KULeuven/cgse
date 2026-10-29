@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -1425,10 +1425,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#connect-grafana-to-influxdb" class="md-nav__link">
+  <a href="#connect-grafana-to-a-metrics-backend" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Connect Grafana to InfluxDB
+        Connect Grafana to a Metrics Backend
       
     </span>
   </a>
@@ -3335,10 +3335,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#connect-grafana-to-influxdb" class="md-nav__link">
+  <a href="#connect-grafana-to-a-metrics-backend" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Connect Grafana to InfluxDB
+        Connect Grafana to a Metrics Backend
       
     </span>
   </a>
@@ -3389,17 +3389,20 @@
 
 <h1 id="using-grafana">Using Grafana<a class="headerlink" href="#using-grafana" title="Permanent link">&para;</a></h1>
 <p>Grafana is commonly used with CGSE to visualize telemetry data stored in
-InfluxDB.</p>
-<p>This page focuses on day-to-day usage: connecting Grafana to InfluxDB,
+InfluxDB or QuestDB.</p>
+<p>This page focuses on day-to-day usage: connecting Grafana to a supported backend,
 creating dashboards, and understanding the data you are plotting.</p>
 <p>For stack installation and server configuration, see
 <a href="../../admin_guide/monitoring/">Monitoring Stack Setup</a>.</p>
 <p>For developer details on telemetry data structure, see
 <a href="../../dev_guide/monitoring/">Monitoring and Telemetry in CGSE</a>.</p>
 <hr />
-<h2 id="connect-grafana-to-influxdb">Connect Grafana to InfluxDB<a class="headerlink" href="#connect-grafana-to-influxdb" title="Permanent link">&para;</a></h2>
-<p>After InfluxDB and Grafana are running, open Grafana in your browser:
+<h2 id="connect-grafana-to-a-metrics-backend">Connect Grafana to a Metrics Backend<a class="headerlink" href="#connect-grafana-to-a-metrics-backend" title="Permanent link">&para;</a></h2>
+<p>After your metrics backend and Grafana are running, open Grafana in your browser:
 <code>http://localhost:3000</code>.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">InfluxDB</label><label for="__tabbed_1_2">QuestDB</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <p>In the left menu, select Connections and add a new InfluxDB connection.</p>
 <p>Use the following settings:</p>
 <ul>
@@ -3411,10 +3414,29 @@ creating dashboards, and understanding the data you are plotting.</p>
 <li><code>InfluxDB Details</code> &gt; <code>Token</code>: Your InfluxDB token (starts with <code>apiv3_</code>).</li>
 <li><code>InfluxDB Details</code>: Enable Insecure Connection.</li>
 </ul>
+</div>
+<div class="tabbed-block">
+<p>In the left menu, select Connections and add a new PostgreSQL connection
+(QuestDB is exposed via PostgreSQL wire protocol).</p>
+<p>Use the following settings:</p>
+<ul>
+<li><code>Name</code>: Any descriptive name, for example <code>questdb-ariel</code>.</li>
+<li><code>Host URL</code>: <code>127.0.0.1:8812</code>.</li>
+<li><code>Database</code>: <code>qdb</code> (or your configured <code>CGSE_QUESTDB_DATABASE</code>).</li>
+<li><code>Username</code>: <code>admin</code> (or your configured <code>CGSE_QUESTDB_USER</code>).</li>
+<li><code>Password</code>: <code>quest</code> (or your configured <code>CGSE_QUESTDB_PASSWORD</code>).</li>
+<li><code>TLS/SSL Mode</code>: <code>disable</code> unless you configured TLS.</li>
+</ul>
+</div>
+</div>
+</div>
 <p>Click Save and test to verify that Grafana can reach the database.</p>
-<p>If the connection test fails, first verify the token, database name, and URL.</p>
+<p>If the connection test fails, first verify the host, credentials, and database settings.</p>
 <hr />
 <h2 id="create-a-basic-dashboard">Create a Basic Dashboard<a class="headerlink" href="#create-a-basic-dashboard" title="Permanent link">&para;</a></h2>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">InfluxDB</label><label for="__tabbed_2_2">QuestDB</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <ol>
 <li>Open Dashboards in the left menu.</li>
 <li>Create a new dashboard and add a panel.</li>
@@ -3423,6 +3445,19 @@ creating dashboards, and understanding the data you are plotting.</p>
 <li>Select the metrics you want to plot.</li>
 <li>Add <code>time</code> in Data Operations so Grafana recognizes the timestamp column.</li>
 </ol>
+</div>
+<div class="tabbed-block">
+<ol>
+<li>Open Dashboards in the left menu.</li>
+<li>Create a new dashboard and add a panel.</li>
+<li>In the panel query, select your PostgreSQL (QuestDB) data source.</li>
+<li>Build a SQL query for the target table (for example, <code>SELECT time, temperature FROM "daq6510" ORDER BY time</code>).</li>
+<li>Ensure the query returns a <code>time</code> column and one or more numeric value columns.</li>
+<li>Set panel visualization options as needed (time-series panel works best for telemetry).</li>
+</ol>
+</div>
+</div>
+</div>
 <p>In CGSE, the table name usually matches the storage mnemonic of the process
 that produced the telemetry.</p>
 <p>Example of the query configuration:</p>
@@ -3432,7 +3467,7 @@ that produced the telemetry.</p>
 <ul>
 <li>No data visible: verify the selected database and table name.</li>
 <li>Empty graph: verify that <code>time</code> is included in the query operations.</li>
-<li>Auth errors: verify token validity and data source settings.</li>
+<li>Auth errors: verify token/credentials and data source settings.</li>
 <li>Unexpected table names: check the process storage mnemonic used by the
    corresponding CGSE component.</li>
 </ul>
@@ -3541,7 +3576,7 @@ that produced the telemetry.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.indexes", "navigation.tabs.sticky", "navigation.footer", "content.code.annotate", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

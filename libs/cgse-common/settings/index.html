@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3487,7 +3487,7 @@ Settings
     └── DELAY: 1
 </code></pre></div>
 <p>If you only need the settings for a particular component, specify that group's name:</p>
-<div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">storage_settings</span> <span class="o">=</span> <span class="n">Settings</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;Storage Control Server&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">storage_settings</span> <span class="o">=</span> <span class="n">Settings</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"Storage Control Server"</span><span class="p">)</span>
 
 <span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">storage_settings</span><span class="p">)</span>
 <span class="n">Storage</span>
@@ -3502,7 +3502,7 @@ Settings
 <span class="err">└──</span> <span class="n">DELAY</span><span class="p">:</span> <span class="mi">1</span>
 </code></pre></div>
 <p>The values can be accessed as usual with a dictionary, by specifying the name of the parameter as the key:</p>
-<div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">storage_settings</span><span class="p">[</span><span class="s2">&quot;COMMANDING_PORT&quot;</span><span class="p">])</span>
+<div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">storage_settings</span><span class="p">[</span><span class="s2">"COMMANDING_PORT"</span><span class="p">])</span>
 <span class="mi">6100</span>
 </code></pre></div>
 <p>We usually only go one level deep when defining settings, and as a convenience, that first level of variables can
@@ -3517,8 +3517,8 @@ below).</p>
 <p>Let's take a look at how the settings are provided for the <code>cgse-core</code> package. First, the <code>pyproject.toml</code> file of
 the project shall define the entry-point. In the snippet below, the entry-point <code>cgse-core</code> is defined for the group
 <code>cgse.settings</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">&quot;cgse.settings&quot;</span><span class="k">]</span>
-<span class="n">cgse-core</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;cgse_core:settings.yaml&quot;</span>
+<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">"cgse.settings"</span><span class="k">]</span>
+<span class="n">cgse-core</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"cgse_core:settings.yaml"</span>
 </code></pre></div>
 <p>The entry-point itself has the following format: <code>&lt;name&gt; = "&lt;module&gt;.&lt;filename&gt;"</code>, where</p>
 <ul>
@@ -3566,7 +3566,7 @@ Configuration Manager Control Server:            # CM_CS
 a namespace. That means it shall have a <code>__init__.py</code> file as shown in the example of the 
 <code>cgse_core</code> module above.</p>
 <p>If the <code>__init__.py</code> file is not there, you will get an error like below:</p>
-<div class="highlight"><pre><span></span><code>ERROR:egse.plugin:The entry-point &#39;cgse-coordinates&#39; is ill defined. The module part doesn&#39;t 
+<div class="highlight"><pre><span></span><code>ERROR:egse.plugin:The entry-point 'cgse-coordinates' is ill defined. The module part doesn't 
 exist or is a namespace. No settings are loaded for this entry-point.
 </code></pre></div>
 </div>
@@ -3616,7 +3616,7 @@ Settings
 <span class="w">    </span>├──<span class="w"> </span>METRICS_PORT:<span class="w"> </span><span class="m">6103</span>
 <span class="w">    </span>└──<span class="w"> </span>DELAY:<span class="w"> </span><span class="m">1</span>
 Memoized<span class="w"> </span>locations:
-<span class="o">[</span><span class="s1">&#39;/Users/rik/github/cgse/libs/cgse-common/src/cgse_common/settings.yaml&#39;</span>,<span class="w"> </span><span class="s1">&#39;/Users/rik/github/cgse/libs/cgse-core/src/cgse_core/settings.yaml&#39;</span>,<span class="w"> </span><span class="s1">&#39;/Users/rik/cgse/local_settings_ariel.yaml&#39;</span><span class="o">]</span>
+<span class="o">[</span><span class="s1">'/Users/rik/github/cgse/libs/cgse-common/src/cgse_common/settings.yaml'</span>,<span class="w"> </span><span class="s1">'/Users/rik/github/cgse/libs/cgse-core/src/cgse_core/settings.yaml'</span>,<span class="w"> </span><span class="s1">'/Users/rik/cgse/local_settings_ariel.yaml'</span><span class="o">]</span>
 </code></pre></div>
 <p>The <em>memoized locations</em> are the settings files that have been loaded and cached. Once the application has started and
 the settings have been loaded, they can only be reloaded by explicitly forcing a reload as follows:</p>
@@ -3643,7 +3643,7 @@ of settings by giving the name of the group as a parameter. When you want to loa
 specify its location also. When a location is given as a str or a Path, the Settings will be loaded from that file 
 only, using the default <code>settings.yaml</code> name or another name given through the <code>filename</code> argument.</p>
 <p>This can be used to e.g. load command files for a device:</p>
-<div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">commands</span> <span class="o">=</span> <span class="n">Settings</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="s2">&quot;~&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;DAQ5610.yaml&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">commands</span> <span class="o">=</span> <span class="n">Settings</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="s2">"~"</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">"DAQ5610.yaml"</span><span class="p">)</span>
 </code></pre></div>
 <p>The mechanism behind the <code>Settings.load()</code> method is shown in the following diagram. For simplicity, parameters are 
 not shown and only the success path is presented, not any exceptions or error handling.</p>
@@ -3753,7 +3753,7 @@ not shown and only the success path is presented, not any exceptions or error ha
       <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.indexes", "navigation.tabs.sticky", "navigation.footer", "content.code.annotate", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../../javascripts/mathjax.js"></script>
       

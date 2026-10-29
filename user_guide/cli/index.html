@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3359,19 +3359,32 @@ sub-commands.</p>
 start/stop all core services in one go. The core services are:</p>
 <ul>
 <li><strong>reg</strong> the service registry for all core services and control servers</li>
-<li><strong>not</strong> the notification server that collects and published all events</li>
+<li><strong>nh</strong> the notification hub that collects and publishes all events</li>
 <li><strong>log</strong> the log server that collects and stores all log messages</li>
 <li><strong>cm</strong> the configuration manager</li>
 <li><strong>sm</strong> the storage manager</li>
 <li><strong>pm</strong> the process manager</li>
+<li><strong>mh</strong> the metrics hub that collects and forwards metrics</li>
 </ul>
 <p>The <em>Device Command</em> section lists the sub-commands for all device packages that have been installed and have a 
-plugin for the <code>cgse</code> command. In the <code>cgse</code> package, the following devices are available:</p>
+plugin for the <code>cgse</code> command. The <code>cgse</code> monorepo provides the following devices, each in its own package:</p>
 <ul>
-<li><strong>DAQ6510</strong> the Keithley Data Acquisition and Logging Multimeter</li>
-<li><strong>LakeShore336</strong> the LakeShore Temperature Controller</li>
-<li><strong>puna</strong>, <strong>joran</strong>, <strong>zonda</strong> the Symétrie positioning Hexapods</li>
+<li><strong>daq6510</strong> the Keithley DAQ6510 Data Acquisition and Logging Multimeter (<code>keithley-tempcontrol</code>)</li>
+<li><strong>lakeshore336</strong> the LakeShore 336 Temperature Controller (<code>lakeshore-tempcontrol</code>)</li>
+<li><strong>puna</strong>, <strong>joran</strong>, <strong>zonda</strong> the Symétrie positioning Hexapods (<code>symetrie-hexapod</code>)</li>
+<li><strong>tgf4000</strong> the Aim-TTi TGF4000 arbitrary function generator (<code>aim-tti-awg</code>)</li>
+<li><strong>pmx_a</strong> the KIKUSUI PMX-A power supply (<code>kikusui-power-supply</code>)</li>
+<li><strong>rsd3305p</strong> the RS PRO RS-D3305P power supply (<code>rs-pro-power-supply</code>)</li>
+<li><strong>dt8874</strong> the Digilent MEASURpoint DT8874 (<code>digilent</code>)</li>
+<li><strong>tvac</strong> the IvS Thermal Vacuum Chamber (<code>ivs-tvac</code>)</li>
+<li><strong>facility_hk</strong> the housekeeping from the facility database (<code>ariel-facility</code>)</li>
+<li><strong>tcu</strong> the ARIEL Telescope Control Unit (<code>ariel-tcu</code>)</li>
 </ul>
+<p>Each device has the sub-commands <code>start</code>, <code>stop</code> and <code>status</code> to manage its control server. When the simulator of a
+device runs as a separate process, there are also <code>start-sim</code>, <code>stop-sim</code> and <code>status-sim</code>, e.g.
+<code>cgse daq6510 start-sim</code>. Other devices have a simulator that is part of the control server, start it with <code>--sim</code>,
+e.g. <code>cgse puna start --sim PUNA_01</code>. Operations on the device itself are in the command of its control server,
+e.g. <code>daq6510_cs start-scan</code>.</p>
 <p>The <em>Example</em> section lists devices that are purely there as examples on how to develop device drives and their 
 plugins and how to use them in the framework.</p>
 
@@ -3479,7 +3492,7 @@ plugins and how to use them in the framework.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.indexes", "navigation.tabs.sticky", "navigation.footer", "content.code.annotate", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

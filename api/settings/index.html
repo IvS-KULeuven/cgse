@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3595,18 +3595,18 @@ available as instance variables of the returned class.</p>
 <p>The intended use is as follows:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">egse.settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">Settings</span>
 
-<span class="n">dsi_settings</span> <span class="o">=</span> <span class="n">Settings</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;DSI&quot;</span><span class="p">)</span>
+<span class="n">dsi_settings</span> <span class="o">=</span> <span class="n">Settings</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"DSI"</span><span class="p">)</span>
 
 <span class="k">if</span> <span class="mh">0x000C</span> <span class="o">&lt;=</span> <span class="n">dsi_settings</span><span class="o">.</span><span class="n">RMAP_BASE_ADDRESS</span> <span class="o">&lt;=</span> <span class="mh">0x00FF</span><span class="p">:</span>
     <span class="o">...</span>  <span class="c1"># do something here</span>
 <span class="k">else</span><span class="p">:</span>
-    <span class="k">raise</span> <span class="n">RMAPError</span><span class="p">(</span><span class="s2">&quot;Attempt to access outside the RMAP memory map.&quot;</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="n">RMAPError</span><span class="p">(</span><span class="s2">"Attempt to access outside the RMAP memory map."</span><span class="p">)</span>
 </code></pre></div>
 <p>The above code reads the settings from the default YAML file for a group called <code>DSI</code>.
 The settings will then be available as variables of the returned class, in this case
 <code>dsi_settings</code>. The returned class is and behaves also like a dictionary, so you can
 check if a configuration parameter is defined like this:</p>
-<p><div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="s2">&quot;DSI_FEE_IP_ADDRESS&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dsi_settings</span><span class="p">:</span>
+<p><div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="s2">"DSI_FEE_IP_ADDRESS"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dsi_settings</span><span class="p">:</span>
     <span class="c1"># define the IP address of the DSI</span>
 </code></pre></div>
 The YAML section for the above code looks like this:</p>
@@ -3859,7 +3859,7 @@ into a dynamically created class as instance variables.</p>
                 <code>yaml_string</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3920,7 +3920,7 @@ into a dynamically created class as instance variables.</p>
 <a href="#egse.settings.Settings.load" class="headerlink" title="Permanent link">&para;</a></h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">load</span><span class="p">(</span>
     <span class="n">group_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;settings.yaml&quot;</span><span class="p">,</span>
+    <span class="n">filename</span><span class="o">=</span><span class="s2">"settings.yaml"</span><span class="p">,</span>
     <span class="n">location</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">add_local_settings</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -3954,7 +3954,7 @@ location, using the given filename or the default (which is settings.yaml).</p>
                 <code>group_name</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3970,7 +3970,7 @@ location, using the given filename or the default (which is settings.yaml).</p>
                 <code>filename</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3986,7 +3986,7 @@ location, using the given filename or the default (which is settings.yaml).</p>
                 <code>location</code>
             </td>
             <td>
-                  <code>(<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a>)</code>
+                  <code>(<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a>)</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4002,7 +4002,7 @@ location, using the given filename or the default (which is settings.yaml).</p>
                 <code>force</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4018,7 +4018,7 @@ location, using the given filename or the default (which is settings.yaml).</p>
                 <code>add_local_settings</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4133,7 +4133,7 @@ location, using the given filename or the default (which is settings.yaml).</p>
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#Exception">Exception</a></code></p>
+              Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/exceptions.html#Exception">Exception</a></code></p>
 
 
 
@@ -4166,7 +4166,7 @@ location, using the given filename or the default (which is settings.yaml).</p>
 
 <a href="#egse.settings.load_global_settings" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">load_global_settings</span><span class="p">(</span>
-    <span class="n">entry_point</span><span class="o">=</span><span class="s2">&quot;cgse.settings&quot;</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span>
+    <span class="n">entry_point</span><span class="o">=</span><span class="s2">"cgse.settings"</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -4192,7 +4192,7 @@ location, using the given filename or the default (which is settings.yaml).</p>
                 <code>entry_point</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4208,7 +4208,7 @@ location, using the given filename or the default (which is settings.yaml).</p>
                 <code>force</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4381,7 +4381,7 @@ location, using the given filename or the default (which is settings.yaml).</p>
                 <code>filename</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4397,7 +4397,7 @@ location, using the given filename or the default (which is settings.yaml).</p>
                 <code>force</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4521,7 +4521,7 @@ once and memoized as load optimization.</p>
                 <code>force</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4570,7 +4570,7 @@ once and memoized as load optimization.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4701,7 +4701,7 @@ once and memoized as load optimization.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.indexes", "navigation.tabs.sticky", "navigation.footer", "content.code.annotate", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

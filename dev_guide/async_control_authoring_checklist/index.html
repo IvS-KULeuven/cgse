@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -29,7 +29,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3438,30 +3438,30 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">MyAsyncControlServer</span><span class="p">(</span><span class="n">AsyncControlServer</span><span class="p">):</span>
-    <span class="n">service_type</span> <span class="o">=</span> <span class="s2">&quot;my-async-control-server&quot;</span>
+    <span class="n">service_type</span> <span class="o">=</span> <span class="s2">"my-async-control-server"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">register_custom_handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">add_device_command_handler</span><span class="p">(</span><span class="s2">&quot;set-mode&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_mode</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">add_service_command_handler</span><span class="p">(</span><span class="s2">&quot;health&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_health</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_device_command_handler</span><span class="p">(</span><span class="s2">"set-mode"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_mode</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_service_command_handler</span><span class="p">(</span><span class="s2">"health"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_health</span><span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_set_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-        <span class="n">mode</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mode&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">zmq_json_response</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="n">mode</span><span class="p">}})</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"mode"</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">zmq_json_response</span><span class="p">({</span><span class="s2">"success"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"message"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"mode"</span><span class="p">:</span> <span class="n">mode</span><span class="p">}})</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_health</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">zmq_json_response</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;ok&quot;</span><span class="p">}})</span>
+        <span class="k">return</span> <span class="n">zmq_json_response</span><span class="p">({</span><span class="s2">"success"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"message"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"status"</span><span class="p">:</span> <span class="s2">"ok"</span><span class="p">}})</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">MyAsyncControlClient</span><span class="p">(</span><span class="n">TypedAsyncControlClient</span><span class="p">):</span>
     <span class="n">service_type</span> <span class="o">=</span> <span class="n">MyAsyncControlServer</span><span class="o">.</span><span class="n">service_type</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">set_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_device_command</span><span class="p">({</span><span class="s2">&quot;command&quot;</span><span class="p">:</span> <span class="s2">&quot;set-mode&quot;</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="n">mode</span><span class="p">})</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_success_message_as_dict</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s2">&quot;set-mode&quot;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_device_command</span><span class="p">({</span><span class="s2">"command"</span><span class="p">:</span> <span class="s2">"set-mode"</span><span class="p">,</span> <span class="s2">"mode"</span><span class="p">:</span> <span class="n">mode</span><span class="p">})</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_success_message_as_dict</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s2">"set-mode"</span><span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">health</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_service_command</span><span class="p">(</span><span class="s2">&quot;health&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_success_message_as_dict</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s2">&quot;health&quot;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_service_command</span><span class="p">(</span><span class="s2">"health"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_success_message_as_dict</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s2">"health"</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="handle-based-acquisition-callback-pattern">Handle-based acquisition callback pattern<a class="headerlink" href="#handle-based-acquisition-callback-pattern" title="Permanent link">&para;</a></h2>
 <p>If your device driver invokes a callback with a single argument such as <code>callback(handle)</code>, do not try to force the
@@ -3484,7 +3484,7 @@ storage/logging belongs to <code>handle_acquisition_record(...)</code>.</p>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">MyHandleBasedServer</span><span class="p">(</span><span class="n">AcquisitionAsyncControlServer</span><span class="p">):</span>
-    <span class="n">service_type</span> <span class="o">=</span> <span class="s2">&quot;my-handle-based-server&quot;</span>
+    <span class="n">service_type</span> <span class="o">=</span> <span class="s2">"my-handle-based-server"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">driver</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_driver</span> <span class="o">=</span> <span class="n">driver</span>
@@ -3492,38 +3492,38 @@ storage/logging belongs to <code>handle_acquisition_record(...)</code>.</p>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">register_custom_handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">add_device_command_handler</span><span class="p">(</span><span class="s2">&quot;start-acquisition&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_start_acquisition</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">add_device_command_handler</span><span class="p">(</span><span class="s2">&quot;stop-acquisition&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_stop_acquisition</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_device_command_handler</span><span class="p">(</span><span class="s2">"start-acquisition"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_start_acquisition</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_device_command_handler</span><span class="p">(</span><span class="s2">"stop-acquisition"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_stop_acquisition</span><span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_do_start_acquisition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_driver</span><span class="o">.</span><span class="n">start_acquisition</span><span class="p">(</span><span class="n">callback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_driver_callback</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_acquisition_running</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">return</span> <span class="n">zmq_json_response</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;running&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}})</span>
+        <span class="k">return</span> <span class="n">zmq_json_response</span><span class="p">({</span><span class="s2">"success"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"message"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"running"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}})</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_do_stop_acquisition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_driver</span><span class="o">.</span><span class="n">stop_acquisition</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_acquisition_running</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">return</span> <span class="n">zmq_json_response</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;running&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}})</span>
+        <span class="k">return</span> <span class="n">zmq_json_response</span><span class="p">({</span><span class="s2">"success"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"message"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"running"</span><span class="p">:</span> <span class="kc">False</span><span class="p">}})</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_driver_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handle</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adapter that matches the driver callback signature exactly.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Adapter that matches the driver callback signature exactly."""</span>
         <span class="n">payload</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_payload_from_handle</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">on_acquisition_data</span><span class="p">(</span>
             <span class="n">payload</span><span class="p">,</span>
-            <span class="n">source</span><span class="o">=</span><span class="s2">&quot;my-device&quot;</span><span class="p">,</span>
-            <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;handle_type&quot;</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">},</span>
+            <span class="n">source</span><span class="o">=</span><span class="s2">"my-device"</span><span class="p">,</span>
+            <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">"handle_type"</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">},</span>
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_extract_payload_from_handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read the data immediately if the handle is only valid during the callback.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Read the data immediately if the handle is only valid during the callback."""</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">handle</span><span class="o">.</span><span class="n">timestamp</span><span class="p">,</span>
-            <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">handle</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">handle</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+            <span class="s2">"timestamp"</span><span class="p">:</span> <span class="n">handle</span><span class="o">.</span><span class="n">timestamp</span><span class="p">,</span>
+            <span class="s2">"value"</span><span class="p">:</span> <span class="n">handle</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="s2">"status"</span><span class="p">:</span> <span class="n">handle</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
         <span class="p">}</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle_acquisition_record</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Received acquisition record: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">record</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Received acquisition record: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">record</span><span class="p">[</span><span class="s2">"data"</span><span class="p">])</span>
 </code></pre></div>
 <p>Notes:</p>
 <ul>
@@ -3546,28 +3546,24 @@ route those operations through <code>AsyncControlServer._execute_sequential(...)
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">MySequentialServer</span><span class="p">(</span><span class="n">AsyncControlServer</span><span class="p">):</span>
-    <span class="n">service_type</span> <span class="o">=</span> <span class="s2">&quot;my-sequential-server&quot;</span>
+    <span class="n">service_type</span> <span class="o">=</span> <span class="s2">"my-sequential-server"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">driver</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_driver</span> <span class="o">=</span> <span class="n">driver</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">register_custom_handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">add_device_command_handler</span><span class="p">(</span><span class="s2">&quot;fetch&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_fetch</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_device_command_handler</span><span class="p">(</span><span class="s2">"fetch"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_fetch</span><span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_do_fetch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
         <span class="c1"># External client request goes through the same serialized lane.</span>
-        <span class="n">value</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_execute_sequential</span><span class="p">(</span>
-            <span class="n">asyncio</span><span class="o">.</span><span class="n">to_thread</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_driver</span><span class="o">.</span><span class="n">fetch_reading</span><span class="p">)</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">zmq_json_response</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">}})</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_execute_sequential</span><span class="p">(</span><span class="n">asyncio</span><span class="o">.</span><span class="n">to_thread</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_driver</span><span class="o">.</span><span class="n">fetch_reading</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">zmq_json_response</span><span class="p">({</span><span class="s2">"success"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"message"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"value"</span><span class="p">:</span> <span class="n">value</span><span class="p">}})</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">poll_timer_tick</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Internal timer work uses the same lane, preventing command/timer races.</span>
-        <span class="n">value</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_execute_sequential</span><span class="p">(</span>
-            <span class="n">asyncio</span><span class="o">.</span><span class="n">to_thread</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_driver</span><span class="o">.</span><span class="n">fetch_reading</span><span class="p">)</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Polled device reading: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_execute_sequential</span><span class="p">(</span><span class="n">asyncio</span><span class="o">.</span><span class="n">to_thread</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_driver</span><span class="o">.</span><span class="n">fetch_reading</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Polled device reading: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 </code></pre></div>
 <p>Notes:</p>
 <ul>
@@ -3642,7 +3638,7 @@ route those operations through <code>AsyncControlServer._execute_sequential(...)
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.indexes", "navigation.tabs.sticky", "navigation.footer", "content.code.annotate", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

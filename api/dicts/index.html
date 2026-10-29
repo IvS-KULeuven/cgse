@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3531,7 +3531,7 @@
                 <code>source_dict</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3557,7 +3557,7 @@
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3571,13 +3571,13 @@
 
 <details class="example" open>
   <summary>Example</summary>
-  <div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;A&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;E&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;F&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}},</span> <span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;D&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}}</span>
+  <div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"A"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"B"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"E"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"F"</span><span class="p">:</span> <span class="mi">2</span><span class="p">}},</span> <span class="s2">"C"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"D"</span><span class="p">:</span> <span class="mi">3</span><span class="p">}}</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">flatten_dict</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
-<span class="p">{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;B:E:F&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;C:D&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
+<span class="p">{</span><span class="s1">'A'</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">'B:E:F'</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">'C:D'</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
 
-<span class="o">&gt;&gt;&gt;</span> <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;A&quot;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;D&quot;</span><span class="p">:</span> <span class="s1">&#39;d&#39;</span><span class="p">,</span> <span class="s2">&quot;E&quot;</span><span class="p">:</span> <span class="s1">&#39;e&#39;</span><span class="p">},</span> <span class="s2">&quot;F&quot;</span><span class="p">:</span> <span class="s1">&#39;f&#39;</span><span class="p">}}</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"A"</span><span class="p">:</span> <span class="s1">'a'</span><span class="p">,</span> <span class="s2">"B"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"C"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"D"</span><span class="p">:</span> <span class="s1">'d'</span><span class="p">,</span> <span class="s2">"E"</span><span class="p">:</span> <span class="s1">'e'</span><span class="p">},</span> <span class="s2">"F"</span><span class="p">:</span> <span class="s1">'f'</span><span class="p">}}</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">flatten_dict</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
-<span class="p">{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;B:C:D&#39;</span><span class="p">:</span> <span class="s1">&#39;d&#39;</span><span class="p">,</span> <span class="s1">&#39;B:C:E&#39;</span><span class="p">:</span> <span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="s1">&#39;B:F&#39;</span><span class="p">:</span> <span class="s1">&#39;f&#39;</span><span class="p">}</span>
+<span class="p">{</span><span class="s1">'A'</span><span class="p">:</span> <span class="s1">'a'</span><span class="p">,</span> <span class="s1">'B:C:D'</span><span class="p">:</span> <span class="s1">'d'</span><span class="p">,</span> <span class="s1">'B:C:E'</span><span class="p">:</span> <span class="s1">'e'</span><span class="p">,</span> <span class="s1">'B:F'</span><span class="p">:</span> <span class="s1">'f'</span><span class="p">}</span>
 </code></pre></div>
 </details>
 
@@ -3607,8 +3607,8 @@ use the <a href="./#egse.dicts.log_key_differences">log_key_differences()</a> fu
 
 <details class="example" open>
   <summary>Example</summary>
-  <div class="highlight"><pre><span></span><code>&gt;&gt;&gt; d1 = { &quot;A&quot;: 1, &quot;B&quot;: 2, &quot;C&quot;: 3 }
-&gt;&gt;&gt; d2 = { &quot;A&quot;: 1, &quot;B&quot;: 5, &quot;C&quot;: 3 }
+  <div class="highlight"><pre><span></span><code>&gt;&gt;&gt; d1 = { "A": 1, "B": 2, "C": 3 }
+&gt;&gt;&gt; d2 = { "A": 1, "B": 5, "C": 3 }
 &gt;&gt;&gt; log_differences(d1, d2)
 
 2025-02-28 09:20:51,639:         MainProcess:    INFO:   37:__main__            :Value Differences
@@ -3644,8 +3644,8 @@ Keys that are present on both dictionaries are not logged.</p>
 
 <details class="example" open>
   <summary>Example</summary>
-  <div class="highlight"><pre><span></span><code>&gt;&gt;&gt; d1 = {&quot;A&quot;: 1, &quot;B&quot;: 2, &quot;C&quot;: 3}
-&gt;&gt;&gt; d2 = {&quot;B&quot;: 2, &quot;C&quot;: 3, &quot;D&quot;: 4}
+  <div class="highlight"><pre><span></span><code>&gt;&gt;&gt; d1 = {"A": 1, "B": 2, "C": 3}
+&gt;&gt;&gt; d2 = {"B": 2, "C": 3, "D": 4}
 &gt;&gt;&gt; log_key_differences(d1, d2)
 2025-02-28 09:08:29,916:         MainProcess:    INFO:   60:__main__            :Key differences
 ┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
@@ -3776,7 +3776,7 @@ Keys that are present on both dictionaries are not logged.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.indexes", "navigation.tabs.sticky", "navigation.footer", "content.code.annotate", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

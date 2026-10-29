@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3807,7 +3807,7 @@
 
 
 <a href="#egse.bits.beautify_binary" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">beautify_binary</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">beautify_binary</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">' '</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">''</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3832,7 +3832,7 @@ in groups of 8 bits for clarity by default (can be changed with the <code>group<
                 <code>value</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3848,7 +3848,7 @@ in groups of 8 bits for clarity by default (can be changed with the <code>group<
                 <code>sep</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3864,7 +3864,7 @@ in groups of 8 bits for clarity by default (can be changed with the <code>group<
                 <code>group</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3880,7 +3880,7 @@ in groups of 8 bits for clarity by default (can be changed with the <code>group<
                 <code>prefix</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3896,7 +3896,7 @@ in groups of 8 bits for clarity by default (can be changed with the <code>group<
                 <code>size</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3922,7 +3922,7 @@ in groups of 8 bits for clarity by default (can be changed with the <code>group<
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3936,7 +3936,7 @@ in groups of 8 bits for clarity by default (can be changed with the <code>group<
 
 <p><span class="doc-section-title">Examples:</span></p>
     <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">status</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">14</span> <span class="o">+</span> <span class="mi">2</span><span class="o">**</span><span class="mi">7</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">beautify_binary</span><span class="p">(</span><span class="n">status</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;01000000 10000000&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">beautify_binary</span><span class="p">(</span><span class="n">status</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"01000000 10000000"</span>
 </code></pre></div>
 
 
@@ -3976,7 +3976,7 @@ in groups of 8 bits for clarity by default (can be changed with the <code>group<
                 <code>value</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3992,7 +3992,7 @@ in groups of 8 bits for clarity by default (can be changed with the <code>group<
                 <code>bit</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4018,7 +4018,7 @@ in groups of 8 bits for clarity by default (can be changed with the <code>group<
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4066,7 +4066,7 @@ in groups of 8 bits for clarity by default (can be changed with the <code>group<
                 <code>value</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4082,7 +4082,7 @@ in groups of 8 bits for clarity by default (can be changed with the <code>group<
                 <code>args</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4110,7 +4110,7 @@ if needed.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4165,7 +4165,7 @@ if needed.</p>
                 <code>value</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4181,7 +4181,7 @@ if needed.</p>
                 <code>bit</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4207,7 +4207,7 @@ if needed.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4255,7 +4255,7 @@ if needed.</p>
                 <code>value</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4271,7 +4271,7 @@ if needed.</p>
                 <code>bits</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4297,7 +4297,7 @@ if needed.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4345,7 +4345,7 @@ if needed.</p>
                 <code>data</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#bytes">bytes</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4361,7 +4361,7 @@ if needed.</p>
                 <code>start</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4377,7 +4377,7 @@ if needed.</p>
                 <code>len_</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4403,7 +4403,7 @@ if needed.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4458,7 +4458,7 @@ on page 80 [ECSS-E-ST-50-52C].</p>
                 <code>value</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4474,7 +4474,7 @@ on page 80 [ECSS-E-ST-50-52C].</p>
                 <code>start_position</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4490,7 +4490,7 @@ on page 80 [ECSS-E-ST-50-52C].</p>
                 <code>num_bits</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4516,7 +4516,7 @@ on page 80 [ECSS-E-ST-50-52C].</p>
       <tbody>
           <tr class="doc-section-item">
 <td><code>int</code></td>            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4564,7 +4564,7 @@ on page 80 [ECSS-E-ST-50-52C].</p>
                 <code>n</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4580,7 +4580,7 @@ on page 80 [ECSS-E-ST-50-52C].</p>
                 <code>base</code>
             </td>
             <td>
-                  <code>(<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>)</code>
+                  <code>(<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>)</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4596,7 +4596,7 @@ on page 80 [ECSS-E-ST-50-52C].</p>
                 <code>precision</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4622,7 +4622,7 @@ on page 80 [ECSS-E-ST-50-52C].</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4645,7 +4645,7 @@ on page 80 [ECSS-E-ST-50-52C].</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError">ValueError</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4658,13 +4658,13 @@ on page 80 [ECSS-E-ST-50-52C].</p>
 
 
 <p><span class="doc-section-title">Examples:</span></p>
-    <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">humanize_bytes</span><span class="p">(</span><span class="mi">55</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;55 bytes&quot;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">humanize_bytes</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;1.000 KiB&quot;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">humanize_bytes</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;1.000 kB&quot;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">humanize_bytes</span><span class="p">(</span><span class="mi">1000000000</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;953.674 MiB&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">humanize_bytes</span><span class="p">(</span><span class="mi">1000000000</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;1.000 GB&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">humanize_bytes</span><span class="p">(</span><span class="mi">1073741824</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;1.000 GiB&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">humanize_bytes</span><span class="p">(</span><span class="mi">1024</span><span class="o">**</span><span class="mi">5</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;1024 TiB&#39;</span>
+    <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">humanize_bytes</span><span class="p">(</span><span class="mi">55</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"55 bytes"</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">humanize_bytes</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"1.000 KiB"</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">humanize_bytes</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"1.000 kB"</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">humanize_bytes</span><span class="p">(</span><span class="mi">1000000000</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'953.674 MiB'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">humanize_bytes</span><span class="p">(</span><span class="mi">1000000000</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'1.000 GB'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">humanize_bytes</span><span class="p">(</span><span class="mi">1073741824</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'1.000 GiB'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">humanize_bytes</span><span class="p">(</span><span class="mi">1024</span><span class="o">**</span><span class="mi">5</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'1024 TiB'</span>
 </code></pre></div>
 
 
@@ -4711,7 +4711,7 @@ System of Units), you need to specify <code>base=10</code> (decimal), i.e. 1000 
                 <code>value</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4737,7 +4737,7 @@ System of Units), you need to specify <code>base=10</code> (decimal), i.e. 1000 
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4761,11 +4761,11 @@ know the concept of twos-complement for negative integers. For example, this 16-
 </code></pre></div>
     <p>The 'bin()' function will return a strange representation of this number:</p>
     <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="nb">bin</span><span class="p">(</span><span class="o">-</span><span class="mi">32751</span><span class="p">)</span>
-<span class="go">&#39;-0b111111111101111&#39;</span>
+<span class="go">'-0b111111111101111'</span>
 </code></pre></div>
     <p>when we however mask the value we get:</p>
     <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="nb">bin</span><span class="p">(</span><span class="o">-</span><span class="mi">32751</span> <span class="o">&amp;</span> <span class="mb">0b1111_1111_1111_1111</span><span class="p">)</span>
-<span class="go">&#39;0b1000000000010001&#39;</span>
+<span class="go">'0b1000000000010001'</span>
 </code></pre></div>
 
 
@@ -4810,7 +4810,7 @@ know the concept of twos-complement for negative integers. For example, this 16-
                 <code>value</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4836,7 +4836,7 @@ know the concept of twos-complement for negative integers. For example, this 16-
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4896,7 +4896,7 @@ know the concept of twos-complement for negative integers. For example, this 32-
                 <code>value</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4912,7 +4912,7 @@ know the concept of twos-complement for negative integers. For example, this 32-
                 <code>bit</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4938,7 +4938,7 @@ know the concept of twos-complement for negative integers. For example, this 32-
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4986,7 +4986,7 @@ know the concept of twos-complement for negative integers. For example, this 32-
                 <code>value</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5002,7 +5002,7 @@ know the concept of twos-complement for negative integers. For example, this 32-
                 <code>bits</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5028,7 +5028,7 @@ know the concept of twos-complement for negative integers. For example, this 32-
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5076,7 +5076,7 @@ know the concept of twos-complement for negative integers. For example, this 32-
                 <code>value</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5092,7 +5092,7 @@ know the concept of twos-complement for negative integers. For example, this 32-
                 <code>bit</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5118,7 +5118,7 @@ know the concept of twos-complement for negative integers. For example, this 32-
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5249,7 +5249,7 @@ know the concept of twos-complement for negative integers. For example, this 32-
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.indexes", "navigation.tabs.sticky", "navigation.footer", "content.code.annotate", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

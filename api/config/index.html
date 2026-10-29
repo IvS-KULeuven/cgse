@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3704,7 +3704,7 @@ current directory.</p>
                 <code>path</code>
             </td>
             <td>
-                  <code>(<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a>)</code>
+                  <code>(<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a>)</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3730,7 +3730,7 @@ current directory.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError">ValueError</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3744,8 +3744,8 @@ current directory.</p>
 
 <details class="example" open>
   <summary>Example</summary>
-  <div class="highlight"><pre><span></span><code><span class="k">with</span> <span class="n">WorkingDirectory</span><span class="p">(</span><span class="n">find_dir</span><span class="p">(</span><span class="s2">&quot;/egse/images&quot;</span><span class="p">))</span> <span class="k">as</span> <span class="n">wdir</span><span class="p">:</span>
-    <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">wdir</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">):</span>
+  <div class="highlight"><pre><span></span><code><span class="k">with</span> <span class="n">WorkingDirectory</span><span class="p">(</span><span class="n">find_dir</span><span class="p">(</span><span class="s2">"/egse/images"</span><span class="p">))</span> <span class="k">as</span> <span class="n">wdir</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">wdir</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">'*'</span><span class="p">):</span>
         <span class="k">assert</span> <span class="n">file</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>  <span class="c1"># do something with the image files</span>
 </code></pre></div>
 </details>
@@ -3873,7 +3873,7 @@ not be what you want. To be sure only one folder is returned, use the
                 <code>pattern</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3889,7 +3889,7 @@ not be what you want. To be sure only one folder is returned, use the
                 <code>root</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3966,7 +3966,7 @@ the last part of the path needs to match these folders.</p>
                 <code>pattern</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3982,7 +3982,7 @@ the last part of the path needs to match these folders.</p>
                 <code>root</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4022,10 +4022,10 @@ the last part of the path needs to match these folders.</p>
 
 <details class="example" open>
   <summary>Example</summary>
-  <div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="k">for</span> <span class="n">folder</span> <span class="ow">in</span> <span class="n">find_dirs</span><span class="p">(</span><span class="s2">&quot;/egse/images&quot;</span><span class="p">):</span>
-<span class="o">...</span>     <span class="k">assert</span> <span class="n">folder</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;*/egse/images&#39;</span><span class="p">)</span>
+  <div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="k">for</span> <span class="n">folder</span> <span class="ow">in</span> <span class="n">find_dirs</span><span class="p">(</span><span class="s2">"/egse/images"</span><span class="p">):</span>
+<span class="o">...</span>     <span class="k">assert</span> <span class="n">folder</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">'*/egse/images'</span><span class="p">)</span>
 
-<span class="o">&gt;&gt;&gt;</span> <span class="n">folders</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">find_dirs</span><span class="p">(</span><span class="s2">&quot;/egse/images&quot;</span><span class="p">))</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">folders</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">find_dirs</span><span class="p">(</span><span class="s2">"/egse/images"</span><span class="p">))</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">folders</span><span class="p">)</span>
 </code></pre></div>
 </details>
@@ -4078,7 +4078,7 @@ This requires that the path ends with the given string in <code>in_dir</code>.</
                 <code>name</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4094,7 +4094,7 @@ This requires that the path ends with the given string in <code>in_dir</code>.</
                 <code>root</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4110,7 +4110,7 @@ This requires that the path ends with the given string in <code>in_dir</code>.</
                 <code>in_dir</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4210,7 +4210,7 @@ that the path ends with the given string in <code>in_dir</code>.</p>
                 <code>root</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4226,7 +4226,7 @@ that the path ends with the given string in <code>in_dir</code>.</p>
                 <code>in_dir</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4307,7 +4307,7 @@ the current working directory.</p>
                 <code>pattern</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4323,7 +4323,7 @@ the current working directory.</p>
                 <code>root</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4403,7 +4403,7 @@ fail and the <code>default</code> parameter will be returned.</p>
                 <code>path</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="pathlib.PurePath" href="https://docs.python.org/3/library/pathlib.html#pathlib.PurePath">PurePath</a>] | None</code>
+                  <code><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="pathlib.PurePath" href="https://docs.python.org/3/library/pathlib.html#pathlib.PurePath">PurePath</a>] | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4419,7 +4419,7 @@ fail and the <code>default</code> parameter will be returned.</p>
                 <code>tests</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Tuple" href="https://docs.python.org/3/library/typing.html#typing.Tuple">Tuple</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, ...]</code>
+                  <code><a class="autorefs autorefs-external" title="typing.Tuple" href="https://docs.python.org/3/library/typing.html#typing.Tuple">Tuple</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, ...]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4435,7 +4435,7 @@ fail and the <code>default</code> parameter will be returned.</p>
                 <code>default</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4592,7 +4592,7 @@ fail and the <code>default</code> parameter will be returned.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.indexes", "navigation.tabs.sticky", "navigation.footer", "content.code.annotate", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

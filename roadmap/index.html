@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3602,7 +3602,7 @@
 <h3 id="the-cgse-command">The <code>cgse</code> Command<a class="headerlink" href="#the-cgse-command" title="Permanent link">&para;</a></h3>
 <p>Provide a <code>cgse</code> command that is extensible with new commands and command groups:</p>
 <ul class="task-list">
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> a command to initialise your environment.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> a command to initialize your environment.</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> a command to check versions of installed packages.</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> a command to check your installation, settings, setups, environment ..</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> a command group to handle core services</li>
@@ -3613,26 +3613,25 @@
 <ul class="task-list">
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> A modular/decomposed <code>settings.yaml</code> file.</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> A clear set of environment variables.</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> automatic submit of new Setups to GitHub.</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> a TUI for inspecting the loaded Setup.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> automatically submit new Setups to GitHub.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> create a TUI for inspecting the loaded Setup.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> improve Settings (attrdict) to allow dot-notation below the first level.</li>
 </ul>
 <h3 id="common-functionality">Common functionality<a class="headerlink" href="#common-functionality" title="Permanent link">&para;</a></h3>
 <ul class="task-list">
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Reference Frames and coordinate transformations -&gt; Graphs</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Metrics for all devices will be handled using InfluxDB</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Metrics for all devices will be handled using InfluxDB or QuestDB</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Use of Grafana to visualize the metrics</li>
 </ul>
 <h3 id="monitoring-and-telemetry">Monitoring and Telemetry<a class="headerlink" href="#monitoring-and-telemetry" title="Permanent link">&para;</a></h3>
 <ul class="task-list">
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Define and document telemetry data retention strategy.</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Decide whether database naming should remain tied to <code>PROJECT</code> or become
-  explicitly configurable.</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Decide whether metrics timestamp precision should remain fixed at <code>ms</code> or
-  become configurable.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Decide whether database naming should remain tied to <code>PROJECT</code> or become explicitly configurable.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Decide whether metrics timestamp precision should remain fixed at <code>ms</code> or become configurable.</li>
 </ul>
 <h2 id="core-services">Core Services<a class="headerlink" href="#core-services" title="Permanent link">&para;</a></h2>
 <ul class="task-list">
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Process Manager needs to be added with optimised design and performance</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Process Manager needs to be added with optimized design and performance</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Synoptic Manager</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Distributed Service Registry</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> dynamic port assignment for all services -&gt; service registry</li>
@@ -3645,7 +3644,7 @@
 </ul>
 <h2 id="projects">Projects<a class="headerlink" href="#projects" title="Permanent link">&para;</a></h2>
 <ul class="task-list">
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Ariel HDF5 format plugin</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Ariel HDF5 file format plugin</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Ariel FITS format plugin</li>
 </ul>
 <h2 id="guis-and-tuis">GUIs and TUIs<a class="headerlink" href="#guis-and-tuis" title="Permanent link">&para;</a></h2>
@@ -3656,31 +3655,22 @@
 <h2 id="maintenance-and-refactoring">Maintenance and refactoring<a class="headerlink" href="#maintenance-and-refactoring" title="Permanent link">&para;</a></h2>
 <ul class="task-list">
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Allow core services to register and/or re-register to another core service as a listener</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> The storage manager shall be able to restore registrations from
-  devices after a restart/crash. This means the registration to the Storage
-  manager needs to be persistent -&gt; SQLite ?</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> The storage manager shall be able to restore registrations from devices after a restart/crash. This means the registration to the Storage manager needs to be persistent -&gt; SQLite ?</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Refactor the commanding protocol</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> The Proxy and Protocol classes should be refactored for full dynamic commanding. Eliminate the
-  use of command YAML files, replace <code>dynamic_interface</code> with <code>dynamic_command</code>.</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Introduce asyncio into the commanding protocol, e.g. <code>get_status()</code>
-  and <code>get_housekeeping()</code> shall be handled asynchronously.</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> GlobalState Setup needs some redesign, especially <code>GlobalState.setup</code>
-  which should not consult
-  the configuration manager by default.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> The Proxy and Protocol classes should be refactored for full dynamic commanding. Eliminate the use of command YAML files, replace <code>dynamic_interface</code> with <code>dynamic_command</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Introduce asyncio into the commanding protocol, e.g. <code>get_status()</code> and <code>get_housekeeping()</code> shall be handled asynchronously.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> GlobalState Setup needs some redesign, especially <code>GlobalState.setup</code> which should not consult the configuration manager by default.</li>
 </ul>
 <h2 id="removals">Removals<a class="headerlink" href="#removals" title="Permanent link">&para;</a></h2>
 <ul class="task-list">
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> The <code>get_common_egse_root()</code> is of no use anymore and needs to be
-  removed or replaced in some
-  cases.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> The <code>get_common_egse_root()</code> is of no use anymore and needs to be removed or replaced in some cases.</li>
 </ul>
 <h2 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">&para;</a></h2>
 <ul class="task-list">
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Add unit testing with <code>nox</code> running tests for Python 3.9, 3.10, 3.11, and 3.12</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Add proper unit tests for all packages – using <code>pytest</code></li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Add a CI test suite</li>
-<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Add GitHub Action to check proper formatting of all the code in a pull
-  request</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Add GitHub Action to check proper formatting of all the code in a pull request</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Add GitHub Actions for running tests before merging</li>
 </ul>
 
@@ -3779,7 +3769,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.indexes", "navigation.tabs.sticky", "navigation.footer", "content.code.annotate", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../javascripts/mathjax.js"></script>
       
