@@ -1,3 +1,10 @@
+import asyncio
+import contextlib
+
+import pytest
+
+from egse.device import DeviceConnectionError
+from egse.scpi import AsyncSCPIInterface
 from egse.scpi import count_number_of_channels
 from egse.scpi import create_channel_list
 from egse.scpi import get_channel_names
@@ -63,3 +70,49 @@ def test_create_channel_list():
     assert create_channel_list("101", "102", "103", "104", "105") == "(@101,102,103,104,105)"
     assert create_channel_list("101", "102", "103", "105") == "(@101,102,103,105)"
     assert create_channel_list(["201", "204"], "205", "206", ["207", "209"], "211") == "(@201:204,205,206,207:209,211)"
+
+
+@pytest.mark.asyncio
+async def test_disconnect_after_the_device_closed_the_connection():
+    """A device that restarts closes the connection on its side, a reconnect must be possible afterwards."""
+
+    connections = []
+    handlers = []
+
+    async def handle(reader, writer):
+        connections.append(writer)
+        handlers.append(asyncio.current_task())
+        while await reader.readline():
+            writer.write(b"ACME,MODEL 1,SN,1.0\n")
+            await writer.drain()
+
+    server = await asyncio.start_server(handle, "127.0.0.1", 0)
+    port = server.sockets[0].getsockname()[1]
+
+    device = AsyncSCPIInterface("ACME", hostname="127.0.0.1", port=port, read_timeout=1.0)
+    await device.connect()
+    assert (await device.trans("*IDN?")).startswith(b"ACME")
+
+    # the device closes the connection, e.g. after a power cycle
+    for writer in connections:
+        writer.close()
+    await asyncio.sleep(0.1)
+
+    with pytest.raises(DeviceConnectionError):
+        for _ in range(3):  # depending on timing, the first transaction might not fail yet
+            await device.trans("*IDN?")
+
+    with contextlib.suppress(DeviceConnectionError):
+        await device.disconnect()  # might raise for the broken connection, but must close it anyway
+
+    assert not device._is_connection_open
+
+    await device.connect()
+    assert (await device.trans("*IDN?")).startswith(b"ACME")
+
+    await device.disconnect()
+    server.close()
+    # A handler whose connection was closed on the server side never sees EOF, wait_closed() would wait for it
+    for handler in handlers:
+        handler.cancel()
+    await asyncio.gather(*handlers, return_exceptions=True)

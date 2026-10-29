@@ -229,6 +229,9 @@ class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
     async def disconnect(self) -> None:
         """Disconnect from the device asynchronously.
 
+        The connection is considered closed afterwards, also when an error is raised, e.g. when the device
+        already closed the connection on its side (broken pipe). A next `connect()` opens a new connection.
+
         Raises:
             DeviceConnectionError: When the connection could not be closed properly
         """
@@ -238,11 +241,12 @@ class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
                     logger.debug(f"Disconnecting from {self._device_name} at {self.hostname}")
                     self._writer.close()
                     await self._writer.wait_closed()
-                    self._writer = None
-                    self._reader = None
-                    self._is_connection_open = False
             except Exception as exc:
                 raise DeviceConnectionError(self._device_name, f"Could not close connection: {exc}") from exc
+            finally:
+                self._writer = None
+                self._reader = None
+                self._is_connection_open = False
 
     async def reconnect(self) -> None:
         """Reconnect to the device asynchronously."""
