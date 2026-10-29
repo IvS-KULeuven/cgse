@@ -328,6 +328,20 @@ async def test_device_not_connected(setup):
 
 
 @pytest.mark.asyncio
+async def test_status_report_device_section(setup):
+    server, _, _ = setup
+
+    report = server.get_status_report()
+    assert report["device"] == {"connected": True, "sim_mode": None}
+    assert report["details"]["scan"]["connected"] is True
+    json.dumps(report)
+
+    await server.controller.daq.disconnect()
+
+    assert server.get_status_report()["device"] == {"connected": False, "sim_mode": None}
+
+
+@pytest.mark.asyncio
 async def test_auto_scan_on_connect(setup):
     server, _, _ = setup
     await server.controller.daq.disconnect()
