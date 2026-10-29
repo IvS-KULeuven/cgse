@@ -57,6 +57,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   exist. There is no separate simulator process: use `cgse tgf4000 start --sim DEVICE_ID`. `cgse tgf4000` now has
   `start`, `stop` and `status`.
 
+### KIKUSUI PMX-A
+
+- Removed the `cgse pmx_a start-sim` and `stop-sim` subcommands, they ran the `pmx_a_sim` module that doesn't exist.
+  There is no separate simulator process: use `cgse pmx_a start --sim DEVICE_ID`. `cgse pmx_a` now has `start`,
+  `stop` and `status`.
+
 ---
 
 ## [0.25.11] - 2026-07-23
