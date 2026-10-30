@@ -313,6 +313,74 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         return self._process_status.as_dict()
 
+    def get_status_details(self) -> dict:
+        """Returns the service or device specific part of the status report.
+
+        By default, these are the entries that the device protocol adds to the base status in its `get_status()`
+        method, i.e. without the timestamp, delay, and process information. Override this method when that status is
+        too large or not suited to be sent to clients.
+        """
+
+        status = self.device_protocol.get_status()
+        base_keys = {"timestamp", "delay", *self.get_process_status()}
+
+        return {key: value for key, value in status.items() if key not in base_keys}
+
+    def get_device_status(self) -> dict | None:
+        """Returns the state of the device that is controlled by this Control Server.
+
+        Control Servers of devices shall override this method and return a dictionary with the following entries:
+
+        * connected (bool | None): True when the device is connected, None when this is not known;
+        * sim_mode (bool | None): True when the Control Server talks to a simulator, None when this is not known.
+
+        Returns:
+            None for Control Servers that do not control a device, e.g. the core services.
+        """
+
+        return None
+
+    def get_status_report(self) -> dict:
+        """Returns the status report of the Control Server, as requested by clients through the service command
+        `get_status_report`.
+
+        The report has the same layout for synchronous and asynchronous control servers:
+
+        * schema_version: version of the report layout;
+        * timestamp: ISO 8601 UTC timestamp;
+        * control_server: name, service type, device identifier, hostname, and ports of the Control Server;
+        * process: process information with normalized keys, see `ProcessStatus.as_status_dict()`;
+        * device: state of the controlled device, see `get_device_status()`, or None when there is no device;
+        * details: service or device specific status, see `get_status_details()`.
+
+        When the device state or the details cannot be retrieved, that section contains only an `error` entry, so the
+        rest of the report is still returned.
+        """
+
+        def collect(section: str, func: Callable):
+            try:
+                return func()
+            except Exception as exc:
+                self.logger.error(f"Could not retrieve the {section} for the status report: {type_name(exc)}: {exc}")
+                return {"error": f"{type_name(exc)}: {exc}"}
+
+        return {
+            "schema_version": 1,
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "control_server": {
+                "name": self.service_name,
+                "service_type": self.service_type,
+                "device_id": self.device_id,
+                "hostname": get_host_ip() or "localhost",
+                "device_commanding_port": get_port_number(self.dev_ctrl_cmd_sock),
+                "service_commanding_port": get_port_number(self.dev_ctrl_service_sock),
+                "monitoring_port": get_port_number(self.dev_ctrl_mon_sock),
+            },
+            "process": self._process_status.as_status_dict(),
+            "device": collect("device status", self.get_device_status),
+            "details": collect("status details", self.get_status_details),
+        }
+
     def get_average_execution_times(self) -> dict:
         """Returns the average execution times of all functions that have been monitored by this process.
 

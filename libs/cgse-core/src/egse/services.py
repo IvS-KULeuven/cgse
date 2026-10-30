@@ -139,6 +139,10 @@ class ServiceProtocol(CommandProtocol):
         logger.debug(f"Asking for process status of {self.control_server.__class__.__name__}.")
         self.send(self.get_status())
 
+    def handle_get_status_report(self):
+        logger.debug(f"Asking for status report of {self.control_server.__class__.__name__}.")
+        self.send(self.control_server.get_status_report())
+
     def handle_get_cs_module(self):
         """
         Returns the module in which the control server has been implemented.
@@ -200,6 +204,8 @@ class ServiceInterface:
     def quit_server(self): ...
     @dynamic_interface
     def get_process_status(self): ...
+    @dynamic_interface
+    def get_status_report(self): ...
     @dynamic_interface
     def get_cs_module(self): ...
     @dynamic_interface

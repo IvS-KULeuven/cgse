@@ -150,6 +150,14 @@ async def test_control_server(caplog):
             assert "service commanding port" in response
             assert "monitoring port" in response
 
+            response = await client.get_status_report()
+            logger.debug(f"{response = }")
+            assert isinstance(response, dict)
+            assert response["schema_version"] == 1
+            assert response["control_server"]["service_type"] == CONTROL_SERVER_SERVICE_TYPE
+            assert response["process"]["pid"] > 0
+            assert "status_report" in response["details"]["service_command_handlers"]
+
             assert await is_control_server_active(service_type=CONTROL_SERVER_SERVICE_TYPE)
 
             response = await client.stop_server()

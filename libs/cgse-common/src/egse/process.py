@@ -235,6 +235,27 @@ class ProcessStatus:
             "CPU%": self._cpu_percent,
         }
 
+    def as_status_dict(self) -> dict:
+        """Returns all process information as a JSON-safe dictionary with normalized keys.
+
+        This is the `process` section of the status report of a control server. The keys of `as_dict()` are kept
+        unchanged because they are also published on the monitoring channel.
+
+        This runs the `update()` method first to bring the numbers up-to-date.
+        """
+        self.update()
+        return {
+            "pid": self._pid,
+            "uptime_s": self._uptime,
+            "uuid": str(self._uuid),
+            "rss": self._memory_info.rss,
+            "uss": self._memory_info.uss,
+            "cpu_user_s": self._cpu_times.user,
+            "cpu_system_s": self._cpu_times.system,
+            "cpu_count": self._cpu_count,
+            "cpu_percent": self._cpu_percent,
+        }
+
     def __str__(self):
         self.update()
         msg = (

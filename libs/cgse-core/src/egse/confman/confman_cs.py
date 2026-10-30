@@ -99,6 +99,19 @@ class ConfigurationManagerControlServer(ControlServer):
         return STORAGE_MNEMONIC
 
     @override
+    def get_status_details(self) -> dict:
+        """Returns the identifiers of the loaded Setup and the running observation instead of the full Setup."""
+        controller = self.device_protocol.controller
+        obsid = controller.get_obsid().return_code
+
+        return {
+            "obsid_active": obsid is not None,
+            "obsid": str(obsid) if obsid else None,
+            "setup_id": controller.get_setup_id(),
+            "site_id": controller.get_site_id(),
+        }
+
+    @override
     def is_storage_manager_active(self):
         from egse.storage import is_storage_manager_active
 

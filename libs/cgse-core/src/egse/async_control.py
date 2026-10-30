@@ -177,6 +177,7 @@ class ServiceCommandRouter:
     def register_default_handlers(self):
         self.add_handler("terminate", self._handle_terminate)
         self.add_handler("info", self._handle_info)
+        self.add_handler("status_report", self._handle_status_report)
         self.add_handler("ping", self._handle_ping)
         self.add_handler("block", self._handle_block)
 
@@ -226,6 +227,16 @@ class ServiceCommandRouter:
             {
                 "success": True,
                 "message": self._control_server.get_info(),
+            },
+        )
+
+    async def _handle_status_report(self, cmd: dict[str, Any]) -> list:
+        self._logger.debug(f"Handling '{cmd['command']}' service request.")
+        return self._control_server.create_json_response(
+            SocketType.SERVICE,
+            {
+                "success": True,
+                "message": self._control_server.get_status_report(),
             },
         )
 
@@ -333,6 +344,9 @@ class AsyncControlServer:
 
         self._service_id = None
         """The unique service ID assigned by the registry on registration, used for deregistration and heartbeats."""
+
+        self.device_id: str | None = None
+        """The device identifier, set by subclasses that control one of several devices of the same type."""
 
         self.storage_manager_active = False
         """Set at start-up to whether the Storage Manager was active and this server registered to it."""
@@ -626,6 +640,51 @@ class AsyncControlServer:
             },
             "components": self.get_component_status(),
             "process": self._process_status.as_dict(),
+        }
+
+    def get_device_status(self) -> dict[str, Any] | None:
+        """Return the state of the device that is controlled by this control server.
+
+        Control servers of devices shall override this method, see `egse.control.ControlServer.get_device_status()`
+        for the entries of the returned dictionary.
+
+        Returns:
+            None for control servers that do not control a device.
+        """
+        return None
+
+    def get_status_report(self) -> dict[str, Any]:
+        """Return the status report, as requested by clients through the `status_report` service command.
+
+        The report has the same layout for synchronous and asynchronous control servers, see
+        `egse.control.ControlServer.get_status_report()`. The `device` section comes from `get_device_status()`, the
+        `details` are the component status from `get_component_status()`.
+
+        The status that is published on the monitoring channel, see `get_status()`, is not changed by this report.
+        """
+
+        def collect(section: str, func: Callable):
+            try:
+                return func()
+            except Exception as exc:
+                self.logger.error(f"Could not retrieve the {section} for the status report: {type_name(exc)}: {exc}")
+                return {"error": f"{type_name(exc)}: {exc}"}
+
+        return {
+            "schema_version": 1,
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "control_server": {
+                "name": self.service_name,
+                "service_type": self.service_type,
+                "device_id": self.device_id,
+                "hostname": self.get_ip_address(),
+                "device_commanding_port": self.device_command_port,
+                "service_commanding_port": self.service_command_port,
+                "monitoring_port": self.monitoring_port,
+            },
+            "process": self._process_status.as_status_dict(),
+            "device": collect("device status", self.get_device_status),
+            "details": collect("component status", self.get_component_status),
         }
 
     async def process_device_command(self):
@@ -1278,6 +1337,14 @@ class AsyncControlClient:
 
     async def info(self) -> str | None:
         response = await self.send_service_command("info")
+        if response["success"]:
+            return response["message"]
+        else:
+            self.logger.error(f"Server returned an error: {response['message']}")
+            return None
+
+    async def get_status_report(self) -> dict | None:
+        response = await self.send_service_command("status_report")
         if response["success"]:
             return response["message"]
         else:

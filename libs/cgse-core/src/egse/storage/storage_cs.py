@@ -101,6 +101,20 @@ class StorageControlServer(ControlServer):
     def get_storage_mnemonic(self):
         return STORAGE_MNEMONIC
 
+    def get_status_details(self) -> dict:
+        """Returns the storage location, disk usage, loaded Setup, running observation, and registrations."""
+        controller = self.device_protocol.controller
+        obsid = controller.get_obsid()
+        total, used, free = controller.get_disk_usage()
+
+        return {
+            "storage_location": str(Path(controller.get_storage_location()).expanduser()),
+            "disk_usage": {"total": total, "used": used, "free": free},
+            "loaded_setup_id": controller.get_loaded_setup_id(),
+            "obsid": str(obsid) if obsid else None,
+            "registrations": controller.get_registry_names(),
+        }
+
     def get_event_subscriptions(self) -> list[str]:
         return ["new_setup"]
 
