@@ -655,6 +655,18 @@ class DAQ6510ControlServer(AcquisitionAsyncControlServer):
         }
         return components
 
+    def get_device_status(self) -> dict[str, Any]:
+        """Returns the state of the DAQ6510 for the status report.
+
+        The connection state is taken from the open socket connection, the device itself is not queried. The simulator
+        is a separate process (`daq6510_sim`) that the control server cannot distinguish from the device, so the
+        simulator mode is not known.
+        """
+        return {
+            "connected": self.controller.daq.is_connection_open,
+            "sim_mode": None,
+        }
+
     # ----- device connection ---------------------------------------------------------------------------------------
 
     async def maintain_connection(self):
