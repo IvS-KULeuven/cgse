@@ -141,6 +141,17 @@ class PmxAControlServer(ControlServer):
 
         return self.cs_settings.get("STORAGE_MNEMONIC", "PMX-A")
 
+    def get_device_status(self) -> dict:
+        """Returns the state of the KIKUSUI PMX-A for the status report.
+
+        The connection state is taken from the open connection, the device itself is not queried.
+        """
+
+        return {
+            "connected": self.device_protocol.pmx_a.is_connection_open(),
+            "sim_mode": self.device_protocol.simulator,
+        }
+
     def is_storage_manager_active(self):
         """Checks whether the Storage Manager is active."""
 
