@@ -128,6 +128,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - DAQ6510 and TVAC: `sim_mode` is `None`, the simulator is a separate process the control server cannot tell apart
   from the device. New `is_connection_open` property on `ThermalVacOpcUaInterface` and `ThermalVacDaq`.
 
+### CGSE TUI
+
+- New package `cgse-tui`: a Textual terminal user interface with the status of the core services and device control
+  servers, started with `cgse tui` or `cgse_tui`. This first version is the skeleton: an overview table and a detail
+  screen, without data collection yet.
+
 ---
 
 ## [0.25.11] - 2026-07-23

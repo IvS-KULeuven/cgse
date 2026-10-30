@@ -195,3 +195,16 @@ and TVAC, whose status prints a dict, this always yields connected=True and sim=
   `cgse-core` `test_async_control.py::test_control_server` (its log capture is empty) and
   `test_client_server_interaction.py::test_proxy_without_cs`, and 10 tests in `cgse-common`. The `cgse-common` and
   `cgse-core` tests cannot run in one pytest process, both have a `tests/fixtures` package.
+- `cgse-core` test suite is timing dependent when no core services are running: the outcome differs from run to run,
+  and a run sometimes doesn't finish. Seen on 2026-10-30:
+  - `test_connect.py::test_circuit_break_async`, a long-running test that checks that reconnecting ends in a circuit
+    break, sometimes fails quickly and sometimes takes longer than 60 s.
+  - `test_registry_service.py::test_server_is_running` (only an `asyncio.sleep(10)` with a registry on the test
+    ports) sometimes takes longer than 60 s, after which the following tests in that file error and the run stops
+    making progress. The file passes on its own.
+  - `test_registry_backend.py`: `test_sqlite_persistence[True]`, `test_sqlite_persistence[False]` and
+    `test_sqlite_backend_resilience` error because they request the async fixture `sqlite_only`, which pytest-asyncio
+    doesn't handle.
+
+  To do: make the async tests independent of a running registry and of timing (explicit timeouts), fix the
+  `sqlite_only` fixture, and run the suite repeatedly (e.g. twice in CI) to catch flaky tests.
