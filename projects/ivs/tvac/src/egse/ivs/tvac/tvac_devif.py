@@ -114,6 +114,12 @@ class ThermalVacOpcUaInterface:
             await self.disconnect()
         await self.connect()
 
+    @property
+    def is_connection_open(self) -> bool:
+        """True when the connection to the OPC UA server is open. Unlike `is_connected()`, this doesn't talk to the
+        device."""
+        return self._is_connection_open
+
     async def is_connected(self) -> bool:
         """Checks whether the device is connected (and responsive).
 

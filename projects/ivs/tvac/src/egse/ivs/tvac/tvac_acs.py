@@ -84,6 +84,11 @@ class ThermalVacDaq:
 
         await self.opcua_interface.disconnect()
 
+    @property
+    def is_connection_open(self) -> bool:
+        """True when the connection to the OPC UA server is open, without communicating with the device."""
+        return self.opcua_interface.is_connection_open
+
     async def _read_node(self, key: str) -> Any:
         """Transmits the given read command to the device and returns the response.
 
@@ -1723,6 +1728,22 @@ class ThermalVacControlServer(AcquisitionAsyncControlServer):
         }
 
         return components
+
+    def get_device_status(self) -> dict[str, Any]:
+        """Returns the state of the ThermalVac device for the status report.
+
+        The connection state is taken from the open connection to the OPC UA server, the device itself is not
+        queried. The simulator is a separate process (`tvac_sim`) that the control server cannot distinguish from the
+        device, so the simulator mode is not known.
+
+        Returns:
+            Device state of the ThermalVac Control Server.
+        """
+
+        return {
+            "connected": self.controller.daq.is_connection_open,
+            "sim_mode": None,
+        }
 
     async def handle_acquisition(
         self,
