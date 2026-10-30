@@ -134,6 +134,17 @@ class TcuControlServer(ControlServer):
 
         return STORAGE_MNEMONIC
 
+    def get_device_status(self) -> dict:
+        """Returns the state of the Ariel TCU for the status report.
+
+        The connection state is whether the serial port to the TCU Arduino is open, the device itself is not queried.
+        """
+
+        return {
+            "connected": self.device_protocol.tcu.is_connected(),
+            "sim_mode": self.device_protocol.simulator,
+        }
+
     def is_storage_manager_active(self):
         """Checks whether the Storage Manager is active."""
         from egse.storage import is_storage_manager_active
