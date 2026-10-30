@@ -21,6 +21,7 @@ keywords = [
 dependencies = [
     "cgse-common",
     "cgse-core",
+    "pyserial>=3.5",
 ]
 
 [project.optional-dependencies]

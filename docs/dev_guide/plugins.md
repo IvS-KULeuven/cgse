@@ -9,7 +9,8 @@ places. The following entry-points are currently defined:
 * `cgse.command`: Packages can add commands or sub-commands to the `cgse` app to manage
   their functionality from within the `cgse` app, e.g. to start or stop the service or to report on
   its status.
-* `cgse.service`: Package provides a device driver or another service.
+* `cgse.service`: Package provides a device driver or another service. Device packages use the
+  sub-group `cgse.service.device_command`, see [Add a Service](#add-a-service).
 * `cgse.settings`: Package can add their own settings.
 * `cgse.explore`: Package provides a set of functions to explore, e.g. if any of the processes 
   it provides are running.
@@ -129,20 +130,64 @@ show = 'cgse_tools.cgse_commands:show[group]'
 ### Add a Service
 
 If your package provides a device driver or a specific service, use the `cgse.service`
-entry-point group. Service entry-points follow the same scheme as command groups, i.e. they are
-added to the `cgse` app as a `Typer()` object. Use the following entry in your `pyproject.toml`
-file:
+entry-point group or one of its sub-groups. Service entry-points follow the same scheme as command
+groups, i.e. they are added to the `cgse` app as a `Typer()` object. A device package uses the
+`cgse.service.device_command` sub-group:
 
 ```toml
-[project.entry-points."cgse.service"]
+[project.entry-points."cgse.service.device_command"]
 name = 'module:object'
 ```
 
 where:
 
-- `name` is the name of the service or device driver
+- `name` is the name of the sub-command of the `cgse` app, e.g. `daq6510` for `cgse daq6510`
 - `module` is a fully qualified module name for your package, a module that can be imported
 - `object` is the name of the `Typer()` object that you want to add as a service
+
+The `cgse` app loads the `cgse.service` group and every sub-group `cgse.service.<sub-group>`. The
+commands of a sub-group are listed in their own section of `cgse --help`, named after the sub-group,
+e.g. _Device Command_ for `cgse.service.device_command`. The sub-groups currently used are:
+
+| Entry-point group             | Section in `cgse --help` | Used by                                      |
+|-------------------------------|--------------------------|----------------------------------------------|
+| `cgse.service.core_command`   | Core Command             | the core services in `cgse-core`             |
+| `cgse.service.device_command` | Device Command           | device packages, e.g. `keithley-tempcontrol` |
+| `cgse.service.example`        | Example                  | the example service in `cgse-tools`          |
+
+The process manager GUI (`pm_ui`) only looks at the `cgse.service.device_command` group, and it
+uses the `object` part of the entry-point value as the name of the `cgse` sub-command. Keep `name`
+and `object` the same, e.g.:
+
+```toml
+[project.entry-points."cgse.service.device_command"]
+daq6510 = 'keithley_tempcontrol.cgse_services:daq6510'
+```
+
+#### Sub-commands of a device
+
+The `cgse <device>` sub-commands manage the life cycle of the control server, nothing else:
+
+| Sub-command  | Description                                                       |
+|--------------|-------------------------------------------------------------------|
+| `start`      | Starts the control server.                                        |
+| `stop`       | Stops the control server.                                         |
+| `status`     | Prints the status of the control server.                          |
+| `start-sim`  | Starts the device simulator in the background.                    |
+| `stop-sim`   | Stops the device simulator.                                       |
+| `status-sim` | Prints the status of the device simulator.                        |
+
+- The process manager starts, stops and queries a control server with
+  `cgse <device> start|stop|status [<device_id>]`, so use these names.
+- Add `start-sim`, `stop-sim` and `status-sim` only when the package has a simulator that runs as
+  a separate process, e.g. `daq6510_sim` in `keithley-tempcontrol`. When the simulator is part of
+  the control server, add a `--sim` (`--simulator`) option to `start` instead, e.g.
+  `cgse puna start --sim PUNA_01`. The process manager offers simulator mode when it finds `--sim`
+  in the output of `cgse <device> start --help`.
+- Device operations, e.g. starting a scan or reading the latest values, don't belong in the `cgse`
+  app. Provide them in the command of the control server itself, e.g. `daq6510_cs start-scan`.
+  The `start` and `stop` sub-commands usually run the control server command in the background with
+  its output redirected to a log file, so the result of a device operation would not be seen.
 
 ## Explore
 

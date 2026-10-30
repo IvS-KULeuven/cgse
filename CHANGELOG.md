@@ -51,6 +51,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   running OPC UA simulator, exits with code 1 when the simulator is not running or not responding.
 - The simulator module `tvac_simulator.py` is renamed to `tvac_sim.py`, matching the `tvac_sim` command and the
   other simulators (e.g. `daq6510_sim.py`).
+  
+### LakeShore 336
+
+- Removed the `cgse lakeshore336 start-simulator` subcommand, it printed the status of the control server instead of
+  starting a simulator. There is no separate simulator process: use `cgse lakeshore336 start --sim DEVICE_ID`.
+  `cgse lakeshore336` now has `start`, `stop` and `status`.
+- Fixed the `lakeshore336_cs` command, it failed with an `ImportError` (the entry point referred to `cli` instead of
+  `app`).
+- Removed the `lakeshore336_ui` GUI script, the `lakeshore336_ui` module doesn't exist.
+
+### Aim-TTi TGF4000
+
+- Removed the `cgse tgf4000 start-sim` and `stop-sim` subcommands, they ran the `tgf4000_sim` module that doesn't
+  exist. There is no separate simulator process: use `cgse tgf4000 start --sim DEVICE_ID`. `cgse tgf4000` now has
+  `start`, `stop` and `status`.
+
+### KIKUSUI PMX-A
+
+- Removed the `cgse pmx_a start-sim` and `stop-sim` subcommands, they ran the `pmx_a_sim` module that doesn't exist.
+  There is no separate simulator process: use `cgse pmx_a start --sim DEVICE_ID`. `cgse pmx_a` now has `start`,
+  `stop` and `status`.
+
+### RS PRO RS-D3305P
+
+- Removed the `cgse rsd3305p start-sim` and `stop-sim` subcommands, they ran the driver module `rsd3305p` instead of
+  a simulator. There is no separate simulator process: use `cgse rsd3305p start --sim DEVICE_ID`. `cgse rsd3305p` now
+  has `start`, `stop` and `status`.
+- Added the missing `pyserial` dependency, the `rsd3305p_cs` command failed with `No module named 'serial'` when no
+  other package had installed it.
+
+### Symétrie Hexapods
+
+- Removed the `cgse puna start-sim` and `stop-sim` subcommands: `start-sim` only printed that the simulator is in
+  development, `stop-sim` ran the `puna_sim` module that doesn't exist. There is no separate simulator process: use
+  `cgse puna start --sim DEVICE_ID`. `cgse puna`, `cgse zonda` and `cgse joran` now all have `start`, `stop` and
+  `status`.
 
 ---
 
