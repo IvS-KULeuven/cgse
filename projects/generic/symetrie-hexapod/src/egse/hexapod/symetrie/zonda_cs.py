@@ -92,6 +92,17 @@ class ZondaControlServer(ControlServer):
     def get_storage_mnemonic(self):
         return CTRL_SETTINGS.get("STORAGE_MNEMONIC", "ZONDA")
 
+    def get_device_status(self) -> dict:
+        """Returns the state of the ZONDA Hexapod for the status report.
+
+        The telnet interface keeps the connection state as a flag, so `is_connected()` does not query the device.
+        """
+
+        return {
+            "connected": self.device_protocol.hexapod.is_connected(),
+            "sim_mode": self.device_protocol.simulator,
+        }
+
     def is_storage_manager_active(self):
         from egse.storage import is_storage_manager_active
 

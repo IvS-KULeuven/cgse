@@ -35,6 +35,10 @@ class PunaPlusController(PunaPlusInterface, DynamicCommandMixin):
     def is_connected(self):
         return self.device.is_connected()
 
+    def is_connection_open(self):
+        """Checks whether the connection is open, the telnet interface keeps this as a flag, no device I/O."""
+        return self.device.is_connected()
+
     def connect(self):
         self.device.connect()
 

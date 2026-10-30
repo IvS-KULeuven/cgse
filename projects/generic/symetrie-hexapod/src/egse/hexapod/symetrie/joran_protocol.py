@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 from egse.command import ClientServerCommand
 from egse.control import ControlServer
@@ -10,13 +11,16 @@ from egse.hk import read_conversion_dict, convert_hk_names
 from egse.metrics import define_metrics
 from egse.protocol import CommandProtocol
 from egse.settings import Settings
+from egse.setup import SetupError
 from egse.system import format_datetime
 from egse.zmq_ser import bind_address
 
 logger = logging.getLogger(__name__)
 
+_HERE = Path(__file__).parent
+
 ctrl_settings = Settings.load("Hexapod Control Server")["JORAN"]
-joran_settings = Settings.load(filename="joran.yaml")
+joran_settings = Settings.load(filename="joran.yaml", location=_HERE)
 
 
 class JoranCommand(ClientServerCommand):
@@ -29,7 +33,13 @@ class JoranProtocol(CommandProtocol):
         self.simulator = simulator
         self.device_id = device_id
 
-        self.hk_conversion_table = read_conversion_dict(self.control_server.get_storage_mnemonic(), use_site=True)
+        try:
+            self.hk_conversion_table = read_conversion_dict(self.control_server.get_storage_mnemonic(), use_site=True)
+            self.metrics = define_metrics("JORAN")
+        except SetupError as exc:
+            logger.warning(f"No housekeeping name conversion and no metrics for JORAN: {exc}")
+            self.hk_conversion_table = None
+            self.metrics = None
 
         if self.simulator:
             self.hexapod = JoranSimulator(self.device_id)
@@ -41,8 +51,6 @@ class JoranProtocol(CommandProtocol):
         self.load_commands(joran_settings.Commands, JoranCommand, JoranInterface)
 
         self.build_device_method_lookup_table(self.hexapod)
-
-        self.metrics = define_metrics("JORAN")
 
     def get_bind_address(self):
         return bind_address(
@@ -100,6 +108,9 @@ class JoranProtocol(CommandProtocol):
 
         result["Homing done"] = self.hexapod.is_homing_done()
         result["In position"] = self.hexapod.is_in_position()
+
+        if not self.hk_conversion_table:
+            return result
 
         hk_dict = convert_hk_names(result, self.hk_conversion_table)
 

@@ -29,7 +29,7 @@ DEVICE_SETTINGS = Settings.load(filename="joran.yaml")
 PROXY_TIMEOUT = 10.0  # don't wait longer than 10s by default
 
 
-class JoranInterface(AlphaPlusControllerInterface):
+class JoranInterface(AlphaPlusControllerInterface, DeviceInterface):
     """
     Interface definition for the JoranController, the JoranProxy, and the JoranSimulator.
     """

@@ -95,6 +95,17 @@ class PunaControlServer(ControlServer):
     def get_storage_mnemonic(self):
         return CTRL_SETTINGS.get("STORAGE_MNEMONIC", "PUNA")
 
+    def get_device_status(self) -> dict:
+        """Returns the state of the PUNA Hexapod for the status report.
+
+        The connection state is taken from the open connection, the device itself is not queried.
+        """
+
+        return {
+            "connected": self.device_protocol.hexapod.is_connection_open(),
+            "sim_mode": self.device_protocol.simulator,
+        }
+
     def is_storage_manager_active(self):
         from egse.storage import is_storage_manager_active
 

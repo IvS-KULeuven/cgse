@@ -114,6 +114,10 @@ class PunaController(PunaInterface):
     def is_connected(self):
         return self.pmac.isConnected()
 
+    def is_connection_open(self):
+        """Checks whether the connection to the PMAC is open, without communicating with the device."""
+        return self.pmac.isConnectionOpen
+
     def connect(self):
         try:
             self.pmac.connect()
