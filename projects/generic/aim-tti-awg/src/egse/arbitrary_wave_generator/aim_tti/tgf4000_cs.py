@@ -141,6 +141,17 @@ class Tgf4000ControlServer(ControlServer):
 
         return self.cs_settings.get("STORAGE_MNEMONIC", "TGF4000")
 
+    def get_device_status(self) -> dict:
+        """Returns the state of the Aim-TTi TGF4000 for the status report.
+
+        The connection state is taken from the open connection, the device itself is not queried.
+        """
+
+        return {
+            "connected": self.device_protocol.tgf4000.is_connection_open(),
+            "sim_mode": self.device_protocol.simulator,
+        }
+
     def is_storage_manager_active(self):
         """Checks whether the Storage Manager is active."""
 
