@@ -134,6 +134,14 @@ class DigilentEthernetInterface(DeviceConnectionInterface, DeviceTransport):
             self.disconnect()
         self.connect()
 
+    def is_connection_open(self) -> bool:
+        """Checks if the connection to the Digilent hardware is open, without communicating with the device.
+
+        Returns: True if the connection is open; False otherwise.
+        """
+
+        return self._is_connection_open
+
     def is_connected(self) -> bool:
         """Checks if the Digilent hardware is connected.
 

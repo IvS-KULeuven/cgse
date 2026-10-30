@@ -43,6 +43,9 @@ class Dt8874Simulator(Dt8874Interface):
     def is_connected(self):
         return self._is_connected
 
+    def is_connection_open(self):
+        return self._is_connected
+
     def connect(self):
         self._is_connected = True
 

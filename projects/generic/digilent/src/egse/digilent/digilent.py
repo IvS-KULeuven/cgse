@@ -2771,6 +2771,15 @@ class DigilentController(DigilentInterface, DynamicCommandMixin):
 
         return self.transport.is_connected()
 
+    def is_connection_open(self):
+        """Checks whether the connection to the Digilent MEASURpoint is open, without communicating with the device.
+
+        Returns:
+            True if the connection to the Digilent MEASURpoint is open; False otherwise.
+        """
+
+        return self.transport.is_connection_open()
+
     def connect(self):
         """Opens the connection to the Digilent MEASURpoint.
 
@@ -2809,6 +2818,9 @@ class DigilentSimulator(DigilentInterface):
 
     # noinspection PyMethodMayBeStatic
     def is_connected(self):
+        return self._is_connected
+
+    def is_connection_open(self):
         return self._is_connected
 
     def connect(self):
