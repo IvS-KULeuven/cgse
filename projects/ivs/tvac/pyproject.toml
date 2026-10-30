@@ -29,7 +29,7 @@ test = ["pytest", "pytest-mock", "pytest-cov"]
 
 [project.scripts]
 tvac_cs = "egse.ivs.tvac.tvac_acs:app"
-tvac_sim = "egse.ivs.tvac.tvac_simulator:app"
+tvac_sim = "egse.ivs.tvac.tvac_sim:app"
 
 [project.entry-points."cgse.version"]
 ivs-tvac = 'egse.version:get_version_installed'

@@ -42,6 +42,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `AsyncSCPIInterface.disconnect()` always resets the connection state, also when closing fails (e.g. after the
   device closed the connection), so the next `connect()` opens a new connection.
 
+### TVAC
+
+- **Breaking:** the `cgse tvac` subcommands `start-cs` and `stop-cs` are renamed to `start` and `stop`, like the
+  other `cgse <device>` commands. `cgse tvac` now has `start`, `stop`, `status`, `start-sim`, `stop-sim` and
+  `status-sim`.
+- New `tvac_sim status` command: prints the TVAC state, average temperature, vessel pressure and data logging of the
+  running OPC UA simulator, exits with code 1 when the simulator is not running or not responding.
+- The simulator module `tvac_simulator.py` is renamed to `tvac_sim.py`, matching the `tvac_sim` command and the
+  other simulators (e.g. `daq6510_sim.py`).
+  
 ### LakeShore 336
 
 - Removed the `cgse lakeshore336 start-simulator` subcommand, it printed the status of the control server instead of
