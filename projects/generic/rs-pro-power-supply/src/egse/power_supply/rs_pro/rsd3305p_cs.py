@@ -141,6 +141,17 @@ class Rsd3305pControlServer(ControlServer):
 
         return self.cs_settings.get("STORAGE_MNEMONIC", "RS-D3305P")
 
+    def get_device_status(self) -> dict:
+        """Returns the state of the RS-PRO RS-D3305P for the status report.
+
+        The connection state is taken from the open serial port, the device itself is not queried.
+        """
+
+        return {
+            "connected": self.device_protocol.rsd3305p.is_connection_open(),
+            "sim_mode": self.device_protocol.simulator,
+        }
+
     def is_storage_manager_active(self):
         """Checks whether the Storage Manager is active."""
 

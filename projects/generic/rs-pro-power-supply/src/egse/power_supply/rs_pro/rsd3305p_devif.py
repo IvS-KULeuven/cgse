@@ -111,6 +111,14 @@ class Rsd3305pUsbInterface(DeviceConnectionInterface, DeviceTransport):
             self.disconnect()
         self.connect()
 
+    def is_connection_open(self) -> bool:
+        """Checks if the serial port to the RS-PRO RS-D3305P hardware is open, without communicating with the device.
+
+        Returns: True if the serial port is open; False otherwise.
+        """
+
+        return self.psu.is_open
+
     def is_connected(self) -> bool:
         """Checks if the RS-PRO RS-D3305P hardware is connected.
 
