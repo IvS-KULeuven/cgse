@@ -93,6 +93,17 @@ class LakeShore336ControlServer(ControlServer):
 
         return get_port_number(self.dev_ctrl_mon_sock) or 0
 
+    def get_device_status(self) -> dict:
+        """Returns the state of the LakeShore336 for the status report.
+
+        The connection state is taken from the open connection, the device itself is not queried.
+        """
+
+        return {
+            "connected": self.device_protocol.lakeshore.is_connection_open(),
+            "sim_mode": self.device_protocol.simulator,
+        }
+
     def get_storage_mnemonic(self) -> str:
         """Returns the storage mnemonic used by the Control Server.
 
