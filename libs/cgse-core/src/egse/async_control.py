@@ -551,6 +551,7 @@ class AsyncControlServer:
             metadata={
                 "service_port": get_port_number(self.service_command_socket),
                 "monitoring_port": get_port_number(self.monitoring_socket),
+                "server_kind": "async",  # clients use JSON service commands on the service port
             },
         )
         await self.registry.start_heartbeat()

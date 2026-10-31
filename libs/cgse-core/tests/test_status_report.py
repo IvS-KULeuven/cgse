@@ -275,3 +275,54 @@ def test_process_manager_status_details():
 
     assert details == {"core_processes": {"Storage Manager": "SM_CS"}}
     json.dumps(details)
+
+
+class RecordingRegistry:
+    """Stands in for the registry client and records the registration, nothing is sent to a registry."""
+
+    def __init__(self):
+        self.registration = None
+
+    def register(self, **kwargs):
+        self.registration = kwargs
+        return "service-id"
+
+    def stop_heartbeat(self):
+        pass
+
+    def start_heartbeat(self):
+        pass
+
+    def disconnect(self):
+        pass
+
+
+class AsyncRecordingRegistry(RecordingRegistry):
+    async def connect(self):
+        pass
+
+    async def register(self, **kwargs):
+        return RecordingRegistry.register(self, **kwargs)
+
+    async def start_heartbeat(self):
+        pass
+
+
+def test_sync_registration_has_server_kind(sync_server):
+    sync_server.registry = RecordingRegistry()
+
+    sync_server.register_service("STATUS_TEST")
+
+    metadata = sync_server.registry.registration["metadata"]
+    assert metadata["server_kind"] == "sync"
+    assert metadata["service_port"] == get_port_number(sync_server.dev_ctrl_service_sock)
+
+
+@pytest.mark.asyncio
+async def test_async_registration_has_server_kind():
+    server = AsyncControlServer()
+    server.registry = AsyncRecordingRegistry()
+
+    await server.register_service()
+
+    assert server.registry.registration["metadata"]["server_kind"] == "async"

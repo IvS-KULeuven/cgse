@@ -111,6 +111,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   servers without a device, otherwise `{"connected": ..., "sim_mode": ...}`). When one of them raises, that section
   contains only an `error` entry and the rest of the report is still returned.
 - `AsyncControlServer` has a `device_id` attribute, `None` by default.
+- Control servers register with `server_kind` in their registry metadata: `"sync"` for a `ControlServer` (use a
+  `ServiceProxy` on the service port) and `"async"` for an `AsyncControlServer` (use JSON service commands). Clients
+  such as the TUI use it to choose the client for the status report.
 - Configuration Manager: `details` has `obsid_active`, `obsid`, `setup_id` and `site_id`, not the full Setup.
   Storage Manager: `storage_location`, `disk_usage`, `loaded_setup_id`, `obsid` and `registrations`.
   Process Manager: `core_processes`.
