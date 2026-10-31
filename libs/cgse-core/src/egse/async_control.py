@@ -64,6 +64,7 @@ from egse.system import log_rich_output
 from egse.system import type_name
 from egse.zmq_ser import get_port_number
 from egse.zmq_ser import set_address_port
+from egse.zmq_ser import wait_for_message
 from egse.zmq_ser import zmq_error_response
 from egse.zmq_ser import zmq_json_request
 from egse.zmq_ser import zmq_json_response
@@ -695,7 +696,9 @@ class AsyncControlServer:
             try:
                 # Wait for a request with timeout to allow checking if still running
                 try:
-                    parts = await asyncio.wait_for(self.device_command_socket.recv_multipart(), timeout=1.0)
+                    if not await wait_for_message(self.device_command_socket, timeout=1.0):
+                        continue
+                    parts = await self.device_command_socket.recv_multipart()
                 except asyncio.TimeoutError:
                     continue
 
@@ -755,7 +758,9 @@ class AsyncControlServer:
             try:
                 # Wait for a request with timeout to allow checking if still running
                 try:
-                    parts = await asyncio.wait_for(self.service_command_socket.recv_multipart(), timeout=1.0)
+                    if not await wait_for_message(self.service_command_socket, timeout=1.0):
+                        continue
+                    parts = await self.service_command_socket.recv_multipart()
                 except asyncio.TimeoutError:
                     continue
 

@@ -37,6 +37,7 @@ from egse.settings import Settings
 from egse.system import TyperAsyncCommand
 from egse.system import get_host_ip
 from egse.zmq_ser import get_port_number
+from egse.zmq_ser import wait_for_message
 
 from egse.logger import remote_logging
 from egse.metricshub import DEFAULT_COLLECTOR_PORT
@@ -600,9 +601,9 @@ class AsyncMetricsHub:
         while self.running:
             try:
                 try:
-                    message_parts = await asyncio.wait_for(
-                        self.requests_socket.recv_multipart(), timeout=REQUEST_POLL_TIMEOUT
-                    )
+                    if not await wait_for_message(self.requests_socket, timeout=REQUEST_POLL_TIMEOUT):
+                        continue
+                    message_parts = await self.requests_socket.recv_multipart()
                 except asyncio.TimeoutError:
                     continue
 

@@ -15,6 +15,7 @@ from egse.registry import DEFAULT_RS_REQ_PORT
 from egse.registry.client import AsyncRegistryClient
 from egse.system import get_host_ip
 from egse.zmq_ser import get_port_number
+from egse.zmq_ser import wait_for_message
 
 module_module_logger_name = "egse.async_microservice"
 module_logger = logging.getLogger(module_module_logger_name)
@@ -201,7 +202,9 @@ class ZMQMicroservice:
                 try:
                     # Wait for a request with timeout
                     try:
-                        request_json = await asyncio.wait_for(self.rep_socket.recv_string(), timeout=1.0)
+                        if not await wait_for_message(self.rep_socket, timeout=1.0):
+                            continue
+                        request_json = await self.rep_socket.recv_string()
                     except asyncio.TimeoutError:
                         continue
 

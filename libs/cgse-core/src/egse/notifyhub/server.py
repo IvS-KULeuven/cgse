@@ -28,6 +28,7 @@ from egse.registry.client import AsyncRegistryClient
 from egse.system import TyperAsyncCommand
 from egse.system import get_host_ip
 from egse.zmq_ser import get_port_number
+from egse.zmq_ser import wait_for_message
 
 from .event import NotificationEvent
 
@@ -156,7 +157,9 @@ class AsyncNotificationHub:
         while self.running:
             try:
                 # Receive event from any service (non-blocking with timeout)
-                message_bytes = await asyncio.wait_for(self.collector_socket.recv(), timeout=0.1)
+                if not await wait_for_message(self.collector_socket, timeout=0.1):
+                    continue
+                message_bytes = await self.collector_socket.recv()
 
                 message = json.loads(message_bytes.decode())
 
@@ -226,9 +229,9 @@ class AsyncNotificationHub:
         while self.running:
             try:
                 try:
-                    message_parts = await asyncio.wait_for(
-                        self.requests_socket.recv_multipart(), timeout=REQUEST_POLL_TIMEOUT
-                    )
+                    if not await wait_for_message(self.requests_socket, timeout=REQUEST_POLL_TIMEOUT):
+                        continue
+                    message_parts = await self.requests_socket.recv_multipart()
                 except asyncio.TimeoutError:
                     # self.logger.debug("waiting for command request...")
                     continue
