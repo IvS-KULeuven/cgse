@@ -35,6 +35,7 @@ from egse.registry.client import AsyncRegistryClient
 from egse.settings import Settings
 from egse.system import TyperAsyncCommand
 from egse.system import caffeinate
+from egse.zmq_ser import wait_for_message
 
 settings = Settings.load("Service Registry")
 
@@ -277,7 +278,9 @@ class AsyncRegistryServer:
                     # Wait for a request with timeout to allow checking if still running
                     try:
                         # self.logger.debug("Waiting for a request with 1s timeout...")
-                        message_parts = await asyncio.wait_for(self.req_socket.recv_multipart(), timeout=1.0)
+                        if not await wait_for_message(self.req_socket, timeout=1.0):
+                            continue
+                        message_parts = await self.req_socket.recv_multipart()
                     except asyncio.TimeoutError:
                         # self.logger.debug("waiting for command request...")
                         continue
@@ -487,7 +490,9 @@ class AsyncRegistryServer:
             while self._running:
                 try:
                     # Receive heartbeat (non-blocking with timeout)
-                    message_parts = await asyncio.wait_for(self.hb_socket.recv_multipart(), timeout=1.0)
+                    if not await wait_for_message(self.hb_socket, timeout=1.0):
+                        continue
+                    message_parts = await self.hb_socket.recv_multipart()
 
                     if VERBOSE_DEBUG:
                         self.logger.debug(f"{message_parts=}")

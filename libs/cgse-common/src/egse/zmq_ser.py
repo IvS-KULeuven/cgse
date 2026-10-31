@@ -66,6 +66,29 @@ def get_port_number(socket: zmq.Socket | None) -> int:
         return 0
 
 
+async def wait_for_message(socket, timeout: float) -> bool:
+    """
+    Waits until a message can be received on the given asyncio socket, without receiving it.
+
+    Use this in a receive loop instead of `asyncio.wait_for(socket.recv_multipart(), timeout)`. When that timeout
+    expires, the receive is cancelled, and a message that arrives at the same moment is lost. Waiting with `poll()`
+    never takes a message from the socket, so nothing is lost when the timeout expires:
+
+        if not await wait_for_message(socket, timeout=1.0):
+            continue  # nothing received, e.g. check if the loop shall stop
+        message = await socket.recv_multipart()  # returns immediately
+
+    Args:
+        socket: a `zmq.asyncio.Socket`
+        timeout: maximum time to wait [seconds]
+
+    Returns:
+        True when a message can be received, False when the timeout expired.
+    """
+    events = await socket.poll(timeout=int(timeout * 1000), flags=zmq.POLLIN)
+    return bool(events & zmq.POLLIN)
+
+
 def zmq_string_request(request: str) -> list:
     return [
         b"MESSAGE_TYPE:STRING",

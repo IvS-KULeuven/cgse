@@ -15,6 +15,7 @@ from egse.env import bool_env
 from egse.log import logging
 from egse.system import do_every
 from egse.system import get_host_ip
+from egse.zmq_ser import wait_for_message
 
 from egse.registry import DEFAULT_RS_HB_PORT
 from egse.registry import DEFAULT_RS_PUB_PORT
@@ -1082,9 +1083,9 @@ class AsyncRegistryClient:
                     try:
                         # Use a timeout to allow for clean shutdown
                         try:
-                            message = await asyncio.wait_for(
-                                self.sub_socket.recv_multipart(), timeout=EVENT_POLL_TIMEOUT
-                            )
+                            if not await wait_for_message(self.sub_socket, timeout=EVENT_POLL_TIMEOUT):
+                                continue
+                            message = await self.sub_socket.recv_multipart()
                         except asyncio.TimeoutError:
                             continue
 

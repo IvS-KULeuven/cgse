@@ -42,6 +42,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `AsyncSCPIInterface.disconnect()` always resets the connection state, also when closing fails (e.g. after the
   device closed the connection), so the next `connect()` opens a new connection.
 
+### Lost requests and messages
+
+- Fixed: the registry server, the notification hub, the metrics hub and the async control server could lose a request
+  or message. Their receive loops waited with `asyncio.wait_for(socket.recv_multipart(), timeout)`, which cancels the
+  receive when the timeout expires; a message that arrived at that moment was lost and the client timed out. A client
+  that polls at a fixed interval (e.g. every 2 s) regularly hit that moment. Found with the CGSE TUI: the registry
+  didn't receive the requests that timed out.
+- The receive loops now wait with the new `egse.zmq_ser.wait_for_message(socket, timeout)`, which polls the socket
+  without taking the message, and receive only when a message is there. Changed: the request and heartbeat loops of
+  the registry server, the event listener of `AsyncRegistryClient`, `registry/service.py`, the request and event
+  collector loops of the notification hub, the request loop of the metrics hub, and the device and service command
+  loops of `AsyncControlServer`.
+
 ### TVAC
 
 - **Breaking:** the `cgse tvac` subcommands `start-cs` and `stop-cs` are renamed to `start` and `stop`, like the
