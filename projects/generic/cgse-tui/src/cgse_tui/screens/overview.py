@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import logging
+
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import DataTable
 from textual.widgets import Footer
 from textual.widgets import Header
+from textual.widgets import RichLog
 
 from cgse_tui.data.model import ServiceInfo
 from cgse_tui.screens.detail import DetailScreen
@@ -53,36 +57,82 @@ def service_row(service: ServiceInfo) -> tuple[str, ...]:
     )
 
 
-class OverviewScreen(Screen):
-    """Shows all services in a table. Select a row to see the status report of that service."""
+LOG_STYLES = {logging.WARNING: "yellow", logging.ERROR: "red", logging.CRITICAL: "bold red"}
 
-    BINDINGS = [("r", "refresh", "Refresh")]
+
+class OverviewScreen(Screen):
+    """Shows all services in a table, and the log messages below it. Select a row to see the status report."""
+
+    DEFAULT_CSS = """
+    OverviewScreen #services {
+        height: 1fr;
+    }
+    OverviewScreen #log {
+        height: 10;
+        border-top: solid $secondary;
+    }
+    """
+
+    BINDINGS = [("r", "refresh", "Refresh"), ("l", "toggle_log", "Log")]
 
     def __init__(self):
         super().__init__()
         self.services: dict[str, ServiceInfo] = {}
+        self._columns = []
 
     def compose(self) -> ComposeResult:
         yield Header()
         yield DataTable(id="services", cursor_type="row", zebra_stripes=True)
+        yield RichLog(id="log", max_lines=1000, wrap=False)
         yield Footer()
 
+    def show_log_messages(self, messages: list[tuple[int, str]]) -> None:
+        """Appends (level, text) log messages to the log pane."""
+        log = self.query_one("#log", RichLog)
+        for level, message in messages:
+            style = next((style for minimum, style in sorted(LOG_STYLES.items(), reverse=True) if level >= minimum), "")
+            log.write(Text(message, style=style))
+
+    def action_toggle_log(self) -> None:
+        log = self.query_one("#log", RichLog)
+        log.display = not log.display
+
     def on_mount(self) -> None:
-        self.query_one("#services", DataTable).add_columns(*COLUMNS)
+        self._columns = self.query_one("#services", DataTable).add_columns(*COLUMNS)
 
     def show_services(self, services: list[ServiceInfo]) -> None:
-        """Replaces the rows of the table by the given services."""
+        """Updates the table with the given services, the rows are keyed by service type."""
+        if not self._columns:
+            return  # not mounted yet
         table = self.query_one("#services", DataTable)
-        table.clear()
-        self.services = {service.name: service for service in services}
-        for service in services:
-            table.add_row(*service_row(service), key=service.name)
+        self.services = {service.service_type: service for service in services}
+        shown = {row_key.value for row_key in table.rows}
+
+        for service_type in shown - self.services.keys():
+            table.remove_row(service_type)
+
+        added = False
+        for service_type, service in self.services.items():
+            cells = service_row(service)
+            if service_type in shown:
+                for column, value in zip(self._columns, cells):
+                    table.update_cell(service_type, column, value)
+            else:
+                table.add_row(*cells, key=service_type)
+                added = True
+
+        if added:
+            table.sort(self._columns[0], key=lambda name: name.lower())
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         service = self.services.get(event.row_key.value)
-        if service is not None:
-            self.app.push_screen(DetailScreen(service))
+        if service is None:
+            return
+        collector = getattr(self.app, "collector", None)
+        refresh = None if collector is None else (lambda: collector.refresh_report(service.service_type))
+        self.app.push_screen(DetailScreen(service, refresh=refresh))
 
     def action_refresh(self) -> None:
-        # The data layer is added in the next step, until then there is nothing to refresh.
-        self.notify("Data collection is not implemented yet.")
+        collector = getattr(self.app, "collector", None)
+        if collector is not None:
+            self.run_worker(collector.poll(), group="refresh", exclusive=True)

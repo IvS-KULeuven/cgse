@@ -35,6 +35,16 @@ class ServiceInfo:
     server_kind: str | None = None
     """Taken from the registry metadata: "sync", "async", or None for the custom servers."""
 
+    registered: bool = False
+    """True while the service is listed in the service registry."""
+
+    registered_at: float | None = None
+    """Time the TUI saw the registration, seconds since the epoch."""
+
+    port: int | None = None
+    service_port: int | None = None
+    monitoring_port: int | None = None
+
     pid: int | None = None
     uptime_s: float | None = None
     cpu_percent: float | None = None
@@ -47,6 +57,9 @@ class ServiceInfo:
 
     last_update: float | None = None
     """Time of the last information, seconds since the epoch."""
+
+    stale_after: float = 5.0
+    """Seconds without new information after which the service is shown as stale."""
 
     report: dict[str, Any] = field(default_factory=dict)
     """The last status report, shown in the detail screen."""

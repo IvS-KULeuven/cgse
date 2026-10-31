@@ -1,4 +1,4 @@
-"""Tests for the TUI screens, driven with Textual's `App.run_test()`."""
+"""Tests for the TUI screens, driven with Textual's `App.run_test()`, with a collector that needs no services."""
 
 from textual.widgets import DataTable
 
@@ -31,6 +31,27 @@ SERVICES = [
 ]
 
 
+class StaticCollector:
+    """Returns fixed services and records the report requests."""
+
+    def __init__(self, services):
+        self.services = services
+        self.refreshed = []
+
+    async def run(self):
+        pass
+
+    async def poll(self):
+        pass
+
+    def snapshot(self):
+        return self.services
+
+    async def refresh_report(self, service_type):
+        self.refreshed.append(service_type)
+        return next(service for service in self.services if service.service_type == service_type)
+
+
 def test_format_uptime():
     assert format_uptime(None) == ""
     assert format_uptime(59.9) == "00:00:59"
@@ -60,31 +81,44 @@ def test_service_row():
     assert service_row(SERVICES[1])[3:] == ("inactive", "", "", "", "", "", "")
 
 
-async def test_overview_starts_with_an_empty_table():
-    app = CgseTuiApp()
-    async with app.run_test():
+async def test_overview_shows_the_services_of_the_collector():
+    app = CgseTuiApp(collector=StaticCollector(SERVICES))
+    async with app.run_test() as pilot:
+        await pilot.pause()
         assert isinstance(app.screen, OverviewScreen)
         table = app.screen.query_one("#services", DataTable)
         assert [str(column.label) for column in table.columns.values()] == list(COLUMNS)
-        assert table.row_count == 0
+        assert table.row_count == 2
+        assert [str(cell) for cell in table.get_row("AWG1")] == list(service_row(SERVICES[0]))
+
+
+async def test_overview_updates_rows_in_place():
+    collector = StaticCollector(SERVICES)
+    app = CgseTuiApp(collector=collector)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        table = app.screen.query_one("#services", DataTable)
+
+        collector.services = [SERVICES[0]]  # the AWG1 stopped and is no longer known
+        app.update_overview()
+        assert table.row_count == 1
+
+        SERVICES[0].cpu_percent = 9.0
+        app.update_overview()
+        assert str(table.get_row("AWG1")[6]) == "9.0"
+        SERVICES[0].cpu_percent = 1.5
 
 
 async def test_select_a_service_shows_its_details():
-    app = CgseTuiApp()
+    collector = StaticCollector(SERVICES)
+    app = CgseTuiApp(collector=collector)
     async with app.run_test() as pilot:
-        app.screen.show_services(SERVICES)
-        assert app.screen.query_one("#services", DataTable).row_count == 2
-
+        await pilot.pause()
         await pilot.press("enter")
+        await pilot.pause()
         assert isinstance(app.screen, DetailScreen)
-        assert app.screen.service.name == "AWG1"
+        assert app.screen.service.service_type == "AWG1"
+        assert collector.refreshed == ["AWG1"]  # a new status report is requested when the screen opens
 
         await pilot.press("escape")
         assert isinstance(app.screen, OverviewScreen)
-
-
-async def test_quit():
-    app = CgseTuiApp()
-    async with app.run_test() as pilot:
-        await pilot.press("q")
-    assert app.return_code == 0

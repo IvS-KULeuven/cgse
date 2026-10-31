@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable
+from collections.abc import Callable
+
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.screen import Screen
@@ -14,22 +17,42 @@ from cgse_tui.data.model import ServiceInfo
 
 
 class DetailScreen(Screen):
-    """Shows the last status report of a service."""
+    """Shows the last status report of a service, and requests a new one when opened or refreshed.
 
-    BINDINGS = [("escape", "app.pop_screen", "Back")]
+    Args:
+        service: the service to show.
+        refresh: coroutine function that requests the status again and returns the updated service.
+    """
 
-    def __init__(self, service: ServiceInfo):
+    BINDINGS = [("escape", "app.pop_screen", "Back"), ("r", "refresh", "Refresh")]
+
+    def __init__(self, service: ServiceInfo, refresh: Callable[[], Awaitable[ServiceInfo | None]] | None = None):
         super().__init__()
         self.service = service
+        self._refresh = refresh
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Static(
-            f"[b]{self.service.name}[/b] ({self.service.service_type}) – {self.service.state.value}", id="title"
-        )
+        yield Static(self._title(), id="title")
         with VerticalScroll():
-            if self.service.report:
-                yield Pretty(self.service.report, id="report")
-            else:
-                yield Static("No status report received yet.", id="report")
+            yield Pretty(self.service.report or "No status report received yet.", id="report")
         yield Footer()
+
+    def on_mount(self) -> None:
+        self.action_refresh()
+
+    def _title(self) -> str:
+        service = self.service
+        return f"[b]{service.name}[/b] ({service.service_type}) – {service.state.value}"
+
+    def action_refresh(self) -> None:
+        if self._refresh is not None:
+            self.run_worker(self._update(), group="refresh", exclusive=True)
+
+    async def _update(self) -> None:
+        service = await self._refresh()
+        if service is None:
+            return
+        self.service = service
+        self.query_one("#title", Static).update(self._title())
+        self.query_one("#report", Pretty).update(service.report or "No status report received.")
