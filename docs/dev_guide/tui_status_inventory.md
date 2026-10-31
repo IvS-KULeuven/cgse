@@ -182,6 +182,23 @@ and TVAC, whose status prints a dict, this always yields connected=True and sim=
   server can be created per Python process (relevant for tests).
 - Process Manager: `get_device_ids()` / `get_devices()` load the Setup on every call, which blocks the single-threaded
   server.
+- Lost requests: the registry server, notification hub and metrics hub wait for a request with
+  `asyncio.wait_for(socket.recv_multipart(), timeout=…)` and cancel the receive when the timeout expires. A request
+  that arrives just when the receive is cancelled is lost, the client times out. Found with the TUI on 2026-10-31:
+  the registry logged no `Received request` for the requests that timed out. Confirmed on a test registry by sending
+  each request a fixed delay after the previous reply: at 996 ms 9 of 10 requests were lost, at all other delays
+  none; with a request loop that waits with `await socket.poll(timeout)` and only then receives, none were lost at
+  any delay. A client that polls in a fixed rhythm (like the TUI, every 2 s) drifts through this window every few
+  polls. The same pattern is in the async control server (`async_control.py`, device and service commands), the
+  registry heartbeat loop, and `registry/service.py`. Fix: wait with `poll()`, then receive, never cancel a receive.
+  The TUI tolerates one lost request per server (stale after three polls plus one request timeout).
+- Registry clients (`RegistryClient` and `AsyncRegistryClient`) use a DEALER socket and don't match replies to
+  requests. A request that times out (e.g. while the registry is restarted) stays queued, and when the registry is
+  back every following request reads the reply to an earlier one. Found with the TUI on 2026-10-30: after a registry
+  restart, `list_services()` read a `health` reply, returned no services, and all services stayed inactive. The TUI
+  now uses a new client for every poll. Long-lived clients, e.g. the one a control server uses for registration and
+  re-registration, can be affected in the same way (not verified). A fix in the client: close and reconnect the
+  socket after a timeout, or add a request id to match the replies.
 - Notification Hub: registers the ports from settings, not the bound ports, so dynamic ports (`0`) are registered as
   0; `_generate_health_response()` is never called.
 - Metrics Hub: `start_time` is set with `time.time()` but compared with `time.monotonic()` in the stats reporter, so the
@@ -195,3 +212,16 @@ and TVAC, whose status prints a dict, this always yields connected=True and sim=
   `cgse-core` `test_async_control.py::test_control_server` (its log capture is empty) and
   `test_client_server_interaction.py::test_proxy_without_cs`, and 10 tests in `cgse-common`. The `cgse-common` and
   `cgse-core` tests cannot run in one pytest process, both have a `tests/fixtures` package.
+- `cgse-core` test suite is timing dependent when no core services are running: the outcome differs from run to run,
+  and a run sometimes doesn't finish. Seen on 2026-10-30:
+  - `test_connect.py::test_circuit_break_async`, a long-running test that checks that reconnecting ends in a circuit
+    break, sometimes fails quickly and sometimes takes longer than 60 s.
+  - `test_registry_service.py::test_server_is_running` (only an `asyncio.sleep(10)` with a registry on the test
+    ports) sometimes takes longer than 60 s, after which the following tests in that file error and the run stops
+    making progress. The file passes on its own.
+  - `test_registry_backend.py`: `test_sqlite_persistence[True]`, `test_sqlite_persistence[False]` and
+    `test_sqlite_backend_resilience` error because they request the async fixture `sqlite_only`, which pytest-asyncio
+    doesn't handle.
+
+  To do: make the async tests independent of a running registry and of timing (explicit timeouts), fix the
+  `sqlite_only` fixture, and run the suite repeatedly (e.g. twice in CI) to catch flaky tests.

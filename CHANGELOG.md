@@ -141,6 +141,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - DAQ6510 and TVAC: `sim_mode` is `None`, the simulator is a separate process the control server cannot tell apart
   from the device. New `is_connection_open` property on `ThermalVacOpcUaInterface` and `ThermalVacDaq`.
 
+### CGSE TUI
+
+- New package `cgse-tui`: a Textual terminal user interface with the status of the core services and device control
+  servers, started with `cgse tui` or `cgse_tui`. The overview shows every service from the registry plus the core
+  services that are not running, with state (ok, stale, unknown, inactive), uptime, PID, CPU, memory, and the device
+  connection and simulator mode. Select a service to see its status report.
+- Control servers are followed on their monitoring port (alive, live process numbers); the status report is requested
+  when a server appears and when its detail screen is opened or refreshed (`r`). The registry, notification hub,
+  metrics hub and logger are asked for their status on every poll. A registered service that doesn't answer is shown as
+  stale; when the registry itself doesn't answer for 30 s, it is shown as inactive and its registrations are dropped
+  (core services become inactive, other services are removed).
+- While the TUI runs, log messages are shown in a log pane below the overview (toggle with `l`) instead of on the
+  terminal; the console handlers of the `egse` and root loggers are restored when the TUI exits. Messages that the
+  client libraries log during the TUI's own requests (e.g. timeouts) are not shown; the TUI logs the state changes of
+  the services instead, e.g. `Notification Hub: ok → stale`.
+
 ---
 
 ## [0.25.11] - 2026-07-23

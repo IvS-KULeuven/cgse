@@ -1,0 +1,81 @@
+[project]
+name = "cgse-tui"
+version = "0.25.11"
+description = "Terminal user interface with the status of the CGSE core services and device control servers"
+authors = [
+    {name = "IvS KU Leuven"}
+]
+maintainers = [
+    {name = "Rik Huygen", email = "rik.huygen@kuleuven.be"},
+]
+readme = {"file" = "README.md", "content-type" = "text/markdown"}
+requires-python = ">=3.10"
+license = "MIT"
+keywords = [
+    "CGSE",
+    "Common-EGSE",
+    "hardware testing",
+    "software framework",
+    "textual",
+]
+dependencies = [
+    "cgse-common",
+    "cgse-core",
+    "textual>=2.0.0",
+    "typer",
+]
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-mock", "pytest-cov"]
+
+[project.scripts]
+cgse_tui = "cgse_tui.cli:main"
+
+[project.entry-points."cgse.version"]
+cgse-tui = 'egse.version:get_version_installed'
+
+[project.entry-points."cgse.command"]
+tui = 'cgse_tui.cli:tui'
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/tests",
+    "/pytest.ini",
+    "/.gitignore",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cgse_tui"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["F", "I"]
+extend-select = ["E", "W"]
+
+[tool.ruff.lint.isort]
+force-single-line = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "ruff>=0.9.0",
+    "pytest-asyncio>=0.26.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/IvS-KULeuven/cgse/tree/main/projects/generic/cgse-tui"
+Repository = "https://github.com/IvS-KULeuven/cgse"
+Releases = "https://github.com/IvS-KULeuven/cgse/releases"
+Changelog = "https://github.com/IvS-KULeuven/cgse/blob/main/CHANGELOG.md"
+Documentation = "https://ivs-kuleuven.github.io/cgse/"
