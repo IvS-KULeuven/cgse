@@ -14,8 +14,8 @@ in [The status report](#the-status-report) and marked in [Proposed API enhanceme
 
 ## The status report
 
-Implemented on the branch `feat/status-on-request` (core) and one `feat/<package>-device-status` branch per device
-package (aim-tti, kikusui, rs-pro, digilent, ariel-tcu, symetrie, lakeshore, daq6510, tvac).
+Merged in PR #449 (core) and one PR per device package, #450–#458 (aim-tti, kikusui, rs-pro, digilent, ariel-tcu,
+symetrie, lakeshore, daq6510, tvac). The registry metadata `server_kind` was added in PR #460.
 
 Every control server returns a status report on request, with the same layout for sync and async servers:
 
@@ -152,14 +152,24 @@ and TVAC, whose status prints a dict, this always yields connected=True and sim=
 - TVAC: `cgse tvac` used `start-cs`/`stop-cs` instead of `start`/`stop`, breaking the `cgse <obj> start|stop|status`
   contract the Process Manager relies on. Fixed in PR #441 (`feat/tvac-cgse-subcommands`).
 - JORAN: no `after_serve()`, so it never deregistered and the process didn't exit after `joran_cs stop` (the registry
-  heartbeat thread kept running). Fixed on `feat/symetrie-device-status`.
+  heartbeat thread kept running). Fixed in PR #455.
 - JORAN: the control server didn't start: it required a telemetry dictionary in the Setup, loaded `joran.yaml` from the
-  wrong location, and `JoranInterface` lacked the `DeviceInterface` methods. Fixed on `feat/symetrie-device-status`.
+  wrong location, and `JoranInterface` lacked the `DeviceInterface` methods. Fixed in PR #455.
 - TGF4000: the simulator and the proxy required `HOSTNAME`/`PORT` in the device settings (an unused
   `ethernet_interface` was created in `Tgf4000Interface`), and the control server settings used `HOST` while the code
-  reads `HOSTNAME`. Fixed on `feat/aim-tti-device-status`.
+  reads `HOSTNAME`. Fixed in PR #450.
 - PMX-A: `pmx_a_cs start --sim` crashed with `NotImplementedError` when the Storage Manager was running, the simulator
-  didn't implement `get_current()`/`get_voltage()`. Fixed on `feat/kikusui-device-status`.
+  didn't implement `get_current()`/`get_voltage()`. Fixed in PR #451.
+- Lost requests: the registry server, notification hub, metrics hub and async control server waited for a request with
+  `asyncio.wait_for(socket.recv_multipart(), timeout=…)` and cancelled the receive when the timeout expired. A request
+  that arrived just when the receive was cancelled was lost, and the client timed out. A client that polls in a fixed
+  rhythm (like the TUI, every 2 s) drifted through this window every few polls, which made services flap between ok
+  and stale in the TUI. Found on 2026-10-31: the registry logged no `Received request` for the requests that timed
+  out. Confirmed on a test registry by sending each request a fixed delay after the previous reply: at 996 ms 9 of 10
+  requests were lost, at all other delays none. Fixed in PR #461: the receive loops wait with
+  `egse.zmq_ser.wait_for_message()` (a `poll()` that doesn't take the message) and receive only when a message is
+  there; with the fix, no request was lost at any delay, and the TUI had no timeouts. The TUI still tolerates one lost
+  request per polled server (stale after three polls plus one request timeout), e.g. for a server that is busy.
 - CLAUDE.md mentioned registry ports 4242/4243; the settings use 6100/6101/6102 (4242/4243 are only the code fallback
   in `egse/registry/__init__.py`). Fixed in the local CLAUDE.md, which is not tracked by git.
 
@@ -182,16 +192,6 @@ and TVAC, whose status prints a dict, this always yields connected=True and sim=
   server can be created per Python process (relevant for tests).
 - Process Manager: `get_device_ids()` / `get_devices()` load the Setup on every call, which blocks the single-threaded
   server.
-- Lost requests: the registry server, notification hub and metrics hub wait for a request with
-  `asyncio.wait_for(socket.recv_multipart(), timeout=…)` and cancel the receive when the timeout expires. A request
-  that arrives just when the receive is cancelled is lost, the client times out. Found with the TUI on 2026-10-31:
-  the registry logged no `Received request` for the requests that timed out. Confirmed on a test registry by sending
-  each request a fixed delay after the previous reply: at 996 ms 9 of 10 requests were lost, at all other delays
-  none; with a request loop that waits with `await socket.poll(timeout)` and only then receives, none were lost at
-  any delay. A client that polls in a fixed rhythm (like the TUI, every 2 s) drifts through this window every few
-  polls. The same pattern is in the async control server (`async_control.py`, device and service commands), the
-  registry heartbeat loop, and `registry/service.py`. Fix: wait with `poll()`, then receive, never cancel a receive.
-  The TUI tolerates one lost request per server (stale after three polls plus one request timeout).
 - Registry clients (`RegistryClient` and `AsyncRegistryClient`) use a DEALER socket and don't match replies to
   requests. A request that times out (e.g. while the registry is restarted) stays queued, and when the registry is
   back every following request reads the reply to an earlier one. Found with the TUI on 2026-10-30: after a registry
