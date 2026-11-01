@@ -231,10 +231,18 @@ class Collector:
                 was_registered = False
 
             service.registered = True
+            service.service_id = record.get("id")
+            service.metadata = metadata
+            service.last_heartbeat = record.get("last_heartbeat")
+            service.ttl = record.get("ttl")
+            service.health = record.get("health")
             service.host = record.get("host")
             service.port = record.get("port")
             service.service_port = metadata.get("service_port")
             service.monitoring_port = metadata.get("monitoring_port")
+            service.start_time = metadata.get("start_time")
+            # Older control servers register without `device_id`, their status report has it
+            service.device_id = metadata.get("device_id") or service.device_id
             # Keep the kind that answered a status report when the server registered without `server_kind`.
             service.server_kind = metadata.get("server_kind") or service.server_kind
             if custom_kind(service):
@@ -258,7 +266,10 @@ class Collector:
             service.pid = process.get("pid")
             service.uptime_s = process.get("uptime_s")
             service.cpu_percent = process.get("cpu_percent")
+            service.cpu_user_s = process.get("cpu_user_s")
+            service.cpu_system_s = process.get("cpu_system_s")
             service.rss = process.get("rss")
+            service.uss = process.get("uss", service.uss)  # only in the status report
 
     def _deregistered(self, service: ServiceInfo) -> None:
         if service.service_type not in self.known_services:
@@ -296,7 +307,10 @@ class Collector:
         service.pid = fields["pid"]
         service.uptime_s = fields["uptime_s"]
         service.cpu_percent = fields["cpu_percent"]
+        service.cpu_user_s = fields["cpu_user_s"]
+        service.cpu_system_s = fields["cpu_system_s"]
         service.rss = fields["rss"]
+        service.uss = fields["uss"]
         if fields["interval_s"]:
             service.stale_after = max(MIN_STALE_AFTER, STALE_INTERVALS * fields["interval_s"])
         service.last_update = self._clock()
@@ -328,6 +342,7 @@ class Collector:
                 if custom_kind(service) == "registry":
                     # The registry doesn't register itself, its `info` reply has its own process information
                     self._update_process(service, status.get("process") or {})
+                    service.start_time = status.get("start_time")
             return
 
         status = await self._request_report(service, self.request_timeout)
@@ -335,12 +350,11 @@ class Collector:
             return
         service.report = status
 
-        process = status.get("process") or {}
         if service.pid is None:
-            service.pid = process.get("pid")
-            service.uptime_s = process.get("uptime_s")
-            service.cpu_percent = process.get("cpu_percent")
-            service.rss = process.get("rss")
+            self._update_process(service, status.get("process") or {})
+        control_server = status.get("control_server")
+        if isinstance(control_server, dict) and control_server.get("device_id"):
+            service.device_id = control_server["device_id"]
         device = status.get("device")
         if isinstance(device, dict):
             service.has_device = True

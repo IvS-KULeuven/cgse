@@ -773,6 +773,7 @@ class ControlServer(metaclass=abc.ABCMeta):
                 "service_port": get_port_number(self.dev_ctrl_service_sock),
                 "monitoring_port": get_port_number(self.dev_ctrl_mon_sock),
                 "server_kind": "sync",  # clients use a ServiceProxy (pickle) on the service port
+                "device_id": self.device_id,
             },
         )
         if self._service_id:

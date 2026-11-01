@@ -204,6 +204,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Overview: a coloured square in front of every service shows its state at a glance: green = running, orange =
   running but no connection with the device, red = not responding, empty frame = not running, grey = registered but
   no information yet. The square keeps its colour on the selected row.
+- Overview: `o` opens a dialog with all available columns, each with a checkbox; a change is applied to the table
+  right away. Besides the default columns (type, host, state, uptime, PID, CPU, memory, device ID, device, simulator)
+  there are: server kind, the commanding, service, monitoring and other ports, process start time, CPU time, USS,
+  Setup, obsid and site (Configuration Manager), received, sent, dropped and queued messages (hubs), age of the last
+  heartbeat, registry health and TTL, age of the last status, stale time, registration time and service ID. `a`, `n`
+  and `d` in the dialog select all, none or the default columns. The Name column is always shown. The selection is
+  kept while the TUI runs, not between runs.
+- Control servers (sync and async) register their `device_id` in the registry metadata; for servers that register
+  without it, the TUI takes it from the status report.
 
 ---
 

@@ -5,12 +5,16 @@ from textual.widgets import DataTable
 from cgse_tui.app import CgseTuiApp
 from cgse_tui.data.model import ServiceInfo
 from cgse_tui.data.model import ServiceState
+from cgse_tui.screens.column_select import ColumnSelectScreen
+from cgse_tui.screens.columns import COLUMNS
+from cgse_tui.screens.columns import DEFAULT_COLUMNS
+from cgse_tui.screens.columns import format_age
+from cgse_tui.screens.columns import format_bytes
+from cgse_tui.screens.columns import format_uptime
+from cgse_tui.screens.columns import visible_columns
 from cgse_tui.screens.detail import DetailScreen
-from cgse_tui.screens.overview import COLUMNS
 from cgse_tui.screens.overview import INDICATOR_COLUMN
 from cgse_tui.screens.overview import OverviewScreen
-from cgse_tui.screens.overview import format_bytes
-from cgse_tui.screens.overview import format_uptime
 from cgse_tui.screens.overview import service_row
 from cgse_tui.screens.overview import state_indicator
 
@@ -27,6 +31,7 @@ SERVICES = [
         rss=48_058_368,
         connected=True,
         sim_mode=True,
+        device_id="AWG-01",
         report={"device": {"connected": True, "sim_mode": True}},
     ),
     ServiceInfo(name="Storage Manager", service_type="SM_CS", state=ServiceState.INACTIVE),
@@ -77,15 +82,45 @@ def test_service_row():
         "1234",
         "1.5",
         "45.8 MiB",
+        "AWG-01",
         "connected",
         "yes",
     )
-    assert service_row(SERVICES[1])[3:] == ("inactive", "", "", "", "", "", "")
+    assert service_row(SERVICES[1])[3:] == ("inactive", "", "", "", "", "", "", "")
 
 
 def test_service_row_without_device():
     service = ServiceInfo(name="Storage Manager", service_type="SM_CS", state=ServiceState.OK, has_device=False)
-    assert service_row(service)[-2:] == ("–", "–")  # not applicable, an empty cell means: not known
+    assert service_row(service)[-3:] == ("–", "–", "–")  # not applicable, an empty cell means: not known
+
+
+def test_format_age():
+    assert format_age(None, 100.0) == ""
+    assert format_age(97.0, 100.0) == "3 s"
+    assert format_age(100.0 - 312, 100.0) == "00:05:12"
+
+
+def test_all_columns_have_a_value():
+    hub = ServiceInfo(
+        name="Metrics Hub",
+        service_type="METRICS_HUB",
+        port=6130,
+        metadata={"server_kind": "metricshub", "collector_port": 6131},
+        report={"statistics": {"received": 10, "written": 8, "dropped": 2, "queue": 0}},
+        has_device=False,
+    )
+    cells = dict(zip((column.key for column in COLUMNS), service_row(hub, list(COLUMNS), now=0.0)))
+    assert cells["other_ports"] == "collector 6131"
+    assert (cells["received"], cells["sent"], cells["dropped"], cells["queue"]) == ("10", "8", "2", "0")
+    assert cells["device_id"] == "–"
+
+    cm = ServiceInfo(name="CM", service_type="CM_CS", report={"details": {"setup_id": "00042", "obsid": None}})
+    cells = dict(zip((column.key for column in COLUMNS), service_row(cm, list(COLUMNS), now=0.0)))
+    assert (cells["setup"], cells["obsid"]) == ("00042", "")
+
+
+def test_visible_columns_keep_the_table_order_and_the_name():
+    assert [column.key for column in visible_columns(["pid", "type"])] == ["name", "type", "pid"]
 
 
 async def test_overview_shows_the_services_of_the_collector():
@@ -94,7 +129,8 @@ async def test_overview_shows_the_services_of_the_collector():
         await pilot.pause()
         assert isinstance(app.screen, OverviewScreen)
         table = app.screen.query_one("#services", DataTable)
-        assert [str(column.label) for column in table.columns.values()] == [INDICATOR_COLUMN, *COLUMNS]
+        labels = [column.label for column in visible_columns(DEFAULT_COLUMNS)]
+        assert [str(column.label) for column in table.columns.values()] == [INDICATOR_COLUMN, *labels]
         assert table.row_count == 2
         indicator, *cells = table.get_row("AWG1")
         assert indicator.plain == "■" and indicator.style == "green"
@@ -179,3 +215,32 @@ def test_state_indicator():
     assert indicator(ServiceState.STALE, has_device=True, connected=False) == ("■", "red")  # not responding wins
     assert indicator(ServiceState.INACTIVE) == ("□", "")  # not running: an empty frame
     assert indicator(ServiceState.UNKNOWN) == ("■", "grey50")  # registered, no information yet
+
+
+async def test_select_columns_changes_the_table_right_away():
+    app = CgseTuiApp(collector=StaticCollector(SERVICES))
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        table = app.overview.query_one("#services", DataTable)
+
+        await pilot.press("o")
+        await pilot.pause()
+        assert isinstance(app.screen, ColumnSelectScreen)
+
+        await pilot.press("n")  # no columns: only the indicator and the name are left
+        await pilot.pause()
+        assert [str(column.label) for column in table.columns.values()] == [INDICATOR_COLUMN, "Name"]
+        assert table.row_count == 2
+
+        await pilot.press("space")  # the first column in the list: Type
+        await pilot.pause()
+        assert [str(column.label) for column in table.columns.values()] == [INDICATOR_COLUMN, "Name", "Type"]
+        assert [str(cell) for cell in table.get_row("AWG1")[1:]] == ["AWG1", "AWG1"]
+
+        await pilot.press("d")  # back to the defaults
+        await pilot.pause()
+        assert [key.value for key in table.columns][1:] == [column.key for column in visible_columns(DEFAULT_COLUMNS)]
+
+        await pilot.press("o")
+        await pilot.pause()
+        assert isinstance(app.screen, OverviewScreen)
