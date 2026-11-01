@@ -9,10 +9,13 @@ from typing import Callable
 from typing import Coroutine
 from typing import Union
 
+import psutil
 import zmq
 import zmq.asyncio
 from egse.env import bool_env
 from egse.log import logging
+from egse.process import process_identity
+from egse.process import process_status
 from egse.system import do_every
 from egse.system import get_host_ip
 from egse.zmq_ser import wait_for_message
@@ -40,6 +43,25 @@ THREAD_JOIN_TIMEOUT = 10.0
 """Joining threads should be longer, but the key is balancing graceful cleanup with reasonable shutdown times."""
 PROCESS_SHUTDOWN_TIMEOUT = 10.0
 """Waiting for a process shutdown confirmation message."""
+
+
+_process: psutil.Process | None = None
+"""The process of this client, kept between heartbeats to measure the CPU percentage since the previous one."""
+
+
+def heartbeat_status() -> dict[str, Any]:
+    """Returns the status of this process, sent with every heartbeat and kept by the registry with the registration.
+
+    The keys are those of `egse.process.process_status()`. An empty dictionary when the status can't be read, the
+    heartbeat itself is more important.
+    """
+    global _process
+    try:
+        if _process is None:
+            _process = psutil.Process()
+        return process_status(_process)
+    except Exception:
+        return {}
 
 
 class RegistryClient:
@@ -282,8 +304,8 @@ class RegistryClient:
         if service_type:
             service_info["type"] = service_type
 
-        if metadata:
-            service_info["metadata"] = metadata
+        # The PID and start time identify the process of the service, the registry keeps them with the registration.
+        service_info["metadata"] = {**(metadata or {}), **process_identity()}
 
         if singleton:
             service_info["singleton"] = True
@@ -511,7 +533,7 @@ class RegistryClient:
                     self.reregister()
                     return
 
-                request = {"action": "renew", "service_id": self._service_id}
+                request = {"action": "renew", "service_id": self._service_id, "status": heartbeat_status()}
 
                 response = self._send_heartbeat(request)
 
@@ -823,8 +845,8 @@ class AsyncRegistryClient:
         if service_type:
             service_info["type"] = service_type
 
-        if metadata:
-            service_info["metadata"] = metadata
+        # The PID and start time identify the process of the service, the registry keeps them with the registration.
+        service_info["metadata"] = {**(metadata or {}), **process_identity()}
 
         if singleton:
             service_info["singleton"] = True
@@ -957,7 +979,7 @@ class AsyncRegistryClient:
                             await asyncio.sleep(interval)
                             continue
 
-                        request = {"action": "renew", "service_id": self._service_id}
+                        request = {"action": "renew", "service_id": self._service_id, "status": heartbeat_status()}
 
                         response = await self._send_heartbeat(request)
 

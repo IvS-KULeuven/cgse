@@ -18,8 +18,8 @@ from typing import Protocol
 from typing import runtime_checkable
 
 import aiosqlite
-
 from egse.decorators import implements_protocol
+
 from egse.registry import logger
 
 
@@ -72,12 +72,13 @@ class AsyncRegistryBackend(Protocol):
         """
         ...
 
-    async def renew(self, service_id: str) -> bool:
+    async def renew(self, service_id: str, status: dict[str, Any] | None = None) -> bool:
         """
         Renew a service's TTL in the registry.
 
         Args:
             service_id: Unique identifier for the service
+            status: the process status sent with the heartbeat, kept with the registration (not changed when None)
 
         Returns:
             True if renewal was successful, False otherwise
@@ -183,10 +184,17 @@ class AsyncSQLiteBackend:
                     metadata TEXT,
                     ttl INTEGER NOT NULL,
                     last_heartbeat INTEGER NOT NULL,
-                    tags TEXT
+                    tags TEXT,
+                    status TEXT
                 )
                 """
             )
+
+            # Databases created before the `status` column existed
+            await cursor.execute("PRAGMA table_info(services)")
+            columns = [row[1] async for row in cursor]
+            if "status" not in columns:
+                await cursor.execute("ALTER TABLE services ADD COLUMN status TEXT")
 
     async def clean_expired_services(self) -> list[str]:
         """Remove services that haven't sent a heartbeat within their TTL."""
@@ -288,20 +296,30 @@ class AsyncSQLiteBackend:
             self.logger.error(f"Failed to deregister service {service_id}: {exc}")
             return False
 
-    async def renew(self, service_id: str) -> bool:
-        """Renew a service's TTL in the registry."""
+    async def renew(self, service_id: str, status: dict[str, Any] | None = None) -> bool:
+        """Renew a service's TTL in the registry, and keep the process status that came with the heartbeat."""
         try:
             current_time = int(time.time())
 
             async with self._db_cursor() as cursor:
-                await cursor.execute(
-                    """
-                    UPDATE services
-                    SET last_heartbeat = ?
-                    WHERE id = ?
-                    """,
-                    (current_time, service_id),
-                )
+                if status is None:
+                    await cursor.execute(
+                        """
+                        UPDATE services
+                        SET last_heartbeat = ?
+                        WHERE id = ?
+                        """,
+                        (current_time, service_id),
+                    )
+                else:
+                    await cursor.execute(
+                        """
+                        UPDATE services
+                        SET last_heartbeat = ?, status = ?
+                        WHERE id = ?
+                        """,
+                        (current_time, json.dumps(status), service_id),
+                    )
 
                 return cursor.rowcount > 0
         except Exception as exc:
@@ -314,7 +332,7 @@ class AsyncSQLiteBackend:
             async with self._db_cursor() as cursor:
                 await cursor.execute(
                     """
-                    SELECT id, name, host, port, metadata, ttl, last_heartbeat, tags
+                    SELECT id, name, host, port, metadata, ttl, last_heartbeat, tags, status
                     FROM services
                     WHERE id = ?
                     """,
@@ -334,6 +352,7 @@ class AsyncSQLiteBackend:
                         "ttl": row[5],
                         "last_heartbeat": row[6],
                         "tags": json.loads(row[7]) if row[7] else [],
+                        "status": json.loads(row[8]) if row[8] else {},
                         "health": "passing" if current_time - row[6] <= row[5] else "critical",
                     }
 
@@ -348,7 +367,7 @@ class AsyncSQLiteBackend:
             async with self._db_cursor() as cursor:
                 await cursor.execute(
                     """
-                    SELECT id, name, host, port, metadata, ttl, last_heartbeat, tags
+                    SELECT id, name, host, port, metadata, ttl, last_heartbeat, tags, status
                     FROM services
                     """
                 )
@@ -374,6 +393,7 @@ class AsyncSQLiteBackend:
                             "ttl": row[5],
                             "last_heartbeat": row[6],
                             "tags": tags,
+                            "status": json.loads(row[8]) if row[8] else {},
                             "health": "passing" if current_time - row[6] <= row[5] else "critical",
                         }
                     )
@@ -462,6 +482,7 @@ class AsyncInMemoryBackend:
             # Add TTL and heartbeat information
             service_data["ttl"] = ttl
             service_data["last_heartbeat"] = current_time
+            service_data["status"] = {}
 
             if "metadata" not in service_data:
                 service_data["metadata"] = {}
@@ -507,8 +528,8 @@ class AsyncInMemoryBackend:
             self.logger.error(f"Failed to deregister service {service_id}: {exc}")
             return False
 
-    async def renew(self, service_id: str) -> bool:
-        """Renew a service's TTL in the registry.
+    async def renew(self, service_id: str, status: dict[str, Any] | None = None) -> bool:
+        """Renew a service's TTL in the registry, and keep the process status that came with the heartbeat.
 
         Returns:
             True when the new TTL could be set, False if an error occurred or when
@@ -520,6 +541,8 @@ class AsyncInMemoryBackend:
             async with self._lock:
                 if service_id in self._services:
                     self._services[service_id]["last_heartbeat"] = current_time
+                    if status is not None:
+                        self._services[service_id]["status"] = json.loads(json.dumps(status))
                     return True
                 return False
         except Exception as exc:

@@ -133,9 +133,13 @@ class AsyncNotificationHub:
         self.service_id = await self.registry_client.register(
             name=self.service_name,
             host=get_host_ip() or "127.0.0.1",
-            port=DEFAULT_REQUESTS_PORT,
+            port=get_port_number(self.requests_socket),  # the bound ports, also when the settings say 0
             service_type=self.service_type,
-            metadata={"pub_port": DEFAULT_PUBLISHER_PORT, "collector_port": DEFAULT_COLLECTOR_PORT},
+            metadata={
+                "server_kind": "notifyhub",
+                "pub_port": get_port_number(self.publisher_socket),
+                "collector_port": get_port_number(self.collector_socket),
+            },
         )
 
         if not self.service_id:

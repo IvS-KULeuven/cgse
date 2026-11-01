@@ -82,3 +82,36 @@ async def test_without_server_kind_and_no_answer(clients):
 async def test_no_service_port_is_not_a_control_server(clients):
     assert await report.request_status_report(control_server(None, service_port=None)) is None
     assert clients["calls"] == []
+
+
+def test_command_status_asks_a_command_server():
+    """The logger and facility_hk answer the pickled string command "status"."""
+    import pickle
+    import threading
+
+    import zmq
+
+    socket = zmq.Context.instance().socket(zmq.REP)
+    port = socket.bind_to_random_port("tcp://127.0.0.1")
+
+    def command_server():
+        command = pickle.loads(socket.recv())
+        socket.send(pickle.dumps({"status": "ACK", "command": command}))
+
+    thread = threading.Thread(target=command_server)
+    thread.start()
+    try:
+        assert report._command_status("127.0.0.1", port, timeout=2.0) == {"status": "ACK", "command": "status"}
+    finally:
+        thread.join(timeout=2.0)
+        socket.close(linger=0)
+
+    assert report._command_status("127.0.0.1", port, timeout=0.1) is None  # nobody answers
+
+
+def test_custom_kind():
+    from cgse_tui.data.services import custom_kind
+
+    assert custom_kind(ServiceInfo(name="facility_hk", service_type="facility_hk", server_kind="command")) == "command"
+    assert custom_kind(ServiceInfo(name="nh_cs", service_type="NH_CS")) == "notifyhub"  # registered without kind
+    assert custom_kind(ServiceInfo(name="cm_cs", service_type="CM_CS", server_kind="sync")) is None

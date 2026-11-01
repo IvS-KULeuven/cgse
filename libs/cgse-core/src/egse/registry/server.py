@@ -17,12 +17,15 @@ import uuid
 from typing import Any
 from typing import Callable
 
+import psutil
 import typer
 import zmq
 import zmq.asyncio
 
 from egse.env import bool_env
 from egse.logger import remote_logging
+from egse.process import process_identity
+from egse.process import process_status
 from egse.registry import DEFAULT_RS_DB_PATH
 from egse.registry import DEFAULT_RS_HB_PORT
 from egse.registry import DEFAULT_RS_PUB_PORT
@@ -73,6 +76,9 @@ class AsyncRegistryServer:
         self.req_port = req_port
         self.pub_port = pub_port
         self.hb_port = hb_port
+
+        self._process = psutil.Process()
+        """This process, kept between info requests to measure the CPU percentage since the previous request."""
         self.db_path = db_path
         self.cleanup_interval = cleanup_interval or settings.get("CLEANUP_INTERVAL", 10)
         self.enforce_unique_service_types = (
@@ -471,8 +477,9 @@ class AsyncRegistryServer:
         if not service_id:
             return {"success": False, "error": "Missing required field: service_id"}
 
-        # Renew the service
-        success = await self.backend.renew(service_id)
+        # Renew the service, and keep the process status that comes with the heartbeat
+        status = request.get("status")
+        success = await self.backend.renew(service_id, status=status if isinstance(status, dict) else None)
 
         if success:
             return {"success": True, "message": "Service renewed successfully"}
@@ -598,6 +605,8 @@ class AsyncRegistryServer:
             "pub_port": self.pub_port,
             "hb_port": self.hb_port,
             "enforce_unique_service_types": self.enforce_unique_service_types,
+            **process_identity(self._process),
+            "process": process_status(self._process),
             "services": services,
         }
 

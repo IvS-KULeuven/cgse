@@ -55,6 +55,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   collector loops of the notification hub, the request loop of the metrics hub, and the device and service command
   loops of `AsyncControlServer`.
 
+### Process information in the service registry
+
+- The registry client adds `pid` and `start_time` (process start, seconds since the epoch) to the metadata of every
+  registration, so all services registered through `RegistryClient` or `AsyncRegistryClient` have them.
+- Every heartbeat carries the status of the service process (`pid`, `uptime_s`, `rss`, `cpu_user_s`, `cpu_system_s`,
+  `cpu_percent`, new `egse.process.process_status()`). The registry keeps the last status with the registration;
+  `list_services()` and `get_service()` return it as `status` (`last_heartbeat` tells its age). A heartbeat without
+  status, from an older client, keeps the previous status.
+- The SQLite backend adds the `status` column to an existing `service_registry.db` at start-up.
+- The `info` reply of the registry has its own `pid`, `start_time` and process status (`process`), the registry
+  doesn't register itself.
+- Every registration has `server_kind` in its metadata, which tells a client how to ask the service for its status:
+  `sync` and `async` (control servers), `notifyhub`, `metricshub`, and `command` for the servers that answer the
+  pickled string command `"status"` (the logger and the ARIEL facility housekeeping exporter).
+- The notification hub registers the ports it bound, not the ports from its settings (which can be 0).
+- The ARIEL facility housekeeping exporter registers with metadata (`server_kind`).
+- The dummy control server registers as `DUMMY_CS` when a registry is available; it still works without one, its
+  ports are fixed in the settings.
+
 ### TVAC
 
 - **Breaking:** the `cgse tvac` subcommands `start-cs` and `stop-cs` are renamed to `start` and `stop`, like the
@@ -161,6 +180,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   the async client, and remembers the kind that answered.
 - Overview: the registry row shows its host. The device columns show `–` for services that control no device; an
   empty cell means not known.
+- Overview: the uptime, PID, CPU and memory of the registry, the hubs and the command servers come from the registry
+  (the heartbeat status, and the `info` reply of the registry itself). Services that are not control servers are
+  recognised by their `server_kind`, so e.g. the ARIEL facility housekeeping exporter is polled as well.
+- `r` writes a line in the log pane when the refresh starts and when it's done; in the detail screen it also shows a
+  short notification, the log pane isn't visible there.
 
 ---
 

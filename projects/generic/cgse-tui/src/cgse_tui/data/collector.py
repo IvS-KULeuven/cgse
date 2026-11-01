@@ -19,9 +19,9 @@ from cgse_tui.data import monitor
 from cgse_tui.data import report
 from cgse_tui.data.model import ServiceInfo
 from cgse_tui.data.model import ServiceState
-from cgse_tui.data.services import CUSTOM_SERVICE_TYPES
 from cgse_tui.data.services import REGISTRY_SERVICE_TYPE
 from cgse_tui.data.services import core_services
+from cgse_tui.data.services import custom_kind
 from cgse_tui.logs import quiet
 
 logger = logging.getLogger("cgse_tui.collector")
@@ -193,7 +193,7 @@ class Collector:
                 )
                 self._update_registrations([])
         for service_type, service in self.services.items():
-            if service.registered and service_type in CUSTOM_SERVICE_TYPES:
+            if service.registered and custom_kind(service):
                 self._start_request(service_type)
 
     async def refresh_report(self, service_type: str) -> ServiceInfo | None:
@@ -237,8 +237,10 @@ class Collector:
             service.monitoring_port = metadata.get("monitoring_port")
             # Keep the kind that answered a status report when the server registered without `server_kind`.
             service.server_kind = metadata.get("server_kind") or service.server_kind
-            if service_type in CUSTOM_SERVICE_TYPES:
+            if custom_kind(service):
                 service.stale_after = self._custom_stale_after()
+                # No monitoring port: the process information comes from the last heartbeat in the registry
+                self._update_process(service, record.get("status") or {})
 
             if not was_registered:
                 service.registered_at = self._clock()
@@ -248,6 +250,15 @@ class Collector:
         for service_type, service in list(self.services.items()):
             if service.registered and service_type not in registered:
                 self._deregistered(service)
+
+    @staticmethod
+    def _update_process(service: ServiceInfo, process: dict[str, Any]) -> None:
+        """Fills the process information from a status with the keys of `egse.process.process_status()`."""
+        if process:
+            service.pid = process.get("pid")
+            service.uptime_s = process.get("uptime_s")
+            service.cpu_percent = process.get("cpu_percent")
+            service.rss = process.get("rss")
 
     def _deregistered(self, service: ServiceInfo) -> None:
         if service.service_type not in self.known_services:
@@ -308,12 +319,15 @@ class Collector:
             await self._request_status(service)
 
     async def _request_status(self, service: ServiceInfo) -> None:
-        if service.service_type in CUSTOM_SERVICE_TYPES:
+        if custom_kind(service):
             status = await self._request_custom_status(service, self.request_timeout)
             if status is not None:
-                service.has_device = False  # the registry, hubs and logger never control a device
+                service.has_device = False  # the registry, hubs and command servers never control a device
                 service.report = status
                 service.last_update = self._clock()
+                if custom_kind(service) == "registry":
+                    # The registry doesn't register itself, its `info` reply has its own process information
+                    self._update_process(service, status.get("process") or {})
             return
 
         status = await self._request_report(service, self.request_timeout)

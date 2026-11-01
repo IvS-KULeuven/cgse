@@ -409,3 +409,35 @@ async def test_report_without_device():
     assert services["AWG1"].has_device is True and services["AWG1"].connected is True
 
     await collector.stop()
+
+
+async def test_command_server_gets_its_process_information_from_the_registry():
+    """A service that is not a control server, recognised by its `server_kind` (e.g. facility_hk)."""
+    collector, registry, fakes, clock = make_collector(known={REGISTRY_SERVICE_TYPE: "Service Registry"})
+    heartbeat = {"pid": 777, "uptime_s": 60.0, "rss": 2048, "cpu_percent": 0.5}
+    registry.records = [
+        {**record("facility_hk", name="facility_hk", port=6201, server_kind="command"), "status": heartbeat}
+    ]
+    fakes.custom["facility_hk"] = {"status": "ACK", "host": "10.0.0.1", "command_port": 6201}
+
+    await collector.poll()
+    await settle()
+
+    service = by_type(collector)["facility_hk"]
+    assert service.state is ServiceState.OK  # polled like the other custom servers
+    assert (service.pid, service.uptime_s, service.rss, service.cpu_percent) == (777, 60.0, 2048, 0.5)
+    assert not fakes.subscriptions  # no monitoring port
+
+    await collector.stop()
+
+
+async def test_registry_row_gets_its_process_information_from_the_info_reply():
+    collector, registry, fakes, clock = make_collector(known={REGISTRY_SERVICE_TYPE: "Service Registry"})
+    fakes.custom[REGISTRY_SERVICE_TYPE] = {"success": True, "status": "ok", "pid": 4141, "process": {"pid": 4141}}
+
+    await collector.poll()
+    await settle()
+
+    assert by_type(collector)[REGISTRY_SERVICE_TYPE].pid == 4141
+
+    await collector.stop()

@@ -272,6 +272,35 @@ class ProcessStatus:
         return msg
 
 
+def process_identity(process: psutil.Process | None = None) -> dict:
+    """Returns the PID and start time [s since epoch] of the given process, by default the current process.
+
+    These don't change while the process runs, a service puts them in its registration.
+    """
+    process = process or psutil.Process()
+    return {"pid": process.pid, "start_time": process.create_time()}
+
+
+def process_status(process: psutil.Process | None = None) -> dict:
+    """Returns the status of the given process, by default the current process, with the keys of
+    `ProcessStatus.as_status_dict()`: pid, uptime_s, rss, cpu_user_s, cpu_system_s, cpu_percent.
+
+    Unlike `ProcessStatus`, this registers no metrics. Pass the same `psutil.Process` object on every call: the CPU
+    percentage is measured since the previous call with that object (the first call returns 0.0).
+    """
+    process = process or psutil.Process()
+    with process.oneshot():
+        cpu_times = process.cpu_times()
+        return {
+            "pid": process.pid,
+            "uptime_s": time.time() - process.create_time(),
+            "rss": process.memory_info().rss,
+            "cpu_user_s": cpu_times.user,
+            "cpu_system_s": cpu_times.system,
+            "cpu_percent": process.cpu_percent(),
+        }
+
+
 #  * can we restart the same sub process?
 #  * do we need to pass the additional arguments to the constructor or to the execute method?
 #    When we can restart/re-execute a subprocess, we might want to do that with additional

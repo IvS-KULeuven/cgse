@@ -62,11 +62,29 @@ async def _request_status_report(kind: str, service: ServiceInfo, timeout: float
     return None
 
 
-async def request_custom_status(service: ServiceInfo, timeout: float = 2.0) -> dict[str, Any] | None:
-    """Returns the status of the registry, notification hub, metrics hub or logger, None when it didn't answer."""
-    from cgse_tui.data.services import CUSTOM_SERVICE_TYPES
+def _command_status(hostname: str, port: int, timeout: float) -> Any:
+    """Sends the pickled string command "status" to a command server (e.g. the logger) and returns its answer."""
+    import pickle
 
-    kind = CUSTOM_SERVICE_TYPES.get(service.service_type)
+    import zmq
+
+    socket = zmq.Context.instance().socket(zmq.REQ)
+    socket.setsockopt(zmq.LINGER, 0)
+    try:
+        socket.connect(f"tcp://{hostname}:{port}")
+        socket.send(pickle.dumps("status"))
+        if not socket.poll(int(timeout * 1000)):
+            return None
+        return pickle.loads(socket.recv())
+    finally:
+        socket.close(linger=0)
+
+
+async def request_custom_status(service: ServiceInfo, timeout: float = 2.0) -> dict[str, Any] | None:
+    """Returns the status of the registry, a hub or a command server (e.g. the logger), None when it didn't answer."""
+    from cgse_tui.data.services import custom_kind
+
+    kind = custom_kind(service)
     try:
         if kind == "registry":
             from egse.registry.client import AsyncRegistryClient
@@ -88,10 +106,10 @@ async def request_custom_status(service: ServiceInfo, timeout: float = 2.0) -> d
                 req_endpoint=f"tcp://{service.host}:{service.port}", request_timeout=timeout
             ) as client:
                 status = await client.server_status()
-        elif kind == "logger":
-            from egse.logger import send_request
-
-            status = await asyncio.wait_for(asyncio.to_thread(send_request, "status"), timeout=5 * timeout)
+        elif kind == "command" and service.host and service.port:
+            status = await asyncio.wait_for(
+                asyncio.to_thread(_command_status, service.host, service.port, timeout), timeout=5 * timeout
+            )
         else:
             return None
     except Exception as exc:
