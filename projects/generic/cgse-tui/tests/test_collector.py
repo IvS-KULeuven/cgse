@@ -8,12 +8,24 @@ from cgse_tui.data.model import ServiceState
 from cgse_tui.data.monitor import process_fields
 from cgse_tui.data.services import REGISTRY_SERVICE_TYPE
 
-SYNC_MONITORING = {"timestamp": "…", "delay": 1000, "PID": 42, "Up": 12.5, "CPU%": 3.0, "RSS": 1024, "obsid": None}
+SYNC_MONITORING = {
+    "timestamp": "…",
+    "delay": 1000,
+    "PID": 42,
+    "Up": 12.5,
+    "CPU%": 3.0,
+    "CPU User": 1.5,
+    "CPU System": 0.5,
+    "RSS": 1024,
+    "USS": 768,
+    "obsid": None,
+}
 ASYNC_MONITORING = {"schema_version": 1, "delay": 2000, "process": {"PID": 43, "Up": 7.0, "CPU%": 1.0, "RSS": 2048}}
 
 REPORT = {
     "schema_version": 1,
-    "process": {"pid": 42, "uptime_s": 10.0, "cpu_percent": 2.0, "rss": 512},
+    "control_server": {"device_id": "AWG-01"},
+    "process": {"pid": 42, "uptime_s": 10.0, "cpu_percent": 2.0, "rss": 512, "uss": 256},
     "device": {"connected": True, "sim_mode": True},
     "details": {},
 }
@@ -101,7 +113,10 @@ def test_process_fields_sync_and_async():
         "pid": 42,
         "uptime_s": 12.5,
         "cpu_percent": 3.0,
+        "cpu_user_s": 1.5,
+        "cpu_system_s": 0.5,
         "rss": 1024,
+        "uss": 768,
         "interval_s": 1.0,
     }
     assert process_fields(ASYNC_MONITORING)["pid"] == 43
@@ -133,12 +148,14 @@ async def test_control_server_is_followed_on_its_monitoring_port():
     awg = by_type(collector)["AWG1"]
     assert awg.state is ServiceState.OK  # the status report arrived
     assert (awg.connected, awg.sim_mode) == (True, True)
-    assert awg.pid == 42 and awg.rss == 512  # from the report, until the first monitoring message
+    assert awg.pid == 42 and awg.rss == 512 and awg.uss == 256  # from the report, until the first monitoring message
+    assert awg.device_id == "AWG-01"  # from the report, the registration has no device_id
     assert by_type(collector)[REGISTRY_SERVICE_TYPE].state is ServiceState.OK
 
     fakes.subscriptions["tcp://10.0.0.1:2002"](SYNC_MONITORING)
     awg = by_type(collector)["AWG1"]
     assert (awg.pid, awg.uptime_s, awg.cpu_percent, awg.rss) == (42, 12.5, 3.0, 1024)
+    assert (awg.cpu_user_s, awg.cpu_system_s, awg.uss) == (1.5, 0.5, 768)
 
     clock.t += 4.9
     assert by_type(collector)["AWG1"].state is ServiceState.OK
@@ -439,5 +456,29 @@ async def test_registry_row_gets_its_process_information_from_the_info_reply():
     await settle()
 
     assert by_type(collector)[REGISTRY_SERVICE_TYPE].pid == 4141
+
+    await collector.stop()
+
+
+async def test_registration_details_are_kept():
+    collector, registry, fakes, clock = make_collector()
+    registry.records = [
+        {
+            **record("AWG2", service_port=2001, monitoring_port=2002, server_kind="sync", device_id="AWG-02"),
+            "id": "awg2-1234",
+            "ttl": 30,
+            "last_heartbeat": 995,
+            "health": "passing",
+        }
+    ]
+    registry.records[0]["metadata"]["start_time"] = 900.0
+
+    await collector.poll()
+    await settle()
+
+    awg = by_type(collector)["AWG2"]
+    assert (awg.service_id, awg.ttl, awg.last_heartbeat, awg.health) == ("awg2-1234", 30, 995, "passing")
+    assert awg.device_id == "AWG-02" and awg.start_time == 900.0
+    assert awg.metadata["service_port"] == 2001
 
     await collector.stop()

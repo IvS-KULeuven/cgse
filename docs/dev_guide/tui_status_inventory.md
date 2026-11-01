@@ -139,8 +139,9 @@ and TVAC, whose status prints a dict, this always yields connected=True and sim=
    has its `pid`, `start_time` and process status. Still open: a client class for the logger, and endpoint discovery
    from the registry in the notification hub and metrics hub clients.
 5. **Partly done — richer registry metadata.** Every registration has `server_kind` (`sync`, `async`, `notifyhub`,
-   `metricshub`, or `command` for the logger and facility_hk), which tells a client how to ask for the status. Still
-   open: `device_id`, `cgse_object` (the `cgse <obj>` name) and `sim_mode`. One `list_services()` call can then map a
+   `metricshub`, or `command` for the logger and facility_hk), which tells a client how to ask for the status. Sync
+   and async control servers register their `device_id` (done on `feat/tui-overview-columns`). Still open:
+   `cgse_object` (the `cgse <obj>` name) and `sim_mode`. One `list_services()` call can then map a
    service to its lifecycle command, replacing the `SequenceMatcher` heuristic in `procman_ui.get_cgse_cmd()`.
 6. **Open — simulator mode for async drivers** (DAQ6510, TVAC) must come from a setting or start flag, since the
    server cannot detect it is talking to a separate simulator process. Until then they report `sim_mode: None`.

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 
 from rich.text import Text
 from textual.app import ComposeResult
@@ -14,15 +15,16 @@ from textual.widgets import RichLog
 
 from cgse_tui.data.model import ServiceInfo
 from cgse_tui.data.model import ServiceState
+from cgse_tui.screens.column_select import ColumnSelectScreen
+from cgse_tui.screens.columns import DEFAULT_COLUMNS
+from cgse_tui.screens.columns import Column
+from cgse_tui.screens.columns import visible_columns
 from cgse_tui.screens.detail import DetailScreen
-
-COLUMNS = ("Name", "Type", "Host", "State", "Uptime", "PID", "CPU %", "Memory", "Device", "Simulator")
-
-NOT_APPLICABLE = "–"
-"""Shown in the device columns of a service that controls no device. An empty cell means: not known."""
 
 INDICATOR_COLUMN = ""
 """The first column, without a label: a coloured square with the state of the service, see `state_indicator()`."""
+
+INDICATOR_KEY = "indicator"
 
 FILLED, FRAME = "■", "□"
 
@@ -47,43 +49,11 @@ def state_indicator(service: ServiceInfo) -> Text:
     return Text(FILLED, style="grey50")
 
 
-def format_uptime(seconds: float | None) -> str:
-    if seconds is None:
-        return ""
-    minutes, secs = divmod(int(seconds), 60)
-    hours, minutes = divmod(minutes, 60)
-    days, hours = divmod(hours, 24)
-    return f"{days}d {hours:02d}:{minutes:02d}:{secs:02d}" if days else f"{hours:02d}:{minutes:02d}:{secs:02d}"
-
-
-def format_bytes(value: int | None) -> str:
-    if value is None:
-        return ""
-    size = float(value)
-    for unit in ("B", "KiB", "MiB", "GiB"):
-        if size < 1024 or unit == "GiB":
-            return f"{size:.0f} {unit}" if unit == "B" else f"{size:.1f} {unit}"
-        size /= 1024
-    return ""  # not reached
-
-
-def format_flag(value: bool | None, true: str, false: str) -> str:
-    return "" if value is None else (true if value else false)
-
-
-def service_row(service: ServiceInfo) -> tuple[str, ...]:
-    return (
-        service.name,
-        service.service_type,
-        service.host or "",
-        service.state.value,
-        format_uptime(service.uptime_s),
-        "" if service.pid is None else str(service.pid),
-        "" if service.cpu_percent is None else f"{service.cpu_percent:.1f}",
-        format_bytes(service.rss),
-        NOT_APPLICABLE if service.has_device is False else format_flag(service.connected, "connected", "not connected"),
-        NOT_APPLICABLE if service.has_device is False else format_flag(service.sim_mode, "yes", "no"),
-    )
+def service_row(service: ServiceInfo, columns: list[Column] | None = None, now: float | None = None) -> tuple[str, ...]:
+    """The cells of a service for the given columns, by default the columns shown at start-up."""
+    columns = visible_columns(DEFAULT_COLUMNS) if columns is None else columns
+    now = time.time() if now is None else now
+    return tuple(column.value(service, now) for column in columns)
 
 
 logger = logging.getLogger("cgse_tui.overview")
@@ -104,12 +74,13 @@ class OverviewScreen(Screen):
     }
     """
 
-    BINDINGS = [("r", "refresh", "Refresh"), ("l", "toggle_log", "Log")]
+    BINDINGS = [("r", "refresh", "Refresh"), ("l", "toggle_log", "Log"), ("o", "select_columns", "Columns")]
 
     def __init__(self):
         super().__init__()
         self.services: dict[str, ServiceInfo] = {}
-        self._columns = []
+        self.columns: list[Column] = visible_columns(DEFAULT_COLUMNS)
+        self._mounted = False
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -130,12 +101,36 @@ class OverviewScreen(Screen):
         log.display = not log.display
 
     def on_mount(self) -> None:
-        self._columns = self.query_one("#services", DataTable).add_columns(INDICATOR_COLUMN, *COLUMNS)
+        self._add_columns(self.query_one("#services", DataTable))
+        self._mounted = True
+
+    def _add_columns(self, table: DataTable) -> None:
+        table.add_column(INDICATOR_COLUMN, key=INDICATOR_KEY)
+        for column in self.columns:
+            table.add_column(column.label, key=column.key)
+
+    def action_select_columns(self) -> None:
+        self.app.push_screen(ColumnSelectScreen([column.key for column in self.columns], self.set_columns))
+
+    def set_columns(self, keys) -> None:
+        """Shows the columns with the given keys, in the order of `columns.COLUMNS`."""
+        columns = visible_columns(keys)
+        if columns == self.columns:
+            return
+        self.columns = columns
+        if not self._mounted:
+            return
+        table = self.query_one("#services", DataTable)
+        cursor_row = table.cursor_row
+        table.clear(columns=True)
+        self._add_columns(table)
+        self.show_services(list(self.services.values()))
+        table.move_cursor(row=cursor_row)
 
     def show_services(self, services: list[ServiceInfo]) -> None:
         """Updates the table with the given services, the rows are keyed by service type."""
-        if not self._columns:
-            return  # not mounted yet
+        if not self._mounted:
+            return
         table = self.query_one("#services", DataTable)
         self.services = {service.service_type: service for service in services}
         shown = {row_key.value for row_key in table.rows}
@@ -143,18 +138,20 @@ class OverviewScreen(Screen):
         for service_type in shown - self.services.keys():
             table.remove_row(service_type)
 
+        now = time.time()
+        keys = [INDICATOR_KEY, *(column.key for column in self.columns)]
         added = False
         for service_type, service in self.services.items():
-            cells = (state_indicator(service), *service_row(service))
+            cells = (state_indicator(service), *service_row(service, self.columns, now))
             if service_type in shown:
-                for column, value in zip(self._columns, cells):
-                    table.update_cell(service_type, column, value)
+                for key, value in zip(keys, cells):
+                    table.update_cell(service_type, key, value)
             else:
                 table.add_row(*cells, key=service_type)
                 added = True
 
         if added:
-            table.sort(self._columns[1], key=lambda name: name.lower())  # the Name column
+            table.sort("name", key=lambda name: name.lower())
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         service = self.services.get(event.row_key.value)

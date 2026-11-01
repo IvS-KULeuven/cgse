@@ -15,6 +15,15 @@ The design and the status information it uses are described in `docs/dev_guide/t
 The first version is read-only: an overview of all services and a detail screen with the status report of the
 selected service.
 
+Keys in the overview:
+
+- `enter`: show the status report of the selected service;
+- `r`: refresh, poll the registry and the services now;
+- `o`: select the columns of the overview (in the dialog: `space` toggles a column, `a` all, `n` none, `d` defaults,
+  `esc` or `o` closes it);
+- `l`: show or hide the log pane;
+- `ctrl+q`: quit.
+
 ## Latest release
 
 - PyPI: https://pypi.org/project/cgse-tui/
