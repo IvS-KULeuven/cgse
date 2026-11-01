@@ -131,3 +131,4 @@ async def test_registry_info_has_its_own_process_information(registry):
     assert info["start_time"] == psutil.Process().create_time()
     assert info["process"]["pid"] == os.getpid()
     assert info["status"] == "ok"
+    assert info["cgse_object"] == "reg"  # the registry doesn't register itself

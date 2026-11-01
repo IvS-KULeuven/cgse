@@ -113,6 +113,11 @@ def test_all_columns_have_a_value():
     assert cells["other_ports"] == "collector 6131"
     assert (cells["received"], cells["sent"], cells["dropped"], cells["queue"]) == ("10", "8", "2", "0")
     assert cells["device_id"] == "–"
+    assert cells["command"] == ""
+
+    hub.cgse_object = "mh"
+    cells = dict(zip((column.key for column in COLUMNS), service_row(hub, list(COLUMNS), now=0.0)))
+    assert cells["command"] == "cgse mh"
 
     cm = ServiceInfo(name="CM", service_type="CM_CS", report={"details": {"setup_id": "00042", "obsid": None}})
     cells = dict(zip((column.key for column in COLUMNS), service_row(cm, list(COLUMNS), now=0.0)))

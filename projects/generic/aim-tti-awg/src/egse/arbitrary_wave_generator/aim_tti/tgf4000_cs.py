@@ -62,6 +62,8 @@ def is_tgf4000_cs_active(device_id: str, timeout: float = 0.5) -> bool:
 
 
 class Tgf4000ControlServer(ControlServer):
+    cgse_object = "tgf4000"
+
     def __init__(self, device_id: str, simulator: bool = False):
         """Initialisation of a new Aim-TTi TGF4000 Control Server.
 

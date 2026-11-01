@@ -394,9 +394,9 @@ async def test_read_and_write_operations_sequence(thermalvac_interface, mock_cli
     write_variable = AsyncMock()
     write_variable.set_value = AsyncMock()
 
-    mock_client.get_node.side_effect = [read_variable, write_variable]
+    await thermalvac_interface.connect()  # reads the product URI with get_node, before the operations below
 
-    await thermalvac_interface.connect()
+    mock_client.get_node.side_effect = [read_variable, write_variable]
 
     with patch("egse.ivs.tvac.tvac_devif.ua") as mock_ua:
         mock_ua.DataValue = MagicMock()

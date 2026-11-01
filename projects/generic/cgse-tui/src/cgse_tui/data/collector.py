@@ -241,6 +241,7 @@ class Collector:
             service.service_port = metadata.get("service_port")
             service.monitoring_port = metadata.get("monitoring_port")
             service.start_time = metadata.get("start_time")
+            service.cgse_object = metadata.get("cgse_object")
             # Older control servers register without `device_id`, their status report has it
             service.device_id = metadata.get("device_id") or service.device_id
             # Keep the kind that answered a status report when the server registered without `server_kind`.
@@ -343,6 +344,7 @@ class Collector:
                     # The registry doesn't register itself, its `info` reply has its own process information
                     self._update_process(service, status.get("process") or {})
                     service.start_time = status.get("start_time")
+                    service.cgse_object = status.get("cgse_object")
             return
 
         status = await self._request_report(service, self.request_timeout)

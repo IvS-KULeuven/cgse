@@ -56,6 +56,8 @@ class StorageControlServer(ControlServer):
     The Storage Manager Control Server (aka Storage Manager) saves information from registered components.
     """
 
+    cgse_object = "sm"
+
     def __init__(self):
         super().__init__()
 

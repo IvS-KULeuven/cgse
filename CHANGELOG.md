@@ -90,6 +90,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `RegistryClient` waits for a reply on its request socket only; an event on the subscription socket ended the wait
   early.
 
+### Registry metadata: `cgse` command and simulator mode
+
+- Every service registers its `cgse_object` in the registry metadata: the `cgse <object>` command that starts, stops
+  and shows the status of the service, e.g. `puna` for `cgse puna start`. Control servers (sync and async) set it as
+  the class attribute `cgse_object`, and all device control servers and the CM, SM and PM do; the notification hub
+  (`nh`), metrics hub (`mh`), logger (`log`) and ARIEL facility housekeeping exporter (`facility_hk`) add it to their
+  metadata. The registry doesn't register itself, its `info` reply has `cgse_object: "reg"`.
+- The CGSE TUI shows it in the new Command column (e.g. `cgse puna`), available in the column dialog (`o`).
+- DAQ6510: the status report says whether the control server talks to the simulator (`sim_mode`), recognised by the
+  serial number `SIMULATOR` in the identification (`*IDN?`) at connect. `AsyncSCPIInterface` keeps the identification
+  of the last successful `is_connected()` in `identification`.
+- TVAC: the simulator sets the build information of its OPC UA server, with product URI `urn:cgse:tvac_sim`. The
+  control server reads the product URI at connect, and the status report says whether it talks to the simulator.
+- For both, `sim_mode` is `None` before the first connection.
+
 ### TVAC
 
 - **Breaking:** the `cgse tvac` subcommands `start-cs` and `stop-cs` are renamed to `start` and `stop`, like the

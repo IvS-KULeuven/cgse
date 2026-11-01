@@ -44,6 +44,8 @@ settings = Settings.load("Configuration Manager Control Server")
 class AsyncConfigurationManagerControlServer(AsyncControlServer):
     """Async server that forwards commands to a native async controller."""
 
+    cgse_object = "cm"
+
     service_type = cm_acs_module.SERVICE_TYPE
     service_name = cm_acs_module.PROCESS_NAME
     device_commanding_port = cm_acs_module.COMMANDING_PORT

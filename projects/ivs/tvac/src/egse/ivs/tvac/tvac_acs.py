@@ -89,6 +89,10 @@ class ThermalVacDaq:
         """True when the connection to the OPC UA server is open, without communicating with the device."""
         return self.opcua_interface.is_connection_open
 
+    def is_simulator(self) -> bool | None:
+        """True when connected to the simulator, None when this is not known, see `ThermalVacOpcUaInterface`."""
+        return self.opcua_interface.is_simulator()
+
     async def _read_node(self, key: str) -> Any:
         """Transmits the given read command to the device and returns the response.
 
@@ -1548,6 +1552,8 @@ class ThermalVacServices(ServiceCommandRouter):
 
 
 class ThermalVacControlServer(AcquisitionAsyncControlServer):
+    cgse_object = "tvac"
+
     service_type = SERVICE_TYPE
     service_name = SERVICE_NAME
 
@@ -1733,8 +1739,9 @@ class ThermalVacControlServer(AcquisitionAsyncControlServer):
         """Returns the state of the ThermalVac device for the status report.
 
         The connection state is taken from the open connection to the OPC UA server, the device itself is not
-        queried. The simulator is a separate process (`tvac_sim`) that the control server cannot distinguish from the
-        device, so the simulator mode is not known.
+        queried. The simulator is a separate process (`tvac_sim`), it is recognised by the product URI in the build
+        information of its OPC UA server, read at connect. The simulator mode is not known (None) before the first
+        connection.
 
         Returns:
             Device state of the ThermalVac Control Server.
@@ -1742,7 +1749,7 @@ class ThermalVacControlServer(AcquisitionAsyncControlServer):
 
         return {
             "connected": self.controller.daq.is_connection_open,
-            "sim_mode": None,
+            "sim_mode": self.controller.daq.is_simulator(),
         }
 
     async def handle_acquisition(

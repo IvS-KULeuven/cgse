@@ -137,6 +137,7 @@ class AsyncNotificationHub:
             service_type=self.service_type,
             metadata={
                 "server_kind": "notifyhub",
+                "cgse_object": "nh",  # `cgse nh start|stop|status`
                 "pub_port": get_port_number(self.publisher_socket),
                 "collector_port": get_port_number(self.collector_socket),
             },

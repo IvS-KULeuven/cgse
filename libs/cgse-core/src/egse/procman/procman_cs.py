@@ -40,6 +40,8 @@ logger = logging.getLogger("egse.procman")
 
 
 class ProcessManagerControlServer(ControlServer):
+    cgse_object = "pm"
+
     def __init__(self):
         super().__init__()
 

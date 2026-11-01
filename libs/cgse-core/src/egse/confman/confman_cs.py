@@ -55,6 +55,8 @@ settings = Settings.load("Configuration Manager Control Server")
 
 
 class ConfigurationManagerControlServer(ControlServer):
+    cgse_object = "cm"
+
     def __init__(self):
         super().__init__()
 

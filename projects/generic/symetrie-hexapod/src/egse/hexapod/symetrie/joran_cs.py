@@ -62,6 +62,8 @@ class JoranControlServer(ControlServer):
 
     """
 
+    cgse_object = "joran"
+
     def __init__(self, device_id: str, simulator: bool = False):
         super().__init__()
 

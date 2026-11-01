@@ -41,6 +41,8 @@ def is_lakeshore336_cs_active(device_id: str, timeout: float = 0.5) -> bool:
 
 
 class LakeShore336ControlServer(ControlServer):
+    cgse_object = "lakeshore336"
+
     def __init__(self, device_id: str, simulator: bool = False):
         """Initialisation of a LakeShore336 Control Server.
 

@@ -76,6 +76,8 @@ class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
         self.read_timeout = read_timeout
         self.read_after_connect = read_after_connect
         self.id_validation = id_validation
+        self.identification: str | None = None
+        """The identification (`*IDN?`) of the device at the last successful `is_connected()`."""
 
         self._reader = None
         self._writer = None
@@ -276,6 +278,7 @@ class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
                 await self.disconnect()
                 return False
 
+            self.identification = id_response
             return True
 
         except DeviceError as exc:

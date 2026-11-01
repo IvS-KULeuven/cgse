@@ -134,7 +134,8 @@ class FacilityHousekeepingExporter:
             host=get_host_ip() or "127.0.0.1",
             port=get_port_number(self.cmd_socket),
             service_type=CTRL_SETTINGS.SERVICE_TYPE.lower(),
-            metadata={"server_kind": "command"},  # pickled string commands: "status" and "quit"
+            # pickled string commands: "status" and "quit"; started with `cgse facility_hk start`
+            metadata={"server_kind": "command", "cgse_object": "facility_hk"},
         )
         self.registry.start_heartbeat()
 

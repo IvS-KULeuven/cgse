@@ -21,6 +21,8 @@ this simulator.
 from __future__ import annotations
 
 import asyncio
+import datetime
+import importlib.metadata
 import logging
 import math
 import multiprocessing
@@ -39,6 +41,7 @@ from egse.env import get_log_file_location
 from egse.ivs.tvac import DEVICE_SETTINGS
 from egse.ivs.tvac import tvac_state_to_string
 from egse.ivs.tvac.tvac_devif import OPC_UA_NODES
+from egse.ivs.tvac.tvac_devif import SIMULATOR_PRODUCT_URI
 from egse.process import kill_process
 from egse.system import TyperAsyncCommand
 
@@ -191,6 +194,15 @@ class ThermalVacSimulator:
 
         await self.server.init()
         self.server.set_endpoint(self.server_url)
+        # The control server recognises the simulator by the product URI
+        await self.server.set_build_info(
+            product_uri=SIMULATOR_PRODUCT_URI,
+            manufacturer_name="CGSE",
+            product_name="ThermalVac PLC simulator",
+            software_version=importlib.metadata.version("ivs_tvac"),
+            build_number="",
+            build_date=datetime.datetime.now(datetime.timezone.utc),
+        )
 
         objects = self.server.get_objects_node()
 
