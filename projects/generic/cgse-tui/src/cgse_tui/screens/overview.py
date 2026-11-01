@@ -13,12 +13,38 @@ from textual.widgets import Header
 from textual.widgets import RichLog
 
 from cgse_tui.data.model import ServiceInfo
+from cgse_tui.data.model import ServiceState
 from cgse_tui.screens.detail import DetailScreen
 
 COLUMNS = ("Name", "Type", "Host", "State", "Uptime", "PID", "CPU %", "Memory", "Device", "Simulator")
 
 NOT_APPLICABLE = "–"
 """Shown in the device columns of a service that controls no device. An empty cell means: not known."""
+
+INDICATOR_COLUMN = ""
+"""The first column, without a label: a coloured square with the state of the service, see `state_indicator()`."""
+
+FILLED, FRAME = "■", "□"
+
+
+def state_indicator(service: ServiceInfo) -> Text:
+    """Returns the coloured square that shows the state of a service.
+
+    - green: running
+    - orange: running, but no connection with the device
+    - red: not responding within the stale time
+    - empty frame: not running
+    - grey: registered, but no information received yet
+    """
+    if service.state is ServiceState.OK:
+        if service.has_device and service.connected is False:
+            return Text(FILLED, style="dark_orange")
+        return Text(FILLED, style="green")
+    if service.state is ServiceState.STALE:
+        return Text(FILLED, style="red")
+    if service.state is ServiceState.INACTIVE:
+        return Text(FRAME)
+    return Text(FILLED, style="grey50")
 
 
 def format_uptime(seconds: float | None) -> str:
@@ -87,7 +113,8 @@ class OverviewScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield DataTable(id="services", cursor_type="row", zebra_stripes=True)
+        # The cell's own colour wins on the cursor row, so the state indicator keeps its colour when selected
+        yield DataTable(id="services", cursor_type="row", zebra_stripes=True, cursor_foreground_priority="renderable")
         yield RichLog(id="log", max_lines=1000, wrap=False)
         yield Footer()
 
@@ -103,7 +130,7 @@ class OverviewScreen(Screen):
         log.display = not log.display
 
     def on_mount(self) -> None:
-        self._columns = self.query_one("#services", DataTable).add_columns(*COLUMNS)
+        self._columns = self.query_one("#services", DataTable).add_columns(INDICATOR_COLUMN, *COLUMNS)
 
     def show_services(self, services: list[ServiceInfo]) -> None:
         """Updates the table with the given services, the rows are keyed by service type."""
@@ -118,7 +145,7 @@ class OverviewScreen(Screen):
 
         added = False
         for service_type, service in self.services.items():
-            cells = service_row(service)
+            cells = (state_indicator(service), *service_row(service))
             if service_type in shown:
                 for column, value in zip(self._columns, cells):
                     table.update_cell(service_type, column, value)
@@ -127,7 +154,7 @@ class OverviewScreen(Screen):
                 added = True
 
         if added:
-            table.sort(self._columns[0], key=lambda name: name.lower())
+            table.sort(self._columns[1], key=lambda name: name.lower())  # the Name column
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         service = self.services.get(event.row_key.value)
