@@ -176,6 +176,7 @@ def start():
             port=get_port_number(commander),
             service_type=SERVICE_TYPE,
             metadata={
+                "server_kind": "command",  # pickled string commands, e.g. "status"
                 "receiver_port": get_port_number(receiver),
             },
         )
@@ -207,6 +208,7 @@ def start():
             port=get_port_number(commander),
             service_type=SERVICE_TYPE,
             metadata={
+                "server_kind": "command",  # pickled string commands, e.g. "status"
                 "receiver_port": get_port_number(receiver),
             },
         )

@@ -60,6 +60,8 @@ def service_row(service: ServiceInfo) -> tuple[str, ...]:
     )
 
 
+logger = logging.getLogger("cgse_tui.overview")
+
 LOG_STYLES = {logging.WARNING: "yellow", logging.ERROR: "red", logging.CRITICAL: "bold red"}
 
 
@@ -138,4 +140,12 @@ class OverviewScreen(Screen):
     def action_refresh(self) -> None:
         collector = getattr(self.app, "collector", None)
         if collector is not None:
-            self.run_worker(collector.poll(), group="refresh", exclusive=True)
+            logger.info("Refresh: polling the registry and the services ...")
+            self.run_worker(self._refresh(collector), group="refresh", exclusive=True)
+
+    async def _refresh(self, collector) -> None:
+        await collector.poll()
+        logger.info("Refresh done.")
+        update_overview = getattr(self.app, "update_overview", None)
+        if update_overview is not None:
+            update_overview()

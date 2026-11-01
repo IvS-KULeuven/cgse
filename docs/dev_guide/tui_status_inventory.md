@@ -132,12 +132,16 @@ and TVAC, whose status prints a dict, this always yields connected=True and sim=
    `{storage_location, disk_usage, loaded_setup_id, obsid, registrations}`, PM `{core_processes}`. The device ids are
    not in the PM section, because `get_device_ids()` loads the Setup on every call and the PM serves requests on a
    single thread.
-4. **Bring the custom servers in line**: add `pid`, `uptime` and `host` to the registry, notification hub, metrics hub
-   and logger status replies; give the logger a client class; let the notification hub and metrics hub clients
-   discover their endpoint from the registry.
-5. **Richer registry metadata**: `device_id`, `cgse_object` (the `cgse <obj>` name) and `sim_mode`. One
-   `list_services()` call can then build the TUI overview and map a service to its lifecycle command, replacing the
-   `SequenceMatcher` heuristic in `procman_ui.get_cgse_cmd()`.
+4. **Partly done — bring the custom servers in line.** Done on `feat/registry-process-status`: the process information
+   of every service is in the registry instead of in the status replies. The registry client adds `pid` and
+   `start_time` to every registration, every heartbeat carries the process status (`egse.process.process_status()`),
+   and the registry keeps it with the registration (`status` in `list_services()`); the registry's own `info` reply
+   has its `pid`, `start_time` and process status. Still open: a client class for the logger, and endpoint discovery
+   from the registry in the notification hub and metrics hub clients.
+5. **Partly done — richer registry metadata.** Every registration has `server_kind` (`sync`, `async`, `notifyhub`,
+   `metricshub`, or `command` for the logger and facility_hk), which tells a client how to ask for the status. Still
+   open: `device_id`, `cgse_object` (the `cgse <obj>` name) and `sim_mode`. One `list_services()` call can then map a
+   service to its lifecycle command, replacing the `SequenceMatcher` heuristic in `procman_ui.get_cgse_cmd()`.
 6. **Open — simulator mode for async drivers** (DAQ6510, TVAC) must come from a setting or start flag, since the
    server cannot detect it is talking to a separate simulator process. Until then they report `sim_mode: None`.
 7. **Open — Process Manager lifecycle**: `start_process` should return a result (it returns `None` now), add
@@ -170,6 +174,12 @@ and TVAC, whose status prints a dict, this always yields connected=True and sim=
   `egse.zmq_ser.wait_for_message()` (a `poll()` that doesn't take the message) and receive only when a message is
   there; with the fix, no request was lost at any delay, and the TUI had no timeouts. The TUI still tolerates one lost
   request per polled server (stale after three polls plus one request timeout), e.g. for a server that is busy.
+- Notification Hub: registered the ports from its settings, not the bound ports, so dynamic ports (`0`) were
+  registered as 0. Fixed on `feat/registry-process-status`.
+- facility_hk: registered without metadata. Fixed on `feat/registry-process-status`: it registers
+  `server_kind: "command"`.
+- Dummy control server: didn't register. Fixed on `feat/registry-process-status`: it registers as `DUMMY_CS` when a
+  registry is available, and keeps working without one (its ports are fixed in the settings).
 - CLAUDE.md mentioned registry ports 4242/4243; the settings use 6100/6101/6102 (4242/4243 are only the code fallback
   in `egse/registry/__init__.py`). Fixed in the local CLAUDE.md, which is not tracked by git.
 
@@ -199,8 +209,7 @@ and TVAC, whose status prints a dict, this always yields connected=True and sim=
   now uses a new client for every poll. Long-lived clients, e.g. the one a control server uses for registration and
   re-registration, can be affected in the same way (not verified). A fix in the client: close and reconnect the
   socket after a timeout, or add a request id to match the replies.
-- Notification Hub: registers the ports from settings, not the bound ports, so dynamic ports (`0`) are registered as
-  0; `_generate_health_response()` is never called.
+- Notification Hub: `_generate_health_response()` is never called.
 - Metrics Hub: `start_time` is set with `time.time()` but compared with `time.monotonic()` in the stats reporter, so the
   logged rates are wrong.
 - `ControlServer`: `__init__` sets `self.service_id` but `register_service()` assigns `self._service_id`

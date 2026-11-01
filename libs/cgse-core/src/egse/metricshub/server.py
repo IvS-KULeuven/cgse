@@ -371,7 +371,7 @@ class AsyncMetricsHub:
             host=get_host_ip() or "127.0.0.1",
             port=requests_port,
             service_type=self.service_type,
-            metadata={"collector_port": collector_port},
+            metadata={"server_kind": "metricshub", "collector_port": collector_port},
         )
 
         if not self.service_id:

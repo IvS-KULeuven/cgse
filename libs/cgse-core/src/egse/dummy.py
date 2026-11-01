@@ -289,6 +289,13 @@ class DummyControlServer(ControlServer):
 
         self.set_hk_delay(ctrl_settings.HK_DELAY)
 
+        self.service_name = "dummy_cs"
+        self.register_service(service_type="DUMMY_CS")
+
+    def can_operate_without_registry(self) -> bool:
+        # The ports are fixed in the settings, clients find the dummy control server without the registry.
+        return True
+
     def get_communication_protocol(self):
         return "tcp"
 
@@ -309,6 +316,7 @@ class DummyControlServer(ControlServer):
 
     def after_serve(self):
         logger.debug("After Serve ...")
+        self.deregister_service()
 
 
 class DummyDeviceEthernetInterface(DeviceConnectionInterface, DeviceTransport):

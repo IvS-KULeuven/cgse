@@ -127,3 +127,34 @@ async def test_select_a_service_shows_its_details():
 
         await pilot.press("escape")
         assert isinstance(app.screen, OverviewScreen)
+
+
+async def test_refresh_is_logged_in_the_log_pane():
+    from textual.widgets import RichLog
+
+    app = CgseTuiApp(collector=StaticCollector(SERVICES))
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        await pilot.press("r")
+        await pilot.pause(0.2)
+        app.update_overview()
+        await pilot.pause()
+        lines = [line.text for line in app.overview.query_one("#log", RichLog).lines]
+
+    assert any("Refresh: polling the registry" in line for line in lines)
+    assert any("Refresh done." in line for line in lines)
+
+
+async def test_refresh_in_the_detail_screen_is_logged():
+    collector = StaticCollector(SERVICES)
+    app = CgseTuiApp(collector=collector)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        await pilot.press("enter")  # opening the screen requests the status
+        await pilot.pause()
+        await pilot.press("r")
+        await pilot.pause()
+        messages = [text for _, text in app.log_handler.drain()]
+
+    assert sum("Requesting the status of AWG1" in text for text in messages) == 2
+    assert any("Status of AWG1 received." in text for text in messages)
