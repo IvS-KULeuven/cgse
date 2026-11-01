@@ -9,7 +9,7 @@ from cgse_tui.screens.column_select import ColumnSelectScreen
 from cgse_tui.screens.columns import COLUMNS
 from cgse_tui.screens.columns import DEFAULT_COLUMNS
 from cgse_tui.screens.columns import format_age
-from cgse_tui.screens.columns import format_bytes
+from cgse_tui.screens.columns import format_mib
 from cgse_tui.screens.columns import format_uptime
 from cgse_tui.screens.columns import visible_columns
 from cgse_tui.screens.detail import DetailScreen
@@ -48,7 +48,7 @@ class StaticCollector:
     async def run(self):
         pass
 
-    async def poll(self):
+    async def poll(self, reports=False):
         pass
 
     def snapshot(self):
@@ -66,10 +66,11 @@ def test_format_uptime():
     assert format_uptime(2 * 86400 + 3725) == "2d 01:02:05"
 
 
-def test_format_bytes():
-    assert format_bytes(None) == ""
-    assert format_bytes(512) == "512 B"
-    assert format_bytes(48_058_368) == "45.8 MiB"
+def test_format_mib():
+    assert format_mib(None) == ""
+    assert format_mib(512) == "0.0"
+    assert format_mib(48_058_368) == "45.8"
+    assert format_mib(2 * 2**30) == "2048.0"
 
 
 def test_service_row():
@@ -81,7 +82,7 @@ def test_service_row():
         "01:02:05",
         "1234",
         "1.5",
-        "45.8 MiB",
+        "45.8",
         "AWG-01",
         "connected",
         "yes",
@@ -249,3 +250,74 @@ async def test_select_columns_changes_the_table_right_away():
         await pilot.press("o")
         await pilot.pause()
         assert isinstance(app.screen, OverviewScreen)
+
+
+class RecordingActions:
+    def __init__(self):
+        self.performed = []
+
+    def is_busy(self, service_type):
+        return False
+
+    async def simulator_support(self, service):
+        return "process"
+
+    async def perform(self, action, service, simulator=False):
+        self.performed.append((action, service.service_type, simulator))
+        return True
+
+
+async def test_actions_dialog_for_the_selected_service(monkeypatch):
+    from textual.widgets import Button
+    from textual.widgets import Checkbox
+
+    from cgse_tui.data import actions
+    from cgse_tui.screens.action_select import ActionSelectScreen
+
+    monkeypatch.setattr(actions, "cgse_executable", lambda: "/venv/bin/cgse")
+    SERVICES[0].cgse_object = "tgf4000"
+    recorder = RecordingActions()
+    app = CgseTuiApp(collector=StaticCollector(SERVICES), actions=recorder)
+    try:
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.press("a")  # the first row: AWG1, running
+            await pilot.pause()
+            assert isinstance(app.screen, ActionSelectScreen)
+            enabled = {button.id for button in app.screen.query(Button) if not button.disabled}
+            assert enabled == {"stop", "restart", "cancel"}
+            assert app.screen.focused.id == "cancel"  # Enter doesn't stop a running service
+            checkbox = app.screen.query_one("#simulator", Checkbox)
+            assert checkbox.value is True  # AWG1 runs with its simulator
+            assert not checkbox.disabled and "cgse tgf4000 start-sim" in str(checkbox.label)
+
+            await pilot.click("#simulator")  # restart without the simulator
+            await pilot.click("#restart")
+            await pilot.pause()
+            assert isinstance(app.screen, OverviewScreen)
+            assert recorder.performed == [("restart", "AWG1", False)]
+
+            await pilot.press("a")
+            await pilot.pause()
+            await pilot.press("escape")
+            await pilot.pause()
+            assert recorder.performed == [("restart", "AWG1", False)]  # cancelled
+    finally:
+        SERVICES[0].cgse_object = None
+
+
+async def test_columns_grow_with_updated_cells():
+    service = ServiceInfo(name="Storage Manager", service_type="SM_CS", state=ServiceState.INACTIVE)
+    collector = StaticCollector([service])
+    app = CgseTuiApp(collector=collector)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        table = app.overview.query_one("#services", DataTable)
+        assert table.columns["host"].content_width < len("192.168.168.175")
+
+        service.host, service.has_device, service.connected = "192.168.168.175", True, True
+        app.update_overview()
+        await pilot.pause()
+
+        assert table.columns["host"].content_width >= len("192.168.168.175")
+        assert table.columns["device"].content_width >= len("connected")

@@ -90,6 +90,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `RegistryClient` waits for a reply on its request socket only; an event on the subscription socket ended the wait
   early.
 
+### CGSE TUI: start, stop and restart services
+
+- `a` in the overview or the detail screen opens a dialog to start, stop or restart the selected service. It runs the
+  `cgse <object> start|stop [<device_id>]` command from the registration (`cgse_object`, `device_id`); the core
+  services that are not running are started with their known command (`reg`, `log`, `nh`, `mh`, `cm`, `sm`, `pm`).
+  The dialog shows the commands, selecting an action is the confirmation; Enter on a running service cancels.
+- The TUI waits up to 30 s until the service is registered (start) or no longer registered (stop), and logs the
+  result in the log pane; a failed command is logged with the last lines of its output.
+- A checkbox in the dialog starts (or restarts) the service with its simulator; it is checked when the service runs
+  with its simulator now, and disabled for services without one. A simulator that is a separate process (DAQ6510,
+  TVAC) is started first with `cgse <object> start-sim`, unless `status-sim` says it is running, and the TUI waits up
+  to 15 s until it answers; other drivers are started with `--sim`. The buttons show the focus with a lighter
+  background only.
+- Fixed: the device connection of a control server was only updated when the server registered or its detail screen
+  was opened. After a restart from the TUI, the report was requested before the server had connected to its device,
+  and the overview kept showing "not connected" (orange square). The status report of a control server is now
+  requested every 10 s, and `r` requests the reports of all services right away.
+- Overview: Memory and USS are shown in MiB with one decimal, the unit in the header (`Mem [MiB]`). The number
+  columns (uptime, PID, CPU %, CPU time, memory, USS, hub counters, ages, TTL, stale time) are right-aligned. A column
+  grows when an updated value doesn't fit, e.g. the host that arrives after start-up.
+- `cgse daq6510 status-sim` and `cgse tvac status-sim` exit with code 1 when the simulator is not running, like the
+  simulator's own `status` command.
+- The commands run in a new session, so the services started from the TUI don't belong to its terminal.
+- JORAN: the control server sets its `device_id`, it is in the status report and the registration.
+
 ### Registry metadata: `cgse` command and simulator mode
 
 - Every service registers its `cgse_object` in the registry metadata: the `cgse <object>` command that starts, stops

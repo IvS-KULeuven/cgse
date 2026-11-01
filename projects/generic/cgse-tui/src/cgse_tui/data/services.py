@@ -23,6 +23,19 @@ CUSTOM_SERVICE_TYPES = {
 """The kind of the core services that are not control servers, for registrations without `server_kind`."""
 
 
+CORE_CGSE_OBJECTS = {
+    REGISTRY_SERVICE_TYPE: "reg",
+    LOGGER_SERVICE_TYPE: "log",
+    NOTIFY_HUB_SERVICE_TYPE: "nh",
+    METRICS_HUB_SERVICE_TYPE: "mh",
+    "CM_CS": "cm",
+    "SM_CS": "sm",
+    "PM_CS": "pm",
+}
+"""The `cgse <object>` command of the core services. A running service registers it as `cgse_object`, a core service
+that is not running has no registration, but can be started from the TUI."""
+
+
 def custom_kind(service) -> str | None:
     """Returns the kind of a service that is not a control server, None for a control server.
 

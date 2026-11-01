@@ -11,6 +11,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
+from rich.text import Text
+
 from cgse_tui.data.model import ServiceInfo
 
 NOT_APPLICABLE = "–"
@@ -25,6 +27,14 @@ class Column:
     """Returns the cell text for a service, at the given time (seconds since the epoch)."""
     description: str
     default: bool = False
+    justify: str = "left"
+    """"right" for numbers, so the digits line up."""
+
+    def header(self) -> Text:
+        return Text(self.label, justify=self.justify)
+
+    def cell(self, service: ServiceInfo, now: float) -> Text:
+        return Text(self.value(service, now), justify=self.justify)
 
 
 def format_uptime(seconds: float | None) -> str:
@@ -36,15 +46,9 @@ def format_uptime(seconds: float | None) -> str:
     return f"{days}d {hours:02d}:{minutes:02d}:{secs:02d}" if days else f"{hours:02d}:{minutes:02d}:{secs:02d}"
 
 
-def format_bytes(value: int | None) -> str:
-    if value is None:
-        return ""
-    size = float(value)
-    for unit in ("B", "KiB", "MiB", "GiB"):
-        if size < 1024 or unit == "GiB":
-            return f"{size:.0f} {unit}" if unit == "B" else f"{size:.1f} {unit}"
-        size /= 1024
-    return ""  # not reached
+def format_mib(value: int | None) -> str:
+    """Bytes in MiB with one decimal, the unit is in the column header."""
+    return "" if value is None else f"{value / 2**20:.1f}"
 
 
 def format_flag(value: bool | None, true: str, false: str) -> str:
@@ -149,19 +153,40 @@ COLUMNS: tuple[Column, ...] = (
     Column("monitoring_port", "Mon. port", lambda s, now: format_number(s.monitoring_port), "Monitoring port"),
     Column("other_ports", "Other ports", other_ports, "Other ports, e.g. publisher and collector of a hub"),
     Column("state", "State", lambda s, now: s.state.value, "State as seen by the TUI", default=True),
-    Column("uptime", "Uptime", lambda s, now: format_uptime(s.uptime_s), "Uptime of the process", default=True),
+    Column(
+        "uptime",
+        "Uptime",
+        lambda s, now: format_uptime(s.uptime_s),
+        "Uptime of the process",
+        default=True,
+        justify="right",
+    ),
     Column("started", "Started", lambda s, now: format_time(s.start_time), "Start time of the process"),
-    Column("pid", "PID", lambda s, now: format_number(s.pid), "Process identifier", default=True),
+    Column("pid", "PID", lambda s, now: format_number(s.pid), "Process identifier", default=True, justify="right"),
     Column(
         "cpu",
         "CPU %",
         lambda s, now: "" if s.cpu_percent is None else f"{s.cpu_percent:.1f}",
         "CPU usage of the process",
         default=True,
+        justify="right",
     ),
-    Column("cpu_time", "CPU time", lambda s, now: format_seconds(cpu_time(s)), "CPU time, user plus system"),
-    Column("memory", "Memory", lambda s, now: format_bytes(s.rss), "Resident memory (RSS)", default=True),
-    Column("uss", "USS", lambda s, now: format_bytes(s.uss), "Memory unique to the process (USS)"),
+    Column(
+        "cpu_time",
+        "CPU time",
+        lambda s, now: format_seconds(cpu_time(s)),
+        "CPU time, user plus system",
+        justify="right",
+    ),
+    Column(
+        "memory",
+        "Mem [MiB]",
+        lambda s, now: format_mib(s.rss),
+        "Resident memory (RSS)",
+        default=True,
+        justify="right",
+    ),
+    Column("uss", "USS [MiB]", lambda s, now: format_mib(s.uss), "Memory unique to the process (USS)", justify="right"),
     Column(
         "device_id",
         "Device ID",
@@ -188,15 +213,51 @@ COLUMNS: tuple[Column, ...] = (
         "obsid", "Obsid", lambda s, now: format_number(report_details(s).get("obsid")), "Running observation (CM, SM)"
     ),
     Column("site", "Site", lambda s, now: format_number(report_details(s).get("site_id")), "Site identifier (CM)"),
-    Column("received", "Received", statistic("events_received", "received"), "Events or metrics received (hubs)"),
-    Column("sent", "Sent", statistic("events_published", "written"), "Events published, metrics written (hubs)"),
-    Column("dropped", "Dropped", statistic("dropped"), "Metrics dropped (metrics hub)"),
-    Column("queue", "Queue", statistic("queue"), "Metrics waiting to be written (metrics hub)"),
-    Column("heartbeat", "Heartbeat", lambda s, now: format_age(s.last_heartbeat, now), "Age of the last heartbeat"),
+    Column(
+        "received",
+        "Received",
+        statistic("events_received", "received"),
+        "Events or metrics received (hubs)",
+        justify="right",
+    ),
+    Column(
+        "sent",
+        "Sent",
+        statistic("events_published", "written"),
+        "Events published, metrics written (hubs)",
+        justify="right",
+    ),
+    Column("dropped", "Dropped", statistic("dropped"), "Metrics dropped (metrics hub)", justify="right"),
+    Column("queue", "Queue", statistic("queue"), "Metrics waiting to be written (metrics hub)", justify="right"),
+    Column(
+        "heartbeat",
+        "Heartbeat",
+        lambda s, now: format_age(s.last_heartbeat, now),
+        "Age of the last heartbeat",
+        justify="right",
+    ),
     Column("health", "Health", lambda s, now: s.health or "", "Health according to the registry"),
-    Column("ttl", "TTL", lambda s, now: format_number(s.ttl), "Registry time-to-live without heartbeat [s]"),
-    Column("updated", "Updated", lambda s, now: format_age(s.last_update, now), "Age of the last status in the TUI"),
-    Column("stale_after", "Stale after", lambda s, now: f"{s.stale_after:.0f} s", "Stale without status for"),
+    Column(
+        "ttl",
+        "TTL",
+        lambda s, now: format_number(s.ttl),
+        "Registry time-to-live without heartbeat [s]",
+        justify="right",
+    ),
+    Column(
+        "updated",
+        "Updated",
+        lambda s, now: format_age(s.last_update, now),
+        "Age of the last status in the TUI",
+        justify="right",
+    ),
+    Column(
+        "stale_after",
+        "Stale after",
+        lambda s, now: f"{s.stale_after:.0f} s",
+        "Stale without status for",
+        justify="right",
+    ),
     Column("registered", "Registered", lambda s, now: format_time(s.registered_at), "When the TUI saw it register"),
     Column("service_id", "Service ID", lambda s, now: s.service_id or "", "Identifier of the registration"),
 )
