@@ -73,4 +73,3 @@ async def test_interface_recognises_the_simulator(interface):
     interface.client.get_node.return_value.read_value = AsyncMock(side_effect=RuntimeError("BadNodeIdUnknown"))
     await interface.connect()
     assert interface.is_simulator() is None  # the product URI couldn't be read
-
