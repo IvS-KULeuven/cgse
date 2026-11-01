@@ -17,6 +17,9 @@ from cgse_tui.screens.detail import DetailScreen
 
 COLUMNS = ("Name", "Type", "Host", "State", "Uptime", "PID", "CPU %", "Memory", "Device", "Simulator")
 
+NOT_APPLICABLE = "–"
+"""Shown in the device columns of a service that controls no device. An empty cell means: not known."""
+
 
 def format_uptime(seconds: float | None) -> str:
     if seconds is None:
@@ -52,8 +55,8 @@ def service_row(service: ServiceInfo) -> tuple[str, ...]:
         "" if service.pid is None else str(service.pid),
         "" if service.cpu_percent is None else f"{service.cpu_percent:.1f}",
         format_bytes(service.rss),
-        format_flag(service.connected, "connected", "not connected"),
-        format_flag(service.sim_mode, "yes", "no"),
+        NOT_APPLICABLE if service.has_device is False else format_flag(service.connected, "connected", "not connected"),
+        NOT_APPLICABLE if service.has_device is False else format_flag(service.sim_mode, "yes", "no"),
     )
 
 

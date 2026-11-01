@@ -55,6 +55,9 @@ class ServiceInfo:
 
     sim_mode: bool | None = None
 
+    has_device: bool | None = None
+    """False when the status report says the service controls no device, None when this is not known."""
+
     last_update: float | None = None
     """Time of the last information, seconds since the epoch."""
 
