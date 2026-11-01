@@ -185,6 +185,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   recognised by their `server_kind`, so e.g. the ARIEL facility housekeeping exporter is polled as well.
 - `r` writes a line in the log pane when the refresh starts and when it's done; in the detail screen it also shows a
   short notification, the log pane isn't visible there.
+- Overview: a coloured square in front of every service shows its state at a glance: green = running, orange =
+  running but no connection with the device, red = not responding, empty frame = not running, grey = registered but
+  no information yet. The square keeps its colour on the selected row.
 
 ---
 
