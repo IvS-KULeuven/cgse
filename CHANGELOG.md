@@ -74,6 +74,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - The dummy control server registers as `DUMMY_CS` when a registry is available; it still works without one, its
   ports are fixed in the settings.
 
+### Registry client recovery
+
+- Fixed: a service could drop out of the registry for good. The registry clients (`RegistryClient`,
+  `AsyncRegistryClient`) use a DEALER socket, which doesn't match replies to requests. A request that timed out left
+  its reply behind, and the next request read that reply instead of its own. A re-registration that read such a reply
+  (without a `service_id`) cleared the service id, which stopped the heartbeat, so the service was never registered
+  again. Seen with the notification hub and the metrics hub: their health checks timed out at start-up, before the
+  registry answered; minutes later the laptop lid was closed, the heartbeat detected an IP address change and
+  re-registered, read the late `health` reply and logged `Service registered with ID: None`.
+- After a timeout or a ZeroMQ error, the clients close the request or heartbeat socket and open a new one with a new
+  identity, so a late reply can no longer be read by the next request.
+- A registration only succeeds with a `service_id` in the reply. When a re-registration fails, the client keeps the
+  service id and the heartbeat tries again.
+- `RegistryClient` waits for a reply on its request socket only; an event on the subscription socket ended the wait
+  early.
+
 ### TVAC
 
 - **Breaking:** the `cgse tvac` subcommands `start-cs` and `stop-cs` are renamed to `start` and `stop`, like the

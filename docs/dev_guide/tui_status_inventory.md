@@ -180,6 +180,16 @@ and TVAC, whose status prints a dict, this always yields connected=True and sim=
   `server_kind: "command"`.
 - Dummy control server: didn't register. Fixed on `feat/registry-process-status`: it registers as `DUMMY_CS` when a
   registry is available, and keeps working without one (its ports are fixed in the settings).
+- Registry clients (`RegistryClient` and `AsyncRegistryClient`) use a DEALER socket and don't match replies to
+  requests. A request that timed out stayed queued, and the next request read the reply to an earlier one. Found with
+  the TUI on 2026-10-30: after a registry restart, `list_services()` read a `health` reply and returned no services
+  (the TUI now uses a new client for every poll). On 2026-11-01 the notification hub and the metrics hub dropped out of
+  the registry for good: their health checks timed out at start-up (13:09, before the registry answered), and when
+  the laptop lid was closed (13:12) the re-registration after an IP address change read a late `health` reply, logged
+  `Service registered with ID: None`, and the cleared service id stopped the heartbeat loop. Fixed on
+  `fix/registry-client-stale-replies`: after a timeout or ZeroMQ error the client replaces the socket (new identity),
+  a registration only succeeds with a `service_id` in the reply, and a failed re-registration keeps the service id so
+  the heartbeat retries. Regression tests in `libs/cgse-core/tests/test_registry_client_recovery.py`.
 - CLAUDE.md mentioned registry ports 4242/4243; the settings use 6100/6101/6102 (4242/4243 are only the code fallback
   in `egse/registry/__init__.py`). Fixed in the local CLAUDE.md, which is not tracked by git.
 
@@ -202,13 +212,14 @@ and TVAC, whose status prints a dict, this always yields connected=True and sim=
   server can be created per Python process (relevant for tests).
 - Process Manager: `get_device_ids()` / `get_devices()` load the Setup on every call, which blocks the single-threaded
   server.
-- Registry clients (`RegistryClient` and `AsyncRegistryClient`) use a DEALER socket and don't match replies to
-  requests. A request that times out (e.g. while the registry is restarted) stays queued, and when the registry is
-  back every following request reads the reply to an earlier one. Found with the TUI on 2026-10-30: after a registry
-  restart, `list_services()` read a `health` reply, returned no services, and all services stayed inactive. The TUI
-  now uses a new client for every poll. Long-lived clients, e.g. the one a control server uses for registration and
-  re-registration, can be affected in the same way (not verified). A fix in the client: close and reconnect the
-  socket after a timeout, or add a request id to match the replies.
+- `get_host_ip()` returns another address when the Wi-Fi is down, e.g. on 2026-11-01 after the laptop lid was closed
+  the heartbeat of the notification hub detected an IP address change from `192.168.68.75` to `100.66.244.53` (the
+  `100.64.0.0/10` range, used by Tailscale) and re-registered with that address. Clients on the same machine still
+  connect, clients on other machines may not.
+- Registry clients: in `RegistryClient` the heartbeat thread calls `health_check()` and `reregister()`, which use the
+  request socket of the main thread (ZeroMQ sockets are not thread-safe); after a timeout that socket is now also
+  replaced from the heartbeat thread. In both heartbeat loops, a failed health check (`continue`) skips the sleep, so
+  during an outage the loop retries after each heartbeat plus health check timeout.
 - Notification Hub: `_generate_health_response()` is never called.
 - Metrics Hub: `start_time` is set with `time.time()` but compared with `time.monotonic()` in the stats reporter, so the
   logged rates are wrong.

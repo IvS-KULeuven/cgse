@@ -103,7 +103,8 @@ class RegistryClient:
         self._hb_stop_event = None
         self._hb_thread: threading.Thread | None = None
 
-        self._client_id = f"{client_id}-{uuid.uuid4()}".encode()
+        self._client_id_prefix = client_id
+        self._client_id = self._new_identity()
 
         self.context: zmq.Context = zmq.Context.instance()
 
@@ -125,10 +126,7 @@ class RegistryClient:
             self.logger.debug("Connecting to service registry...")
 
         # REQ socket for request-reply pattern
-        self.req_socket = self.context.socket(zmq.DEALER)
-        self.req_socket.setsockopt(zmq.LINGER, 0)  # Don't wait for unsent messages on close()
-        self.req_socket.setsockopt(zmq.IDENTITY, self._client_id)
-        self.req_socket.connect(self.registry_req_endpoint)
+        self.req_socket = self._create_req_socket()
 
         # SUB socket for receiving events
         self.sub_socket = self.context.socket(zmq.SUB)
@@ -139,11 +137,39 @@ class RegistryClient:
         self.poller.register(self.req_socket, zmq.POLLIN)
         self.poller.register(self.sub_socket, zmq.POLLIN)
 
+    def _new_identity(self) -> bytes:
+        return f"{self._client_id_prefix}-{uuid.uuid4()}".encode()
+
+    def _create_req_socket(self) -> zmq.Socket:
+        socket = self.context.socket(zmq.DEALER)
+        socket.setsockopt(zmq.LINGER, 0)  # Don't wait for unsent messages on close()
+        socket.setsockopt(zmq.IDENTITY, self._client_id)
+        socket.connect(self.registry_req_endpoint)
+        return socket
+
+    def _reset_req_socket(self):
+        """Replaces the request socket after a request failed, e.g. timed out.
+
+        The DEALER socket doesn't match replies to requests. A request that timed out stays queued, and its late reply
+        would be read by the next request. The new socket has a new identity, the registry may still know the old one.
+        """
+        if self.req_socket:
+            self.poller.unregister(self.req_socket)
+            self.req_socket.close(linger=0)
+        self._client_id = self._new_identity()
+        self.req_socket = self._create_req_socket()
+        self.poller.register(self.req_socket, zmq.POLLIN)
+
     def _connect_hb_socket(self):
         self.hb_socket = self.context.socket(zmq.DEALER)
         self.hb_socket.setsockopt(zmq.LINGER, 0)  # Don't wait for unsent messages on close()
-        self.hb_socket.setsockopt(zmq.IDENTITY, self._client_id)
+        self.hb_socket.setsockopt(zmq.IDENTITY, self._new_identity())
         self.hb_socket.connect(self.registry_hb_endpoint)
+
+    def _reset_hb_socket(self):
+        """Replaces the heartbeat socket after a heartbeat failed, for the same reason as `_reset_req_socket()`."""
+        self._disconnect_hb_socket()
+        self._connect_hb_socket()
 
     def disconnect(self):
         if VERBOSE_DEBUG:
@@ -188,7 +214,8 @@ class RegistryClient:
             if msg_type == MessageType.REQUEST_NO_REPLY:
                 return {"success": True}
 
-            if self.poller.poll(timeout=timeout_ms):
+            # Wait on the request socket only: the poller also has the SUB socket, an event would end the wait
+            if self.req_socket.poll(timeout=timeout_ms):
                 message_parts = self.req_socket.recv_multipart()
 
                 if len(message_parts) >= 2:
@@ -212,10 +239,12 @@ class RegistryClient:
                         "data": message_parts,
                     }
             else:
-                self.logger.error(f"Request timed out after {self.timeout:.2f}s")
+                self.logger.error(f"Request timed out after {timeout_ms / 1000:.2f}s")
+                self._reset_req_socket()
                 return {"success": False, "error": "Request timed out"}
         except zmq.ZMQError as exc:
             self.logger.error(f"ZMQ error: {exc}", exc_info=True)
+            self._reset_req_socket()
             return {"success": False, "error": str(exc)}
         except Exception as exc:
             self.logger.error(f"Error sending request: {exc}", exc_info=True)
@@ -248,10 +277,12 @@ class RegistryClient:
                 return response
             else:
                 self.logger.error(f"Request timed out after {HEART_BEAT_TIMEOUT:.2f}s")
+                self._reset_hb_socket()
                 return {"success": False, "error": "Request timed out"}
 
         except zmq.ZMQError as exc:
             self.logger.error(f"ZMQ error: {exc}", exc_info=True)
+            self._reset_hb_socket()
             return {"success": False, "error": str(exc)}
         except Exception as exc:
             self.logger.error(f"Error sending request: {exc}", exc_info=True)
@@ -324,7 +355,9 @@ class RegistryClient:
 
         response = self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
-        if response.get("success"):
+        # A successful reply always has the service_id, without it the reply doesn't belong to this request.
+        # Keep the current registration then: the heartbeat loop stops when the service_id is gone.
+        if response.get("success") and response.get("service_id"):
             # Store service information for later use
             self._service_id = response.get("service_id")
             self._service_info = service_info
@@ -635,7 +668,8 @@ class AsyncRegistryClient:
         self._service_info = None
         self._ttl = None
 
-        self._client_id = f"{client_id}-{uuid.uuid4()}".encode()
+        self._client_id_prefix = client_id
+        self._client_id = self._new_identity()
 
         self.context = zmq.asyncio.Context.instance()
 
@@ -666,10 +700,7 @@ class AsyncRegistryClient:
             return
 
         # REQ socket for request-reply pattern
-        self.req_socket = self.context.socket(zmq.DEALER)
-        self.req_socket.setsockopt(zmq.LINGER, 0)  # Don't wait for unsent messages on close()
-        self.req_socket.setsockopt(zmq.IDENTITY, self._client_id)
-        self.req_socket.connect(self.registry_req_endpoint)
+        self.req_socket = self._create_req_socket()
 
         # SUB socket for receiving events
         self.sub_socket = self.context.socket(zmq.SUB)
@@ -677,11 +708,37 @@ class AsyncRegistryClient:
         # Default to receiving all events
         self.sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
 
+    def _new_identity(self) -> bytes:
+        return f"{self._client_id_prefix}-{uuid.uuid4()}".encode()
+
+    def _create_req_socket(self) -> zmq.asyncio.Socket:
+        socket = self.context.socket(zmq.DEALER)
+        socket.setsockopt(zmq.LINGER, 0)  # Don't wait for unsent messages on close()
+        socket.setsockopt(zmq.IDENTITY, self._client_id)
+        socket.connect(self.registry_req_endpoint)
+        return socket
+
+    def _reset_req_socket(self):
+        """Replaces the request socket after a request failed, e.g. timed out.
+
+        The DEALER socket doesn't match replies to requests. A request that timed out stays queued, and its late reply
+        would be read by the next request. The new socket has a new identity, the registry may still know the old one.
+        """
+        if self.req_socket:
+            self.req_socket.close(linger=0)
+        self._client_id = self._new_identity()
+        self.req_socket = self._create_req_socket()
+
     def _connect_hb_socket(self):
         self.hb_socket = self.context.socket(zmq.DEALER)
         self.hb_socket.setsockopt(zmq.LINGER, 0)  # Don't wait for unsent messages on close()
-        self.hb_socket.setsockopt(zmq.IDENTITY, self._client_id)
+        self.hb_socket.setsockopt(zmq.IDENTITY, self._new_identity())
         self.hb_socket.connect(self.registry_hb_endpoint)
+
+    def _reset_hb_socket(self):
+        """Replaces the heartbeat socket after a heartbeat failed, for the same reason as `_reset_req_socket()`."""
+        self._disconnect_hb_socket()
+        self._connect_hb_socket()
 
     async def disconnect(self) -> None:
         if VERBOSE_DEBUG:
@@ -754,9 +811,11 @@ class AsyncRegistryClient:
                     }
             except asyncio.TimeoutError:
                 self.logger.error(f"Request timed out after {timeout:.2f}s")
+                self._reset_req_socket()
                 return {"success": False, "error": "Request timed out"}
         except zmq.ZMQError as exc:
             self.logger.error(f"ZMQ error: {exc}", exc_info=True)
+            self._reset_req_socket()
             return {"success": False, "error": str(exc)}
         except Exception as exc:
             self.logger.error(f"Error sending request: {exc}", exc_info=True)
@@ -789,10 +848,12 @@ class AsyncRegistryClient:
                 return response
             except asyncio.TimeoutError:
                 self.logger.error(f"Heartbeat request timed out after {HEART_BEAT_TIMEOUT:.2f}s")
+                self._reset_hb_socket()
                 return {"success": False, "error": "Heartbeat request timed out"}
 
         except zmq.ZMQError as exc:
             self.logger.error(f"ZMQ error: {exc}", exc_info=True)
+            self._reset_hb_socket()
             return {"success": False, "error": str(exc)}
         except Exception as exc:
             self.logger.error(f"Error sending heartbeat request: {exc}", exc_info=True)
@@ -865,7 +926,9 @@ class AsyncRegistryClient:
 
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
-        if response.get("success"):
+        # A successful reply always has the service_id, without it the reply doesn't belong to this request.
+        # Keep the current registration then: the heartbeat loop stops when the service_id is gone.
+        if response.get("success") and response.get("service_id"):
             # Store service information for later use
             self._service_id = response.get("service_id")
             self._service_info = service_info
