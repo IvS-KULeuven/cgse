@@ -9,6 +9,9 @@ from egse.ivs.tvac import DEVICE_SETTINGS
 
 LOGGER = logging.getLogger(__name__)
 
+SIMULATOR_PRODUCT_URI = "urn:cgse:tvac_sim"
+"""The product URI of the simulator (`tvac_sim`) in the build information of its OPC UA server."""
+
 
 # Look-up table, relating the name of the command with the actual OPC UA node id it corresponds to on the PLC.
 # This table is shared between the real client (`ThermalVacOpcUaInterface`) and the `ThermalVacSimulator`, so both
@@ -67,6 +70,8 @@ class ThermalVacOpcUaInterface:
         self.device_id = "TVAC"
 
         self._is_connection_open = False
+        self.product_uri: str | None = None
+        """The product URI in the build information of the OPC UA server, read at connect; None when not known."""
         self.client = Client(self.server_url)
         self._lock = asyncio.Lock()
         self._reconnect_lock = asyncio.Lock()
@@ -94,6 +99,22 @@ class ThermalVacOpcUaInterface:
                 raise DeviceConnectionError(
                     self.device_id, "Device is not connected, check logging messages for the cause."
                 )
+
+            self.product_uri = await self._read_product_uri()
+
+    async def _read_product_uri(self) -> str | None:
+        """Reads the product URI from the build information, a standard node of every OPC UA server."""
+        try:
+            return await self.client.get_node(ua.ObjectIds.Server_ServerStatus_BuildInfo_ProductUri).read_value()
+        except Exception as exc:
+            LOGGER.warning(f"{self.device_id}: couldn't read the product URI of the OPC UA server: {exc}")
+            return None
+
+    def is_simulator(self) -> bool | None:
+        """True when connected to the simulator (`tvac_sim`), None when this is not known (not connected yet)."""
+        if self.product_uri is None:
+            return None
+        return self.product_uri == SIMULATOR_PRODUCT_URI
 
     async def disconnect(self) -> None:
         """Closes the connection to the device."""

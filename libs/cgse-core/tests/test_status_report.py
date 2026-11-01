@@ -316,6 +316,16 @@ def test_sync_registration_has_server_kind(sync_server):
     metadata = sync_server.registry.registration["metadata"]
     assert metadata["server_kind"] == "sync"
     assert metadata["service_port"] == get_port_number(sync_server.dev_ctrl_service_sock)
+    assert metadata["cgse_object"] is None  # no `cgse` command for this test server
+
+
+def test_sync_registration_has_the_cgse_object(sync_server, monkeypatch):
+    sync_server.registry = RecordingRegistry()
+    monkeypatch.setattr(sync_server, "cgse_object", "status_test")
+
+    sync_server.register_service("STATUS_TEST")
+
+    assert sync_server.registry.registration["metadata"]["cgse_object"] == "status_test"
 
 
 @pytest.mark.asyncio
@@ -326,3 +336,17 @@ async def test_async_registration_has_server_kind():
     await server.register_service()
 
     assert server.registry.registration["metadata"]["server_kind"] == "async"
+    assert server.registry.registration["metadata"]["cgse_object"] is None
+
+
+@pytest.mark.asyncio
+async def test_async_registration_has_the_cgse_object():
+    class CgseObjectServer(AsyncControlServer):
+        cgse_object = "status_test"
+
+    server = CgseObjectServer()
+    server.registry = AsyncRecordingRegistry()
+
+    await server.register_service()
+
+    assert server.registry.registration["metadata"]["cgse_object"] == "status_test"

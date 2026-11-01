@@ -20,6 +20,7 @@ from egse.tempcontrol.keithley import daq6510_acs
 from egse.tempcontrol.keithley.daq6510_acs import DAQ6510ControlServer
 from egse.tempcontrol.keithley.daq6510_config import ScanConfig
 from egse.tempcontrol.keithley.daq6510_config import SensorConfig
+from egse.tempcontrol.keithley.daq6510_model import IDN
 from egse.tempcontrol.keithley.daq6510_model import DAQ6510Model
 from egse.tempcontrol.keithley.daq6510_model import ModelledDAQ6510
 
@@ -339,6 +340,18 @@ async def test_status_report_device_section(setup):
     await server.controller.daq.disconnect()
 
     assert server.get_status_report()["device"] == {"connected": False, "sim_mode": None}
+
+
+@pytest.mark.asyncio
+async def test_status_report_recognises_the_simulator(setup):
+    server, _, _ = setup
+    daq = server.controller.daq
+
+    daq.identification = IDN  # the identification of the simulator
+    assert server.get_status_report()["device"] == {"connected": True, "sim_mode": True}
+
+    daq.identification = "KEITHLEY INSTRUMENTS,MODEL DAQ6510,04512345,1.7.12b"  # a real device
+    assert server.get_status_report()["device"] == {"connected": True, "sim_mode": False}
 
 
 @pytest.mark.asyncio

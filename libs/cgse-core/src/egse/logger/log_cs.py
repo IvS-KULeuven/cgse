@@ -177,6 +177,7 @@ def start():
             service_type=SERVICE_TYPE,
             metadata={
                 "server_kind": "command",  # pickled string commands, e.g. "status"
+                "cgse_object": "log",  # `cgse log start|stop|status`
                 "receiver_port": get_port_number(receiver),
             },
         )
@@ -209,6 +210,7 @@ def start():
             service_type=SERVICE_TYPE,
             metadata={
                 "server_kind": "command",  # pickled string commands, e.g. "status"
+                "cgse_object": "log",  # `cgse log start|stop|status`
                 "receiver_port": get_port_number(receiver),
             },
         )

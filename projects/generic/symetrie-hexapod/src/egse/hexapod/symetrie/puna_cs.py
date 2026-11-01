@@ -59,6 +59,8 @@ class PunaControlServer(ControlServer):
 
     """
 
+    cgse_object = "puna"
+
     def __init__(self, device_id: str, simulator: bool = False):
         super().__init__()
 

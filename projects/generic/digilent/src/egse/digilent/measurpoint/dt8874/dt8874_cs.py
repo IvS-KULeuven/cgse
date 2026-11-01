@@ -68,6 +68,8 @@ def is_dt8874_cs_active(timeout: float = 0.5) -> bool:
 
 
 class Dt8874ControlServer(ControlServer):
+    cgse_object = "dt8874"
+
     def __init__(self, simulator: bool = False):
         """Initialisation of a Digilent MEASURpoint DT8874 Control Server.
 

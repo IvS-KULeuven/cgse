@@ -450,12 +450,19 @@ async def test_command_server_gets_its_process_information_from_the_registry():
 
 async def test_registry_row_gets_its_process_information_from_the_info_reply():
     collector, registry, fakes, clock = make_collector(known={REGISTRY_SERVICE_TYPE: "Service Registry"})
-    fakes.custom[REGISTRY_SERVICE_TYPE] = {"success": True, "status": "ok", "pid": 4141, "process": {"pid": 4141}}
+    fakes.custom[REGISTRY_SERVICE_TYPE] = {
+        "success": True,
+        "status": "ok",
+        "pid": 4141,
+        "cgse_object": "reg",
+        "process": {"pid": 4141},
+    }
 
     await collector.poll()
     await settle()
 
     assert by_type(collector)[REGISTRY_SERVICE_TYPE].pid == 4141
+    assert by_type(collector)[REGISTRY_SERVICE_TYPE].cgse_object == "reg"
 
     await collector.stop()
 
@@ -464,7 +471,14 @@ async def test_registration_details_are_kept():
     collector, registry, fakes, clock = make_collector()
     registry.records = [
         {
-            **record("AWG2", service_port=2001, monitoring_port=2002, server_kind="sync", device_id="AWG-02"),
+            **record(
+                "AWG2",
+                service_port=2001,
+                monitoring_port=2002,
+                server_kind="sync",
+                device_id="AWG-02",
+                cgse_object="tgf4000",
+            ),
             "id": "awg2-1234",
             "ttl": 30,
             "last_heartbeat": 995,
@@ -479,6 +493,7 @@ async def test_registration_details_are_kept():
     awg = by_type(collector)["AWG2"]
     assert (awg.service_id, awg.ttl, awg.last_heartbeat, awg.health) == ("awg2-1234", 30, 995, "passing")
     assert awg.device_id == "AWG-02" and awg.start_time == 900.0
+    assert awg.cgse_object == "tgf4000"
     assert awg.metadata["service_port"] == 2001
 
     await collector.stop()

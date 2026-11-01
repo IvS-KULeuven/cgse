@@ -38,7 +38,9 @@ details          service or device specific status
   the monitoring port and `get_process_status()` keep the old keys.
 - `device` comes from `get_device_status()`. `connected` tells whether the connection to the device is open; the device
   itself is not queried, so a status request never blocks a control server or disconnects a device. `sim_mode` is the
-  protocol's `simulator` flag for the sync drivers, and `None` (unknown) for DAQ6510 and TVAC.
+  protocol's `simulator` flag for the sync drivers. DAQ6510 and TVAC recognise their simulator, a separate process,
+  at connect: the DAQ6510 simulator has serial number `SIMULATOR` in its `*IDN?`, the TVAC simulator has product URI
+  `urn:cgse:tvac_sim` in the build information of its OPC UA server. Before the first connection it is `None`.
 - `details` comes from `get_status_details()` (sync, by default the entries the device protocol adds to its
   `get_status()`) or `get_component_status()` (async). CM: `obsid_active, obsid, setup_id, site_id`. SM:
   `storage_location, disk_usage, loaded_setup_id, obsid, registrations`. PM: `core_processes`.
@@ -108,8 +110,8 @@ All sync drivers expose `is_connected` and `is_simulator` as proxy commands (YAM
 | PUNA (symetrie-hexapod)        | sync                     | `ProxyFactory` → `PunaProxy` / `PunaPlusProxy`           | `mach, user, alength`                | `is_connected`                               | `is_simulator`                     | = device_id              | multiple, all named `puna_cs`              | in-process, text                           | `quit_server()`      |
 | ZONDA (symetrie-hexapod)       | sync                     | `ZondaProxy`                                             | `mach, user, alength` (no guard for a disconnected device) | `is_connected`         | `is_simulator`                     | = device_id              | multiple, name defaults to `zonda_control_server` | in-process, text                    | `quit_server()`      |
 | JORAN (symetrie-hexapod)       | sync                     | `JoranProxy(device_id)`                                  | `mach, user, alength`                | `is_connected`                               | `is_simulator`                     | = device_id              | multiple, all named `joran_cs`             | in-process, text                           | `quit_server()`      |
-| DAQ6510 (keithley-tempcontrol) | async (`daq6510_acs`)    | `DAQ6510Client`                                          | `scan`, `acquisition`, `sinks`       | yes, via `health` service command and `scan_status()` | no — simulator is a separate process (`daq6510_sim`) | settings `DAQ6510` | single                                 | subprocess, prints a dict; has `start-sim`/`stop-sim`/`status-sim` | `stop_server()` |
-| ThermalVac (ivs tvac)          | async (`tvac_acs`)       | `ThermalVacControlClient`                                | `scan`, `acquisition`, `sinks`       | **no** — `tvac_devif.is_connected()` exists but is not exposed | no — separate OPC UA simulator | `TVAC`                   | single                                     | in-process, prints a dict                  | `stop_server()`      |
+| DAQ6510 (keithley-tempcontrol) | async (`daq6510_acs`)    | `DAQ6510Client`                                          | `scan`, `acquisition`, `sinks`       | yes, via `health` service command and `scan_status()` | yes — the simulator (`daq6510_sim`) is recognised by its `*IDN?` | settings `DAQ6510` | single                                 | subprocess, prints a dict; has `start-sim`/`stop-sim`/`status-sim` | `stop_server()` |
+| ThermalVac (ivs tvac)          | async (`tvac_acs`)       | `ThermalVacControlClient`                                | `scan`, `acquisition`, `sinks`       | **no** — `tvac_devif.is_connected()` exists but is not exposed | yes — the OPC UA simulator is recognised by its product URI | `TVAC`                   | single                                     | in-process, prints a dict                  | `stop_server()`      |
 | facility_hk (ariel-facility)   | not a ControlServer (`FacilityHousekeepingExporter`) | none, raw `send_request()`   | n/a                                  | no                                           | no                                 | lower-cased, **no metadata** | single                                 | text plus a registry listing               | `"quit"`             |
 | Dummy (`egse/dummy.py`)        | sync                     | `DummyProxy`                                             | none                                 | no                                           | no                                 | **does not register**    | single                                     | not a `cgse` entry point                   | `quit_server()`      |
 
@@ -138,13 +140,16 @@ and TVAC, whose status prints a dict, this always yields connected=True and sim=
    and the registry keeps it with the registration (`status` in `list_services()`); the registry's own `info` reply
    has its `pid`, `start_time` and process status. Still open: a client class for the logger, and endpoint discovery
    from the registry in the notification hub and metrics hub clients.
-5. **Partly done — richer registry metadata.** Every registration has `server_kind` (`sync`, `async`, `notifyhub`,
+5. **Done — richer registry metadata.** Every registration has `server_kind` (`sync`, `async`, `notifyhub`,
    `metricshub`, or `command` for the logger and facility_hk), which tells a client how to ask for the status. Sync
-   and async control servers register their `device_id` (done on `feat/tui-overview-columns`). Still open:
-   `cgse_object` (the `cgse <obj>` name) and `sim_mode`. One `list_services()` call can then map a
-   service to its lifecycle command, replacing the `SequenceMatcher` heuristic in `procman_ui.get_cgse_cmd()`.
-6. **Open — simulator mode for async drivers** (DAQ6510, TVAC) must come from a setting or start flag, since the
-   server cannot detect it is talking to a separate simulator process. Until then they report `sim_mode: None`.
+   and async control servers register their `device_id` (done on `feat/tui-overview-columns`). Every service
+   registers its `cgse_object`, the `cgse <obj>` command that starts, stops and shows its status (done on
+   `feat/registry-cgse-object`); the registry has it in its `info` reply. Control servers set it as the class
+   attribute `cgse_object`. The simulator mode is in the `device` section of the status report, not in the
+   registration. Still open: the `SequenceMatcher` heuristic in `procman_ui.get_cgse_cmd()` can be replaced by the
+   registered `cgse_object`.
+6. **Done — simulator mode for async drivers** (DAQ6510, TVAC): recognised at connect, see the status report section
+   above (done on `feat/registry-cgse-object`).
 7. **Open — Process Manager lifecycle**: `start_process` should return a result (it returns `None` now), add
    `restart_process`, and resolve the command from the service type instead of accepting shell strings. Its
    `get_*_status` methods should use the status report instead of text-matching. This is part of a broader refactor of

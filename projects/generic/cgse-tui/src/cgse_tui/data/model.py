@@ -35,6 +35,9 @@ class ServiceInfo:
     server_kind: str | None = None
     """Taken from the registry metadata: "sync", "async", or None for the custom servers."""
 
+    cgse_object: str | None = None
+    """The `cgse <object>` command that starts, stops and shows the status of the service, e.g. "puna"."""
+
     registered: bool = False
     """True while the service is listed in the service registry."""
 

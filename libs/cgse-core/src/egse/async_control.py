@@ -316,6 +316,11 @@ class AsyncControlServer:
     device_commanding_port = CONTROL_SERVER_DEVICE_COMMANDING_PORT
     service_commanding_port = CONTROL_SERVER_SERVICE_COMMANDING_PORT
     monitoring_port = CONTROL_SERVER_MONITORING_PORT
+    cgse_object: str | None = None
+    """The `cgse <object>` command that starts, stops and shows the status of this control server, e.g. "puna" for
+    `cgse puna start`, None when there is no such command. It is registered in the metadata, so clients can find the
+    lifecycle command of a service. Subclasses set it to the name of their entry point in `cgse.service.device_command`
+    (devices) or `cgse.service.core_command` (core services)."""
 
     def __init__(self):
         self.interrupted: Event = asyncio.Event()
@@ -554,6 +559,7 @@ class AsyncControlServer:
                 "monitoring_port": get_port_number(self.monitoring_socket),
                 "server_kind": "async",  # clients use JSON service commands on the service port
                 "device_id": self.device_id,
+                "cgse_object": self.cgse_object,
             },
         )
         await self.registry.start_heartbeat()

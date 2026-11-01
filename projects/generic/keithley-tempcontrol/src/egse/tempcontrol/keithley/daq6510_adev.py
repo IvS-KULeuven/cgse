@@ -32,6 +32,9 @@ DEVICE_NAME = dev_settings.get("DEVICE_NAME", "DAQ6510")
 READ_TIMEOUT = dev_settings.get("TIMEOUT", 5.0)
 DEV_ID_VALIDATION = "DAQ6510"
 
+SIMULATOR_SERIAL_NUMBER = "SIMULATOR"
+"""The simulator identifies itself with this serial number, see `daq6510_model.IDN`."""
+
 BUFFER_ELEMENTS = ("CHAN", "SEC", "FRAC", "READ", "UNIT")
 """The buffer elements requested for each reading, the order matters for parsing."""
 
@@ -104,6 +107,15 @@ class DAQ6510(AsyncSCPIInterface):
 
     async def get_idn(self) -> str:
         return await self.query_str("*IDN?")
+
+    def is_simulator(self) -> bool:
+        """True when the identification at connect has the serial number of the simulator (`daq6510_sim`).
+
+        The identification is "<manufacturer>,<model>,<serial number>,<firmware>". Before the first connection the
+        identification is not known and this returns False, see `identification`.
+        """
+        fields = (self.identification or "").split(",")
+        return len(fields) > 2 and fields[2].strip() == SIMULATOR_SERIAL_NUMBER
 
     async def reset(self) -> None:
         """Resets the instrument to its default settings. This also aborts a running scan and clears the buffers."""

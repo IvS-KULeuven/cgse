@@ -605,6 +605,7 @@ class AsyncRegistryServer:
             "pub_port": self.pub_port,
             "hb_port": self.hb_port,
             "enforce_unique_service_types": self.enforce_unique_service_types,
+            "cgse_object": "reg",  # the registry doesn't register itself, `cgse reg start|stop|status`
             **process_identity(self._process),
             "process": process_status(self._process),
             "services": services,

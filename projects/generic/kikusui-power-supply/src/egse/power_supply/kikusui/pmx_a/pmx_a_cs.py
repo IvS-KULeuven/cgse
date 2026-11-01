@@ -62,6 +62,8 @@ def is_pmx_a_cs_active(device_id: str, timeout: float = 0.5) -> bool:
 
 
 class PmxAControlServer(ControlServer):
+    cgse_object = "pmx_a"
+
     def __init__(self, device_id: str, simulator: bool = False):
         """Initialisation of a new KIKUSUI PMX-A Control Server.
 

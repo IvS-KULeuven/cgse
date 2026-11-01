@@ -64,6 +64,8 @@ def is_tcu_cs_active(timeout: float = 0.5) -> bool:
 
 
 class TcuControlServer(ControlServer):
+    cgse_object = "tcu"
+
     def __init__(self, simulator: bool = False):
         """Initialisation of an Ariel TCU Control Server.
 

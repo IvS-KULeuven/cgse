@@ -604,6 +604,8 @@ class DAQ6510ControlServer(AcquisitionAsyncControlServer):
         auto_scan: start scanning as soon as the device is connected
     """
 
+    cgse_object = "daq6510"
+
     service_type = SERVICE_TYPE
     service_name = SERVICE_NAME
 
@@ -659,12 +661,13 @@ class DAQ6510ControlServer(AcquisitionAsyncControlServer):
         """Returns the state of the DAQ6510 for the status report.
 
         The connection state is taken from the open socket connection, the device itself is not queried. The simulator
-        is a separate process (`daq6510_sim`) that the control server cannot distinguish from the device, so the
-        simulator mode is not known.
+        is a separate process (`daq6510_sim`), it is recognised by the identification at connect. The simulator mode is
+        not known (None) before the first connection.
         """
+        daq = self.controller.daq
         return {
-            "connected": self.controller.daq.is_connection_open,
-            "sim_mode": None,
+            "connected": daq.is_connection_open,
+            "sim_mode": daq.is_simulator() if daq.identification is not None else None,
         }
 
     # ----- device connection ---------------------------------------------------------------------------------------

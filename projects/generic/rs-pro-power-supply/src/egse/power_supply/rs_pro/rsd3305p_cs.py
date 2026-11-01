@@ -61,6 +61,8 @@ def is_rsd3305p_cs_active(device_id: str, timeout: float = 0.5) -> bool:
 
 
 class Rsd3305pControlServer(ControlServer):
+    cgse_object = "rsd3305p"
+
     def __init__(self, device_id: str, simulator: bool = False):
         """Initialisation of a new RS-PRO RS-D3305P Control Server.
 

@@ -110,6 +110,12 @@ class ControlServer(metaclass=abc.ABCMeta):
 
     """
 
+    cgse_object: str | None = None
+    """The `cgse <object>` command that starts, stops and shows the status of this control server, e.g. "puna" for
+    `cgse puna start`, None when there is no such command. It is registered in the metadata, so clients can find the
+    lifecycle command of a service. Subclasses set it to the name of their entry point in `cgse.service.device_command`
+    (devices) or `cgse.service.core_command` (core services)."""
+
     def __init__(self, device_id: str = None):
         """Initialization of a new Control Server."""
 
@@ -774,6 +780,7 @@ class ControlServer(metaclass=abc.ABCMeta):
                 "monitoring_port": get_port_number(self.dev_ctrl_mon_sock),
                 "server_kind": "sync",  # clients use a ServiceProxy (pickle) on the service port
                 "device_id": self.device_id,
+                "cgse_object": self.cgse_object,
             },
         )
         if self._service_id:

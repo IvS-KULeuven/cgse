@@ -136,6 +136,12 @@ def other_ports(service: ServiceInfo, now: float) -> str:
 COLUMNS: tuple[Column, ...] = (
     Column("name", "Name", lambda s, now: s.name, "Name of the service", default=True),
     Column("type", "Type", lambda s, now: s.service_type, "Service type in the registry", default=True),
+    Column(
+        "command",
+        "Command",
+        lambda s, now: f"cgse {s.cgse_object}" if s.cgse_object else "",
+        "The cgse command that starts and stops the service",
+    ),
     Column("kind", "Kind", lambda s, now: s.server_kind or "", "How the TUI asks for the status (server_kind)"),
     Column("host", "Host", lambda s, now: s.host or "", "Host (IP address) of the registration", default=True),
     Column("port", "Port", lambda s, now: format_number(s.port), "Commanding port, or requests port of a hub"),
