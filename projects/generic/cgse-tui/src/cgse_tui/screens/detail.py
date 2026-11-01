@@ -27,7 +27,7 @@ class DetailScreen(Screen):
         refresh: coroutine function that requests the status again and returns the updated service.
     """
 
-    BINDINGS = [("escape", "app.pop_screen", "Back"), ("r", "refresh", "Refresh")]
+    BINDINGS = [("escape", "app.pop_screen", "Back"), ("r", "refresh", "Refresh"), ("a", "select_action", "Actions")]
 
     def __init__(self, service: ServiceInfo, refresh: Callable[[], Awaitable[ServiceInfo | None]] | None = None):
         super().__init__()
@@ -47,6 +47,9 @@ class DetailScreen(Screen):
     def _title(self) -> str:
         service = self.service
         return f"[b]{service.name}[/b] ({service.service_type}) – {service.state.value}"
+
+    def action_select_action(self) -> None:
+        self.app.select_action(self.service)
 
     def action_refresh(self) -> None:
         if self._refresh is not None:

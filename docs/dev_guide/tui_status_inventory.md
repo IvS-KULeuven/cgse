@@ -196,12 +196,13 @@ and TVAC, whose status prints a dict, this always yields connected=True and sim=
   `fix/registry-client-stale-replies`: after a timeout or ZeroMQ error the client replaces the socket (new identity),
   a registration only succeeds with a `service_id` in the reply, and a failed re-registration keeps the service id so
   the heartbeat retries. Regression tests in `libs/cgse-core/tests/test_registry_client_recovery.py`.
+- JORAN: `self.device_id` was never set, the status report showed `device_id: null` and the registration had no
+  `device_id`, so the TUI couldn't stop or restart it. Fixed on `feat/tui-service-actions`.
 - CLAUDE.md mentioned registry ports 4242/4243; the settings use 6100/6101/6102 (4242/4243 are only the code fallback
   in `egse/registry/__init__.py`). Fixed in the local CLAUDE.md, which is not tracked by git.
 
 ### Open
 
-- JORAN: `self.device_id` is never set, the status report shows `device_id: null`.
 - JORAN: `JoranController.__init__` would fail with real hardware: `{JORAN_SETTINGS.IP}` creates a set instead of a
   string, and `super.__init__()` is missing the parentheses. `joran.py` also loads `joran.yaml` without a location
   into the unused `DEVICE_SETTINGS`.

@@ -95,7 +95,7 @@ def stop_daq6510_sim():
 
 @daq6510.command(name="status-sim")
 def status_daq6510_sim():
-    """Print status information on the DAQ6510 Simulator."""
+    """Print status information on the DAQ6510 Simulator. The exit code is 1 when the simulator is not running."""
 
     proc = subprocess.Popen(
         [sys.executable, "-m", "egse.tempcontrol.keithley.daq6510_sim", "status"],
@@ -107,6 +107,7 @@ def status_daq6510_sim():
     stdout, stderr = proc.communicate()
 
     rich.print(stdout.decode(), end="")
+    raise typer.Exit(proc.returncode)
 
 
 if __name__ == "__main__":

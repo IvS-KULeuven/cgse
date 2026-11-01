@@ -69,6 +69,7 @@ class JoranControlServer(ControlServer):
 
         multiprocessing.current_process().name = "joran_cs"
 
+        self.device_id = device_id
         self.device_protocol = JoranProtocol(self, device_id=device_id, simulator=simulator)
 
         self.logger.debug(f"Binding ZeroMQ socket to {self.device_protocol.get_bind_address()}")

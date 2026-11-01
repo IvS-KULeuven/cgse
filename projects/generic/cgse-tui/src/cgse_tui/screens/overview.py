@@ -74,7 +74,12 @@ class OverviewScreen(Screen):
     }
     """
 
-    BINDINGS = [("r", "refresh", "Refresh"), ("l", "toggle_log", "Log"), ("o", "select_columns", "Columns")]
+    BINDINGS = [
+        ("r", "refresh", "Refresh"),
+        ("a", "select_action", "Actions"),
+        ("l", "toggle_log", "Log"),
+        ("o", "select_columns", "Columns"),
+    ]
 
     def __init__(self):
         super().__init__()
@@ -107,7 +112,7 @@ class OverviewScreen(Screen):
     def _add_columns(self, table: DataTable) -> None:
         table.add_column(INDICATOR_COLUMN, key=INDICATOR_KEY)
         for column in self.columns:
-            table.add_column(column.label, key=column.key)
+            table.add_column(column.header(), key=column.key)
 
     def action_select_columns(self) -> None:
         self.app.push_screen(ColumnSelectScreen([column.key for column in self.columns], self.set_columns))
@@ -142,16 +147,29 @@ class OverviewScreen(Screen):
         keys = [INDICATOR_KEY, *(column.key for column in self.columns)]
         added = False
         for service_type, service in self.services.items():
-            cells = (state_indicator(service), *service_row(service, self.columns, now))
+            cells = (state_indicator(service), *(column.cell(service, now) for column in self.columns))
             if service_type in shown:
                 for key, value in zip(keys, cells):
-                    table.update_cell(service_type, key, value)
+                    # A column is sized to its content when a row is added, e.g. still without host at start-up
+                    table.update_cell(service_type, key, value, update_width=True)
             else:
                 table.add_row(*cells, key=service_type)
                 added = True
 
         if added:
-            table.sort("name", key=lambda name: name.lower())
+            table.sort("name", key=lambda name: str(name).lower())
+
+    def selected_service(self) -> ServiceInfo | None:
+        table = self.query_one("#services", DataTable)
+        if table.row_count == 0:
+            return None
+        row_key = table.coordinate_to_cell_key(table.cursor_coordinate).row_key
+        return self.services.get(row_key.value)
+
+    def action_select_action(self) -> None:
+        service = self.selected_service()
+        if service is not None:
+            self.app.select_action(service)
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         service = self.services.get(event.row_key.value)
@@ -164,11 +182,11 @@ class OverviewScreen(Screen):
     def action_refresh(self) -> None:
         collector = getattr(self.app, "collector", None)
         if collector is not None:
-            logger.info("Refresh: polling the registry and the services ...")
+            logger.info("Refresh: polling the registry and requesting the status of all services ...")
             self.run_worker(self._refresh(collector), group="refresh", exclusive=True)
 
     async def _refresh(self, collector) -> None:
-        await collector.poll()
+        await collector.poll(reports=True)
         logger.info("Refresh done.")
         update_overview = getattr(self.app, "update_overview", None)
         if update_overview is not None:

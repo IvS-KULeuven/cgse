@@ -75,10 +75,11 @@ def stop_tvac_sim():
 
 @tvac.command(name="status-sim")
 def status_tvac_sim():
-    """Prints status information for the ThermalVac OPC UA simulator."""
+    """Prints status information for the ThermalVac OPC UA simulator. The exit code is 1 when it is not running."""
 
     cmd = [sys.executable, "-m", "egse.ivs.tvac.tvac_sim", "status"]
 
     proc = subprocess.run(cmd, capture_output=True, stdin=subprocess.DEVNULL)
 
     rich.print(proc.stdout.decode(), end="")
+    raise typer.Exit(proc.returncode)

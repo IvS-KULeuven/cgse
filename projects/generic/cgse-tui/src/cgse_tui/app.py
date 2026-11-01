@@ -8,11 +8,17 @@ from pathlib import Path
 from textual.app import App
 from textual.screen import Screen
 
+from cgse_tui.data.actions import ServiceActions
 from cgse_tui.data.collector import Collector
+from cgse_tui.data.model import ServiceInfo
+from cgse_tui.data.model import ServiceState
 from cgse_tui.logs import BufferedLogHandler
 from cgse_tui.logs import capture_logging
 from cgse_tui.logs import create_log_file_handler
+from cgse_tui.screens.action_select import ActionSelectScreen
 from cgse_tui.screens.overview import OverviewScreen
+
+logger = logging.getLogger("cgse_tui.app")
 
 
 class CgseTuiApp(App):
@@ -25,18 +31,26 @@ class CgseTuiApp(App):
         refresh_interval: seconds between two updates of the overview.
         log_file: file that gets all log messages, also those that are not shown in the log pane, e.g. the timeouts
             of the client libraries. No log file when None.
+        actions: starts, stops and restarts the services, a default `ServiceActions` when None.
     """
 
     TITLE = "CGSE"
     SUB_TITLE = "Status of services and devices"
 
-    def __init__(self, collector: Collector | None = None, refresh_interval: float = 1.0, log_file: Path | None = None):
+    def __init__(
+        self,
+        collector: Collector | None = None,
+        refresh_interval: float = 1.0,
+        log_file: Path | None = None,
+        actions: ServiceActions | None = None,
+    ):
         super().__init__()
         self.log_file = log_file
         self.log_handler = BufferedLogHandler()
         self._restore_logging = None
         self.collector = collector if collector is not None else Collector()
         self.refresh_interval = refresh_interval
+        self.actions = actions if actions is not None else ServiceActions(self.collector)
         self.overview = OverviewScreen()
 
     def get_default_screen(self) -> Screen:
@@ -53,7 +67,6 @@ class CgseTuiApp(App):
         self._restore_logging = capture_logging(*handlers)
         logging.getLogger("cgse_tui").setLevel(logging.INFO)  # e.g. the state changes logged by the collector
 
-        logger = logging.getLogger("cgse_tui.app")
         if file_error is not None:
             logger.warning(f"Couldn't open the log file {self.log_file}: {file_error}")
         elif self.log_file is not None:
@@ -68,6 +81,28 @@ class CgseTuiApp(App):
         if self._restore_logging is not None:
             self._restore_logging()
             self._restore_logging = None
+
+    def select_action(self, service: ServiceInfo) -> None:
+        """Asks the user to start, stop or restart the service, and performs the selected action."""
+        if self.actions.is_busy(service.service_type):
+            self.notify(f"{service.name}: an action is still running.", severity="warning")
+            return
+        is_running = getattr(self.collector, "is_running", None)
+        running = is_running(service.service_type) if is_running else service.state is not ServiceState.INACTIVE
+
+        def perform(choice: tuple[str, bool] | None) -> None:
+            if choice is not None:
+                action, simulator = choice
+                self.run_worker(self._perform(action, service, simulator), group="actions")
+
+        simulator_support = getattr(self.actions, "simulator_support", None)
+        self.push_screen(ActionSelectScreen(service, running, simulator_support), perform)
+
+    async def _perform(self, action: str, service: ServiceInfo, simulator: bool) -> None:
+        ok = await self.actions.perform(action, service, simulator)
+        if not ok:
+            self.notify(f"{service.name}: {action} failed, see the log pane.", severity="error")
+        self.update_overview()
 
     def update_overview(self) -> None:
         self.overview.show_services(self.collector.snapshot())

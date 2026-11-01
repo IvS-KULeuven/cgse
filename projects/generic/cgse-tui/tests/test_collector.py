@@ -497,3 +497,62 @@ async def test_registration_details_are_kept():
     assert awg.metadata["service_port"] == 2001
 
     await collector.stop()
+
+
+async def test_core_services_have_their_cgse_command_also_when_not_running():
+    collector, registry, fakes, clock = make_collector()
+
+    assert by_type(collector)["SM_CS"].cgse_object == "sm"
+    assert by_type(collector)[REGISTRY_SERVICE_TYPE].cgse_object == "reg"
+
+    registry.records = [record("SM_CS", service_port=6101, monitoring_port=6102, server_kind="sync")]
+    await collector.poll()
+    registry.records = []
+    await collector.poll()  # deregistered: the row is reset
+
+    assert by_type(collector)["SM_CS"].cgse_object == "sm"
+    await collector.stop()
+
+
+async def test_wait_until_a_service_is_running():
+    collector, registry, fakes, clock = make_collector()
+
+    await collector.poll()
+    assert collector.is_running(REGISTRY_SERVICE_TYPE)
+    assert not collector.is_running("SM_CS")
+    assert not await collector.wait_until("SM_CS", running=True, timeout=0.05, interval=0.01)
+
+    registry.records = [record("SM_CS", service_port=6101, monitoring_port=6102, server_kind="sync")]
+    assert await collector.wait_until("SM_CS", running=True, timeout=1.0, interval=0.01)
+
+    registry.healthy = False
+    assert await collector.wait_until(REGISTRY_SERVICE_TYPE, running=False, timeout=1.0, interval=0.01)
+    await collector.stop()
+
+
+async def test_status_report_is_requested_again_for_the_device_connection():
+    collector, registry, fakes, clock = make_collector()
+    registry.records = [record("TVAC", service_port=3001, monitoring_port=3002, server_kind="async")]
+    fakes.reports["TVAC"] = {**REPORT, "device": {"connected": False, "sim_mode": None}}  # just started
+
+    await collector.poll()
+    await settle()
+    assert by_type(collector)["TVAC"].connected is False
+
+    fakes.reports["TVAC"] = {**REPORT, "device": {"connected": True, "sim_mode": True}}  # connected to the device
+    clock.t += collector.report_interval - 1
+    await collector.poll()
+    await settle()
+    assert by_type(collector)["TVAC"].connected is False  # not yet asked again
+
+    clock.t += 1
+    await collector.poll()
+    await settle()
+    assert (by_type(collector)["TVAC"].connected, by_type(collector)["TVAC"].sim_mode) == (True, True)
+
+    fakes.reports["TVAC"] = {**REPORT, "device": {"connected": False, "sim_mode": True}}  # the device disconnected
+    await collector.poll(reports=True)  # a refresh asks right away
+    await settle()
+    assert by_type(collector)["TVAC"].connected is False
+
+    await collector.stop()

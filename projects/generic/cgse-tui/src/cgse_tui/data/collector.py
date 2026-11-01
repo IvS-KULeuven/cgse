@@ -2,7 +2,8 @@
 
 The collector polls the service registry for the registered services. For each control server it subscribes to the
 monitoring port, which tells whether the server is alive and gives the live process information, and it requests
-the status report when the server appears or when the report is refreshed. The custom servers (registry,
+the status report, with the device connection, when the server appears, every `REPORT_INTERVAL` seconds, and when the
+user refreshes. The custom servers (registry,
 notification hub, metrics hub, logger) have no monitoring port and are asked for their status on every poll.
 """
 
@@ -19,6 +20,7 @@ from cgse_tui.data import monitor
 from cgse_tui.data import report
 from cgse_tui.data.model import ServiceInfo
 from cgse_tui.data.model import ServiceState
+from cgse_tui.data.services import CORE_CGSE_OBJECTS
 from cgse_tui.data.services import REGISTRY_SERVICE_TYPE
 from cgse_tui.data.services import core_services
 from cgse_tui.data.services import custom_kind
@@ -31,6 +33,10 @@ MIN_STALE_AFTER = 5.0
 
 STALE_INTERVALS = 3
 """Number of missed monitoring messages or polls after which a service is shown as stale."""
+
+REPORT_INTERVAL = 10.0
+"""Seconds between two status reports of a control server. The device connection is only in the status report, the
+monitoring messages have the process information."""
 
 REGISTRY_GONE_AFTER = 30.0
 """Seconds without an answer from the registry after which it is shown as inactive and its registrations are dropped.
@@ -53,6 +59,7 @@ class Collector:
             would read the replies to earlier requests.
         registry_endpoint: the request endpoint of the registry, the default from the settings when None.
         poll_interval: seconds between two polls of the registry and the custom servers.
+        report_interval: seconds between two status reports of a control server.
         request_timeout: timeout in seconds for a single request.
         known_services: service type to name of the services that are shown also when not registered,
             by default the service registry and the core services.
@@ -68,6 +75,7 @@ class Collector:
         registry: Any = None,
         registry_endpoint: str | None = None,
         poll_interval: float = 2.0,
+        report_interval: float = REPORT_INTERVAL,
         request_timeout: float = 2.0,
         known_services: dict[str, str] | None = None,
         subscribe: Callable[..., Awaitable[None]] = monitor.subscribe,
@@ -78,6 +86,7 @@ class Collector:
         self.registry = registry
         self.registry_endpoint = registry_endpoint
         self.poll_interval = poll_interval
+        self.report_interval = report_interval
         self.request_timeout = request_timeout
         self.known_services = core_services() if known_services is None else known_services
         self._subscribe = subscribe
@@ -86,7 +95,12 @@ class Collector:
         self._clock = clock
 
         self.services: dict[str, ServiceInfo] = {
-            service_type: ServiceInfo(name=name, service_type=service_type, state=ServiceState.INACTIVE)
+            service_type: ServiceInfo(
+                name=name,
+                service_type=service_type,
+                state=ServiceState.INACTIVE,
+                cgse_object=CORE_CGSE_OBJECTS.get(service_type),
+            )
             for service_type, name in self.known_services.items()
         }
         if REGISTRY_SERVICE_TYPE in self.services:
@@ -100,8 +114,11 @@ class Collector:
             self.services[REGISTRY_SERVICE_TYPE].port = int(port)
         self._monitors: dict[str, asyncio.Task] = {}
         self._requests: dict[str, asyncio.Task] = {}
+        self._report_requested_at: dict[str, float] = {}
         self._last_states: dict[str, ServiceState] = {}
         self._registry_answered_at: float | None = None
+        self.registry_answering = False
+        """True when the registry answered the health check of the last poll."""
 
     def _custom_stale_after(self) -> float:
         """Stale time of the servers that are polled: three polls plus one request timeout.
@@ -165,21 +182,26 @@ class Collector:
         self._monitors.clear()
         self._requests.clear()
 
-    async def poll(self) -> None:
-        """Updates the services from the registry, and asks the custom servers for their status."""
+    async def poll(self, reports: bool = False) -> None:
+        """Updates the services from the registry, and asks the custom servers for their status.
+
+        The control servers are asked for their status report every `report_interval` seconds, or now when `reports`
+        is True (a refresh by the user).
+        """
         with quiet():
             if self.registry is not None:
-                await self._poll_registry(self.registry)
+                await self._poll_registry(self.registry, reports)
             else:
                 from egse.registry.client import AsyncRegistryClient
 
                 async with AsyncRegistryClient(
                     registry_req_endpoint=self.registry_endpoint, timeout=self.request_timeout
                 ) as registry:
-                    await self._poll_registry(registry)
+                    await self._poll_registry(registry, reports)
 
-    async def _poll_registry(self, registry: Any) -> None:
-        if await registry.health_check():
+    async def _poll_registry(self, registry: Any, reports: bool = False) -> None:
+        self.registry_answering = await registry.health_check()
+        if self.registry_answering:
             self._registry_answered_at = self._clock()
             self._update_registrations(await registry.list_services())
             self._start_request(REGISTRY_SERVICE_TYPE)
@@ -192,9 +214,32 @@ class Collector:
                     "the services are no longer considered registered."
                 )
                 self._update_registrations([])
+        now = self._clock()
         for service_type, service in self.services.items():
-            if service.registered and custom_kind(service):
+            if not service.registered:
+                continue
+            requested_at = self._report_requested_at.get(service_type, now)
+            if custom_kind(service) or reports or now - requested_at >= self.report_interval:
                 self._start_request(service_type)
+
+    def is_running(self, service_type: str) -> bool:
+        """True when the service is registered, for the registry: when it answered the last health check."""
+        if service_type == REGISTRY_SERVICE_TYPE:
+            return self.registry_answering
+        service = self.services.get(service_type)
+        return service is not None and service.registered
+
+    async def wait_until(self, service_type: str, running: bool, timeout: float, interval: float = 1.0) -> bool:
+        """Polls until the service is (not) running, see `is_running()`. Returns False after the timeout."""
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + timeout
+        while True:
+            await self.poll()
+            if self.is_running(service_type) is running:
+                return True
+            if loop.time() >= deadline:
+                return False
+            await asyncio.sleep(interval)
 
     async def refresh_report(self, service_type: str) -> ServiceInfo | None:
         """Requests the status of the given service again and returns its updated information."""
@@ -241,7 +286,7 @@ class Collector:
             service.service_port = metadata.get("service_port")
             service.monitoring_port = metadata.get("monitoring_port")
             service.start_time = metadata.get("start_time")
-            service.cgse_object = metadata.get("cgse_object")
+            service.cgse_object = metadata.get("cgse_object") or CORE_CGSE_OBJECTS.get(service_type)
             # Older control servers register without `device_id`, their status report has it
             service.device_id = metadata.get("device_id") or service.device_id
             # Keep the kind that answered a status report when the server registered without `server_kind`.
@@ -277,9 +322,12 @@ class Collector:
             logger.info(f"{service.name} ({service.service_type}) is no longer registered.")
         if task := self._monitors.pop(service.service_type, None):
             task.cancel()
+        self._report_requested_at.pop(service.service_type, None)
         if service.service_type in self.known_services:
             name = self.known_services[service.service_type]
-            self.services[service.service_type] = ServiceInfo(name=name, service_type=service.service_type)
+            self.services[service.service_type] = ServiceInfo(
+                name=name, service_type=service.service_type, cgse_object=CORE_CGSE_OBJECTS.get(service.service_type)
+            )
         else:
             del self.services[service.service_type]
 
@@ -324,6 +372,7 @@ class Collector:
         service = self.services.get(service_type)
         if service is None:
             return None
+        self._report_requested_at[service_type] = self._clock()
         task = asyncio.create_task(self._request(service), name=f"request-{service_type}")
         self._requests[service_type] = task
         task.add_done_callback(lambda _: self._requests.pop(service_type, None))
@@ -344,7 +393,7 @@ class Collector:
                     # The registry doesn't register itself, its `info` reply has its own process information
                     self._update_process(service, status.get("process") or {})
                     service.start_time = status.get("start_time")
-                    service.cgse_object = status.get("cgse_object")
+                    service.cgse_object = status.get("cgse_object") or service.cgse_object
             return
 
         status = await self._request_report(service, self.request_timeout)
