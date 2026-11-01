@@ -156,6 +156,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   terminal; the console handlers of the `egse` and root loggers are restored when the TUI exits. Messages that the
   client libraries log during the TUI's own requests (e.g. timeouts) are not shown; the TUI logs the state changes of
   the services instead, e.g. `Notification Hub: ok → stale`.
+- Fixed: no status report for control servers that registered without `server_kind` (started with a version before
+  it was added, e.g. the CM, PM and SM after an upgrade without restart). The TUI now tries the sync client first, then
+  the async client, and remembers the kind that answered.
+- Overview: the registry row shows its host. The device columns show `–` for services that control no device; an
+  empty cell means not known.
 
 ---
 

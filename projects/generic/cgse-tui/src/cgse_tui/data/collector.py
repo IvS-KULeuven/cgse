@@ -91,6 +91,8 @@ class Collector:
         }
         if REGISTRY_SERVICE_TYPE in self.services:
             self.services[REGISTRY_SERVICE_TYPE].stale_after = self._custom_stale_after()
+        if REGISTRY_SERVICE_TYPE in self.services:
+            self.services[REGISTRY_SERVICE_TYPE].host = "localhost"  # the default registry endpoint
         if registry_endpoint and REGISTRY_SERVICE_TYPE in self.services:
             # The status request of the registry row goes to the same registry, e.g. "tcp://localhost:6100".
             host, _, port = registry_endpoint.rpartition("://")[2].rpartition(":")
@@ -225,6 +227,7 @@ class Collector:
                 # The server was restarted between two polls and registered with new ports.
                 if task := self._monitors.pop(service_type, None):
                     task.cancel()
+                service.server_kind = None  # a restarted server may run another version
                 was_registered = False
 
             service.registered = True
@@ -232,7 +235,8 @@ class Collector:
             service.port = record.get("port")
             service.service_port = metadata.get("service_port")
             service.monitoring_port = metadata.get("monitoring_port")
-            service.server_kind = metadata.get("server_kind")
+            # Keep the kind that answered a status report when the server registered without `server_kind`.
+            service.server_kind = metadata.get("server_kind") or service.server_kind
             if service_type in CUSTOM_SERVICE_TYPES:
                 service.stale_after = self._custom_stale_after()
 
@@ -307,6 +311,7 @@ class Collector:
         if service.service_type in CUSTOM_SERVICE_TYPES:
             status = await self._request_custom_status(service, self.request_timeout)
             if status is not None:
+                service.has_device = False  # the registry, hubs and logger never control a device
                 service.report = status
                 service.last_update = self._clock()
             return
@@ -324,7 +329,10 @@ class Collector:
             service.rss = process.get("rss")
         device = status.get("device")
         if isinstance(device, dict):
+            service.has_device = True
             service.connected = device.get("connected")
             service.sim_mode = device.get("sim_mode")
+        elif "device" in status:
+            service.has_device = False  # the report says: no device
         if service.last_update is None:
             service.last_update = self._clock()

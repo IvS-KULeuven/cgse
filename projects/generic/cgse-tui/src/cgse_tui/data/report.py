@@ -25,20 +25,40 @@ def _sync_status_report(hostname: str, port: int, timeout: float) -> dict[str, A
 
 
 async def request_status_report(service: ServiceInfo, timeout: float = 2.0) -> dict[str, Any] | None:
-    """Returns the status report of a sync or async control server, or None when it couldn't be retrieved."""
+    """Returns the status report of a sync or async control server, or None when it couldn't be retrieved.
+
+    A control server that registered without `server_kind` (started with an older version) is asked with the sync
+    client first, then with the async client. The kind that answers is remembered in `service.server_kind`.
+    """
+    if service.server_kind in ("sync", "async"):
+        kinds = [service.server_kind]
+    elif service.service_port:
+        kinds = ["sync", "async"]
+    else:
+        return None
+
+    for kind in kinds:
+        report = await _request_status_report(kind, service, timeout)
+        if report is not None:
+            service.server_kind = kind
+            return report
+    return None
+
+
+async def _request_status_report(kind: str, service: ServiceInfo, timeout: float) -> dict[str, Any] | None:
     try:
-        if service.server_kind == "sync" and service.host and service.service_port:
+        if kind == "sync" and service.host and service.service_port:
             return await asyncio.wait_for(
                 asyncio.to_thread(_sync_status_report, service.host, service.service_port, timeout),
                 timeout=5 * timeout,
             )
-        if service.server_kind == "async":
+        if kind == "async":
             from egse.async_control import AsyncControlClient
 
             async with AsyncControlClient(service_type=service.service_type, timeout=timeout) as client:
                 return await client.get_status_report()
     except Exception as exc:
-        logger.warning(f"No status report from {service.service_type}: {type(exc).__name__}: {exc}")
+        logger.warning(f"No status report from {service.service_type} ({kind}): {type(exc).__name__}: {exc}")
     return None
 
 

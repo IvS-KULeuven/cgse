@@ -230,6 +230,7 @@ async def test_custom_servers_are_polled():
     nh = by_type(collector)["NH_CS"]
     assert nh.state is ServiceState.OK
     assert nh.report["statistics"]["events_received"] == 3
+    assert nh.has_device is False
     assert not fakes.subscriptions  # no monitoring port
 
     fakes.custom.pop("NH_CS")  # stops answering
@@ -366,5 +367,45 @@ async def test_registry_gone_drops_the_registrations():
     services = by_type(collector)
     assert services[REGISTRY_SERVICE_TYPE].state is ServiceState.OK
     assert services["SM_CS"].registered and "DAQ6510" in services
+
+    await collector.stop()
+
+
+async def test_server_kind_found_by_the_report_is_kept():
+    """A server that registered without `server_kind`: the kind found by the report request is kept on every poll."""
+    collector, registry, fakes, clock = make_collector()
+    registry.records = [record("CM_CS", name="cm_cs", service_port=6112, monitoring_port=6111)]
+
+    async def request_report(service, timeout):
+        service.server_kind = "sync"  # like report.request_status_report() does after a successful sync request
+        return REPORT
+
+    collector._request_report = request_report
+    await collector.poll()
+    await settle()
+    await collector.poll()
+    await settle()
+
+    assert by_type(collector)["CM_CS"].server_kind == "sync"
+    assert by_type(collector)["CM_CS"].report == REPORT
+
+    await collector.stop()
+
+
+async def test_report_without_device():
+    collector, registry, fakes, clock = make_collector()
+    registry.records = [
+        record("SM_CS", name="sm_cs", service_port=5001, monitoring_port=5002, server_kind="sync"),
+        record("AWG1", service_port=2001, monitoring_port=2002, server_kind="sync"),
+    ]
+    fakes.reports["SM_CS"] = {**REPORT, "device": None}
+    fakes.reports["AWG1"] = REPORT
+
+    await collector.poll()
+    await settle()
+
+    services = by_type(collector)
+    assert services["SM_CS"].has_device is False
+    assert services["AWG1"].has_device is True and services["AWG1"].connected is True
 
     await collector.stop()

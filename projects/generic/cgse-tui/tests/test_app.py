@@ -81,6 +81,11 @@ def test_service_row():
     assert service_row(SERVICES[1])[3:] == ("inactive", "", "", "", "", "", "")
 
 
+def test_service_row_without_device():
+    service = ServiceInfo(name="Storage Manager", service_type="SM_CS", state=ServiceState.OK, has_device=False)
+    assert service_row(service)[-2:] == ("–", "–")  # not applicable, an empty cell means: not known
+
+
 async def test_overview_shows_the_services_of_the_collector():
     app = CgseTuiApp(collector=StaticCollector(SERVICES))
     async with app.run_test() as pilot:
