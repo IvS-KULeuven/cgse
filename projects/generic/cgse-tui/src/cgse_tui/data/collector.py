@@ -16,8 +16,10 @@ from collections.abc import Awaitable
 from collections.abc import Callable
 from typing import Any
 
+from cgse_tui.data import health
 from cgse_tui.data import monitor
 from cgse_tui.data import report
+from cgse_tui.data.model import Level
 from cgse_tui.data.model import ServiceInfo
 from cgse_tui.data.model import ServiceState
 from cgse_tui.data.services import CORE_CGSE_OBJECTS
@@ -145,9 +147,25 @@ class Collector:
                 level = logging.INFO if service.state is ServiceState.OK else logging.WARNING
                 logger.log(level, f"{service.name}: {previous.value} → {service.state.value}")
             self._last_states[service_type] = service.state
+            self._assess(service, now)
         for service_type in self._last_states.keys() - self.services.keys():
             del self._last_states[service_type]
         return sorted(self.services.values(), key=lambda service: service.name.lower())
+
+    @staticmethod
+    def _assess(service: ServiceInfo, now: float) -> None:
+        """Judges the CPU and memory use of the process, and logs when this changes, see `cgse_tui.data.health`."""
+        before = (service.cpu_level, service.memory_level)
+        health.assess(service, now)
+        for name, previous, level, reason in (
+            ("CPU", before[0], service.cpu_level, service.cpu_reason),
+            ("memory", before[1], service.memory_level, service.memory_reason),
+        ):
+            if level is not previous:
+                if level is Level.OK:
+                    logger.info(f"{service.name}: {name} is ok again.")
+                else:
+                    logger.warning(f"{service.name}: {name} {level.value}, {reason}")
 
     def _state(self, service: ServiceInfo, now: float) -> ServiceState:
         if not service.registered and service.service_type != REGISTRY_SERVICE_TYPE:
@@ -273,6 +291,8 @@ class Collector:
                 if task := self._monitors.pop(service_type, None):
                     task.cancel()
                 service.server_kind = None  # a restarted server may run another version
+                service.monitoring = {}  # the values of the old process
+                service.samples.clear()
                 was_registered = False
 
             service.registered = True
@@ -295,6 +315,7 @@ class Collector:
                 service.stale_after = self._custom_stale_after()
                 # No monitoring port: the process information comes from the last heartbeat in the registry
                 self._update_process(service, record.get("status") or {})
+                service.add_sample(self._clock())
 
             if not was_registered:
                 service.registered_at = self._clock()
@@ -360,6 +381,8 @@ class Collector:
         service.cpu_system_s = fields["cpu_system_s"]
         service.rss = fields["rss"]
         service.uss = fields["uss"]
+        service.monitoring = status
+        service.add_sample(self._clock())
         if fields["interval_s"]:
             service.stale_after = max(MIN_STALE_AFTER, STALE_INTERVALS * fields["interval_s"])
         service.last_update = self._clock()
@@ -392,6 +415,7 @@ class Collector:
                 if custom_kind(service) == "registry":
                     # The registry doesn't register itself, its `info` reply has its own process information
                     self._update_process(service, status.get("process") or {})
+                    service.add_sample(self._clock())
                     service.start_time = status.get("start_time")
                     service.cgse_object = status.get("cgse_object") or service.cgse_object
             return

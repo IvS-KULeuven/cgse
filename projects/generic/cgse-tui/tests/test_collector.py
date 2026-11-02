@@ -156,6 +156,8 @@ async def test_control_server_is_followed_on_its_monitoring_port():
     awg = by_type(collector)["AWG1"]
     assert (awg.pid, awg.uptime_s, awg.cpu_percent, awg.rss) == (42, 12.5, 3.0, 1024)
     assert (awg.cpu_user_s, awg.cpu_system_s, awg.uss) == (1.5, 0.5, 768)
+    assert awg.monitoring is SYNC_MONITORING  # the live device values for the detail screen
+    assert [sample[1:] for sample in awg.samples] == [(42, 3.0, 1024)]  # pid, cpu %, rss for the health checks
 
     clock.t += 4.9
     assert by_type(collector)["AWG1"].state is ServiceState.OK
@@ -225,6 +227,7 @@ async def test_restart_with_new_ports_follows_the_new_monitoring_port():
     registry.records = [record("AWG1", service_port=2001, monitoring_port=2002, server_kind="sync")]
     await collector.poll()
     await settle()
+    fakes.subscriptions["tcp://10.0.0.1:2002"](SYNC_MONITORING)
 
     registry.records = [record("AWG1", service_port=2101, monitoring_port=2102, server_kind="sync")]
     await collector.poll()
@@ -232,6 +235,7 @@ async def test_restart_with_new_ports_follows_the_new_monitoring_port():
 
     assert "tcp://10.0.0.1:2002" in fakes.cancelled
     assert "tcp://10.0.0.1:2102" in fakes.subscriptions
+    assert by_type(collector)["AWG1"].monitoring == {}  # no live values of the old process
 
     await collector.stop()
 
@@ -554,5 +558,35 @@ async def test_status_report_is_requested_again_for_the_device_connection():
     await collector.poll(reports=True)  # a refresh asks right away
     await settle()
     assert by_type(collector)["TVAC"].connected is False
+
+    await collector.stop()
+
+
+async def test_high_cpu_is_judged_and_logged(caplog):
+    from cgse_tui.data.model import Level
+
+    collector, registry, fakes, clock = make_collector()
+    registry.records = [record("AWG1", service_port=2001, monitoring_port=2002, server_kind="sync")]
+    await collector.poll()
+    await settle()
+
+    publish = fakes.subscriptions["tcp://10.0.0.1:2002"]
+    with caplog.at_level(logging.INFO, logger="cgse_tui"):
+        for _ in range(61):
+            publish({**SYNC_MONITORING, "CPU%": 95.0})
+            clock.t += 1.0
+        collector.snapshot()
+        awg = by_type(collector)["AWG1"]
+        assert awg.cpu_level is Level.CRITICAL and awg.memory_level is Level.OK
+
+        for _ in range(61):
+            publish(SYNC_MONITORING)
+            clock.t += 1.0
+        collector.snapshot()
+        assert by_type(collector)["AWG1"].cpu_level is Level.OK
+
+    messages = [r.getMessage() for r in caplog.records if r.name == "cgse_tui.collector"]
+    assert "awg1: CPU critical, average CPU 95 % over the last 59 s" in messages
+    assert "awg1: CPU is ok again." in messages
 
     await collector.stop()

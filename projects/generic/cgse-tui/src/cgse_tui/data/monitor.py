@@ -36,6 +36,26 @@ def process_fields(status: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+MONITORING_KEYS = {"schema_version", "timestamp", "delay", "control_server", "process"}
+"""Keys of a monitoring message that are not device values."""
+
+PROCESS_KEYS = {"PID", "Up", "UUID", "RSS", "USS", "CPU User", "CPU System", "CPU count", "CPU%"}
+"""Keys of `ProcessStatus.as_dict()`, at the top level of the monitoring message of a sync control server."""
+
+
+def live_values(status: dict[str, Any]) -> dict[str, Any]:
+    """Returns the device values from a monitoring message, without the process information.
+
+    A sync control server adds the device values to its status, e.g. the positions of a hexapod. An async control
+    server has them in its `components` section, which is returned without the section: these are the same values as
+    the `details` of the status report.
+    """
+    values = {key: value for key, value in status.items() if key not in MONITORING_KEYS | PROCESS_KEYS}
+    if set(values) == {"components"} and isinstance(values["components"], dict):
+        return values["components"]
+    return values
+
+
 async def subscribe(endpoint: str, on_status: Callable[[dict[str, Any]], None]) -> None:
     """Passes every monitoring message from the given endpoint to `on_status`, until the task is cancelled."""
     socket = zmq.asyncio.Context.instance().socket(zmq.SUB)

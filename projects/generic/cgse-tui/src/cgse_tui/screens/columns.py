@@ -13,6 +13,7 @@ from typing import Any
 
 from rich.text import Text
 
+from cgse_tui.data.model import Level
 from cgse_tui.data.model import ServiceInfo
 
 NOT_APPLICABLE = "–"
@@ -29,12 +30,26 @@ class Column:
     default: bool = False
     justify: str = "left"
     """"right" for numbers, so the digits line up."""
+    style: Callable[[ServiceInfo], str] | None = None
+    """Returns the style of the cell, e.g. orange for a warning."""
 
     def header(self) -> Text:
         return Text(self.label, justify=self.justify)
 
     def cell(self, service: ServiceInfo, now: float) -> Text:
-        return Text(self.value(service, now), justify=self.justify)
+        return Text(self.value(service, now), justify=self.justify, style=self.style(service) if self.style else "")
+
+
+LEVEL_STYLES = {Level.OK: "", Level.WARNING: "dark_orange", Level.CRITICAL: "bold red"}
+"""The colour of a number that is judged, see `cgse_tui.data.health`."""
+
+
+def cpu_style(service: ServiceInfo) -> str:
+    return LEVEL_STYLES[service.cpu_level]
+
+
+def memory_style(service: ServiceInfo) -> str:
+    return LEVEL_STYLES[service.memory_level]
 
 
 def format_uptime(seconds: float | None) -> str:
@@ -170,6 +185,7 @@ COLUMNS: tuple[Column, ...] = (
         "CPU usage of the process",
         default=True,
         justify="right",
+        style=cpu_style,
     ),
     Column(
         "cpu_time",
@@ -185,8 +201,16 @@ COLUMNS: tuple[Column, ...] = (
         "Resident memory (RSS)",
         default=True,
         justify="right",
+        style=memory_style,
     ),
-    Column("uss", "USS [MiB]", lambda s, now: format_mib(s.uss), "Memory unique to the process (USS)", justify="right"),
+    Column(
+        "uss",
+        "USS [MiB]",
+        lambda s, now: format_mib(s.uss),
+        "Memory unique to the process (USS)",
+        justify="right",
+        style=memory_style,
+    ),
     Column(
         "device_id",
         "Device ID",

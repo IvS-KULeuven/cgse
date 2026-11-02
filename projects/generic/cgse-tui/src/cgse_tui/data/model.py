@@ -2,10 +2,25 @@
 
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass
 from dataclasses import field
 from enum import Enum
 from typing import Any
+
+SAMPLES_KEPT = 900.0
+"""Seconds of process samples kept per service, for `cgse_tui.data.health`."""
+
+MAX_SAMPLES = 5000
+"""Maximum number of process samples kept per service, for a service that publishes very often."""
+
+
+class Level(str, Enum):
+    """How the CPU or memory use of a process is judged, see `cgse_tui.data.health`."""
+
+    OK = "ok"
+    WARNING = "warning"
+    CRITICAL = "critical"
 
 
 class ServiceState(str, Enum):
@@ -91,3 +106,27 @@ class ServiceInfo:
 
     report: dict[str, Any] = field(default_factory=dict)
     """The last status report, shown in the detail screen."""
+
+    monitoring: dict[str, Any] = field(default_factory=dict)
+    """The last message on the monitoring port of a control server, with the live values of the device."""
+
+    samples: deque = field(default_factory=lambda: deque(maxlen=MAX_SAMPLES))
+    """(time, pid, cpu %, rss) of the process, oldest first, of the last `SAMPLES_KEPT` seconds."""
+
+    cpu_level: Level = Level.OK
+    cpu_reason: str = ""
+    """Why the CPU level is not ok, e.g. "average CPU 95 % over the last 60 s"."""
+
+    memory_level: Level = Level.OK
+    memory_reason: str = ""
+    """Why the memory level is not ok, e.g. "memory grew 30 % in 10 min (40.0 → 52.0 MiB), a leak?"."""
+
+    def add_sample(self, now: float) -> None:
+        """Adds the current CPU % and RSS to the samples; a new process (PID) starts with new samples."""
+        if self.cpu_percent is None and self.rss is None:
+            return
+        if self.samples and self.samples[-1][1] != self.pid:
+            self.samples.clear()
+        self.samples.append((now, self.pid, self.cpu_percent, self.rss))
+        while self.samples and now - self.samples[0][0] > SAMPLES_KEPT:
+            self.samples.popleft()
