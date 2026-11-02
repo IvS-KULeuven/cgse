@@ -732,6 +732,21 @@ def get_host_ip() -> Optional[str]:
     return None
 
 
+def get_routed_host_ip() -> Optional[str]:
+    """Returns the IP address of the interface that routes to other hosts, None when there is no route.
+
+    Unlike `get_host_ip()`, this doesn't fall back to the address of the host name. While the network is down (e.g. the
+    lid of a laptop was closed), that can be the address of another interface, e.g. a VPN. Use this function to detect
+    a change of the IP address, and keep the last known address when it returns None.
+    """
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.connect(("10.255.255.255", 1))  # no packets are sent, this only selects the route
+            return sock.getsockname()[0]
+    except OSError:
+        return None
+
+
 def get_current_location() -> tuple[str, int, str]:
     """
     Returns the location where this function is called, i.e. the filename, line number, and function name.

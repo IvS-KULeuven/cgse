@@ -243,6 +243,9 @@ class AsyncMetricsHub:
             "start_time": time.time(),
         }
 
+        self._started_at = time.monotonic()
+        """For the rates in the statistics log, `stats["start_time"]` is the wall clock time."""
+
         self._last_queue_full_log_ts = 0.0
         self._flush_semaphore: asyncio.Semaphore | None = None  # initialized in start()
         self._pending_flushes: set[asyncio.Task] = set()
@@ -574,7 +577,7 @@ class AsyncMetricsHub:
                 await asyncio.wait_for(self._shutdown_event.wait(), timeout=STATS_INTERVAL)
                 break  # shutdown was requested
             except asyncio.TimeoutError:
-                uptime = max(1e-6, time.monotonic() - self.stats["start_time"])
+                uptime = max(1e-6, time.monotonic() - self._started_at)
                 recv_rate = self.stats["received"] / uptime
                 write_rate = self.stats["written"] / uptime
                 self._logger.info(

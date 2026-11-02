@@ -472,3 +472,27 @@ def test_register_measurement_schemas_from_env(monkeypatch):
     assert loaded == ["project.schemas"]
     assert captured["modules"] == ["project.schemas"]
     assert captured["function_name"] == "register_measurement_schemas"
+
+
+@pytest.mark.asyncio
+async def test_stats_reporter_logs_rates_over_the_uptime(monkeypatch, caplog):
+    import time
+
+    monkeypatch.setattr("egse.metricshub.server.STATS_INTERVAL", 0.05)
+    hub = AsyncMetricsHub(repository=RecordingRepository())
+    hub.running = True
+    hub.stats["received"], hub.stats["written"] = 100, 50
+    hub._started_at = time.monotonic() - 10.0  # 10 s ago; stats["start_time"] is the wall clock time
+
+    with caplog.at_level("INFO", logger="egse.metricshub"):
+        reporter = asyncio.create_task(hub._stats_reporter())
+        await asyncio.sleep(0.08)
+        hub._shutdown_event.set()
+        await reporter
+
+    hub.collector_socket.close(linger=0)
+    hub.requests_socket.close(linger=0)
+    hub.context.term()
+
+    assert "recv_rate=10/s" in caplog.text
+    assert "write_rate=5/s" in caplog.text

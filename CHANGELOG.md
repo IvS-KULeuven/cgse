@@ -74,6 +74,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - The dummy control server registers as `DUMMY_CS` when a registry is available; it still works without one, its
   ports are fixed in the settings.
 
+### Robustness: host address, heartbeat and metrics hub rates
+
+- Fixed: while the network was down (e.g. the laptop lid closed), `get_host_ip()` fell back to the address of the host
+  name, which can be the address of another interface (a VPN like Tailscale), and the heartbeat re-registered the
+  service with that address. The heartbeat and the re-registration now use the new
+  `egse.system.get_routed_host_ip()`, which returns None when there is no route, and keep the registered address until
+  the network is back.
+- Fixed: `AsyncRegistryClient` didn't wait the heartbeat interval after a failed health check, so it retried as fast
+  as the timeouts allowed while the registry didn't answer.
+- Fixed: in `RegistryClient` the heartbeat thread and the main thread could use the request socket at the same time;
+  a lock now serialises the requests.
+- Fixed: the metrics hub logged wrong rates (e.g. `recv_rate=9624000000/s`), it compared a wall clock start time with
+  `time.monotonic()`. `start_time` in the statistics stays the wall clock time.
+
 ### Registry client recovery
 
 - Fixed: a service could drop out of the registry for good. The registry clients (`RegistryClient`,

@@ -1229,3 +1229,28 @@ def test_redirect_output_to_log():
 
         absolute_log_path.unlink()  # Clean up the absolute log file after test
         absolute_log_path.parent.rmdir()  # Remove the created directory
+
+
+def test_get_routed_host_ip(monkeypatch):
+    import socket
+
+    from egse.system import get_routed_host_ip
+
+    host_ip = get_routed_host_ip()
+    assert host_ip is None or socket.inet_aton(host_ip)  # None only when this machine has no network
+
+    class NoRoute:
+        def __init__(self, *args):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def connect(self, address):
+            raise OSError(101, "Network is unreachable")
+
+    monkeypatch.setattr(socket, "socket", NoRoute)
+    assert get_routed_host_ip() is None  # no fallback to the address of the host name
