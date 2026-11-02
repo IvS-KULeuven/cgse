@@ -16,6 +16,7 @@ from cgse_tui.logs import BufferedLogHandler
 from cgse_tui.logs import capture_logging
 from cgse_tui.logs import create_log_file_handler
 from cgse_tui.screens.action_select import ActionSelectScreen
+from cgse_tui.screens.detail import DetailScreen
 from cgse_tui.screens.overview import OverviewScreen
 
 logger = logging.getLogger("cgse_tui.app")
@@ -105,6 +106,10 @@ class CgseTuiApp(App):
         self.update_overview()
 
     def update_overview(self) -> None:
-        self.overview.show_services(self.collector.snapshot())
+        services = self.collector.snapshot()
+        self.overview.show_services(services)
+        for screen in self.screen_stack:
+            if isinstance(screen, DetailScreen):
+                screen.show_services(services)
         if messages := self.log_handler.drain():
             self.overview.show_log_messages(messages)

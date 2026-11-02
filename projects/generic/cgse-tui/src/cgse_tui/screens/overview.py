@@ -14,39 +14,17 @@ from textual.widgets import Header
 from textual.widgets import RichLog
 
 from cgse_tui.data.model import ServiceInfo
-from cgse_tui.data.model import ServiceState
 from cgse_tui.screens.column_select import ColumnSelectScreen
 from cgse_tui.screens.columns import DEFAULT_COLUMNS
 from cgse_tui.screens.columns import Column
 from cgse_tui.screens.columns import visible_columns
 from cgse_tui.screens.detail import DetailScreen
+from cgse_tui.screens.panels import state_indicator
 
 INDICATOR_COLUMN = ""
 """The first column, without a label: a coloured square with the state of the service, see `state_indicator()`."""
 
 INDICATOR_KEY = "indicator"
-
-FILLED, FRAME = "■", "□"
-
-
-def state_indicator(service: ServiceInfo) -> Text:
-    """Returns the coloured square that shows the state of a service.
-
-    - green: running
-    - orange: running, but no connection with the device
-    - red: not responding within the stale time
-    - empty frame: not running
-    - grey: registered, but no information received yet
-    """
-    if service.state is ServiceState.OK:
-        if service.has_device and service.connected is False:
-            return Text(FILLED, style="dark_orange")
-        return Text(FILLED, style="green")
-    if service.state is ServiceState.STALE:
-        return Text(FILLED, style="red")
-    if service.state is ServiceState.INACTIVE:
-        return Text(FRAME)
-    return Text(FILLED, style="grey50")
 
 
 def service_row(service: ServiceInfo, columns: list[Column] | None = None, now: float | None = None) -> tuple[str, ...]:

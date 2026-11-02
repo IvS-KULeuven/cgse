@@ -194,6 +194,8 @@ async def test_refresh_is_logged_in_the_log_pane():
 
 
 async def test_refresh_in_the_detail_screen_is_logged():
+    from textual.widgets import RichLog
+
     collector = StaticCollector(SERVICES)
     app = CgseTuiApp(collector=collector)
     async with app.run_test() as pilot:
@@ -202,7 +204,8 @@ async def test_refresh_in_the_detail_screen_is_logged():
         await pilot.pause()
         await pilot.press("r")
         await pilot.pause()
-        messages = [text for _, text in app.log_handler.drain()]
+        app.update_overview()  # the log messages go to the log pane, also on the timer of the app
+        messages = [line.text for line in app.overview.query_one("#log", RichLog).lines]
 
     assert sum("Requesting the status of AWG1" in text for text in messages) == 2
     assert any("Status of AWG1 received." in text for text in messages)
@@ -321,3 +324,69 @@ async def test_columns_grow_with_updated_cells():
 
         assert table.columns["host"].content_width >= len("192.168.168.175")
         assert table.columns["device"].content_width >= len("connected")
+
+
+def text(screen, selector: str) -> str:
+    """The text of a Static in the given screen, rendered as plain text."""
+    from rich.console import Console
+    from textual.widgets import Static
+
+    console = Console(width=120, color_system=None)
+    with console.capture() as capture:
+        console.print(screen.query_one(selector, Static).content)
+    return capture.get()
+
+
+async def test_detail_screen_follows_the_service_live():
+    from textual.widgets import Pretty
+
+    awg = ServiceInfo(
+        name="AWG1",
+        service_type="AWG1",
+        state=ServiceState.OK,
+        server_kind="sync",
+        pid=1234,
+        has_device=True,
+        report={"control_server": {}, "device": {"connected": True}, "details": {"frequency": 1000}},
+    )
+    collector = StaticCollector([awg])
+    app = CgseTuiApp(collector=collector)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        await pilot.press("enter")
+        await pilot.pause()
+        screen = app.screen
+        assert isinstance(screen, DetailScreen)
+        assert "1234" in text(screen, "#process")
+        assert "frequency" in text(screen, "#details")
+
+        restarted = ServiceInfo(name="AWG1", service_type="AWG1", state=ServiceState.OK, server_kind="sync", pid=5678)
+        collector.services = [restarted]  # the collector has a new object for the restarted service
+        app.update_overview()
+        assert screen.service is restarted
+        assert "5678" in text(screen, "#process")
+
+        collector.services = []  # no longer registered
+        app.update_overview()
+        assert screen.service is restarted  # the last information is kept
+        assert "no longer registered" in text(screen, "#title")
+        assert screen.query_one("#panels").has_class("-dimmed")
+
+        await pilot.press("v")
+        assert screen.query_one("#raw-view").display and not screen.query_one("#panels").display
+        assert isinstance(screen.query_one("#raw", Pretty), Pretty)
+
+
+def test_cpu_and_memory_cells_are_coloured_by_their_level():
+    from cgse_tui.data.model import Level
+    from cgse_tui.screens.columns import COLUMNS_BY_KEY
+
+    service = ServiceInfo(name="AWG1", service_type="AWG1", cpu_percent=95.0, rss=2**20, uss=2**19)
+    service.cpu_level, service.memory_level = Level.CRITICAL, Level.WARNING
+    cells = {key: COLUMNS_BY_KEY[key].cell(service, 0.0) for key in ("cpu", "memory", "uss", "pid")}
+    assert (str(cells["cpu"].style), str(cells["memory"].style), str(cells["uss"].style)) == (
+        "bold red",
+        "dark_orange",
+        "dark_orange",
+    )
+    assert str(cells["pid"].style) == ""

@@ -26,6 +26,29 @@ Keys in the overview:
 - `l`: show or hide the log pane;
 - `ctrl+q`: quit.
 
+The detail screen shows the selected service in panels, updated every second:
+
+- Service: the registration in the service registry and the endpoints;
+- Process: PID, uptime, CPU and memory. CPU % and memory are shown in orange (warning) or red (critical) when the
+  process uses too much CPU or its memory keeps growing, with the reason below, see "CPU and memory warnings";
+- Device: the connection and simulator mode, only for services that control a device;
+- Details: the service specific status. For a control server these are the `details` of its status report,
+  updated with the live values of its monitoring messages (the border says `live`), for the registry, logger and
+  hubs their own status.
+
+CPU and memory warnings: the TUI judges the process of every service, and shows the CPU % and memory in orange or red,
+also in the overview, and writes a message in the log pane when this changes:
+
+- CPU: the average CPU % over the last minute, a warning from 50 %, critical from 90 %;
+- memory: the growth of the RSS over the last 10 minutes, a warning from 10 %, critical from 25 %. It's judged when
+  there are samples of at least 5 minutes, so a process that just started isn't taken for a leak.
+
+The limits are in `cgse_tui/data/health.py`.
+
+Panels are dimmed when the service is stale or not running. Keys in the detail screen: `r` requests the status report
+now (otherwise every 10 s), `a` starts, stops or restarts the service, `v` shows the raw status report, `esc` goes
+back to the overview.
+
 Start, stop and restart run the `cgse <object> start|stop` command of the service, with its device identifier, e.g.
 `cgse puna stop PUNA_01`. The dialog shows the commands; selecting an action is the confirmation. A running service
 can be stopped or restarted, a core service that is not running can be started. With the simulator checkbox, the
