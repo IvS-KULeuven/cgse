@@ -18,7 +18,6 @@ from cgse_tui.screens.column_select import ColumnSelectScreen
 from cgse_tui.screens.columns import DEFAULT_COLUMNS
 from cgse_tui.screens.columns import Column
 from cgse_tui.screens.columns import visible_columns
-from cgse_tui.screens.detail import DetailScreen
 from cgse_tui.screens.panels import state_indicator
 
 INDICATOR_COLUMN = ""
@@ -150,12 +149,8 @@ class OverviewScreen(Screen):
             self.app.select_action(service)
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
-        service = self.services.get(event.row_key.value)
-        if service is None:
-            return
-        collector = getattr(self.app, "collector", None)
-        refresh = None if collector is None else (lambda: collector.refresh_report(service.service_type))
-        self.app.push_screen(DetailScreen(service, refresh=refresh))
+        if event.row_key.value in self.services:
+            self.app.show_details(event.row_key.value)
 
     def action_refresh(self) -> None:
         collector = getattr(self.app, "collector", None)

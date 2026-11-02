@@ -15,6 +15,7 @@ from cgse_tui.data.model import ServiceState
 from cgse_tui.logs import BufferedLogHandler
 from cgse_tui.logs import capture_logging
 from cgse_tui.logs import create_log_file_handler
+from cgse_tui.plugins import DetailsRenderers
 from cgse_tui.screens.action_select import ActionSelectScreen
 from cgse_tui.screens.detail import DetailScreen
 from cgse_tui.screens.overview import OverviewScreen
@@ -53,6 +54,7 @@ class CgseTuiApp(App):
         self.refresh_interval = refresh_interval
         self.actions = actions if actions is not None else ServiceActions(self.collector)
         self.overview = OverviewScreen()
+        self.details_renderers = DetailsRenderers()
 
     def get_default_screen(self) -> Screen:
         return self.overview
@@ -82,6 +84,15 @@ class CgseTuiApp(App):
         if self._restore_logging is not None:
             self._restore_logging()
             self._restore_logging = None
+
+    def show_details(self, service_type: str) -> None:
+        """Opens the detail screen of a service, e.g. selected in the overview or in the registrations."""
+        service = next((s for s in self.collector.snapshot() if s.service_type == service_type), None)
+        if service is None:
+            self.notify(f"{service_type} is not known (yet).", severity="warning")
+            return
+        refresh = getattr(self.collector, "refresh_report", None)
+        self.push_screen(DetailScreen(service, refresh=refresh and (lambda: refresh(service_type))))
 
     def select_action(self, service: ServiceInfo) -> None:
         """Asks the user to start, stop or restart the service, and performs the selected action."""

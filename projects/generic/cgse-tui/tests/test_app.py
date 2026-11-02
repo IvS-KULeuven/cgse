@@ -358,7 +358,7 @@ async def test_detail_screen_follows_the_service_live():
         screen = app.screen
         assert isinstance(screen, DetailScreen)
         assert "1234" in text(screen, "#process")
-        assert "frequency" in text(screen, "#details")
+        assert "frequency" in text(screen, ".section")
 
         restarted = ServiceInfo(name="AWG1", service_type="AWG1", state=ServiceState.OK, server_kind="sync", pid=5678)
         collector.services = [restarted]  # the collector has a new object for the restarted service
@@ -390,3 +390,49 @@ def test_cpu_and_memory_cells_are_coloured_by_their_level():
         "dark_orange",
     )
     assert str(cells["pid"].style) == ""
+
+
+async def test_registry_drill_down_opens_the_details_of_a_service():
+    from cgse_tui.screens.registry import RegistryTable
+
+    registry = ServiceInfo(
+        name="Service Registry",
+        service_type="SERVICE_REGISTRY",
+        state=ServiceState.OK,
+        server_kind="registry",
+        cgse_object="reg",
+        report={
+            "services": [
+                {
+                    "id": "awg-1",
+                    "name": "awg1",
+                    "host": "localhost",
+                    "port": 2000,
+                    "health": "passing",
+                    "metadata": {"type": "AWG1"},
+                },
+            ]
+        },
+    )
+    collector = StaticCollector([SERVICES[0], registry])
+    app = CgseTuiApp(collector=collector)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app.show_details("SERVICE_REGISTRY")
+        await pilot.pause()
+        screen = app.screen
+        table = screen.query_one("#registrations", RegistryTable)
+        assert table.row_count == 1 and screen.query_one("#registry-panel").display
+        assert "1 registered" in text(screen, ".section")
+
+        app.update_overview()  # the table is updated in place
+        assert table.row_count == 1
+
+        table.focus()
+        await pilot.press("enter")
+        await pilot.pause()
+        assert isinstance(app.screen, DetailScreen) and app.screen.service.service_type == "AWG1"
+        assert not app.screen.query_one("#registry-panel").display
+
+        await pilot.press("escape")
+        assert app.screen is screen

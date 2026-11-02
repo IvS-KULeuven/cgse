@@ -19,12 +19,15 @@ from textual.widgets import Static
 
 from cgse_tui.data.model import ServiceInfo
 from cgse_tui.data.model import ServiceState
+from cgse_tui.data.services import custom_kind
+from cgse_tui.plugins import DetailsRenderers
 from cgse_tui.screens import panels
+from cgse_tui.screens.registry import RegistryTable
 
 logger = logging.getLogger("cgse_tui.detail")
 
 
-def panel(title: str, *children, id: str) -> Vertical:
+def panel(title: str, *children, id: str | None = None) -> Vertical:
     container = Vertical(*children, id=id, classes="panel")
     container.border_title = title
     return container
@@ -33,6 +36,10 @@ def panel(title: str, *children, id: str) -> Vertical:
 class DetailScreen(Screen):
     """Shows the status of a service in panels: Service, Process, Device and Details.
 
+    The Details panel comes from a plugin of the package of the service, a built-in renderer, or the generic tree, see
+    `cgse_tui.plugins`. A renderer can split the details over several panels. The detail screen of the service
+    registry also has a table of the registrations: `enter` shows the details of the selected service.
+
     The app passes the services to `show_services()` on every update of the overview, so the panels follow the
     service live, also when it is restarted. The status report is requested when the screen opens and with `r`, the
     collector requests it regularly as well. `v` shows the raw status report instead of the panels.
@@ -40,6 +47,7 @@ class DetailScreen(Screen):
     Args:
         service: the service to show.
         refresh: coroutine function that requests the status again and returns the updated service.
+        renderers: the renderers of the Details panel, by default those of the app, or new `DetailsRenderers`.
     """
 
     DEFAULT_CSS = """
@@ -60,6 +68,16 @@ class DetailScreen(Screen):
     DetailScreen #top .panel {
         width: 1fr;
     }
+    DetailScreen #details-area {
+        height: auto;
+    }
+    DetailScreen #details-area .panel {
+        width: 1fr;
+    }
+    DetailScreen #registrations {
+        height: auto;
+        max-height: 20;
+    }
     DetailScreen #panels.-dimmed .panel {
         opacity: 60%;
     }
@@ -75,10 +93,19 @@ class DetailScreen(Screen):
         ("v", "toggle_raw", "Raw report"),
     ]
 
-    def __init__(self, service: ServiceInfo, refresh: Callable[[], Awaitable[ServiceInfo | None]] | None = None):
+    def __init__(
+        self,
+        service: ServiceInfo,
+        refresh: Callable[[], Awaitable[ServiceInfo | None]] | None = None,
+        renderers: DetailsRenderers | None = None,
+    ):
         super().__init__()
         self.service = service
         self._refresh = refresh
+        self._renderers = renderers
+        self._section_titles: list[str] = []
+        self._sections: list[Static] = []
+        self._section_panels: list[Vertical] = []
         self._requesting = False
         self._gone = False
         self._raw_report: dict | None = None
@@ -91,12 +118,15 @@ class DetailScreen(Screen):
                 yield panel("Service", Static(id="service"), id="service-panel")
                 yield panel("Process", Static(id="process"), id="process-panel")
                 yield panel("Device", Static(id="device"), id="device-panel")
-            yield panel("Details", Static(id="details"), id="details-panel")
+            yield Horizontal(id="details-area")
+            yield panel("Registrations", RegistryTable(id="registrations"), id="registry-panel")
         with VerticalScroll(id="raw-view"):
             yield Pretty({}, id="raw")
         yield Footer()
 
     def on_mount(self) -> None:
+        if self._renderers is None:
+            self._renderers = getattr(self.app, "details_renderers", None) or DetailsRenderers()
         self.refresh_view()
         self.action_refresh()
 
@@ -127,13 +157,34 @@ class DetailScreen(Screen):
         if device_panel.display:
             self.query_one("#device", Static).update(panels.device_panel(service))
 
-        details, source = panels.details_panel(service)
-        self.query_one("#details", Static).update(details)
-        self.query_one("#details-panel").border_subtitle = source
+        self._show_details(service)
+
+        registry_panel = self.query_one("#registry-panel")
+        registry_panel.display = custom_kind(service) == "registry"
+        if registry_panel.display:
+            self.query_one("#registrations", RegistryTable).show(service.report, now)
 
         if self._raw_report is not service.report:
             self._raw_report = service.report
             self.query_one("#raw", Pretty).update(service.report or "No status report received yet.")
+
+    def _show_details(self, service: ServiceInfo) -> None:
+        """Shows the sections of the Details renderer, a panel per section. The panels are only replaced when the
+        titles of the sections change, otherwise their content is updated."""
+        sections, source = self._renderers.render(service)
+        titles = [title for title, _ in sections]
+        area = self.query_one("#details-area")
+        if titles != self._section_titles:
+            self._section_titles = titles
+            self._sections = [Static(renderable, classes="section") for _, renderable in sections]
+            self._section_panels = [panel(title, static) for title, static in zip(titles, self._sections)]
+            area.remove_children()
+            area.mount_all(self._section_panels)
+        else:
+            for static, (_, renderable) in zip(self._sections, sections):
+                if renderable is not static.content:  # the same object needn't be rendered again
+                    static.update(renderable)
+        self._section_panels[0].border_subtitle = source
 
     def action_toggle_raw(self) -> None:
         raw = self.query_one("#raw-view")

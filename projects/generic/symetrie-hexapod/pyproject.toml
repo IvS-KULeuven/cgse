@@ -54,6 +54,11 @@ symetrie-hexapod = "symetrie_hexapod:settings.yaml"
 [project.entry-points."cgse.explore"]
 explore = "symetrie_hexapod.cgse_explore"
 
+[project.entry-points."cgse.tui.details"]
+puna = "symetrie_hexapod.tui_details:details"
+zonda = "symetrie_hexapod.tui_details:details"
+joran = "symetrie_hexapod.tui_details:details"
+
 [tool.hatch.build.targets.sdist]
 exclude = [
     "/tests",

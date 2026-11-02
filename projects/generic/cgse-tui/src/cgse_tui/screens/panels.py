@@ -101,7 +101,7 @@ def key_values(rows: list[Row]) -> Table:
     """A two-column grid of labels and values. A label can be a Rich `Text`, e.g. with the guides of a tree."""
     grid = Table.grid(padding=(0, 2))
     grid.add_column(style="bold", no_wrap=True)
-    grid.add_column()
+    grid.add_column(overflow="fold")  # e.g. a long path is folded, not cut off
     for label, value in rows:
         key = label.plain if isinstance(label, Text) else label
         grid.add_row(label, value if isinstance(value, (Text, Table)) else Text(format_value(value, key)))
@@ -266,15 +266,19 @@ GUIDES = {"branch": "├── ", "last": "└── ", "line": "│   ", "space
 """The guides of a tree, as `rich.tree.Tree` draws them."""
 
 
-def generic(values: dict[str, Any]) -> RenderableType:
+def generic(values: dict[str, Any], max_group_size: int | None = MAX_GROUP_SIZE) -> RenderableType:
     """Renders a status of any shape: the keys in the left column, with nested dictionaries as a tree, the values in
-    the right column. A list of dictionaries is a table in the right column."""
+    the right column. A list of dictionaries is a table in the right column.
+
+    A nested dictionary of more than `max_group_size` rows is not unfolded, None unfolds all. Rendering ~1000 rows
+    takes about 0.25 s, too long for a panel that is rendered every second.
+    """
     rows: list[Row] = []
-    _tree_rows(values, "", None, rows)
+    _tree_rows(values, "", None, rows, max_group_size)
     return key_values(rows)
 
 
-def _tree_rows(values: dict, prefix: str, depth: int | None, rows: list[Row]) -> None:
+def _tree_rows(values: dict, prefix: str, depth: int | None, rows: list[Row], max_group_size: int | None) -> None:
     """Adds a row per key; `prefix` is the guides of the parent levels, `depth` is None for the top level."""
     items = list(values.items())
     for index, (key, value) in enumerate(items):
@@ -283,12 +287,12 @@ def _tree_rows(values: dict, prefix: str, depth: int | None, rows: list[Row]) ->
         guide = "" if depth is None else GUIDES["last" if last else "branch"]
         label = Text.assemble((prefix + guide, "not bold dim"), key)
         if isinstance(value, dict) and value:
-            if count_rows(value, MAX_GROUP_SIZE + 1) > MAX_GROUP_SIZE:
-                rows.append((label, Text(f"more than {MAX_GROUP_SIZE} rows, see the raw report (v)", style="dim")))
+            if max_group_size is not None and count_rows(value, max_group_size + 1) > max_group_size:
+                rows.append((label, Text(f"more than {max_group_size} rows, see the raw report (v)", style="dim")))
                 continue
             rows.append((label, Text("")))
             child_prefix = "" if depth is None else prefix + GUIDES["space" if last else "line"]
-            _tree_rows(value, child_prefix, 0 if depth is None else depth + 1, rows)
+            _tree_rows(value, child_prefix, 0 if depth is None else depth + 1, rows, max_group_size)
         elif is_table(value):
             rows.append((label, table(None, value)))
         else:

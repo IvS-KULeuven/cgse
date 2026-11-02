@@ -15,6 +15,8 @@ places. The following entry-points are currently defined:
 * `cgse.explore`: Package provides a set of functions to explore, e.g. if any of the processes 
   it provides are running.
 * `cgse.resource`: Packages can register resources.
+* `cgse.tui.details`: Package shows the details of its service in the detail screen of the CGSE TUI,
+  see [Details in the TUI](#details-in-the-tui).
 
 Each of the entry-points knows how to load a module or object and each entry-point group is
 connected to a specific action or plugin hook like, e.g. add a command or command group to the
@@ -227,6 +229,48 @@ something like below (the format is from the unix `ps -ef` command).
 │ 94365 │ python3.12 │ rik  │  0.0 │     125.6 │ running │ python -m egse.procman.procman_cs start                  │
 └───────┴────────────┴──────┴──────┴───────────┴─────────┴──────────────────────────────────────────────────────────┘
 ```
+
+## Details in the TUI
+
+The detail screen of the CGSE TUI (`cgse tui`) shows a service in panels: Service, Process, Device and
+Details. The first three are the same for every service. The Details panel shows the service specific status, by
+default as a generic tree of the `details` in the status report of the control server, updated with the values of
+its monitoring messages. A package can show these details in its own way with a `cgse.tui.details` entry-point.
+The name of the entry-point is the `cgse_object` of the control server, i.e. the `cgse <object>` command, the value
+is a function:
+
+```toml
+[project.entry-points."cgse.tui.details"]
+puna = "symetrie_hexapod.tui_details:details"
+zonda = "symetrie_hexapod.tui_details:details"
+joran = "symetrie_hexapod.tui_details:details"
+```
+
+```python
+def details(report: dict, live: dict) -> RenderableType | dict[str, RenderableType]:
+    ...
+```
+
+- `report` is the last status report of the control server, see the `details` section for the values of
+  `get_status_details()` (sync) or `get_component_status()` (async). A section that couldn't be retrieved contains
+  only an `error` entry.
+- `live` holds the device values of the last monitoring message, without the process information: the entries that
+  a sync device protocol adds to its `get_status()`, or the `components` of an async control server. They are newer
+  than those in the report; when the server publishes no device values, `live` is empty.
+- The function returns a [Rich](https://rich.readthedocs.io) renderable, e.g. a `Table`, or a dictionary of
+  renderables that are shown as separate panels with the keys as titles, e.g. `{"Position": ..., "Actuators": ...}`.
+
+The function is called every second, so it shall be fast and must not talk to the device. A renderable that is
+expensive to render, e.g. a large table that rarely changes, can be cached by the plugin: when the function returns
+the same object as before, the TUI doesn't render it again. It only uses Rich, so the
+package doesn't depend on Textual or on `cgse-tui`; the module is only imported by the TUI, and only when a
+service with that `cgse_object` is shown. A plugin that can't be imported, raises an exception, or returns something
+that isn't a Rich renderable, is logged once and the generic tree is shown, the panel border says the plugin failed.
+
+The core services have built-in renderers in `cgse_tui.details`, e.g. the disk usage of the Storage Manager, and
+the running observation and the loaded Setup of the Configuration Manager. A
+plugin takes precedence over a built-in renderer. The `symetrie-hexapod` package has an example in
+`symetrie_hexapod/tui_details.py`.
 
 ## Register resources
 
