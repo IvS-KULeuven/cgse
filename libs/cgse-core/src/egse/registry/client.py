@@ -17,7 +17,7 @@ from egse.log import logging
 from egse.process import process_identity
 from egse.process import process_status
 from egse.system import do_every
-from egse.system import get_host_ip
+from egse.system import get_routed_host_ip
 from egse.zmq_ser import wait_for_message
 
 from egse.registry import DEFAULT_RS_HB_PORT
@@ -103,6 +103,10 @@ class RegistryClient:
         self._hb_stop_event = None
         self._hb_thread: threading.Thread | None = None
 
+        self._req_lock = threading.Lock()
+        """The heartbeat thread also uses the request socket (health check, re-registration), a ZeroMQ socket shall not
+        be used by two threads at the same time."""
+
         self._client_id_prefix = client_id
         self._client_id = self._new_identity()
 
@@ -175,10 +179,11 @@ class RegistryClient:
         if VERBOSE_DEBUG:
             self.logger.debug("Disconnecting from service registry...")
 
-        if self.req_socket:
-            self.poller.unregister(self.req_socket)
-            self.req_socket.close(linger=0)
-        self.req_socket = None
+        with self._req_lock:
+            if self.req_socket:
+                self.poller.unregister(self.req_socket)
+                self.req_socket.close(linger=0)
+            self.req_socket = None
 
         if self.sub_socket:
             self.poller.unregister(self.sub_socket)
@@ -203,6 +208,10 @@ class RegistryClient:
         Returns:
             The response from the registry.
         """
+        with self._req_lock:  # one thread at a time, see `_req_lock`
+            return self._send_request_locked(msg_type, request, timeout)
+
+    def _send_request_locked(self, msg_type: MessageType, request: dict[str, Any], timeout: float = None) -> dict:
         timeout_ms = int(timeout * 1000) if timeout else self.timeout_ms
 
         try:
@@ -408,7 +417,7 @@ class RegistryClient:
             )
             return None
 
-        new_host = get_host_ip() or str(self._service_info["host"])
+        new_host = get_routed_host_ip() or str(self._service_info["host"])
 
         return self.register(
             name=self._service_info["name"],
@@ -557,7 +566,7 @@ class RegistryClient:
 
         def send_heartbeat():
             try:
-                current_host = get_host_ip()
+                current_host = get_routed_host_ip()  # None while there is no network
                 if current_host and self._service_info and current_host != self._service_info.get("host"):
                     self.logger.info(
                         f"Detected IP address change ({self._service_info.get('host')} -> {current_host}); "
@@ -991,7 +1000,7 @@ class AsyncRegistryClient:
             )
             return None
 
-        new_host = get_host_ip() or self._service_info["host"]
+        new_host = get_routed_host_ip() or self._service_info["host"]
 
         return await self.register(
             name=self._service_info["name"],
@@ -1032,7 +1041,7 @@ class AsyncRegistryClient:
             try:
                 while self._running and self._service_id:
                     try:
-                        current_host = get_host_ip()
+                        current_host = get_routed_host_ip()  # None while there is no network
                         if current_host and self._service_info and current_host != self._service_info.get("host"):
                             self.logger.info(
                                 f"Detected IP address change ({self._service_info.get('host')} -> {current_host}); "
@@ -1052,7 +1061,6 @@ class AsyncRegistryClient:
                             # Do a health check
                             if not await self.health_check():
                                 self.logger.warning("Heartbeat failed: ServiceRegistry not responding.")
-                                continue
                             else:
                                 self.logger.info("Heartbeat failed, but health check succeeded, reregistering...")
                                 await self.reregister()

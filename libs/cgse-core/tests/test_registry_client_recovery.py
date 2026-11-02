@@ -144,3 +144,77 @@ async def test_service_registers_again_after_the_registry_was_down():
             await client.deregister()
         finally:
             await stop_registry(server, task)
+
+
+@pytest.mark.asyncio
+async def test_heartbeat_keeps_the_host_while_there_is_no_route(registry, monkeypatch):
+    routed_ip = None  # e.g. the laptop lid was closed, the Wi-Fi is down
+    monkeypatch.setattr("egse.registry.client.get_routed_host_ip", lambda: routed_ip)
+
+    async with AsyncRegistryClient(**ENDPOINTS, timeout=2.0) as client:
+        service_id = await client.register(name="test_cs", host="10.9.9.9", port=9999, service_type="TEST_CS")
+        await client.start_heartbeat(interval=1)
+
+        await asyncio.sleep(1.5)
+        assert (await client.get_service(service_id))["host"] == "10.9.9.9"  # not re-registered
+
+        routed_ip = "10.1.2.3"  # the network is back, with another address
+        for _ in range(30):
+            if (await client.get_service(service_id))["host"] == "10.1.2.3":
+                break
+            await asyncio.sleep(0.1)
+        assert (await client.get_service(service_id))["host"] == "10.1.2.3"
+
+        await client.stop_heartbeat()
+        await client.deregister()
+
+
+@pytest.mark.asyncio
+async def test_heartbeat_waits_the_interval_while_the_registry_doesnt_answer(monkeypatch):
+    client = AsyncRegistryClient(**ENDPOINTS)
+    client._service_id, client._ttl = "test_cs-1", 30
+    health_checks = []
+
+    async def failed_heartbeat(request):
+        return {"success": False, "error": "Heartbeat request timed out"}
+
+    async def no_registry():
+        health_checks.append(1)
+        return False
+
+    monkeypatch.setattr(client, "_send_heartbeat", failed_heartbeat)
+    monkeypatch.setattr(client, "health_check", no_registry)
+
+    await client.start_heartbeat(interval=0.1)
+    await asyncio.sleep(0.45)
+    await client.stop_heartbeat()
+
+    assert 3 <= len(health_checks) <= 6  # one per interval, not as fast as the failures come back
+
+
+def test_sync_client_sends_one_request_at_a_time(monkeypatch):
+    import threading
+
+    client = RegistryClient(**ENDPOINTS)
+    active, overlaps = [], []
+
+    def request(msg_type, request, timeout=None):
+        active.append(1)
+        overlaps.append(len(active) > 1)
+        time.sleep(0.05)
+        active.pop()
+        return {"success": True}
+
+    monkeypatch.setattr(client, "_send_request_locked", request)
+
+    # e.g. the main thread and the heartbeat thread (health check, re-registration)
+    threads = [
+        threading.Thread(target=client._send_request, args=(MessageType.REQUEST_WITH_REPLY, {"action": "health"}))
+        for _ in range(4)
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert overlaps == [False] * 4

@@ -198,6 +198,20 @@ and TVAC, whose status prints a dict, this always yields connected=True and sim=
   the heartbeat retries. Regression tests in `libs/cgse-core/tests/test_registry_client_recovery.py`.
 - JORAN: `self.device_id` was never set, the status report showed `device_id: null` and the registration had no
   `device_id`, so the TUI couldn't stop or restart it. Fixed on `feat/tui-service-actions`.
+- Registry heartbeat with the network down: when the route lookup of `get_host_ip()` failed ("Network is
+  unreachable"), it fell back to the address of the host name, e.g. on 2026-11-01 after the laptop lid was closed the
+  notification hub detected an IP address change from `192.168.68.75` to `100.66.244.53` (the `100.64.0.0/10` range,
+  used by Tailscale) and re-registered with that address. Fixed on `fix/robustness-host-ip-heartbeat`: the heartbeat
+  and the re-registration use the new `egse.system.get_routed_host_ip()`, which returns None without a route, and then
+  keep the registered address. `get_host_ip()` is unchanged.
+- Registry clients: in `RegistryClient` the heartbeat thread (health check, re-registration) and the main thread used
+  the request socket at the same time (ZeroMQ sockets are not thread-safe), and after a timeout the heartbeat thread
+  also replaced it. In `AsyncRegistryClient` a failed health check skipped the sleep of the heartbeat loop, so during
+  an outage it retried after each heartbeat plus health check timeout. Fixed on `fix/robustness-host-ip-heartbeat`: a
+  lock gives one thread at a time the request socket, and the async loop waits the interval.
+- Metrics Hub: `start_time` was set with `time.time()` but compared with `time.monotonic()` in the stats reporter, so
+  the logged rates were wrong, e.g. `recv_rate=9624000000/s` for 9624 received metrics. Fixed on
+  `fix/robustness-host-ip-heartbeat`: the rates use a monotonic start time, `start_time` stays the wall clock time.
 - CLAUDE.md mentioned registry ports 4242/4243; the settings use 6100/6101/6102 (4242/4243 are only the code fallback
   in `egse/registry/__init__.py`). Fixed in the local CLAUDE.md, which is not tracked by git.
 
@@ -219,17 +233,7 @@ and TVAC, whose status prints a dict, this always yields connected=True and sim=
   server can be created per Python process (relevant for tests).
 - Process Manager: `get_device_ids()` / `get_devices()` load the Setup on every call, which blocks the single-threaded
   server.
-- `get_host_ip()` returns another address when the Wi-Fi is down, e.g. on 2026-11-01 after the laptop lid was closed
-  the heartbeat of the notification hub detected an IP address change from `192.168.68.75` to `100.66.244.53` (the
-  `100.64.0.0/10` range, used by Tailscale) and re-registered with that address. Clients on the same machine still
-  connect, clients on other machines may not.
-- Registry clients: in `RegistryClient` the heartbeat thread calls `health_check()` and `reregister()`, which use the
-  request socket of the main thread (ZeroMQ sockets are not thread-safe); after a timeout that socket is now also
-  replaced from the heartbeat thread. In both heartbeat loops, a failed health check (`continue`) skips the sleep, so
-  during an outage the loop retries after each heartbeat plus health check timeout.
 - Notification Hub: `_generate_health_response()` is never called.
-- Metrics Hub: `start_time` is set with `time.time()` but compared with `time.monotonic()` in the stats reporter, so the
-  logged rates are wrong.
 - `ControlServer`: `__init__` sets `self.service_id` but `register_service()` assigns `self._service_id`
   (`egse/control.py:141` vs `:699`).
 - Process Manager: `StatusCommand.cmd` interpolates the `device_args` list directly into the command string (runtime
