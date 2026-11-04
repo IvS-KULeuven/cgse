@@ -221,12 +221,13 @@ class AsyncSCPIInterface(AsyncDeviceInterface, AsyncDeviceTransport):
                 if VERBOSE_DEBUG:
                     logger.debug(f"Response after connection: {response}")
 
-            # Validate device identity if requested
-            if self.id_validation:
-                logger.debug("Validating connection..")
-                if not await self.is_connected():
-                    await self.disconnect()
-                    raise DeviceConnectionError(self._device_name, "Device connected but failed identity verification")
+        # Validate device identity if requested. This is done after the connect lock is released: when the validation
+        # fails, is_connected() calls disconnect(), which takes the same (not re-entrant) lock.
+        if self.id_validation:
+            logger.debug("Validating connection..")
+            if not await self.is_connected():
+                await self.disconnect()
+                raise DeviceConnectionError(self._device_name, "Device connected but failed identity verification")
 
     async def disconnect(self) -> None:
         """Disconnect from the device asynchronously.

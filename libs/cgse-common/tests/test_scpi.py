@@ -116,3 +116,53 @@ async def test_disconnect_after_the_device_closed_the_connection():
     for handler in handlers:
         handler.cancel()
     await asyncio.gather(*handlers, return_exceptions=True)
+
+
+async def _identification_server(identification: bytes, delay: float = 0.0):
+    """A device that answers every line with the given identification, after `delay` seconds."""
+
+    async def handle(reader, writer):
+        try:
+            while await reader.readline():
+                await asyncio.sleep(delay)
+                writer.write(identification + b"\n")
+                await writer.drain()
+        except ConnectionError:
+            pass
+
+    server = await asyncio.start_server(handle, "127.0.0.1", 0)
+    return server, server.sockets[0].getsockname()[1]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "identification, delay",
+    [
+        (b"OTHER,MODEL 2,SN,1.0", 0.0),  # the wrong device
+        (b"ACME,MODEL 1,SN,1.0", 1.0),  # the right device, but it answers after the read timeout
+    ],
+)
+async def test_connect_fails_and_does_not_hang_when_the_identification_fails(identification, delay):
+    """connect() used to deadlock here: is_connected() called disconnect() while connect() held the connect lock."""
+    server, port = await _identification_server(identification, delay)
+    device = AsyncSCPIInterface("ACME", hostname="127.0.0.1", port=port, read_timeout=0.3, id_validation="ACME")
+    try:
+        with pytest.raises(DeviceConnectionError, match="identity verification"):
+            await asyncio.wait_for(device.connect(), timeout=5.0)
+        assert not device._is_connection_open
+    finally:
+        server.close()
+
+
+@pytest.mark.asyncio
+async def test_connect_validates_the_identification():
+    server, port = await _identification_server(b"ACME,MODEL 1,SN,1.0")
+    device = AsyncSCPIInterface("ACME", hostname="127.0.0.1", port=port, read_timeout=1.0, id_validation="ACME")
+    try:
+        await asyncio.wait_for(device.connect(), timeout=5.0)
+        assert device._is_connection_open
+        assert device.identification == "ACME,MODEL 1,SN,1.0"
+        await device.connect()  # already connected: a warning, no second validation
+        await device.disconnect()
+    finally:
+        server.close()
