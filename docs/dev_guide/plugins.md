@@ -267,10 +267,10 @@ package doesn't depend on Textual or on `cgse-tui`; the module is only imported 
 service with that `cgse_object` is shown. A plugin that can't be imported, raises an exception, or returns something
 that isn't a Rich renderable, is logged once and the generic tree is shown, the panel border says the plugin failed.
 
-The core services have built-in renderers in `cgse_tui.details`, e.g. the disk usage of the Storage Manager, and
-the running observation and the loaded Setup of the Configuration Manager, and the core services of the Process
-Manager with their state. A
-plugin takes precedence over a built-in renderer. The `symetrie-hexapod` package has an example in
+The core services have built-in renderers in `cgse_tui.details`, e.g. the disk usage of the Storage Manager, the
+running observation and the loaded Setup of the Configuration Manager, the core services of the Process Manager with
+their state, and the messages per second of the logger and the hubs. A plugin takes precedence over a built-in
+renderer. The `symetrie-hexapod` package has an example in
 `symetrie_hexapod/tui_details.py`.
 
 ## Register resources

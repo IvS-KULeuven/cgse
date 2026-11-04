@@ -28,15 +28,19 @@ Keys in the overview:
 
 The detail screen shows the selected service in panels, updated every second:
 
-- Service: the registration in the service registry and the endpoints;
+- Service: the registration in the service registry and the endpoints (Service, Process and Device have the same
+  height);
 - Process: PID, uptime, CPU and memory. CPU % and memory are shown in orange (warning) or red (critical) when the
   process uses too much CPU or its memory keeps growing, with the reason below, see "CPU and memory warnings";
 - Device: the connection and simulator mode, only for services that control a device;
 - Details: the service specific status. For a control server these are the `details` of its status report,
   updated with the live values of its monitoring messages (the border says `live`), for the registry, logger and
   hubs their own status. The package of a device can show its details in its own way with a plugin (e.g. the
-  positions of the hexapods), the TUI has its own for some core services (e.g. the disk usage of the Storage
-  Manager, the observation and the whole Setup of the Configuration Manager), otherwise they're shown as a tree, see "Details in the TUI" in `docs/dev_guide/plugins.md`;
+  positions of the hexapods). The TUI has its own panels for the core services: the disk usage of the Storage
+  Manager, the observation and the whole Setup of the Configuration Manager, the messages per second, the queue
+  and the database of the Metrics Hub, the events of the Notification Hub, and the log file, the messages by level
+  and the last warning and error of the logger. Otherwise the details are shown as a tree, see "Details in the TUI"
+  in `docs/dev_guide/plugins.md`;
 - Registrations: only for the service registry, all registered services; `enter` shows the details of the selected
   service, `esc` goes back.
 - Core services: only for the Process Manager, the core services it manages with their state in the TUI; `enter`

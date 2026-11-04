@@ -6,7 +6,11 @@ The registry also gets a table of its registrations in the detail screen, see `c
 
 from __future__ import annotations
 
+import datetime
+import logging
+import time
 from collections import Counter
+from collections import deque
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +21,8 @@ from rich.text import Text
 from cgse_tui.data.model import Level
 from cgse_tui.plugins import latest_details
 from cgse_tui.screens.columns import LEVEL_STYLES
+from cgse_tui.screens.columns import format_age
+from cgse_tui.screens.columns import format_time
 from cgse_tui.screens.panels import format_value
 from cgse_tui.screens.panels import generic
 from cgse_tui.screens.panels import key_values
@@ -156,5 +162,216 @@ def process_manager(report: dict[str, Any], live: dict[str, Any]) -> RenderableT
     return key_values([("Core services", f"{len(processes)} managed")])
 
 
-BUILTINS = {"reg": registry, "sm": storage, "cm": configuration_manager, "pm": process_manager}
+# ----- the logger and the hubs ----------------------------------------------------------------------------------------
+
+RATE_WINDOW = 10.0
+"""Seconds over which a rate of messages is computed."""
+
+
+class Rates:
+    """Messages per second from the counters in the successive statuses of a server. Only pass counters: values
+    that never go down while the server runs.
+
+    The time of a status is its `timestamp` (seconds since the epoch, from the server), so a status that is shown
+    several times doesn't count twice. Counters that go down mean the server was restarted: the rates start over.
+    """
+
+    def __init__(self, window: float = RATE_WINDOW):
+        self.window = window
+        self._samples: dict[str, deque[tuple[float, dict[str, float]]]] = {}
+
+    def update(self, key: str, timestamp: Any, counters: dict[str, Any]) -> dict[str, float | None]:
+        samples = self._samples.setdefault(key, deque())
+        counters = {name: value for name, value in counters.items() if isinstance(value, (int, float))}
+        if isinstance(timestamp, (int, float)) and (not samples or timestamp > samples[-1][0]):
+            if samples and any(counters.get(name, 0) < value for name, value in samples[-1][1].items()):
+                samples.clear()
+            samples.append((timestamp, counters))
+            while len(samples) > 2 and timestamp - samples[1][0] >= self.window:
+                samples.popleft()
+        if len(samples) < 2 or samples[-1][0] <= samples[0][0]:
+            return dict.fromkeys(counters)
+        (first_time, first), (last_time, last) = samples[0], samples[-1]
+        return {name: (last[name] - first.get(name, 0)) / (last_time - first_time) for name in last if name in counters}
+
+
+RATES = Rates()
+
+
+def counters(statistics: dict[str, Any], *names: str) -> dict[str, Any]:
+    """The counters with the given names: only values that never go down, e.g. not the size of a queue, else the
+    rates start over every time such a value goes down."""
+    return {name: statistics.get(name) for name in names}
+
+
+def count(value: Any, rate: float | None = None, style: str = "") -> Text:
+    """A counter, with its rate when known, e.g. "19801  (12.5/s)"."""
+    text = Text(format_value(value), style=style)
+    if rate is not None:
+        text.append(f"  ({rate:.1f}/s)", style="dim")
+    return text
+
+
+def problem(value: Any, style: str) -> Text:
+    """A counter of problems, e.g. dropped messages: coloured when it isn't zero."""
+    return Text(format_value(value), style=style if isinstance(value, (int, float)) and value > 0 else "")
+
+
+def epoch_timestamp(report: dict[str, Any]) -> float | None:
+    """The time of a status as seconds since the epoch: the hubs send a number, the logger an ISO 8601 string."""
+    value = report.get("timestamp")
+    if isinstance(value, (int, float)):
+        return float(value)
+    try:
+        return datetime.datetime.fromisoformat(str(value).replace("+0000", "+00:00")).timestamp()
+    except ValueError:
+        return None
+
+
+def when(timestamp: Any) -> Text | str | None:
+    """A time as "12 s ago (2026-11-04 21:22:04)", None when not known."""
+    if not isinstance(timestamp, (int, float)):
+        return None
+    return Text.assemble(f"{format_age(timestamp, time.time())} ago", (f"  ({format_time(timestamp)})", "dim"))
+
+
+def notification_hub(report: dict[str, Any], live: dict[str, Any]) -> dict[str, RenderableType]:
+    """The notification hub: the events it received and published, and when the last one came in."""
+    statistics = report.get("statistics") or {}
+    rates = RATES.update("nh", report.get("timestamp"), counters(statistics, "events_received", "events_published"))
+    received, published = statistics.get("events_received"), statistics.get("events_published")
+    rows = [
+        ("Received", count(received, rates.get("events_received"))),
+        ("Published", count(published, rates.get("events_published"))),
+    ]
+    if isinstance(received, int) and isinstance(published, int) and received != published:
+        rows.append(("Not published", Text(str(received - published), style="dark_orange")))
+    rows += [
+        ("Last event", when(statistics.get("last_message_time")) or Text("none yet", style="dim")),
+        ("Started", format_time(statistics.get("start_time")) or None),
+    ]
+    return {"Events": key_values([(label, value) for label, value in rows if value is not None])}
+
+
+def queue_bar(queue: Any, maximum: Any, watermark: Any) -> RenderableType:
+    """The queue of the metrics hub as a bar, orange above the backlog high watermark (a fraction of the maximum)."""
+    if not isinstance(queue, (int, float)) or not isinstance(maximum, (int, float)) or maximum <= 0:
+        return Text(format_value(queue))
+    fraction = queue / maximum
+    high = isinstance(watermark, (int, float)) and fraction >= watermark
+    filled = round(BAR_WIDTH * fraction)
+    return Text.assemble(
+        ("█" * filled, "dark_orange" if high else "green"),
+        ("░" * (BAR_WIDTH - filled), "dim"),
+        f" {queue:g} of {maximum:g}",
+    )
+
+
+def metrics_hub(report: dict[str, Any], live: dict[str, Any]) -> dict[str, RenderableType]:
+    """The metrics hub: what it received, wrote and dropped, its queue, and the database it writes to."""
+    statistics = report.get("statistics") or {}
+    rates = RATES.update("mh", report.get("timestamp"), counters(statistics, "received", "written"))
+    value = statistics.get  # the counters of the hub
+    last_s, avg_s = value("last_write_s"), value("avg_write_s")
+    write_time = None
+    if isinstance(last_s, (int, float)) and isinstance(avg_s, (int, float)):
+        write_time = f"last {last_s * 1000:.1f} ms, average {avg_s * 1000:.1f} ms"
+    metrics = [
+        ("Received", count(value("received"), rates.get("received"))),
+        ("Written", count(value("written"), rates.get("written"))),
+        ("Dropped", problem(value("dropped"), "dark_orange")),
+        ("Errors", problem(value("errors"), "red")),
+        ("Queue", queue_bar(value("queue"), value("queue_maxsize"), report.get("backlog_high_watermark"))),
+        ("Pending flushes", value("pending_flushes")),
+        ("Batches", f"{format_value(value('write_batches'))}, last {format_value(value('last_batch_size'))}"),
+        ("Write time", write_time),
+        ("Started", format_time(value("start_time")) or None),
+    ]
+
+    backend = report.get("backend") or {}
+    reachable = backend.get("reachable")
+    if reachable is not None:
+        reachable = Text("yes", style="green") if reachable else Text("no", style="red")
+    setting = report.get  # the configuration of the hub
+    database = [
+        ("Backend", backend.get("name")),
+        ("Reachable", reachable),
+        ("Address", f"{backend['host']}:{backend['port']}" if backend.get("host") else None),
+        ("Database", backend.get("database")),
+        ("Table", f"{backend.get('table_name')} ({backend.get('schema')})" if backend.get("table_name") else None),
+        ("Batch size", f"{format_value(setting('batch_size'))}, at most {format_value(setting('max_batch_size'))}"),
+        ("Flush every", f"{format_value(setting('flush_interval'))} s"),
+        ("Flushes at a time", setting("flush_concurrency")),
+    ]
+    return {
+        "Metrics": key_values([(label, value) for label, value in metrics if value is not None]),
+        "Database": key_values([(label, value) for label, value in database if value is not None]),
+    }
+
+
+LEVEL_COLOURS = {"WARNING": "dark_orange", "ERROR": "red", "CRITICAL": "bold red"}
+
+
+def level_number(name: str) -> int:
+    """The number of a level name, e.g. 30 for WARNING, 0 for a name that logging doesn't know."""
+    number = logging.getLevelName(name)
+    return number if isinstance(number, int) else 0
+
+
+def log_summary(summary: Any) -> RenderableType | None:
+    """The last warning or error of the logger: when, from where, and the message."""
+    if not isinstance(summary, dict):
+        return None
+    return Group(
+        Text.assemble(when(summary.get("time")) or "", (f"  {summary.get('process')} {summary.get('name')}", "dim")),
+        Text(str(summary.get("message", "")), style=LEVEL_COLOURS.get(summary.get("level"), "")),
+    )
+
+
+def logger(report: dict[str, Any], live: dict[str, Any]) -> dict[str, RenderableType]:
+    """The logger: where it writes, at which levels, and what it received."""
+    location = report.get("file_logger_location")
+    path = Path(location) if location else None
+    configuration = [
+        ("Folder", str(path.parent) if path else None),
+        ("File", path.name if path else None),
+        ("File level", report.get("file_logger_level")),
+        ("Console level", report.get("stream_logger_level")),
+    ]
+    sections = {"Logger": key_values([(label, value) for label, value in configuration if value is not None])}
+
+    statistics = report.get("statistics")
+    if not isinstance(statistics, dict):
+        sections["Messages"] = Text(
+            "This logger doesn't report statistics, restart it with the current version to see them.", style="dim"
+        )
+        return sections
+
+    rates = RATES.update("log", epoch_timestamp(report), {"received": statistics.get("received")})
+    levels = Text()
+    by_level = sorted((statistics.get("levels") or {}).items(), key=lambda item: level_number(item[0]))
+    for name, number in by_level:
+        if levels:
+            levels.append(", ")
+        levels.append(f"{name} {number}", style=LEVEL_COLOURS.get(name, ""))
+    messages = [
+        ("Received", count(statistics.get("received"), rates.get("received"))),
+        ("By level", levels or None),
+        ("Last warning", log_summary(statistics.get("last_warning"))),
+        ("Last error", log_summary(statistics.get("last_error"))),
+        ("Started", format_time(statistics.get("start_time")) or None),
+    ]
+    sections["Messages"] = key_values([(label, value) for label, value in messages if value is not None])
+    return sections
+
+
+BUILTINS = {
+    "reg": registry,
+    "sm": storage,
+    "cm": configuration_manager,
+    "pm": process_manager,
+    "log": logger,
+    "nh": notification_hub,
+    "mh": metrics_hub,
+}
 """The built-in renderers by `cgse_object`."""

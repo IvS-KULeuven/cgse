@@ -44,6 +44,9 @@ details          service or device specific status
 - `details` comes from `get_status_details()` (sync, by default the entries the device protocol adds to its
   `get_status()`) or `get_component_status()` (async). CM: `obsid_active, obsid, setup_id, site_id`. SM:
   `storage_location, disk_usage, loaded_setup_id, obsid, registrations`. PM: `core_processes`.
+- The logger (`log_cs`, not a control server) answers `"status"` also with `statistics`: `start_time`, `received`,
+  the number of records by level name in `levels`, and `last_warning` and `last_error` (time, logger name, process,
+  level, message cut to 200 characters). A logger started with an older version doesn't have them.
 - When `device` or `details` cannot be retrieved, that section contains only an `error` entry.
 - Only `control_server`, `process` and `device` are guaranteed JSON-safe. Sync `details` travel over pickle and may hold
   any value a device protocol puts there, e.g. `NaN` in the `alength` of the hexapods, which is not valid strict JSON.

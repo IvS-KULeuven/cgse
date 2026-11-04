@@ -105,6 +105,41 @@ file_formatter = DateTimeFormatter(fmt=LOG_FORMAT_FILE, style=LOG_FORMAT_FILE_ST
 app = typer.Typer(name=PROCESS_NAME)
 
 
+STATISTICS: dict = {
+    "start_time": datetime.datetime.now(datetime.timezone.utc).timestamp(),
+    "received": 0,
+    "levels": {},
+    "last_warning": None,
+    "last_error": None,
+}
+"""What the logger received since it started, part of the answer to the `status` command: the number of records, by
+level name, and the last warning and the last error (or critical) with the time, the logger name, the process and
+the message."""
+
+MAX_MESSAGE_LENGTH = 200
+"""The message of the last warning or error is cut to this length in the statistics."""
+
+
+def count_log_record(record: logging.LogRecord) -> None:
+    """Adds the record to the statistics."""
+    STATISTICS["received"] += 1
+    levels = STATISTICS["levels"]
+    levels[record.levelname] = levels.get(record.levelname, 0) + 1
+    if record.levelno >= logging.WARNING:
+        try:
+            message = record.getMessage()
+        except Exception as exc:  # a record with arguments that don't match its message
+            message = f"{record.msg} ({type(exc).__name__})"
+        summary = {
+            "time": record.created,
+            "name": record.name,
+            "process": record.processName,
+            "level": record.levelname,
+            "message": message[:MAX_MESSAGE_LENGTH],
+        }
+        STATISTICS["last_error" if record.levelno >= logging.ERROR else "last_warning"] = summary
+
+
 def _log_record(message: str, level: int = logging.WARNING):
     record = _create_log_record(level, message)
     handle_log_record(record)
@@ -296,6 +331,8 @@ def handle_log_record(record):
     """Send the log record to the file handler and the stream handler."""
     global file_handler, stream_handler, socket_handler
 
+    count_log_record(record)
+
     if record.levelno >= LOG_LEVEL_FILE:
         file_handler.emit(record)
 
@@ -357,6 +394,7 @@ def handle_command(command) -> dict:
                 file_logger_level=logging.getLevelName(LOG_LEVEL_FILE),
                 stream_logger_level=logging.getLevelName(LOG_LEVEL_STREAM),
                 file_logger_location=file_handler.baseFilename,
+                statistics=STATISTICS,
             )
         )
 

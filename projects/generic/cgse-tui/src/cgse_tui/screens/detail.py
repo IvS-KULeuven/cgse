@@ -64,11 +64,20 @@ class DetailScreen(Screen):
         border-title-style: bold;
         padding: 0 1;
     }
+    /* A grid row is as high as its highest cell, and height 100% makes every panel fill its cell: the
+       Service, Process and Device panels get the same height. */
     DetailScreen #top {
+        layout: grid;
+        grid-size: 3;
+        grid-columns: 1fr;
+        grid-rows: auto;
         height: auto;
     }
+    DetailScreen #top.-no-device {
+        grid-size: 2;
+    }
     DetailScreen #top .panel {
-        width: 1fr;
+        height: 100%;
     }
     DetailScreen #details-area {
         height: auto;
@@ -159,6 +168,7 @@ class DetailScreen(Screen):
 
         device_panel = self.query_one("#device-panel")
         device_panel.display = panels.has_device_panel(service)
+        self.query_one("#top").set_class(not device_panel.display, "-no-device")
         if device_panel.display:
             self.query_one("#device", Static).update(panels.device_panel(service))
 

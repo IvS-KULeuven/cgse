@@ -104,7 +104,9 @@ def key_values(rows: list[Row]) -> Table:
     grid.add_column(overflow="fold")  # e.g. a long path is folded, not cut off
     for label, value in rows:
         key = label.plain if isinstance(label, Text) else label
-        grid.add_row(label, value if isinstance(value, (Text, Table)) else Text(format_value(value, key)))
+        # A Rich renderable (Text, Table, Group, ...) is shown as it is, any other value is formatted
+        renderable = hasattr(value, "__rich_console__") or hasattr(value, "__rich__")
+        grid.add_row(label, value if renderable else Text(format_value(value, key)))
     return grid
 
 

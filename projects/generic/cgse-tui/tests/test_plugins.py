@@ -195,3 +195,60 @@ def test_the_same_renderable_keeps_its_guard():
     first, _ = plugins.render(hexapod())
     second, _ = plugins.render(hexapod())
     assert first[0][1] is second[0][1]
+
+
+def test_rates_from_successive_statuses():
+    rates = builtin.Rates(window=10)
+    assert rates.update("x", 100, {"n": 0}) == {"n": None}
+    assert rates.update("x", 100, {"n": 50}) == {"n": None}  # the same status again: no new sample
+    assert rates.update("x", 102, {"n": 20}) == {"n": 10.0}
+    assert rates.update("x", 104, {"n": 40}) == {"n": 10.0}
+    assert rates.update("x", 106, {"n": 5}) == {"n": None}  # the counter went down: the server restarted
+
+
+def test_metrics_hub_builtin():
+    builtin.RATES = builtin.Rates()
+    report = {
+        "timestamp": 100,
+        "backend": {"name": "questdb", "host": "localhost", "port": 8812, "reachable": False},
+        "backlog_high_watermark": 0.2,
+        "statistics": {"received": 10, "written": 8, "dropped": 2, "errors": 0, "queue": 3000, "queue_maxsize": 10000},
+    }
+    builtin.metrics_hub(report, {})
+    later = {**report, "timestamp": 102, "statistics": {**report["statistics"], "received": 30, "written": 28}}
+    sections = builtin.metrics_hub(later, {})
+    metrics, database = render(sections["Metrics"]), render(sections["Database"])
+    assert "30  (10.0/s)" in metrics and "28  (10.0/s)" in metrics
+    assert "3000 of 10000" in metrics
+    assert "Reachable  no" in " ".join(database.split()) or "no" in database
+    assert "localhost:8812" in database
+
+
+def test_notification_hub_builtin():
+    report = {"timestamp": 100, "statistics": {"events_received": 5, "events_published": 3, "start_time": 1.8e9}}
+    text = render(builtin.notification_hub(report, {})["Events"])
+    assert "Not published" in text and "none yet" in text
+
+
+def test_logger_builtin():
+    report = {
+        "timestamp": "2026-11-04T21:22:04.821+0000",
+        "file_logger_location": "/data/log/general.log",
+        "file_logger_level": "DEBUG",
+        "stream_logger_level": "INFO",
+    }
+    sections = builtin.logger(report, {})
+    assert "/data/log" in render(sections["Logger"]) and "general.log" in render(sections["Logger"])
+    assert "restart it" in render(sections["Messages"])
+
+    statistics = {
+        "start_time": 1.8e9,
+        "received": 12,
+        "levels": {"WARNING": 2, "INFO": 9, "ERROR": 1, "SPECIAL": 0},
+        "last_warning": None,
+        "last_error": {"time": 1.8e9, "name": "egse.x", "process": "cm_cs", "level": "ERROR", "message": "boom"},
+    }
+    messages = render(builtin.logger({**report, "statistics": statistics}, {})["Messages"])
+    assert "SPECIAL 0, INFO 9, WARNING 2, ERROR 1" in messages  # by level number, unknown names first
+    assert "boom" in messages and "cm_cs egse.x" in messages
+    assert "Last warning" not in messages
