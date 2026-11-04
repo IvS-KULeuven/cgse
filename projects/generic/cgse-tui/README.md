@@ -43,6 +43,8 @@ The detail screen shows the selected service in panels, updated every second:
   in `docs/dev_guide/plugins.md`;
 - Registrations: only for the service registry, all registered services; `enter` shows the details of the selected
   service, `esc` goes back.
+- Log: only for the logger, the last log lines, coloured by level, filling the lower part of the screen; new lines are
+  requested every 2 s with the `tail` command of the logger (a logger of an older version doesn't have it);
 - Core services: only for the Process Manager, the core services it manages with their state in the TUI; `enter`
   shows the details of the selected service, `esc` goes back.
 

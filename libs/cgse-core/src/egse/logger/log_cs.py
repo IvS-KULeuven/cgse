@@ -12,6 +12,7 @@ import multiprocessing
 import os
 import pickle
 import sys
+from collections import deque
 from logging import StreamHandler
 from logging.handlers import SocketHandler
 from logging.handlers import TimedRotatingFileHandler
@@ -119,17 +120,41 @@ the message."""
 MAX_MESSAGE_LENGTH = 200
 """The message of the last warning or error is cut to this length in the statistics."""
 
+TAIL_LENGTH = 1000
+"""The number of recent records the logger keeps in memory for the `tail` command."""
+
+MAX_TAIL_MESSAGE_LENGTH = 1000
+"""The message of a record in the tail is cut to this length."""
+
+TAIL: deque = deque(maxlen=TAIL_LENGTH)
+"""The most recent records, oldest first, as dictionaries with a sequence number `seq` (the number of records received
+when it arrived), `time`, `level`, `name`, `process` and `message`. See the `tail` command in `handle_command()`."""
+
+
+def _message(record: logging.LogRecord) -> str:
+    try:
+        return record.getMessage()
+    except Exception as exc:  # a record with arguments that don't match its message
+        return f"{record.msg} ({type(exc).__name__})"
+
 
 def count_log_record(record: logging.LogRecord) -> None:
-    """Adds the record to the statistics."""
+    """Adds the record to the statistics and to the tail."""
     STATISTICS["received"] += 1
     levels = STATISTICS["levels"]
     levels[record.levelname] = levels.get(record.levelname, 0) + 1
+    message = _message(record)
+    TAIL.append(
+        {
+            "seq": STATISTICS["received"],
+            "time": record.created,
+            "level": record.levelname,
+            "name": record.name,
+            "process": record.processName,
+            "message": message[:MAX_TAIL_MESSAGE_LENGTH],
+        }
+    )
     if record.levelno >= logging.WARNING:
-        try:
-            message = record.getMessage()
-        except Exception as exc:  # a record with arguments that don't match its message
-            message = f"{record.msg} ({type(exc).__name__})"
         summary = {
             "time": record.created,
             "name": record.name,
@@ -395,6 +420,23 @@ def handle_command(command) -> dict:
                 stream_logger_level=logging.getLevelName(LOG_LEVEL_STREAM),
                 file_logger_location=file_handler.baseFilename,
                 statistics=STATISTICS,
+            )
+        )
+
+    elif command.lower().startswith("tail"):
+        # "tail [after [max]]": the records in the tail with a sequence number above `after`, at most `max` of them,
+        # the most recent ones. A client that remembers the last sequence number only gets the new records.
+        try:
+            after, maximum = (int(value) for value in (command.split()[1:] + ["0", "100"])[:2])
+        except ValueError:
+            response.update(dict(status="NACK", error=f"Usage: tail [after [max]], got {command!r}"))
+            return response
+        records = [record for record in TAIL if record["seq"] > after]
+        response.update(
+            dict(
+                status="ACK",
+                last_seq=STATISTICS["received"],
+                records=records[-maximum:] if maximum > 0 else [],
             )
         )
 

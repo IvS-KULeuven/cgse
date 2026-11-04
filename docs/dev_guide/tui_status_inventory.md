@@ -47,6 +47,10 @@ details          service or device specific status
 - The logger (`log_cs`, not a control server) answers `"status"` also with `statistics`: `start_time`, `received`,
   the number of records by level name in `levels`, and `last_warning` and `last_error` (time, logger name, process,
   level, message cut to 200 characters). A logger started with an older version doesn't have them.
+- The logger keeps its last 1000 records in memory. `"tail <after> <max>"` returns the records with a sequence number
+  above `after`, at most `max` of them, the most recent ones, and `last_seq`, the sequence number of the last record
+  received. A client that remembers `last_seq` only gets the new records. A `last_seq` that goes down means the
+  logger was restarted.
 - When `device` or `details` cannot be retrieved, that section contains only an `error` entry.
 - Only `control_server`, `process` and `device` are guaranteed JSON-safe. Sync `details` travel over pickle and may hold
   any value a device protocol puts there, e.g. `NaN` in the `alength` of the hexapods, which is not valid strict JSON.
