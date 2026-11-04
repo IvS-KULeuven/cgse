@@ -1564,6 +1564,8 @@ class ThermalVacControlServer(AcquisitionAsyncControlServer):
         self.metrics_count = 0
         self.metrics_failed_count = 0
         self.latest_sample: dict[str, Any] = {}
+        self.latest_sample_at: str | None = None
+        """Time of the latest sample, ISO 8601 in UTC."""
         self._metrics_sender: AsyncMetricsHubSender | None = None
 
         super().__init__()
@@ -1700,7 +1702,8 @@ class ThermalVacControlServer(AcquisitionAsyncControlServer):
     def get_component_status(self) -> dict[str, Any]:
         """Returns the component status of the ThermalVac Control Server.
 
-        The returned status reports the state of the Control Server and its sinks, not live device telemetry.
+        The returned status reports the state of the Control Server and its sinks, and the latest sample for display,
+        e.g. in the TUI. The samples themselves go to the CSV file and the Metrics Hub.
 
         Returns:
             Component status of the ThermalVac Control Server.
@@ -1732,6 +1735,7 @@ class ThermalVacControlServer(AcquisitionAsyncControlServer):
             "failed_metrics": self.metrics_failed_count,
             "metrics_sender_connected": self._metrics_sender is not None,
         }
+        components["latest"] = {"timestamp": self.latest_sample_at, "sample": dict(self.latest_sample)}
 
         return components
 
@@ -1770,6 +1774,7 @@ class ThermalVacControlServer(AcquisitionAsyncControlServer):
         """
 
         self.latest_sample = data
+        self.latest_sample_at = timestamp or dt.datetime.now(dt.timezone.utc).isoformat()
 
         timestamped_data = {"timestamp": timestamp or dt.datetime.now(dt.timezone.utc).isoformat()} | data
 

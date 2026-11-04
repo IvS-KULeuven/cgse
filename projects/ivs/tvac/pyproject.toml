@@ -43,6 +43,9 @@ tvac = 'ivs_tvac.cgse_services:tvac'
 [project.entry-points."cgse.explore"]
 explore = "ivs_tvac.cgse_explore"
 
+[project.entry-points."cgse.tui.details"]
+tvac = "ivs_tvac.tui_details:details"
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 pythonpath = [

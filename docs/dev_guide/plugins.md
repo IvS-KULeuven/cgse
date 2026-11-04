@@ -270,8 +270,10 @@ that isn't a Rich renderable, is logged once and the generic tree is shown, the 
 The core services have built-in renderers in `cgse_tui.details`, e.g. the disk usage of the Storage Manager, the
 running observation and the loaded Setup of the Configuration Manager, the core services of the Process Manager with
 their state, and the messages per second of the logger and the hubs. A plugin takes precedence over a built-in
-renderer. The `symetrie-hexapod` package has an example in
-`symetrie_hexapod/tui_details.py`.
+renderer. The `symetrie-hexapod` (`symetrie_hexapod/tui_details.py`), `keithley-tempcontrol`
+(`keithley_tempcontrol/tui_details.py`) and `ivs-tvac` (`ivs_tvac/tui_details.py`) packages have examples. A device
+control server that wants its latest readings in its panel adds them as a component, e.g. `latest` in
+`get_component_status()` of the DAQ6510 and the ThermalVac, so they arrive with every monitoring message.
 
 ## Register resources
 

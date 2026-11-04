@@ -44,6 +44,9 @@ details          service or device specific status
 - `details` comes from `get_status_details()` (sync, by default the entries the device protocol adds to its
   `get_status()`) or `get_component_status()` (async). CM: `obsid_active, obsid, setup_id, site_id`. SM:
   `storage_location, disk_usage, loaded_setup_id, obsid, registrations`. PM: `core_processes`.
+- The DAQ6510 and the ThermalVac add their latest readings to `details` (and to the components of their monitoring
+  messages) as `latest`: the DAQ6510 per channel `{value, unit, timestamp}`, the ThermalVac `{timestamp, sample}`.
+  They are for display; the readings themselves go to the Storage Manager (CSV) and the Metrics Hub.
 - The logger (`log_cs`, not a control server) answers `"status"` also with `statistics`: `start_time`, `received`,
   the number of records by level name in `levels`, and `last_warning` and `last_error` (time, logger name, process,
   level, message cut to 200 characters). A logger started with an older version doesn't have them.

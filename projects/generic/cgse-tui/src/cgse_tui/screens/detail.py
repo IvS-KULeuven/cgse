@@ -35,6 +35,10 @@ from cgse_tui.screens.registry import RegistryTable
 logger = logging.getLogger("cgse_tui.detail")
 
 
+MAX_SECTION_COLUMNS = 3
+"""Sections of the Details panel side by side; more sections continue on the next row."""
+
+
 def panel(title: str, *children, id: str | None = None) -> Vertical:
     container = Vertical(*children, id=id, classes="panel")
     container.border_title = title
@@ -86,8 +90,8 @@ class DetailScreen(Screen):
     DetailScreen #top .panel {
         height: 100%;
     }
-    /* The sections of the Details panel side by side, as high as the highest, like the top row. The number of
-       columns is the number of sections, set in _show_details(). */
+    /* The sections of the Details panel side by side, at most MAX_SECTION_COLUMNS per row, each row as high as its
+       highest section, like the top row. The number of columns is set in _show_details(). */
     DetailScreen #details-area {
         layout: grid;
         grid-columns: 1fr;
@@ -248,7 +252,7 @@ class DetailScreen(Screen):
             self._sections = [Static(renderable, classes="section") for _, renderable in sections]
             self._section_panels = [panel(title, static) for title, static in zip(titles, self._sections)]
             area.remove_children()
-            area.styles.grid_size_columns = len(self._section_panels)
+            area.styles.grid_size_columns = min(len(self._section_panels), MAX_SECTION_COLUMNS)
             area.mount_all(self._section_panels)
         else:
             for static, (_, renderable) in zip(self._sections, sections):

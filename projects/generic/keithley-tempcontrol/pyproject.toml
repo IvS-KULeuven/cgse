@@ -43,6 +43,9 @@ daq6510 = 'keithley_tempcontrol.cgse_services:daq6510'
 [project.entry-points."cgse.explore"]
 explore = "keithley_tempcontrol.cgse_explore"
 
+[project.entry-points."cgse.tui.details"]
+daq6510 = "keithley_tempcontrol.tui_details:details"
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 pythonpath = [
