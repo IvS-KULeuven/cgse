@@ -436,3 +436,41 @@ async def test_registry_drill_down_opens_the_details_of_a_service():
 
         await pilot.press("escape")
         assert app.screen is screen
+
+
+async def test_process_manager_lists_its_core_services_with_their_state():
+    from cgse_tui.screens.procman import CoreServicesTable
+
+    procman = ServiceInfo(
+        name="Process Manager",
+        service_type="PM_CS",
+        state=ServiceState.OK,
+        server_kind="sync",
+        cgse_object="pm",
+        report={
+            "control_server": {},
+            "device": None,
+            "details": {"core_processes": {"Storage Manager": "SM_CS", "Process Manager": "PM_CS"}},
+        },
+    )
+    collector = StaticCollector([procman, SERVICES[1]])  # the Storage Manager is inactive
+    app = CgseTuiApp(collector=collector)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app.show_details("PM_CS")
+        await pilot.pause()
+        app.update_overview()
+        screen = app.screen
+        table = screen.query_one("#core-services", CoreServicesTable)
+        assert table.row_count == 2 and screen.query_one("#procman-panel").display
+        assert screen.query_one("#procman-panel").border_subtitle == "1 of 2 running"
+        assert str(table.get_row("SM_CS")[3]) == "inactive"
+        assert not screen.query_one("#registry-panel").display
+        assert "2 managed" in text(screen, ".section")
+
+        table.focus()
+        table.move_cursor(row=table.get_row_index("SM_CS"))
+        await pilot.press("enter")
+        await pilot.pause()
+        assert app.screen.service.service_type == "SM_CS"
+        assert not app.screen.query_one("#procman-panel").display

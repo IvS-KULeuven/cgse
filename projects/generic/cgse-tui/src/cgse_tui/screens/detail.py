@@ -22,6 +22,7 @@ from cgse_tui.data.model import ServiceState
 from cgse_tui.data.services import custom_kind
 from cgse_tui.plugins import DetailsRenderers
 from cgse_tui.screens import panels
+from cgse_tui.screens.procman import CoreServicesTable
 from cgse_tui.screens.registry import RegistryTable
 
 logger = logging.getLogger("cgse_tui.detail")
@@ -38,7 +39,8 @@ class DetailScreen(Screen):
 
     The Details panel comes from a plugin of the package of the service, a built-in renderer, or the generic tree, see
     `cgse_tui.plugins`. A renderer can split the details over several panels. The detail screen of the service
-    registry also has a table of the registrations: `enter` shows the details of the selected service.
+    registry also has a table of the registrations, that of the Process Manager a table of the core services: `enter`
+    shows the details of the selected service.
 
     The app passes the services to `show_services()` on every update of the overview, so the panels follow the
     service live, also when it is restarted. The status report is requested when the screen opens and with `r`, the
@@ -74,7 +76,7 @@ class DetailScreen(Screen):
     DetailScreen #details-area .panel {
         width: 1fr;
     }
-    DetailScreen #registrations {
+    DetailScreen #registrations, DetailScreen #core-services {
         height: auto;
         max-height: 20;
     }
@@ -106,6 +108,7 @@ class DetailScreen(Screen):
         self._section_titles: list[str] = []
         self._sections: list[Static] = []
         self._section_panels: list[Vertical] = []
+        self._services: list[ServiceInfo] = []
         self._requesting = False
         self._gone = False
         self._raw_report: dict | None = None
@@ -120,6 +123,7 @@ class DetailScreen(Screen):
                 yield panel("Device", Static(id="device"), id="device-panel")
             yield Horizontal(id="details-area")
             yield panel("Registrations", RegistryTable(id="registrations"), id="registry-panel")
+            yield panel("Core services", CoreServicesTable(id="core-services"), id="procman-panel")
         with VerticalScroll(id="raw-view"):
             yield Pretty({}, id="raw")
         yield Footer()
@@ -132,6 +136,7 @@ class DetailScreen(Screen):
 
     def show_services(self, services: list[ServiceInfo]) -> None:
         """Follows the service in the given services; a service that is gone keeps its last information."""
+        self._services = services
         service = next((s for s in services if s.service_type == self.service.service_type), None)
         self._gone = service is None
         if service is not None:
@@ -163,6 +168,13 @@ class DetailScreen(Screen):
         registry_panel.display = custom_kind(service) == "registry"
         if registry_panel.display:
             self.query_one("#registrations", RegistryTable).show(service.report, now)
+
+        procman_panel = self.query_one("#procman-panel")
+        procman_panel.display = service.cgse_object == "pm"
+        if procman_panel.display:
+            table = self.query_one("#core-services", CoreServicesTable)
+            table.show(service.report, self._services, now)
+            procman_panel.border_subtitle = f"{table.running} of {table.row_count} running"
 
         if self._raw_report is not service.report:
             self._raw_report = service.report

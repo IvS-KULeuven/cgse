@@ -39,6 +39,8 @@ The detail screen shows the selected service in panels, updated every second:
   Manager, the observation and the whole Setup of the Configuration Manager), otherwise they're shown as a tree, see "Details in the TUI" in `docs/dev_guide/plugins.md`;
 - Registrations: only for the service registry, all registered services; `enter` shows the details of the selected
   service, `esc` goes back.
+- Core services: only for the Process Manager, the core services it manages with their state in the TUI; `enter`
+  shows the details of the selected service, `esc` goes back.
 
 CPU and memory warnings: the TUI judges the process of every service, and shows the CPU % and memory in orange or red,
 also in the overview, and writes a message in the log pane when this changes:

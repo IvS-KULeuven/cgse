@@ -150,5 +150,11 @@ def configuration_manager(report: dict[str, Any], live: dict[str, Any]) -> dict[
     return sections
 
 
-BUILTINS = {"reg": registry, "sm": storage, "cm": configuration_manager}
+def process_manager(report: dict[str, Any], live: dict[str, Any]) -> RenderableType:
+    """The Process Manager: the number of core services it manages, which are listed in their own table."""
+    processes = (report.get("details") or {}).get("core_processes") or {}
+    return key_values([("Core services", f"{len(processes)} managed")])
+
+
+BUILTINS = {"reg": registry, "sm": storage, "cm": configuration_manager, "pm": process_manager}
 """The built-in renderers by `cgse_object`."""
