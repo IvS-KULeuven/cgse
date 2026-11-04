@@ -9,9 +9,12 @@ in the entry-point group `cgse.tui.details`, with the `cgse_object` of the servi
 
 The function is called with the last status report and the device values of the last monitoring message:
 
-    def details(report: dict, live: dict) -> RenderableType | dict[str, RenderableType]
+    Section = dict[str, RenderableType]
 
-It returns a Rich renderable, or a dictionary of titled renderables that are shown as separate panels. The
+    def details(report: dict, live: dict) -> RenderableType | Section | list[Section]
+
+It returns a Rich renderable, a dictionary of titled renderables that are shown as separate panels side by side (at
+most three per row), or a list of such dictionaries, one per row: a row with a single panel takes the full width. The
 function only uses Rich, so the package doesn't depend on Textual or on this package. A renderer that returns the
 same renderable object as the previous call, e.g. from a cache, saves the time to render it again. See
 `docs/dev_guide/plugins.md`.
@@ -47,6 +50,8 @@ DETAILS = "Details"
 
 Renderer = Callable[[dict[str, Any], dict[str, Any]], Any]
 Sections = list[tuple[str, RenderableType]]
+Rows = list[Sections]
+"""The sections of the Details panel by row, the screen shows each row as a grid of panels."""
 
 
 def latest_details(report: dict[str, Any], live: dict[str, Any]) -> dict[str, Any]:
@@ -130,29 +135,37 @@ class DetailsRenderers:
         return self._plugins[cgse_object]
 
     def render(self, service: ServiceInfo) -> tuple[Sections, str]:
-        """The sections of the Details panel and the source shown in its border."""
+        """The sections of the Details panel, all rows after each other, and the source shown in its border."""
+        rows, source = self.render_rows(service)
+        return [section for row in rows for section in row], source
+
+    def render_rows(self, service: ServiceInfo) -> tuple[Rows, str]:
+        """The sections of the Details panel by row, and the source shown in its border."""
         generic = panels.details_panel(service)
         if not self._has_data(service):
-            return [(DETAILS, generic[0])], generic[1]
+            return [[(DETAILS, generic[0])]], generic[1]
 
         cgse_object = service.cgse_object
         renderer, source = self.plugin(cgse_object), f"plugin {cgse_object}"
         if renderer is None:
             renderer, source = self.builtins.get(cgse_object or ""), generic[1]
         if renderer is None:
-            return [(DETAILS, generic[0])], generic[1]
+            return [[(DETAILS, generic[0])]], generic[1]
 
         try:
             result = renderer(service.report, live_values(service.monitoring))
-            sections = self._sections(result)
+            rows = self._rows(result)
         except Exception as exc:
             self._log_error(cgse_object, exc)
-            return [(DETAILS, generic[0])], f"{source} failed, see the log".strip()
+            return [[(DETAILS, generic[0])]], f"{source} failed, see the log".strip()
 
         def on_error(exc: Exception) -> None:
             self._log_error(cgse_object, exc)
 
-        return [(title, self._guard(service, title, renderable, on_error)) for title, renderable in sections], source
+        guarded = [
+            [(title, self._guard(service, title, renderable, on_error)) for title, renderable in row] for row in rows
+        ]
+        return guarded, source
 
     def _guard(self, service: ServiceInfo, title: str, renderable: RenderableType, on_error) -> Guarded:
         """The guarded renderable; the same object as before when the renderer returned the same renderable, so the
@@ -172,6 +185,19 @@ class DetailsRenderers:
             return True
         report = service.report
         return "control_server" in report and not panels.error_of(report.get("details"))
+
+    @classmethod
+    def _rows(cls, result: Any) -> Rows:
+        """The rows of sections: a list of dictionaries is a row per dictionary, anything else is one row."""
+        if isinstance(result, list):
+            if not result or not all(isinstance(row, dict) for row in result):
+                raise TypeError("a list of rows shall contain dictionaries of titled renderables")
+            rows = [cls._sections(row) for row in result]
+            titles = [title for row in rows for title, _ in row]
+            if len(titles) != len(set(titles)):
+                raise ValueError(f"the titles of the sections shall be unique, got {titles}")
+            return rows
+        return [cls._sections(result)]
 
     @staticmethod
     def _sections(result: Any) -> Sections:

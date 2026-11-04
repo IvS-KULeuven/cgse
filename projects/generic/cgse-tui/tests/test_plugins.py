@@ -252,3 +252,17 @@ def test_logger_builtin():
     assert "SPECIAL 0, INFO 9, WARNING 2, ERROR 1" in messages  # by level number, unknown names first
     assert "boom" in messages and "cm_cs egse.x" in messages
     assert "Last warning" not in messages
+
+
+def test_sections_in_rows():
+    renderer = lambda report, live: [{"One": "a", "Two": "b"}, {"Three": "c"}]  # noqa: E731
+    rows, source = renderers({"puna": renderer}).render_rows(hexapod())
+    assert [[title for title, _ in row] for row in rows] == [["One", "Two"], ["Three"]]
+    sections, _ = renderers({"puna": renderer}).render(hexapod())
+    assert [title for title, _ in sections] == ["One", "Two", "Three"]  # render() gives all rows after each other
+
+
+def test_rows_with_the_same_title_are_refused(caplog):
+    renderer = lambda report, live: [{"One": "a"}, {"One": "b"}]  # noqa: E731
+    sections, source = renderers({"puna": renderer}).render(hexapod())
+    assert source.endswith("failed, see the log")

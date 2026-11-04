@@ -258,7 +258,10 @@ def details(report: dict, live: dict) -> RenderableType | dict[str, RenderableTy
   a sync device protocol adds to its `get_status()`, or the `components` of an async control server. They are newer
   than those in the report; when the server publishes no device values, `live` is empty.
 - The function returns a [Rich](https://rich.readthedocs.io) renderable, e.g. a `Table`, or a dictionary of
-  renderables that are shown as separate panels with the keys as titles, e.g. `{"Position": ..., "Actuators": ...}`.
+  renderables that are shown as separate panels with the keys as titles, e.g. `{"Position": ..., "Actuators": ...}`,
+  side by side, at most three per row and each row as high as its highest panel. It can also return a list of such
+  dictionaries, one per row, e.g. `[{"FB-1": ..., "Server": ...}, {"Fleas": ...}]`: a row with one panel takes the
+  full width, for a wide table. The titles shall be unique.
 
 The function is called every second, so it shall be fast and must not talk to the device. A renderable that is
 expensive to render, e.g. a large table that rarely changes, can be cached by the plugin: when the function returns

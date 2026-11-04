@@ -93,12 +93,15 @@ class DetailScreen(Screen):
     /* The sections of the Details panel side by side, at most MAX_SECTION_COLUMNS per row, each row as high as its
        highest section, like the top row. The number of columns is set in _show_details(). */
     DetailScreen #details-area {
+        height: auto;
+    }
+    DetailScreen .details-row {
         layout: grid;
         grid-columns: 1fr;
         grid-rows: auto;
         height: auto;
     }
-    DetailScreen #details-area .panel {
+    DetailScreen .details-row .panel {
         height: 100%;
     }
     DetailScreen #registrations, DetailScreen #core-services {
@@ -155,7 +158,7 @@ class DetailScreen(Screen):
         self.service = service
         self._refresh = refresh
         self._renderers = renderers
-        self._section_titles: list[str] = []
+        self._section_titles: list[list[str]] = []
         self._sections: list[Static] = []
         self._section_panels: list[Vertical] = []
         self._services: list[ServiceInfo] = []
@@ -171,7 +174,7 @@ class DetailScreen(Screen):
                 yield panel("Service", Static(id="service"), id="service-panel")
                 yield panel("Process", Static(id="process"), id="process-panel")
                 yield panel("Device", Static(id="device"), id="device-panel")
-            yield Horizontal(id="details-area")
+            yield Vertical(id="details-area")
             yield panel("Registrations", RegistryTable(id="registrations"), id="registry-panel")
             yield panel("Core services", CoreServicesTable(id="core-services"), id="procman-panel")
         yield panel("Log", RichLog(id="log-tail", max_lines=MAX_LINES, wrap=True, markup=False), id="log-panel")
@@ -242,18 +245,26 @@ class DetailScreen(Screen):
             self.query_one("#raw", Pretty).update(service.report or "No status report received yet.")
 
     def _show_details(self, service: ServiceInfo) -> None:
-        """Shows the sections of the Details renderer, a panel per section. The panels are only replaced when the
-        titles of the sections change, otherwise their content is updated."""
-        sections, source = self._renderers.render(service)
-        titles = [title for title, _ in sections]
+        """Shows the sections of the Details renderer, a panel per section, a grid per row. The panels are only
+        replaced when the titles of the sections change, otherwise their content is updated."""
+        rows, source = self._renderers.render_rows(service)
+        sections = [section for row in rows for section in row]
+        titles = [[title for title, _ in row] for row in rows]
         area = self.query_one("#details-area")
         if titles != self._section_titles:
             self._section_titles = titles
             self._sections = [Static(renderable, classes="section") for _, renderable in sections]
-            self._section_panels = [panel(title, static) for title, static in zip(titles, self._sections)]
+            statics = iter(self._sections)
+            self._section_panels = []
+            grids = []
+            for row in rows:
+                row_panels = [panel(title, next(statics)) for title, _ in row]
+                self._section_panels += row_panels
+                grid = Horizontal(*row_panels, classes="details-row")
+                grid.styles.grid_size_columns = min(len(row_panels), MAX_SECTION_COLUMNS)
+                grids.append(grid)
             area.remove_children()
-            area.styles.grid_size_columns = min(len(self._section_panels), MAX_SECTION_COLUMNS)
-            area.mount_all(self._section_panels)
+            area.mount_all(grids)
         else:
             for static, (_, renderable) in zip(self._sections, sections):
                 if renderable is not static.content:  # the same object needn't be rendered again

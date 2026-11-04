@@ -573,7 +573,35 @@ async def test_the_sections_of_the_details_have_the_same_height():
         app.push_screen(screen)
         await pilot.pause(0.3)
         area = screen.query_one("#details-area")
-        assert area.styles.grid_size_columns == 3
-        heights = [panel.region.height for panel in area.query(".panel")]
+        row = area.query_one(".details-row")
+        assert row.styles.grid_size_columns == 3
+        heights = [panel.region.height for panel in row.query(".panel")]
         assert len(heights) == 3 and len(set(heights)) == 1  # all three as high as the highest
         assert heights[0] >= 6  # the 4 lines of the highest section and its border
+
+
+async def test_a_plugin_can_put_its_sections_in_rows():
+    from cgse_tui.plugins import DetailsRenderers
+
+    def rows(report, live):
+        return [{"One": "a", "Two": "a\nb"}, {"Wide": "a table that needs the full width"}]
+
+    service = ServiceInfo(
+        name="AWG1",
+        service_type="AWG1",
+        state=ServiceState.OK,
+        server_kind="sync",
+        cgse_object="awg",
+        report={"control_server": {}, "details": {"x": 1}},
+    )
+    renderers = DetailsRenderers(builtins={"awg": rows}, entry_points=dict)
+    app = CgseTuiApp(collector=StaticCollector([service]))
+    async with app.run_test(size=(150, 50)) as pilot:
+        await pilot.pause()
+        screen = DetailScreen(service, renderers=renderers)
+        app.push_screen(screen)
+        await pilot.pause(0.3)
+        grids = list(screen.query_one("#details-area").query(".details-row"))
+        assert [grid.styles.grid_size_columns for grid in grids] == [2, 1]
+        wide = grids[1].query_one(".panel")
+        assert wide.border_title == "Wide" and wide.region.width > 140  # the full width
