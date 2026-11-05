@@ -247,8 +247,7 @@ joran = "symetrie_hexapod.tui_details:details"
 ```
 
 ```python
-def details(report: dict, live: dict) -> RenderableType | dict[str, RenderableType]:
-    ...
+def details(report: dict, live: dict) -> RenderableType | dict[str, RenderableType]: ...
 ```
 
 - `report` is the last status report of the control server, see the `details` section for the values of
