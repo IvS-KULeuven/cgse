@@ -18,6 +18,8 @@ from cgse_tui.logs import create_log_file_handler
 from cgse_tui.plugins import DetailsRenderers
 from cgse_tui.screens.action_select import ActionSelectScreen
 from cgse_tui.screens.detail import DetailScreen
+from cgse_tui.screens.help import DETAIL_SCREEN_ANCHOR
+from cgse_tui.screens.help import HelpScreen
 from cgse_tui.screens.overview import OverviewScreen
 
 logger = logging.getLogger("cgse_tui.app")
@@ -35,6 +37,8 @@ class CgseTuiApp(App):
             of the client libraries. No log file when None.
         actions: starts, stops and restarts the services, a default `ServiceActions` when None.
     """
+
+    BINDINGS = [("f1", "help", "Help")]
 
     TITLE = "CGSE"
     SUB_TITLE = "Status of services and devices"
@@ -93,6 +97,13 @@ class CgseTuiApp(App):
             return
         refresh = getattr(self.collector, "refresh_report", None)
         self.push_screen(DetailScreen(service, refresh=refresh and (lambda: refresh(service_type))))
+
+    def action_help(self) -> None:
+        """Shows the help, at the part about the detail screen when opened from there; F1 in the help closes it."""
+        if isinstance(self.screen, HelpScreen):
+            return
+        anchor = DETAIL_SCREEN_ANCHOR if isinstance(self.screen, DetailScreen) else None
+        self.push_screen(HelpScreen(anchor))
 
     def select_action(self, service: ServiceInfo) -> None:
         """Asks the user to start, stop or restart the service, and performs the selected action."""
