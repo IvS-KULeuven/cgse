@@ -590,3 +590,35 @@ async def test_high_cpu_is_judged_and_logged(caplog):
     assert "awg1: CPU is ok again." in messages
 
     await collector.stop()
+
+
+async def test_the_device_connection_follows_the_monitoring_messages():
+    collector, registry, fakes, clock = make_collector()
+    registry.records = [record("AWG1", service_port=2001, monitoring_port=2002, server_kind="sync")]
+    fakes.reports["AWG1"] = REPORT
+    await collector.poll()
+    await settle()
+    awg = by_type(collector)["AWG1"]
+    assert awg.connected is True  # from the status report
+
+    publish = fakes.subscriptions["tcp://10.0.0.1:2002"]
+    publish({**SYNC_MONITORING, "device": {"connected": False, "sim_mode": True}})
+    assert awg.connected is False  # right away, not at the next status report
+
+    publish(SYNC_MONITORING)  # a server of an older version: no device section, nothing changes
+    assert awg.connected is False
+
+    publish({**SYNC_MONITORING, "device": {"connected": True, "sim_mode": True}})
+    assert awg.connected is True and awg.has_device is True
+
+    publish({**SYNC_MONITORING, "device": None})  # a service without device
+    assert awg.has_device is False
+
+    await collector.stop()
+
+
+def test_the_device_section_is_not_a_live_value():
+    from cgse_tui.data.monitor import live_values
+
+    live = live_values({**SYNC_MONITORING, "device": {"connected": True}, "mach": [0.0]})
+    assert "device" not in live and live["mach"] == [0.0]

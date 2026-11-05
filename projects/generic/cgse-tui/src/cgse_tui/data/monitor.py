@@ -36,7 +36,7 @@ def process_fields(status: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-MONITORING_KEYS = {"schema_version", "timestamp", "delay", "control_server", "process"}
+MONITORING_KEYS = {"schema_version", "timestamp", "delay", "control_server", "device", "process"}
 """Keys of a monitoring message that are not device values."""
 
 PROCESS_KEYS = {"PID", "Up", "UUID", "RSS", "USS", "CPU User", "CPU System", "CPU count", "CPU%"}

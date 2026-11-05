@@ -44,6 +44,10 @@ details          service or device specific status
 - `details` comes from `get_status_details()` (sync, by default the entries the device protocol adds to its
   `get_status()`) or `get_component_status()` (async). CM: `obsid_active, obsid, setup_id, site_id`. SM:
   `storage_location, disk_usage, loaded_setup_id, obsid, registrations`. PM: `core_processes`.
+- Every monitoring message of a sync or async control server has a `device` section, the same as in the status
+  report (`get_device_status()`: `connected`, `sim_mode`, None for a server without device, an `error` entry when it
+  can't be retrieved). The TUI takes the device connection from it every second, and from the status report for a
+  server of an older version.
 - The DAQ6510 and the ThermalVac add their latest readings to `details` (and to the components of their monitoring
   messages) as `latest`: the DAQ6510 per channel `{value, unit, timestamp}`, the ThermalVac `{timestamp, sample}`.
   They are for display; the readings themselves go to the Storage Manager (CSV) and the Metrics Hub.
