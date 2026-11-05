@@ -865,3 +865,17 @@ if __name__ == "__main__":
             console.print("\nInvalid input, please enter a number.", style="bold red")
         except asyncio.CancelledError:
             console.print("\nTest cancelled.", style="bold red")
+
+
+def test_monitoring_status_has_the_device_status():
+    """The device status is in every monitoring message; an error in it doesn't stop the monitoring."""
+    server = TempControlServer()
+
+    server.get_device_status = lambda: {"connected": False, "sim_mode": True}
+    assert server.get_status()["device"] == {"connected": False, "sim_mode": True}
+
+    def broken():
+        raise RuntimeError("no device")
+
+    server.get_device_status = broken
+    assert server.get_status()["device"] == {"error": "RuntimeError: no device"}

@@ -346,6 +346,14 @@ class ControlServer(metaclass=abc.ABCMeta):
 
         return None
 
+    def get_device_status_for_monitoring(self) -> dict | None:
+        """The device status for the monitoring messages, see `get_device_status()`; an `error` entry when it can't be
+        retrieved, so the monitoring messages are never stopped by it."""
+        try:
+            return self.get_device_status()
+        except Exception as exc:
+            return {"error": f"{type(exc).__name__}: {exc}"}
+
     def get_status_report(self) -> dict:
         """Returns the status report of the Control Server, as requested by clients through the service command
         `get_status_report`.
@@ -671,7 +679,11 @@ class ControlServer(metaclass=abc.ABCMeta):
                 last_time = time_in_ms()
                 # self.logger.debug("Sending status to monitoring processes.")
                 try:
-                    self.monitoring_protocol.send_status(save_average_execution_time(self.device_protocol.get_status))
+                    status = save_average_execution_time(self.device_protocol.get_status)
+                    # The device status (connected, sim_mode) in every monitoring message, not only in the status
+                    # report, so a client follows the connection with the device every second.
+                    status = {**status, "device": self.get_device_status_for_monitoring()}
+                    self.monitoring_protocol.send_status(status)
                 except Exception as exc:
                     logger.error(
                         textwrap.dedent(

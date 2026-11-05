@@ -7,6 +7,65 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Device status in the monitoring messages
+
+- Every monitoring message of a sync or async control server has a `device` section, the same as in the status
+  report (`get_device_status()`: `connected`, `sim_mode`, None for a server without device, an `error` entry when it
+  can't be retrieved; an error never stops the monitoring messages).
+- CGSE TUI: the device connection (orange square, Device column) follows the monitoring messages, so it changes within
+  a second. Before, it came from the status report every 10 s, and a short loss of the connection was missed or shown
+  too long. A server of an older version has no `device` section; then the status report is used, as before.
+
+### CGSE TUI: Details panels and plugins
+
+- The Details panel of a service comes from a plugin of its package, a built-in renderer for the core services, or
+  the generic tree, in that order. A package registers a function in the new entry-point group `cgse.tui.details`
+  with the `cgse_object` as name: `details(report, live)` gets the last status report and the device values of the
+  last monitoring message, and returns a Rich renderable, a dict of titled renderables (side by side, at most three
+  per row), or a list of such dicts, one per row (a row with one panel takes the full width). Only Rich is needed, the
+  package doesn't depend on the TUI. A plugin is imported when it's first needed; a plugin that can't be loaded,
+  raises or returns something Rich can't render is logged once and the generic tree is shown. A renderer that returns
+  the same object as before isn't rendered again. See "Details in the TUI" in `docs/dev_guide/plugins.md`.
+- Built-in panels: the service registry (number of registrations by health, and a table of the registrations; `enter`
+  opens the details of a service), the Storage Manager (location, disk usage bar, orange from 80 %, red from 90 %,
+  loaded Setup, observation, registrations), the Configuration Manager (observation, Setup ID, site, folder on the host
+  of the CM and file, and the whole Setup as a tree, `history` last), the Process Manager (its core services with their
+  state, process and resources; `enter` opens their details), the metrics hub (received and written with their rate
+  per second, dropped, errors, queue bar, write times, and the database), the notification hub (events received and
+  published with their rate, time of the last event) and the logger (log file and levels, messages by level, last
+  warning and error, and the last log lines filling the lower part of the screen).
+- Plugins: the hexapods PUNA, ZONDA and JORAN (positions in machine and user coordinates, actuator lengths), the
+  DAQ6510 (latest reading per channel, scan, data sinks) and the ThermalVac (vessel and pumps, temperatures, data).
+- The Service, Process and Device panels have the same height, and so have the panels of a row of the Details.
+- Fixed: a detail screen opened without its Details and filled them up to a second later.
+
+### CGSE TUI: detail screen in panels
+
+- The detail screen shows a service in panels, updated every second: Service (registration and endpoints), Process
+  (PID, uptime, CPU, memory), Device (connection and simulator mode, only for services with a device) and Details. It
+  follows the service when it is restarted, keeps the last information when it is gone, and is dimmed when the service
+  is stale or not running. `v` shows the raw status report; `r` requests it right away, without a notification.
+- Details: nested values are shown as a tree with the values aligned in a column, lists of dicts as tables, and the
+  values of keys like `start_time` or `last_heartbeat` (seconds since the epoch) as local time. For a control server the
+  `details` of the status report are updated with the device values of its monitoring messages (the border says `live`).
+  A group of more than 200 rows is not unfolded.
+- CPU and memory warnings: the CPU % and memory of every service are shown in orange or red, in the overview and in
+  the Process panel with the reason, and a change is logged. CPU: the average over the last minute, orange from 50 %,
+  red from 90 %. Memory: the growth of the RSS over the last 10 minutes, judged once there are samples of 5 minutes,
+  orange from 10 %, red from 25 % (a leak). A new process starts with new samples.
+
+### Logger
+
+- The answer of `log_cs` to `status` has `statistics`: the number of records received, by level, and the last warning
+  and the last error (time, logger name, process, message).
+- `log_cs` keeps its last 1000 records in memory; the new command `tail <after> <max>` returns the records after a
+  sequence number, at most `max` of them, and `last_seq`. The CGSE TUI uses it for the log lines of the logger.
+
+### DAQ6510 and ThermalVac: latest readings in the status
+
+- The component status (status report and monitoring messages) has a `latest` component, for display: the DAQ6510
+  the latest reading per channel (value, unit, time), the ThermalVac its latest sample and the time of the sample.
+
 ### Dynamic commands
 
 - Added support for optional argument validation in `@dynamic_command` via a `validate` callback. The callback receives the same `*args` and `**kwargs` as the decorated call and can raise `ValueError` when the input is invalid.
@@ -41,6 +100,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `SocketDevice.disconnect()` does nothing when not connected, instead of raising an `AssertionError`.
 - `AsyncSCPIInterface.disconnect()` always resets the connection state, also when closing fails (e.g. after the
   device closed the connection), so the next `connect()` opens a new connection.
+- Fixed: `AsyncSCPIInterface.connect()` with `id_validation` hung forever when the identification of the device
+  failed or timed out: it called `disconnect()` while it held the connect lock, which `disconnect()` takes too. The
+  identification is now checked after the lock is released; `connect()` raises `DeviceConnectionError`. This affected
+  e.g. the DAQ6510 at connect with a slow or wrong device. Found with Fleabag.
 
 ### Lost requests and messages
 

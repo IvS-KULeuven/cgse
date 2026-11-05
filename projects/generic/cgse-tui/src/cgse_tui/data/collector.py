@@ -383,9 +383,28 @@ class Collector:
         service.uss = fields["uss"]
         service.monitoring = status
         service.add_sample(self._clock())
+        self._update_device(service, status)  # a server of an older version has no `device` in its messages
         if fields["interval_s"]:
             service.stale_after = max(MIN_STALE_AFTER, STALE_INTERVALS * fields["interval_s"])
         service.last_update = self._clock()
+
+    @staticmethod
+    def _update_device(service: ServiceInfo, status: dict[str, Any]) -> None:
+        """Takes the device status from the `device` section of a status report or a monitoring message.
+
+        The monitoring messages have it every second, the status report every `REPORT_INTERVAL`: a short loss of the
+        connection with the device is only seen in the monitoring messages. A message without the section (a server
+        of an older version) leaves the device status as it is.
+        """
+        if "device" not in status:
+            return
+        device = status["device"]
+        if isinstance(device, dict):
+            service.has_device = True
+            service.connected = device.get("connected")
+            service.sim_mode = device.get("sim_mode")
+        else:
+            service.has_device = False  # None: the service controls no device
 
     # ----- requests ---------------------------------------------------------------------------------------------------
 
@@ -430,12 +449,6 @@ class Collector:
         control_server = status.get("control_server")
         if isinstance(control_server, dict) and control_server.get("device_id"):
             service.device_id = control_server["device_id"]
-        device = status.get("device")
-        if isinstance(device, dict):
-            service.has_device = True
-            service.connected = device.get("connected")
-            service.sim_mode = device.get("sim_mode")
-        elif "device" in status:
-            service.has_device = False  # the report says: no device
+        self._update_device(service, status)
         if service.last_update is None:
             service.last_update = self._clock()

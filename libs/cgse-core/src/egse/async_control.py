@@ -636,7 +636,8 @@ class AsyncControlServer:
 
         This intentionally reports server health and component state, not the stream of device telemetry, which goes
         to the Storage Manager and the Metrics Hub. A device control server may add its latest readings as a component,
-        for display, e.g. in the TUI.
+        for display, e.g. in the TUI. The `device` section is `get_device_status()`, as in the status report, so a
+        client follows the connection with the device every second.
         """
         return {
             "schema_version": 1,
@@ -650,8 +651,17 @@ class AsyncControlServer:
                 "monitoring_port": self.monitoring_port,
             },
             "components": self.get_component_status(),
+            "device": self.get_device_status_for_monitoring(),
             "process": self._process_status.as_dict(),
         }
+
+    def get_device_status_for_monitoring(self) -> dict[str, Any] | None:
+        """The device status for the monitoring messages, see `get_device_status()`; an `error` entry when it can't be
+        retrieved, so the monitoring messages are never stopped by it."""
+        try:
+            return self.get_device_status()
+        except Exception as exc:
+            return {"error": f"{type_name(exc)}: {exc}"}
 
     def get_device_status(self) -> dict[str, Any] | None:
         """Return the state of the device that is controlled by this control server.
