@@ -3,14 +3,14 @@ import time
 from pathlib import Path
 
 import pytest
-
 from egse.env import get_log_file_location
+from egse.process import is_process_running
+from egse.system import read_last_lines
+
 from egse.logger import create_new_zmq_logger
 from egse.logger import egse_logger
 from egse.logger import get_log_file_name
 from egse.logger import send_request
-from egse.process import is_process_running
-from egse.system import read_last_lines
 
 
 @pytest.mark.skipif(
@@ -110,3 +110,45 @@ def test_create_new_zmq_logger(caplog):
     lines = [line for line in lines if line.strip()]  # filter out empty lines
 
     assert len(lines) == 1
+
+
+def test_count_log_record():
+    """The statistics of the logger count the records by level and keep the last warning and error."""
+    from egse.logger import log_cs
+
+    log_cs.STATISTICS.update(received=0, levels={}, last_warning=None, last_error=None)
+
+    def record(level, msg, *args):
+        return logging.LogRecord("egse.test", level, __file__, 1, msg, args, None)
+
+    log_cs.count_log_record(record(logging.INFO, "hello"))
+    log_cs.count_log_record(record(logging.WARNING, "careful %s", "now"))
+    log_cs.count_log_record(record(logging.ERROR, "x" * 500))
+    log_cs.count_log_record(record(logging.WARNING, "bad %d", "not a number"))  # message and args don't match
+
+    statistics = log_cs.STATISTICS
+    assert statistics["received"] == 4
+    assert statistics["levels"] == {"INFO": 1, "WARNING": 2, "ERROR": 1}
+    assert statistics["last_error"]["message"] == "x" * log_cs.MAX_MESSAGE_LENGTH
+    assert statistics["last_error"]["name"] == "egse.test"
+    assert statistics["last_warning"]["message"] == "bad %d (TypeError)"
+
+
+def test_tail_command():
+    """The logger keeps the recent records; `tail <after> <max>` returns the records after a sequence number."""
+    from egse.logger import log_cs
+
+    log_cs.STATISTICS.update(received=0, levels={}, last_warning=None, last_error=None)
+    log_cs.TAIL.clear()
+    for index in range(5):
+        log_cs.count_log_record(logging.LogRecord("egse.test", logging.INFO, __file__, 1, f"line {index}", (), None))
+
+    response = log_cs.handle_command("tail 0 3")
+    assert response["status"] == "ACK" and response["last_seq"] == 5
+    assert [record["message"] for record in response["records"]] == ["line 2", "line 3", "line 4"]  # the most recent
+
+    response = log_cs.handle_command("tail 4 100")
+    assert [record["seq"] for record in response["records"]] == [5]
+    assert log_cs.handle_command("tail 5")["records"] == []
+    assert len(log_cs.handle_command("tail")["records"]) == 5
+    assert log_cs.handle_command("tail x")["status"] == "NACK"

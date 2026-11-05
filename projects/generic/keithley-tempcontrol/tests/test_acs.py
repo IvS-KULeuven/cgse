@@ -143,6 +143,7 @@ async def test_scans_are_passed_to_latest_and_sinks(setup):
     latest = (await command(server, "get-latest"))["message"]
     assert sorted(latest) == CHANNELS
     assert latest["101"]["unit"] == "Celsius"
+    assert server.get_component_status()["latest"] == latest  # also in the status, for display in the TUI
 
     hk = server.metrics[-1]
     assert sorted(hk) == ["TEST_T101", "TEST_T102", "TEST_T103", "timestamp"]

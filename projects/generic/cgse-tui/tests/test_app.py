@@ -358,7 +358,7 @@ async def test_detail_screen_follows_the_service_live():
         screen = app.screen
         assert isinstance(screen, DetailScreen)
         assert "1234" in text(screen, "#process")
-        assert "frequency" in text(screen, "#details")
+        assert "frequency" in text(screen, ".section")
 
         restarted = ServiceInfo(name="AWG1", service_type="AWG1", state=ServiceState.OK, server_kind="sync", pid=5678)
         collector.services = [restarted]  # the collector has a new object for the restarted service
@@ -390,3 +390,218 @@ def test_cpu_and_memory_cells_are_coloured_by_their_level():
         "dark_orange",
     )
     assert str(cells["pid"].style) == ""
+
+
+async def test_registry_drill_down_opens_the_details_of_a_service():
+    from cgse_tui.screens.registry import RegistryTable
+
+    registry = ServiceInfo(
+        name="Service Registry",
+        service_type="SERVICE_REGISTRY",
+        state=ServiceState.OK,
+        server_kind="registry",
+        cgse_object="reg",
+        report={
+            "services": [
+                {
+                    "id": "awg-1",
+                    "name": "awg1",
+                    "host": "localhost",
+                    "port": 2000,
+                    "health": "passing",
+                    "metadata": {"type": "AWG1"},
+                },
+            ]
+        },
+    )
+    collector = StaticCollector([SERVICES[0], registry])
+    app = CgseTuiApp(collector=collector)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app.show_details("SERVICE_REGISTRY")
+        await pilot.pause()
+        screen = app.screen
+        table = screen.query_one("#registrations", RegistryTable)
+        assert table.row_count == 1 and screen.query_one("#registry-panel").display
+        assert "1 registered" in text(screen, ".section")
+
+        app.update_overview()  # the table is updated in place
+        assert table.row_count == 1
+
+        table.focus()
+        await pilot.press("enter")
+        await pilot.pause()
+        assert isinstance(app.screen, DetailScreen) and app.screen.service.service_type == "AWG1"
+        assert not app.screen.query_one("#registry-panel").display
+
+        await pilot.press("escape")
+        assert app.screen is screen
+
+
+async def test_process_manager_lists_its_core_services_with_their_state():
+    from cgse_tui.screens.procman import CoreServicesTable
+
+    procman = ServiceInfo(
+        name="Process Manager",
+        service_type="PM_CS",
+        state=ServiceState.OK,
+        server_kind="sync",
+        cgse_object="pm",
+        report={
+            "control_server": {},
+            "device": None,
+            "details": {"core_processes": {"Storage Manager": "SM_CS", "Process Manager": "PM_CS"}},
+        },
+    )
+    collector = StaticCollector([procman, SERVICES[1]])  # the Storage Manager is inactive
+    app = CgseTuiApp(collector=collector)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app.show_details("PM_CS")
+        await pilot.pause()
+        app.update_overview()
+        screen = app.screen
+        table = screen.query_one("#core-services", CoreServicesTable)
+        assert table.row_count == 2 and screen.query_one("#procman-panel").display
+        assert screen.query_one("#procman-panel").border_subtitle == "1 of 2 running"
+        assert str(table.get_row("SM_CS")[3]) == "inactive"
+        assert not screen.query_one("#registry-panel").display
+        assert "2 managed" in text(screen, ".section")
+
+        table.focus()
+        table.move_cursor(row=table.get_row_index("SM_CS"))
+        await pilot.press("enter")
+        await pilot.pause()
+        assert app.screen.service.service_type == "SM_CS"
+        assert not app.screen.query_one("#procman-panel").display
+
+
+def log_record(seq, message, level="INFO"):
+    return {"seq": seq, "time": 1.8e9, "level": level, "name": "egse.x", "process": "cm_cs", "message": message}
+
+
+async def test_the_logger_screen_shows_the_last_log_lines():
+    from textual.widgets import RichLog
+
+    from cgse_tui.screens import detail
+
+    logger_service = ServiceInfo(
+        name="Logger",
+        service_type="LOG_CS",
+        state=ServiceState.OK,
+        server_kind="command",
+        cgse_object="log",
+        report={"file_logger_location": "/data/log/general.log"},
+    )
+    answers = [
+        {"last_seq": 2, "records": [log_record(1, "first"), log_record(2, "second", "WARNING")]},
+        {"last_seq": 3, "records": [log_record(3, "third")]},
+        {"last_seq": 1, "records": [log_record(1, "after restart")]},
+    ]
+    requests = []
+
+    async def log_tail(service, after, maximum):
+        requests.append((after, maximum))
+        return answers[len(requests) - 1] if len(requests) <= len(answers) else {"last_seq": 1, "records": []}
+
+    detail.TAIL_INTERVAL = 0  # a request on every update of the screen
+    collector = StaticCollector([logger_service])
+    app = CgseTuiApp(collector=collector)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        screen = DetailScreen(logger_service, log_tail=log_tail)
+        app.push_screen(screen)
+        await pilot.pause()
+        for _ in range(3):
+            app.update_overview()
+            await pilot.pause(0.1)
+        assert screen.has_class("-with-log") and screen.query_one("#log-panel").display
+        lines = [line.text for line in screen.query_one("#log-tail", RichLog).lines]
+        assert requests[:3] == [(0, 200), (2, 1000), (3, 1000)]  # only the new records after the first request
+        assert any("first" in line for line in lines) and any("third" in line for line in lines)
+        assert any("the logger was restarted" in line for line in lines)
+        assert lines[-1].endswith("after restart")
+    detail.TAIL_INTERVAL = 2.0
+
+
+async def test_an_old_logger_has_no_log_lines():
+    from textual.widgets import RichLog
+
+    logger_service = ServiceInfo(name="Logger", service_type="LOG_CS", state=ServiceState.OK, cgse_object="log")
+
+    async def log_tail(service, after, maximum):
+        return {"timestamp": "now"}  # an older logger answers an unknown command with only a timestamp
+
+    app = CgseTuiApp(collector=StaticCollector([logger_service]))
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        screen = DetailScreen(logger_service, log_tail=log_tail)
+        app.push_screen(screen)
+        await pilot.pause(0.2)
+        app.update_overview()  # the log panel shows its lines once it has a size
+        await pilot.pause(0.2)
+        lines = [line.text for line in screen.query_one("#log-tail", RichLog).lines]
+        assert lines == ["This logger can't send its log lines, restart it with the current version."]
+
+
+def test_format_record():
+    from cgse_tui.screens.logtail import format_record
+
+    line = format_record(log_record(7, "careful", "WARNING"))
+    assert line.plain.endswith("WARNING  cm_cs egse.x careful")
+
+
+async def test_the_sections_of_the_details_have_the_same_height():
+    from cgse_tui.plugins import DetailsRenderers
+
+    def three_sections(report, live):
+        return {"One": "a", "Two": "a\nb\nc\nd", "Three": "a\nb"}
+
+    service = ServiceInfo(
+        name="AWG1",
+        service_type="AWG1",
+        state=ServiceState.OK,
+        server_kind="sync",
+        cgse_object="awg",
+        report={"control_server": {}, "details": {"x": 1}},
+    )
+    renderers = DetailsRenderers(builtins={"awg": three_sections}, entry_points=dict)
+    app = CgseTuiApp(collector=StaticCollector([service]))
+    async with app.run_test(size=(150, 50)) as pilot:
+        await pilot.pause()
+        screen = DetailScreen(service, renderers=renderers)
+        app.push_screen(screen)
+        await pilot.pause(0.3)
+        area = screen.query_one("#details-area")
+        row = area.query_one(".details-row")
+        assert row.styles.grid_size_columns == 3
+        heights = [panel.region.height for panel in row.query(".panel")]
+        assert len(heights) == 3 and len(set(heights)) == 1  # all three as high as the highest
+        assert heights[0] >= 6  # the 4 lines of the highest section and its border
+
+
+async def test_a_plugin_can_put_its_sections_in_rows():
+    from cgse_tui.plugins import DetailsRenderers
+
+    def rows(report, live):
+        return [{"One": "a", "Two": "a\nb"}, {"Wide": "a table that needs the full width"}]
+
+    service = ServiceInfo(
+        name="AWG1",
+        service_type="AWG1",
+        state=ServiceState.OK,
+        server_kind="sync",
+        cgse_object="awg",
+        report={"control_server": {}, "details": {"x": 1}},
+    )
+    renderers = DetailsRenderers(builtins={"awg": rows}, entry_points=dict)
+    app = CgseTuiApp(collector=StaticCollector([service]))
+    async with app.run_test(size=(150, 50)) as pilot:
+        await pilot.pause()
+        screen = DetailScreen(service, renderers=renderers)
+        app.push_screen(screen)
+        await pilot.pause(0.3)
+        grids = list(screen.query_one("#details-area").query(".details-row"))
+        assert [grid.styles.grid_size_columns for grid in grids] == [2, 1]
+        wide = grids[1].query_one(".panel")
+        assert wide.border_title == "Wide" and wide.region.width > 140  # the full width

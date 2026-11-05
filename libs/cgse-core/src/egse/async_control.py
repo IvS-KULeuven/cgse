@@ -634,7 +634,9 @@ class AsyncControlServer:
     def get_status(self) -> dict[str, Any]:
         """Return control-server/component status for monitoring consumers.
 
-        This intentionally reports server health and component state, not device telemetry.
+        This intentionally reports server health and component state, not the stream of device telemetry, which goes
+        to the Storage Manager and the Metrics Hub. A device control server may add its latest readings as a component,
+        for display, e.g. in the TUI.
         """
         return {
             "schema_version": 1,

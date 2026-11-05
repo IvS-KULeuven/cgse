@@ -73,3 +73,24 @@ async def test_interface_recognises_the_simulator(interface):
     interface.client.get_node.return_value.read_value = AsyncMock(side_effect=RuntimeError("BadNodeIdUnknown"))
     await interface.connect()
     assert interface.is_simulator() is None  # the product URI couldn't be read
+
+
+@pytest.mark.asyncio
+async def test_handle_acquisition_keeps_the_latest_sample_and_its_time():
+    """The latest sample and its time are shown in the status (the `latest` component), e.g. in the TUI."""
+
+    async def send_metrics(*args, **kwargs):
+        return True
+
+    server = SimpleNamespace(
+        hk_conversion_dict={},
+        _append_csv_row=lambda row: None,
+        csv_count=0,
+        _send_metrics=send_metrics,
+        metrics_count=0,
+        metrics_failed_count=0,
+    )
+    sample = {"temperature1": 19.5, "tvac_state_text": "idle"}
+    await ThermalVacControlServer.handle_acquisition(server, sample, timestamp="2026-11-04T22:00:00+00:00")
+    assert server.latest_sample == sample
+    assert server.latest_sample_at == "2026-11-04T22:00:00+00:00"

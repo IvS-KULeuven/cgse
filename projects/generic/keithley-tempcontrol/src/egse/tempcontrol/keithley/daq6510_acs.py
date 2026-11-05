@@ -655,6 +655,9 @@ class DAQ6510ControlServer(AcquisitionAsyncControlServer):
             "sent_metrics": self.metrics_count,
             "failed_metrics": self.metrics_failed_count,
         }
+        # The latest reading per channel (value, unit, timestamp), for display, e.g. in the TUI. The readings
+        # themselves go to the Storage Manager and the Metrics Hub.
+        components["latest"] = dict(self.latest)
         return components
 
     def get_device_status(self) -> dict[str, Any]:

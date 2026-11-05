@@ -64,6 +64,12 @@ async def _request_status_report(kind: str, service: ServiceInfo, timeout: float
 
 def _command_status(hostname: str, port: int, timeout: float) -> Any:
     """Sends the pickled string command "status" to a command server (e.g. the logger) and returns its answer."""
+    return _command_request(hostname, port, "status", timeout)
+
+
+def _command_request(hostname: str, port: int, command: str, timeout: float) -> Any:
+    """Sends a pickled string command to a command server (e.g. the logger) and returns its answer, None when it
+    didn't answer in time."""
     import pickle
 
     import zmq
@@ -72,7 +78,7 @@ def _command_status(hostname: str, port: int, timeout: float) -> Any:
     socket.setsockopt(zmq.LINGER, 0)
     try:
         socket.connect(f"tcp://{hostname}:{port}")
-        socket.send(pickle.dumps("status"))
+        socket.send(pickle.dumps(command))
         if not socket.poll(int(timeout * 1000)):
             return None
         return pickle.loads(socket.recv())
@@ -121,3 +127,24 @@ async def request_custom_status(service: ServiceInfo, timeout: float = 2.0) -> d
     if status.get("success") is False or "error" in status or status.get("status") == "NACK":
         return None
     return status
+
+
+async def request_log_tail(
+    service: ServiceInfo, after: int, maximum: int, timeout: float = 2.0
+) -> dict[str, Any] | None:
+    """Returns the log records the logger received after sequence number `after`, at most `maximum`, the most recent.
+
+    The answer has `last_seq` and `records`; None when the logger didn't answer, and an answer without `records` when
+    the logger is an older version without the `tail` command.
+    """
+    if not (service.host and service.port):
+        return None
+    try:
+        answer = await asyncio.wait_for(
+            asyncio.to_thread(_command_request, service.host, service.port, f"tail {after} {maximum}", timeout),
+            timeout=5 * timeout,
+        )
+    except Exception as exc:
+        logger.warning(f"No log records from {service.service_type}: {type(exc).__name__}: {exc}")
+        return None
+    return answer if isinstance(answer, dict) else None
