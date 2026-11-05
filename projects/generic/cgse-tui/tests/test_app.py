@@ -605,3 +605,31 @@ async def test_a_plugin_can_put_its_sections_in_rows():
         assert [grid.styles.grid_size_columns for grid in grids] == [2, 1]
         wide = grids[1].query_one(".panel")
         assert wide.border_title == "Wide" and wide.region.width > 140  # the full width
+
+
+async def test_f1_shows_the_help():
+    from textual.widgets import Markdown
+
+    from cgse_tui.screens.help import HelpScreen
+
+    app = CgseTuiApp(collector=StaticCollector(SERVICES))
+    async with app.run_test(size=(140, 45)) as pilot:
+        await pilot.pause()
+        await pilot.press("f1")
+        await pilot.pause(0.3)
+        assert isinstance(app.screen, HelpScreen) and app.screen.anchor is None
+        assert "The CGSE TUI" in app.screen.query_one(Markdown).source
+        await pilot.press("f1")  # F1 closes it again
+        await pilot.pause(0.1)
+        assert isinstance(app.screen, OverviewScreen)
+
+        await pilot.press("enter")  # the detail screen of the first service
+        await pilot.pause(0.3)
+        await pilot.press("f1")
+        await pilot.pause(0.5)
+        assert isinstance(app.screen, HelpScreen) and app.screen.anchor == "the-detail-screen"
+        scroll = app.screen.query_one("#help")
+        assert scroll.scroll_y > 0  # opened at the part about the detail screen
+        await pilot.press("escape")
+        await pilot.pause(0.1)
+        assert isinstance(app.screen, DetailScreen)

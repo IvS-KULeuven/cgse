@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### CGSE TUI: help
+
+- `F1` opens a help for the first-time user on every screen: what the TUI shows, the meaning of the coloured square,
+  the stale times, the CPU and memory warnings, the panels of the detail screen, start, stop and restart, the log pane
+  and the keys of every screen. From a detail screen it opens at the part about the detail screen; `esc` or `F1`
+  closes it.
+
 ### Device status in the monitoring messages
 
 - Every monitoring message of a sync or async control server has a `device` section, the same as in the status

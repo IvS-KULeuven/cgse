@@ -24,6 +24,7 @@ Keys in the overview:
 - `o`: select the columns of the overview (in the dialog: `space` toggles a column, `a` all, `n` none, `d` defaults,
   `esc` or `o` closes it);
 - `l`: show or hide the log pane;
+- `F1`: help, on every screen (from a detail screen it opens at the part about the detail screen);
 - `ctrl+q`: quit.
 
 The detail screen shows the selected service in panels, updated every second:
