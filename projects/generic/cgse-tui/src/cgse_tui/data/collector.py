@@ -26,6 +26,9 @@ from cgse_tui.data.services import CORE_CGSE_OBJECTS
 from cgse_tui.data.services import REGISTRY_SERVICE_TYPE
 from cgse_tui.data.services import core_services
 from cgse_tui.data.services import custom_kind
+from cgse_tui.data.setup import SetupDevice
+from cgse_tui.data.setup import matches
+from cgse_tui.data.setup import setup_devices
 from cgse_tui.logs import quiet
 
 logger = logging.getLogger("cgse_tui.collector")
@@ -121,6 +124,8 @@ class Collector:
         self._registry_answered_at: float | None = None
         self.registry_answering = False
         """True when the registry answered the health check of the last poll."""
+        self.setup_devices: dict[str, SetupDevice] = {}
+        """The device drivers in the Setup of the Configuration Manager, by the key of their row, see `data.setup`."""
 
     def _custom_stale_after(self) -> float:
         """Stale time of the servers that are polled: three polls plus one request timeout.
@@ -150,7 +155,56 @@ class Collector:
             self._assess(service, now)
         for service_type in self._last_states.keys() - self.services.keys():
             del self._last_states[service_type]
-        return sorted(self.services.values(), key=lambda service: service.name.lower())
+        return sorted(self._shown_services(), key=lambda service: service.name.lower())
+
+    def _shown_services(self) -> list[ServiceInfo]:
+        """The services, without the rows of the devices of the Setup that run: they are shown as their service."""
+        shown = []
+        for key, service in self.services.items():
+            device = self.setup_devices.get(key)
+            if device is None:
+                shown.append(service)
+                continue
+            running = self._running_service(device)
+            if running is None:
+                shown.append(service)
+            else:
+                running.setup_path = device.path
+        return shown
+
+    def _running_service(self, device: SetupDevice) -> ServiceInfo | None:
+        """The registered service that is the device of the Setup, None when it doesn't run."""
+        return next(
+            (
+                service
+                for key, service in self.services.items()
+                if key not in self.setup_devices
+                and service.registered
+                and matches(device, service.cgse_object, service.device_id)
+            ),
+            None,
+        )
+
+    def _update_setup(self, setup: dict[str, Any]) -> None:
+        """Follows the device drivers in the Setup: a row for every device, until it runs, see `data.setup`."""
+        devices = {device.key: device for device in setup_devices(setup)}
+        if devices == self.setup_devices:
+            return
+        for key in self.setup_devices.keys() - devices.keys():
+            self.services.pop(key, None)
+        for key, device in devices.items():
+            self.services[key] = ServiceInfo(
+                name=device.name,
+                service_type=key,
+                state=ServiceState.INACTIVE,
+                cgse_object=device.cgse_object,
+                device_id=device.device_id,
+                has_device=True,
+                setup_path=device.path,
+            )
+        self.setup_devices = devices
+        names = ", ".join(f"{device.name} ({device.cgse_object})" for device in devices.values()) or "none"
+        logger.info(f"Device drivers in the Setup: {names}")
 
     @staticmethod
     def _assess(service: ServiceInfo, now: float) -> None:
@@ -244,6 +298,8 @@ class Collector:
         """True when the service is registered, for the registry: when it answered the last health check."""
         if service_type == REGISTRY_SERVICE_TYPE:
             return self.registry_answering
+        if service_type in self.setup_devices:  # a device of the Setup: is its service registered?
+            return self._running_service(self.setup_devices[service_type]) is not None
         service = self.services.get(service_type)
         return service is not None and service.registered
 
@@ -383,6 +439,11 @@ class Collector:
         service.uss = fields["uss"]
         service.monitoring = status
         service.add_sample(self._clock())
+        if isinstance(status.get("setup"), dict):  # the Configuration Manager publishes the whole Setup
+            try:
+                self._update_setup(status["setup"])
+            except Exception as exc:  # a Setup that can't be read shall not stop the monitoring
+                logger.warning(f"Couldn't read the device drivers from the Setup: {type(exc).__name__}: {exc}")
         self._update_device(service, status)  # a server of an older version has no `device` in its messages
         if fields["interval_s"]:
             service.stale_after = max(MIN_STALE_AFTER, STALE_INTERVALS * fields["interval_s"])

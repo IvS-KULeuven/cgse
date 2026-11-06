@@ -36,6 +36,7 @@ from cgse_tui.screens.columns import format_seconds
 from cgse_tui.screens.columns import format_time
 from cgse_tui.screens.columns import format_uptime
 from cgse_tui.screens.columns import other_ports
+from cgse_tui.screens.columns import service_type
 
 NOT_KNOWN = "–"
 
@@ -153,7 +154,8 @@ def service_rows(service: ServiceInfo, now: float) -> list[Row]:
     control_server = service.report.get("control_server")
     control_server = control_server if isinstance(control_server, dict) else {}
     rows: list[Row] = [
-        ("Service type", service.service_type),
+        ("Service type", service_type(service) or None),
+        ("In the Setup", service.setup_path),
         ("Device ID", service.device_id),
         ("Host", service.host),
         ("Server kind", service.server_kind),

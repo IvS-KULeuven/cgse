@@ -14,6 +14,7 @@ from textual.widgets import Header
 from textual.widgets import RichLog
 
 from cgse_tui.data.model import ServiceInfo
+from cgse_tui.data.model import ServiceState
 from cgse_tui.screens.column_select import ColumnSelectScreen
 from cgse_tui.screens.columns import DEFAULT_COLUMNS
 from cgse_tui.screens.columns import Column
@@ -125,6 +126,9 @@ class OverviewScreen(Screen):
         added = False
         for service_type, service in self.services.items():
             cells = (state_indicator(service), *(column.cell(service, now) for column in self.columns))
+            if service.state is ServiceState.INACTIVE:  # not running: dimmed
+                for cell in cells[1:]:
+                    cell.stylize("dim")
             if service_type in shown:
                 for key, value in zip(keys, cells):
                     # A column is sized to its content when a row is added, e.g. still without host at start-up

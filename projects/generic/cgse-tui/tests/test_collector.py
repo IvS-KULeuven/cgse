@@ -622,3 +622,43 @@ def test_the_device_section_is_not_a_live_value():
 
     live = live_values({**SYNC_MONITORING, "device": {"connected": True}, "mach": [0.0]})
     assert "device" not in live and live["mach"] == [0.0]
+
+
+async def test_the_device_drivers_of_the_setup_are_shown():
+    collector, registry, fakes, clock = make_collector()
+    registry.records = [record("CM_CS", service_port=6112, monitoring_port=6111, server_kind="sync", cgse_object="cm")]
+    await collector.poll()
+    await settle()
+    setup = {"gse": {"hexapod": {"device_name": "PUNA Hexapod", "cgse_object": "puna", "device_id": "PUNA_01"}}}
+    fakes.subscriptions["tcp://10.0.0.1:6111"]({**SYNC_MONITORING, "setup": setup})
+
+    key = "setup:puna:PUNA_01"
+    puna = by_type(collector)[key]
+    assert puna.name == "PUNA Hexapod" and puna.state is ServiceState.INACTIVE
+    assert (puna.cgse_object, puna.device_id, puna.setup_path) == ("puna", "PUNA_01", "gse.hexapod")
+    assert not collector.is_running(key)
+
+    # the hexapod starts: its own row replaces the row of the Setup
+    registry.records.append(
+        record(
+            "PUNA_01", name="puna_cs", service_port=2001, monitoring_port=2002, cgse_object="puna", device_id="PUNA_01"
+        )
+    )
+    await collector.poll()
+    await settle()
+    shown = by_type(collector)
+    assert key not in shown and "PUNA_01" in shown
+    assert shown["PUNA_01"].setup_path == "gse.hexapod"
+    assert collector.is_running(key)  # what the start action waits for
+
+    # it stops: the row of the Setup is back
+    registry.records.pop()
+    await collector.poll()
+    await settle()
+    assert key in by_type(collector) and not collector.is_running(key)
+
+    # another Setup without the hexapod
+    fakes.subscriptions["tcp://10.0.0.1:6111"]({**SYNC_MONITORING, "setup": {"gse": {}}})
+    assert key not in by_type(collector)
+
+    await collector.stop()

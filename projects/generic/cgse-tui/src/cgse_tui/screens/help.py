@@ -25,7 +25,10 @@ services is done on request, with `a`.
 
 ## The overview
 
-One row per service: the services in the registry, and the core services that don't run.
+One row per service: the services in the registry, the core services that don't run, and the device drivers of the
+project that don't run. The device drivers come from the Setup that the configuration manager has loaded: every node
+with a `cgse_object` (the `cgse <object>` command), see the documentation of the Setup. A row that doesn't run is
+dimmed; `a` starts it. The column "In Setup" (`o`) tells where a device is in the Setup.
 
 ### The coloured square
 
