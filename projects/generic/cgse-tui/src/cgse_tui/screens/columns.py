@@ -15,6 +15,7 @@ from rich.text import Text
 
 from cgse_tui.data.model import Level
 from cgse_tui.data.model import ServiceInfo
+from cgse_tui.data.setup import SETUP_PREFIX
 
 NOT_APPLICABLE = "–"
 """Shown in the device columns of a service that controls no device. An empty cell means: not known."""
@@ -50,6 +51,11 @@ def cpu_style(service: ServiceInfo) -> str:
 
 def memory_style(service: ServiceInfo) -> str:
     return LEVEL_STYLES[service.memory_level]
+
+
+def service_type(service: ServiceInfo) -> str:
+    """The service type in the registry; empty for a device of the Setup that never ran, it has none yet."""
+    return "" if service.service_type.startswith(SETUP_PREFIX) else service.service_type
 
 
 def format_uptime(seconds: float | None) -> str:
@@ -154,7 +160,8 @@ def other_ports(service: ServiceInfo, now: float) -> str:
 
 COLUMNS: tuple[Column, ...] = (
     Column("name", "Name", lambda s, now: s.name, "Name of the service", default=True),
-    Column("type", "Type", lambda s, now: s.service_type, "Service type in the registry", default=True),
+    Column("type", "Type", lambda s, now: service_type(s), "Service type in the registry", default=True),
+    Column("in_setup", "In Setup", lambda s, now: s.setup_path or "", "Where the device driver is in the Setup"),
     Column(
         "command",
         "Command",

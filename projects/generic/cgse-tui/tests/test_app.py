@@ -633,3 +633,22 @@ async def test_f1_shows_the_help():
         await pilot.press("escape")
         await pilot.pause(0.1)
         assert isinstance(app.screen, DetailScreen)
+
+
+async def test_a_device_of_the_setup_that_does_not_run_is_dimmed():
+    setup_device = ServiceInfo(
+        name="PUNA Hexapod",
+        service_type="setup:puna:PUNA_01",
+        state=ServiceState.INACTIVE,
+        cgse_object="puna",
+        device_id="PUNA_01",
+        has_device=True,
+        setup_path="gse.hexapod",
+    )
+    app = CgseTuiApp(collector=StaticCollector([SERVICES[0], setup_device]))
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        table = app.screen.query_one("#services", DataTable)
+        name, service_type = table.get_row("setup:puna:PUNA_01")[1:3]
+        assert name.plain == "PUNA Hexapod" and "dim" in str(name.style) + str(name.spans)
+        assert service_type.plain == ""  # no service type before it ran

@@ -19,6 +19,7 @@ from cgse_tui.data.actions import SIMULATOR_PROCESS
 from cgse_tui.data.actions import display
 from cgse_tui.data.actions import lifecycle_command
 from cgse_tui.data.model import ServiceInfo
+from cgse_tui.screens.columns import service_type
 
 ACTIONS = ("start", "stop", "restart")
 
@@ -95,7 +96,9 @@ class ActionSelectScreen(ModalScreen[tuple[str, bool] | None]):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="dialog"):
-            yield Static(Text.assemble((self.service.name, "bold"), f" ({self.service.service_type})"), id="title")
+            # A device of the Setup that never ran has no service type yet: show where it is in the Setup
+            kind = service_type(self.service) or f"Setup: {self.service.setup_path}"
+            yield Static(Text.assemble((self.service.name, "bold"), f" ({kind})"), id="title")
             yield Static(self._description(), id="description")
             yield Checkbox(
                 "Use the simulator (checking ...)", value=self.service.sim_mode is True, disabled=True, id="simulator"

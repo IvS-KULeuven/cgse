@@ -7,6 +7,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### CGSE TUI: the device drivers of the Setup
+
+- The overview also shows the device drivers of the project, from the Setup that the configuration manager has
+  loaded: every node with a `cgse_object` (the `cgse <object>` command), with its `device_name` and optional
+  `device_id`. A device that runs is shown as its service in the registry (matched on `cgse_object` and `device_id`);
+  one that doesn't run is shown dimmed and can be started with `a`. The Setup is taken from the monitoring messages
+  of the configuration manager, so a new Setup is followed right away.
+- New column "In Setup" (`o`): where a device is in the Setup; the Service panel of the detail screen shows it too.
+- All rows of services that don't run are dimmed, also those of the core services.
+- Setup: `cgse_object` is a new key of a device node, see "Device drivers in the Setup" in
+  `docs/libs/cgse-common/setup.md`.
+
 ### CGSE TUI: help
 
 - `F1` opens a help for the first-time user on every screen: what the TUI shows, the meaning of the coloured square,

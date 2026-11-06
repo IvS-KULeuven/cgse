@@ -90,6 +90,9 @@ class ServiceInfo:
 
     device_id: str | None = None
 
+    setup_path: str | None = None
+    """Where the device driver is in the Setup, e.g. "gse.DAQ6510", None when it is not in the Setup."""
+
     connected: bool | None = None
     """Device connection, None for services without a device or when this is not known."""
 
