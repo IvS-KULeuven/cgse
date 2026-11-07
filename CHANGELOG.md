@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### PLATO FITS
+
+- Fixed: the FITS persistence layer (`plato-fits`) couldn't be loaded, and every process that imports the Storage
+  Manager's persistence (e.g. `cm_cs`, `sm_cs`, `pm_cs`, `cm_cs load-setup`) logged "Couldn't load entry point
+  cgse.storage.persistence: SettingsError – Group name 'CCD' is not defined". The `CCD` settings group was only
+  defined in `plato-common-egse`; `plato-fits` now has it in its own `settings.yaml` (registered with the
+  `cgse.settings` entry point), with the same values.
+
 ### CGSE TUI: the device drivers of the Setup
 
 - The overview also shows the device drivers of the project, from the Setup that the configuration manager has

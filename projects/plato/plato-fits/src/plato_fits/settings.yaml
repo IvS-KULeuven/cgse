@@ -1,0 +1,12 @@
+PACKAGES:
+    PLATO_FITS: FITS persistence layer of the Storage Manager for PLATO
+
+# The CCD of the PLATO cameras, used to write the image data in FITS files. Taken from plato-common-egse.
+CCD:
+
+    ZEROPOINT:          [-1.3, 82.48]       # CCD zeropoint (x, y) [mm]
+    ORIENTATION:    [180, 270, 0, 90]       # Orientation of the CCD w.r.t. the focal plane [degrees]
+    PIXEL_SIZE:                    18       # Pixel size [µm]
+    NUM_ROWS:                    4510       # Number of rows
+    NUM_COLUMNS:                 4510       # Number of columns
+    LENGTH_SERIAL_PRESCAN:    25            # Number of columns in the serial pre-scan
