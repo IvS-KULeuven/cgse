@@ -30,6 +30,9 @@ test = ["pytest", "pytest-mock", "pytest-cov"]
 [project.entry-points."cgse.version"]
 plato-fits = 'egse.version:get_version_installed'
 
+[project.entry-points."cgse.settings"]
+plato-fits = "plato_fits:settings.yaml"
+
 [project.entry-points."cgse.storage.persistence"]
 FITS = "egse.plugins.storage.fits:FITS"
 
@@ -41,7 +44,7 @@ exclude = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/egse", "src/scripts"]
+packages = ["src/egse", "src/scripts", "src/plato_fits"]
 
 [tool.ruff]
 line-length = 120
