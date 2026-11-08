@@ -4,10 +4,12 @@ The collector keeps the process samples of every service (`ServiceInfo.samples`)
 snapshot. The screens show the CPU and memory numbers in orange for a warning and in red when critical.
 
 - CPU: the average CPU % over the last `CPU_WINDOW` seconds, so a short peak doesn't count.
-- Memory: the growth of the RSS over the last `MEMORY_WINDOW` seconds, the median of the last quarter of the samples
-  compared to the median of the first quarter. Only judged when the samples cover at least `MIN_COVERAGE` of the
-  window, so the growth while a process starts is not taken for a leak, and a memory that stops growing is ok again
-  after one window. The RSS is used because every service reports it, also the registry, logger and hubs.
+- Memory: the growth of the memory over the last `MEMORY_WINDOW` seconds, the median of the last quarter of the
+  samples compared to the median of the first quarter. Only judged when the samples cover at least `MIN_COVERAGE` of
+  the window, so the growth while a process starts is not taken for a leak, and a memory that stops growing is ok
+  again after one window. The memory is the RSS plus the swapped-out memory (`ServiceInfo.memory`): memory that leaks
+  is never used again and is swapped out, so the RSS alone can go down while the leak grows. A service of an older
+  version doesn't report its swap; then it's the RSS.
 """
 
 from __future__ import annotations
@@ -27,7 +29,7 @@ MEMORY_WINDOW = 600.0
 """Seconds over which the growth of the memory is judged."""
 
 MEMORY_WARNING, MEMORY_CRITICAL = 0.10, 0.25
-"""Relative growth of the RSS within `MEMORY_WINDOW` for a warning and for critical."""
+"""Relative growth of the memory (RSS plus swap) within `MEMORY_WINDOW` for a warning and for critical."""
 
 MIN_COVERAGE = 0.5
 """Part of a window that the samples have to cover before it is judged."""
@@ -44,7 +46,7 @@ def _window(samples, now: float, window: float) -> list[tuple[float, float]]:
 
 
 def cpu_level(samples, now: float) -> tuple[Level, str]:
-    """The level of the CPU from (time, pid, cpu %, rss) samples, and the reason when it isn't ok."""
+    """The level of the CPU from (time, pid, cpu %, memory) samples, and the reason when it isn't ok."""
     values = _window(((t, cpu) for t, _, cpu, _ in samples), now, CPU_WINDOW)
     if len(values) < 2 or values[-1][0] - values[0][0] < MIN_COVERAGE * CPU_WINDOW:
         return Level.OK, ""
@@ -55,8 +57,8 @@ def cpu_level(samples, now: float) -> tuple[Level, str]:
 
 
 def memory_level(samples, now: float) -> tuple[Level, str]:
-    """The level of the memory from (time, pid, cpu %, rss) samples, and the reason when it isn't ok."""
-    values = _window(((t, rss) for t, _, _, rss in samples), now, MEMORY_WINDOW)
+    """The level of the memory from (time, pid, cpu %, memory) samples, and the reason when it isn't ok."""
+    values = _window(((t, memory) for t, _, _, memory in samples), now, MEMORY_WINDOW)
     if len(values) < 8:
         return Level.OK, ""
     start, end = values[0][0], values[-1][0]

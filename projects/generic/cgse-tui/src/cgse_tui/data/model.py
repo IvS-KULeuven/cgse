@@ -87,6 +87,8 @@ class ServiceInfo:
     cpu_system_s: float | None = None
     rss: int | None = None
     uss: int | None = None
+    swap: int | None = None
+    """Memory of the process that is swapped out [bytes], None when the service doesn't report it (older versions)."""
 
     device_id: str | None = None
 
@@ -114,7 +116,8 @@ class ServiceInfo:
     """The last message on the monitoring port of a control server, with the live values of the device."""
 
     samples: deque = field(default_factory=lambda: deque(maxlen=MAX_SAMPLES))
-    """(time, pid, cpu %, rss) of the process, oldest first, of the last `SAMPLES_KEPT` seconds."""
+    """(time, pid, cpu %, memory) of the process, oldest first, of the last `SAMPLES_KEPT` seconds. The memory is the
+    RSS plus the swapped-out memory, see `memory`."""
 
     cpu_level: Level = Level.OK
     cpu_reason: str = ""
@@ -124,12 +127,20 @@ class ServiceInfo:
     memory_reason: str = ""
     """Why the memory level is not ok, e.g. "memory grew 30 % in 10 min (40.0 → 52.0 MiB), a leak?"."""
 
+    @property
+    def memory(self) -> int | None:
+        """The memory of the process: the RSS plus what is swapped out. A leak ends up in swap, the RSS alone can even
+        go down while the memory grows. Only the RSS for a service that doesn't report its swap."""
+        if self.rss is None:
+            return None
+        return self.rss + (self.swap or 0)
+
     def add_sample(self, now: float) -> None:
-        """Adds the current CPU % and RSS to the samples; a new process (PID) starts with new samples."""
+        """Adds the current CPU % and memory to the samples; a new process (PID) starts with new samples."""
         if self.cpu_percent is None and self.rss is None:
             return
         if self.samples and self.samples[-1][1] != self.pid:
             self.samples.clear()
-        self.samples.append((now, self.pid, self.cpu_percent, self.rss))
+        self.samples.append((now, self.pid, self.cpu_percent, self.memory))
         while self.samples and now - self.samples[0][0] > SAMPLES_KEPT:
             self.samples.popleft()

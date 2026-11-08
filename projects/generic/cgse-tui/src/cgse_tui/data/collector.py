@@ -393,6 +393,7 @@ class Collector:
             service.cpu_system_s = process.get("cpu_system_s")
             service.rss = process.get("rss")
             service.uss = process.get("uss", service.uss)  # only in the status report
+            service.swap = process.get("swap")  # None from a service of an older version
 
     def _deregistered(self, service: ServiceInfo) -> None:
         if service.service_type not in self.known_services:
@@ -437,6 +438,7 @@ class Collector:
         service.cpu_system_s = fields["cpu_system_s"]
         service.rss = fields["rss"]
         service.uss = fields["uss"]
+        service.swap = fields["swap"]
         service.monitoring = status
         service.add_sample(self._clock())
         if isinstance(status.get("setup"), dict):  # the Configuration Manager publishes the whole Setup

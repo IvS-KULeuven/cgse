@@ -32,6 +32,7 @@ def process_fields(status: dict[str, Any]) -> dict[str, Any]:
         "cpu_system_s": process.get("CPU System"),
         "rss": process.get("RSS"),
         "uss": process.get("USS"),
+        "swap": process.get("Swap"),
         "interval_s": delay / 1000 if isinstance(delay, (int, float)) else None,
     }
 

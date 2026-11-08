@@ -190,6 +190,7 @@ def process_rows(service: ServiceInfo) -> list[Row]:
         ("CPU system", format_seconds(service.cpu_system_s) or None),
         ("RSS", mib(service.rss)),
         ("USS", mib(service.uss)),
+        ("Swap", mib(service.swap)),
     ]
 
 

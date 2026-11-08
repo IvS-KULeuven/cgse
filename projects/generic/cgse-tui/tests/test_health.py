@@ -60,3 +60,22 @@ def test_assess_sets_the_levels():
     service.samples.extend(samples([95.0] * 61))
     health.assess(service, now=60.0)
     assert service.cpu_level is Level.CRITICAL and service.memory_level is Level.OK
+
+
+def test_memory_is_rss_plus_swap():
+    service = ServiceInfo(name="REG", service_type="REG", rss=100 * 2**20, swap=None)
+    assert service.memory == 100 * 2**20  # a service of an older version: the RSS
+    service.swap = 50 * 2**20
+    assert service.memory == 150 * 2**20
+
+
+def test_a_leak_that_is_swapped_out_is_seen():
+    """The registry leaked 1.1 GiB while its RSS went down from 516 to 154 MiB: the leak was swapped out."""
+    service = ServiceInfo(name="REG", service_type="REG", pid=1, cpu_percent=0.5)
+    for second in range(601):
+        service.rss = int((300 - 100 * second / 600) * 2**20)  # 300 -> 200 MiB in RAM
+        service.swap = int((100 + 250 * second / 600) * 2**20)  # 100 -> 350 MiB swapped out
+        service.add_sample(float(second))
+    health.assess(service, now=600.0)
+    assert service.memory_level is Level.CRITICAL  # 400 -> 550 MiB: +38 %
+    assert service.memory_reason.startswith("memory grew")

@@ -207,6 +207,11 @@ class AsyncRegistryServer:
         self._tasks.add(heartbeats_task)
         heartbeats_task.add_done_callback(self._tasks.discard)
 
+        # Publish a status event every second, see _publish_status()
+        status_task = asyncio.create_task(self._publish_status())
+        self._tasks.add(status_task)
+        status_task.add_done_callback(self._tasks.discard)
+
         # Wait for shutdown
         await self._shutdown_event.wait()
 
@@ -271,6 +276,19 @@ class AsyncRegistryServer:
         except asyncio.CancelledError:
             self.logger.info("Cleanup task cancelled")
 
+    async def _publish_status(self, interval: float = 1.0):
+        """Publishes a `status` event every `interval` seconds, with the PID and start time of the registry.
+
+        Subscribers can use it to know that the registry is alive, and that it was restarted when the PID or start time
+        changes. It also keeps the publisher socket in use: libzmq cleans up after a subscriber that went away only
+        when the socket is used. When the registry published only on register, deregister and expire, the state of
+        every subscriber that came and went piled up, about 6 KB each, 250 MiB a day with the CGSE TUI polling every
+        2 s.
+        """
+        while self._running:
+            await self._publish_event("status", process_identity(self._process))
+            await asyncio.sleep(interval)
+
     async def _handle_requests(self):
         """Task that handles incoming requests."""
         self.logger.info("Started request handler task")
@@ -319,7 +337,7 @@ class AsyncRegistryServer:
         Publish an event to subscribers.
 
         Args:
-            event_type: Type of event (register, deregister, expire, etc.)
+            event_type: Type of event (register, deregister, expire, status)
             data: Event payload
         """
         assert self.pub_socket is not None, "PUB socket is not connected, cannot publish events."

@@ -404,3 +404,21 @@ def send(port: int, command: str) -> str:
             logger.exception(f"Send failed with: {exc}")
 
     return reply
+
+
+def test_process_status_has_the_swapped_out_memory():
+    """A leak ends up in swap: the status, the monitoring messages and the status report carry it next to the RSS."""
+    import sys
+
+    import psutil
+
+    from egse.process import ProcessStatus
+    from egse.process import process_status
+
+    status = process_status(psutil.Process())
+    assert "swap" in status
+    if sys.platform.startswith("linux"):
+        assert isinstance(status["swap"], int) and status["swap"] >= 0
+    process = ProcessStatus(metrics_prefix="test_swap")  # its own metrics, they are registered once per prefix
+    assert "Swap" in process.as_dict()
+    assert "swap" in process.as_status_dict()
