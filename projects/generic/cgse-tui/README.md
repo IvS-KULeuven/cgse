@@ -59,8 +59,10 @@ CPU and memory warnings: the TUI judges the process of every service, and shows 
 also in the overview, and writes a message in the log pane when this changes:
 
 - CPU: the average CPU % over the last minute, a warning from 50 %, critical from 90 %;
-- memory: the growth of the RSS over the last 10 minutes, a warning from 10 %, critical from 25 %. It's judged when
-  there are samples of at least 5 minutes, so a process that just started isn't taken for a leak.
+- memory: the growth of the memory, the RSS plus what is swapped out, over the last 10 minutes, a warning from 10 %,
+  critical from 25 %. It's judged when there are samples of at least 5 minutes, so a process that just started isn't
+  taken for a leak. The swapped-out memory counts because leaked memory ends up in swap: the RSS alone can go down
+  while a process leaks. A service of an older version doesn't report its swap, then only the RSS counts.
 
 The limits are in `cgse_tui/data/health.py`.
 

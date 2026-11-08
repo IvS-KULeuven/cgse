@@ -110,7 +110,8 @@ It uses a pluggable backend (`AsyncSQLiteBackend` by default) and handles:
 - request processing on the request socket
 - heartbeat renewals on the heartbeat socket
 - cleanup of expired services
-- publication of registry events (`register`, `deregister`, `expire`)
+- publication of registry events (`register`, `deregister`, `expire`), and a `status` event every second with the
+  PID and start time of the registry (`pid`, `start_time`), to know that it is alive or was restarted
 
 ## Control Actions
 

@@ -211,6 +211,14 @@ COLUMNS: tuple[Column, ...] = (
         style=memory_style,
     ),
     Column(
+        "swap",
+        "Swap [MiB]",
+        lambda s, now: format_mib(s.swap),
+        "Memory of the process that is swapped out; a leak ends up there",
+        justify="right",
+        style=memory_style,
+    ),
+    Column(
         "uss",
         "USS [MiB]",
         lambda s, now: format_mib(s.uss),

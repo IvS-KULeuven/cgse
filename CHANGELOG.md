@@ -7,6 +7,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Service registry: memory leak
+
+- Fixed: the service registry grew by about 6 KB for every client that connected, some 250 MiB a day with the CGSE
+  TUI polling every 2 s (1.1 GiB after 6 days, most of it swapped out). Every registry client opened a subscription to
+  the event socket of the registry, also to send a single request, and libzmq only cleans up after a subscriber that
+  went away when the publisher socket is used, while the registry publishes only when a service registers,
+  deregisters or expires.
+- The registry publishes a `status` event every second, with its PID and start time: subscribers know that it is
+  alive or was restarted, and libzmq cleans up after the subscribers that went away.
+- `RegistryClient` no longer opens a subscription (it never read events); `AsyncRegistryClient` opens it only when
+  events are used (`on_event()`, `start_event_listener()`).
+- The process status reports the memory that is swapped out: `Swap` in the monitoring messages, `swap` in the status
+  report and in `process_status()`, so also in the heartbeats and in the `info` of the registry.
+- CGSE TUI: the memory warning judges the RSS plus the swapped-out memory. Leaked memory ends up in swap: the RSS of
+  the registry went down from 516 to 154 MiB while it held 1.1 GiB, and no warning was shown. The swap is shown in the
+  Process panel and in the new column "Swap [MiB]" (`o`).
+
 ### PLATO FITS
 
 - Fixed: the FITS persistence layer (`plato-fits`) couldn't be loaded, and every process that imports the Storage

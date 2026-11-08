@@ -50,8 +50,10 @@ registered are no longer considered registered.
 The TUI judges the process of every service:
 
 - **CPU %**: the average over the last minute, orange from 50 %, red from 90 %. A short peak doesn't count.
-- **Memory**: the growth of the resident memory (RSS) over the last 10 minutes, judged once there are samples of
-  5 minutes: orange from 10 % growth, red from 25 % (a leak?).
+- **Memory**: the growth of the memory over the last 10 minutes, judged once there are samples of 5 minutes: orange
+  from 10 % growth, red from 25 % (a leak?). The memory is the resident memory (RSS) plus what is swapped out: leaked
+  memory is never used again and ends up in swap, so the RSS alone can even go down while a process leaks. The swap
+  is in the Process panel and in the column "Swap [MiB]" (`o`); a service of an older version doesn't report it.
 
 The reason is shown in the Process panel of the detail screen, and a change is written in the log pane.
 

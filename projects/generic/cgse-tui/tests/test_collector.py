@@ -117,6 +117,7 @@ def test_process_fields_sync_and_async():
         "cpu_system_s": 0.5,
         "rss": 1024,
         "uss": 768,
+        "swap": None,  # not in the monitoring message of a server of an older version
         "interval_s": 1.0,
     }
     assert process_fields(ASYNC_MONITORING)["pid"] == 43
@@ -660,5 +661,25 @@ async def test_the_device_drivers_of_the_setup_are_shown():
     # another Setup without the hexapod
     fakes.subscriptions["tcp://10.0.0.1:6111"]({**SYNC_MONITORING, "setup": {"gse": {}}})
     assert key not in by_type(collector)
+
+    await collector.stop()
+
+
+async def test_the_swapped_out_memory_is_taken_into_account():
+    collector, registry, fakes, clock = make_collector()
+    registry.records = [record("AWG1", service_port=2001, monitoring_port=2002, server_kind="sync")]
+    await collector.poll()
+    await settle()
+
+    fakes.subscriptions["tcp://10.0.0.1:2002"]({**SYNC_MONITORING, "Swap": 4096})
+    awg = by_type(collector)["AWG1"]
+    assert awg.swap == 4096 and awg.samples[-1][3] == 1024 + 4096  # the sample has RSS plus swap
+
+    # the registry, the logger and the hubs: from the status in the heartbeats
+    nh = {"pid": 7, "rss": 2048, "swap": 1000, "cpu_percent": 0.1}
+    registry.records.append({**record("NH_CS", server_kind="notifyhub"), "status": nh})
+    await collector.poll()
+    await settle()
+    assert by_type(collector)["NH_CS"].swap == 1000
 
     await collector.stop()

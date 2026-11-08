@@ -1,6 +1,7 @@
 """Tests for the recovery of the registry clients after timeouts, e.g. when the network was down (laptop lid closed)."""
 
 import asyncio
+import os
 import time
 
 import pytest
@@ -218,3 +219,48 @@ def test_sync_client_sends_one_request_at_a_time(monkeypatch):
         thread.join()
 
     assert overlaps == [False] * 4
+
+
+@pytest.mark.asyncio
+async def test_async_client_subscribes_only_for_events(registry):
+    """A client that only sends requests opens no subscription: every subscription that comes and goes cost the
+    registry memory, about 6 KB, until it processed the commands of its publisher socket."""
+    async with AsyncRegistryClient(**ENDPOINTS) as client:
+        assert await client.health_check()
+        assert client.sub_socket is None
+
+    events = []
+    async with AsyncRegistryClient(**ENDPOINTS) as listener:
+        listener.on_event("register", lambda event: events.append(event))
+        assert listener.sub_socket is not None
+        await listener.start_event_listener()
+        await asyncio.sleep(0.3)  # the subscription reaches the registry
+
+        async with AsyncRegistryClient(**ENDPOINTS) as client:
+            await register(client)
+        for _ in range(20):
+            if events:
+                break
+            await asyncio.sleep(0.1)
+        await listener.stop_event_listener()
+    assert events and events[0]["service_info"]["name"] == "test_cs"
+
+
+def test_sync_client_opens_no_subscription(registry):
+    with RegistryClient(**ENDPOINTS) as client:
+        assert client.sub_socket is None
+
+
+@pytest.mark.asyncio
+async def test_the_registry_publishes_its_status(registry):
+    """The registry publishes a status event every second, so libzmq cleans up after subscribers that went away."""
+    events = []
+    async with AsyncRegistryClient(**ENDPOINTS) as listener:
+        listener.on_event("status", lambda event: events.append(event))
+        await listener.start_event_listener()
+        for _ in range(30):
+            if events:
+                break
+            await asyncio.sleep(0.1)
+        await listener.stop_event_listener()
+    assert events and events[0]["pid"] == os.getpid() and events[0]["start_time"] > 0

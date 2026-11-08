@@ -129,17 +129,11 @@ class RegistryClient:
         if VERBOSE_DEBUG:
             self.logger.debug("Connecting to service registry...")
 
-        # REQ socket for request-reply pattern
+        # REQ socket for request-reply pattern. No SUB socket: this client has no events, and every subscription that
+        # comes and goes costs the registry memory until it processes the commands of its publisher socket.
         self.req_socket = self._create_req_socket()
 
-        # SUB socket for receiving events
-        self.sub_socket = self.context.socket(zmq.SUB)
-        self.sub_socket.connect(self.registry_sub_endpoint)
-        # Default to receiving all events
-        self.sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
-
         self.poller.register(self.req_socket, zmq.POLLIN)
-        self.poller.register(self.sub_socket, zmq.POLLIN)
 
     def _new_identity(self) -> bytes:
         return f"{self._client_id_prefix}-{uuid.uuid4()}".encode()
@@ -704,18 +698,21 @@ class AsyncRegistryClient:
         if VERBOSE_DEBUG:
             self.logger.debug("Connecting to service registry...")
 
-        if self.req_socket is not None and self.sub_socket is not None:
+        if self.req_socket is not None:
             self.logger.warning("Already connected to service registry, skipping connection.")
             return
 
-        # REQ socket for request-reply pattern
+        # REQ socket for request-reply pattern. The SUB socket for the events is only created when events are used,
+        # see _subscriber(): most clients only send requests.
         self.req_socket = self._create_req_socket()
 
-        # SUB socket for receiving events
-        self.sub_socket = self.context.socket(zmq.SUB)
-        self.sub_socket.connect(self.registry_sub_endpoint)
-        # Default to receiving all events
-        self.sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
+    def _subscriber(self) -> zmq.asyncio.Socket:
+        """The SUB socket for the events of the registry, created when it is first needed, receiving all events."""
+        if self.sub_socket is None:
+            self.sub_socket = self.context.socket(zmq.SUB)
+            self.sub_socket.connect(self.registry_sub_endpoint)
+            self.sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
+        return self.sub_socket
 
     def _new_identity(self) -> bytes:
         return f"{self._client_id_prefix}-{uuid.uuid4()}".encode()
@@ -1146,14 +1143,14 @@ class AsyncRegistryClient:
         Register a handler for a specific event type.
 
         Args:
-            event_type: Type of event to handle (register, deregister, expire)
+            event_type: Type of event to handle (register, deregister, expire, status)
             handler: Function or coroutine to call with event data
         """
         if event_type not in self._event_handlers:
             self._event_handlers[event_type] = []
 
             # Subscribe to this specific event type
-            self.sub_socket.setsockopt_string(zmq.SUBSCRIBE, event_type)
+            self._subscriber().setsockopt_string(zmq.SUBSCRIBE, event_type)
 
         self._event_handlers[event_type].append(handler)
         self.logger.debug(f"Registered handler for {event_type} events")
@@ -1168,6 +1165,7 @@ class AsyncRegistryClient:
         # Cancel existing event listener task if present
         await self.stop_event_listener()
 
+        self._subscriber()
         self._running = True
 
         async def subscription_loop():

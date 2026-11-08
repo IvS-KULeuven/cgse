@@ -229,6 +229,7 @@ class ProcessStatus:
             "UUID": self._uuid,
             "RSS": self._memory_info.rss,
             "USS": self._memory_info.uss,
+            "Swap": getattr(self._memory_info, "swap", None),  # memory swapped out, not on every platform
             "CPU User": self._cpu_times.user,
             "CPU System": self._cpu_times.system,
             "CPU count": self._cpu_count,
@@ -250,6 +251,7 @@ class ProcessStatus:
             "uuid": str(self._uuid),
             "rss": self._memory_info.rss,
             "uss": self._memory_info.uss,
+            "swap": getattr(self._memory_info, "swap", None),  # memory swapped out, not on every platform
             "cpu_user_s": self._cpu_times.user,
             "cpu_system_s": self._cpu_times.system,
             "cpu_count": self._cpu_count,
@@ -281,9 +283,20 @@ def process_identity(process: psutil.Process | None = None) -> dict:
     return {"pid": process.pid, "start_time": process.create_time()}
 
 
+def _swap(process: psutil.Process) -> int | None:
+    """The memory of the process that is swapped out [bytes], None when the platform doesn't give it."""
+    try:
+        return getattr(process.memory_full_info(), "swap", None)
+    except (psutil.Error, OSError):
+        return None
+
+
 def process_status(process: psutil.Process | None = None) -> dict:
     """Returns the status of the given process, by default the current process, with the keys of
-    `ProcessStatus.as_status_dict()`: pid, uptime_s, rss, cpu_user_s, cpu_system_s, cpu_percent.
+    `ProcessStatus.as_status_dict()`: pid, uptime_s, rss, swap, cpu_user_s, cpu_system_s, cpu_percent.
+
+    `swap` is the memory of the process that is swapped out, None when it can't be read (e.g. not on Linux). A leak
+    ends up there: the RSS alone doesn't show it.
 
     Unlike `ProcessStatus`, this registers no metrics. Pass the same `psutil.Process` object on every call: the CPU
     percentage is measured since the previous call with that object (the first call returns 0.0).
@@ -295,6 +308,7 @@ def process_status(process: psutil.Process | None = None) -> dict:
             "pid": process.pid,
             "uptime_s": time.time() - process.create_time(),
             "rss": process.memory_info().rss,
+            "swap": _swap(process),
             "cpu_user_s": cpu_times.user,
             "cpu_system_s": cpu_times.system,
             "cpu_percent": process.cpu_percent(),
