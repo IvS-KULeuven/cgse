@@ -8,12 +8,12 @@ import logging
 import time
 from collections.abc import Awaitable
 from collections.abc import Callable
+from collections.abc import Iterator
 from typing import Any
 
 from rich.text import Text
 from textual.app import ComposeResult
 from textual.containers import Horizontal
-from textual.containers import ScrollableContainer
 from textual.containers import Vertical
 from textual.containers import VerticalScroll
 from textual.screen import Screen
@@ -34,6 +34,8 @@ from cgse_tui.screens.logtail import MAX_LINES
 from cgse_tui.screens.logtail import TAIL_INTERVAL
 from cgse_tui.screens.logtail import LogFilter
 from cgse_tui.screens.logtail import format_record
+from cgse_tui.screens.logview import FOLLOW_HINT
+from cgse_tui.screens.logview import FollowingLog
 from cgse_tui.screens.procman import CoreServicesTable
 from cgse_tui.screens.registry import RegistryTable
 
@@ -56,10 +58,13 @@ class LogPanel(Vertical):
     ALLOW_MAXIMIZE = True
 
 
-class LogTail(RichLog):
-    """The log lines, scrolled with the keys of a scrollable container when it has the focus."""
+class LogTail(FollowingLog):
+    """The log lines of the logger; the border of its panel shows whether the view follows the new lines."""
 
-    BINDINGS = ScrollableContainer.BINDINGS
+    def show_follow_state(self) -> None:
+        screen = self.screen
+        if isinstance(screen, DetailScreen) and screen._in_stack:
+            screen._show_log_subtitle()
 
 
 class DetailScreen(Screen):
@@ -354,14 +359,15 @@ class DetailScreen(Screen):
         line = format_record(entry)
         return Text(line.plain, "dim") if dimmed else line
 
-    def _write_log_entry(self, log: RichLog, entry: dict[str, Any], matches, scroll_end: bool) -> None:
-        """Writes the entry when it passes the filter, or dimmed when the filter dims the other lines."""
-        if self._log_filter.hides(entry):
-            return
-        if matches(entry):
-            log.write(self._log_line(entry), scroll_end=scroll_end)
-        elif self._log_filter.dim:
-            log.write(self._log_line(entry, dimmed=True), scroll_end=scroll_end)
+    def _log_lines(self, entries: list[dict[str, Any]], matches) -> Iterator[Text]:
+        """The lines of the entries that pass the filter, and the others dimmed when the filter dims them."""
+        for entry in entries:
+            if self._log_filter.hides(entry):
+                continue
+            if matches(entry):
+                yield self._log_line(entry)
+            elif self._log_filter.dim:
+                yield self._log_line(entry, dimmed=True)
 
     def _log_matcher(self) -> Callable[[dict[str, Any]], bool]:
         matches = self._log_filter.matcher()
@@ -369,20 +375,10 @@ class DetailScreen(Screen):
 
     def _append_log(self, entries: list[dict[str, Any]]) -> None:
         """Keeps the entries and writes those that pass the filter, and the others dimmed when the filter dims.
-
-        The view follows the new lines when it is at the end. Otherwise it stays at the same lines: when the oldest
-        lines are removed (`max_lines`), it is scrolled up by as many lines.
-        """
+        The view follows the new lines, or keeps its position when scrolled up, see `FollowingLog`."""
         self._log_entries.extend(entries)
-        log = self.query_one("#log-tail", RichLog)
         matches = self._log_matcher()
-        follow = log.is_vertical_scroll_end  # before the writes: a write scrolls to the end only after a refresh
-        start_line = log._start_line  # the number of lines removed at the top, private in RichLog
-        for entry in entries:
-            self._write_log_entry(log, entry, matches, follow)
-        removed = log._start_line - start_line
-        if not follow and removed > 0:
-            log.scroll_to(y=max(0, log.scroll_y - removed), animate=False, immediate=True)
+        self.query_one("#log-tail", LogTail).write_lines(self._log_lines(entries, matches))
         self._count_log_matches(matches)
         self._show_log_subtitle()
 
@@ -394,18 +390,17 @@ class DetailScreen(Screen):
 
     def _rewrite_log(self) -> None:
         """Writes the kept entries again after a change of the filter."""
-        log = self.query_one("#log-tail", RichLog)
-        log.clear()
+        log = self.query_one("#log-tail", LogTail)
+        log.clear()  # at the end: follows the lines that are written again
         matches = self._log_matcher()
-        for entry in self._log_entries:
-            self._write_log_entry(log, entry, matches, scroll_end=True)
+        log.write_lines(self._log_lines(list(self._log_entries), matches))
         self._count_log_matches(matches)
         self._show_log_subtitle()
 
     def _show_log_subtitle(self) -> None:
         """The border of the log panel: the number of messages, the filter, and whether the view follows new lines."""
-        log = self.query_one("#log-tail", RichLog)
-        parts = [] if log.is_vertical_scroll_end else ["scrolled, end to follow"]  # first, a long border is cut
+        log = self.query_one("#log-tail", LogTail)
+        parts = [] if log.follows else [FOLLOW_HINT]  # first, a long border is cut
         if self._log_status:
             parts.append(self._log_status)
         if self._log_filter.active:

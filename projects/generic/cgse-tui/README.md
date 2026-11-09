@@ -23,7 +23,9 @@ Keys in the overview:
 - `a`: start, stop or restart the selected service (also in the detail screen), see below;
 - `o`: select the columns of the overview (in the dialog: `space` toggles a column, `a` all, `n` none, `d` defaults,
   `esc` or `o` closes it);
-- `l`: show or hide the log pane;
+- `l`: show or hide the log pane; with the focus in the log pane (`tab`), `m` makes it fill the screen and back
+  (`esc` too). The log pane follows the new messages while it's at the end; scrolled up, it stays at the same lines
+  (`end` follows again);
 - `F1`: help, on every screen (from a detail screen it opens at the part about the detail screen);
 - `ctrl+q`: quit.
 
@@ -79,10 +81,10 @@ Start, stop and restart run the `cgse <object> start|stop` command of the servic
 can be stopped or restarted, a core service that is not running can be started. With the simulator checkbox, the
 service is started with its simulator: a simulator that is a separate process (e.g. DAQ6510, TVAC) is started first
 with `cgse <object> start-sim` when it isn't running, other drivers are started with `--sim`. The checkbox is checked
-when the service runs with its simulator now. The progress and the result are written to the
-log pane: the TUI waits up to 30 s until a started service is registered, or a stopped service is no longer
-registered. The commands run in their own session, so the services started from the TUI don't belong to the terminal of
-the TUI.
+when the service runs with its simulator now. With the verbose debug checkbox, the service (and its simulator) is
+started with `VERBOSE_DEBUG=1`, otherwise without it. The progress and the result are written to the log pane: the
+TUI waits up to 30 s until a started service is registered, or a stopped service is no longer registered. The commands
+run in their own session, so the services started from the TUI don't belong to the terminal of the TUI.
 
 ## Latest release
 

@@ -57,6 +57,15 @@ async def test_run_command_runs_in_a_new_session():
     assert int(result.output) != os.getsid(0)  # the services it starts don't belong to the terminal of the TUI
 
 
+async def test_run_command_sets_and_removes_environment_variables(monkeypatch):
+    monkeypatch.setenv("VERBOSE_DEBUG", "1")
+    monkeypatch.setenv("CGSE_TUI_TEST", "kept")
+    script = "import os; print(os.environ.get('VERBOSE_DEBUG'), os.environ.get('CGSE_TUI_TEST'), os.environ.get('X'))"
+
+    result = await run_command([sys.executable, "-c", script], env={"VERBOSE_DEBUG": None, "X": "1"})
+    assert result.output.split() == ["None", "kept", "1"]  # removed, inherited, set
+
+
 async def test_run_command_kills_a_command_that_takes_too_long():
     result = await run_command([sys.executable, "-c", "import time; time.sleep(10)"], timeout=0.2)
     assert result.returncode is None
@@ -82,9 +91,11 @@ class FakeRun:
         self.returncode = returncode
         self.help_text = help_text
         self.commands = []
+        self.envs = []
 
-    async def __call__(self, command, timeout=None):
+    async def __call__(self, command, timeout=None, env=None):
         self.commands.append(command)
+        self.envs.append(env)
         if "--help" in command:
             return CommandResult(command, 0, self.help_text)
         if self.returncode == 0:
@@ -117,7 +128,7 @@ async def test_failed_command_logs_its_output(caplog):
 async def test_service_that_doesnt_register_is_reported(caplog):
     collector = FakeCollector(running=False)
 
-    async def run(command, timeout=None):
+    async def run(command, timeout=None, env=None):
         return CommandResult(command, 0, "")  # the command succeeds, but the service never registers
 
     with caplog.at_level(logging.INFO, logger="cgse_tui.actions"):
@@ -172,9 +183,11 @@ class SimulatorProcessRun:
         self.simulator_running = simulator_running
         self.answers_after = answers_after  # number of status requests before a started simulator answers
         self.commands = []
+        self.envs = {}
 
-    async def __call__(self, command, timeout=None):
+    async def __call__(self, command, timeout=None, env=None):
         self.commands.append(command[1:])
+        self.envs[command[2]] = env
         action = command[2]
         if action == "--help":
             return CommandResult(command, 0, "  start  start-sim  stop-sim  status-sim")
@@ -241,3 +254,35 @@ async def test_restart_stops_when_the_stop_fails():
     assert not await ServiceActions(collector, run=run).perform("restart", puna())
 
     assert run.commands == [[CGSE, "puna", "stop", "PUNA_01"]]
+
+
+async def test_start_with_verbose_debug(caplog):
+    collector = FakeCollector(running=True)
+    run = FakeRun(collector)
+
+    with caplog.at_level(logging.INFO, logger="cgse_tui.actions"):
+        assert await ServiceActions(collector, run=run).perform("restart", puna(), verbose_debug=True)
+
+    assert run.envs == [None, {"VERBOSE_DEBUG": "1"}]  # stop as it is, then start with the variable
+    assert "puna_cs: VERBOSE_DEBUG=1 cgse puna start PUNA_01" in caplog.messages
+
+
+async def test_start_without_verbose_debug_removes_the_variable():
+    collector = FakeCollector(running=False)
+    run = FakeRun(collector)
+
+    assert await ServiceActions(collector, run=run).perform("start", puna())
+
+    assert run.envs == [{"VERBOSE_DEBUG": None}]  # also when the TUI runs with VERBOSE_DEBUG
+
+
+async def test_the_simulator_process_gets_verbose_debug_too():
+    collector = FakeCollector(running=False)
+    run = SimulatorProcessRun(collector, answers_after=0)
+
+    assert await ServiceActions(collector, run=run, simulator_interval=0.01).perform(
+        "start", daq6510(), simulator=True, verbose_debug=True
+    )
+
+    assert run.envs["start-sim"] == run.envs["start"] == {"VERBOSE_DEBUG": "1"}
+    assert run.envs["status-sim"] is None
