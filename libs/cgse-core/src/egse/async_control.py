@@ -39,6 +39,7 @@ from __future__ import annotations
 import asyncio
 import datetime
 import json
+import multiprocessing
 import pickle
 import uuid
 from asyncio import Event
@@ -218,11 +219,13 @@ class ServiceCommandRouter:
         return zmq_string_response("block: ACK")
 
     async def _handle_ping(self, cmd: dict[str, Any]) -> list:
-        self._logger.debug(f"Handling '{cmd['command']}' service request.")
+        if VERBOSE_DEBUG:
+            self._logger.debug(f"Handling '{cmd['command']}' service request.")
         return zmq_string_response("pong")
 
     async def _handle_info(self, cmd: dict[str, Any]) -> list:
-        self._logger.debug(f"Handling '{cmd['command']}' service request.")
+        if VERBOSE_DEBUG:
+            self._logger.debug(f"Handling '{cmd['command']}' service request.")
         return self._control_server.create_json_response(
             SocketType.SERVICE,
             {
@@ -232,7 +235,8 @@ class ServiceCommandRouter:
         )
 
     async def _handle_status_report(self, cmd: dict[str, Any]) -> list:
-        self._logger.debug(f"Handling '{cmd['command']}' service request.")
+        if VERBOSE_DEBUG:
+            self._logger.debug(f"Handling '{cmd['command']}' service request.")
         return self._control_server.create_json_response(
             SocketType.SERVICE,
             {
@@ -482,6 +486,13 @@ class AsyncControlServer:
     async def start(self):
         self._loop = asyncio.get_running_loop()
 
+        # The process name is in every log record, see `egse.logger`: a server whose start command didn't name its
+        # process is logged with its service name instead of "MainProcess".
+        process = multiprocessing.current_process()
+        original_process_name = process.name
+        if process.name == "MainProcess":
+            process.name = self.service_name
+
         self.connect_device_command_socket()
         self.connect_service_command_socket()
         self.connect_monitoring_socket()
@@ -516,6 +527,8 @@ class AsyncControlServer:
         self.disconnect_device_command_socket()
         self.disconnect_service_command_socket()
         self.disconnect_monitoring_socket()
+
+        process.name = original_process_name
 
     def create_background_tasks(self) -> list[Task]:
         """Create top-level server tasks.
@@ -751,10 +764,12 @@ class AsyncControlServer:
 
                 self.logger.debug(f"Received device command: {device_command}")
 
-                self.logger.debug("Process the command...")
+                if VERBOSE_DEBUG:
+                    self.logger.debug("Process the command...")
                 response = await self._process_device_command(device_command)
 
-                self.logger.debug("Send the response...")
+                if VERBOSE_DEBUG:
+                    self.logger.debug("Send the response...")
                 await self.device_command_socket.send_multipart([client_id, sequence_id, *response])
 
             except asyncio.CancelledError:
@@ -811,12 +826,14 @@ class AsyncControlServer:
                     await self.service_command_socket.send_multipart([client_id, sequence_id, *message])
                     continue
 
-                self.logger.debug(f"Received service request: {service_command}")
-
-                self.logger.debug("Process the command...")
+                # Service requests are mostly monitoring (ping, info, status_report, e.g. by the CGSE TUI every 10 s)
+                if VERBOSE_DEBUG:
+                    self.logger.debug(f"Received service request: {service_command}")
+                    self.logger.debug("Process the command...")
                 response = await self._process_service_command(service_command)
 
-                self.logger.debug("Send the response...")
+                if VERBOSE_DEBUG:
+                    self.logger.debug("Send the response...")
                 await self.service_command_socket.send_multipart([client_id, sequence_id, *response])
 
             except asyncio.CancelledError:
@@ -878,7 +895,8 @@ class AsyncControlServer:
         try:
             while not self.interrupted.is_set():
                 status = self.get_status()
-                self.logger.debug(f"{datetime.datetime.now()} Sending status updates.")
+                if VERBOSE_DEBUG:
+                    self.logger.debug("Sending status updates.")
                 await self.monitoring_socket.send(pickle.dumps(status))
 
                 try:

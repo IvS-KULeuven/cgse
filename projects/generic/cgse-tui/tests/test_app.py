@@ -480,7 +480,7 @@ def log_record(seq, message, level="INFO"):
     return {"seq": seq, "time": 1.8e9, "level": level, "name": "egse.x", "process": "cm_cs", "message": message}
 
 
-async def test_the_logger_screen_shows_the_last_log_lines():
+async def test_the_logger_screen_shows_the_last_log_lines(monkeypatch):
     from textual.widgets import RichLog
 
     from cgse_tui.screens import detail
@@ -504,7 +504,7 @@ async def test_the_logger_screen_shows_the_last_log_lines():
         requests.append((after, maximum))
         return answers[len(requests) - 1] if len(requests) <= len(answers) else {"last_seq": 1, "records": []}
 
-    detail.TAIL_INTERVAL = 0  # a request on every update of the screen
+    monkeypatch.setattr(detail, "TAIL_INTERVAL", 0)  # a request on every update of the screen
     collector = StaticCollector([logger_service])
     app = CgseTuiApp(collector=collector)
     async with app.run_test() as pilot:
@@ -517,11 +517,10 @@ async def test_the_logger_screen_shows_the_last_log_lines():
             await pilot.pause(0.1)
         assert screen.has_class("-with-log") and screen.query_one("#log-panel").display
         lines = [line.text for line in screen.query_one("#log-tail", RichLog).lines]
-        assert requests[:3] == [(0, 200), (2, 1000), (3, 1000)]  # only the new records after the first request
+        assert requests[:3] == [(0, 1000), (2, 1000), (3, 1000)]  # only the new records after the first request
         assert any("first" in line for line in lines) and any("third" in line for line in lines)
         assert any("the logger was restarted" in line for line in lines)
         assert lines[-1].endswith("after restart")
-    detail.TAIL_INTERVAL = 2.0
 
 
 async def test_an_old_logger_has_no_log_lines():

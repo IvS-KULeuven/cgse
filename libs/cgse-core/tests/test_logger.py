@@ -146,6 +146,7 @@ def test_tail_command():
     response = log_cs.handle_command("tail 0 3")
     assert response["status"] == "ACK" and response["last_seq"] == 5
     assert [record["message"] for record in response["records"]] == ["line 2", "line 3", "line 4"]  # the most recent
+    assert response["records"][0]["module"] == Path(__file__).stem
 
     response = log_cs.handle_command("tail 4 100")
     assert [record["seq"] for record in response["records"]] == [5]

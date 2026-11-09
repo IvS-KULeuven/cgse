@@ -146,6 +146,7 @@ nav:
     - dev_guide/installation.md
     - dev_guide/uv.md
     - dev_guide/coding_style.md
+    - dev_guide/logging.md
     - dev_guide/docs.md
     - dev_guide/plugins.md
     - dev_guide/dotenv.md

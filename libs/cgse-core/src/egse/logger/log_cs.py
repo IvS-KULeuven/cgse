@@ -120,7 +120,7 @@ the message."""
 MAX_MESSAGE_LENGTH = 200
 """The message of the last warning or error is cut to this length in the statistics."""
 
-TAIL_LENGTH = 1000
+TAIL_LENGTH = 10_000
 """The number of recent records the logger keeps in memory for the `tail` command."""
 
 MAX_TAIL_MESSAGE_LENGTH = 1000
@@ -128,7 +128,8 @@ MAX_TAIL_MESSAGE_LENGTH = 1000
 
 TAIL: deque = deque(maxlen=TAIL_LENGTH)
 """The most recent records, oldest first, as dictionaries with a sequence number `seq` (the number of records received
-when it arrived), `time`, `level`, `name`, `process` and `message`. See the `tail` command in `handle_command()`."""
+when it arrived), `time`, `level`, `name`, `module`, `process` and `message`. See the `tail` command in
+`handle_command()`."""
 
 
 def _message(record: logging.LogRecord) -> str:
@@ -150,6 +151,7 @@ def count_log_record(record: logging.LogRecord) -> None:
             "time": record.created,
             "level": record.levelname,
             "name": record.name,
+            "module": record.module,
             "process": record.processName,
             "message": message[:MAX_TAIL_MESSAGE_LENGTH],
         }
