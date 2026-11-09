@@ -5,6 +5,7 @@ Used for the log pane of the overview and the log panel of the logger's detail s
 
 from __future__ import annotations
 
+import collections
 from collections.abc import Iterable
 
 from rich.console import RenderableType
@@ -18,12 +19,20 @@ FOLLOW_HINT = "scrolled, end to follow"
 class FollowingLog(RichLog):
     """A `RichLog` that follows the new lines while the view is at the end. Scrolled up, the view stays at the same
     lines, also when the oldest lines are removed (`max_lines`). With the focus, the keys of a scrollable container
-    scroll it, `end` follows again.
+    scroll it, `end` follows again, and `w` wraps the long lines or cuts them off again (the default, the log keeps its
+    cadence; `left` and `right` scroll a long line).
 
     Subclasses show whether the view follows in `show_follow_state()`, called when it may have changed.
     """
 
-    BINDINGS = ScrollableContainer.BINDINGS
+    BINDINGS = [*ScrollableContainer.BINDINGS, ("w", "toggle_wrap", "Wrap")]
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("wrap", False)
+        super().__init__(*args, **kwargs)
+        self._written: collections.deque[tuple[int, RenderableType]] = collections.deque(maxlen=self.max_lines)
+        """What `write_lines()` wrote, with the number of its first line, to write it again with or without wrapping.
+        The number counts from the first line ever written, also when the oldest lines were removed."""
 
     @property
     def follows(self) -> bool:
@@ -32,13 +41,35 @@ class FollowingLog(RichLog):
 
     def write_lines(self, lines: Iterable[RenderableType]) -> None:
         """Appends the lines, following them when the view is at the end, otherwise keeping it at the same lines."""
-        follow = self.follows  # before the writes: a write scrolls to the end only after a refresh
+        self._write_lines(lines, follow=self.follows)  # before the writes: a write scrolls to the end after a refresh
+        self.show_follow_state()
+
+    def _write_lines(self, lines: Iterable[RenderableType], follow: bool) -> None:
         start_line = self._start_line  # the number of lines removed at the top, private in RichLog
         for line in lines:
+            self._written.append((self._start_line + len(self.lines), line))
             self.write(line, scroll_end=follow)
         removed = self._start_line - start_line
         if not follow and removed > 0:
             self.scroll_to(y=max(0, self.scroll_y - removed), animate=False, immediate=True)
+
+    def clear(self):
+        self._written.clear()
+        return super().clear()
+
+    def action_toggle_wrap(self) -> None:
+        """Wraps the long lines, or cuts them off, and writes all lines again. Scrolled up, the view stays at the same
+        line; at the end it keeps following."""
+        follow = self.follows
+        top = self._start_line + round(self.scroll_y)
+        written = list(self._written)
+        index = max((i for i, (first, _) in enumerate(written) if first <= top), default=0)
+        self.wrap = not self.wrap
+        self.clear()
+        self.scroll_to(x=0, animate=False, immediate=True)
+        self._write_lines((line for _, line in written), follow)
+        if not follow and written:
+            self.scroll_to(y=self._written[index][0] - self._start_line, animate=False, immediate=True)
         self.show_follow_state()
 
     def watch_scroll_y(self, old_value: float, new_value: float) -> None:

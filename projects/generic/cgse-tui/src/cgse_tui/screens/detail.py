@@ -217,7 +217,7 @@ class DetailScreen(Screen):
             yield Vertical(id="details-area")
             yield panel("Registrations", RegistryTable(id="registrations"), id="registry-panel")
             yield panel("Core services", CoreServicesTable(id="core-services"), id="procman-panel")
-        log_tail = LogTail(id="log-tail", max_lines=MAX_LINES, wrap=True, markup=False)
+        log_tail = LogTail(id="log-tail", max_lines=MAX_LINES, markup=False)
         log_panel = LogPanel(log_tail, id="log-panel", classes="panel")
         log_panel.border_title = "Log"
         yield log_panel

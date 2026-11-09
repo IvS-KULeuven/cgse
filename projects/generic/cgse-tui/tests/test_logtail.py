@@ -317,3 +317,22 @@ async def test_d_hides_the_debug_lines_also_when_dimmed():
         await pilot.press("ctrl+s")
         await pilot.pause()
         assert words() == ["chatter", "info", "broken"]
+
+
+async def test_w_wraps_the_long_log_lines():
+    app = CgseTuiApp(collector=StaticCollector([LOGGER]))
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        screen = await open_logger(pilot, app)
+        log = screen.query_one("#log-tail", RichLog)
+        screen._append_log([record(1, "x" * 300), record(2, "debug " + "y" * 300, "DEBUG")])
+        await pilot.pause()
+        assert not log.wrap and len(log.lines) == 2  # a line per message
+
+        await pilot.press("w")  # the log has the focus in the logger screen
+        await pilot.pause()
+        assert log.wrap and len(log.lines) > 4
+
+        await pilot.press("d")  # a filter change writes the lines again, still wrapped
+        await pilot.pause()
+        assert log.wrap and len(log.lines) > 2 and all("y" not in line.text for line in log.lines)

@@ -94,7 +94,7 @@ class OverviewScreen(Screen):
         yield Header()
         # The cell's own colour wins on the cursor row, so the state indicator keeps its colour when selected
         yield DataTable(id="services", cursor_type="row", zebra_stripes=True, cursor_foreground_priority="renderable")
-        yield LogPane(id="log", max_lines=1000, wrap=False)
+        yield LogPane(id="log", max_lines=1000)
         yield Footer()
 
     def show_log_messages(self, messages: list[tuple[int, str]]) -> None:

@@ -67,6 +67,7 @@ The reason is shown in the Process panel of the detail screen, and a change is w
 | `o`       | choose the columns of the overview                                                        |
 | `l`       | show or hide the log pane                                                                 |
 | `m`       | in the log pane (`tab` gives it the focus): fill the screen, and back (`esc` too)         |
+| `w`       | in the log pane: wrap the long lines, and back (`left` and `right` scroll a long line)    |
 | `F1`      | this help                                                                                 |
 | `ctrl+q`  | quit                                                                                      |
 
@@ -127,6 +128,7 @@ Some detail screens have more:
 | `m`       | logger: the log panel fills the screen, and back          |
 | `f`       | logger: filter the log lines                              |
 | `d`       | logger: hide the DEBUG lines, and show them again         |
+| `w`       | logger: wrap the long log lines, and back                 |
 | `F1`      | this help                                                 |
 
 ## Start, stop and restart

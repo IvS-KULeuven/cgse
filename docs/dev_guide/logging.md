@@ -55,6 +55,38 @@ if state != previous_state:
     logger.info(f"{service_name}: {previous_state} → {state}")
 ```
 
+## Naming loggers
+
+The name of a logger decides where its messages go. The ZeroMQ handler is attached to the `egse` logger only, so
+only the loggers below `egse` reach the Logger, the log file and the log panel of the CGSE TUI. A logger with another
+name (`"periodic"`, `"__main__"`) prints to the terminal and is lost afterwards. The name is also in every line of
+the log file, and it's the handle to change the level of a part of the system:
+
+```python
+logging.getLogger("egse.notifyhub").setLevel(logging.WARNING)  # the notification hub and everything below it
+```
+
+1. **One logger per module, named after the module.** Use `logger = logging.getLogger(__name__)` at the top of the
+   module. The loggers then follow the packages, e.g. `egse.hexapod.symetrie.joran` is below `egse.hexapod`.
+2. **A module that runs as a program gets its name written out.** The core services and most control servers are
+   started with `python -m`, e.g. `python -m egse.storage.storage_cs`. In that process `__name__` is `"__main__"`,
+   which is not below `egse`. Write the module path instead:
+
+   ```python
+   logger = logging.getLogger("egse.hexapod.symetrie.joran_cs")  # started with python -m, __name__ is "__main__"
+   ```
+
+   The same holds for a name that is derived from a class defined in such a module (e.g. with
+   `get_full_classname()`): it starts with `__main__`.
+3. **No bare `egse`.** A message on the `egse` logger doesn't say where it comes from, and its level can't be changed
+   separately. Only code that sets up logging for the whole tree uses `egse` (`egse.log`, `egse.logger`).
+4. **Not deeper than the module.** No loggers per class, per device or per instance. The record already has the file
+   and line number, the device id belongs in the message (rule 5 above), and a logger is never freed once created.
+5. **No made-up names.** No hyphens, no names of a subsystem that is not a module (`egse.event-pub`), no names
+   outside `egse`, no name shared by several modules.
+6. **Third-party loggers** (`asyncua`, `urllib3`, …) are only addressed by their name to set their level, e.g. to
+   silence a chatty library.
+
 ## Keeping levels from freezing in place
 
 A level chosen while writing the code tends to stay when the code is finished. Two habits help:

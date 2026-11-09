@@ -24,8 +24,8 @@ Keys in the overview:
 - `o`: select the columns of the overview (in the dialog: `space` toggles a column, `a` all, `n` none, `d` defaults,
   `esc` or `o` closes it);
 - `l`: show or hide the log pane; with the focus in the log pane (`tab`), `m` makes it fill the screen and back
-  (`esc` too). The log pane follows the new messages while it's at the end; scrolled up, it stays at the same lines
-  (`end` follows again);
+  (`esc` too), and `w` wraps the long lines and back. The log pane follows the new messages while it's at the end;
+  scrolled up, it stays at the same lines (`end` follows again);
 - `F1`: help, on every screen (from a detail screen it opens at the part about the detail screen);
 - `ctrl+q`: quit.
 
@@ -56,8 +56,9 @@ The detail screen shows the selected service in panels, updated every second:
   requested every 2 s with the `tail` command of the logger (a logger of an older version doesn't have it). The
   lines follow the new messages while the view is at the end; scrolled up, the view stays at the same lines (`end`
   follows again). `m` makes the panel fill the screen and back, `f` filters the lines on levels, process, logger or
-  module, words in the message, and a time range, and hides or dims the other lines; `d` hides the DEBUG lines. The
-  panel keeps the last 1000 messages (the logger keeps 10 000 in memory), the filter applies to those;
+  module, words in the message, and a time range, and hides or dims the other lines; `d` hides the DEBUG lines, `w`
+  wraps the long lines. The panel keeps the last 1000 messages (the logger keeps 10 000 in memory), the filter applies
+  to those;
 - Core services: only for the Process Manager, the core services it manages with their state in the TUI; `enter`
   shows the details of the selected service, `esc` goes back.
 
