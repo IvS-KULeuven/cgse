@@ -66,6 +66,8 @@ The reason is shown in the Process panel of the detail screen, and a change is w
 | `a`       | start, stop or restart the selected service, see "Start, stop and restart"                |
 | `o`       | choose the columns of the overview                                                        |
 | `l`       | show or hide the log pane                                                                 |
+| `m`       | in the log pane (`tab` gives it the focus): fill the screen, and back (`esc` too)         |
+| `w`       | in the log pane: wrap the long lines, and back (`left` and `right` scroll a long line)    |
 | `F1`      | this help                                                                                 |
 | `ctrl+q`  | quit                                                                                      |
 
@@ -84,7 +86,8 @@ that the service registered.
 
 Below the table: the state changes of the services (e.g. "Notification Hub: ok → stale"), the warnings about CPU and
 memory, the progress of start, stop and restart, and other messages of the TUI. All messages, also those of the
-client libraries that are not shown, go to `cgse_tui.log` in the CGSE log location.
+client libraries that are not shown, go to `cgse_tui.log` in the CGSE log location. The log pane follows the new
+messages while it's at the end; scrolled up, it stays at the same lines and its border says so (`end` follows again).
 
 ## The detail screen
 
@@ -125,6 +128,7 @@ Some detail screens have more:
 | `m`       | logger: the log panel fills the screen, and back          |
 | `f`       | logger: filter the log lines                              |
 | `d`       | logger: hide the DEBUG lines, and show them again         |
+| `w`       | logger: wrap the long log lines, and back                 |
 | `F1`      | this help                                                 |
 
 ## Start, stop and restart
@@ -136,6 +140,10 @@ is the confirmation, `esc` cancels.
 With the **simulator** checkbox the service is started with its simulator; it is checked when the service runs with
 its simulator now. A simulator that is a separate process (e.g. DAQ6510, TVAC) is started first when it isn't
 running.
+
+With **verbose debug messages** the service (and its simulator) is started with `VERBOSE_DEBUG=1`: it also logs its
+development traces, e.g. every message it receives, see `docs/dev_guide/logging.md`. It is checked when the TUI itself
+runs with `VERBOSE_DEBUG`; when it's not checked, the service is started without it.
 
 The TUI then waits up to 30 s until the service is registered (start) or gone from the registry (stop), and writes the
 result in the log pane. The services started from the TUI keep running when the TUI quits.

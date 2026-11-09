@@ -113,16 +113,16 @@ class CgseTuiApp(App):
         is_running = getattr(self.collector, "is_running", None)
         running = is_running(service.service_type) if is_running else service.state is not ServiceState.INACTIVE
 
-        def perform(choice: tuple[str, bool] | None) -> None:
+        def perform(choice: tuple[str, bool, bool] | None) -> None:
             if choice is not None:
-                action, simulator = choice
-                self.run_worker(self._perform(action, service, simulator), group="actions")
+                action, simulator, verbose_debug = choice
+                self.run_worker(self._perform(action, service, simulator, verbose_debug), group="actions")
 
         simulator_support = getattr(self.actions, "simulator_support", None)
         self.push_screen(ActionSelectScreen(service, running, simulator_support), perform)
 
-    async def _perform(self, action: str, service: ServiceInfo, simulator: bool) -> None:
-        ok = await self.actions.perform(action, service, simulator)
+    async def _perform(self, action: str, service: ServiceInfo, simulator: bool, verbose_debug: bool = False) -> None:
+        ok = await self.actions.perform(action, service, simulator, verbose_debug=verbose_debug)
         if not ok:
             self.notify(f"{service.name}: {action} failed, see the log pane.", severity="error")
         self.update_overview()

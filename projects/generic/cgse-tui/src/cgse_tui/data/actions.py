@@ -6,6 +6,9 @@ as argument, as required by the commands of devices with several instances, e.g.
 
 A command runs in a new session, so the services it starts don't belong to the terminal of the TUI. Its output goes to
 a temporary file instead of a pipe: a started service could inherit the pipe, and reading it would never end.
+
+The start commands launch the service with the environment of the command, so the TUI can start a service with
+`VERBOSE_DEBUG`, the development traces of the CGSE (see `docs/dev_guide/logging.md`).
 """
 
 from __future__ import annotations
@@ -26,6 +29,9 @@ logger = logging.getLogger("cgse_tui.actions")
 
 COMMAND_TIMEOUT = 30.0
 """Seconds a `cgse` command may take, the start commands return when the service process is launched."""
+
+VERBOSE_DEBUG = "VERBOSE_DEBUG"
+"""The environment variable that switches on the development traces of a service, see `egse.env`."""
 
 STATE_TIMEOUT = 30.0
 """Seconds to wait until a started service is registered, or a stopped service is no longer registered."""
@@ -81,8 +87,27 @@ def display(command: list[str]) -> str:
     return " ".join(["cgse", *command[1:]])
 
 
-async def run_command(command: list[str], timeout: float = COMMAND_TIMEOUT) -> CommandResult:
-    """Runs a command in a new session and returns its exit code and output."""
+def display_env(env: dict[str, str | None] | None) -> str:
+    """The variables that are set for a command, as the user would type them before it, e.g. "VERBOSE_DEBUG=1 "."""
+    return "".join(f"{name}={value} " for name, value in (env or {}).items() if value is not None)
+
+
+async def run_command(
+    command: list[str], timeout: float = COMMAND_TIMEOUT, env: dict[str, str | None] | None = None
+) -> CommandResult:
+    """Runs a command in a new session and returns its exit code and output.
+
+    Args:
+        command: the command and its arguments.
+        timeout: seconds after which the command is killed.
+        env: environment variables that differ from those of the TUI, None removes a variable.
+    """
+    environment = {**os.environ, "COLUMNS": "200"}  # no wrapped lines in the output of rich
+    for name, value in (env or {}).items():
+        if value is None:
+            environment.pop(name, None)
+        else:
+            environment[name] = value
     with tempfile.TemporaryFile() as output:
         process = await asyncio.create_subprocess_exec(
             *command,
@@ -90,7 +115,7 @@ async def run_command(command: list[str], timeout: float = COMMAND_TIMEOUT) -> C
             stdout=output,
             stderr=output,
             start_new_session=True,
-            env={**os.environ, "COLUMNS": "200"},  # no wrapped lines in the output of rich
+            env=environment,
         )
         try:
             returncode = await asyncio.wait_for(process.wait(), timeout)
@@ -132,25 +157,30 @@ class ServiceActions:
     def is_busy(self, service_type: str) -> bool:
         return service_type in self._busy
 
-    async def perform(self, action: str, service: ServiceInfo, simulator: bool = False) -> bool:
+    async def perform(
+        self, action: str, service: ServiceInfo, simulator: bool = False, verbose_debug: bool = False
+    ) -> bool:
         """Starts, stops or restarts the service, returns True when it reached the expected state.
 
         Args:
             action: "start", "stop" or "restart".
             service: the service.
             simulator: start the service with its simulator, see `simulator_support()`.
+            verbose_debug: start the service (and its simulator) with `VERBOSE_DEBUG`, otherwise without it, also
+                when the TUI has it.
         """
         if self.is_busy(service.service_type):
             logger.warning(f"{service.name}: another action is still running.")
             return False
         self._busy.add(service.service_type)
         try:
+            env = {VERBOSE_DEBUG: "1" if verbose_debug else None}
             if action == "start":
-                return await self._start(service, simulator)
+                return await self._start(service, simulator, env)
             if action == "stop":
                 return await self._stop(service)
             if action == "restart":
-                return await self._stop(service) and await self._start(service, simulator)
+                return await self._stop(service) and await self._start(service, simulator, env)
             raise ValueError(f"Unknown action: {action}")
         finally:
             self._busy.discard(service.service_type)
@@ -174,19 +204,21 @@ class ServiceActions:
             self._simulator_support[service.cgse_object] = support
         return self._simulator_support[service.cgse_object]
 
-    async def _start(self, service: ServiceInfo, simulator: bool = False) -> bool:
+    async def _start(
+        self, service: ServiceInfo, simulator: bool = False, env: dict[str, str | None] | None = None
+    ) -> bool:
         sim_option = False
         if simulator:
             support = await self.simulator_support(service)
             if support == SIMULATOR_PROCESS:
-                if not await self._start_simulator(service):
+                if not await self._start_simulator(service, env):
                     return False
             elif support == SIMULATOR_OPTION:
                 sim_option = True
             else:
                 logger.warning(f"{service.name}: no simulator is known for this service.")
                 return False
-        if not await self._command(service, "start", sim_option):
+        if not await self._command(service, "start", sim_option, env):
             return False
         if await self.collector.wait_until(service.service_type, running=True, timeout=self.state_timeout):
             logger.info(f"{service.name} is running.")
@@ -194,13 +226,13 @@ class ServiceActions:
         logger.warning(f"{service.name} didn't register within {self.state_timeout:.0f} s after the start command.")
         return False
 
-    async def _start_simulator(self, service: ServiceInfo) -> bool:
+    async def _start_simulator(self, service: ServiceInfo, env: dict[str, str | None] | None = None) -> bool:
         """Starts the simulator process of the service, unless it is running. Waits until it answers."""
         status = [cgse_executable(), service.cgse_object, "status-sim"]
         if (await self._run(status)).ok:
             logger.info(f"{service.name}: the simulator is already running.")
             return True
-        if not await self._run_logged(service, [cgse_executable(), service.cgse_object, "start-sim"]):
+        if not await self._run_logged(service, [cgse_executable(), service.cgse_object, "start-sim"], env):
             return False
         loop = asyncio.get_running_loop()
         deadline = loop.time() + self.simulator_timeout
@@ -223,17 +255,21 @@ class ServiceActions:
         logger.warning(f"{service.name} is still running {self.state_timeout:.0f} s after the stop command.")
         return False
 
-    async def _command(self, service: ServiceInfo, action: str, sim: bool = False) -> bool:
+    async def _command(
+        self, service: ServiceInfo, action: str, sim: bool = False, env: dict[str, str | None] | None = None
+    ) -> bool:
         command = lifecycle_command(service, action, sim)
         if command is None:
             logger.warning(f"{service.name}: no cgse command is known for this service.")
             return False
-        return await self._run_logged(service, command)
+        return await self._run_logged(service, command, env)
 
-    async def _run_logged(self, service: ServiceInfo, command: list[str]) -> bool:
+    async def _run_logged(
+        self, service: ServiceInfo, command: list[str], env: dict[str, str | None] | None = None
+    ) -> bool:
         """Runs the command, logs it, and logs the end of its output when it fails."""
-        logger.info(f"{service.name}: {display(command)}")
-        result = await self._run(command)
+        logger.info(f"{service.name}: {display_env(env)}{display(command)}")
+        result = await self._run(command, env=env)
         if result.ok:
             return True
         reason = "timed out" if result.returncode is None else f"failed with exit code {result.returncode}"

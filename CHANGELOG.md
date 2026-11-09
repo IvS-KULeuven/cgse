@@ -9,8 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Developer guide: logging
 
-- New `docs/dev_guide/logging.md`: where log messages go, how to choose the level of a message, and rules that keep
-  the log useful.
+- New `docs/dev_guide/logging.md`: where log messages go, how to choose the level of a message, rules that keep the
+  log useful, and how to name loggers.
 
 ### Async control servers: process name and debug log
 
@@ -28,8 +28,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `f` filters the log lines on levels, process, logger or module, words in the message, and a time range (local
   time, date and time, or a time ago like `15m`). Text fields take comma separated words, `!word` leaves lines out.
   The lines that don't pass are hidden, or dimmed to keep their context (a checkbox in the dialog).
-- `d` hides the DEBUG lines of the log panel, also when the other lines are dimmed, and shows them again.
   The panel keeps the last 1000 messages, also when it opens, and the filter applies to those.
+- `d` hides the DEBUG lines of the log panel, also when the other lines are dimmed, and shows them again.
+- The log pane of the overview: with the focus (`tab`), `m` makes it fill the screen and back (`esc` too), and the
+  arrow and page keys scroll it. It keeps its position when scrolled up, like the log panel of the logger.
+- The actions dialog has a checkbox "Verbose debug messages": the service (and its simulator) is started with
+  `VERBOSE_DEBUG=1`, otherwise without it. The command in the log pane shows the variable.
+- The log lines are no longer wrapped, so the log keeps its cadence: a long message takes one line, `left` and
+  `right` scroll it. `w` wraps the long lines and back, in the log panel of the logger and in the log pane of the
+  overview (with the focus); scrolled up, the view stays at the same message.
 - Logger: the records of the `tail` command also have the `module` of the record. The logger keeps the last 10 000
   records in memory for the `tail` command (was 1000), some 6 MB with messages of 80 characters.
 

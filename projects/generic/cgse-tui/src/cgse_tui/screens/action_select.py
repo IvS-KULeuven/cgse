@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Awaitable
 from collections.abc import Callable
 
+from egse.env import bool_env
 from rich.text import Text
 from textual.app import ComposeResult
 from textual.containers import Horizontal
@@ -16,6 +17,7 @@ from textual.widgets import Static
 
 from cgse_tui.data.actions import SIMULATOR_OPTION
 from cgse_tui.data.actions import SIMULATOR_PROCESS
+from cgse_tui.data.actions import VERBOSE_DEBUG
 from cgse_tui.data.actions import display
 from cgse_tui.data.actions import lifecycle_command
 from cgse_tui.data.model import ServiceInfo
@@ -39,11 +41,13 @@ def simulator_label(service: ServiceInfo, support: str | None) -> str:
     return "Use the simulator (no simulator for this service)"
 
 
-class ActionSelectScreen(ModalScreen[tuple[str, bool] | None]):
-    """Shows the commands for a service and returns the selected action and simulator choice, None when cancelled.
+class ActionSelectScreen(ModalScreen[tuple[str, bool, bool] | None]):
+    """Shows the commands for a service and returns the selected action, the simulator choice and the verbose debug
+    choice, None when cancelled.
 
     Selecting an action is the confirmation, the dialog shows the commands that will run. The simulator checkbox is
-    enabled when the service has a simulator, it is checked when the service runs with its simulator now.
+    enabled when the service has a simulator, it is checked when the service runs with its simulator now. The verbose
+    debug checkbox starts the service with `VERBOSE_DEBUG`, it is checked when the TUI itself runs with it.
 
     Args:
         service: the selected service.
@@ -65,6 +69,9 @@ class ActionSelectScreen(ModalScreen[tuple[str, bool] | None]):
         padding: 1 2;
     }
     ActionSelectScreen #simulator {
+        margin-top: 1;
+    }
+    ActionSelectScreen #verbose-debug {
         margin-top: 1;
     }
     ActionSelectScreen #buttons {
@@ -103,6 +110,9 @@ class ActionSelectScreen(ModalScreen[tuple[str, bool] | None]):
             yield Checkbox(
                 "Use the simulator (checking ...)", value=self.service.sim_mode is True, disabled=True, id="simulator"
             )
+            yield Checkbox(
+                f"Verbose debug messages ({VERBOSE_DEBUG}=1)", value=bool_env(VERBOSE_DEBUG), id="verbose-debug"
+            )
             with Horizontal(id="buttons"):
                 for action in ACTIONS:
                     variant = "error" if action == "stop" else "primary"
@@ -127,6 +137,7 @@ class ActionSelectScreen(ModalScreen[tuple[str, bool] | None]):
             self.run_worker(self._check_simulator(), group="simulator")
         else:
             self.query_one("#simulator", Checkbox).display = False
+        self.query_one("#verbose-debug", Checkbox).display = bool(self.actions - {"stop"})  # start or restart
 
     async def _check_simulator(self) -> None:
         support = await self._simulator_support(self.service)
@@ -140,4 +151,10 @@ class ActionSelectScreen(ModalScreen[tuple[str, bool] | None]):
         if event.button.id == "cancel":
             self.dismiss(None)
         else:
-            self.dismiss((event.button.id, self.query_one("#simulator", Checkbox).value))
+            self.dismiss(
+                (
+                    event.button.id,
+                    self.query_one("#simulator", Checkbox).value,
+                    self.query_one("#verbose-debug", Checkbox).value,
+                )
+            )

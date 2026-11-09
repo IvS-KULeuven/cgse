@@ -19,6 +19,8 @@ from cgse_tui.screens.column_select import ColumnSelectScreen
 from cgse_tui.screens.columns import DEFAULT_COLUMNS
 from cgse_tui.screens.columns import Column
 from cgse_tui.screens.columns import visible_columns
+from cgse_tui.screens.logview import FOLLOW_HINT
+from cgse_tui.screens.logview import FollowingLog
 from cgse_tui.screens.panels import state_indicator
 
 INDICATOR_COLUMN = ""
@@ -39,6 +41,26 @@ logger = logging.getLogger("cgse_tui.overview")
 LOG_STYLES = {logging.WARNING: "yellow", logging.ERROR: "red", logging.CRITICAL: "bold red"}
 
 
+def _log_style(level: int) -> str:
+    return next((style for minimum, style in sorted(LOG_STYLES.items(), reverse=True) if level >= minimum), "")
+
+
+class LogPane(FollowingLog):
+    """The log messages of the TUI below the table. It follows the new messages, or keeps its position when scrolled
+    up, which its top border tells. With the focus, `m` makes it fill the screen and back (`esc` too)."""
+
+    BINDINGS = [*FollowingLog.BINDINGS, ("m", "toggle_maximized", "Maximize log")]
+
+    def show_follow_state(self) -> None:
+        self.border_title = "" if self.follows else FOLLOW_HINT
+
+    def action_toggle_maximized(self) -> None:
+        if self.screen.maximized is self:
+            self.screen.minimize()
+        else:
+            self.screen.maximize(self, container=False)
+
+
 class OverviewScreen(Screen):
     """Shows all services in a table, and the log messages below it. Select a row to see the status report."""
 
@@ -49,6 +71,9 @@ class OverviewScreen(Screen):
     OverviewScreen #log {
         height: 10;
         border-top: solid $secondary;
+    }
+    OverviewScreen #log.-maximized {
+        height: 1fr;
     }
     """
 
@@ -69,17 +94,18 @@ class OverviewScreen(Screen):
         yield Header()
         # The cell's own colour wins on the cursor row, so the state indicator keeps its colour when selected
         yield DataTable(id="services", cursor_type="row", zebra_stripes=True, cursor_foreground_priority="renderable")
-        yield RichLog(id="log", max_lines=1000, wrap=False)
+        yield LogPane(id="log", max_lines=1000)
         yield Footer()
 
     def show_log_messages(self, messages: list[tuple[int, str]]) -> None:
         """Appends (level, text) log messages to the log pane."""
-        log = self.query_one("#log", RichLog)
-        for level, message in messages:
-            style = next((style for minimum, style in sorted(LOG_STYLES.items(), reverse=True) if level >= minimum), "")
-            log.write(Text(message, style=style))
+        self.query_one("#log", LogPane).write_lines(
+            Text(message, style=_log_style(level)) for level, message in messages
+        )
 
     def action_toggle_log(self) -> None:
+        if self.maximized is not None:
+            self.minimize()
         log = self.query_one("#log", RichLog)
         log.display = not log.display
 

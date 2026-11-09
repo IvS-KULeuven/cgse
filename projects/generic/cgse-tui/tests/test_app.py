@@ -1,5 +1,7 @@
 """Tests for the TUI screens, driven with Textual's `App.run_test()`, with a collector that needs no services."""
 
+import logging
+
 from textual.widgets import DataTable
 
 from cgse_tui.app import CgseTuiApp
@@ -265,12 +267,13 @@ class RecordingActions:
     async def simulator_support(self, service):
         return "process"
 
-    async def perform(self, action, service, simulator=False):
-        self.performed.append((action, service.service_type, simulator))
+    async def perform(self, action, service, simulator=False, verbose_debug=False):
+        self.performed.append((action, service.service_type, simulator, verbose_debug))
         return True
 
 
 async def test_actions_dialog_for_the_selected_service(monkeypatch):
+    monkeypatch.delenv("VERBOSE_DEBUG", raising=False)
     from textual.widgets import Button
     from textual.widgets import Checkbox
 
@@ -293,18 +296,21 @@ async def test_actions_dialog_for_the_selected_service(monkeypatch):
             checkbox = app.screen.query_one("#simulator", Checkbox)
             assert checkbox.value is True  # AWG1 runs with its simulator
             assert not checkbox.disabled and "cgse tgf4000 start-sim" in str(checkbox.label)
+            verbose = app.screen.query_one("#verbose-debug", Checkbox)
+            assert verbose.display and verbose.value is False  # the TUI runs without VERBOSE_DEBUG
 
-            await pilot.click("#simulator")  # restart without the simulator
+            await pilot.click("#simulator")  # restart without the simulator, with verbose debug messages
+            await pilot.click("#verbose-debug")
             await pilot.click("#restart")
             await pilot.pause()
             assert isinstance(app.screen, OverviewScreen)
-            assert recorder.performed == [("restart", "AWG1", False)]
+            assert recorder.performed == [("restart", "AWG1", False, True)]
 
             await pilot.press("a")
             await pilot.pause()
             await pilot.press("escape")
             await pilot.pause()
-            assert recorder.performed == [("restart", "AWG1", False)]  # cancelled
+            assert recorder.performed == [("restart", "AWG1", False, True)]  # cancelled
     finally:
         SERVICES[0].cgse_object = None
 
@@ -651,3 +657,94 @@ async def test_a_device_of_the_setup_that_does_not_run_is_dimmed():
         name, service_type = table.get_row("setup:puna:PUNA_01")[1:3]
         assert name.plain == "PUNA Hexapod" and "dim" in str(name.style) + str(name.spans)
         assert service_type.plain == ""  # no service type before it ran
+
+
+async def test_maximize_the_log_pane_of_the_overview():
+    from cgse_tui.screens.overview import LogPane
+
+    app = CgseTuiApp(collector=StaticCollector(SERVICES))
+    async with app.run_test(size=(120, 40)) as pilot:
+        await pilot.pause()
+        overview = app.overview
+        log = overview.query_one("#log", LogPane)
+
+        await pilot.press("m")  # the table has the focus: m does nothing
+        assert overview.maximized is None
+
+        log.focus()
+        await pilot.press("m")
+        await pilot.pause()
+        assert overview.maximized is log and log.region.height > 30  # fills the screen
+
+        await pilot.press("escape")  # restores the pane, the TUI stays
+        await pilot.pause()
+        assert app.screen is overview and overview.maximized is None and log.region.height == 10
+
+        await pilot.press("m")
+        await pilot.press("l")  # hiding the log restores it first
+        assert overview.maximized is None and not log.display
+
+
+async def test_the_log_pane_keeps_its_position_when_scrolled_up():
+    from cgse_tui.screens.logview import FOLLOW_HINT
+    from cgse_tui.screens.overview import LogPane
+
+    app = CgseTuiApp(collector=StaticCollector(SERVICES))
+    async with app.run_test(size=(120, 40)) as pilot:
+        await pilot.pause()
+        overview = app.overview
+        log = overview.query_one("#log", LogPane)
+
+        overview.show_log_messages([(logging.INFO, f"message {n}") for n in range(100)])
+        await pilot.pause()
+        assert log.follows and log.lines[-1].text == "message 99" and log.border_title == ""
+
+        log.scroll_to(y=20, animate=False, immediate=True)
+        await pilot.pause()
+        assert log.border_title == FOLLOW_HINT  # right after scrolling, before new messages arrive
+        top = log.lines[20].text
+        overview.show_log_messages([(logging.INFO, f"message {n}") for n in range(100, 1005)])  # 5 lines removed
+        await pilot.pause()
+        assert len(log.lines) == 1000 and log.scroll_y == 15 and log.lines[15].text == top
+
+        log.focus()
+        await pilot.press("end")
+        await pilot.pause()
+        overview.show_log_messages([(logging.WARNING, "the last message")])
+        await pilot.pause()
+        assert log.follows and log.lines[-1].text == "the last message" and log.border_title == ""
+
+
+async def test_w_wraps_the_long_lines_of_the_log_pane():
+    from cgse_tui.screens.overview import LogPane
+
+    app = CgseTuiApp(collector=StaticCollector(SERVICES))
+    async with app.run_test(size=(80, 40)) as pilot:
+        await pilot.pause()
+        overview = app.overview
+        log = overview.query_one("#log", LogPane)
+        long = "x" * 200
+        overview.show_log_messages([(logging.INFO, f"message {n} {long}") for n in range(50)])
+        await pilot.pause()
+        assert not log.wrap and len(log.lines) == 50  # one line per message, the log keeps its cadence
+
+        log.focus()
+        await pilot.press("w")
+        await pilot.pause()
+        assert log.wrap and len(log.lines) > 100 and log.follows  # wrapped, still at the end
+        assert log.lines[-1].text.rstrip().endswith("x")
+
+        y = next(n for n, line in enumerate(log.lines) if line.text.startswith("message 20 "))
+        log.scroll_to(y=y, animate=False, immediate=True)
+        await pilot.pause()
+        assert not log.follows
+        await pilot.press("w")  # back to one line per message, the view stays at message 20
+        await pilot.pause()
+        assert not log.wrap and len(log.lines) == 50
+        assert log.lines[round(log.scroll_y)].text.startswith("message 20 ")
+
+        log.scroll_to(y=30, animate=False, immediate=True)  # message 30, then wrap: the view stays there
+        await pilot.pause()
+        await pilot.press("w")
+        await pilot.pause()
+        assert log.wrap and log.lines[round(log.scroll_y)].text.startswith("message 30 ")
