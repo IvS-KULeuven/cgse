@@ -158,6 +158,8 @@ def service_rows(service: ServiceInfo, now: float) -> list[Row]:
         ("In the Setup", service.setup_path),
         ("Device ID", service.device_id),
         ("Host", service.host),
+        ("Registered host", service.registered_host or service.host),
+        ("Hostname", service.hostname),
         ("Server kind", service.server_kind),
         ("cgse object", service.cgse_object),
         # The registry doesn't register itself

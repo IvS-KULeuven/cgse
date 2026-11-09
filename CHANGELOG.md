@@ -7,6 +7,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Service registry: local services without network
+
+- Fixed: when the network went away after the services had registered (e.g. a laptop on the road), the services on
+  the same machine couldn't be reached anymore: clients connected to the registered WiFi address, which no longer
+  existed. The CGSE TUI showed all services as stale while they were running.
+- A service registers its machine identity (`machine_id`: the host name and, on Linux, `/etc/machine-id`). The
+  registry clients return a service on their own machine with `host` = `127.0.0.1` and the registered address in
+  `registered_host` (`discover_service()`, `get_service()`, `list_services()`, `get_endpoint()`). The machine is
+  recognised by its identity, not by addresses, which change with the network or a VPN.
+- New `egse.system.get_machine_id()`.
+- CGSE TUI: the Host column is the address the TUI connects to (`127.0.0.1` for a service on this machine). New
+  columns "Registered host" and "Hostname" (`o`), also in the Service panel; the registry table shows the
+  registered address.
+
 ### Service registry: memory leak
 
 - Fixed: the service registry grew by about 6 KB for every client that connected, some 250 MiB a day with the CGSE

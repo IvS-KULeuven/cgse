@@ -17,6 +17,7 @@ from egse.log import logging
 from egse.process import process_identity
 from egse.process import process_status
 from egse.system import do_every
+from egse.system import get_machine_id
 from egse.system import get_routed_host_ip
 from egse.zmq_ser import wait_for_message
 
@@ -62,6 +63,29 @@ def heartbeat_status() -> dict[str, Any]:
         return process_status(_process)
     except Exception:
         return {}
+
+
+LOCAL_HOST = "127.0.0.1"
+"""The address a client uses for a service on its own machine. Every server binds on all IPv4 interfaces."""
+
+
+def localize(service: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Returns the service with `host` = `LOCAL_HOST` when it runs on the machine of this client, else unchanged.
+
+    A service registers the address of its network interface. On the same machine the loopback interface is used, so a
+    client keeps reaching the service when the network is gone (e.g. a laptop on the road) or changes address. The
+    machine is recognised by its identity in the registration (`machine_id`, see `egse.system.get_machine_id()`),
+    never by addresses, which change with the network or a VPN. The registered address is kept in `registered_host`.
+
+    A registration without `machine_id` (an older version) is returned unchanged. The given dictionary is not changed,
+    a localized service is a copy.
+    """
+    if not service:
+        return service
+    metadata = service.get("metadata") or {}
+    if metadata.get("machine_id") != get_machine_id():
+        return service
+    return {**service, "host": LOCAL_HOST, "registered_host": service.get("host")}
 
 
 class RegistryClient:
@@ -339,7 +363,8 @@ class RegistryClient:
             service_info["type"] = service_type
 
         # The PID and start time identify the process of the service, the registry keeps them with the registration.
-        service_info["metadata"] = {**(metadata or {}), **process_identity()}
+        # The machine identity tells clients on the same machine to connect through the loopback, see `localize()`.
+        service_info["metadata"] = {**(metadata or {}), **process_identity(), "machine_id": get_machine_id()}
 
         if singleton:
             service_info["singleton"] = True
@@ -430,7 +455,8 @@ class RegistryClient:
         The returned information contains:
 
         - name: the name of the service
-        - host: the ip address or hostname of the service
+        - host: the ip address or hostname of the service, `127.0.0.1` when it runs on the machine of this client
+          (see `localize()`), the registered address is then in `registered_host`
         - port: the port number for requests to the microservice
 
         Args:
@@ -447,8 +473,7 @@ class RegistryClient:
             self.logger.debug(f"{response = }")
 
         if response.get("success"):
-            service = response.get("service")
-            return service
+            return localize(response.get("service"))
         else:
             if VERBOSE_DEBUG:
                 self.logger.debug(f"Service discovery failed: {response.get('error')}")
@@ -476,8 +501,7 @@ class RegistryClient:
         response = self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
         if response.get("success"):
-            service = response.get("service")
-            return service
+            return localize(response.get("service"))
         else:
             self.logger.warning(f"Get service failed: {response.get('error')}")
             return None
@@ -497,8 +521,7 @@ class RegistryClient:
         response = self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
         if response.get("success"):
-            services = response.get("services", [])
-            return services
+            return [localize(service) for service in response.get("services", [])]
         else:
             self.logger.warning(f"List services failed: {response.get('error')}")
             return []
@@ -913,7 +936,8 @@ class AsyncRegistryClient:
             service_info["type"] = service_type
 
         # The PID and start time identify the process of the service, the registry keeps them with the registration.
-        service_info["metadata"] = {**(metadata or {}), **process_identity()}
+        # The machine identity tells clients on the same machine to connect through the loopback, see `localize()`.
+        service_info["metadata"] = {**(metadata or {}), **process_identity(), "machine_id": get_machine_id()}
 
         if singleton:
             service_info["singleton"] = True
@@ -1221,7 +1245,8 @@ class AsyncRegistryClient:
         The returned information contains:
 
         - name: the name of the service
-        - host: the ip address or hostname of the service
+        - host: the ip address or hostname of the service, `127.0.0.1` when it runs on the machine of this client
+          (see `localize()`), the registered address is then in `registered_host`
         - port: the port number for requests to the microservice
 
         Args:
@@ -1236,9 +1261,7 @@ class AsyncRegistryClient:
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
         if response.get("success"):
-            service = response.get("service")
-
-            return service
+            return localize(response.get("service"))
         else:
             if VERBOSE_DEBUG:
                 self.logger.debug(f"Service discovery failed: {response.get('error')}")
@@ -1263,9 +1286,7 @@ class AsyncRegistryClient:
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
         if response.get("success"):
-            service = response.get("service")
-
-            return service
+            return localize(response.get("service"))
         else:
             self.logger.warning(f"Get service failed: {response.get('error')}")
             return None
@@ -1285,9 +1306,7 @@ class AsyncRegistryClient:
         response = await self._send_request(MessageType.REQUEST_WITH_REPLY, request)
 
         if response.get("success"):
-            services = response.get("services", [])
-
-            return services
+            return [localize(service) for service in response.get("services", [])]
         else:
             self.logger.warning(f"List services failed: {response.get('error')}")
             return []

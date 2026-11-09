@@ -4,9 +4,11 @@ import asyncio
 import logging
 
 from cgse_tui.data.collector import Collector
+from cgse_tui.data.model import ServiceInfo
 from cgse_tui.data.model import ServiceState
 from cgse_tui.data.monitor import process_fields
 from cgse_tui.data.services import REGISTRY_SERVICE_TYPE
+from cgse_tui.screens.columns import COLUMNS_BY_KEY
 
 SYNC_MONITORING = {
     "timestamp": "…",
@@ -683,3 +685,29 @@ async def test_the_swapped_out_memory_is_taken_into_account():
     assert by_type(collector)["NH_CS"].swap == 1000
 
     await collector.stop()
+
+
+async def test_a_service_on_this_machine_is_followed_on_the_loopback():
+    """The registry client gives the loopback address for a local service, the TUI connects to it."""
+    collector, registry, fakes, clock = make_collector()
+    local = record("AWG1", host="127.0.0.1", service_port=2001, monitoring_port=2002, server_kind="sync")
+    registry.records = [{**local, "registered_host": "192.168.68.75"}]
+    fakes.reports["AWG1"] = REPORT
+
+    await collector.poll()
+    await settle()
+
+    assert "tcp://127.0.0.1:2002" in fakes.subscriptions
+    awg = by_type(collector)["AWG1"]
+    assert (awg.host, awg.registered_host) == ("127.0.0.1", "192.168.68.75")
+    assert COLUMNS_BY_KEY["host"].value(awg, clock()) == "127.0.0.1"
+    assert COLUMNS_BY_KEY["registered_host"].value(awg, clock()) == "192.168.68.75"
+    assert COLUMNS_BY_KEY["hostname"].value(awg, clock()) == ""  # registered without machine identity
+
+
+def test_the_host_name_comes_from_the_machine_identity():
+    service = ServiceInfo(name="puna_cs", service_type="PUNA", host="10.0.0.5", metadata={"machine_id": "lab-pc:4c4c"})
+    assert service.hostname == "lab-pc"
+    assert COLUMNS_BY_KEY["registered_host"].value(service, 0.0) == "10.0.0.5"  # not localized: the registered one
+    assert ServiceInfo(name="x", service_type="X", metadata={"machine_id": "mac-mini"}).hostname == "mac-mini"
+    assert ServiceInfo(name="x", service_type="X").hostname is None

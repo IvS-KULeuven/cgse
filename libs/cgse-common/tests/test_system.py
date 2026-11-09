@@ -1254,3 +1254,30 @@ def test_get_routed_host_ip(monkeypatch):
 
     monkeypatch.setattr(socket, "socket", NoRoute)
     assert get_routed_host_ip() is None  # no fallback to the address of the host name
+
+
+def test_get_machine_id(monkeypatch, tmp_path):
+    import socket
+
+    from egse import system
+
+    system.get_machine_id.cache_clear()
+    monkeypatch.setattr(socket, "gethostname", lambda: "lab-pc")
+    machine_id_file = tmp_path / "machine-id"
+    machine_id_file.write_text("4c4c4544004d\n")
+    monkeypatch.setattr(system, "MACHINE_ID_FILES", (str(tmp_path / "missing"), str(machine_id_file)))
+    try:
+        assert system.get_machine_id() == "lab-pc:4c4c4544004d"
+
+        # the network doesn't play a role: no addresses, no name resolution
+        monkeypatch.setattr(socket, "gethostbyname", lambda name: pytest.fail("gethostbyname was called"))
+        monkeypatch.setattr(socket, "socket", lambda *args: pytest.fail("a socket was opened"))
+        system.get_machine_id.cache_clear()
+        assert system.get_machine_id() == "lab-pc:4c4c4544004d"
+
+        # without a machine id, e.g. macOS, the host name alone
+        monkeypatch.setattr(system, "MACHINE_ID_FILES", (str(tmp_path / "missing"),))
+        system.get_machine_id.cache_clear()
+        assert system.get_machine_id() == "lab-pc"
+    finally:
+        system.get_machine_id.cache_clear()

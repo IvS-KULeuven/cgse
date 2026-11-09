@@ -46,6 +46,9 @@ class ServiceInfo:
     name: str
     service_type: str
     host: str | None = None
+    """The address to connect to: `127.0.0.1` for a service on this machine, see `egse.registry.client.localize()`."""
+    registered_host: str | None = None
+    """The address in the registration, when `host` is the loopback address for a service on this machine."""
     state: ServiceState = ServiceState.UNKNOWN
     server_kind: str | None = None
     """Taken from the registry metadata: "sync", "async", or None for the custom servers."""
@@ -134,6 +137,13 @@ class ServiceInfo:
         if self.rss is None:
             return None
         return self.rss + (self.swap or 0)
+
+    @property
+    def hostname(self) -> str | None:
+        """The host name of the machine of the service, from its machine identity in the registration ("host:id", see
+        `egse.system.get_machine_id()`). None for a service of an older version, which doesn't register it."""
+        machine_id = self.metadata.get("machine_id")
+        return machine_id.partition(":")[0] if isinstance(machine_id, str) and machine_id else None
 
     def add_sample(self, now: float) -> None:
         """Adds the current CPU % and memory to the samples; a new process (PID) starts with new samples."""
