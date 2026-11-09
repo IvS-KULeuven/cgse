@@ -123,18 +123,9 @@ async def test_control_server(caplog):
             # Sleep some time, so we can see the control server in action, e.g. status reports, housekeeping, etc
             await asyncio.sleep(5.0)
 
-            # These logging messages are send by the control server, so if they are in the logs,
-            # it means the server is running and sending status updates as expected.
-            # Note that the messages are sent every second, so in 5 seconds we should see 5 of them.
-            # We check for at least one occurrence to avoid flaky test failures due to timing issues,
-            # but in practice there should be 5 of them.
-            # Its important to note the log level is set to INFO in the control server, so if the
-            # test logs are configured to show INFO level logs, we should see these messages.
-            # If the test logs are configured to show only WARNING or higher level logs,
-            # we won't see these messages and the assertion will fail.
-            # So make sure the test logging configuration includes INFO level logs for this assertion
-            # to work as intended.
-            assert "Sending status updates" in caplog.text  # this should there be 5 times actually
+            # The server is still running all its tasks. The status updates themselves are checked in
+            # test_control_server_publishes_status_on_monitoring_port, they are no longer logged.
+            assert server._tasks and not [task.get_name() for task in server._tasks if task.done()]
 
             response = await client.ping()
             logger.debug(f"{response = }")
@@ -260,6 +251,29 @@ async def test_control_server_skips_storage_manager_when_not_active():
     await asyncio.wait_for(server_task, timeout=3.0)
 
     assert server.storage_calls == ["is_storage_manager_active"]
+
+
+@pytest.mark.asyncio
+async def test_control_server_names_its_process_and_keeps_the_debug_log_quiet(caplog):
+    """A server is logged with its service name, not "MainProcess", and doesn't log every status update."""
+    import multiprocessing
+
+    process = multiprocessing.current_process()
+    assert process.name == "MainProcess"
+
+    server = StorageAwareTestServer(active=False)
+    server.mon_delay = 100
+    with caplog.at_level(logging.DEBUG, logger="egse.async_control.server"):
+        server_task = asyncio.create_task(server.start())
+        try:
+            await asyncio.sleep(0.5)  # a few status updates
+            assert process.name == server.service_name
+        finally:
+            server.stop()
+            await asyncio.wait_for(server_task, timeout=3.0)
+
+    assert process.name == "MainProcess"  # restored when the server stops
+    assert not [r for r in caplog.records if "Sending status updates" in r.getMessage()]
 
 
 def test_temp_control_server_status_extends_base_status():

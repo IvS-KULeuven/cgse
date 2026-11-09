@@ -105,7 +105,14 @@ Some detail screens have more:
 
 - **Service registry**: the table of the registrations; `enter` opens the details of the selected service.
 - **Process manager**: its core services with their state; `enter` opens their details.
-- **Logger**: the messages by level, the last warning and error, and the last log lines at the bottom.
+- **Logger**: the messages by level, the last warning and error, and the last log lines at the bottom. The lines
+  follow the new messages while the view is at the end; scrolled up, the view stays where it is (`end` follows
+  again). `m` makes the log panel fill the screen, `m` or `esc` brings it back. `f` filters the lines on levels,
+  process, logger or module, words in the message, and a time range (`14:05`, `2026-11-09 14:05`, or a time ago
+  like `15m`). The text fields take comma separated words, `!word` leaves lines out. The lines that don't pass
+  are hidden, or dimmed to keep their context (a checkbox in the dialog). `d` hides the DEBUG lines, also when
+  the others are dimmed, and shows them again. The panel keeps the last 1000 messages, the filter applies to those,
+  not to the log file.
 
 ### Keys
 
@@ -115,6 +122,9 @@ Some detail screens have more:
 | `r`       | ask the service for its status report now                 |
 | `a`       | start, stop or restart the service                        |
 | `v`       | show the raw status report, and back                      |
+| `m`       | logger: the log panel fills the screen, and back          |
+| `f`       | logger: filter the log lines                              |
+| `d`       | logger: hide the DEBUG lines, and show them again         |
 | `F1`      | this help                                                 |
 
 ## Start, stop and restart

@@ -7,6 +7,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Developer guide: logging
+
+- New `docs/dev_guide/logging.md`: where log messages go, how to choose the level of a message, and rules that keep
+  the log useful.
+
+### Async control servers: process name and debug log
+
+- Fixed: an async control server without its own process name (e.g. Fleabag) was logged as `MainProcess`. It's now
+  logged with its service name (e.g. `daq6510_cs`); a process name set by its start command is kept.
+- Fixed: every async control server logged a DEBUG message every second ("Sending status updates") and four for every
+  service request (e.g. each `status_report` of the CGSE TUI). These are only logged with `VERBOSE_DEBUG` now; device
+  commands are still logged.
+
+### CGSE TUI: log panel of the logger
+
+- The log lines keep their position when scrolled up, also when the oldest lines are removed; at the end of the
+  view they follow the new messages (`end` to follow again). The border tells when the view doesn't follow.
+- `m` makes the log panel fill the screen, `m` or `esc` brings it back.
+- `f` filters the log lines on levels, process, logger or module, words in the message, and a time range (local
+  time, date and time, or a time ago like `15m`). Text fields take comma separated words, `!word` leaves lines out.
+  The lines that don't pass are hidden, or dimmed to keep their context (a checkbox in the dialog).
+- `d` hides the DEBUG lines of the log panel, also when the other lines are dimmed, and shows them again.
+  The panel keeps the last 1000 messages, also when it opens, and the filter applies to those.
+- Logger: the records of the `tail` command also have the `module` of the record. The logger keeps the last 10 000
+  records in memory for the `tail` command (was 1000), some 6 MB with messages of 80 characters.
+
 ### Service registry: local services without network
 
 - Fixed: when the network went away after the services had registered (e.g. a laptop on the road), the services on

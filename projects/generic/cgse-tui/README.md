@@ -51,7 +51,11 @@ The detail screen shows the selected service in panels, updated every second:
 - Registrations: only for the service registry, all registered services; `enter` shows the details of the selected
   service, `esc` goes back.
 - Log: only for the logger, the last log lines, coloured by level, filling the lower part of the screen; new lines are
-  requested every 2 s with the `tail` command of the logger (a logger of an older version doesn't have it);
+  requested every 2 s with the `tail` command of the logger (a logger of an older version doesn't have it). The
+  lines follow the new messages while the view is at the end; scrolled up, the view stays at the same lines (`end`
+  follows again). `m` makes the panel fill the screen and back, `f` filters the lines on levels, process, logger or
+  module, words in the message, and a time range, and hides or dims the other lines; `d` hides the DEBUG lines. The
+  panel keeps the last 1000 messages (the logger keeps 10 000 in memory), the filter applies to those;
 - Core services: only for the Process Manager, the core services it manages with their state in the TUI; `enter`
   shows the details of the selected service, `esc` goes back.
 
@@ -67,8 +71,8 @@ also in the overview, and writes a message in the log pane when this changes:
 The limits are in `cgse_tui/data/health.py`.
 
 Panels are dimmed when the service is stale or not running. Keys in the detail screen: `r` requests the status report
-now (otherwise every 10 s), `a` starts, stops or restarts the service, `v` shows the raw status report, `esc` goes
-back to the overview.
+now (otherwise every 10 s), `a` starts, stops or restarts the service, `v` shows the raw status report, `m`, `f` and `d`
+maximize and filter the log lines of the logger and hide its DEBUG lines, `esc` goes back to the overview.
 
 Start, stop and restart run the `cgse <object> start|stop` command of the service, with its device identifier, e.g.
 `cgse puna stop PUNA_01`. The dialog shows the commands; selecting an action is the confirmation. A running service
