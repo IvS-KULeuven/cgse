@@ -358,6 +358,7 @@ class Collector:
             service.ttl = record.get("ttl")
             service.health = record.get("health")
             service.host = record.get("host")
+            service.registered_host = record.get("registered_host")
             service.port = record.get("port")
             service.service_port = metadata.get("service_port")
             service.monitoring_port = metadata.get("monitoring_port")

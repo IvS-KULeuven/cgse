@@ -102,6 +102,20 @@ Both clients support the same core operations.
         if service:
             endpoint = f"tcp://{service['host']}:{service['port']}"
     ```
+
+### Services On The Same Machine
+
+A service registers the address of its network interface, and its machine identity (`machine_id` in the metadata: the
+host name and, on Linux, the machine id from `/etc/machine-id`). When a client gets a service that runs on its own
+machine (`discover_service()`, `get_service()`, `list_services()`, `get_endpoint()`), the `host` is `127.0.0.1` and
+the registered address is in `registered_host`. Local clients keep reaching the services when the network is gone,
+e.g. on a laptop without WiFi, or when it changes address. Clients on other machines get the registered address.
+
+The machine is recognised by its identity, never by its addresses: these change with the network or a VPN (e.g.
+Tailscale). A registration of an older version has no `machine_id`, its `host` is returned unchanged.
+
+Two machines with the same host name and the same `/etc/machine-id` (e.g. cloned from one disk image without a new
+machine id, see `systemd-machine-id-setup`) can't be told apart: give each machine its own machine id.
 ## Server Behavior
 
 The server implementation is `AsyncRegistryServer`.

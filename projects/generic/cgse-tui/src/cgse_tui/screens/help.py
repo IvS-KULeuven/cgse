@@ -71,10 +71,14 @@ The reason is shown in the Process panel of the detail screen, and a change is w
 
 ### Columns
 
-`o` opens a list of all columns, also the ones that are not shown at start-up: ports, CPU time, USS, Setup and obsid,
-the counters of the hubs, the heartbeat and health in the registry, and more. `space` turns a column on or off, `a`
-selects all, `n` none, `d` the defaults; `esc` or `o` closes the list. The change is applied right away, for as long
-as the TUI runs.
+`o` opens a list of all columns, also the ones that are not shown at start-up: ports, the registered address and the
+host name of a service, CPU time, USS, Setup and obsid, the counters of the hubs, the heartbeat and health in the
+registry, and more. `space` turns a column on or off, `a` selects all, `n` none, `d` the defaults; `esc` or `o` closes
+the list. The change is applied right away, for as long as the TUI runs.
+
+The Host column is the address the TUI connects to: `127.0.0.1` for a service on this machine, so it stays reachable
+when the network is gone or changes address. The column "Registered host" has the address of the network interface
+that the service registered.
 
 ### The log pane
 

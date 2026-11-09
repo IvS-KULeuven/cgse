@@ -48,7 +48,7 @@ def cells(record: dict[str, Any], now: float) -> tuple:
         service_type(record),
         format_value(metadata.get("cgse_object")),
         format_value(metadata.get("device_id")),
-        format_value(record.get("host")),
+        format_value(record.get("registered_host") or record.get("host")),
         Text(format_value(record.get("port")), justify="right"),
         Text(health, style=HEALTH_STYLES.get(health, "")),
         Text(f"{format_age(heartbeat, now)} ago" if heartbeat else "", justify="right"),

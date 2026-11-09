@@ -747,6 +747,32 @@ def get_routed_host_ip() -> Optional[str]:
         return None
 
 
+MACHINE_ID_FILES = ("/etc/machine-id", "/var/lib/dbus/machine-id")
+"""The files with the unique id of a Linux machine (systemd and D-Bus), the first one that exists is used."""
+
+
+@functools.lru_cache(maxsize=1)
+def get_machine_id() -> str:
+    """Returns an identity of this machine: the host name and, on Linux, the machine id, e.g. "lab-pc:4c4c4544...".
+
+    A service puts it in its registration, so a client knows the service runs on its own machine and connects through
+    the loopback interface. It doesn't depend on the network: no IP addresses and no name resolution, these change
+    with the network (WiFi, VPN). The machine id tells apart two machines with the same host name; without it (e.g.
+    macOS) the host name alone is used.
+    """
+    machine_id = ""
+    for filename in MACHINE_ID_FILES:
+        try:
+            machine_id = Path(filename).read_text().strip()
+        except OSError:
+            continue
+        if machine_id:
+            break
+
+    hostname = socket.gethostname()
+    return f"{hostname}:{machine_id}" if machine_id else hostname
+
+
 def get_current_location() -> tuple[str, int, str]:
     """
     Returns the location where this function is called, i.e. the filename, line number, and function name.

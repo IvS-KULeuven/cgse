@@ -7,11 +7,14 @@ import time
 import pytest
 import pytest_asyncio
 from egse.system import get_host_ip
+from egse.system import get_machine_id
 
 from egse.registry import MessageType
 from egse.registry.backend import AsyncInMemoryBackend
+from egse.registry.client import LOCAL_HOST
 from egse.registry.client import AsyncRegistryClient
 from egse.registry.client import RegistryClient
+from egse.registry.client import localize
 from egse.registry.server import AsyncRegistryServer
 
 REQ_PORT, PUB_PORT, HB_PORT = 15586, 15587, 15588
@@ -157,14 +160,14 @@ async def test_heartbeat_keeps_the_host_while_there_is_no_route(registry, monkey
         await client.start_heartbeat(interval=1)
 
         await asyncio.sleep(1.5)
-        assert (await client.get_service(service_id))["host"] == "10.9.9.9"  # not re-registered
+        assert (await client.get_service(service_id))["registered_host"] == "10.9.9.9"  # not re-registered
 
         routed_ip = "10.1.2.3"  # the network is back, with another address
         for _ in range(30):
-            if (await client.get_service(service_id))["host"] == "10.1.2.3":
+            if (await client.get_service(service_id))["registered_host"] == "10.1.2.3":
                 break
             await asyncio.sleep(0.1)
-        assert (await client.get_service(service_id))["host"] == "10.1.2.3"
+        assert (await client.get_service(service_id))["registered_host"] == "10.1.2.3"
 
         await client.stop_heartbeat()
         await client.deregister()
@@ -264,3 +267,48 @@ async def test_the_registry_publishes_its_status(registry):
             await asyncio.sleep(0.1)
         await listener.stop_event_listener()
     assert events and events[0]["pid"] == os.getpid() and events[0]["start_time"] > 0
+
+
+def test_a_service_on_this_machine_is_used_through_the_loopback():
+    """The machine identity in the registration, not the address, tells that a service runs on this machine."""
+    service = {"name": "puna_cs", "host": "192.168.68.75", "port": 6700, "metadata": {"machine_id": get_machine_id()}}
+
+    local = localize(service)
+    assert local["host"] == LOCAL_HOST == "127.0.0.1"
+    assert local["registered_host"] == "192.168.68.75"
+    assert service["host"] == "192.168.68.75" and "registered_host" not in service  # the given service is unchanged
+
+    other_machine = {**service, "metadata": {"machine_id": "lab-pc:4c4c4544004d"}}
+    assert localize(other_machine) is other_machine
+    older_version = {**service, "metadata": {"pid": 42}}  # registered without machine identity
+    assert localize(older_version) is older_version
+    assert localize(None) is None
+
+
+@pytest.mark.asyncio
+async def test_the_clients_return_a_service_on_this_machine_on_the_loopback(registry):
+    async with AsyncRegistryClient(**ENDPOINTS) as client:
+        service_id = await client.register(name="test_cs", host="192.168.68.75", port=6700, service_type="TEST_CS")
+        assert client._service_info["host"] == "192.168.68.75"  # its own registration keeps the network address
+        assert client._service_info["metadata"]["machine_id"] == get_machine_id()
+
+        services = [
+            await client.discover_service("TEST_CS"),
+            await client.get_service(service_id),
+            *await client.list_services("TEST_CS"),
+        ]
+
+        def sync_services():  # in a thread, the registry runs in the event loop of the test
+            with RegistryClient(**ENDPOINTS) as sync_client:
+                return [
+                    sync_client.discover_service("TEST_CS"),
+                    sync_client.get_service(service_id),
+                    *sync_client.list_services("TEST_CS"),
+                ]
+
+        services += await asyncio.to_thread(sync_services)
+        assert [(s["host"], s["registered_host"]) for s in services] == [("127.0.0.1", "192.168.68.75")] * 6
+        assert await client.get_endpoint("TEST_CS") == "tcp://127.0.0.1:6700"
+
+        assert client._service_info["host"] == "192.168.68.75"  # discovery doesn't change its own registration
+        await client.deregister()
