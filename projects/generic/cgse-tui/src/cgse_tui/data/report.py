@@ -148,3 +148,27 @@ async def request_log_tail(
         logger.warning(f"No log records from {service.service_type}: {type(exc).__name__}: {exc}")
         return None
     return answer if isinstance(answer, dict) else None
+
+
+async def request_log_history(
+    service: ServiceInfo, since: float, until: float, maximum: int, cursor: str | None = None, timeout: float = 10.0
+) -> dict[str, Any] | None:
+    """Returns the log records the logger reads from its log files, created between the timestamps `since` and
+    `until`, at most `maximum`; the answer of the previous request has the `cursor` to continue with.
+
+    The answer has `status`, and `records` and `cursor` (None when the window is complete) or `error`; None when the
+    logger didn't answer, and an answer without `status` ACK when the logger is an older version without the
+    `history` command. See `egse.logger.history`.
+    """
+    if not (service.host and service.port):
+        return None
+    command = f"history {since} {until} {maximum}" + (f" {cursor}" if cursor else "")
+    try:
+        answer = await asyncio.wait_for(
+            asyncio.to_thread(_command_request, service.host, service.port, command, timeout),
+            timeout=2 * timeout,
+        )
+    except Exception as exc:
+        logger.warning(f"No log history from {service.service_type}: {type(exc).__name__}: {exc}")
+        return None
+    return answer if isinstance(answer, dict) else None

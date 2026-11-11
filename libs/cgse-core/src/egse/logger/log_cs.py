@@ -41,6 +41,7 @@ from egse.zmq_ser import get_port_number
 
 from egse.logger import SERVICE_TYPE
 from egse.logger import get_log_file_name
+from egse.logger import history
 from egse.logger import send_request
 from egse.registry.client import RegistryClient
 
@@ -300,7 +301,10 @@ def start():
                     commander.send(pickle.dumps("ACK"))
                     break
 
-                response = handle_command(command)
+                try:
+                    response = handle_command(command)
+                except Exception as exc:  # a bad request shall not stop the logger
+                    response = dict(timestamp=format_datetime(), status="NACK", error=f"{type(exc).__name__}: {exc}")
                 commander.send(pickle.dumps(response))
 
             if receiver in socks:
@@ -441,6 +445,27 @@ def handle_command(command) -> dict:
                 records=records[-maximum:] if maximum > 0 else [],
             )
         )
+
+    elif command.lower().startswith("history"):
+        # "history <since> <until> [max [cursor]]": the records created between the timestamps since and until, read
+        # from the log files, at most `max`; with a cursor the answer continues where the previous one stopped.
+        # See `egse.logger.history`.
+        arguments = command.split()[1:]
+        try:
+            since, until = float(arguments[0]), float(arguments[1])
+            maximum = int(arguments[2]) if len(arguments) > 2 else history.MAX_RECORDS
+            cursor = arguments[3] if len(arguments) > 3 else None
+        except (IndexError, ValueError):
+            usage = "history <since> <until> [max [cursor]]"
+            response.update(dict(status="NACK", error=f"Usage: {usage}, got {command!r}"))
+            return response
+        path = Path(file_handler.baseFilename)
+        try:
+            answer = history.read_history(path.parent, path.name, since, until, max(1, maximum), cursor)
+        except ValueError as exc:
+            response.update(dict(status="NACK", error=str(exc)))
+            return response
+        response.update(dict(status="ACK", **answer))
 
     elif command.lower().startswith("set_level"):
         new_level = command.split()[-1]

@@ -81,6 +81,7 @@ class OverviewScreen(Screen):
         ("r", "refresh", "Refresh"),
         ("a", "select_action", "Actions"),
         ("l", "toggle_log", "Log"),
+        ("L", "show_logs", "Log screen"),
         ("o", "select_columns", "Columns"),
     ]
 
@@ -108,6 +109,11 @@ class OverviewScreen(Screen):
             self.minimize()
         log = self.query_one("#log", RichLog)
         log.display = not log.display
+
+    def action_show_logs(self) -> None:
+        show_logs = getattr(self.app, "show_logs", None)
+        if show_logs is not None:
+            show_logs()
 
     def on_mount(self) -> None:
         self._add_columns(self.query_one("#services", DataTable))

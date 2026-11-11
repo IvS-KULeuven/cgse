@@ -19,7 +19,9 @@ from cgse_tui.plugins import DetailsRenderers
 from cgse_tui.screens.action_select import ActionSelectScreen
 from cgse_tui.screens.detail import DetailScreen
 from cgse_tui.screens.help import DETAIL_SCREEN_ANCHOR
+from cgse_tui.screens.help import LOG_SCREEN_ANCHOR
 from cgse_tui.screens.help import HelpScreen
+from cgse_tui.screens.log_screen import LogScreen
 from cgse_tui.screens.overview import OverviewScreen
 
 logger = logging.getLogger("cgse_tui.app")
@@ -36,6 +38,7 @@ class CgseTuiApp(App):
         log_file: file that gets all log messages, also those that are not shown in the log pane, e.g. the timeouts
             of the client libraries. No log file when None.
         actions: starts, stops and restarts the services, a default `ServiceActions` when None.
+        logs: opens the log screen at start-up, on top of the overview.
     """
 
     BINDINGS = [("f1", "help", "Help")]
@@ -49,6 +52,7 @@ class CgseTuiApp(App):
         refresh_interval: float = 1.0,
         log_file: Path | None = None,
         actions: ServiceActions | None = None,
+        logs: bool = False,
     ):
         super().__init__()
         self.log_file = log_file
@@ -59,6 +63,7 @@ class CgseTuiApp(App):
         self.actions = actions if actions is not None else ServiceActions(self.collector)
         self.overview = OverviewScreen()
         self.details_renderers = DetailsRenderers()
+        self._logs_at_start = logs
 
     def get_default_screen(self) -> Screen:
         return self.overview
@@ -83,6 +88,8 @@ class CgseTuiApp(App):
         self.run_worker(self.collector.run(), name="collector", group="collector", exit_on_error=False)
         self.call_after_refresh(self.update_overview)  # the overview screen is mounted by then
         self.set_interval(self.refresh_interval, self.update_overview)
+        if self._logs_at_start:
+            self.call_after_refresh(self.show_logs)
 
     def on_unmount(self) -> None:
         if self._restore_logging is not None:
@@ -98,11 +105,26 @@ class CgseTuiApp(App):
         refresh = getattr(self.collector, "refresh_report", None)
         self.push_screen(DetailScreen(service, refresh=refresh and (lambda: refresh(service_type))))
 
+    def find_logger(self) -> ServiceInfo | None:
+        """The logger service, None when it isn't known (yet)."""
+        return next((s for s in self.collector.snapshot() if s.cgse_object == "log" and s.host and s.port), None)
+
+    def show_logs(self) -> None:
+        """Opens the log screen with the latest hour of log messages, read from the log files by the logger."""
+        if not isinstance(self.screen, LogScreen):
+            self.push_screen(LogScreen(self.find_logger))
+
     def action_help(self) -> None:
-        """Shows the help, at the part about the detail screen when opened from there; F1 in the help closes it."""
+        """Shows the help, at the part about the detail screen or the log screen when opened from there; F1 in the help
+        closes it."""
         if isinstance(self.screen, HelpScreen):
             return
-        anchor = DETAIL_SCREEN_ANCHOR if isinstance(self.screen, DetailScreen) else None
+        if isinstance(self.screen, DetailScreen):
+            anchor = DETAIL_SCREEN_ANCHOR
+        elif isinstance(self.screen, LogScreen):
+            anchor = LOG_SCREEN_ANCHOR
+        else:
+            anchor = None
         self.push_screen(HelpScreen(anchor))
 
     def select_action(self, service: ServiceInfo) -> None:

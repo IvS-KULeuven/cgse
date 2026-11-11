@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Iterable
 
 from rich.text import Text
@@ -140,7 +141,8 @@ class LogFilterScreen(ModalScreen[LogFilter | None]):
         yield Footer()
 
     def current_filter(self) -> LogFilter:
-        return LogFilter(
+        return dataclasses.replace(  # keeps what the dialog doesn't show, e.g. the loggers selected in a tree
+            self._filter,
             levels=frozenset(self.query_one("#levels", SelectionList).selected),
             **{name: self.query_one(f"#{name}", Input).value.strip() for name, _, _ in FIELDS},
             dim=self.query_one("#dim", Checkbox).value,
