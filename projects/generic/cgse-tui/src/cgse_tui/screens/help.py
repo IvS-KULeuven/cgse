@@ -1,6 +1,7 @@
 """The help of the TUI, for a first-time user: what it shows, what the colours mean, and the keys of every screen.
 
-`F1` opens it from every screen; from a detail screen it opens at the part about the detail screen.
+`F1` opens it from every screen; from a detail screen it opens at the part about the detail screen, from the log
+screen at the part about the log screen.
 """
 
 from __future__ import annotations
@@ -13,6 +14,9 @@ from textual.widgets import Markdown
 
 DETAIL_SCREEN_ANCHOR = "the-detail-screen"
 """The anchor of the part about the detail screen, the slug of its heading."""
+
+LOG_SCREEN_ANCHOR = "the-log-screen"
+"""The anchor of the part about the log screen, the slug of its heading."""
 
 HELP = """\
 # The CGSE TUI
@@ -66,6 +70,7 @@ The reason is shown in the Process panel of the detail screen, and a change is w
 | `a`       | start, stop or restart the selected service, see "Start, stop and restart"                |
 | `o`       | choose the columns of the overview                                                        |
 | `l`       | show or hide the log pane                                                                 |
+| `L`       | the log screen: the log messages of an hour, a day, ... from the log files, see below     |
 | `m`       | in the log pane (`tab` gives it the focus): fill the screen, and back (`esc` too)         |
 | `w`       | in the log pane: wrap the long lines, and back (`left` and `right` scroll a long line)    |
 | `F1`      | this help                                                                                 |
@@ -129,7 +134,42 @@ Some detail screens have more:
 | `f`       | logger: filter the log lines                              |
 | `d`       | logger: hide the DEBUG lines, and show them again         |
 | `w`       | logger: wrap the long log lines, and back                 |
+| `L`       | logger: the log screen, see below                         |
 | `F1`      | this help                                                 |
+
+## The log screen
+
+`L` in the overview or in the detail screen of the logger, or `cgse tui --logs`: the log messages of a time window,
+the latest hour at first. The logger reads them from its log files (`general.log` and the files of the days before),
+so the TUI can run on another machine. A window has at most 50 000 messages; for a busy period, make it shorter.
+
+The latest window is live: the new messages are added every 2 s (the `tail` of the logger) and the window moves with
+the time, the oldest messages leave it. The view follows the new messages while it's at the end; scrolled up, it
+stays where it is and its border says so (`end` follows again). An earlier window is not live, `t` goes back.
+
+At the left the loggers of the messages in the window, as a tree on the dots in their names (`egse.hexapod.puna` is
+below `egse.hexapod`), with the number of messages. `space` selects a logger with the loggers below it, only their
+messages are shown then; `space` again deselects it, `c` clears the selection. "itself" is a logger without the
+loggers below it, e.g. the plain `egse` logger. Below the tree the processes that logged the messages (e.g. `cm_cs`),
+with their number of messages; `space` selects a process in the same way. With loggers and processes selected, a
+message must be of both. `c` clears the selection in both. `tab` moves between the panes.
+
+| Key       | Action                                                                     |
+|-----------|----------------------------------------------------------------------------|
+| `[` `]`   | the window before and after, by the length of the window                   |
+| `p` `n`   | the same window a day earlier (yesterday) and a day later                  |
+| `-` `+`   | a shorter and a longer window, from 5 min to 1 day, with the same start    |
+| `g`       | go to a time: `14:05`, `2026-11-09 14:05`, or a time ago like `2h`         |
+| `t`       | the latest window, until now, live                                         |
+| `end`     | the last message; in the live window: follow the new messages again       |
+| `r`       | read the window again; the latest window then ends now                     |
+| `space`   | in Loggers or Processes: select or deselect a logger or a process          |
+| `c`       | clear the selected loggers and processes                                   |
+| `f` `d`   | filter the messages, hide the DEBUG messages, as in the detail screen      |
+| `w`       | wrap the long lines, and back                                              |
+| `esc`     | back                                                                       |
+
+A logger of an older version can't read its log files: the screen says so, restart the logger to use it.
 
 ## Start, stop and restart
 
@@ -164,7 +204,7 @@ class HelpScreen(ModalScreen):
     """The help of the TUI in a scrollable window.
 
     Args:
-        anchor: the part to open at, e.g. `DETAIL_SCREEN_ANCHOR`; None opens at the top.
+        anchor: the part to open at, e.g. `DETAIL_SCREEN_ANCHOR` or `LOG_SCREEN_ANCHOR`; None opens at the top.
     """
 
     DEFAULT_CSS = """

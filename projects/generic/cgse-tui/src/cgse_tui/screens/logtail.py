@@ -93,6 +93,11 @@ def _matches(text: str, values: list[str]) -> bool:
     return not any(word in value for word in excluded for value in values)
 
 
+def selects_logger(selected: frozenset[str], name: str) -> bool:
+    """True when the logger name is selected: one of the names, below one of them, or one of the `=name`s."""
+    return f"={name}" in selected or any(name == s or name.startswith(f"{s}.") for s in selected)
+
+
 @dataclasses.dataclass(frozen=True)
 class LogFilter:
     """Which log records are shown.
@@ -109,6 +114,11 @@ class LogFilter:
         until: the text of the end of the time range.
         dim: the records that don't pass are shown dimmed instead of left out, they keep the context.
         hide_debug: DEBUG records are left out, also when they pass or would be dimmed, see `hides()`.
+        loggers: the selected loggers, a record passes when its logger is one of them or below one of them (`egse`
+            selects `egse.hexapod` too); a name with `=` in front selects that logger only, e.g. `=egse`. All
+            loggers when empty. The selection in the tree of the log screen, see `cgse_tui.screens.log_screen`.
+        processes: the selected process names, exact; all processes when empty. The selection in the Processes pane
+            of the log screen.
     """
 
     levels: frozenset[str] = frozenset()
@@ -119,6 +129,8 @@ class LogFilter:
     until: str = ""
     dim: bool = False
     hide_debug: bool = False
+    loggers: frozenset[str] = frozenset()
+    processes: frozenset[str] = frozenset()
 
     @property
     def active(self) -> bool:
@@ -147,6 +159,10 @@ class LogFilter:
                     return False
                 if (since is not None and moment < since) or (until is not None and moment > until):
                     return False
+            if self.loggers and not selects_logger(self.loggers, str(record.get("name", ""))):
+                return False
+            if self.processes and str(record.get("process", "")) not in self.processes:
+                return False
             if self.process and not _matches(self.process, [str(record.get("process", ""))]):
                 return False
             if self.module and not _matches(self.module, [str(record.get("name", "")), str(record.get("module", ""))]):
@@ -163,6 +179,10 @@ class LogFilter:
         for label, value in (("process", self.process), ("module", self.module), ("message", self.message)):
             if value.strip():
                 parts.append(f"{label} {value.strip()}")
+        if self.loggers:
+            parts.append(f"loggers {', '.join(sorted(self.loggers))}")
+        if self.processes:
+            parts.append(f"processes {', '.join(sorted(self.processes))}")
         if self.since.strip() or self.until.strip():
             parts.append(f"time {self.since.strip() or '…'} – {self.until.strip() or 'now'}")
         return "; ".join(parts)

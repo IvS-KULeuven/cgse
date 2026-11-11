@@ -169,9 +169,10 @@ class DetailScreen(Screen):
         ("m", "toggle_log_maximized", "Maximize"),
         ("f", "filter_log", "Filter"),
         ("d", "toggle_debug", "Debug"),
+        ("L", "show_logs", "Log screen"),
     ]
 
-    LOG_ACTIONS = ("toggle_log_maximized", "filter_log", "toggle_debug")
+    LOG_ACTIONS = ("toggle_log_maximized", "filter_log", "toggle_debug", "show_logs")
     """The actions of the log panel, only possible in the detail screen of the logger."""
 
     def __init__(
@@ -440,6 +441,11 @@ class DetailScreen(Screen):
             return
         self._log_filter = log_filter
         self._rewrite_log()
+
+    def action_show_logs(self) -> None:
+        show_logs = getattr(self.app, "show_logs", None)
+        if show_logs is not None:
+            show_logs()
 
     def action_toggle_raw(self) -> None:
         if self.maximized is not None:

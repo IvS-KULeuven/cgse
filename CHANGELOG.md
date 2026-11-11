@@ -7,6 +7,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### CGSE TUI: log screen with the history of the logger
+
+- New log screen: `L` in the overview or the detail screen of the logger, or `cgse tui --logs`. It shows the log
+  messages of a time window (the latest hour at first), read from the log files, also those of the days before.
+- `[` and `]` move the window by its length, `p` and `n` by a day, `-` and `+` make it shorter or longer (5 min to
+  1 day), `g` goes to a time, `t` to the latest window.
+- The latest window is live: the new messages are added every 2 s and the window moves with the time. The view
+  follows while it's at the end; scrolled up, it stays where it is (`end` follows again).
+- The loggers of the window are in a tree at the left, with their number of messages; `space` selects a logger and
+  those below it, only their messages are shown. `f`, `d` and `w` filter, hide DEBUG and wrap as in the log panel.
+- Below the loggers, the processes that logged the messages of the window; `space` selects a process in the same
+  way. With loggers and processes selected, a message must be of both; `c` clears the selection in both.
+- `F1` in the log screen opens the help at the part about the log screen.
+- The log screen needs the `history` command of the logger: restart the logger to use it.
+
+### Logger: `history` command
+
+- New command `history <since> <until> [max [cursor]]`: the records of a time window from the log files
+  (`general.log` and the rotated files), in pages, see `egse.logger.history`.
+- Fixed: a command that failed in the logger (e.g. an unknown level for `set_level`) stopped the logger, it now
+  answers with an error.
+
 ### Developer guide: logging
 
 - New `docs/dev_guide/logging.md`: where log messages go, how to choose the level of a message, rules that keep the

@@ -26,7 +26,16 @@ Keys in the overview:
 - `l`: show or hide the log pane; with the focus in the log pane (`tab`), `m` makes it fill the screen and back
   (`esc` too), and `w` wraps the long lines and back. The log pane follows the new messages while it's at the end;
   scrolled up, it stays at the same lines (`end` follows again);
-- `F1`: help, on every screen (from a detail screen it opens at the part about the detail screen);
+- `L`: the log screen, also from the detail screen of the logger or with `cgse tui --logs`: the log messages of a time
+  window (the latest hour at first), read by the logger from its log files with its `history` command. `[` and `]`
+  move the window by its length, `p` and `n` by a day (yesterday), `-` and `+` make it shorter or longer (5 min to 1
+  day), `g` goes to a time, `t` to the latest window. The latest window is live: new messages are added every 2 s with
+  the `tail` command and the window moves with the time; the view follows while it's at the end (`end`). The tree at
+  the left has the loggers of the window with their number of messages; `space` selects a logger and those below it,
+  only their messages are shown. Below it the processes that logged the messages, `space` selects a process in the
+  same way (with both selected, a message must be of both); `c` clears the selection. `f`, `d` and `w` filter, hide
+  the DEBUG messages and wrap, as in the log panel of the logger;
+- `F1`: help, on every screen (from a detail screen or the log screen it opens at the part about that screen);
 - `ctrl+q`: quit.
 
 The overview also shows the device drivers of the project: every node of the Setup (loaded by the configuration
