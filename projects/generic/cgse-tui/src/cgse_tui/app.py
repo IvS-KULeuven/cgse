@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+from egse.logfiles import CGSE_OBJECT as LOG_FILES_CGSE_OBJECT
+from egse.system import get_machine_id
 from textual.app import App
 from textual.screen import Screen
 
@@ -18,6 +20,7 @@ from cgse_tui.logs import create_log_file_handler
 from cgse_tui.plugins import DetailsRenderers
 from cgse_tui.screens.action_select import ActionSelectScreen
 from cgse_tui.screens.detail import DetailScreen
+from cgse_tui.screens.files_screen import LogFilesScreen
 from cgse_tui.screens.help import DETAIL_SCREEN_ANCHOR
 from cgse_tui.screens.help import LOG_SCREEN_ANCHOR
 from cgse_tui.screens.help import HelpScreen
@@ -114,6 +117,15 @@ class CgseTuiApp(App):
         if not isinstance(self.screen, LogScreen):
             self.push_screen(LogScreen(self.find_logger))
 
+    def find_log_file_services(self) -> list[ServiceInfo]:
+        """The log-files services, one per machine and log folder, see `egse.logfiles`."""
+        return [s for s in self.collector.snapshot() if s.cgse_object == LOG_FILES_CGSE_OBJECT and s.host and s.port]
+
+    def action_show_log_files(self) -> None:
+        """Opens the log-files screen with the files of the log folders of the machines."""
+        if not isinstance(self.screen, LogFilesScreen):
+            self.push_screen(LogFilesScreen(self.find_log_file_services))
+
     def action_help(self) -> None:
         """Shows the help, at the part about the detail screen or the log screen when opened from there; F1 in the help
         closes it."""
@@ -131,6 +143,10 @@ class CgseTuiApp(App):
         """Asks the user to start, stop or restart the service, and performs the selected action."""
         if self.actions.is_busy(service.service_type):
             self.notify(f"{service.name}: an action is still running.", severity="warning")
+            return
+        if service.cgse_object == LOG_FILES_CGSE_OBJECT and service.metadata.get("machine_id") != get_machine_id():
+            # `cgse lf` acts on the service of the machine where it runs, i.e. the machine of the TUI.
+            self.notify(f"{service.name} runs on another machine, use `cgse lf` there.", severity="warning")
             return
         is_running = getattr(self.collector, "is_running", None)
         running = is_running(service.service_type) if is_running else service.state is not ServiceState.INACTIVE

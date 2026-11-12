@@ -370,3 +370,46 @@ def metricshub_stop():
 async def mh_cs_status(suppress_errors: bool = True):
     """Print the status of the Metrics Hub."""
     await status_mh_cs(suppress_errors)
+
+
+lf = typer.Typer(
+    name="lf",
+    help="handle the log-files service of this machine: start, stop, status",
+)
+
+
+@lf.command(name="start")
+def lf_start():
+    """Start the log-files service of this machine, it reads the files of the log folder for the CGSE TUI."""
+    from egse.logfiles import lock_info
+    from egse.logfiles import log_folder
+    from egse.logfiles import start_process
+
+    try:
+        folder = log_folder()
+    except ValueError as exc:
+        rich.print(f"[red]The log-files service can't start: {exc}[/]")
+        raise typer.Exit(1)
+
+    if lock_info(folder) is not None:
+        rich.print(f"The log-files service already runs for {folder!s}.")
+        return
+
+    rich.print("Starting the log-files service...")
+    start_process(folder)
+
+
+@lf.command(name="stop")
+def lf_stop():
+    """Stop the log-files service of this machine."""
+    from egse.logfiles.server import stop
+
+    stop()
+
+
+@lf.command(name="status")
+def lf_status():
+    """Print the status of the log-files service of this machine."""
+    from egse.logfiles.server import status
+
+    status()

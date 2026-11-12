@@ -7,6 +7,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Log-files service and the log files in the CGSE TUI
+
+- New log-files service (`cgse lf start|stop|status`, `lf_cs`): reads the files of the log folder of its
+  machine, e.g. `puna_cs.puna_01.start.log` with the output of `cgse puna start`, for clients on other machines.
+  Read-only, bare file names only, pages of at most 1 MiB. One per machine and log folder, it's a separate process so
+  the logger is never delayed. See `docs/libs/cgse-core/logfiles.md`.
+- The start commands of the core services and of the device packages start the log-files service when it doesn't run
+  (`egse.logfiles.start_output_log()`). It registers as soon as the registry answers.
+- CGSE TUI: `F` in the log screen shows the machines and the files of their log folders; a file is shown from its end
+  and followed, `b` adds the part before it.
+- The output files of the start and stop commands (`*.start.log`, `*.stop.log`) are appended to, after a line with the
+  time and the command, instead of overwritten: the traceback of an earlier start is kept. A file over 10 MiB is
+  renamed to `<name>.1` at the next start. `redirect_output_to_log()` appends by default now (`append=True`).
+
 ### CGSE TUI: log screen with the history of the logger
 
 - New log screen: `L` in the overview or the detail screen of the logger, or `cgse tui --logs`. It shows the log

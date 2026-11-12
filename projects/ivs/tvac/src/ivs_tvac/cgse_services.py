@@ -5,6 +5,7 @@ import sys
 import rich
 import typer
 
+from egse.logfiles import start_output_log
 from egse.system import all_logging_disabled
 from egse.system import redirect_output_to_log
 
@@ -17,7 +18,7 @@ def start_tvac():
 
     rich.print("Starting ThermalVac control server service")
 
-    out = redirect_output_to_log("tvac.start.log")
+    out = start_output_log("tvac.start.log")
 
     cmd = [sys.executable, "-m", "egse.ivs.tvac.tvac_acs", "start"]
 
@@ -53,7 +54,7 @@ def start_tvac_sim():
 
     rich.print("Starting ThermalVac OPC UA simulator service")
 
-    out = redirect_output_to_log("tvac.start-sim.log")
+    out = start_output_log("tvac.start-sim.log")
 
     cmd = [sys.executable, "-m", "egse.ivs.tvac.tvac_sim", "start"]
 

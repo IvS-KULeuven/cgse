@@ -177,6 +177,7 @@ nav:
       - libs/cgse-core/notifyhub.md
       - libs/cgse-core/metricshub.md
       - libs/cgse-core/logger.md
+      - libs/cgse-core/logfiles.md
       - libs/cgse-core/configuration-manager.md
       - libs/cgse-core/storage-manager.md
       - libs/cgse-core/process-manager.md

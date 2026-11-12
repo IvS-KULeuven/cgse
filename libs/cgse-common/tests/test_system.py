@@ -1209,7 +1209,7 @@ def test_redirect_output_to_log():
         # The overwrite argument is False, so it should raise an exception
 
         with pytest.raises(FileExistsError):
-            log = redirect_output_to_log("test_redirect_output_to_log.log", overwrite=False)
+            log = redirect_output_to_log("test_redirect_output_to_log.log", append=False, overwrite=False)
 
         log_path.unlink()  # Clean up the log file after test
 
@@ -1229,6 +1229,37 @@ def test_redirect_output_to_log():
 
         absolute_log_path.unlink()  # Clean up the absolute log file after test
         absolute_log_path.parent.rmdir()  # Remove the created directory
+
+
+def test_redirect_output_to_log_keeps_earlier_output(tmp_path, monkeypatch):
+    import sys
+
+    import egse.env
+    import egse.system
+
+    monkeypatch.setattr(egse.env, "get_log_file_location", lambda: tmp_path)
+    monkeypatch.setattr(sys, "argv", ["/venv/bin/cgse", "puna", "start", "PUNA_01"])
+
+    for message in ("Traceback of the first start", "second start"):
+        with redirect_output_to_log("puna_cs.start.log") as log:
+            log.write(f"{message}\n")
+
+    lines = (tmp_path / "puna_cs.start.log").read_text().splitlines()
+    assert lines[0].startswith("===== ") and lines[0].endswith(" cgse puna start PUNA_01 =====")
+    assert lines[1] == "Traceback of the first start"
+    assert lines[2].startswith("===== ")
+    assert lines[3] == "second start"
+
+    # A file that is too large is renamed, the new start begins a new file
+
+    monkeypatch.setattr(egse.system, "OUTPUT_LOG_MAX_SIZE", 10)
+    with redirect_output_to_log("puna_cs.start.log") as log:
+        log.write("third start\n")
+    assert (tmp_path / "puna_cs.start.log.1").read_text().splitlines()[1:4:2] == [
+        "Traceback of the first start",
+        "second start",
+    ]
+    assert (tmp_path / "puna_cs.start.log").read_text().splitlines()[1] == "third start"
 
 
 def test_get_routed_host_ip(monkeypatch):

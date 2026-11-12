@@ -6,6 +6,7 @@ import sys
 import rich
 import typer
 
+from egse.logfiles import start_output_log
 from egse.system import redirect_output_to_log
 
 pmx_a = typer.Typer(name="pmx_a", help="KIKUSUI PMX, Regulated DC Power Supply", no_args_is_help=True)
@@ -25,7 +26,7 @@ def start_pmx_a(
     """
 
     rich.print("Starting service pmx_a")
-    out = redirect_output_to_log("pmx_a.start.log")
+    out = start_output_log("pmx_a.start.log")
 
     cmd = [sys.executable, "-m", "egse.power_supply.kikusui.pmx_a.pmx_a_cs", "start", device_id]
     if simulator:

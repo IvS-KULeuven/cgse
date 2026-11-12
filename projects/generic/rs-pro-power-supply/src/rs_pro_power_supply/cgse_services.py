@@ -5,6 +5,7 @@ import rich
 import sys
 import typer
 
+from egse.logfiles import start_output_log
 from egse.system import redirect_output_to_log
 
 rsd3305p = typer.Typer(name="rsd3305p", help="RS-PRO, RS-D3305P power supply", no_args_is_help=True)
@@ -24,7 +25,7 @@ def start_rs3305p(
     """
 
     rich.print("Starting service RS-D3305P")
-    out = redirect_output_to_log("rsd3305p.start.log")
+    out = start_output_log("rsd3305p.start.log")
 
     cmd = [sys.executable, "-m", "egse.power_supply.rs_pro.rsd3305p_cs", "start", device_id]
     if simulator:
