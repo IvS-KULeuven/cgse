@@ -7,6 +7,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-11-12
+
+This release is about seeing what your test setup is doing, and keeping it running. The main addition is the CGSE TUI (cgse tui), 
+a terminal dashboard. It shows every core service and every device in your Setup on one screen: whether each one is running, 
+whether it's connected to its hardware, and whether it's using too much CPU or memory. From the same screen you can start, 
+stop or restart services and browse the log history. To make that dashboard reliable, the service registry and the communication 
+between services were made much more robust. Services no longer disappear from the registry or look unreachable after a network 
+change, messages are no longer lost now and then, and the registry no longer leaks memory over days of running. 
+The DAQ6510 driver moved to the new asynchronous control server, so it now reconnects and recovers by itself. 
+A few cgse <device> commands were cleaned up along the way. Read the breaking changes below before you upgrade, and restart 
+all services afterwards.
+
+
 ### Log-files service and the log files in the CGSE TUI
 
 - New log-files service (`cgse lf start|stop|status`, `lf_cs`): reads the files of the log folder of its
@@ -1007,7 +1020,8 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.11...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.26.0...HEAD
+[0.26.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.11...v0.26.0
 [0.25.11]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.10...v0.25.11
 [0.25.10]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.9...v0.25.10
 [0.25.9]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.8...v0.25.9
