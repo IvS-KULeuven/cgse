@@ -172,3 +172,44 @@ async def request_log_history(
         logger.warning(f"No log history from {service.service_type}: {type(exc).__name__}: {exc}")
         return None
     return answer if isinstance(answer, dict) else None
+
+
+async def request_log_files(service: ServiceInfo, timeout: float = 2.0) -> dict[str, Any] | None:
+    """Returns the files of the log folder of a log-files service: `status`, and `folder` and `files` (`name`, `size`,
+    `mtime`, the most recently changed first) or `error`; None when the service didn't answer. See `egse.logfiles`."""
+    return await _log_files_request(service, "files", timeout)
+
+
+async def request_log_file_page(
+    service: ServiceInfo,
+    name: str,
+    offset: int | None = None,
+    before: int | None = None,
+    maximum: int | None = None,
+    timeout: float = 5.0,
+) -> dict[str, Any] | None:
+    """Returns a page of a file of the log folder of a log-files service: from `offset`, the page that ends at
+    `before`, or the last page when both are None. The answer has `status`, and `text`, `offset`, `end`, `size` and
+    `truncated`, or `error`; None when the service didn't answer. See `egse.logfiles.reader.read_file()`."""
+    import shlex
+
+    size = "" if maximum is None else f" {maximum}"
+    if before is not None:
+        command = f"before {shlex.quote(name)} {before}{size}"
+    else:
+        command = f"read {shlex.quote(name)} {'-' if offset is None else offset}{size}"
+    return await _log_files_request(service, command, timeout)
+
+
+async def _log_files_request(service: ServiceInfo, command: str, timeout: float) -> dict[str, Any] | None:
+    if not (service.host and service.port):
+        return None
+    try:
+        answer = await asyncio.wait_for(
+            asyncio.to_thread(_command_request, service.host, service.port, command, timeout),
+            timeout=2 * timeout,
+        )
+    except Exception as exc:
+        logger.warning(f"No answer from {service.service_type}: {type(exc).__name__}: {exc}")
+        return None
+    return answer if isinstance(answer, dict) else None

@@ -2384,12 +2384,19 @@ def caffeinate(pid: int = None):
         subprocess.Popen([shutil.which("caffeinate"), "-i", "-w", str(pid)])
 
 
-def redirect_output_to_log(output_fn: str, append: bool = False, overwrite=True) -> TextIO:
+OUTPUT_LOG_MAX_SIZE = 10 * 1024 * 1024
+"""An output file of `redirect_output_to_log()` that is larger is renamed to `<name>.1` before it's opened."""
+
+
+def redirect_output_to_log(output_fn: str, append: bool = True, overwrite=True) -> TextIO:
     """
     Open the file in the log folder where the current process output will be redirected.
     When no location can be determined, the user's home directory will be used.
 
-    The file will be opened in text mode.
+    The file will be opened in text mode. When appending, a line with the time and the command is written first, so
+    the output of an earlier start is kept, e.g. the traceback of a crash. A file larger than `OUTPUT_LOG_MAX_SIZE` is
+    renamed to `<name>.1` (replacing the previous one) and a new file is started: a process that still writes to the
+    old file keeps writing to the renamed file.
 
     Args:
         output_fn: the name of the output file
@@ -2423,7 +2430,14 @@ def redirect_output_to_log(output_fn: str, append: bool = False, overwrite=True)
                 f"Use overwrite=True to allow overwriting."
             )
 
+    if append and output_path.exists() and output_path.stat().st_size > OUTPUT_LOG_MAX_SIZE:
+        output_path.replace(output_path.with_name(f"{output_path.name}.1"))
+
     out = open(output_path, "a" if append else "w")
+    if append:
+        command = " ".join(Path(sys.argv[0]).name if index == 0 else arg for index, arg in enumerate(sys.argv))
+        out.write(f"===== {format_datetime()} {command} =====\n")
+        out.flush()
 
     logger.info(f"Output will be redirected to {output_path!s}")
 

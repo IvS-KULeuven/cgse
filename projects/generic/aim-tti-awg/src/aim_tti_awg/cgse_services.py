@@ -5,6 +5,7 @@ import rich
 import sys
 import typer
 
+from egse.logfiles import start_output_log
 from egse.system import redirect_output_to_log
 
 tgf4000 = typer.Typer(name="tgf4000", help="Aim-TTi, Dual-channel arbitrary function generator", no_args_is_help=True)
@@ -24,7 +25,7 @@ def start_tgf40000(
     """
 
     rich.print("Starting service tgf4000")
-    out = redirect_output_to_log("tgf4000.start.log")
+    out = start_output_log("tgf4000.start.log")
 
     cmd = [sys.executable, "-m", "egse.arbitrary_wave_generator.aim_tti.tgf4000_cs", "start", device_id]
     if simulator:

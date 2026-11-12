@@ -5,6 +5,7 @@ from typing import Annotated
 import rich
 import typer
 
+from egse.logfiles import start_output_log
 from egse.system import all_logging_disabled
 from egse.system import redirect_output_to_log
 
@@ -20,7 +21,7 @@ def start_hexapod_cs_process(device_name, device_id, simulator):
 
     rich.print(f"Starting the {device_name} hexapod control server for {device_id} – {simulator = }")
 
-    out = redirect_output_to_log(f"{device_name.lower()}_cs.{device_id.lower()}.start.log")
+    out = start_output_log(f"{device_name.lower()}_cs.{device_id.lower()}.start.log")
 
     cmd = [sys.executable, "-m", f"egse.hexapod.symetrie.{device_name.lower()}_cs", "start", device_id]
     if simulator:

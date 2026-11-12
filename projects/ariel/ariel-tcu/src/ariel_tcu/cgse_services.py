@@ -6,6 +6,7 @@ import sys
 import rich
 import typer
 
+from egse.logfiles import start_output_log
 from egse.system import all_logging_disabled, redirect_output_to_log
 
 tcu = typer.Typer(name="tcu", help="Ariel Telescope Control Unit (TCU)", no_args_is_help=True)
@@ -23,7 +24,7 @@ def start_tcu(
     """
 
     rich.print(f"Starting the Ariel TCU Control Server - {simulator = }")
-    out = redirect_output_to_log("tcu_cs.start.log")
+    out = start_output_log("tcu_cs.start.log")
 
     cmd = [sys.executable, "-m", "egse.ariel.tcu.tcu_cs", "start"]
     if simulator:

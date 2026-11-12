@@ -6,6 +6,7 @@ import sys
 import rich
 import typer
 
+from egse.logfiles import start_output_log
 from egse.system import redirect_output_to_log, all_logging_disabled
 
 dt8874 = typer.Typer(
@@ -25,7 +26,7 @@ def start_dt8874(
     """
 
     rich.print(f"Starting the Digilent MEASURpoint DT8874 Control Server - {simulator = }")
-    out = redirect_output_to_log("dt8874_cs.start.log")
+    out = start_output_log("dt8874_cs.start.log")
 
     cmd = [sys.executable, "-m", "egse.digilent.measurpoint.dt8874.dt8874_cs", "start"]
     if simulator:

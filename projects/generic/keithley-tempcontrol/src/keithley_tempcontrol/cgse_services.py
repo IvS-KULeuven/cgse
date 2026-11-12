@@ -6,6 +6,7 @@ import sys
 import rich
 import typer
 
+from egse.logfiles import start_output_log
 from egse.system import redirect_output_to_log
 
 daq6510 = typer.Typer(name="daq6510", help="DAQ6510 Data Acquisition Unit, Keithley, temperature monitoring")
@@ -16,7 +17,7 @@ def start_daq6510():
     """Start the daq6510 service."""
     rich.print("Starting service daq6510")
 
-    out = redirect_output_to_log("daq6510_cs.start.log")
+    out = start_output_log("daq6510_cs.start.log")
 
     subprocess.Popen(
         [sys.executable, "-m", "egse.tempcontrol.keithley.daq6510_acs", "start"],
@@ -66,7 +67,7 @@ def start_daq6510_sim():
     """Start the DAQ6510 Simulator."""
     rich.print("Starting service DAQ6510 Simulator")
 
-    out = redirect_output_to_log("daq6510_sim.start.log")
+    out = start_output_log("daq6510_sim.start.log")
 
     subprocess.Popen(
         [sys.executable, "-m", "egse.tempcontrol.keithley.daq6510_sim", "start"],

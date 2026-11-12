@@ -2,13 +2,14 @@ import subprocess
 import sys
 
 import rich
-from egse.system import redirect_output_to_log
+
+from egse.logfiles import start_output_log
 
 
 def start_rm_cs(log_level: str, enforce_unique_service_types: bool | None = None):
     rich.print("Starting the service registry manager core service...")
 
-    out = redirect_output_to_log("rm_cs.start.log")
+    out = start_output_log("rm_cs.start.log")
 
     command = [sys.executable, "-m", "egse.registry.server", "start", "--log-level", log_level]
 
@@ -29,7 +30,7 @@ def start_rm_cs(log_level: str, enforce_unique_service_types: bool | None = None
 def start_log_cs():
     rich.print("Starting the logging core service...")
 
-    out = redirect_output_to_log("log_cs.start.log")
+    out = start_output_log("log_cs.start.log")
 
     subprocess.Popen(
         [sys.executable, "-m", "egse.logger.log_cs", "start"],
@@ -43,7 +44,7 @@ def start_log_cs():
 def start_sm_cs():
     rich.print("Starting the storage manager core service...")
 
-    out = redirect_output_to_log("sm_cs.start.log")
+    out = start_output_log("sm_cs.start.log")
 
     subprocess.Popen(
         [sys.executable, "-m", "egse.storage.storage_cs", "start"],
@@ -57,7 +58,7 @@ def start_sm_cs():
 def start_cm_cs():
     rich.print("Starting the configuration manager core service...")
 
-    out = redirect_output_to_log("cm_cs.start.log")
+    out = start_output_log("cm_cs.start.log")
 
     subprocess.Popen(
         [sys.executable, "-m", "egse.confman.confman_cs", "start"],
@@ -71,7 +72,7 @@ def start_cm_cs():
 def start_pm_cs():
     rich.print("Starting the process manager core service...")
 
-    out = redirect_output_to_log("pm_cs.start.log")
+    out = start_output_log("pm_cs.start.log")
 
     subprocess.Popen(
         [sys.executable, "-m", "egse.procman.procman_cs", "start"],
@@ -85,7 +86,7 @@ def start_pm_cs():
 def start_notifyhub():
     rich.print("Starting the notification hub core service...")
 
-    out = redirect_output_to_log("nh_cs.start.log")
+    out = start_output_log("nh_cs.start.log")
 
     subprocess.Popen(
         [sys.executable, "-m", "egse.notifyhub.server", "start"],
@@ -99,7 +100,7 @@ def start_notifyhub():
 def start_metricshub():
     rich.print("Starting the metrics hub core service...")
 
-    out = redirect_output_to_log("mh_cs.start.log")
+    out = start_output_log("mh_cs.start.log")
 
     subprocess.Popen(
         [sys.executable, "-m", "egse.metricshub.server", "start"],

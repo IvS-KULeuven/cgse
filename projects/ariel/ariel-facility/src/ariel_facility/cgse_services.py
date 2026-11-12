@@ -4,6 +4,7 @@ import sys
 import rich
 import typer
 
+from egse.logfiles import start_output_log
 from egse.system import all_logging_disabled
 from egse.system import redirect_output_to_log
 
@@ -16,7 +17,7 @@ def start_facility_hk():
 
     rich.print("Starting the extraction of HK from the facility DB into TA-EGSE CSV files")
 
-    out = redirect_output_to_log("facility_hk.start.log")
+    out = start_output_log("facility_hk.start.log")
 
     cmd = [sys.executable, "-m", "egse.ariel.facility.hk", "start"]
 

@@ -365,6 +365,7 @@ class LogScreen(Screen):
         ("f", "filter_log", "Filter"),
         ("d", "toggle_debug", "Debug"),
         ("c", "clear_selection", "Clear selection"),
+        Binding("F", "app.show_log_files", "Files", key_display="F"),
     ]
 
     def __init__(

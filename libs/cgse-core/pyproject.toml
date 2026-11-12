@@ -38,6 +38,7 @@ mh_cs = 'egse.metricshub.server:app'
 sm_cs = 'egse.storage.storage_cs:app'
 cm_cs = 'egse.confman.confman_cs:app'
 pm_cs = 'egse.procman.procman_cs:app'
+lf_cs = 'egse.logfiles.server:app'
 
 [project.gui-scripts]
 pm_ui = "egse.procman.procman_ui:main"
@@ -57,6 +58,7 @@ sm = 'cgse_core.services:sm_cs'
 pm = 'cgse_core.services:pm_cs'
 nh = 'cgse_core.services:notifyhub'
 mh = 'cgse_core.services:metricshub'
+lf = 'cgse_core.services:lf'
 
 [project.entry-points."cgse.explore"]
 explore = "cgse_core.cgse_explore"

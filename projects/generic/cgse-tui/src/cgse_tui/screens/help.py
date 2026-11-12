@@ -167,9 +167,19 @@ message must be of both. `c` clears the selection in both. `tab` moves between t
 | `c`       | clear the selected loggers and processes                                   |
 | `f` `d`   | filter the messages, hide the DEBUG messages, as in the detail screen      |
 | `w`       | wrap the long lines, and back                                              |
+| `F`       | the log files of the machines, see below                                   |
 | `esc`     | back                                                                       |
 
 A logger of an older version can't read its log files: the screen says so, restart the logger to use it.
+
+### The log files
+
+`F` in the log screen: the files in the log folders of the machines, e.g. `puna_cs.puna_01.start.log` with the output
+of `cgse puna start`, where the traceback of a service that doesn't start or stop ends up. Every machine runs a
+log-files service for its own log folder (`cgse lf`); the start commands of the services start it. At the left
+the machines with their files, the most recently changed first; `enter` shows a file from its end, and the view
+follows the new lines while it's at the end (`end` follows again). `b` adds the part before it, up to 4 MiB, `r`
+reads the list of files again, `esc` goes back.
 
 ## Start, stop and restart
 
