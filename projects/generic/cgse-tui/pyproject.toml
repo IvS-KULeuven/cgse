@@ -1,6 +1,6 @@
 [project]
 name = "cgse-tui"
-version = "0.25.11"
+version = "0.26.0"
 description = "Terminal user interface with the status of the CGSE core services and device control servers"
 authors = [
     {name = "IvS KU Leuven"}
