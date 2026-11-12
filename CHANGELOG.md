@@ -7,7 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-## [0.26.0] - 2026-11-12
+## [0.26.1] - 2026-11-12
+
+> [!NOTE]
+> Something went wrong in the order of things while releasing v0.26.0. DON'T USE IT. Use v0.26.1 instead.
 
 This release is about seeing what your test setup is doing, and keeping it running. The main addition is the CGSE TUI (cgse tui), 
 a terminal dashboard. It shows every core service and every device in your Setup on one screen: whether each one is running, 
