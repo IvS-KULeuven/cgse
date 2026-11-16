@@ -831,6 +831,8 @@
       
         
       
+        
+      
     
     
     
@@ -982,6 +984,34 @@
     
   
     Style Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dev_guide/logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
   
 
     
@@ -1790,6 +1820,8 @@
       
         
       
+        
+      
     
     
     
@@ -1941,6 +1973,34 @@
     
   
     The Logger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logfiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Log-Files Service
   
 
     
@@ -2352,6 +2412,8 @@
       
         
       
+        
+      
     
     
     
@@ -2419,6 +2481,34 @@
     
   
     Tools for the CGSE framework
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../projects/cgse-tui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The CGSE TUI
   
 
     
@@ -3588,11 +3678,24 @@ the active endpoints through the Registry, especially when ports are configured 
 <li><code>unregister_from_storage_manager(...)</code></li>
 </ul>
 <h2 id="running-the-service">Running The Service<a class="headerlink" href="#running-the-service" title="Permanent link">&para;</a></h2>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Using <code>uv</code> (preferred)</label><label for="__tabbed_1_2">Direct (for debugging)</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>cgse<span class="w"> </span>sm<span class="w"> </span>start
+uv<span class="w"> </span>run<span class="w"> </span>cgse<span class="w"> </span>sm<span class="w"> </span>stop
+uv<span class="w"> </span>run<span class="w"> </span>cgse<span class="w"> </span>sm<span class="w"> </span>status
+uv<span class="w"> </span>run<span class="w"> </span>cgse<span class="w"> </span>sm<span class="w"> </span>status<span class="w"> </span>--full
+</code></pre></div>
+</div>
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>egse.storage.storage_cs<span class="w"> </span>start
 python<span class="w"> </span>-m<span class="w"> </span>egse.storage.storage_cs<span class="w"> </span>status
 python<span class="w"> </span>-m<span class="w"> </span>egse.storage.storage_cs<span class="w"> </span>status<span class="w"> </span>--full
 python<span class="w"> </span>-m<span class="w"> </span>egse.storage.storage_cs<span class="w"> </span>stop
 </code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
 <p>Settings are loaded from <code>Storage Manager Control Server</code> in <code>cgse_core/settings.yaml</code>.
 Important keys include:</p>

@@ -831,6 +831,8 @@
       
         
       
+        
+      
     
     
     
@@ -982,6 +984,34 @@
     
   
     Style Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dev_guide/logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
   
 
     
@@ -1790,6 +1820,8 @@
       
         
       
+        
+      
     
     
     
@@ -1958,6 +1990,50 @@
     <span class="md-ellipsis">
       
         Discover A Service
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#services-on-the-same-machine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Services On The Same Machine
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-metadata-of-a-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Metadata Of A Registration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-status-of-the-service-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Status Of The Service Process
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#registry-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Registry Events
       
     </span>
   </a>
@@ -2154,6 +2230,34 @@
     
   
     The Logger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logfiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Log-Files Service
   
 
     
@@ -2419,6 +2523,8 @@
       
         
       
+        
+      
     
     
     
@@ -2486,6 +2592,34 @@
     
   
     Tools for the CGSE framework
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../projects/cgse-tui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The CGSE TUI
   
 
     
@@ -3525,6 +3659,50 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#services-on-the-same-machine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Services On The Same Machine
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-metadata-of-a-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Metadata Of A Registration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-status-of-the-service-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Status Of The Service Process
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#registry-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Registry Events
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3719,7 +3897,7 @@ Both clients support the same core operations.</p>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">egse.registry.client</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncRegistryClient</span>
 
-<span class="k">with</span> <span class="n">AsyncRegistryClient</span><span class="p">()</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+<span class="k">async</span> <span class="k">with</span> <span class="n">AsyncRegistryClient</span><span class="p">()</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
     <span class="n">service_id</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">register</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s2">"cm_cs"</span><span class="p">,</span>
         <span class="n">host</span><span class="o">=</span><span class="s2">"127.0.0.1"</span><span class="p">,</span>
@@ -3758,7 +3936,7 @@ Both clients support the same core operations.</p>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">egse.registry.client</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncRegistryClient</span>
 
-<span class="k">with</span> <span class="n">AsyncRegistryClient</span><span class="p">()</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+<span class="k">async</span> <span class="k">with</span> <span class="n">AsyncRegistryClient</span><span class="p">()</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
     <span class="n">service</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">discover_service</span><span class="p">(</span><span class="s2">"CM_CS"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">service</span><span class="p">:</span>
         <span class="n">endpoint</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"tcp://</span><span class="si">{</span><span class="n">service</span><span class="p">[</span><span class="s1">'host'</span><span class="p">]</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">service</span><span class="p">[</span><span class="s1">'port'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
@@ -3775,6 +3953,88 @@ Both clients support the same core operations.</p>
 </div>
 </div>
 </div>
+<h3 id="services-on-the-same-machine">Services On The Same Machine<a class="headerlink" href="#services-on-the-same-machine" title="Permanent link">&para;</a></h3>
+<p>A service registers the address of its network interface, and its machine identity (<code>machine_id</code> in the metadata: the
+host name and, on Linux, the machine id from <code>/etc/machine-id</code>). When a client gets a service that runs on its own
+machine (<code>discover_service()</code>, <code>get_service()</code>, <code>list_services()</code>, <code>get_endpoint()</code>), the <code>host</code> is <code>127.0.0.1</code> and
+the registered address is in <code>registered_host</code>. Local clients keep reaching the services when the network is gone,
+e.g. on a laptop without WiFi, or when it changes address. Clients on other machines get the registered address.</p>
+<p>The machine is recognised by its identity, never by its addresses: these change with the network or a VPN (e.g.
+Tailscale). A registration of an older version has no <code>machine_id</code>, its <code>host</code> is returned unchanged.</p>
+<p>Two machines with the same host name and the same <code>/etc/machine-id</code> (e.g. cloned from one disk image without a new
+machine id, see <code>systemd-machine-id-setup</code>) can't be told apart: give each machine its own machine id.</p>
+<h3 id="the-metadata-of-a-registration">The Metadata Of A Registration<a class="headerlink" href="#the-metadata-of-a-registration" title="Permanent link">&para;</a></h3>
+<p>The registry clients add to the metadata of every registration:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pid</code></td>
+<td>the PID of the service process</td>
+</tr>
+<tr>
+<td><code>start_time</code></td>
+<td>the start time of the service process [s since the epoch]</td>
+</tr>
+<tr>
+<td><code>machine_id</code></td>
+<td>the machine identity, see above (<code>egse.system.get_machine_id()</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>The control servers (sync and async) also register:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>service_port</code></td>
+<td>the port of the service commands</td>
+</tr>
+<tr>
+<td><code>monitoring_port</code></td>
+<td>the port where the status is published</td>
+</tr>
+<tr>
+<td><code>server_kind</code></td>
+<td>how to ask the service for its status, see below</td>
+</tr>
+<tr>
+<td><code>cgse_object</code></td>
+<td>the <code>cgse &lt;object&gt;</code> command of the service, e.g. <code>puna</code> for <code>cgse puna start</code></td>
+</tr>
+<tr>
+<td><code>device_id</code></td>
+<td>the instance of the device, the argument of <code>cgse &lt;object&gt; start &lt;device_id&gt;</code>, or None</td>
+</tr>
+</tbody>
+</table>
+<p><code>server_kind</code> is <code>sync</code> or <code>async</code> for the control servers, <code>notifyhub</code>, <code>metricshub</code>, or <code>command</code> for the servers
+that answer the pickled string command <code>"status"</code> (the logger, the log-files service and the ARIEL facility
+housekeeping exporter). The notification hub, the metrics hub, the logger, the log-files service and the ARIEL facility
+housekeeping exporter add <code>cgse_object</code> (<code>nh</code>, <code>mh</code>, <code>log</code>, <code>lf</code>, <code>facility_hk</code>) to their own metadata.</p>
+<p>The process manager and the CGSE TUI find the devices of the Setup by <code>cgse_object</code> and <code>device_id</code>, see
+<a href="../../cgse-common/setup/">The Setup</a>.</p>
+<h3 id="the-status-of-the-service-process">The Status Of The Service Process<a class="headerlink" href="#the-status-of-the-service-process" title="Permanent link">&para;</a></h3>
+<p>Every heartbeat carries the status of the service process, from <code>egse.process.process_status()</code>: <code>pid</code>, <code>uptime_s</code>,
+<code>rss</code>, <code>swap</code>, <code>cpu_user_s</code>, <code>cpu_system_s</code> and <code>cpu_percent</code>. The registry keeps the last status with the
+registration; <code>list_services()</code> and <code>get_service()</code> return it as <code>status</code>, and <code>last_heartbeat</code> tells its age. A
+heartbeat without status, from an older client, keeps the previous status.</p>
+<p>The heartbeat interval is a third of the TTL of the registration (30 s by default), unless <code>start_heartbeat()</code> gets
+another interval.</p>
+<h3 id="registry-events">Registry Events<a class="headerlink" href="#registry-events" title="Permanent link">&para;</a></h3>
+<p>The registry publishes the events <code>register</code>, <code>deregister</code> and <code>expire</code>, and a <code>status</code> event every second (see
+below). <code>RegistryClient</code> doesn't subscribe to the events. <code>AsyncRegistryClient</code> subscribes only when the events are
+used: <code>on_event(event_type, handler)</code> and <code>start_event_listener()</code>.</p>
 <h2 id="server-behavior">Server Behavior<a class="headerlink" href="#server-behavior" title="Permanent link">&para;</a></h2>
 <p>The server implementation is <code>AsyncRegistryServer</code>.
 It uses a pluggable backend (<code>AsyncSQLiteBackend</code> by default) and handles:</p>
@@ -3782,7 +4042,8 @@ It uses a pluggable backend (<code>AsyncSQLiteBackend</code> by default) and han
 <li>request processing on the request socket</li>
 <li>heartbeat renewals on the heartbeat socket</li>
 <li>cleanup of expired services</li>
-<li>publication of registry events (<code>register</code>, <code>deregister</code>, <code>expire</code>)</li>
+<li>publication of registry events (<code>register</code>, <code>deregister</code>, <code>expire</code>), and a <code>status</code> event every second with the
+  PID and start time of the registry (<code>pid</code>, <code>start_time</code>), to know that it is alive or was restarted</li>
 </ul>
 <h2 id="control-actions">Control Actions<a class="headerlink" href="#control-actions" title="Permanent link">&para;</a></h2>
 <p>The request socket supports these actions:</p>
@@ -3797,6 +4058,8 @@ It uses a pluggable backend (<code>AsyncSQLiteBackend</code> by default) and han
 <li><code>info</code></li>
 <li><code>terminate</code></li>
 </ul>
+<p>A request that times out leaves its reply behind on the DEALER socket. The clients therefore close the socket after a
+timeout or a ZeroMQ error and open a new one, so the next request can't read that late reply.</p>
 <h2 id="running-the-service">Running The Service<a class="headerlink" href="#running-the-service" title="Permanent link">&para;</a></h2>
 <p>Start, inspect, and stop the Registry service:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Using <code>uv</code> (preferred)</label><label for="__tabbed_3_2">Direct (for debugging)</label></div>
@@ -3816,12 +4079,17 @@ python<span class="w"> </span>-m<span class="w"> </span>egse.registry.server<spa
 </div>
 </div>
 </div>
-<p>Optional CLI parameters include <code>req_port</code>, <code>pub_port</code>, <code>hb_port</code>, <code>db_path</code>, and <code>cleanup_interval</code>.</p>
-<p>In core-service orchestration this service is referred to as <code>rm_cs</code>.</p>
+<p><code>cgse reg start</code> takes <code>--enforce-unique-service-types</code> (one service per service type, the default from the
+settings) or <code>--allow-duplicate-service-types</code>, and <code>--log-level</code>. <code>cgse reg deregister &lt;service_type&gt;</code> removes the
+registrations of a service type, e.g. of a service that was killed.</p>
+<p>The options of <code>python -m egse.registry.server start</code> are <code>--req-port</code>, <code>--pub-port</code>, <code>--hb-port</code>, <code>--db-path</code>,
+<code>--cleanup-interval</code>, <code>--enforce-unique-service-types</code> and <code>--log-level</code>. Its script is <code>reg_cs</code>.</p>
 <h2 id="status-and-health">Status And Health<a class="headerlink" href="#status-and-health" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>health</code> returns simple liveness (<code>success</code>, <code>status</code>, <code>timestamp</code>)</li>
-<li><code>info</code> returns runtime details including request/publication/heartbeat ports and current registrations</li>
+<li><code>info</code> returns runtime details: the request, publication and heartbeat ports, whether service types are unique,
+  <code>cgse_object</code> <code>reg</code>, the PID, start time and process status (<code>process</code>) of the registry, and the current
+  registrations. The registry doesn't register itself, <code>info</code> is where its own process information is.</li>
 </ul>
 <p>You can query these through:</p>
 <ul>
@@ -3829,8 +4097,13 @@ python<span class="w"> </span>-m<span class="w"> </span>egse.registry.server<spa
 <li><code>RegistryClient.server_status()</code> / <code>AsyncRegistryClient.server_status()</code></li>
 </ul>
 <h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
-<p>The Registry server can be configured via CLI parameters and defaults from the <code>egse.registry</code> module constants.
-For deployments that need custom ports or storage path, pass explicit CLI options when starting the server.</p>
+<p>Settings are loaded from <code>Service Registry</code> in <code>cgse_core/settings.yaml</code>:</p>
+<ul>
+<li><code>REQUESTER_PORT</code>, <code>PUBLISHER_PORT</code>, <code>HEARTBEAT_PORT</code>: the ports, the defaults of the CLI options</li>
+<li><code>CLEANUP_INTERVAL</code>: how often expired registrations are removed [s], when <code>--cleanup-interval</code> is not given</li>
+<li><code>UNIQUE_SERVICE_TYPES</code>: one service per service type (<code>true</code>), or several for pooling</li>
+</ul>
+<p>The SQLite database is <code>service_registry.db</code> in the working directory of the registry, unless <code>--db-path</code> is given.</p>
 <h2 id="monitoring-and-troubleshooting">Monitoring And Troubleshooting<a class="headerlink" href="#monitoring-and-troubleshooting" title="Permanent link">&para;</a></h2>
 <h3 id="registry-is-not-reachable">Registry is not reachable<a class="headerlink" href="#registry-is-not-reachable" title="Permanent link">&para;</a></h3>
 <ul>
@@ -3840,7 +4113,7 @@ For deployments that need custom ports or storage path, pass explicit CLI option
 </ul>
 <h3 id="services-disappear-unexpectedly">Services disappear unexpectedly<a class="headerlink" href="#services-disappear-unexpectedly" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Confirm heartbeats are started (<code>start_heartbeat</code>)</li>
+<li>Confirm heartbeats are started (<code>start_heartbeat</code>), and check <code>last_heartbeat</code> with <code>cgse reg list-services</code></li>
 <li>Check TTL value vs heartbeat interval</li>
 <li>Check cleanup interval and long event-loop blocking in your service</li>
 </ul>

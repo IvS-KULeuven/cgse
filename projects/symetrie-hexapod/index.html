@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://ivs-kuleuven.github.io/cgse/projects/symetrie-hexapod/">
       
       
-        <link rel="prev" href="../cgse-tools/">
+        <link rel="prev" href="../cgse-tui/">
       
       
         <link rel="next" href="../../api/">
@@ -831,6 +831,8 @@
       
         
       
+        
+      
     
     
     
@@ -982,6 +984,34 @@
     
   
     Style Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev_guide/logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
   
 
     
@@ -1783,6 +1813,8 @@
       
         
       
+        
+      
     
     
     
@@ -1934,6 +1966,34 @@
     
   
     The Logger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../libs/cgse-core/logfiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Log-Files Service
   
 
     
@@ -2201,6 +2261,8 @@
       
         
       
+        
+      
     
     
     
@@ -2271,6 +2333,34 @@
     
   
     Tools for the CGSE framework
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cgse-tui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The CGSE TUI
   
 
     
@@ -3351,10 +3441,11 @@
 they can be the same type or different types. So, how do we specify two PUNA hexapods used 
 to position two different parts of your test equiopment?  </p>
 </div>
-<p>The system needs to know the following information on the hexapod:</p>
+<p>The system needs to know the following information on the hexapod, in its node in the Setup (see
+<a href="../../libs/cgse-common/setup/">The Setup</a>):</p>
 <ul>
-<li>device name: specified in the Setup under <code>setup.gse.hexapod.device_args.device_name</code></li>
-<li>device id: specified in the Setup under <code>setup.gse.hexapod.device_args.device_id</code></li>
+<li>device name: <code>setup.gse.hexapod.device_name</code></li>
+<li>device id: <code>setup.gse.hexapod.device_id</code>, the argument of <code>cgse puna start &lt;device_id&gt;</code>, e.g. <code>PUNA_01</code></li>
 </ul>
 <p>These above settings can olso be specified in the environment variables:</p>
 <ul>
@@ -3390,7 +3481,7 @@ to position two different parts of your test equiopment?  </p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../cgse-tools/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Tools for the CGSE framework">
+          <a href="../cgse-tui/" class="md-footer__link md-footer__link--prev" aria-label="Previous: The CGSE TUI">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3400,7 +3491,7 @@ to position two different parts of your test equiopment?  </p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Tools for the CGSE framework
+                The CGSE TUI
               </div>
             </div>
           </a>

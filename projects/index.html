@@ -831,6 +831,8 @@
       
         
       
+        
+      
     
     
     
@@ -982,6 +984,34 @@
     
   
     Style Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dev_guide/logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
   
 
     
@@ -1783,6 +1813,8 @@
       
         
       
+        
+      
     
     
     
@@ -1934,6 +1966,34 @@
     
   
     The Logger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../libs/cgse-core/logfiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Log-Files Service
   
 
     
@@ -2201,6 +2261,8 @@
       
         
       
+        
+      
     
     
     
@@ -2271,6 +2333,34 @@
     
   
     Tools for the CGSE framework
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="cgse-tui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The CGSE TUI
   
 
     
@@ -3248,6 +3338,36 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#generic-packages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generic packages
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#project-specific-packages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Project specific packages
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -3268,20 +3388,134 @@
 
 <h1 id="projects">Projects<a class="headerlink" href="#projects" title="Permanent link">&para;</a></h1>
 <p>The projects are those packages that add functionality to the CGSE framework.</p>
-<p>The projects live under the folder <code>projects</code>, and they are organised in <em>generic</em> and <em>specific</em> projects. Generic 
-projects do not have an implementation that is specific for one particular project, while, obviously, specific 
-projects have. We currently have the following generic packages:</p>
-<ul>
-<li><code>cgse-tools</code></li>
-<li><code>symetrie-hexapod</code></li>
-<li><code>keithley-tempcontrol</code></li>
-</ul>
-<p>and then there are the project specific packages:</p>
-<ul>
-<li><code>plato-fits</code></li>
-<li><code>plato-hdf5</code></li>
-<li><code>plato-spw</code></li>
-</ul>
+<p>The projects live under the folder <code>projects</code>, and they are organised in <em>generic</em> and <em>specific</em> projects. Generic
+projects do not have an implementation that is specific for one particular project, while, obviously, specific
+projects have.</p>
+<p>For a device driver, the <code>cgse</code> column is the <code>cgse &lt;object&gt;</code> command of its control server, which is also the
+<code>cgse_object</code> of the device in the Setup, see <a href="../libs/cgse-common/setup/">The Setup</a>.</p>
+<h2 id="generic-packages">Generic packages<a class="headerlink" href="#generic-packages" title="Permanent link">&para;</a></h2>
+<p>In <code>projects/generic</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Description</th>
+<th><code>cgse</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="cgse-tools/"><code>cgse-tools</code></a></td>
+<td>Tools for the CGSE</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="cgse-tui/"><code>cgse-tui</code></a></td>
+<td>Terminal user interface with the status of the core services and devices</td>
+<td></td>
+</tr>
+<tr>
+<td><code>aim-tti-awg</code></td>
+<td>Aim-TTi TGF4000 Arbitrary Wave Generator</td>
+<td><code>tgf4000</code></td>
+</tr>
+<tr>
+<td><code>digilent</code></td>
+<td>Digilent MEASURpoint DT8874, temperature and voltage monitoring</td>
+<td><code>dt8874</code></td>
+</tr>
+<tr>
+<td><code>keithley-tempcontrol</code></td>
+<td>Keithley DAQ6510 data acquisition, temperature monitoring</td>
+<td><code>daq6510</code></td>
+</tr>
+<tr>
+<td><code>kikusui-power-supply</code></td>
+<td>KIKUSUI PMX-A power supplies</td>
+<td><code>pmx_a</code></td>
+</tr>
+<tr>
+<td><code>lakeshore-tempcontrol</code></td>
+<td>LakeShore 336 temperature controller (prototype)</td>
+<td><code>lakeshore336</code></td>
+</tr>
+<tr>
+<td><code>rs-pro-power-supply</code></td>
+<td>RS PRO RS-D3305P power supply</td>
+<td><code>rsd3305p</code></td>
+</tr>
+<tr>
+<td><a href="symetrie-hexapod/"><code>symetrie-hexapod</code></a></td>
+<td>Symétrie hexapods PUNA, ZONDA and JORAN</td>
+<td><code>puna</code>, <code>zonda</code>, <code>joran</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="project-specific-packages">Project specific packages<a class="headerlink" href="#project-specific-packages" title="Permanent link">&para;</a></h2>
+<p>PLATO, in <code>projects/plato</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>plato-fits</code></td>
+<td>FITS persistence layer for the Storage Manager</td>
+</tr>
+<tr>
+<td><code>plato-hdf5</code></td>
+<td>HDF5 persistence layer for the Storage Manager</td>
+</tr>
+<tr>
+<td><code>plato-spw</code></td>
+<td>SpaceWire implementation for the CGSE</td>
+</tr>
+</tbody>
+</table>
+<p>ARIEL, in <code>projects/ariel</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Description</th>
+<th><code>cgse</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ariel-facility</code></td>
+<td>Housekeeping from the MySQL facility database for Ariel</td>
+<td><code>facility_hk</code></td>
+</tr>
+<tr>
+<td><code>ariel-tcu</code></td>
+<td>Telescope Control Unit (TCU) for Ariel</td>
+<td><code>tcu</code></td>
+</tr>
+</tbody>
+</table>
+<p>IvS (KU Leuven), in <code>projects/ivs</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Description</th>
+<th><code>cgse</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tvac</code></td>
+<td>ThermalVac thermal vacuum chamber, over OPC UA</td>
+<td><code>tvac</code></td>
+</tr>
+</tbody>
+</table>
+<p>The folder name is used above. Some packages are installed under another name: <code>aim_tti_awg</code>, <code>kikusui_power_supply</code>,
+<code>rs_pro_power_supply</code> and <code>ivs_tvac</code>.</p>
 
 
 

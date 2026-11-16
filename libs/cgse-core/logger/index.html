@@ -18,7 +18,7 @@
         <link rel="prev" href="../metricshub/">
       
       
-        <link rel="next" href="../configuration-manager/">
+        <link rel="next" href="../logfiles/">
       
       
         
@@ -831,6 +831,8 @@
       
         
       
+        
+      
     
     
     
@@ -982,6 +984,34 @@
     
   
     Style Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dev_guide/logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
   
 
     
@@ -1790,6 +1820,8 @@
       
         
       
+        
+      
     
     
     
@@ -2034,6 +2066,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Control Actions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tail
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        history
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2084,6 +2144,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logfiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Log-Files Service
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -2341,6 +2429,8 @@
       
         
       
+        
+      
     
     
     
@@ -2408,6 +2498,34 @@
     
   
     Tools for the CGSE framework
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../projects/cgse-tui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The CGSE TUI
   
 
     
@@ -3433,6 +3551,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Control Actions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tail
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        history
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3553,14 +3699,67 @@ the active endpoints through the Registry, especially when ports are configured 
 </code></pre></div>
 <p>This configures the ZeroMQ log handler so records are forwarded to <code>log_cs</code>.</p>
 <h2 id="control-actions">Control Actions<a class="headerlink" href="#control-actions" title="Permanent link">&para;</a></h2>
-<p>The command endpoint supports:</p>
-<ul>
-<li><code>status</code></li>
-<li><code>set_level &lt;LEVEL&gt;</code></li>
-<li><code>roll</code> (log rotation)</li>
-<li><code>quit</code></li>
-</ul>
-<p>Convenience wrappers are exposed via CLI.</p>
+<p>The command endpoint takes a command string and answers with a dictionary with <code>status</code> <code>"ACK"</code>, or <code>"NACK"</code> and an
+<code>error</code>. A failing command doesn't stop the logger, it answers with an error. The commands are:</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>status</code></td>
+<td>the ports, the levels, the location of the log file and statistics</td>
+</tr>
+<tr>
+<td><code>set_level &lt;LEVEL&gt;</code></td>
+<td>sets the level of the log file, e.g. <code>set_level INFO</code></td>
+</tr>
+<tr>
+<td><code>roll</code></td>
+<td>rolls over the log file</td>
+</tr>
+<tr>
+<td><code>tail [after [max]]</code></td>
+<td>the most recent records, kept in memory</td>
+</tr>
+<tr>
+<td><code>history &lt;since&gt; &lt;until&gt; [max [cursor]]</code></td>
+<td>the records of a time window, read from the log files</td>
+</tr>
+<tr>
+<td><code>quit</code></td>
+<td>stops the logger, the answer is <code>"ACK"</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>egse.logger.send_request()</code> sends a command and returns the answer:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">egse.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">send_request</span>
+
+<span class="n">response</span> <span class="o">=</span> <span class="n">send_request</span><span class="p">(</span><span class="s2">"tail 0 50"</span><span class="p">)</span>
+</code></pre></div>
+<p><code>status</code>, <code>roll</code> and <code>quit</code> are also available from the CLI, see below.</p>
+<h3 id="tail"><code>tail</code><a class="headerlink" href="#tail" title="Permanent link">&para;</a></h3>
+<p>The logger keeps the last 10 000 records in memory (<code>TAIL_LENGTH</code> in <code>egse.logger.log_cs</code>). <code>tail [after [max]]</code>
+returns the records with a sequence number above <code>after</code> (default 0), at most <code>max</code> of them (default 100), the most
+recent ones. The answer has <code>records</code> and <code>last_seq</code>, the number of records received. A client that remembers
+<code>last_seq</code> and passes it as <code>after</code> the next time only gets the new records; the CGSE TUI does this for its log panel.</p>
+<p>A record is a dictionary with <code>seq</code>, <code>time</code> (a timestamp), <code>level</code>, <code>name</code> (the logger), <code>module</code>, <code>process</code> and
+<code>message</code>, the message cut to 1000 characters.</p>
+<h3 id="history"><code>history</code><a class="headerlink" href="#history" title="Permanent link">&para;</a></h3>
+<p><code>history &lt;since&gt; &lt;until&gt; [max [cursor]]</code> returns the records created between the timestamps <code>since</code> and <code>until</code>, read
+from the log files: <code>general.log</code> and the files it rotated into at midnight (<code>general.log.YYYY-MM-DD</code>). It's used by
+the log screen of the CGSE TUI. The records come oldest first, at most <code>max</code> of them (default 5000); one answer reads
+at most 8 MB of the log files, the logger doesn't handle other commands while it reads.</p>
+<p>The answer has <code>records</code> and a <code>cursor</code>. When the window has more records, the <code>cursor</code> is not <code>None</code>: send the same
+command with that cursor to continue where the answer stopped. A cursor is no longer valid when its log file has
+rotated, the answer is then a <code>"NACK"</code>.</p>
+<p>A record has the fields of a <code>tail</code> record without <code>seq</code>, and with <code>pid</code>, <code>filename</code> and <code>lineno</code>; the message is cut
+to 4000 characters, a traceback included. The records are written in the order they arrive with the time they were
+created, so a record can arrive up to some seconds after a younger one; the window is searched with a margin of 10 s
+and the records are selected on their own time. See <code>egse.logger.history</code>.</p>
 <h2 id="running-the-service">Running The Service<a class="headerlink" href="#running-the-service" title="Permanent link">&para;</a></h2>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Using <code>uv</code> (preferred)</label><label for="__tabbed_1_2">Direct (for debugging)</label></div>
 <div class="tabbed-content">
@@ -3649,13 +3848,13 @@ Important keys include:</p>
         
         
           
-          <a href="../configuration-manager/" class="md-footer__link md-footer__link--next" aria-label="Next: The Configuration Manager">
+          <a href="../logfiles/" class="md-footer__link md-footer__link--next" aria-label="Next: The Log-Files Service">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                The Configuration Manager
+                The Log-Files Service
               </div>
             </div>
             <div class="md-footer__button md-icon">

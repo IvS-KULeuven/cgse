@@ -833,6 +833,8 @@
       
         
       
+        
+      
     
     
     
@@ -987,6 +989,34 @@
     
   
     Style Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
   
 
     
@@ -1177,6 +1207,17 @@
     <span class="md-ellipsis">
       
         Explore
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#details-in-the-tui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Details in the TUI
       
     </span>
   </a>
@@ -1935,6 +1976,8 @@
       
         
       
+        
+      
     
     
     
@@ -2086,6 +2129,34 @@
     
   
     The Logger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../libs/cgse-core/logfiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Log-Files Service
   
 
     
@@ -2351,6 +2422,8 @@
       
         
       
+        
+      
     
     
     
@@ -2418,6 +2491,34 @@
     
   
     Tools for the CGSE framework
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../projects/cgse-tui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The CGSE TUI
   
 
     
@@ -3491,6 +3592,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#details-in-the-tui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Details in the TUI
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#register-resources" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3537,6 +3649,8 @@ places. The following entry-points are currently defined:</p>
 <li><code>cgse.explore</code>: Package provides a set of functions to explore, e.g. if any of the processes 
   it provides are running.</li>
 <li><code>cgse.resource</code>: Packages can register resources.</li>
+<li><code>cgse.tui.details</code>: Package shows the details of its service in the detail screen of the CGSE TUI,
+  see <a href="#details-in-the-tui">Details in the TUI</a>.</li>
 </ul>
 <p>Each of the entry-points knows how to load a module or object and each entry-point group is
 connected to a specific action or plugin hook like, e.g. add a command or command group to the
@@ -3708,12 +3822,21 @@ and <code>object</code> the same, e.g.:</p>
 </table>
 <ul>
 <li>The process manager starts, stops and queries a control server with
-  <code>cgse &lt;device&gt; start|stop|status [&lt;device_id&gt;]</code>, so use these names.</li>
+  <code>cgse &lt;device&gt; start|stop|status [&lt;device_id&gt;]</code>, so use these names. <code>&lt;device&gt;</code> is the
+  <code>cgse_object</code> and <code>&lt;device_id&gt;</code> the <code>device_id</code> of the device in the Setup, see
+  <a href="../../libs/cgse-common/setup/">The Setup</a>.</li>
 <li>Add <code>start-sim</code>, <code>stop-sim</code> and <code>status-sim</code> only when the package has a simulator that runs as
   a separate process, e.g. <code>daq6510_sim</code> in <code>keithley-tempcontrol</code>. When the simulator is part of
   the control server, add a <code>--sim</code> (<code>--simulator</code>) option to <code>start</code> instead, e.g.
   <code>cgse puna start --sim PUNA_01</code>. The process manager offers simulator mode when it finds <code>--sim</code>
   in the output of <code>cgse &lt;device&gt; start --help</code>.</li>
+<li>A simulator that runs as a separate process stands in for the hardware, it is not a CGSE
+  service: it speaks the device protocol (e.g. SCPI, OPC UA) on the address of the device in the
+  settings, and doesn't register to the service registry. The control server connects to it as to
+  the real device and recognises it at connect, e.g. the DAQ6510 simulator by the serial number
+  <code>SIMULATOR</code> in <code>*IDN?</code>, and reports this as <code>sim_mode</code> in its status. <code>status-sim</code> is therefore
+  the only way to know whether the simulator runs, it exits with code 1 when it doesn't. The CGSE
+  TUI relies on this exit code after <code>start-sim</code>.</li>
 <li>Device operations, e.g. starting a scan or reading the latest values, don't belong in the <code>cgse</code>
   app. Provide them in the command of the control server itself, e.g. <code>daq6510_cs start-scan</code>.
   The <code>start</code> and <code>stop</code> sub-commands usually run the control server command in the background with
@@ -3750,6 +3873,46 @@ something like below (the format is from the unix <code>ps -ef</code> command). 
 │ 94365 │ python3.12 │ rik  │  0.0 │     125.6 │ running │ python -m egse.procman.procman_cs start                  │
 └───────┴────────────┴──────┴──────┴───────────┴─────────┴──────────────────────────────────────────────────────────┘
 </code></pre></div>
+<h2 id="details-in-the-tui">Details in the TUI<a class="headerlink" href="#details-in-the-tui" title="Permanent link">&para;</a></h2>
+<p>The detail screen of the CGSE TUI (<code>cgse tui</code>) shows a service in panels: Service, Process, Device and
+Details. The first three are the same for every service. The Details panel shows the service specific status, by
+default as a generic tree of the <code>details</code> in the status report of the control server, updated with the values of
+its monitoring messages. A package can show these details in its own way with a <code>cgse.tui.details</code> entry-point.
+The name of the entry-point is the <code>cgse_object</code> of the control server, i.e. the <code>cgse &lt;object&gt;</code> command, the value
+is a function:</p>
+<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">"cgse.tui.details"</span><span class="k">]</span>
+<span class="n">puna</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"symetrie_hexapod.tui_details:details"</span>
+<span class="n">zonda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"symetrie_hexapod.tui_details:details"</span>
+<span class="n">joran</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"symetrie_hexapod.tui_details:details"</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">details</span><span class="p">(</span><span class="n">report</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">live</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RenderableType</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">RenderableType</span><span class="p">]:</span> <span class="o">...</span>
+</code></pre></div>
+<ul>
+<li><code>report</code> is the last status report of the control server, see the <code>details</code> section for the values of
+  <code>get_status_details()</code> (sync) or <code>get_component_status()</code> (async). A section that couldn't be retrieved contains
+  only an <code>error</code> entry.</li>
+<li><code>live</code> holds the device values of the last monitoring message, without the process information: the entries that
+  a sync device protocol adds to its <code>get_status()</code>, or the <code>components</code> of an async control server. They are newer
+  than those in the report; when the server publishes no device values, <code>live</code> is empty.</li>
+<li>The function returns a <a href="https://rich.readthedocs.io">Rich</a> renderable, e.g. a <code>Table</code>, or a dictionary of
+  renderables that are shown as separate panels with the keys as titles, e.g. <code>{"Position": ..., "Actuators": ...}</code>,
+  side by side, at most three per row and each row as high as its highest panel. It can also return a list of such
+  dictionaries, one per row, e.g. <code>[{"FB-1": ..., "Server": ...}, {"Fleas": ...}]</code>: a row with one panel takes the
+  full width, for a wide table. The titles shall be unique.</li>
+</ul>
+<p>The function is called every second, so it shall be fast and must not talk to the device. A renderable that is
+expensive to render, e.g. a large table that rarely changes, can be cached by the plugin: when the function returns
+the same object as before, the TUI doesn't render it again. It only uses Rich, so the
+package doesn't depend on Textual or on <code>cgse-tui</code>; the module is only imported by the TUI, and only when a
+service with that <code>cgse_object</code> is shown. A plugin that can't be imported, raises an exception, or returns something
+that isn't a Rich renderable, is logged once and the generic tree is shown, the panel border says the plugin failed.</p>
+<p>The core services have built-in renderers in <code>cgse_tui.details</code>, e.g. the disk usage of the Storage Manager, the
+running observation and the loaded Setup of the Configuration Manager, the core services of the Process Manager with
+their state, and the messages per second of the logger and the hubs. A plugin takes precedence over a built-in
+renderer. The <code>symetrie-hexapod</code> (<code>symetrie_hexapod/tui_details.py</code>), <code>keithley-tempcontrol</code>
+(<code>keithley_tempcontrol/tui_details.py</code>) and <code>ivs-tvac</code> (<code>ivs_tvac/tui_details.py</code>) packages have examples. A device
+control server that wants its latest readings in its panel adds them as a component, e.g. <code>latest</code> in
+<code>get_component_status()</code> of the DAQ6510 and the ThermalVac, so they arrive with every monitoring message.</p>
 <h2 id="register-resources">Register resources<a class="headerlink" href="#register-resources" title="Permanent link">&para;</a></h2>
 <p>TODO: what if two packages provide a resource <code>icons</code> ?</p>
 <ul>

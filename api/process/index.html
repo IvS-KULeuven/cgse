@@ -831,6 +831,8 @@
       
         
       
+        
+      
     
     
     
@@ -982,6 +984,34 @@
     
   
     Style Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev_guide/logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
   
 
     
@@ -1783,6 +1813,8 @@
       
         
       
+        
+      
     
     
     
@@ -1934,6 +1966,34 @@
     
   
     The Logger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../libs/cgse-core/logfiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Log-Files Service
   
 
     
@@ -2199,6 +2259,8 @@
       
         
       
+        
+      
     
     
     
@@ -2266,6 +2328,34 @@
     
   
     Tools for the CGSE framework
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../projects/cgse-tui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The CGSE TUI
   
 
     
@@ -3152,6 +3242,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#egse.process.ProcessStatus.as_status_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;as_status_dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.process.ProcessStatus.update" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3321,6 +3422,28 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;list_zombies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.process.process_identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;process_identity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.process.process_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;process_status
       
     </span>
   </a>
@@ -3547,6 +3670,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#egse.process.ProcessStatus.as_status_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;as_status_dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#egse.process.ProcessStatus.update" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3716,6 +3850,28 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;list_zombies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.process.process_identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;process_identity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#egse.process.process_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;process_status
       
     </span>
   </a>
@@ -3976,6 +4132,14 @@ process.</p>
               </td>
             </tr>
             <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title="            as_status_dict (egse.process.ProcessStatus.as_status_dict)" href="#egse.process.ProcessStatus.as_status_dict">as_status_dict</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Returns all process information as a JSON-safe dictionary with normalized keys.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
               <td><code><a class="autorefs autorefs-internal" title="            update (egse.process.ProcessStatus.update)" href="#egse.process.ProcessStatus.update">update</a></code></td>
               <td>
                 <div class="doc-md-description">
@@ -4024,6 +4188,29 @@ process.</p>
     <div class="doc doc-contents ">
 
         <p>Returns all process information as a dictionary.</p>
+<p>This runs the <code>update()</code> method first to bring the numbers up-to-date.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="egse.process.ProcessStatus.as_status_dict" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">as_status_dict</span>
+
+
+<a href="#egse.process.ProcessStatus.as_status_dict" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">as_status_dict</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns all process information as a JSON-safe dictionary with normalized keys.</p>
+<p>This is the <code>process</code> section of the status report of a control server. The keys of <code>as_dict()</code> are kept
+unchanged because they are also published on the monitoring channel.</p>
 <p>This runs the <code>update()</code> method first to bring the numbers up-to-date.</p>
 
 
@@ -5031,6 +5218,52 @@ contains the 'pid', 'name', and 'cmdline' of the zombie process.</p>
           </tr>
       </tbody>
     </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.process.process_identity" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">process_identity</span>
+
+
+<a href="#egse.process.process_identity" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">process_identity</span><span class="p">(</span><span class="n">process</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the PID and start time [s since epoch] of the given process, by default the current process.</p>
+<p>These don't change while the process runs, a service puts them in its registration.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="egse.process.process_status" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">process_status</span>
+
+
+<a href="#egse.process.process_status" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">process_status</span><span class="p">(</span><span class="n">process</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the status of the given process, by default the current process, with the keys of
+<code>ProcessStatus.as_status_dict()</code>: pid, uptime_s, rss, swap, cpu_user_s, cpu_system_s, cpu_percent.</p>
+<p><code>swap</code> is the memory of the process that is swapped out, None when it can't be read (e.g. not on Linux). A leak
+ends up there: the RSS alone doesn't show it.</p>
+<p>Unlike <code>ProcessStatus</code>, this registers no metrics. Pass the same <code>psutil.Process</code> object on every call: the CPU
+percentage is measured since the previous call with that object (the first call returns 0.0).</p>
 
 
     </div>

@@ -831,6 +831,8 @@
       
         
       
+        
+      
     
     
     
@@ -982,6 +984,34 @@
     
   
     Style Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dev_guide/logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
   
 
     
@@ -1743,6 +1773,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Setup
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -1759,6 +1807,36 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#device-drivers-in-the-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Device drivers in the Setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1784,6 +1862,8 @@
       
         
           
+        
+      
         
       
         
@@ -1951,6 +2031,34 @@
     
   
     The Logger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cgse-core/logfiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Log-Files Service
   
 
     
@@ -2216,6 +2324,8 @@
       
         
       
+        
+      
     
     
     
@@ -2283,6 +2393,34 @@
     
   
     Tools for the CGSE framework
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../projects/cgse-tui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The CGSE TUI
   
 
     
@@ -3260,6 +3398,25 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#device-drivers-in-the-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Device drivers in the Setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -3279,6 +3436,66 @@
 
 
 <h1 id="the-setup">The Setup<a class="headerlink" href="#the-setup" title="Permanent link">&para;</a></h1>
+<h2 id="device-drivers-in-the-setup">Device drivers in the Setup<a class="headerlink" href="#device-drivers-in-the-setup" title="Permanent link">&para;</a></h2>
+<p>The device drivers that are used in a project are described in the Setup, usually under <code>gse</code>. A node describes a
+device driver when it has a <code>cgse_object</code>, the name of its <code>cgse &lt;object&gt;</code> command, the command that starts, stops
+and shows the status of its control server:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">gse</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">DAQ6510</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">device_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Keithley DAQ6510</span>
+<span class="w">        </span><span class="nt">cgse_object</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">daq6510</span>
+<span class="w">        </span><span class="nt">channels</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">(@101:103)</span>
+<span class="w">    </span><span class="nt">hexapod</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">device_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PUNA Hexapod</span>
+<span class="w">        </span><span class="nt">cgse_object</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">puna</span>
+<span class="w">        </span><span class="nt">device_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PUNA_01</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cgse_object</code></td>
+<td>yes</td>
+<td>the <code>cgse &lt;object&gt;</code> command of the device, e.g. <code>daq6510</code>, <code>puna</code>, <code>tvac</code></td>
+</tr>
+<tr>
+<td><code>device_name</code></td>
+<td>no</td>
+<td>the name shown for the device, by default the key of the node</td>
+</tr>
+<tr>
+<td><code>device_id</code></td>
+<td>no</td>
+<td>the instance of the device, when there are several devices of the same type</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>device_id</code> is the argument of <code>cgse &lt;object&gt; start|stop|status &lt;device_id&gt;</code>, and the control server registers it
+in the service registry, e.g. <code>PUNA_01</code>. A single device, whose <code>cgse &lt;object&gt; start</code> takes no device identifier
+(e.g. <code>dt8874</code>, <code>daq6510</code>, <code>tvac</code>), has no <code>device_id</code>: its control server registers none, and a <code>device_id</code> in the
+Setup would never match it.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">gse</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">dt8874</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">device_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Digilent DT8874</span>
+<span class="w">        </span><span class="nt">cgse_object</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dt8874</span><span class="w">        </span><span class="c1"># no device_id: there is one DT8874</span>
+</code></pre></div>
+<p>The other entries of the node are the configuration of the device, they are not searched for further devices.</p>
+<p>The CGSE TUI and the process manager GUI show every device driver of the Setup that the configuration manager has
+loaded. A device runs when a service is registered with the same <code>cgse_object</code> and, when given, the same <code>device_id</code>;
+the registry service type is not used. They start and stop it with <code>cgse &lt;object&gt; start|stop [&lt;device_id&gt;]</code>. When a
+service of the same <code>cgse_object</code> runs with another <code>device_id</code>, both log a warning that says what to change in the
+Setup. The TUI also warns when a Setup device without <code>device_id</code> matches several running services, and when there is
+no <code>cgse &lt;object&gt;</code> command for a device that doesn't run.</p>
+<p>Older Setups describe a device with <code>device</code> (a proxy class), <code>device_name</code> and <code>device_id</code>. The process manager still
+uses these when the node has no <code>cgse_object</code>: it looks for the service type <code>device_id</code> (in upper case) in the
+registry, and passes the first of the <code>device_args</code> to the <code>cgse</code> command. Add a <code>cgse_object</code> to use the device
+driver form, then <code>device</code> and <code>device_args</code> are not needed by the process manager or the TUI.</p>
 
 
 
