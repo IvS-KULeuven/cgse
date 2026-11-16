@@ -57,12 +57,23 @@ The module provides convenience functions:
 
 ## Running The Service
 
-```bash
-python -m egse.storage.storage_cs start
-python -m egse.storage.storage_cs status
-python -m egse.storage.storage_cs status --full
-python -m egse.storage.storage_cs stop
-```
+=== "Using `uv` (preferred)"
+
+    ```bash
+    uv run cgse sm start
+    uv run cgse sm stop
+    uv run cgse sm status
+    uv run cgse sm status --full
+    ```
+
+=== "Direct (for debugging)"
+
+    ```bash
+    python -m egse.storage.storage_cs start
+    python -m egse.storage.storage_cs status
+    python -m egse.storage.storage_cs status --full
+    python -m egse.storage.storage_cs stop
+    ```
 
 ## Configuration
 

@@ -7,6 +7,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Documentation
+
+- New page for the CGSE TUI (`projects/cgse-tui.md`): installation and start, the overview, the detail screen, the log
+  screen and log files, start/stop/restart, with screenshots. The content follows the help of the TUI (`F1`).
+- Projects: the index lists all packages, with the `cgse <object>` command of the device drivers.
+- Service registry: the metadata of a registration (`pid`, `start_time`, `machine_id`, `server_kind`, `cgse_object`,
+  `device_id`), the process status in the heartbeats, the registry events, the CLI options and the settings.
+  Fixed: the asynchronous examples used `with` instead of `async with`.
+- Logger: all commands, with the new `tail` and `history` commands.
+- Process manager: the devices of the Setup, how they are started, stopped and found in the registry.
+- The configuration manager, storage manager, process manager and log-files service pages show `cgse <object>` and
+  the direct command in tabs, like the other core services.
+- Developer guide, plugins: a simulator that runs as a separate process doesn't register to the service registry,
+  `status-sim` tells whether it runs.
+- Fixed: the API pages of `egse.command`, `control`, `dummy`, `listener`, `mixin` and `monitoring` said they are part
+  of `cgse-common`, they moved to `cgse-core`.
+
 ## [0.26.2] - 2026-11-16
 
 ### `device_id` and `cgse_object` of the devices in the Setup

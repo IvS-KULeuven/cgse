@@ -92,7 +92,6 @@ plugins:
                     docstring_section_style: table
                     docstring_options:
                         ignore_init_summary: true
-                    cross_reference_types: true
                     inherited_members: true
                     merge_init_into_class: true
                     parameter_headings: false
@@ -188,6 +187,7 @@ nav:
   - Projects:
     - projects/index.md
     - projects/cgse-tools.md
+    - projects/cgse-tui.md
     - projects/symetrie-hexapod.md
   - API:
       - api/index.md

@@ -188,6 +188,13 @@ The `cgse <device>` sub-commands manage the life cycle of the control server, no
   the control server, add a `--sim` (`--simulator`) option to `start` instead, e.g.
   `cgse puna start --sim PUNA_01`. The process manager offers simulator mode when it finds `--sim`
   in the output of `cgse <device> start --help`.
+- A simulator that runs as a separate process stands in for the hardware, it is not a CGSE
+  service: it speaks the device protocol (e.g. SCPI, OPC UA) on the address of the device in the
+  settings, and doesn't register to the service registry. The control server connects to it as to
+  the real device and recognises it at connect, e.g. the DAQ6510 simulator by the serial number
+  `SIMULATOR` in `*IDN?`, and reports this as `sim_mode` in its status. `status-sim` is therefore
+  the only way to know whether the simulator runs, it exits with code 1 when it doesn't. The CGSE
+  TUI relies on this exit code after `start-sim`.
 - Device operations, e.g. starting a scan or reading the latest values, don't belong in the `cgse`
   app. Provide them in the command of the control server itself, e.g. `daq6510_cs start-scan`.
   The `start` and `stop` sub-commands usually run the control server command in the background with
