@@ -16,6 +16,13 @@ from collections.abc import Awaitable
 from collections.abc import Callable
 from typing import Any
 
+from egse.plugin import HierarchicalEntryPoints
+from egse.plugin import entry_points
+from egse.setup import SetupDevice
+from egse.setup import device_id_mismatch
+from egse.setup import find_cgse_devices
+from egse.setup import matches
+
 from cgse_tui.data import health
 from cgse_tui.data import monitor
 from cgse_tui.data import report
@@ -26,9 +33,7 @@ from cgse_tui.data.services import CORE_CGSE_OBJECTS
 from cgse_tui.data.services import REGISTRY_SERVICE_TYPE
 from cgse_tui.data.services import core_services
 from cgse_tui.data.services import custom_kind
-from cgse_tui.data.setup import SetupDevice
-from cgse_tui.data.setup import matches
-from cgse_tui.data.setup import setup_devices
+from cgse_tui.data.setup import setup_key
 from cgse_tui.logs import quiet
 
 logger = logging.getLogger("cgse_tui.collector")
@@ -126,6 +131,10 @@ class Collector:
         """True when the registry answered the health check of the last poll."""
         self.setup_devices: dict[str, SetupDevice] = {}
         """The device drivers in the Setup of the Configuration Manager, by the key of their row, see `data.setup`."""
+        self._unknown_commands: dict[str, str] = {}
+        """The warning per device of the Setup, by its path, whose `cgse <object>` command doesn't exist."""
+        self._setup_problems: set[str] = set()
+        """The problems with the devices of the Setup that are logged, so they are logged once."""
 
     def _custom_stale_after(self) -> float:
         """Stale time of the servers that are polled: three polls plus one request timeout.
@@ -155,6 +164,7 @@ class Collector:
             self._assess(service, now)
         for service_type in self._last_states.keys() - self.services.keys():
             del self._last_states[service_type]
+        self._check_setup()
         return sorted(self._shown_services(), key=lambda service: service.name.lower())
 
     def _shown_services(self) -> list[ServiceInfo]:
@@ -187,7 +197,7 @@ class Collector:
 
     def _update_setup(self, setup: dict[str, Any]) -> None:
         """Follows the device drivers in the Setup: a row for every device, until it runs, see `data.setup`."""
-        devices = {device.key: device for device in setup_devices(setup)}
+        devices = {setup_key(device): device for device in find_cgse_devices(setup)}
         if devices == self.setup_devices:
             return
         for key in self.setup_devices.keys() - devices.keys():
@@ -205,6 +215,42 @@ class Collector:
         self.setup_devices = devices
         names = ", ".join(f"{device.name} ({device.cgse_object})" for device in devices.values()) or "none"
         logger.info(f"Device drivers in the Setup: {names}")
+        commands = cgse_commands() if devices else set()
+        self._unknown_commands = {
+            device.path: f"Setup {device.path} has cgse_object {device.cgse_object!r}, but there is no "
+            f"`cgse {device.cgse_object}` command: is the package of the device installed?"
+            for device in devices.values()
+            if device.cgse_object not in commands
+        }
+
+    def _check_setup(self) -> None:
+        """Logs a warning for every problem with the device drivers of the Setup that the TUI can't solve.
+
+        A problem is logged once, and again when it comes back after it was solved. A device without `cgse <object>`
+        command on this machine is no problem while it runs, on another machine.
+        """
+        registered = [
+            (service.cgse_object, service.device_id)
+            for key, service in self.services.items()
+            if key not in self.setup_devices and service.registered
+        ]
+        problems = {}
+        for device in self.setup_devices.values():
+            running = [device_id for cgse_object, device_id in registered if matches(device, cgse_object, device_id)]
+            if device.path in self._unknown_commands and not running:  # it can run on another machine
+                problems[f"command:{device.path}"] = self._unknown_commands[device.path]
+            if reason := device_id_mismatch(device, registered):
+                problems[f"device_id:{device.path}"] = reason
+            if len(running) > 1:
+                device_ids = ", ".join(repr(device_id) for device_id in running)
+                problems[f"several:{device.path}"] = (
+                    f"Setup {device.path} has no device_id and matches {len(running)} running "
+                    f"{device.cgse_object} control servers (device_id {device_ids}): add the device_id to the Setup."
+                )
+        for problem, message in problems.items():
+            if problem not in self._setup_problems:
+                logger.warning(message)
+        self._setup_problems = set(problems)
 
     @staticmethod
     def _assess(service: ServiceInfo, now: float) -> None:
@@ -516,3 +562,9 @@ class Collector:
         self._update_device(service, status)
         if service.last_update is None:
             service.last_update = self._clock()
+
+
+def cgse_commands() -> set[str]:
+    """The names of the `cgse` sub-commands, e.g. "daq6510" for `cgse daq6510`, as `cgse_common.cgse` finds them."""
+    services = HierarchicalEntryPoints("cgse.service").get_all_entry_points()
+    return {ep.name for ep in [*entry_points("cgse.command"), *services]}

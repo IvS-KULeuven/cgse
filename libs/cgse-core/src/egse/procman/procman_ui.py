@@ -42,6 +42,9 @@ from egse.procman import ProcessManagerProxy
 from egse.registry.client import RegistryClient
 from egse.resource import get_resource
 from egse.setup import Setup
+from egse.setup import SetupDevice
+from egse.setup import device_id_mismatch
+from egse.setup import matches
 from egse.system import do_every
 from egse.zmq_ser import set_address_port
 
@@ -349,13 +352,21 @@ class DeviceMonitoringWorker(QObject):
 
     process_status_signal = Signal(dict)
 
-    def __init__(self, device_id: str, device_args: list, device_proxy: str, parent=None):
+    def __init__(
+        self,
+        device_id: str,
+        device_args: list,
+        device_proxy: str,
+        setup_device: SetupDevice | None = None,
+        parent=None,
+    ):
         """Initialisation of a monitoring worker for a device.
 
         Args:
             device_id (str): Identifier of the device to monitor.
             device_args (list): Arguments for the device.
             device_proxy (str): Device proxy.
+            setup_device (SetupDevice | None): The device driver in the Setup, None for an older device node.
         """
 
         super().__init__(parent)
@@ -363,14 +374,17 @@ class DeviceMonitoringWorker(QObject):
         self.device_id = device_id
         self.device_args = device_args
         self.device_proxy = device_proxy
-        self.process_manager: ProcessManagerProxy = ProcessManagerProxy()
+        self.setup_device = setup_device
+        self.mismatch: str | None = None
+        self.status_problem: str | None = None
+        self.process_manager: ProcessManagerProxy | None = None  # connected in the thread of the worker
         self.active = False
         self.registry_client = RegistryClient()
 
         self.cs_is_active = False
         self.cs_status = ControlServerStatus.INACTIVE
 
-        self.cgse_cmd = get_cgse_cmd(self.device_proxy)
+        self.cgse_cmd = f"cgse {setup_device.cgse_object}" if setup_device else get_cgse_cmd(self.device_proxy)
         self.status_cmd = StatusCommand(device_id=self.device_id, device_args=self.device_args, cgse_cmd=self.cgse_cmd)
 
     def start_listening(self) -> None:
@@ -401,7 +415,10 @@ class DeviceMonitoringWorker(QObject):
 
         while self.active:
             try:
-                services = self.registry_client.list_services(service_type=self.device_id.upper())
+                if self.setup_device is None:
+                    services = self.registry_client.list_services(service_type=self.device_id.upper())
+                else:
+                    services = self.setup_device_services()
 
                 if len(services) == 0:
                     self.cs_is_active = False
@@ -410,11 +427,11 @@ class DeviceMonitoringWorker(QObject):
                 else:
                     cs_is_active_new = not services is None
                     if cs_is_active_new != self.cs_is_active:
-                        self.cs_is_active = cs_is_active_new
+                        status_output = self.device_process_status()
 
-                        if self.cs_is_active:
+                        if status_output is not None:  # else ask again at the next update
+                            self.cs_is_active = cs_is_active_new
                             self.cs_status = ControlServerStatus.ACTIVE
-                            status_output = self.process_manager.get_device_process_status(self.status_cmd)
 
                             # Due to static type checking the IDE doesn't recognise the `emit` method on a `Signal` object.
                             # This happens because `Signal` is a special descriptor in `PyQt` and doesn't expose `emit` in a
@@ -429,6 +446,60 @@ class DeviceMonitoringWorker(QObject):
                     self.active = False
             except ZMQError:
                 pass
+
+    def device_process_status(self) -> dict | None:
+        """Returns the status of the device Control Server from the Process Manager, None when there is no answer.
+
+        The Process Manager handles one request at a time, and runs a `cgse <object> status` command for a status, which
+        takes a few seconds. When it was busy with the request of another device while this worker connected, the proxy
+        has no commands: it connects again. The proxy connects at the first status, in the thread of the worker, so a
+        busy Process Manager doesn't hold up the UI. A problem is logged once, the status is asked again at the next
+        update.
+        """
+
+        if self.process_manager is None or not self.process_manager.has_commands():
+            if self.process_manager is not None:
+                self.process_manager.disconnect_cs()
+            self.process_manager = ProcessManagerProxy()
+
+        if self.process_manager.has_commands():
+            status_output = self.process_manager.get_device_process_status(self.status_cmd)
+        else:
+            status_output = "the Process Manager doesn't answer"
+
+        if isinstance(status_output, dict):
+            self.status_problem = None
+            return status_output
+
+        problem = f"No status of {self.device_id} from the Process Manager: {status_output}"
+        if problem != self.status_problem:
+            LOGGER.warning(problem)
+        self.status_problem = problem
+        return None
+
+    def setup_device_services(self) -> list[dict]:
+        """Returns the registered services that are the device driver of the Setup.
+
+        A service is the device driver when its `cgse_object` and `device_id` in the registry match the Setup, see
+        `egse.setup.matches()`. When a service of the same `cgse_object` runs with another `device_id`, a warning is
+        logged, once.
+        """
+
+        services = self.registry_client.list_services()
+        registered = [
+            (service.get("metadata", {}).get("cgse_object"), service.get("metadata", {}).get("device_id"))
+            for service in services
+        ]
+        mismatch = device_id_mismatch(self.setup_device, registered)
+        if mismatch and mismatch != self.mismatch:
+            LOGGER.warning(mismatch)
+        self.mismatch = mismatch
+
+        return [
+            service
+            for service, (cgse_object, device_id) in zip(services, registered)
+            if matches(self.setup_device, cgse_object, device_id)
+        ]
 
 
 class LedColor(Enum):
@@ -490,7 +561,13 @@ class DeviceWidget(QGroupBox, Observable):
     """Widget to display the status of a device Control Server, to start and stop it, and to open its UI."""
 
     def __init__(
-        self, device_id: str, device_name: str, device_proxy: str, device_args: Union[list, None], parent: QMainWindow
+        self,
+        device_id: str,
+        device_name: str,
+        device_proxy: str,
+        device_args: Union[list, None],
+        parent: QMainWindow,
+        setup_device: SetupDevice | None = None,
     ):  # FIXME device_args
         """Initialisation of a device widget.
 
@@ -500,6 +577,7 @@ class DeviceWidget(QGroupBox, Observable):
             device_proxy (str): Device proxy
             device_args (Union[str, args]): Device arguments
             parent (QMainWindow): Parent window
+            setup_device (SetupDevice | None): The device driver in the Setup, None for an older device node.
         """
 
         super().__init__()
@@ -511,8 +589,12 @@ class DeviceWidget(QGroupBox, Observable):
 
         self.parent = parent
 
-        self.cgse_cmd = get_cgse_cmd(device_proxy)
-        self.ui_cmd = get_cgse_ui(device_proxy)
+        if setup_device:
+            self.cgse_cmd = f"cgse {setup_device.cgse_object}"
+            self.ui_cmd = " ".join([f"{setup_device.cgse_object}_ui", *device_args])  # e.g. `puna_ui PUNA_01`
+        else:
+            self.cgse_cmd = get_cgse_cmd(device_proxy)
+            self.ui_cmd = get_cgse_ui(device_proxy)
 
         layout = QGridLayout()
 
@@ -535,8 +617,8 @@ class DeviceWidget(QGroupBox, Observable):
         # Open UI
         if self.has_ui_option():
             self.ui_button = TouchButton(
-                name=f"Open the UI for the {self.device_id} Control Server.",
-                status_tip=f"Open the UI for the {self.device_id} Control Server.",
+                name=f"Open the UI for the {device_name} Control Server.",
+                status_tip=f"Open the UI for the {device_name} Control Server.",
                 selected=get_resource(":/icons/user-interface.svg"),
             )
             self.ui_button.setFixedSize(30, 30)
@@ -547,8 +629,8 @@ class DeviceWidget(QGroupBox, Observable):
         # Shut down / re-start
 
         self.start_stop_button = ToggleButton(
-            name=f"Start / shut down the {self.device_id} Control Server.",
-            status_tip=f"Start / shut down the {self.device_id} Control Server.",
+            name=f"Start / shut down the {device_name} Control Server.",
+            status_tip=f"Start / shut down the {device_name} Control Server.",
             selected=get_resource(":/icons/start-process-button.svg"),
             not_selected=get_resource(":/icons/stop-process-button.svg"),
             disabled=[get_resource(":/icons/busy.svg"), get_resource(":/icons/busy.svg")],
@@ -573,7 +655,7 @@ class DeviceWidget(QGroupBox, Observable):
                 status_tip=f"Operational mode only.",
                 selected=get_resource(":/icons/operational-mode.svg"),
                 not_selected=get_resource(":/icons/operational-mode.svg"),
-                disabled=[get_resource(":/icons/operational-mode.svg")],
+                disabled=get_resource(":/icons/operational-mode.svg"),  # the same icon in every state
             )
         self.simulator_option_button.clicked.connect(self.change_cs_start_mode)
         layout.addWidget(self.simulator_option_button, 0, index)
@@ -587,7 +669,11 @@ class DeviceWidget(QGroupBox, Observable):
         Returns: True if the Control Server can be started in simulator mode; False otherwise.
         """
 
-        output = subprocess.check_output(f"{self.cgse_cmd} start --help", shell=True).decode("utf-8")
+        try:
+            output = subprocess.check_output(f"{self.cgse_cmd} start --help", shell=True).decode("utf-8")
+        except subprocess.CalledProcessError as exc:  # e.g. a `cgse_object` in the Setup without `cgse` command
+            LOGGER.warning(f"`{self.cgse_cmd} start --help` failed (exit code {exc.returncode}), is it installed?")
+            return False
         return "--sim" in output
 
     def has_ui_option(self) -> bool:
@@ -599,7 +685,7 @@ class DeviceWidget(QGroupBox, Observable):
         if not self.ui_cmd:
             return False
         else:
-            return shutil.which(self.ui_cmd) is not None
+            return shutil.which(self.ui_cmd.split()[0]) is not None
 
         # return self.ui_cmd is not None and
 
@@ -1016,9 +1102,11 @@ class ProcessManagerUIController(Observer):
             - Add the new device widgets to the layout.
         """
 
-        for device_id, (device_name, device_proxy, device_args) in self.device_ids.items():
+        for device_id, (device_name, device_proxy, device_args, *setup_device) in self.device_ids.items():
+            # A device driver of the Setup (with a `cgse_object`) has its `SetupDevice` as last item
+            setup_device = setup_device[0] if setup_device else None
             device_monitoring_thread = QThread(self.view)  # TODO
-            device_monitoring_worker = DeviceMonitoringWorker(device_id, device_args, device_proxy)
+            device_monitoring_worker = DeviceMonitoringWorker(device_id, device_args, device_proxy, setup_device)
             device_monitoring_worker.moveToThread(device_monitoring_thread)
             # Due to static type checking the IDE doesn't recognise the `connect` method on a `Signal` object.  This
             # happens because `Signal` is a special descriptor in `PyQt` and doesn't expose `emit` in a way that static
@@ -1034,7 +1122,7 @@ class ProcessManagerUIController(Observer):
 
             # Add the new device widgets
 
-            device_widget = DeviceWidget(device_id, device_name, device_proxy, device_args, self.view)
+            device_widget = DeviceWidget(device_id, device_name, device_proxy, device_args, self.view, setup_device)
             device_widget.add_observer(self)
             self.view.device_widgets[device_id] = device_widget
             self.view.overview_devices_widget_layout.addWidget(device_widget)
@@ -1081,7 +1169,8 @@ class ProcessManagerUIController(Observer):
         # UI button in one of the widgets has been clicked
 
         elif isinstance(changed_object, UiCommand):
-            subprocess.call(changed_object.cmd, shell=True)
+            # Not waiting for the UI to close, that would block the Process Manager UI
+            subprocess.Popen(changed_object.cmd, shell=True, start_new_session=True)
 
     def do(self, actions):
         """Execute the given actions upon notification from an observable."""
