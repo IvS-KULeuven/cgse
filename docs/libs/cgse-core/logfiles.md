@@ -14,11 +14,21 @@ files never delays the logger.
 
 ## Starting and stopping
 
-```bash
-cgse lf start     # in the background, does nothing when it already runs
-cgse lf status    # exit code 1 when it doesn't run
-cgse lf stop
-```
+=== "Using `uv` (preferred)"
+
+    ```bash
+    uv run cgse lf start     # in the background, does nothing when it already runs
+    uv run cgse lf status    # exit code 1 when it doesn't run
+    uv run cgse lf stop
+    ```
+
+=== "Direct (for debugging)"
+
+    ```bash
+    python -m egse.logfiles.server start
+    python -m egse.logfiles.server status
+    python -m egse.logfiles.server stop
+    ```
 
 The start commands of the services (`cgse core start`, `cgse puna start`, `cgse daq6510 start-sim`, ...) start the
 log-files service when it doesn't run, so normally there is nothing to do. A package does the same in its own start

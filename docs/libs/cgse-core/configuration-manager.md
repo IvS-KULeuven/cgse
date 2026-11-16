@@ -55,13 +55,23 @@ Useful helper functions:
 
 ## Running The Service
 
-```bash
-python -m egse.confman.confman_cs start
-python -m egse.confman.confman_cs status
-python -m egse.confman.confman_cs list-setups
-python -m egse.confman.confman_cs load-setup <setup_id>
-python -m egse.confman.confman_cs stop
-```
+=== "Using `uv` (preferred)"
+
+    ```bash
+    uv run cgse cm start
+    uv run cgse cm stop
+    uv run cgse cm status
+    ```
+
+=== "Direct (for debugging)"
+
+    ```bash
+    python -m egse.confman.confman_cs start
+    python -m egse.confman.confman_cs status
+    python -m egse.confman.confman_cs list-setups
+    python -m egse.confman.confman_cs load-setup <setup_id>
+    python -m egse.confman.confman_cs stop
+    ```
 
 ## Configuration
 

@@ -45,14 +45,53 @@ This configures the ZeroMQ log handler so records are forwarded to `log_cs`.
 
 ## Control Actions
 
-The command endpoint supports:
+The command endpoint takes a command string and answers with a dictionary with `status` `"ACK"`, or `"NACK"` and an
+`error`. A failing command doesn't stop the logger, it answers with an error. The commands are:
 
-- `status`
-- `set_level <LEVEL>`
-- `roll` (log rotation)
-- `quit`
+| Command                                  | Answer                                                             |
+|------------------------------------------|--------------------------------------------------------------------|
+| `status`                                 | the ports, the levels, the location of the log file and statistics |
+| `set_level <LEVEL>`                      | sets the level of the log file, e.g. `set_level INFO`              |
+| `roll`                                   | rolls over the log file                                            |
+| `tail [after [max]]`                     | the most recent records, kept in memory                            |
+| `history <since> <until> [max [cursor]]` | the records of a time window, read from the log files              |
+| `quit`                                   | stops the logger, the answer is `"ACK"`                            |
 
-Convenience wrappers are exposed via CLI.
+`egse.logger.send_request()` sends a command and returns the answer:
+
+```python
+from egse.logger import send_request
+
+response = send_request("tail 0 50")
+```
+
+`status`, `roll` and `quit` are also available from the CLI, see below.
+
+### `tail`
+
+The logger keeps the last 10 000 records in memory (`TAIL_LENGTH` in `egse.logger.log_cs`). `tail [after [max]]`
+returns the records with a sequence number above `after` (default 0), at most `max` of them (default 100), the most
+recent ones. The answer has `records` and `last_seq`, the number of records received. A client that remembers
+`last_seq` and passes it as `after` the next time only gets the new records; the CGSE TUI does this for its log panel.
+
+A record is a dictionary with `seq`, `time` (a timestamp), `level`, `name` (the logger), `module`, `process` and
+`message`, the message cut to 1000 characters.
+
+### `history`
+
+`history <since> <until> [max [cursor]]` returns the records created between the timestamps `since` and `until`, read
+from the log files: `general.log` and the files it rotated into at midnight (`general.log.YYYY-MM-DD`). It's used by
+the log screen of the CGSE TUI. The records come oldest first, at most `max` of them (default 5000); one answer reads
+at most 8 MB of the log files, the logger doesn't handle other commands while it reads.
+
+The answer has `records` and a `cursor`. When the window has more records, the `cursor` is not `None`: send the same
+command with that cursor to continue where the answer stopped. A cursor is no longer valid when its log file has
+rotated, the answer is then a `"NACK"`.
+
+A record has the fields of a `tail` record without `seq`, and with `pid`, `filename` and `lineno`; the message is cut
+to 4000 characters, a traceback included. The records are written in the order they arrive with the time they were
+created, so a record can arrive up to some seconds after a younger one; the window is searched with a margin of 10 s
+and the records are selected on their own time. See `egse.logger.history`.
 
 ## Running The Service
 

@@ -63,3 +63,7 @@ install_influxdb3.sh
 
 .migrate_influx_to_questdb.state.json
 service_registry.db*
+
+# Exploratory and one-off scripts
+
+/scratch/

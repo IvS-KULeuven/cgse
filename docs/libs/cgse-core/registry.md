@@ -46,7 +46,7 @@ Both clients support the same core operations.
     ```python
     from egse.registry.client import AsyncRegistryClient
 
-    with AsyncRegistryClient() as client:
+    async with AsyncRegistryClient() as client:
         service_id = await client.register(
             name="cm_cs",
             host="127.0.0.1",
@@ -86,7 +86,7 @@ Both clients support the same core operations.
     ```python
     from egse.registry.client import AsyncRegistryClient
 
-    with AsyncRegistryClient() as client:
+    async with AsyncRegistryClient() as client:
         service = await client.discover_service("CM_CS")
         if service:
             endpoint = f"tcp://{service['host']}:{service['port']}"
@@ -116,6 +116,51 @@ Tailscale). A registration of an older version has no `machine_id`, its `host` i
 
 Two machines with the same host name and the same `/etc/machine-id` (e.g. cloned from one disk image without a new
 machine id, see `systemd-machine-id-setup`) can't be told apart: give each machine its own machine id.
+
+### The Metadata Of A Registration
+
+The registry clients add to the metadata of every registration:
+
+| Key          | Value                                                                        |
+|--------------|------------------------------------------------------------------------------|
+| `pid`        | the PID of the service process                                               |
+| `start_time` | the start time of the service process [s since the epoch]                    |
+| `machine_id` | the machine identity, see above (`egse.system.get_machine_id()`)             |
+
+The control servers (sync and async) also register:
+
+| Key               | Value                                                                                   |
+|-------------------|-----------------------------------------------------------------------------------------|
+| `service_port`    | the port of the service commands                                                        |
+| `monitoring_port` | the port where the status is published                                                  |
+| `server_kind`     | how to ask the service for its status, see below                                        |
+| `cgse_object`     | the `cgse <object>` command of the service, e.g. `puna` for `cgse puna start`           |
+| `device_id`       | the instance of the device, the argument of `cgse <object> start <device_id>`, or None  |
+
+`server_kind` is `sync` or `async` for the control servers, `notifyhub`, `metricshub`, or `command` for the servers
+that answer the pickled string command `"status"` (the logger, the log-files service and the ARIEL facility
+housekeeping exporter). The notification hub, the metrics hub, the logger, the log-files service and the ARIEL facility
+housekeeping exporter add `cgse_object` (`nh`, `mh`, `log`, `lf`, `facility_hk`) to their own metadata.
+
+The process manager and the CGSE TUI find the devices of the Setup by `cgse_object` and `device_id`, see
+[The Setup](../cgse-common/setup.md).
+
+### The Status Of The Service Process
+
+Every heartbeat carries the status of the service process, from `egse.process.process_status()`: `pid`, `uptime_s`,
+`rss`, `swap`, `cpu_user_s`, `cpu_system_s` and `cpu_percent`. The registry keeps the last status with the
+registration; `list_services()` and `get_service()` return it as `status`, and `last_heartbeat` tells its age. A
+heartbeat without status, from an older client, keeps the previous status.
+
+The heartbeat interval is a third of the TTL of the registration (30 s by default), unless `start_heartbeat()` gets
+another interval.
+
+### Registry Events
+
+The registry publishes the events `register`, `deregister` and `expire`, and a `status` event every second (see
+below). `RegistryClient` doesn't subscribe to the events. `AsyncRegistryClient` subscribes only when the events are
+used: `on_event(event_type, handler)` and `start_event_listener()`.
+
 ## Server Behavior
 
 The server implementation is `AsyncRegistryServer`.
@@ -141,6 +186,9 @@ The request socket supports these actions:
 - `info`
 - `terminate`
 
+A request that times out leaves its reply behind on the DEALER socket. The clients therefore close the socket after a
+timeout or a ZeroMQ error and open a new one, so the next request can't read that late reply.
+
 ## Running The Service
 
 Start, inspect, and stop the Registry service:
@@ -162,14 +210,19 @@ Start, inspect, and stop the Registry service:
     python -m egse.registry.server stop
     ```
 
-Optional CLI parameters include `req_port`, `pub_port`, `hb_port`, `db_path`, and `cleanup_interval`.
+`cgse reg start` takes `--enforce-unique-service-types` (one service per service type, the default from the
+settings) or `--allow-duplicate-service-types`, and `--log-level`. `cgse reg deregister <service_type>` removes the
+registrations of a service type, e.g. of a service that was killed.
 
-In core-service orchestration this service is referred to as `rm_cs`.
+The options of `python -m egse.registry.server start` are `--req-port`, `--pub-port`, `--hb-port`, `--db-path`,
+`--cleanup-interval`, `--enforce-unique-service-types` and `--log-level`. Its script is `reg_cs`.
 
 ## Status And Health
 
 - `health` returns simple liveness (`success`, `status`, `timestamp`)
-- `info` returns runtime details including request/publication/heartbeat ports and current registrations
+- `info` returns runtime details: the request, publication and heartbeat ports, whether service types are unique,
+  `cgse_object` `reg`, the PID, start time and process status (`process`) of the registry, and the current
+  registrations. The registry doesn't register itself, `info` is where its own process information is.
 
 You can query these through:
 
@@ -178,8 +231,13 @@ You can query these through:
 
 ## Configuration
 
-The Registry server can be configured via CLI parameters and defaults from the `egse.registry` module constants.
-For deployments that need custom ports or storage path, pass explicit CLI options when starting the server.
+Settings are loaded from `Service Registry` in `cgse_core/settings.yaml`:
+
+- `REQUESTER_PORT`, `PUBLISHER_PORT`, `HEARTBEAT_PORT`: the ports, the defaults of the CLI options
+- `CLEANUP_INTERVAL`: how often expired registrations are removed [s], when `--cleanup-interval` is not given
+- `UNIQUE_SERVICE_TYPES`: one service per service type (`true`), or several for pooling
+
+The SQLite database is `service_registry.db` in the working directory of the registry, unless `--db-path` is given.
 
 ## Monitoring And Troubleshooting
 
@@ -191,7 +249,7 @@ For deployments that need custom ports or storage path, pass explicit CLI option
 
 ### Services disappear unexpectedly
 
-- Confirm heartbeats are started (`start_heartbeat`)
+- Confirm heartbeats are started (`start_heartbeat`), and check `last_heartbeat` with `cgse reg list-services`
 - Check TTL value vs heartbeat interval
 - Check cleanup interval and long event-loop blocking in your service
 
