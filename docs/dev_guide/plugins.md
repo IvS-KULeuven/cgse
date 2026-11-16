@@ -180,7 +180,9 @@ The `cgse <device>` sub-commands manage the life cycle of the control server, no
 | `status-sim` | Prints the status of the device simulator.                        |
 
 - The process manager starts, stops and queries a control server with
-  `cgse <device> start|stop|status [<device_id>]`, so use these names.
+  `cgse <device> start|stop|status [<device_id>]`, so use these names. `<device>` is the
+  `cgse_object` and `<device_id>` the `device_id` of the device in the Setup, see
+  [The Setup](../libs/cgse-common/setup.md).
 - Add `start-sim`, `stop-sim` and `status-sim` only when the package has a simulator that runs as
   a separate process, e.g. `daq6510_sim` in `keithley-tempcontrol`. When the simulator is part of
   the control server, add a `--sim` (`--simulator`) option to `start` instead, e.g.

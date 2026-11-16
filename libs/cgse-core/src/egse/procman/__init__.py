@@ -14,6 +14,7 @@ from egse.proxy import Proxy
 from egse.registry.client import RegistryClient
 from egse.settings import Settings
 from egse.setup import Setup
+from egse.setup import find_cgse_devices
 from egse.setup import load_setup
 from egse.storage import is_storage_manager_active
 
@@ -211,8 +212,8 @@ class StatusCommand(ProcessCommand):
         Returns: Full CGSE command to query the status of the Control Server.
         """
 
-        if len(self.device_args) > 0:
-            return f"{self._cgse_cmd} status {self.device_args}"
+        if self.device_args:
+            return f"{self._cgse_cmd} status {self.device_args[0]}"
         else:
             return f"{self._cgse_cmd} status"
 
@@ -276,12 +277,18 @@ class ProcessManagerInterface:
 
     @dynamic_interface
     def get_device_ids(self) -> dict:
-        """Returns a list with the identifiers of the devices that are included in the setup.
+        """Returns a dictionary with the devices that are included in the setup.
 
-        The devices for which the identifiers are returned are the ones that are included in the setup that is currently
-        loaded in the Configuration Manager.
+        The devices are the ones that are included in the setup that is currently loaded in the Configuration Manager:
 
-        Returns: List with the identifiers of the devices that are included in the setup.
+            - A device driver, a node with a `cgse_object` (see `egse.setup.find_cgse_devices()`), has the key
+              "<cgse_object>:<device_id>" (without device_id for a single device) and the value
+              `(device_name, None, device_args, setup_device)`. The device arguments are `[device_id]`, the
+              argument of `cgse <cgse_object> start|stop|status`, or empty for a single device.
+            - An older device node, with `device`, `device_id` and `device_name` (see `Setup.find_device_ids()`), has
+              the device_id as key and the value `(device_name, device_proxy, device_args)`.
+
+        Returns: Dictionary with the devices that are included in the setup.
         """
 
         raise NotImplementedError
@@ -365,6 +372,9 @@ class ProcessManagerController(ProcessManagerInterface):
 
             device_ids = {}
             device_ids = Setup.find_device_ids(setup, device_ids=device_ids)
+            for device in find_cgse_devices(setup):
+                device_args = [device.device_id] if device.device_id else []
+                device_ids[f"{device.cgse_object}:{device.device_id or ''}"] = (device.name, None, device_args, device)
 
             return device_ids
 

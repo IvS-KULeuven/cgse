@@ -7,6 +7,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### `device_id` and `cgse_object` of the devices in the Setup
+
+- The `device_id` of a device in the Setup is the instance of the device: the argument of
+  `cgse <object> start|stop|status <device_id>`, as registered by its control server. Leave it out for a single
+  device (e.g. DT8874, DAQ6510, TVAC), whose control server registers no `device_id`.
+- The process manager GUI shows the devices with a `cgse_object` in the Setup: it runs `cgse <cgse_object>` and
+  `<cgse_object>_ui` with the `device_id`, and finds a running device by its `cgse_object` and `device_id` in the
+  registry instead of its service type. Devices without `cgse_object` work as before.
+- The CGSE TUI and the process manager log a warning when a running control server of a device in the Setup has
+  another `device_id`. The TUI also warns about a device without `device_id` that matches several running control
+  servers, and about a `cgse_object` without `cgse` command.
+- `egse.setup` has `find_cgse_devices()`, `matches()` and `device_id_mismatch()`, shared by the TUI and the PM.
+- Fixed: the process manager ran `cgse <object> status ['<arg>']`, with the list of device arguments.
+- Fixed: the device monitoring of the process manager GUI crashed when the process manager was busy with the status
+  of another device at its start (`NotImplementedError`); it now connects in its own thread, again when needed, and
+  retries at the next update.
+- Fixed: the process manager GUI crashed painting the "operational mode only" button of a running device without
+  simulator option, e.g. the DAQ6510 (`IndexError`).
+- Fixed: the process manager GUI was blocked while the UI of a device that it opened was open.
+- Restart `pm_cs` and `pm_ui` together: an older `pm_ui` can't read the devices of the new `pm_cs`.
+
 ## [0.26.1] - 2026-11-12
 
 > [!NOTE]

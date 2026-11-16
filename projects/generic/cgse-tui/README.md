@@ -41,8 +41,9 @@ Keys in the overview:
 The overview also shows the device drivers of the project: every node of the Setup (loaded by the configuration
 manager) with a `cgse_object`, e.g. `gse.DAQ6510.cgse_object: daq6510`, with its `device_name` and optional
 `device_id`. A device that runs is shown as its service in the registry; one that doesn't run is shown dimmed, with an
-empty frame, and can be started with `a` (`cgse <object> start [<device_id>]`). See "Device drivers in the Setup" in
-`docs/libs/cgse-common/setup.md`.
+empty frame, and can be started with `a` (`cgse <object> start [<device_id>]`). A problem with a device of the Setup,
+e.g. a `device_id` that its running control server doesn't register, is logged as a warning. See "Device drivers in
+the Setup" in `docs/libs/cgse-common/setup.md`.
 
 The detail screen shows the selected service in panels, updated every second:
 

@@ -160,8 +160,10 @@ and TVAC, whose status prints a dict, this always yields connected=True and sim=
    registers its `cgse_object`, the `cgse <obj>` command that starts, stops and shows its status (done on
    `feat/registry-cgse-object`); the registry has it in its `info` reply. Control servers set it as the class
    attribute `cgse_object`. The simulator mode is in the `device` section of the status report, not in the
-   registration. Still open: the `SequenceMatcher` heuristic in `procman_ui.get_cgse_cmd()` can be replaced by the
-   registered `cgse_object`.
+   registration. The process manager GUI uses the `cgse_object` of a device in the Setup instead of the
+   `SequenceMatcher` heuristic in `procman_ui.get_cgse_cmd()`, and finds it running by `cgse_object` and `device_id`
+   in the registry (done on `fix/setup-device-id`). Still open: the heuristic for older Setup nodes without
+   `cgse_object`.
 6. **Done — simulator mode for async drivers** (DAQ6510, TVAC): recognised at connect, see the status report section
    above (done on `feat/registry-cgse-object`).
 7. **Open — Process Manager lifecycle**: `start_process` should return a result (it returns `None` now), add
@@ -250,8 +252,6 @@ and TVAC, whose status prints a dict, this always yields connected=True and sim=
 - Notification Hub: `_generate_health_response()` is never called.
 - `ControlServer`: `__init__` sets `self.service_id` but `register_service()` assigns `self._service_id`
   (`egse/control.py:141` vs `:699`).
-- Process Manager: `StatusCommand.cmd` interpolates the `device_args` list directly into the command string (runtime
-  effect not verified).
 - facility_hk: an unknown command gets no reply, leaving the client's REQ socket stuck.
 - Tests failing on `main`, independent of these changes: `ariel-tcu` `test_tcu.py::test_set_prof_gen_axis_speed`,
   `cgse-core` `test_async_control.py::test_control_server` (its log capture is empty) and

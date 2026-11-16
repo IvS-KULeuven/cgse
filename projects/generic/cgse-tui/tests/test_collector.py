@@ -667,6 +667,55 @@ async def test_the_device_drivers_of_the_setup_are_shown():
     await collector.stop()
 
 
+async def test_the_problems_with_the_setup_are_logged_once(caplog, monkeypatch):
+    monkeypatch.setattr("cgse_tui.data.collector.cgse_commands", lambda: {"dt8874", "puna"})
+    collector, registry, fakes, clock = make_collector()
+    registry.records = [
+        record("CM_CS", service_port=6112, monitoring_port=6111, server_kind="sync", cgse_object="cm"),
+        record("DT8874", service_port=2001, monitoring_port=2002, cgse_object="dt8874", device_id=None),
+        record("PUNA_01", service_port=2011, monitoring_port=2012, cgse_object="puna", device_id="PUNA_01"),
+        record("PUNA_02", service_port=2021, monitoring_port=2022, cgse_object="puna", device_id="PUNA_02"),
+    ]
+    await collector.poll()
+    await settle()
+    setup = {
+        "gse": {
+            "dt8874": {"cgse_object": "dt8874", "device_id": "DT8874"},  # the DT8874 registers no device_id
+            "hexapod": {"cgse_object": "puna"},  # two PUNA hexapods run
+            "awg": {"cgse_object": "tgf4000", "device_id": "AWG1"},  # no `cgse tgf4000` command
+        }
+    }
+
+    def warnings():
+        return [r.getMessage() for r in caplog.records if r.name == "cgse_tui.collector" and r.levelname == "WARNING"]
+
+    with caplog.at_level(logging.WARNING, logger="cgse_tui"):
+        fakes.subscriptions["tcp://10.0.0.1:6111"]({**SYNC_MONITORING, "setup": setup})
+        collector.snapshot()
+        collector.snapshot()  # the 10 s refresh doesn't repeat the warnings
+        assert warnings() == [
+            "Setup gse.dt8874 has device_id 'DT8874', but the running dt8874 control server registers device_id "
+            "None: leave device_id out of the Setup for a single device.",
+            "Setup gse.hexapod has no device_id and matches 2 running puna control servers "
+            "(device_id 'PUNA_01', 'PUNA_02'): add the device_id to the Setup.",
+            "Setup gse.awg has cgse_object 'tgf4000', but there is no `cgse tgf4000` command: "
+            "is the package of the device installed?",
+        ]
+        assert "setup:dt8874:DT8874" in by_type(collector)  # not matched: shown as inactive
+
+        # the Setup is corrected: the DT8874 matches, the problems are solved
+        caplog.clear()
+        setup = {
+            "gse": {"dt8874": {"cgse_object": "dt8874"}, "hexapod": {"cgse_object": "puna", "device_id": "PUNA_01"}}
+        }
+        fakes.subscriptions["tcp://10.0.0.1:6111"]({**SYNC_MONITORING, "setup": setup})
+        shown = by_type(collector)
+        assert warnings() == []
+        assert "setup:dt8874:" not in shown and shown["DT8874"].setup_path == "gse.dt8874"
+
+    await collector.stop()
+
+
 async def test_the_swapped_out_memory_is_taken_into_account():
     collector, registry, fakes, clock = make_collector()
     registry.records = [record("AWG1", service_port=2001, monitoring_port=2002, server_kind="sync")]

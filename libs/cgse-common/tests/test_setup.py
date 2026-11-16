@@ -22,10 +22,14 @@ from egse.env import print_env
 from egse.env import set_conf_repo_location
 from egse.env import setup_env
 from egse.setup import Setup
+from egse.setup import SetupDevice
+from egse.setup import device_id_mismatch
+from egse.setup import find_cgse_devices
 from egse.setup import get_last_setup_id_file_path
 from egse.setup import get_path_of_setup_file
 from egse.setup import load_last_setup_id
 from egse.setup import load_setup
+from egse.setup import matches
 from egse.setup import navdict
 from egse.setup import save_last_setup_id
 from egse.setup import submit_setup_to_disk
@@ -1121,3 +1125,69 @@ def test_find_devices():
     assert devices["BBB"] == ("dev-zzz-bbb", None, ())
     assert devices["AAA"] == ("dev-zzz-aaa", None, [1, 2, 3])
     assert devices["CCC"] == ("dev-zzz-ccc", 3578, ["True", "False"])
+
+
+CGSE_DEVICES_SETUP = {
+    "site_id": "LAB",
+    "gse": {
+        "DAQ6510": {"device_name": "Keithley DAQ6510", "cgse_object": "daq6510", "channels": {"cgse_object": "x"}},
+        "hexapods": {
+            "one": {"device_name": "PUNA Hexapod", "cgse_object": "puna", "device_id": "PUNA_01"},
+            "two": {"cgse_object": "puna", "device_id": 2},
+        },
+        "tcs": {"device_name": "TCS", "device": "class//egse.tcs.tcs.TCSProxy"},  # no cgse_object: not a driver
+    },
+    "history": {"1": "first Setup"},
+}
+
+
+def test_find_cgse_devices():
+    assert find_cgse_devices(CGSE_DEVICES_SETUP) == [
+        SetupDevice("daq6510", None, "Keithley DAQ6510", "gse.DAQ6510"),  # its sub-nodes are configuration
+        SetupDevice("puna", "PUNA_01", "PUNA Hexapod", "gse.hexapods.one"),
+        SetupDevice("puna", "2", "two", "gse.hexapods.two"),  # the key when there's no device_name
+    ]
+    devices = find_cgse_devices(Setup(CGSE_DEVICES_SETUP))  # a Setup object is read too
+    assert [device.cgse_object for device in devices] == ["daq6510", "puna", "puna"]
+
+
+def test_matches():
+    daq, puna, _ = find_cgse_devices(CGSE_DEVICES_SETUP)
+    assert matches(daq, "daq6510", None) and matches(daq, "daq6510", "ANY")  # no device_id in the Setup
+    assert matches(puna, "puna", "PUNA_01") and not matches(puna, "puna", "PUNA_02")
+    assert not matches(puna, "puna", None)
+    assert not matches(puna, "zonda", "PUNA_01")
+
+
+def test_device_id_mismatch():
+    dt8874 = SetupDevice("dt8874", "DT8874", "DT8874", "gse.dt8874")
+    assert device_id_mismatch(dt8874, [("dt8874", None)]) == (
+        "Setup gse.dt8874 has device_id 'DT8874', but the running dt8874 control server registers device_id None: "
+        "leave device_id out of the Setup for a single device."
+    )
+    assert device_id_mismatch(dt8874, []) is None  # not running
+    assert device_id_mismatch(dt8874, [("dt8874", "DT8874")]) is None
+    assert device_id_mismatch(SetupDevice("dt8874", None, "DT8874", "gse.dt8874"), [("dt8874", None)]) is None
+
+    puna = SetupDevice("puna", "PUNA_01", "PUNA", "gse.hexapod")
+    assert device_id_mismatch(puna, [("puna", "PUNA_02"), ("zonda", "PUNA_01")]) == (
+        "Setup gse.hexapod has device_id 'PUNA_01', but the running puna control server registers device_id "
+        "'PUNA_02': the device_id in the Setup shall be the argument of `cgse puna start`."
+    )
+
+
+def test_find_device_ids_leaves_out_the_device_drivers():
+    setup = Setup.from_yaml_string(
+        """
+        old:
+            device: dev-old
+            device_name: OLD
+            device_id: OLD_1
+        new:
+            device: dev-new
+            device_name: NEW
+            device_id: NEW_1
+            cgse_object: new
+        """
+    )
+    assert Setup.find_device_ids(setup) == {"OLD_1": ("OLD", "dev-old", ())}

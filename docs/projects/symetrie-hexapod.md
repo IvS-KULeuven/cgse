@@ -10,10 +10,11 @@
     they can be the same type or different types. So, how do we specify two PUNA hexapods used 
     to position two different parts of your test equiopment?  
 
-The system needs to know the following information on the hexapod:
+The system needs to know the following information on the hexapod, in its node in the Setup (see
+[The Setup](../libs/cgse-common/setup.md)):
 
-- device name: specified in the Setup under `setup.gse.hexapod.device_args.device_name`
-- device id: specified in the Setup under `setup.gse.hexapod.device_args.device_id`
+- device name: `setup.gse.hexapod.device_name`
+- device id: `setup.gse.hexapod.device_id`, the argument of `cgse puna start <device_id>`, e.g. `PUNA_01`
 
 These above settings can olso be specified in the environment variables:
 

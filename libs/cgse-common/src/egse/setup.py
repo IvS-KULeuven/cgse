@@ -129,15 +129,23 @@ __all__ = [
     "validate_setup_description",
     "load_last_setup_id",
     "save_last_setup_id",
+    "SetupDevice",
+    "find_cgse_devices",
+    "matches",
+    "device_id_mismatch",
 ]
 
 import re
 import textwrap
 import warnings
+from collections.abc import Iterable
+from collections.abc import Mapping
 from contextvars import ContextVar
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 from threading import Lock
+from typing import Any
 from typing import Optional
 from typing import Protocol
 from typing import Union
@@ -505,6 +513,8 @@ class Setup(NavigableDict):
             node: Dictionary in which to look for the device identifiers.
             device_ids: List in which to include the devices in the setup.
 
+        A node with a `cgse_object` is left out, it is a device driver of `find_cgse_devices()`.
+
         Returns: List with the identifiers of the devices that are included in the given dictionary.
         """
 
@@ -512,6 +522,8 @@ class Setup(NavigableDict):
 
         for sub_node in node.values():
             if isinstance(sub_node, NavigableDict):
+                if "cgse_object" in sub_node:
+                    continue
                 if ("device" in sub_node) and ("device_id" in sub_node) and ("device_name" in sub_node):
                     # device_ids[sub_node.get_raw_value("device_id")] = sub_node.get_raw_value("device_name")
 
@@ -580,6 +592,94 @@ class Setup(NavigableDict):
             return self.get_private_attribute("_filename")
         else:
             return None
+
+
+@dataclass(frozen=True)
+class SetupDevice:
+    """A device driver in the Setup, see `find_cgse_devices()`."""
+
+    cgse_object: str
+    """The `cgse <object>` command that starts, stops and shows the status of the control server."""
+    device_id: str | None
+    """The instance of the device: the argument of `cgse <object> start <device_id>`, None for a single device."""
+    name: str
+    path: str
+    """Where the device is in the Setup, e.g. "gse.DAQ6510"."""
+
+
+def find_cgse_devices(setup: Mapping[str, Any], path: str = "") -> list[SetupDevice]:
+    """Returns the device drivers in the Setup: the nodes with a `cgse_object`, in the order of the Setup.
+
+    A node describes a device driver when it has a `cgse_object`, the `cgse <object>` command of its control server.
+    It can have a `device_name`, shown as the name, and a `device_id` when there are several devices of the same type.
+    The `device_id` is the argument of `cgse <object> start|stop|status <device_id>` and the control server registers
+    it in the service registry. A single device, whose control server takes no device identifier (e.g. the DAQ6510),
+    has no `device_id`:
+
+        gse:
+            DAQ6510:
+                device_name: Keithley DAQ6510
+                cgse_object: daq6510
+            hexapod:
+                device_name: PUNA Hexapod
+                cgse_object: puna
+                device_id: PUNA_01
+
+    A device node is not searched further, its sub-nodes are its configuration. The process manager and the TUI
+    identify the device by its `cgse_object` and `device_id`, see `matches()`.
+    """
+    devices = []
+    for key, node in setup.items():
+        if not isinstance(node, Mapping):
+            continue
+        node_path = f"{path}.{key}" if path else str(key)
+        cgse_object = node.get("cgse_object")
+        if isinstance(cgse_object, str) and cgse_object:
+            device_id = node.get("device_id")
+            devices.append(
+                SetupDevice(
+                    cgse_object=cgse_object,
+                    device_id=None if device_id is None else str(device_id),
+                    name=str(node.get("device_name") or key),
+                    path=node_path,
+                )
+            )
+        else:
+            devices.extend(find_cgse_devices(node, node_path))
+    return devices
+
+
+def matches(device: SetupDevice, cgse_object: str | None, device_id: str | None) -> bool:
+    """True when a service, registered with this `cgse_object` and `device_id`, is the device of the Setup.
+
+    A device without `device_id` in the Setup matches every service of its `cgse_object`.
+    """
+    if cgse_object != device.cgse_object:
+        return False
+    return device.device_id is None or (device_id is not None and str(device_id) == device.device_id)
+
+
+def device_id_mismatch(device: SetupDevice, registered: Iterable[tuple[str | None, str | None]]) -> str | None:
+    """Explains why a device of the Setup doesn't match a running service of its `cgse_object`.
+
+    Args:
+        device: The device of the Setup.
+        registered: The `cgse_object` and `device_id` of the registered services.
+
+    Returns: None when a service matches the device or no service of its `cgse_object` runs, else the reason.
+    """
+    device_ids = [device_id for cgse_object, device_id in registered if cgse_object == device.cgse_object]
+    if not device_ids or any(matches(device, device.cgse_object, device_id) for device_id in device_ids):
+        return None
+    registered_ids = ", ".join(repr(device_id) for device_id in device_ids)
+    if all(device_id is None for device_id in device_ids):
+        hint = "leave device_id out of the Setup for a single device"
+    else:
+        hint = f"the device_id in the Setup shall be the argument of `cgse {device.cgse_object} start`"
+    return (
+        f"Setup {device.path} has device_id {device.device_id!r}, but the running {device.cgse_object} control "
+        f"server registers device_id {registered_ids}: {hint}."
+    )
 
 
 def list_setups(**attr):
