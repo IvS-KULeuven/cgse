@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.26.2] - 2026-11-16
+
 ### `device_id` and `cgse_object` of the devices in the Setup
 
 - The `device_id` of a device in the Setup is the instance of the device: the argument of
@@ -1044,7 +1046,9 @@ This release is mainly on maintenance and improvements to the `cgse-common` pack
 - Renamed `cgse` subcommands `registry` →  `reg`, `notify` →  `not`.
 
 
-[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.26.0...HEAD
+[Unreleased]: https://github.com/IvS-KULeuven/cgse/compare/v0.26.2...HEAD
+[0.26.2]: https://github.com/IvS-KULeuven/cgse/compare/v0.26.1...v0.26.2
+[0.26.1]: https://github.com/IvS-KULeuven/cgse/compare/v0.26.0...v0.26.1
 [0.26.0]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.11...v0.26.0
 [0.25.11]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.10...v0.25.11
 [0.25.10]: https://github.com/IvS-KULeuven/cgse/compare/v0.25.9...v0.25.10
